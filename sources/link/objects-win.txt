@@ -152,8 +152,6 @@ rt burgerfile
 rt burgermisc2
 rt burgerfilemgr
 rt burgersavefile
-rt atnetup
-rt atnetinfo
 rt burgergraphics
 rt burgeronce
 rt athashtbl
@@ -205,11 +203,7 @@ rt itmarkup
 rt regcomp
 rt burgerscreenshape
 rt burgertextbuf
-rt atnetsock
-rt atnetaddr
-rt atnet
 rt atmutexlist
-rt atzstream
 rt atutf162
 rt burgerfloatingpoint
 rt burgersndwin2
@@ -245,7 +239,6 @@ rt pngmem
 rt itattr
 rt crt4
 rt burgeropengl
-rt atresolve
 rt convertutf
 rt ztrees
 rt zlibcrt

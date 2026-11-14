@@ -217,108 +217,12 @@ extern unsigned char QueueIsEmpty(void *ref);
 extern unsigned char AtomicMaskApply(ULong *word, ULong bit);
 extern unsigned char AtomicMaskClear(ULong *word, ULong bit);
 
-/* the network layer (atnet.c): on Mac the first argument of a Create names the stack */
-#ifdef MAC1010
-typedef unsigned short NetStackID;
-#else
-typedef void *NetStackID;
-#endif
-/* the Winsock layer (atnet.c) */
-struct NetSocket;
-struct NetAddress;
-struct NetPacket;
-extern void NetworkMakeCallback(void (*proc)(struct NetSocket *s, void *ref, unsigned short event),
-                         void *ref, struct NetSocket *s, unsigned short event);
-extern void NetworkQueueEmpty(struct MutexList *list);
-extern void _EndpointUnregister(struct NetSocket *s, unsigned short kind);
-extern unsigned char AddressCompare(const void *refA, const void *refB);
-extern void DatagramDispose(void *ref);
-extern void DatagramClose(void *ref, int32_t unused);
-extern int32_t NetworkQueueFill(struct MutexList *list, unsigned short kind, ULong count, ULong size);
-extern struct MutexNode *NetworkQueuePoll(struct MutexList *list);
-extern void _EndpointRegister(struct NetSocket *s, unsigned short kind);
-extern unsigned short AddressToNetworkStack(const struct NetAddress *a);
-extern void AddressDuplicate(void *to, const struct NetAddress *src);
-extern unsigned char AddressIsEmpty(const struct NetAddress *a);
-extern void AddressComposeEmpty(struct NetAddress *a);
-extern void AddressComposeTCPIP(void *ref, unsigned short port, ULong ip);
-extern void AddressDecomposeTCPIP(const void *ref, unsigned short *port, ULong *ip);
-extern void AddressTranscribe(const void *address, char *out);
-extern struct NetSocket *DatagramCreate(NetStackID stack, void *ref,
-    void (*proc)(struct NetSocket *s, void *ref, unsigned short event),
-    struct MutexList *sentList, struct MutexList *freeList, struct MutexList *recvList,
-    struct MutexList *recvList2);
-extern void DatagramTickle(struct NetSocket *s);
-extern int32_t DatagramControl(void *ref, void *out, ULong option, ULong value);
-extern int32_t DatagramOpen(void *ref, struct NetAddress *address);
-extern int32_t DatagramSend(void *ref, struct NetPacket *packet);
-extern int32_t DatagramGetAddress(void *ref, struct NetAddress *out);
-extern int32_t _EndpointGetError(struct NetSocket *s);
-extern unsigned char NetworkStackGetAvail(unsigned short mode);
-extern unsigned char _AddressFromString(struct NetAddress *address, const char *text);
-extern struct MutexNode *NetworkQueueWait(struct MutexList *list, ULong seconds);
-extern int32_t SimpleResolve(NetStackID stack, const char *host, struct NetAddress *out);
-
-/* the TCP stream socket (atnet.c) */
-struct NetStream;
-struct NetChunk;
-extern struct NetStream *StreamCreate(NetStackID stack, void *ref,
-    void (*proc)(struct NetSocket *s, void *ref, unsigned short event),
-    struct MutexList *sentList, struct MutexList *freeList, struct MutexList *recvList,
-    struct MutexList *recvList2);
-extern void StreamTickle(struct NetStream *s);
-extern void StreamDispose(struct NetSocket *sock);
-extern void StreamClose(struct NetSocket *sock, unsigned char graceful);
-extern int32_t StreamAcceptServer(void *ref, void *other);
-extern int32_t StreamOpenClient(void *ref, struct NetAddress *local,
-    const struct NetAddress *remote, ULong timeout);
-extern int32_t StreamSend(void *ref, struct NetChunk *chunk);
-extern int32_t StreamGetAddress(void *ref, struct NetAddress *local,
-    struct NetAddress *remote);
-
-/* a TCP stream cut into frames (atnet.c) and the socket accessors (reggie.c) */
-extern struct NetStream *StreamCreateBuffered(NetStackID stack, void *ref,
-    void (*proc)(struct NetSocket *s, void *ref, unsigned short event), int32_t frameMode,
-    struct MutexList *sentList, struct MutexList *freeList, struct MutexList *outList,
-    struct MutexList *outList2);
-extern unsigned short BufferedStreamStatus(struct NetSocket *s, unsigned short state);
-extern void _EndpointTickleAll(void);
-extern void _EndpointDisposeAll(void);
-extern int32_t NetworkStackLoad(ULong wanted);
-extern ULong NetworkStackGetAddressList(unsigned short kind, struct NetAddress *out, ULong max);
-extern int32_t SimpleSend(struct NetSocket *s, const struct NetAddress *to, void **h);
-extern unsigned short EndpointGetElem(void *ref);
-extern unsigned short EndpointGetStack(void *ref);
-extern unsigned short EndpointGetStatus(void *ref);
-extern void EndpointGetCallback(void *handle,
-    void (**proc)(struct NetSocket *s, void *ref, unsigned short event), void **ref);
-extern void DatagramGetQueues(void *ref, struct MutexList **sentList,
-    struct MutexList **freeList, struct MutexList **recvList, struct MutexList **recvList2);
-extern void StreamGetQueues(void *ref, struct MutexList **sentList,
-    struct MutexList **freeList, struct MutexList **recvList, struct MutexList **recvList2);
-
-/* the host-name resolver (atresolve.c) */
-struct NetResolver;
-struct NetLookup;
-extern struct NetResolver *ResolverCreate(NetStackID stack, void *ref,
-    void (*proc)(struct NetSocket *s, void *ref, unsigned short event),
-    struct MutexList *doneList, struct MutexList *freeList);
-extern void ResolverTickle(struct NetSocket *s);
-extern void ResolverDispose(void *ref);
-extern int32_t ResolverOpen(void *ref);
-extern int32_t ResolverControl(void *ref, struct NetLookup *lookup);
-extern void ResolverClose(void *ref);
+/* critical sections, threads and atomics (atplat) */
 extern int32_t CriticalDispose(void *lock);
 extern ULong _PlatformResumeThread(void *thread);
 extern ULong _PlatformSuspendThread(void *thread);
 extern int32_t CriticalCreate(void *lock);
 extern int32_t AtomicIncrement(int32_t *value, int32_t delta);
-
-/* a handle deflated / inflated through a kept zlib stream (atzstream.c) */
-struct ZState;
-extern void ProgressiveDispose(struct ZState *state);
-extern int32_t ProgressiveDecompress(void **h, struct ZState *state);
-extern int32_t ProgressiveCompress(void **h, struct ZState *state);
 
 /* UTF-16 / UTF-8 (atcharset.c, atutf162.c, convertutf.c) */
 extern int32_t UnicodeCompare(const unsigned short *a, const unsigned short *b);
@@ -1041,11 +945,6 @@ extern uint32_t RT3_IsRegistered(void);
 extern int32_t RT3_IsRegistered(void);
 #endif
 extern void RT3_Idle(void);
-#ifdef MAC1010
-extern unsigned char NetworkStackGetActive(unsigned short mode);
-#else
-extern char NetworkStackGetActive(unsigned short mode);
-#endif
 extern void VideoGetCurrentMode(int32_t *out);
 extern int32_t VideoSetMode(int32_t *rec);
 extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);

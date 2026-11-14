@@ -312,8 +312,6 @@ _ReleasePrefixs
 __rt_mul64@16
 _AllocAHandleClear
 _OpenPort
-_NetworkStackLoad
-_EndpointGetElem
 _VideoGetCurrentMode
 _UnlockMe
 __HashDataEncode
@@ -392,19 +390,15 @@ ___dup_core
 _QTLoadLibrary
 ___get_char
 _WSAStartup@8
-_NetworkMakeCallback
 _WSACleanup@0
 _WSAGetLastError@0
 _closesocket@4
 _socket@12
-_AddressToNetworkStack
 _gethostname@8
 _gethostbyname@4
 _connect@12
 _getsockname@12
-_StreamCreateBuffered
 _QueueCreate
-_ProgressiveDispose
 _unicode_bytecount
 _FloatATan2
 _StopASound
@@ -456,7 +450,6 @@ __IT_ParseTreeFindNextTag
 _crt4_abs
 _OpenGLInit
 ___wFileWrite
-_ResolverCreate
 _getsockopt@20
 _setsockopt@20
 _bind@12
