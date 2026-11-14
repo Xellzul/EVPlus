@@ -254,11 +254,6 @@ void MainScreenUpdate(short which)
     }
 }
 
-#define kShippingVer    "1.0.A"
-#define kUpgradePrompt  0x33
-#define kUrlStrList     0x82
-#define kUrlIndex       6
-#define kPollTimeout    5
 #define kHotStripHeight 0x14
 #define kBarHeight      0x1e
 
@@ -273,52 +268,9 @@ void MainScreenActivate(Boolean activate)
 void MainScreenIdle(void)
 {
 #if !V111
-    unsigned char text[256];
     Rect strip;
     Point mouse;
-    void *reply;
-    char *latest;
-    Boolean wanted;
 
-    if (reggieStarted != 0 && reggieVersion[0] == 0 &&
-        slideIndex[2] >= kAnimDone && inBackground == 0) {
-#ifdef MACBUILD
-        GetIndString(text, kUrlStrList, 5);
-        PtoCstr(text);
-#else
-        strcpy((char *)text, "EV Nova PC");
-#endif
-        reply = ReggieVersionCheck(0, (char *)text);
-        if (reply != NULL) {
-            latest = HashLookup(reply, "$VERSION", 0);
-            if (latest != NULL) {
-                crashlog_print("latest version is ");
-                crashlog_print(latest);
-                crashlog_print("\n");
-                strcpy(reggieVersion, latest);
-                reggieSuccess = 1;
-                reggieStarted = 0;
-                if (strcmp(reggieVersion, kShippingVer) > 0) {
-                    GetIndString(text, kAlertStrList, kUpgradePrompt);
-                    wanted = EVYesNoDialog(text);
-                    MainScreenUpdate(1);
-                    if (wanted) {
-                        GetIndString(text, kUrlStrList, kUrlIndex);
-                        PtoCstr(text);
-                        IT_OpenBrowser((char *)text);
-                    }
-                }
-            }
-        } else {
-            crashlog("reggie version check returned nil");
-        }
-        if (reggieSuccess == 0) {
-            if ((unsigned int)(TimerGetSeconds() - reggieStarted) > kPollTimeout) {
-                crashlog("timeout contacting version server");
-                reggieStarted = 0;
-            }
-        }
-    }
     HandleIntroMusic(0);
 #endif
     MainScreenAnimIdle();

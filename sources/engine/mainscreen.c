@@ -68,8 +68,6 @@ uint32_t LastTick;                   /* 0x008700f0 */
 
 #define kIdleWaitTicks       30
 #define kStrQuitConfirm     0xa
-#define kStrListVersion    0x82
-#define kStrVersionURL        5
 #define kStartupIterations 0x32
 
 /* DoMainScreen (mac _DoMainScreen). STATE: MATCH, byte-identical. OPEN: none */
@@ -78,7 +76,6 @@ uint32_t LastTick;                   /* 0x008700f0 */
 #ifdef MACBUILD
 void DoMainScreen(void)
 {
-    Str255 versionURL;
     int32_t err;
 #if TARGET_API_MAC_OS8
     Point diskPt;
@@ -129,27 +126,6 @@ void DoMainScreen(void)
         SWSetPortToWindow(gSpriteWorld);
     }
 
-#ifdef MAC1010
-    if (settings.noVersionCheck == 0) {
-        crashlog("checking network stack");
-        if (NetworkStackGetActive(0)) {
-            crashlog("beginning version check");
-            GetIndString(versionURL, kStrListVersion, kStrVersionURL);
-            PtoCstr(versionURL);
-            err = ReggieVersionBegin(0, (char *)versionURL);
-            if (err == 0) {
-                reggieStarted = TimerGetSeconds();
-            } else {
-                crashlog_print("couldn't begin version check (error code ");
-                crashlog_print_num(err);
-                crashlog_print(")\n");
-            }
-        } else {
-            crashlog("network stack not active");
-        }
-    }
-
-#endif
     crashlog("setting up main screen graphics");
     SetupInterfaceBackground();
     ShowTheCursor();
@@ -276,10 +252,8 @@ void DoMainScreen(void)
     int32_t mouseV;
     Str255 confirm;
     int32_t mouseH;
-    Str255 versionURL;
     int32_t mode[4];
     Point where;
-    int32_t err;
     short delay;
     int key;
     int upper;
@@ -329,25 +303,6 @@ void DoMainScreen(void)
         PaintRect(&gSpriteWorld->windRect);
         ForeColor(blackColor);
         SWSetPortToWindow(gSpriteWorld);
-    }
-
-    if (settings.noVersionCheck == 0) {
-        crashlog("checking network stack");
-        if (NetworkStackGetActive(0)) {
-            crashlog("beginning version check");
-            GetIndString(versionURL, kStrListVersion, kStrVersionURL);
-            PtoCstr(versionURL);
-            err = ReggieVersionBegin(0, (char *)versionURL);
-            if (err != 0) {
-                crashlog_print("couldn't begin version check (error code ");
-                crashlog_print_num(err);
-                crashlog_print(")\n");
-            } else {
-                reggieStarted = TimerGetSeconds();
-            }
-        } else {
-            crashlog("network stack not active");
-        }
     }
 
     crashlog("setting up main screen graphics");
