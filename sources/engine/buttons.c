@@ -34,17 +34,6 @@ enum { kTradeDoneButton, kTradeBuyButton, kTradeSellButton };
 enum { kMissionAcceptButton, kMissionOkButton };
 enum { kMissionInfoDoneButton, kMissionInfoAbortButton };
 enum { kHaggleYesButton, kHaggleNoButton };
-#ifdef MAC1010 /* 1.0.10 spelling: plain numbers at the sites */
-#define kTradeDoneButton 0
-#define kTradeBuyButton 1
-#define kTradeSellButton 2
-#define kMissionAcceptButton 0
-#define kMissionOkButton 1
-#define kMissionInfoDoneButton 0
-#define kMissionInfoAbortButton 1
-#define kHaggleYesButton 0
-#define kHaggleNoButton 1
-#endif
 
 /* the button object's globals; this file ends that object (the .CRT hook).
    mapButtonTable's sixth slot is shipyardButtonTable[0], as in the exe */

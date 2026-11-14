@@ -4155,12 +4155,8 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
                 return 1;
             }
             refuseKey = missionButtonLabel[1][1];
-#ifdef MAC1010 /* 1.0.10 spelling */
-            if (tolower(acceptKey = missionButtonLabel[0][1]) != tolower(refuseKey)) {
-#else
             acceptKey = missionButtonLabel[0][1];
             if (tolower(acceptKey) != tolower(refuseKey)) {
-#endif
                 if (c == tolower(acceptKey)) {
                     *itemHit = kItemAccept;
                     return 1;

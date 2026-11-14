@@ -3938,19 +3938,6 @@ short PlayerEnterWormhole(void)
     return destStellar;
 }
 
-#ifdef MACBUILD /* mac spelling */
-#define dockMission badLicense
-#define dockDistX spawnStellar
-#else
-#define dockMission sVal2
-#define dockDistX distX
-#endif
-#ifdef MAC1010
-#define sVal2 sVal
-#define badLicense sVal
-#define distX spawnStellar
-#endif
-
 /* HandlePlayerDockRequest (mac _HandlePlayerDockRequest). STATE: win MATCH 100.0%, 2120/2120,
    relocregcheck 0 of 378; byte-identical yes (9159 bytes). mac MATCH both slices.
    OPEN: nothing. */
@@ -4664,15 +4651,15 @@ void HandlePlayerDockRequest(void)
                         spawnStellar = qtStellar;
                     else
                         spawnStellar = commResult;
-                    for (dockMission = 0; dockMission < kMaxActiveMissions; dockMission++) {
-                        if (currentMissionObjectives[dockMission].active != 0 &&
-                            currentMissions[dockMission].shipSyst == -6 &&
-                            currentMissions[dockMission].shipCount > 0 &&
-                            currentMissions[dockMission].shipBehav == kMissionModeAttackPlayer &&
-                            currentMissions[dockMission].shipDelay == -1) {
+                    for (sVal2 = 0; sVal2 < kMaxActiveMissions; sVal2++) {
+                        if (currentMissionObjectives[sVal2].active != 0 &&
+                            currentMissions[sVal2].shipSyst == -6 &&
+                            currentMissions[sVal2].shipCount > 0 &&
+                            currentMissions[sVal2].shipBehav == kMissionModeAttackPlayer &&
+                            currentMissions[sVal2].shipDelay == -1) {
                             for (i = 1; i < kMaxShips; i++) {
                                 if (shipData[i].active != 0 &&
-                                    dockMission == shipData[i].specialMission) {
+                                    sVal2 == shipData[i].specialMission) {
                                     shipData[i].vel.x = 0;
                                     shipData[i].vel.y = 0;
                                     shipData[i].accelMag = 0;
@@ -4786,7 +4773,7 @@ void HandlePlayerDockRequest(void)
 
     /* dockTarget != stellar: the player has just asked to dock here. */
     dockTarget = ship->targetStellar;
-    dockDistX = abs((short)(ship->pos.x - stellarData[dockTarget].pos.h));
+    distX = abs((short)(ship->pos.x - stellarData[dockTarget].pos.h));
     distY = abs((short)(ship->pos.y - stellarData[dockTarget].pos.v));
     granted = 0;
     if ((playerRecord[ship->curSystem] >= stellarData[dockTarget].minStatus ||
@@ -4816,7 +4803,7 @@ void HandlePlayerDockRequest(void)
         PlayerBlessedByGovt(stellarData[dockTarget].govt, 1))
         granted = 1;
     if (granted) {
-        if ((short)dockDistX < 0xfa && (short)distY < 0xfa) {
+        if ((short)distX < 0xfa && (short)distY < 0xfa) {
             dockPermission = 0x2ed;
             goto done;
         }

@@ -70,13 +70,8 @@ unsigned char influenceOwner[256][256][4];
 // MAC: _DoSystemSearch i386 0x00011c86 ppc 0x000156dc
 void DoSystemSearch(void)
 {
-#if V111 /* V111 spelling */
-    short itemType;
-    short itemHit;
-#else
     short itemHit;
     short itemType;
-#endif
     Handle item;
     Rect box;
     DialogPtr dlg;

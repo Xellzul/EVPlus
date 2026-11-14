@@ -1833,9 +1833,6 @@ void HandleBeams(unsigned char advance)
     short impact;
     short best;
     short bestRoid;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    int32_t jOff;
-#endif
     int32_t range;
     int32_t bestDist;
     Boolean notSelf;
@@ -2001,10 +1998,6 @@ void HandleBeams(unsigned char advance)
                         for (j = 0; j < kMaxShips; j++) {
                             notSelf = 1;
                             eligible = 1;
-#ifdef MAC1010
-                            jOff = (int32_t)shipData; /* 1.0.10 pad: shipData read ahead of the offset; the parentShip test reuses the load */
-                            jOff = j * sizeof(ShipObj); /* 1.0.10 pad: the stride product first defined in a named local, so it colours in the named band */
-#endif
                             if (shipData[j].parentShip != -1) {
                                 if (shipData[j].parentShip == beamData[i].owner)
                                     notSelf = 0;
@@ -2689,11 +2682,7 @@ void HandleShotGuidance(ShotObj *shot)
 // MAC: _HandleStellarSystemVisibility i386 0x00032aa5 ppc 0x000382cc
 void HandleStellarSystemVisibility(void)
 {
-#ifdef MAC1010 /* 1.0.10 spelling: one counter for n and j */
-#define n j
-#else
     short n;
-#endif
     Boolean fresh;
     Boolean used[256];
     short i;
@@ -2880,7 +2869,6 @@ void HandleStellarSystemVisibility(void)
         }
         SWLockSprite(stellarSprite[i]);
     }
-#undef n
 }
 
 // COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -proc generic

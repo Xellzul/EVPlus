@@ -1631,9 +1631,6 @@ void MapDialogUpdate(void)
     short count;
     short drawn;
     short fit;
-#if V111 /* V111 spelling */
-    short xoff;
-#endif
     short savedY;
     short sel;
     int32_t temp;
@@ -1648,10 +1645,7 @@ void MapDialogUpdate(void)
     float sy;
     short w, h;
     unsigned char *name;
-#if V111 /* V111 spelling */
-#else
     short xoff;
-#endif
     short k;
     short n;
     short sw;
@@ -1864,10 +1858,7 @@ void MapDialogUpdate(void)
             ForeColor(whiteColor);
             MoveTo(box.left + 0x2d, box.top + 0xc);
             if (systemData[sel].exploreLevel > 0) {
-#if V111 /* V111 spelling */
-#else
                 short xoff;
-#endif
                 count = 0;
                 drawn = 0;
                 xoff = 0;

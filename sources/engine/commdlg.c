@@ -1008,16 +1008,10 @@ Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
-#ifndef V111
     int what;
-#endif
 
-#if V111 /* V111 spelling */
-    if (ev->what == kKeyDown) {
-#else
     what = ev->what;
     if (what == kKeyDown) {
-#endif
 #if V111
         short key;
 
@@ -1080,11 +1074,7 @@ Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit)
             }
         }
     }
-#if V111 /* V111 spelling */
-    if (ev->what == kMouseDown) {
-#else
     if (what == kMouseDown) {
-#endif
         where = ev->where;
 #ifdef MACBUILD
         GlobalToLocal(&where);
@@ -1098,11 +1088,7 @@ Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit)
         *itemHit = -1;
         return 1;
     }
-#if V111 /* V111 spelling */
-    if (ev->what == kUpdateEvt) {
-#else
     if (what == kUpdateEvt) {
-#endif
 #ifdef MACBUILD
         BeginUpdate(GetDialogWindow(commDialog));
         PlanetCommDialogUpdate();
