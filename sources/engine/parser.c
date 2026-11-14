@@ -78,10 +78,7 @@ char GetToken(short *pos)
             *pos += 1;
             i++;
         }
-        if ((shipClass[gameIsRegisteredIndex].registered != 0 ? 1 : 0) != 0
-                || totalDaysPlayed < num)
-            return '1';
-        return '0';
+        return '1';                  /* Pnnn: always true (the game is registered) */
     } else if (c == 'g' || c == 'G') {
         *pos += 1;
         if (playerGender == 1)
@@ -757,13 +754,7 @@ void ParseTextDescription(void)
                 num = num * 10 + c - '0';
             } else {
                 if (kind == 'P') {
-                    if ((shipClass[gameIsRegisteredIndex].registered != 0
-                             ? 1 : 0) != 0)
-                        keep = 1;
-                    else if (totalDaysPlayed < num)
-                        keep = 1;
-                    else
-                        keep = 0;
+                    keep = 1;        /* Pnnn: always true (the game is registered) */
                 } else if (num < 10000) {
                     keep = missionBit[num];
                 } else {

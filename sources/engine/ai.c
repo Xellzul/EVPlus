@@ -1057,7 +1057,6 @@ void PirateWarshipAI(ShipObj *ship)
     }
 }
 
-#define kSharewareGraceDays 30
 #define kHailFirstIndex     381
 
 /* InterceptorAI. STATE: MATCH, byte-identical. OPEN: none */
@@ -1089,12 +1088,6 @@ void InterceptorAI(ShipObj *ship)
                             AIMakeShipLeave(ship);
                         else
                             ship->aiState = kAIStateWait;
-                    } else if (totalDaysPlayed * (1 - (shipClass[gameIsRegisteredIndex].registered != 0
-                                                      ? 1 : 0)) > kSharewareGraceDays) {
-                        ship->aiState = kAIStateFightSh;
-                        ship->targetShip = 0;
-                        ship->targetStellar = -1;
-                        ship->grudge = 1;
                     } else {
                         ship->aiState = kAIStateInspect;
                         ship->targetShip = 0;
@@ -2230,19 +2223,11 @@ void HighLevelAIHandler(ShipObj *ship)
                             pt.x = pt.y = 0.0f;
                         if (ship->persType == kPersCaptainHector) {
                             ship->lastInspected = 0;
-                            if (totalDaysPlayed * (1 - ((shipClass[gameIsRegisteredIndex].registered != 0)
-                                        ? 1 : 0)) > 30) {
-                                ship->aiState = kAIStateFightSh;
-                                ship->targetShip = 0;
-                                ship->targetStellar = -1;
-                                ship->grudge = 1;
-                            } else {
-                                ST_PlaySound(beepSnd[4], 1, gSoundVolume);
-                                GetIndString(msg, kHackedStrList, Rand(3) + 2);
-                                DisplayComm((PStrChar *)msg, 0x168, 0, kCommTextSize,
-                                            &rgbWhite, 0, 0);
-                                AIMakeShipLeave(ship);
-                            }
+                            ST_PlaySound(beepSnd[4], 1, gSoundVolume);
+                            GetIndString(msg, kHackedStrList, Rand(3) + 2);
+                            DisplayComm((PStrChar *)msg, 0x168, 0, kCommTextSize,
+                                        &rgbWhite, 0, 0);
+                            AIMakeShipLeave(ship);
                         } else {
                             ship->targetStellar = -1;
                             ship->targetShip = -1;

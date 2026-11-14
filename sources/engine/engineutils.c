@@ -4819,6 +4819,7 @@ short ShipAntiInterference(void)
    counter at 16 bits and indexes the weapon loop with the same long `w'. see notes */
 // FUNCTION: EVNOVA 0x0046ac50
 // MAC: _SpawnNagShip i386 0x00005fdb ppc 0x000077d8
+// NOT USED
 void SpawnNagShip(void)
 {
     int32_t chance;
@@ -4829,6 +4830,7 @@ void SpawnNagShip(void)
     float total;
     FloatPoint origin;
     unsigned char msg[256];
+    short totalDaysPlayed = 0;
 
     if (personData[kPersCaptainHector].shipType < 0)
         return;
@@ -4849,17 +4851,10 @@ void SpawnNagShip(void)
             return;
     }
 
-#ifdef MACBUILD
-    for (slot = 1; slot < kMaxShips; slot++) {
-        if (shipData[slot].active != 0 && shipData[slot].persType == kPersCaptainHector)
-            return;
-    }
-#else
     for (w = 1; (short)w < kMaxShips; w++) {
         if (shipData[w].active != 0 && shipData[w].persType == kPersCaptainHector)
             return;
     }
-#endif
 
     if ((chance > 0 && Rand(chance) == 0) ||
         ((shipClass[gameIsHackedIndex].hacked != 0) ? 1 : 0)) {

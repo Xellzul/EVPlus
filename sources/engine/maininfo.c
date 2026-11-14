@@ -1168,7 +1168,6 @@ void EnterGameFromMainScreen(void)
 
     HandleStellarSystemVisibility();
     HandleStellarSprites();
-    totalDaysPlayed = 0;
     PrepareAllSprites();
     gameFrozen = 1;
     ignoreKeys = 1;

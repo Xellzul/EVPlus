@@ -79,7 +79,6 @@ extern float playerFuelCapacity;
 extern float playerMaxSpeed;
 extern float playerTurnRate;
 extern unsigned char govtMediumNames[256][256];
-extern short totalDaysPlayed;
 extern Boolean gravitySourcesPresent;
 extern DateTimeRec scenarioStartDate;
 extern short tradePrice[];

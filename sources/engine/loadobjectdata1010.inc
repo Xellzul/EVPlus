@@ -1558,11 +1558,7 @@
                 personData[k].weapCount[j] = 10;
                 personData[k].weapAmmo[j] = 1000;
                 n++;
-                if ((totalDaysPlayed < 35 && n > 2) ||
-                    (totalDaysPlayed < 40 && n > 3) ||
-                    (totalDaysPlayed < 45 && n > 4) ||
-                    (totalDaysPlayed < 50 && n > 5) ||
-                    (totalDaysPlayed < 55 && n > 6))
+                if (n > 2)
                     break;
             }
         }

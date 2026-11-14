@@ -216,7 +216,6 @@ unsigned char DAT_00597990[2];
 short frameCounter;
 unsigned char DAT_00597994[8];
 short lastShipAIDispatched;
-short totalDaysPlayed;
 short cursorHidden;
 unsigned char DAT_005979a2[2];
 short selTradeItem;
@@ -1679,18 +1678,6 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
         return;
 
     if (fromAttack != 0 && attacker > 0 && attacker < kMaxShips) {
-        if (shipData[attacker].persType == kPersCaptainHector) {
-            if (totalDaysPlayed > 90) {
-                armorDmg *= 5;
-                shieldDmg *= 5;
-            } else if (totalDaysPlayed > 60) {
-                armorDmg *= 3;
-                shieldDmg *= 3;
-            } else if (totalDaysPlayed > 40) {
-                armorDmg *= 2;
-                shieldDmg *= 2;
-            }
-        }
         if (ship->index == shipData[attacker].targetShip) {
             if (AIShipIsPlundering(&shipData[attacker])) {
                 disableOnly = 1;
@@ -2875,7 +2862,6 @@ void EnterMoreShips(short sys)
         }
     }
 
-    SpawnNagShip();
     if (antiEscortDelay == 0) {
         antiEscortDelay = -1;
         cargo = 0;

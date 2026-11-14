@@ -2085,11 +2085,7 @@ void LoadObjectData(void)
                 personData[n].weapCount[count] = 10;
                 personData[n].weapAmmo[count] = 1000;
                 j++;
-                if ((totalDaysPlayed < 35 && j > 2) ||
-                    (totalDaysPlayed < 40 && j > 3) ||
-                    (totalDaysPlayed < 45 && j > 4) ||
-                    (totalDaysPlayed < 50 && j > 5) ||
-                    (totalDaysPlayed < 55 && j > 6))
+                if (j > 2)
                     break;
             }
         }
