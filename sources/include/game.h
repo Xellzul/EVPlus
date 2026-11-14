@@ -21,9 +21,7 @@ void ActivateCron(short index);
 extern void AutoAbortMission(short mission);
 extern void Bye(void);
 extern void ClearParticles(Boolean on);
-#if !defined(MACBUILD) || !V111 /* the 1.1.1 Setup.c calls it undeclared (implicit int) */
 extern short Construct8BitAlphaTable(void);
-#endif
 extern void TableCos(short angle);
 #pragma cplusplus on
 EXTERN_CPP_BEGIN
@@ -80,11 +78,7 @@ extern short EscapeShipWeapType(ShipObj *ship);
 extern Boolean EvalMissionBitTestString(char *expr);
 extern void EvalMissionBitSetString(char *expr);
 extern short SelectNearestAnyStellar(ShipObj *ship, short exclude);
-#ifndef MACBUILD /* static in ai.c on 1.1.1 */
 extern Boolean AIShouldLeaveSystem(ShipObj *ship, short sys);
-#elif defined(MAC1010)
-extern Boolean AIShouldLeaveSystem(ShipObj *ship, short sys);
-#endif
 extern Boolean SufficentTargetedDamage(ShipObj *ship);
 extern void MakeEscortsHyperWithParent(ShipObj *ship);
 extern void HandleLocalPriceFlux(void);
@@ -106,12 +100,8 @@ extern void AddToPlayerKills(int strength);
 extern void FrameDefaultButton(void *dlg, short flag);
 extern void SWExitSpriteWorld(void);
 extern void RestoreControlStrip(void);
-#if !defined(MACBUILD) || !V111 /* the 1.1.1 Setup.c calls it undeclared (implicit int) */
 extern short InitParticles(int numElements, int gravity);
-#endif
 extern void DisposeParticles(void);
-#ifndef MACBUILD /* inline on mac: sources/mac/include/rt3_ev_nova.h */
-#endif
 extern void DoAboutBox(void);
 extern void InitMainScreen(void);
 extern void FUN_00486ec0(void);
@@ -148,9 +138,7 @@ void MyProfileReset(void);
 extern void MyProfileSetName(short slot, const char *name);
 extern Boolean OfferMissionFromPort(short venue);
 extern void PlayGame(void);
-#ifndef MAC1010 /* 1.0.10's definition returns long, commdlg.c holds the callers' view */
 extern Boolean PlayerCanUseAmmoType(short weapon);
-#endif
 extern Boolean PlayerHasJettisonableCargo(void);
 extern void RefreshWindowBuffer(void);
 extern void ReportSpriteLoadError(short label, short value, short special);
@@ -174,11 +162,7 @@ extern short WeaponBurstInterval(short weap, short count);
 extern Boolean WeaponDisableOnly(short weap);
 #pragma cplusplus on
 EXTERN_CPP_BEGIN
-#ifdef MACBUILD
-extern unsigned char absquatulateStr[];
-#else
 extern char absquatulateStr[];
-#endif
 extern SpriteLayerRec *asteroidLayer;
 extern SpriteLayerRec *boxLayer;
 extern float tableCos[360];

@@ -3689,11 +3689,7 @@ int32_t PlayerShipTradeInPrice(void)
 /* PlayerCanUseAmmoType. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469230
 // MAC: _PlayerCanUseAmmoType i386 0x00005896 ppc 0x00006f40
-#ifdef MAC1010 /* returns long here; its one caller, commdlg.c, reads a Boolean */
-int32_t PlayerCanUseAmmoType(short weapIndex)
-#else
 Boolean PlayerCanUseAmmoType(short weapIndex)
-#endif
 {
     short i;
 

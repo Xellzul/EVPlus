@@ -66,10 +66,3 @@ int SoundFrequencyAdjust;
 void *MyDirectSoundBuffer;
 Word DebugTraceFlag;
 Word32 MasterRezHeader[9];
-
-/* COMMON cells the exe's tail holds that no code reads; names and their evidence: Research/notes/globaldefs.md */
-void *gNT_LookupCache;
-void *gIT_EventProc;
-void *BurgerSndGameApp;
-int32_t gLegacyVar;
-char gUnusedFlag;

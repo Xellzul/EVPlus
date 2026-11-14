@@ -2205,9 +2205,6 @@ void SetPlunderValues(void)
     int32_t crew;
     int32_t mass;
     Boolean ok;
-#ifdef MAC1010
-    extern Boolean PlayerCanUseAmmoType(short weapon);
-#endif
 
     dude = shipData[shipData->targetShip].dude;
     if (dude != -1)

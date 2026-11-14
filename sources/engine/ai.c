@@ -32,12 +32,6 @@ Boolean scanActive;
 short prevParent[kMaxShips];
 short aiComplexity;
 
-#ifdef MACBUILD
-#ifndef MAC1010 /* 1.1.1 only */
-static Boolean AIShouldLeaveSystem(ShipObj *ship, short sys);
-#endif
-#endif
-
 EXTERN_C_BEGIN
 
 /* AIDispatch (mac _AIDispatch). STATE: MATCH, byte-identical. OPEN: none */

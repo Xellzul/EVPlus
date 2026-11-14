@@ -3,18 +3,6 @@
 #ifndef ENDIANSWAP_H
 #define ENDIANSWAP_H
 
-#ifdef MACBUILD
-/* the Mac Resource Manager hands its data over in host order: nothing to swap */
-static __inline short SwapEndianShort(const unsigned short *p)
-{
-    return *p;
-}
-
-static __inline int32_t SwapEndianLong(const uint32_t *p)
-{
-    return *p;
-}
-#else
 /* BurgerLib's SwapEndian written out; `static __inline' is the only spelling that inlines an
    asm block in C */
 static __inline short SwapEndianShort(const unsigned short *p)
@@ -34,6 +22,5 @@ static __inline int32_t SwapEndianLong(const uint32_t *p)
     asm { bswap t }
     return t;
 }
-#endif
 
 #endif
