@@ -5581,21 +5581,4 @@ void SpawnEscapePod(ShipObj *ship)
     }
 }
 
-/* The exe's const table at 0x0056b910: the same 38 revoked keys that InitEVNova tests inline
-   (transcription allowed by the user, 2026-09-16). */
-#ifndef MACBUILD
-/* CrtInitHook1. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x00428330
-void CrtInitHook1(void)
-{
-}
-#endif
-
 EXTERN_C_END
-
-/* The exe ends this object with a C++ static initializer, reached through .CRT$XCU; its body
-   is the function above.  An empty constructor makes the compiler emit the hook. */
-#ifndef MACBUILD
-struct CrtHook { CrtHook() {} };
-static CrtHook crtHook;
-#endif

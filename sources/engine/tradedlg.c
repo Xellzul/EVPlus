@@ -9978,19 +9978,4 @@ void DisposeDialogs(void)
         DisposeGWorldContainer(&iconsPort);
 }
 
-#ifndef MACBUILD
-/* CrtInitHook5. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x0049eee0
-void CrtInitHook5(void)
-{
-}
-#endif
-
 EXTERN_C_END
-
-/* The exe ends this object with a C++ static initializer, reached through .CRT$XCU; its body
-   is the function above.  An empty constructor makes the compiler emit the hook. */
-#ifndef MACBUILD
-struct CrtHook { CrtHook() {} };
-static CrtHook crtHook;
-#endif

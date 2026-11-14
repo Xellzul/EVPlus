@@ -1,6 +1,6 @@
 // COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -D_MSL_USE_INLINE=0 -lang c++ -bool off
 // COMPILE-WHY: -D_MSL_USE_INLINE=0 (Win32Headers.pch): <ctype.h> declares tolower pure, so the name loop's systemData load ranks invariant.
-/* dosystemsearch.c -- DoSystemSearch and CrtInitHook7, the .CRT hook that ends its object; exe 0x004aab30..0x004aaf50. Notes: Research/notes/mapdlg.md */
+/* dosystemsearch.c -- DoSystemSearch; exe 0x004aab30..0x004aaf50. Notes: Research/notes/mapdlg.md */
 
 #include <ctype.h>
 #include <stddef.h>
@@ -16,13 +16,6 @@
 #include "macport.h"
 #include "dialogs.h"
 #include "cefix.h"
-
-/* The exe ends this object with a C++ static initializer, reached through .CRT$XCU; its body
-   is CrtInitHook7.  An empty constructor makes the compiler emit the hook, after every
-   function wherever the object is defined; the object's byte sits in the block below. */
-#ifndef MACBUILD
-struct CrtHook { CrtHook() {} };
-#endif
 
 /* the map object's globals */
 Image_t *redMapArrow;
@@ -44,9 +37,6 @@ short selSystem;
 short influenceStepSize;
 short nextInfluenceSyst;
 DialogPtr mapDialog;
-#ifndef MACBUILD
-static CrtHook crtHook;
-#endif
 #ifdef CEFIX
 unsigned char influenceValue[kCEBordersWidth][kCEBordersHeight][4];
 unsigned char influenceOwner[kCEBordersWidth][kCEBordersHeight][4];
@@ -182,11 +172,3 @@ void DoSystemSearch(void)
         PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
     }
 }
-
-#ifndef MACBUILD
-/* CrtInitHook7. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004aaf50
-void CrtInitHook7(void)
-{
-}
-#endif

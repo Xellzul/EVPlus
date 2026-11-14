@@ -1,5 +1,5 @@
 // COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
-/* music.c -- the intro-music song and CrtInitHook8, the .CRT hook that ends its object (win 0x004ab5d0..0x004ab960). Notes: Research/notes/music.md */
+/* music.c -- the intro-music song (win 0x004ab5d0..0x004ab960). Notes: Research/notes/music.md */
 /*
  * Both volume computations read settings.volume through movzx even though the pref
  * is a signed short, because the product is truncated back to a short and the
@@ -34,15 +34,7 @@
 #define fsRdPerm          1
 #define newMovieActive    1
 
-/* the exe's C++ static initializer (.CRT$XCU, CrtInitHook8) */
-#ifndef MACBUILD
-struct CrtHook { CrtHook() {} };
-#endif
-
 /* the load-bar and intro-music object's globals */
-#ifndef MACBUILD
-static CrtHook crtHook;
-#endif
 Rect progressRect;
 #ifdef MACBUILD
 Rect fireOffRect[18];
@@ -337,13 +329,5 @@ static void *MusicThread(void *arg)
     StopIntroMusic(1);
     ExitMoviesOnThread();
     return NULL;
-}
-#endif
-
-#ifndef MACBUILD
-/* CrtInitHook8. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004ab960
-void CrtInitHook8(void)
-{
 }
 #endif

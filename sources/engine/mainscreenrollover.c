@@ -1,5 +1,5 @@
 // COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
-/* mainscreenrollover.c -- MainScreenRolloverDraw and CrtInitHook4, the .CRT hook that ends its object; exe 0x0048c580..0x0048c720. Notes: Research/notes/mainscreen.md */
+/* mainscreenrollover.c -- MainScreenRolloverDraw; exe 0x0048c580..0x0048c720. Notes: Research/notes/mainscreen.md */
 
 #include <stddef.h>
 #include "prototypes.h"
@@ -117,18 +117,3 @@ void MainScreenRolloverDraw(void)
         }
     }
 }
-
-#ifndef MACBUILD
-/* CrtInitHook4. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x0048c720
-void CrtInitHook4(void)
-{
-}
-#endif
-
-/* The exe ends this object with a C++ static initializer, reached through .CRT$XCU; its body
-   is the function above.  An empty constructor makes the compiler emit the hook. */
-#ifndef MACBUILD
-struct CrtHook { CrtHook() {} };
-static CrtHook crtHook;
-#endif

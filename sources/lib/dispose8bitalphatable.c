@@ -1,5 +1,5 @@
 // COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
-/* dispose8bitalphatable.c -- Dispose8BitAlphaTable (win 0x00474300), then CrtInitHook3, the .CRT hook that ends its object. Notes: Research/notes/dispose8bitalphatable.md */
+/* dispose8bitalphatable.c -- Dispose8BitAlphaTable (win 0x00474300). Notes: Research/notes/dispose8bitalphatable.md */
 /* Frees the 5 x 256 array of pointers Construct8BitAlphaTable (0x004740d0) builds: the
    mac's `_alphaTable'. Both loop counters are SHORTS (`cmp bp, 0x100' and `cmp si, 5',
    both signed) while the row base is mwcc's own strength-reduced induction variable. */
@@ -34,18 +34,3 @@ void Dispose8BitAlphaTable(void)
         for (j = 0; j < 256; j++)
             DeallocAPointer(alphaTable[i][j]);
 }
-
-#ifndef MACBUILD
-/* CrtInitHook3. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x00474340
-void CrtInitHook3(void)
-{
-}
-#endif
-
-/* The exe ends this object with a C++ static initializer, reached through .CRT$XCU; its body
-   is the function above.  An empty constructor makes the compiler emit the hook. */
-#ifndef MACBUILD
-struct CrtHook { CrtHook() {} };
-static CrtHook crtHook;
-#endif

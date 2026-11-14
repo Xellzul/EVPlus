@@ -1,5 +1,5 @@
 // COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
-/* listdefdraw.c -- the mission-list TU: per-arrival mission housekeeping and the mission list's LDEF (win 0x00448910..0x00448b85), then CrtInitHook2, the .CRT hook that ends the object. Notes: Research/notes/listdefdraw.md */
+/* listdefdraw.c -- the mission-list TU: per-arrival mission housekeeping and the mission list's LDEF (win 0x00448910..0x00448b85). Notes: Research/notes/listdefdraw.md */
 #include "macport.h"
 #include "gametypes.h"
 #include "shipobj.h"
@@ -205,18 +205,3 @@ void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t
     }
 #endif
 }
-
-#ifndef MACBUILD
-/* CrtInitHook2. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x00448b90
-void CrtInitHook2(void)
-{
-}
-#endif
-
-/* The exe ends this object with a C++ static initializer, reached through .CRT$XCU; its body
-   is the function above.  An empty constructor makes the compiler emit the hook. */
-#ifndef MACBUILD
-struct CrtHook { CrtHook() {} };
-static CrtHook crtHook;
-#endif

@@ -1,5 +1,5 @@
 // COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
-/* buttons.c -- the custom picture buttons every EV Nova dialog draws over its Dialog Manager items (win TU region 0x0049eef0..0x004a3aa0), ending in CrtInitHook6, the object's .CRT hook. Notes: Research/notes/buttons.md */
+/* buttons.c -- the custom picture buttons every EV Nova dialog draws over its Dialog Manager items (win TU region 0x0049eef0..0x004a3aa0). Notes: Research/notes/buttons.md */
 #include "macport.h"
 
 #include "gametypes.h"
@@ -1727,18 +1727,3 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
                  &box, bounds, 0, GetPortVisRgn(port));
     }
 }
-
-#ifndef MACBUILD
-/* CrtInitHook6. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004a3a90
-void CrtInitHook6(void)
-{
-}
-#endif
-
-/* The exe ends this object with a C++ static initializer, reached through .CRT$XCU; its body
-   is the function above.  An empty constructor makes the compiler emit the hook. */
-#ifndef MACBUILD
-struct CrtHook { CrtHook() {} };
-static CrtHook crtHook;
-#endif
