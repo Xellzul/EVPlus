@@ -461,13 +461,10 @@ void OpenDataFiles(void)
    OPEN: none. Declaration order and roles carry the exe's spill numbering: the junk counter
    is its own `loaded', declared first; the weap and pers totals stay on `n'. The colour
    extracts are masks, not casts (see notes, lanes RB, RD, RE, CL3).
-   Mac 1.0.10: its body is loadobjectdata1010.inc, MATCH 8469 / 8469 on both fragments. */
+*/
 // FUNCTION: EVNOVA 0x004bd3c0
 // MAC: _LoadObjectData i386 0x000771b0 ppc 0x00080100
 void LoadObjectData(void)
-#ifdef MAC1010
-#include "../engine/loadobjectdata1010.inc"
-#else
 {
     short loaded;
     short n;
@@ -1164,6 +1161,9 @@ void LoadObjectData(void)
                     weaponStats[i].rgbScratch.red = ((weaponStats[i].beamColor >> 16) & 0xff) * 256;
                     weaponStats[i].rgbScratch.green = ((weaponStats[i].beamColor >> 8) & 0xff) * 256;
                     weaponStats[i].rgbScratch.blue = (weaponStats[i].beamColor & 0xff) * 256;
+#ifdef MAC1010 /* 1.0.10 clamps before the depth test; no effect, ClampRGB never fires on unsigned short */
+                    ClampRGB(weaponStats[i].rgbScratch);
+#endif
                     if (gSpriteWorld->pixelDepth == 16) {
                         weaponStats[i].beamColor = (weaponStats[i].beamColor >> 9) & 0x7c00 |
                                           (weaponStats[i].beamColor >> 6) & 0x3e0 |
@@ -1172,7 +1172,9 @@ void LoadObjectData(void)
                                             (weaponStats[i].coronaColor >> 6) & 0x3e0 |
                                             (weaponStats[i].coronaColor >> 3) & 0x1f;
                     } else {
+#ifndef MAC1010
                         ClampRGB(weaponStats[i].rgbScratch);
+#endif
                         weaponStats[i].beamColor = Color2Index(&weaponStats[i].rgbScratch);
                         rgb.red = ((weaponStats[i].coronaColor >> 16) & 0xff) << 7;
                         rgb.green = ((weaponStats[i].coronaColor >> 8) & 0xff) << 7;
@@ -1185,7 +1187,9 @@ void LoadObjectData(void)
                 rgb.red = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 16) & 0xff) * 256;
                 rgb.green = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 8) & 0xff) * 256;
                 rgb.blue = (ResRec(WeapRes, weaponFileHand)->hitPartColor & 0xff) * 256;
+#ifndef MAC1010 /* 1.0.10 has no clamp here; no effect either way */
                 ClampRGB(rgb);
+#endif
                 weaponStats[i].hitPartColor = Color2Index(&rgb);
                 weaponStats[i].hitPartLife = ResRec(WeapRes, weaponFileHand)->hitPartLife;
                 weaponStats[i].hitPartVel = ResRec(WeapRes, weaponFileHand)->hitPartVel * 0.01;
@@ -1217,6 +1221,11 @@ void LoadObjectData(void)
                     shade.red = rgb.red * factor;
                     shade.green = rgb.green * factor;
                     shade.blue = rgb.blue * factor;
+                    // BUG (all versions): factor reaches 1.40, so a component above ~0xb6ff wraps when stored in
+                    // the unsigned short -- bright particle colours turn dark; the clamp below runs too late
+#ifdef MAC1010 /* 1.0.10 clamps the shade; no effect, see above */
+                    ClampRGB(shade);
+#endif
                     weaponStats[i].partColor[j] = Color2Index(&shade);
                     weaponStats[i].partVel[j] = base * factor;
                 }
@@ -1544,6 +1553,8 @@ void LoadObjectData(void)
                                         outfitSystem[j].techLevel < kOutfTechAbsent) {
                                     mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountAmmo[count];
                                     shipClass[i].freeMass += mass;
+                                        // BUG (all versions): ammo priced by mountCount, not mountAmmo; only feeds
+                                        // the crashlog trade-in warning
                                         if (!outfitSystem[j].persistent)
                                             tradeEst = tradeEst +
                                                 (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[count]) * 0.5;
@@ -1843,6 +1854,9 @@ void LoadObjectData(void)
                 govtData[i].rgb2.green = (ResRec(GovtRes, govtFileHand)->shipColor >> 11) & 0x1f;
                 govtData[i].rgb2.blue = (ResRec(GovtRes, govtFileHand)->shipColor >> 3) & 0x1f;
 #else
+                // BUG: 16-bit components (0..0xff00), but GetShipPaintColor adds rgb2 to a sprite tint that
+                // takes 5-bit ones (0..31, like person shipColor and playerPaint) -- the short tint overflows
+                // and govt ship colours come out wrong; the mac's >>19 / >>11 / >>3 & 0x1f is right
                 govtData[i].rgb2.red = ((ResRec(GovtRes, govtFileHand)->shipColor >> 16) & 0xff) * 256;
                 govtData[i].rgb2.green = ((ResRec(GovtRes, govtFileHand)->shipColor >> 8) & 0xff) * 256;
                 govtData[i].rgb2.blue = (ResRec(GovtRes, govtFileHand)->shipColor & 0xff) * 256;
@@ -2621,7 +2635,6 @@ void LoadObjectData(void)
     if (CountResources(kLeetType) > 0)
         leetMode = 1;
 }
-#endif
 
 
 /* LoadDescription. STATE: MATCH 100%, 188/188, byte-identical yes (masked relocs, by hand;
