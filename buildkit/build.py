@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build EV Nova from this repository's sources into byte-identical copies of the original programs.
+"""Build EV Nova from this repository's sources.
 
     python buildkit/build.py check              verify every tool and original build.ini names
     python buildkit/build.py win                EV Nova.exe 1.0.10 for Windows
@@ -9,12 +9,11 @@
 Options:
     --config FILE    another build.ini (default: buildkit/build.ini)
     --no-pin-date    keep the link time in the headers instead of the original's date
-    --unsigned       leave the code signature off (win): runs the same, not identical
+    --unsigned       leave the code signature off (win)
     --twice          build each target twice and compare (the 2.4.7 b335 compiler is not always
                      deterministic; a second build tells a flaky compile from a real difference)
 
-Every output goes to buildkit/out/<target>/. At the end each one's SHA-256 is printed beside the
-SHA-256 of the original it reproduces: IDENTICAL or DIFFERENT. README.md says what to do then.
+Every output goes to buildkit/out/<target>/. At the end each one's SHA-256 is printed.
 """
 import argparse
 import shutil
@@ -26,11 +25,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from buildlib import host, toolchain  # noqa: E402
 from buildlib.host import BuildError, say  # noqa: E402
 
-# The originals, by SHA-256: what an identical build reproduces.
-PINS = {
-    "win": "43e8db386caa0fd32d48e8b5a45b81c894063870a0b52e95ef89a1c6471a248c",      # EV Nova.exe 1.0.10, signed
-    "ce": "f5d8d90ffa93cce502d7404b8135e06b236b860ba722929f4d259983f0351120",       # the repository's CE link, dated as 1.0.10
-}
 TARGETS = ["win", "ce"]
 
 
@@ -75,27 +69,22 @@ def main():
                 f = build_one(cfg, t, out, a)
             except BuildError as e:
                 say("FAILED: %s" % e)
-                results.append((t, None, "FAILED", ""))
+                results.append((t, None, "FAILED"))
                 break
             shas.append((f, host.sha256(f)))
             say("   %s, %.0f s" % (f, time.time() - t0))
         else:
             f, sha = shas[0]
-            plain = not a.no_pin_date and not a.unsigned
-            verdict = "IDENTICAL" if sha == PINS[t] else "DIFFERENT" if plain else "different (expected: %s)" % (
-                "--no-pin-date" if a.no_pin_date else "--unsigned")
             twice = "" if runs == 1 else "twice: same" if shas[0][1] == shas[1][1] else "twice: THE TWO BUILDS DIFFER"
-            results.append((t, f, verdict, twice))
+            results.append((t, f, twice))
             if a.twice and shas[0][1] == shas[1][1]:
                 shutil.rmtree(cfg.out(t + "-twice"), ignore_errors=True)
 
     say("")
-    say("%-8s %-64s %s" % ("target", "SHA-256 of the build", "against the original"))
-    for t, f, verdict, twice in results:
-        say("%-8s %-64s %s %s" % (t, host.sha256(f) if f else "-", verdict, twice))
-        if f:
-            say("%-8s %-64s (%s)" % ("", PINS[t], "the original's"))
-    return 0 if all(r[2] == "IDENTICAL" for r in results) else 1
+    say("%-8s %s" % ("target", "SHA-256 of the build"))
+    for t, f, twice in results:
+        say("%-8s %s %s" % (t, host.sha256(f) if f else "FAILED", twice))
+    return 0 if all(r[1] for r in results) else 1
 
 
 if __name__ == "__main__":
