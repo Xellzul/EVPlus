@@ -906,17 +906,5 @@ void RestoreBuffer(void *saved)
     DeallocAPointer(saved);
 }
 
-/*
- * There is no mac symbol for any of the four below, so they keep FUN_ names;
- * 0x004d3356/0x004d3961 are unnamed helpers in the runtime block above
- * 0x004d3000 and are declared extern rather than written.
- */
-
-#ifndef MACBUILD
-#endif
-
 char parseBuffer[8192];
 short lastInteger;
-#ifndef MACBUILD
-unsigned char DAT_007caa12[6];
-#endif

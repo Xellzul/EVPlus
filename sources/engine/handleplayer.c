@@ -105,15 +105,9 @@ Boolean dontMovePlayerAfterLanding;
 Boolean abOn;
 short newbieFlag;
 float sabotageCounter;
-#ifndef MACBUILD
-unsigned char DAT_007cab24[4];
-#endif
 Boolean dockLand;
 Boolean dockTryFlag;
 Boolean boardTryFlag;
-#ifndef MACBUILD
-Boolean DAT_007cab2b;
-#endif
 FloatPoint wrapDelta;
 Boolean lastJumpDistOk;
 Boolean ackCommFlag;
@@ -142,9 +136,6 @@ Boolean escortCommandFlag[4];
 Boolean pauseKeyFlag;
 short selEscortGroup;
 short lastEscortCount;
-#ifndef MACBUILD
-unsigned char DAT_007cab58[16];
-#endif
 
 EXTERN_C_BEGIN
 

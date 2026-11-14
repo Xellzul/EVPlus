@@ -9,9 +9,6 @@
 #include "spriteworld.h"
 #include "game.h"
 
-#ifndef MACBUILD
-unsigned char DAT_007cdab8[4112];
-#endif
 uint32_t alpha;
 uint32_t alphaR;
 uint32_t alphaG;
@@ -25,9 +22,6 @@ short scaleG;
 short scaleB;
 uint32_t biasColor;
 unsigned char *alphaTable[5][256];
-#ifndef MACBUILD
-unsigned char DAT_007cfef4[1547];
-#endif
 
 /* Dispose8BitAlphaTable (mac _Dispose8BitAlphaTable). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00474300

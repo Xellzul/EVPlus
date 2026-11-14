@@ -33,16 +33,10 @@
 DialogPtr commDialog;
 DialogPtr haggleDialog;
 DialogPtr plunderDialog;
-#ifndef MACBUILD
-unsigned char DAT_007d17c4[2];
-#endif
 short haggleMode;
 short responseRandom;
 short adviceRandom;
 short adviceDisasterRandom;
-#ifndef MACBUILD
-unsigned char DAT_007d17ce[2];
-#endif
 short salvageType;
 short salvageQty;
 SalvageAmmo salvageAmmoType;
@@ -55,9 +49,6 @@ int32_t initialHaggleVal;
 int32_t haggleVal;
 float bribeFlux;
 Boolean hatesPlayer;
-#ifndef MACBUILD
-Boolean DAT_007d17f1;
-#endif
 Boolean willTakeBribe;
 Boolean hasDemandedTribute;
 Boolean commShipXeno;
@@ -73,14 +64,8 @@ unsigned char commResponseString[256];
 unsigned char adviceString[256];
 unsigned char stellarTypeStr[256];
 unsigned char shipClassStr[256];
-#ifndef MACBUILD
-unsigned char DAT_007d1c0c[256];
-#endif
 unsigned char shipGovtStr[256];
 short commDialogMode;
-#ifndef MACBUILD
-unsigned char DAT_007d1e0e[2];
-#endif
 
 #define kCommDlgID2      0x3ef
 #define kCommPictID2     0x213f

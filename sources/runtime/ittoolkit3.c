@@ -12,7 +12,6 @@
 #endif
 #include "ittoolkit.h"
 
-static ITRect DAT_0086bb20[2];                   /* 0x0086bb20, unreferenced */
 
 ITControl *_IT_GetPreviousItem(ITControlList *list, ITControl *control);
 extern unsigned short *UnicodeFindDelimiter(const unsigned short *s, const unsigned short *set);

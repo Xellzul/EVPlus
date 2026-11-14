@@ -18,7 +18,6 @@ static short gSWStickyError;
 unsigned short SWMaskedRGBValue;
 unsigned short SWTransparentRGBValue;
 short gSWStickyError;
-unsigned char DAT_007d0506[18];
 #endif
 
 

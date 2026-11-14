@@ -42,9 +42,7 @@ TEHandle offerTextHandle;
 short currentMissionIndexForSetParser;
 #ifndef MACBUILD
 BriefMissionRec briefMissionInfo[1000];
-unsigned char DAT_0077e804[1972];
 Handle missionFileHand;
-unsigned char DAT_0077efbc[1648];
 MissionAvailRec missionAvailData[kMaxMissions];
 #else
 /* tentative here too; ResourceTypes.o's equal-size definitions come later in link order and win */

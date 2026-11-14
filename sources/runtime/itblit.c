@@ -176,7 +176,6 @@ unsigned char DT_IsOpen(void)
     return gDT_Open;
 }
 
-static const double DAT_00576dd8[2] = { 1.0 / 255.0, 255.0 };    /* 0x00576dd8, unreferenced */
 
 #define kPortSize           sizeof(ITPort)
 #if defined(MAC1010) && TARGET_API_MAC_CARBON

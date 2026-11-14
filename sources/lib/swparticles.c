@@ -31,9 +31,6 @@ static Boolean gParticlesInitialized = false;
 static int32_t scrollOffsetHoriz;
 static int32_t scrollOffsetVert;
 #endif
-#ifndef MACBUILD
-static unsigned char DAT_007d053c[260];
-#endif
 
 #ifndef MAC_PARTICLES_ONLY
 /* RestoreControlStrip. STATE: MATCH, byte-identical. OPEN: none */

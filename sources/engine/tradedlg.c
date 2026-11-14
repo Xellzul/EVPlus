@@ -79,9 +79,6 @@ Boolean canDoMissions;
 Boolean shipyardEgg;
 Boolean didOutfit;
 Boolean didBuyShip;
-#ifndef MACBUILD
-unsigned char DAT_007d4c06[2];
-#endif
 Boolean boughtMap;
 Boolean boughtID;
 Boolean onPlanet = 0;

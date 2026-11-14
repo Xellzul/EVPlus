@@ -705,7 +705,6 @@ ULong IT_HashName(const unsigned char *s)
     return hash;
 }
 
-static const unsigned char DAT_00581bf4[4] = { 0 };   /* 0x00581bf4, unreferenced */
 
 /* _IT_PageListCreate (the page table of a document: every PAGE element with its NAME and TITLE, in
    document order and hashed by name over 31 buckets; NULL when out of memory). STATE: MATCH

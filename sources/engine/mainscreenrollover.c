@@ -22,26 +22,14 @@
 #include "game.h"
 /* the main-screen object's globals; this file ends that object (the .CRT hook) */
 PicHandle keyPic;
-#ifndef MACBUILD
-unsigned char DAT_007d1f14[40];
-#endif
 short keyDialogSel;
-#ifndef MACBUILD
-unsigned char DAT_007d1f3e[4];
-#endif
 short introTextID;
 short introPictID[4];
 short introPictDelay[4];
 DialogPtr prefsDialog;
 DialogPtr keyDialog;
-#ifndef MACBUILD
-unsigned char DAT_007d1f5c[4];
-#endif
 Rect standardPicRect;
 Rect interfacePicRect;
-#ifndef MACBUILD
-unsigned char DAT_007d1f70[8];
-#endif
 Rect logoDestRect;
 Rect rolloverDestRect;
 Rect slideDestRect[3];
@@ -63,7 +51,6 @@ Boolean showingIntroText;
 #ifdef MACBUILD
 EventRecord gEvent;
 #else
-unsigned char DAT_007d1fa7[272];
 #endif
 Str255 newPlayerName[2];
 Str255 newPilotPopupChoice[2];
@@ -93,9 +80,6 @@ uint32_t lastLogoAnimTime;
 uint32_t lastRolloverAnimTime;
 uint32_t lastSlideAnimTime;
 Boolean mainScreenBackgroundDirty;
-#ifndef MACBUILD
-unsigned char DAT_007d2665[258];
-#endif
 
 /* MainScreenRolloverDraw. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048c580

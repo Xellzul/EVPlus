@@ -34,7 +34,6 @@
 #define kAlphaByte          3
 #endif
 
-static const unsigned char DAT_0057aff8[8] = { 0 };   /* 0x0057aff8, unreferenced */
 static char kNoMemoryText[] = "Out of memory.";
 
 #ifdef MAC1010
@@ -507,4 +506,3 @@ done:
     return err;
 }
 
-static const unsigned char DAT_0057b080[8] = { 0 };   /* 0x0057b080, unreferenced */

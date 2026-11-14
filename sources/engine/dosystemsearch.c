@@ -41,17 +41,11 @@ Boolean influenceCoordsCached;
 short missionSyst[32];
 short greenMissionSyst;
 short selSystem;
-#ifndef MACBUILD
-unsigned char DAT_007dcf8c[2];
-#endif
 short influenceStepSize;
 short nextInfluenceSyst;
 DialogPtr mapDialog;
 #ifndef MACBUILD
 static CrtHook crtHook;
-#endif
-#ifndef MACBUILD
-unsigned char DAT_007dcf99[255];
 #endif
 #ifdef CEFIX
 unsigned char influenceValue[kCEBordersWidth][kCEBordersHeight][4];

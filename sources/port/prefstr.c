@@ -22,7 +22,6 @@
 
 /* the prefs and data-file object's globals: each resource type's file-data record, then its handle */
 PrefsFileRec gPrefs;
-unsigned char DAT_0085fb30[256];
 unsigned char stellarFileData[1120];
 Handle stellarFileHand;
 unsigned char systemFileData[428];
@@ -63,14 +62,11 @@ unsigned char intfFileData[168];
 Handle intfFileHand;
 unsigned char colorFileData[244];
 Handle colorFileHand;
-unsigned char DAT_00863f08[1];
 char noSavePilotFiles;
 char noUpdatePilotData;
-unsigned char DAT_00863f0b[9];
 PilotRec **playerFileHand;
 PilotRec2 **altPlayerFileHand;
 PrefsRecord **gPrefsHandle;
-unsigned char DAT_00863f20[18];
 char pilotsFolder[2048];
 char gPrefsDirectory[2054];
 

@@ -28,18 +28,9 @@
 
 #define kRespawnDelayTicks  45
 
-#ifndef MACBUILD
-unsigned char DAT_00591000[256];
-#endif
 Boolean scanActive;
-#ifndef MACBUILD
-char DAT_00591101[3];
-#endif
 short prevParent[kMaxShips];
 short aiComplexity;
-#ifndef MACBUILD
-short DAT_00591186;
-#endif
 
 #ifdef MACBUILD
 #ifndef MAC1010 /* 1.1.1 only */

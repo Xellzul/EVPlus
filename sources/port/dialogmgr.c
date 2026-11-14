@@ -36,7 +36,6 @@ int32_t gLastModifiers;
 uint32_t gClickTime;
 void *gClickDialog;
 void *gClickItem;
-unsigned char DAT_00864f9c[4];
 int32_t gRezOpenPending;
 int32_t paintBlackFlag;
 void *gKeyboardHook;

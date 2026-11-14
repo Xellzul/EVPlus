@@ -24,7 +24,6 @@ extern ITElement *_IT_ParseTreeFindNextData(ITElement *root, ITElement *node);  
 
 static ITRect gIT_EnableControlZeroRect;                      /* 0x0086bba0 IT_ViewSetItemEnabled's empty clip */
 static ITRect gIT_ShowControlZeroRect;                      /* 0x0086bb90 IT_ViewSetItemVisible's empty clip */
-static ITRect DAT_0086bb50[4];                   /* 0x0086bb50, unreferenced */
 
 #define INDEX_LEFT(i) (i--)
 

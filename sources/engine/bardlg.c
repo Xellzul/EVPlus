@@ -50,16 +50,10 @@ DialogPtr raceDialog;
 char barDescText[2048];
 char newsString[2048];
 char sponsorString[256];
-#ifndef MACBUILD
-unsigned char DAT_007d179c[8];
-#endif
 short racePick;
 short raceWinner;
 short lastRaceWinner;
 short raceCount;
-#ifndef MACBUILD
-unsigned char DAT_007d17ac[8];
-#endif
 int32_t raceBetAmount;
 
 EXTERN_C_BEGIN

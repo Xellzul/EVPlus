@@ -738,7 +738,6 @@ char *_DT_GetFontByNameList(void *dc, const char *faces, char *out)
     return *out != 0 ? out : 0;
 }
 
-static const unsigned char DAT_00579ae4[8] = { 0 };   /* 0x00579ae4, unreferenced */
 
 /* DT_SetTextAttributes (a port's font: text colour when given, alignment on the baseline, a stock font by
    number or one made from the FACE list, size and style bits (bold, italic, underline), the

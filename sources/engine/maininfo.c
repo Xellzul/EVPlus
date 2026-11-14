@@ -1055,9 +1055,6 @@ void DoPrefsDialog(void)
 
 /* entergame -- EnterGameFromMainScreen and DoNewPilot. Notes: Research/notes/entergame.md */
 
-/* far arrays inside the one big 0x005912a0 allocation, reached at raw offsets
-   because no header names them yet */
-
 /* EnterGameFromMainScreen (mac _EnterGameFromMainScreen). STATE: MATCH 100.0%, exe 763 / obj 763,
    byte-identical yes (2912 bytes, relocs masked), relocregcheck 0 of 194. 1.0.10 MATCH 907 of
    907 Classic, 894 of 894 Carbon, padded. OPEN: nothing. */

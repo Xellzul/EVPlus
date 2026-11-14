@@ -62,9 +62,6 @@ RGBColor buttonColor[3];
 Rect buttonPieceRect[kButtonPieceCount];
 unsigned char buttonLabel[kButtonLabelCount][256];
 unsigned char missionButtonLabel[kMissionButtonLabelCount][256];
-#ifndef MACBUILD
-unsigned char DAT_007dc2aa[261];
-#endif
 
 /* TrackTradeButtons. STATE: MATCH 100%, exe 158 / obj 158, byte-identical.
    The slot enum (-enum min) at the GetDialogItem sites keeps their addresses out of the CSE

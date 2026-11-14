@@ -55,7 +55,6 @@ double progressMax;
 #ifdef MACBUILD
 GWorldContainer progressLoadPort;
 #else
-unsigned char DAT_0085d150[44];
 Rect gLoadBarBase;
 #endif
 RGBColor progressColor[3];

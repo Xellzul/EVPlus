@@ -2649,7 +2649,6 @@ unsigned short keyMap[8];
 #elif defined(MACBUILD)
 KeyMapByteArray keyMap;
 #else
-unsigned char DAT_007ccd94[68];
 #endif
 #ifndef MACBUILD
 uint32_t randomSeed;

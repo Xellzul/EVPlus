@@ -14,9 +14,6 @@ float tableCos[360];
 float tableTan[360];
 float trigResult;
 short tableArcTan[0x400];
-#ifndef MACBUILD
-unsigned char DAT_007cc48c[260];
-#endif
 
 /* BuildTrigTable (mac _BuildTrigTable). STATE: MATCH 100.0%, exe 79 / obj 79 instrs,
    byte-identical yes. OPEN: none */

@@ -626,7 +626,6 @@ done:
     return click.followed;
 }
 
-static ITClick DAT_00865b1c;                     /* 0x00865b1c, unreferenced */
 
 /* IT_SetCursor. STATE: MATCH 100%, exe 70 / obj 70, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb5d4
