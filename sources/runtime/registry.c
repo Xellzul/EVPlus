@@ -1,5 +1,4 @@
 // COMPILE: -lang c++ -bool off
-// LINK: after window; data EVNOVA 0x005832d4
 /* registry.c -- libvorbis 1.0rc3 lib/registry.c, (C) COPYRIGHT 1994-2001 by the XIPHOPHORUS Company; licence in codec.h. Stock in BurgerLib's copy (the four arrays at .data 0x005832d4); altered: comments and residue_free_info (not linked) removed. Notes: Research/notes/burgervorbis.md */
 
 #include <stdio.h>

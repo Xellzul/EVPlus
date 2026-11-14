@@ -1,22 +1,17 @@
 """EV Nova.exe 1.0.10 for Windows, and the EV Nova CE build (-DCEFIX), with the original
 Metrowerks tools: mwcc 3.2.4 b418 for every source, mwwinrc for the resources, mwld for the archives and the link.
 
-The steps are those of tools/build.ps1 and tools/link.ps1 (Research/the-link-step.md):
-  1. compile every sources/**.c (not include/, mac/, v111/; cefix/ only for CE), each on BASELINE
-     plus the flags of its `// COMPILE:` marker (`-lang c++ -bool off` for the C++ files)
-  2. math_x87.obj: MSL's own source with cbrt's coefficient spelled as the exe's (tools/mslmath.py)
-  3. the eleven QuickTime client-library members the exe interleaves, copied with the names the tree
-     also defines renamed away (tools/qtorder.py)
-  4. win: rt.lib and qt.lib by `mwld -library`, members and pull order from sources/link/*.txt;
-     CE: the same order derived from the sources' FUNCTION markers (tools/pullorder.py --cefix)
-  5. the resources: evnova.rc by mwwinrc, the icons and CHNK read out of the user's own exe
-  6. the link, then the post-steps: the date pin, the signature copied from the user's exe (win),
-     the large-address-aware bit (CE)
+The steps:
+  1. compile every sources/**.c (not include/, v111/; cefix/ only for CE), each on BASELINE plus the
+     flags of its `// COMPILE:` marker (`-lang c++ -bool off` for the C++ files)
+  2. the eleven QuickTime client-library members, copied with the names the tree also defines
+     renamed away (tables/qtorder.tsv)
+  3. the link inputs: the game's objects, then rt.lib (sources/runtime/) and qt.lib
+  4. the resources: evnova.rc by mwwinrc, the icons read out of the user's own exe
+  5. the link with MSL, QuickTime and the Windows libraries, then (CE) the large-address-aware bit
 """
 import concurrent.futures
 import re
-import shutil
-import struct
 
 from . import coff, pe
 from .host import KIT, REPO, BuildError, exe_env, run_exe, say, winlist, winpath
@@ -95,47 +90,9 @@ def compile_all(cfg, objdir, cefix):
     return t
 
 
-# -- 2. MSL's math_x87 with the exe's cbrt coefficient ---------------------------------------------
-def math_x87(t, outdir):
-    """mwcc converts 0.1950252994681516 through its 80-bit mantissa onto a rounding tie, so every stock
-    MSL_All_x86.lib holds pool byte 0x58 where the exe has 0x57; the longer spelling converts to the exe's."""
-    src = outdir / "src"
-    shutil.rmtree(src, ignore_errors=True)
-    src.mkdir(parents=True)
-    msl = t.cw / "MSL" / "MSL_C"
-    shutil.copyfile(msl / "MSL_X86" / "math_x87.c", src / "math_x87.c")
-    text = (msl / "MSL_Common" / "Src" / "math.c").read_bytes()
-    old, new = b"0.1950252994681516", b"0.19502529946815159"
-    if text.count(old) != 1:
-        raise BuildError("MSL math.c: cbrt's coefficient found %d times, expected once" % text.count(old))
-    (src / "math.c").write_bytes(text.replace(old, new))
-    (src / "pfx.h").write_text("#pragma avoid_ebp on\n")
-    inc = [src] + [t.cw / p for p in (
-        "MSL/MSL_C/MSL_Common/Include", "MSL/MSL_C/MSL_Win32/Include", "MSL/MSL_C/MSL_X86", "MSL/MSL_C/MSL_Common/Src",
-        "MSL/MSL_C/MSL_Win32/Src", "MSL/MSL_C++/MSL_Common/Include", "MSL/MSL_Extras/MSL_Common/Include",
-        "MSL/MSL_Extras/MSL_Win32/Include", "Win32-x86 Support/Headers/Win32 SDK", "Win32-x86 Support/Headers/Prefix Files")]
-    obj = outdir / "math_x87.obj"
-    rc, msg = run_exe(t.mwcc, ["-c", "-opt", "level=4,intrinsics", "-lang", "c99", "-enum", "min",
-                               "-Cpp_exceptions", "off", "-str", "noreadonly", "-prefix", winpath(src / "pfx.h"),
-                               winpath(src / "math_x87.c"), "-o", winpath(obj)], env=t.env(MWCWinx86Includes=winlist(inc)))
-    if rc or not obj.exists():
-        raise BuildError("math_x87.c failed to compile\n" + msg[-2000:])
-    # the library member carries no .drectve text: empty the section (mwld ignores a zero-sized one)
-    b = bytearray(obj.read_bytes())
-    nsec, _ts, _symp, _nsym, opt = struct.unpack_from("<HIIIH", b, 2)
-    for k in range(nsec):
-        o = 20 + opt + 40 * k
-        if bytes(b[o:o + 8]).rstrip(b"\0") == b".drectve":
-            raw, ptr = struct.unpack_from("<II", b, o + 16)
-            b[ptr:ptr + raw] = b"\0" * raw
-            struct.pack_into("<I", b, o + 16, 0)
-    obj.write_bytes(bytes(b))
-    return obj
-
-
-# -- 3. the QuickTime client-library members -------------------------------------------------------
+# -- 2. the QuickTime client-library members --------------------------------------------------------
 def table(name):
-    """A tab-separated table of buildkit/tables/ (the exe's orders, read off the exe once): rows of fields."""
+    """A tab-separated table of buildkit/tables/: rows of fields."""
     rows = []
     for line in (KIT / "tables" / name).read_text().splitlines():
         if line and not line.startswith("#"):
@@ -144,7 +101,8 @@ def table(name):
 
 
 def qt_members(qtlib, objdir, outdir):
-    """Write qt_<member> for every row of tables/qtorder.tsv; return [(exe VA, path)]."""
+    """Write qt_<member> for every row of tables/qtorder.tsv, with the names the tree also defines
+    renamed away (and the table's own renames); return their paths."""
     lib = {}
     for name, body in coff.members(qtlib / "qtmlClient.lib"):
         lib.setdefault(name, []).append(body)
@@ -154,7 +112,7 @@ def qt_members(qtlib, objdir, outdir):
     outdir.mkdir(parents=True, exist_ok=True)
     out = []
     for row in table("qtorder.tsv"):
-        name, va = row[0], int(row[1], 16)
+        name = row[0]
         ren = dict(p.split("=") for p in row[2].split(",")) if len(row) > 2 and row[2] else {}
         if len(lib.get(name, [])) != 1:
             raise BuildError("qtmlClient.lib: %d members named %s" % (len(lib.get(name, [])), name))
@@ -166,129 +124,35 @@ def qt_members(qtlib, objdir, outdir):
             b = coff.rename(b, allren)
         p = outdir / ("qt_" + name)
         p.write_bytes(b)
-        out.append((va, p))
+        out.append(p)
     return out
 
 
-# -- 4. the link order -----------------------------------------------------------------------------
-def mwld_library(t, lib, members):
-    rsp = lib.with_suffix(".rsp")
-    rsp.write_text("".join('"%s"\n' % winpath(m) for m in members))
-    if lib.exists():
-        lib.unlink()
-    rc, msg = run_exe(t.mwld, ["-library", "-nostdlib", "-o", winpath(lib), "@" + winpath(rsp)], env=t.env())
-    if not lib.exists():
-        raise BuildError("mwld -library did not write %s\n%s" % (lib.name, msg[-2000:]))
-    return lib
-
-
-def win_order(t, objdir, work, mslobj, qtdir):
-    """The committed order: sources/link/objects-win.txt and pull-win.txt. Returns (inputs, -include names)."""
-    plain, rt, qt, listed = [], [], [], set()
-    for line in (SOURCES / "link" / "objects-win.txt").read_text().splitlines():
-        if not line.strip():
-            continue
-        kind, name = line.split(" ", 1)
-        p = {"obj": objdir / (name + ".o"), "rt": objdir / (name + ".o"),
-             "msl": mslobj.parent / name, "qt": qtdir / ("qt_" + name)}.get(kind)
-        if p is None:
-            raise BuildError("sources/link/objects-win.txt: unknown line %r" % line)
-        if not p.exists():
-            raise BuildError("sources/link/objects-win.txt lists %s, which was not built" % p.name)
-        if kind in ("obj", "rt"):
-            listed.add(name.lower())
-        (plain if kind == "obj" else qt if kind == "qt" else rt).append(p)
-    extra = sorted(o.name for o in objdir.glob("*.o") if o.stem.lower() not in listed)
-    if extra:
-        raise BuildError("objects not in sources/link/objects-win.txt: %s" % " ".join(extra))
-    pulls = [l for l in (SOURCES / "link" / "pull-win.txt").read_text().splitlines() if l]
-    return plain + [mwld_library(t, work / "rt.lib", rt), mwld_library(t, work / "qt.lib", qt)], pulls
-
-
-MARK = re.compile(r"//\s*FUNCTION:\s*EVNOVA\s+0x([0-9a-fA-F]+)")
-ANCHOR = re.compile(r"^//\s*LINK:\s*(after|before)\s+(\w+)\s*;\s*data\s+EVNOVA\s+0x([0-9a-fA-F]+)", re.M)
-
-
-def ce_order(t, objdir, work, mslobj, qtmembers):
-    """The CE link has no committed order: the exe's order derived as tools/pullorder.py --cefix does.
-    Plain objects sort by their source's lowest FUNCTION address (a `// LINK:` anchor sits by its
-    neighbour); the runtime units, MSL and QuickTime members and import thunks are pulled in exe order
-    by a first input that only names them (driver.obj); the imports first, in the exe's IAT order."""
-    lo, anchors = {}, {}
-    for p in SOURCES.rglob("*.c"):
-        parts = p.relative_to(SOURCES).parts
-        if "include" in parts or parts[0] == "mac":
-            continue
-        text = p.read_text(encoding="latin-1", errors="replace")
-        a = [int(x, 16) for x in MARK.findall(text)]
-        lo[p.stem.lower()] = min(a) if a else None
-        m = ANCHOR.search("\n".join(text.splitlines()[:30]))
-        if m and not a:
-            anchors[p.stem.lower()] = (m.group(1), m.group(2).lower(), int(m.group(3), 16))
-
-    def plain_key(o):
-        s = o.stem.lower()
-        if s in anchors:
-            side, n, va = anchors[s]
-            return (False, lo[n], 0 if side == "before" else 2, va, o.name.lower())
-        return (lo[s] is None, lo[s] or 0, 1, 0, o.name.lower())
+# -- 3. the link inputs ----------------------------------------------------------------------------
+def link_inputs(objdir, work, qtmembers):
+    """The game's objects as plain inputs, then the runtime (sources/runtime/) as rt.lib and the
+    QuickTime members as qt.lib, whose members the link pulls as they are referenced."""
     runtime = {p.stem.lower() for p in (SOURCES / "runtime").glob("*.c")}
-    units, plain, wanted = [], [], set()
-    for o in sorted(objdir.glob("*.o"), key=plain_key):
-        b = o.read_bytes()
-        wanted |= coff.undefined(b)
-        s = o.stem.lower()
-        if s not in runtime:
-            plain.append(o)
-            continue
-        sym = coff.pull_symbol(b)
-        if sym is None:
-            raise BuildError("%s has no global symbol to pull it by" % o.name)
-        if s in anchors:
-            side, n, va = anchors[s]
-            key = (lo[n], 0 if side == "before" else 2, va)
-        else:
-            key = (lo[s], 1, 0) if lo.get(s) is not None else (1 << 40, 1, 0)
-        units.append((key, sym, o))
-    msl = dict(coff.members(t.libdirs[0] / "MSL_All_x86.lib")[::-1])     # first member of a name wins
-    for name, va in table("mslorder.tsv"):
-        mine = mslobj if name == mslobj.name else None
-        b = mine.read_bytes() if mine else msl[name]
-        wanted |= coff.undefined(b)
-        units.append(((int(va, 16), 1, 0), coff.pull_symbol(b), mine))
-    for va, p in qtmembers:
-        b = p.read_bytes()
-        wanted |= coff.undefined(b)
-        units.append(((va, 1, 0), coff.pull_symbol(b, avoid=QT_SHADOW), p))
-    thunked = set()
-    for sym, va, _dll in table("thunkorder.tsv"):
-        if sym in wanted or "__imp_" + sym in wanted:
-            units.append(((int(va, 16), 1, 0), sym, None))
-            thunked.add("__imp_" + sym)
-    units.sort(key=lambda u: u[0])
-    imports = [r[0] for r in table("iatorder.tsv") if r[0].startswith("__IMPORT_DESCRIPTOR_") or
-               (r[0] not in thunked and (r[0] in wanted or r[0][len("__imp_"):] in wanted))]
-    driver = work / "driver.obj"
-    coff.write_undefined_object(driver, imports + [u[1] for u in units])
-    rt = [o for _k, _s, o in units if o and not o.name.startswith("qt_")]
-    qt = [o for _k, _s, o in units if o and o.name.startswith("qt_")]
+    objs = sorted(objdir.glob("*.o"), key=lambda o: o.name.lower())
+    plain = [o for o in objs if o.stem.lower() not in runtime]
+    rt = [o for o in objs if o.stem.lower() in runtime]
     coff.write_archive(work / "rt.lib", [(o.name, o.read_bytes()) for o in rt])
-    coff.write_archive(work / "qt.lib", [(o.name, o.read_bytes()) for o in qt])
-    return [driver] + plain + [work / "rt.lib", work / "qt.lib"], []
+    coff.write_archive(work / "qt.lib", [(p.name, p.read_bytes()) for p in qtmembers])
+    return plain + [work / "rt.lib", work / "qt.lib"]
 
 
-# -- 5. resources ----------------------------------------------------------------------------------
+# -- 4. resources ----------------------------------------------------------------------------------
 TYPE_NAME = {3: "ICON", 14: "GROUP_ICON"}
 
 
 def resources(t, exe, work):
-    """novaport.res: VERSION and STRING from sources/rsrc/evnova.rc, ICON, GROUP_ICON and CHNK read out
-    of the user's exe into work/rsrc/ (never stored anywhere else)."""
+    """novaport.res: VERSION and STRING from sources/rsrc/evnova.rc, ICON and GROUP_ICON read out of the
+    user's exe into work/rsrc/ (never stored anywhere else)."""
     rsrc = work / "rsrc"
     rsrc.mkdir(parents=True, exist_ok=True)
-    assets = [(ty, rid, b) for ty, rid, b in pe.resources(exe) if ty not in (6, 16)]
-    if sorted((str(ty), rid) for ty, rid, _b in assets) != [("14", 202), ("3", 1), ("CHNK", 950)]:
-        raise BuildError("%s: not the 1.0.10 resource set (ICON 1, GROUP_ICON 202, CHNK 950)" % exe)
+    assets = [(ty, rid, b) for ty, rid, b in pe.resources(exe) if ty in (3, 14)]
+    if sorted((ty, rid) for ty, rid, _b in assets) != [(3, 1), (14, 202)]:
+        raise BuildError("%s: not the 1.0.10 icon set (ICON 1, GROUP_ICON 202)" % exe)
     for ty, rid, b in assets:
         (rsrc / ("%s_%s.bin" % (TYPE_NAME.get(ty, ty), rid))).write_bytes(b)
     res = work / "novaport.res"
@@ -299,7 +163,7 @@ def resources(t, exe, work):
     return res
 
 
-# -- 6. the link -----------------------------------------------------------------------------------
+# -- 5. the link -----------------------------------------------------------------------------------
 LIBS = ["MSL_All_x86.lib", "qtmlClient.lib", "kernel32.lib", "user32.lib", "gdi32.lib", "winmm.lib", "wsock32.lib",
         "advapi32.lib", "comctl32.lib", "shell32.lib", "version.lib", "comdlg32.lib", "iphlpapi.lib", "ole32.lib",
         "oleaut32.lib", "opengl32.lib"]
@@ -309,13 +173,8 @@ def link(cfg, objdir, work, out_exe, cefix):
     t = Tools(cfg)
     work.mkdir(parents=True, exist_ok=True)
     exe = cfg.path("game", "win1010") / "EV Nova.exe"
-    mslobj = math_x87(t, work / "mslmath")
     qtm = qt_members(cfg.path("win", "quicktime"), objdir, work / "qt")
-    if cefix:
-        inputs, pulls = ce_order(t, objdir, work, mslobj, qtm)
-    else:
-        inputs, pulls = win_order(t, objdir, work, mslobj, work / "qt")
-    inputs = inputs + [resources(t, exe, work)]
+    inputs = link_inputs(objdir, work, qtm) + [resources(t, exe, work)]
     # iconv.dll is loaded through an import library made from tables/iconv.def (the hints of the DLL the
     # exe was linked against); CE draws text without it, and then the DLL leaves the import table
     if any("libiconv" in n for o in objdir.glob("*.o") for n in coff.undefined(o.read_bytes())):
@@ -327,7 +186,7 @@ def link(cfg, objdir, work, out_exe, cefix):
             raise BuildError("mwld -importlib did not write iconv_imp.lib")
         inputs.append(lib)
     rsp = work / "link.rsp"
-    rsp.write_text("".join("-include %s\n" % n for n in pulls) + "".join('"%s"\n' % winpath(p) for p in inputs))
+    rsp.write_text("".join('"%s"\n' % winpath(p) for p in inputs))
     if out_exe.exists():
         out_exe.unlink()
     libdirs = t.libdirs + [cfg.path("win", "quicktime")]
@@ -352,19 +211,15 @@ def link(cfg, objdir, work, out_exe, cefix):
     return exe
 
 
-def build(cfg, out, cefix=False, pin_date=True, signed=True):
+def build(cfg, out, cefix=False):
     """Compile, link and finish one Windows target into OUT; returns the exe's path."""
     name = "EV Nova CE.exe" if cefix else "EV Nova.exe"
     objdir, work, exe = out / "obj", out / "link", out / name
-    say("  [1/3] compile" + (" (-DCEFIX, sources/cefix/ included)" if cefix else ""))
+    say("  [1/%d] compile" % (3 if cefix else 2) + (" (-DCEFIX, sources/cefix/ included)" if cefix else ""))
     compile_all(cfg, objdir, cefix)
-    say("  [2/3] link")
-    original = link(cfg, objdir, work, exe, cefix)
-    say("  [3/3] post-steps")
+    say("  [2/%d] link" % (3 if cefix else 2))
+    link(cfg, objdir, work, exe, cefix)
     if cefix:
+        say("  [3/3] large-address-aware")
         pe.set_large_address_aware(exe)      # CE links with --large-address-aware for its 2,040 MB pool
-    if pin_date:
-        pe.set_stamp(exe)                    # mwld writes the link time; the original's date instead
-    if signed and not cefix:
-        pe.copy_signature(exe, original)
     return exe

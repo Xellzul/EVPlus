@@ -1,9 +1,8 @@
-"""PE post-steps of the Windows link: the date pin, the large-address-aware bit, the copied
-Authenticode signature, and reading the icon resources out of the user's exe."""
+"""PE helpers of the Windows link: the large-address-aware bit, and reading the icon resources out
+of the user's exe."""
 import struct
 from pathlib import Path
 
-ORIGINAL_STAMP = 0x449CBBC3            # EV Nova.exe 1.0.10's TimeDateStamp, 2006-06-24 04:12:51 UTC
 LARGE_ADDRESS_AWARE = 0x0020
 
 
@@ -15,13 +14,11 @@ class Pe:
         if d[lfanew:lfanew + 4] != b"PE\0\0":
             raise ValueError("not a PE file")
         coff = lfanew + 4
-        self.stamp_off = coff + 4
         self.chars_off = coff + 18
         nsec, = struct.unpack_from("<H", d, coff + 2)
         optsize, = struct.unpack_from("<H", d, coff + 16)
         opt = coff + 20
         self.chk_off = opt + 64
-        self.sec_off = opt + 96 + 4 * 8                # IMAGE_DIRECTORY_ENTRY_SECURITY (PE32)
         self.sections = []
         for i in range(nsec):
             o = opt + optsize + 40 * i
@@ -48,37 +45,11 @@ def _finish(d, pe):
     return bytes(d)
 
 
-def set_stamp(path, stamp=ORIGINAL_STAMP):
-    d = bytearray(Path(path).read_bytes())
-    pe = Pe(d)
-    struct.pack_into("<I", d, pe.stamp_off, stamp)
-    Path(path).write_bytes(_finish(d, pe))
-
-
 def set_large_address_aware(path):
     d = bytearray(Path(path).read_bytes())
     pe = Pe(d)
     chars = struct.unpack_from("<H", d, pe.chars_off)[0]
     struct.pack_into("<H", d, pe.chars_off, chars | LARGE_ADDRESS_AWARE)
-    Path(path).write_bytes(_finish(d, pe))
-
-
-def copy_signature(path, original):
-    """Append the WIN_CERTIFICATE the user's own exe ends with, at the next 8-byte boundary, and
-    point the security directory at it. Valid only for an image identical to the original's."""
-    o = Path(original).read_bytes()
-    off, size = struct.unpack_from("<II", o, Pe(o).sec_off)
-    if not size or off + size != len(o):
-        raise ValueError("%s has no certificate table at its end" % original)
-    d = bytearray(Path(path).read_bytes())
-    pe = Pe(d)
-    have_off, have_size = struct.unpack_from("<II", d, pe.sec_off)
-    if have_size:
-        del d[have_off:]
-    d += b"\0" * (-len(d) & 7)
-    at = len(d)
-    d += o[off:off + size]
-    struct.pack_into("<II", d, pe.sec_off, at, size)
     Path(path).write_bytes(_finish(d, pe))
 
 

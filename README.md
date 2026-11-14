@@ -27,7 +27,7 @@ Or targeted runs:
 
 Target can be: all, win, ce, check
 
-Options can be: --twice, --no-pin-date, --unsigned, --config FILE
+Options can be: --config FILE
 
 ## Credits:
 andrews05 for CE patches - https://github.com/andrews05/EV-Nova-CE 

@@ -16,15 +16,13 @@ INPUTS = {
     "cw92": ("CW_Windows_9.2.exe", "86608e30a15f501065fc0e0aab55b0ac3372aa02818f7f37f2aa20e47dccd6dc"),
     "cw93": ("CW_Windows_9.3_Update.exe", "3b23182e13646d076829861f46fa963066f04ec639bc06fba6c02edd2df96467"),
     "cw9lic": ("CW_Windows_9_license.dat", None),
-    "sym20": ("CodeWarrior_for_Symbian_OS_2.0_Personal_Edition.zip", "3739222b9da9da0209b8b536793cc777ed0d1856b5f132134374a1f40811cf88"),
-    "sym30": ("CodeWarrior_Development_Studio_for_SymbianOS_3.0.zip", "764d379dd88707a0da045c1fb8425e3234c3e000c5b263c9129bff91d57c940c"),
     "qt6": ("QT6SDK_Win.hqx", "fbcb3822ac4a16a5d21fa6575677b17cfa888bf937f4d59e8aa7ad75d72efb11"),
     "win1010": ("EV_Nova_1.0.10_for_Windows.zip", "ce3650391697be80968cea2527a612e6e8cd836b898c355724d2671af4a5cb05"),
 }
 # the inputs each target needs
 TARGETS = {
-    "win": ["cw92", "cw93", "cw9lic", "sym20", "sym30", "qt6", "win1010"],
-    "ce": ["cw92", "cw93", "cw9lic", "sym20", "sym30", "qt6", "win1010"],
+    "win": ["cw92", "cw93", "cw9lic", "qt6", "win1010"],
+    "ce": ["cw92", "cw93", "cw9lic", "qt6", "win1010"],
 }
 WORK = Path("/var/tmp/unpack")
 
@@ -72,20 +70,6 @@ def cw9(src, dest):
     shutil.copyfile(src / INPUTS["cw9lic"][0], cw / "license.dat")
 
 
-def sym20(src, dest):
-    # CodeWarrior for Symbian Personal 2.0: mwccsym2 2.4.7 build 335 and FlexLM 3.26
-    w = fresh("sym20")
-    sh("7z", "x", "-y", "-o%s" % w, src / INPUTS["sym20"][0])
-    installshield.groups(str(w / "data1.cab"), str(dest / "cw-symbian-2.0-personal"), ["!!ALL FILES!!"])
-
-
-def sym30(src, dest):
-    # CodeWarrior for Symbian OS 3.0: its Symbian Support MSL headers only
-    w = fresh("sym30")
-    sh("7z", "x", "-y", "-o%s" % w, src / INPUTS["sym30"][0], "Setup/data*")
-    installshield.groups(str(w / "Setup" / "data1.cab"), str(dest / "cw-symbian-3.0" / "Symbian_Support"), ["Symbian Support"])
-
-
 def qt6(src, dest):
     # Apple's QuickTime 6 SDK for Windows (BinHex around a zip): qtmlClient.lib
     w = fresh("qt6")
@@ -102,8 +86,7 @@ def win1010(src, dest):
 
 
 # each unpacking step and the inputs it reads
-STEPS = [(cw9, ["cw92", "cw93", "cw9lic"]), (sym20, ["sym20"]), (sym30, ["sym30"]), (qt6, ["qt6"]),
-         (win1010, ["win1010"])]
+STEPS = [(cw9, ["cw92", "cw93", "cw9lic"]), (qt6, ["qt6"]), (win1010, ["win1010"])]
 
 
 def main(src, dest):

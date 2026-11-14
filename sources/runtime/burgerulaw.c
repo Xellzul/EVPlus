@@ -1,5 +1,4 @@
 // COMPILE: -lang c++ -bool off
-// LINK: before burgermace; data EVNOVA 0x00571614
 /* burgerulaw.c -- BurgerLib's mu-law expansion table (PkULaw): a byte to a 16-bit sample. Notes: Research/notes/burgerdigsong.md */
 
 #include "burgertypes.h"

@@ -1,5 +1,4 @@
 // COMPILE: -lang c++ -bool off
-// LINK: after setup; data EVNOVA 0x00575acc
 /* portcolors.c -- the four QuickDraw colour globals the port had to supply, 0x00575acc .. 0x00575af0. Notes: Research/notes/portcolors.md */
 #include "macport.h"
 

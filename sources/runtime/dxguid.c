@@ -1,5 +1,4 @@
 // COMPILE: -lang c++ -bool off
-// LINK: before atfilespec2; data EVNOVA 0x005713e8
 /* dxguid.c -- the three DirectDraw interface IDs the game links from dxguid.lib. Notes: Research/notes/burgervideomode.md */
 
 #include "burgerddraw.h"
