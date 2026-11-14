@@ -22,15 +22,6 @@
 /* button slots: the index into the spaceport's Rect array */
 enum { kPortLeaveButton, kPortRefuelButton, kPortTradeButton, kPortOutfitButton,
        kPortShipyardButton, kPortMissionsButton, kPortBarButton };
-#ifdef MAC1010 /* 1.0.10 spelling: plain numbers at the sites */
-#define kPortLeaveButton 0
-#define kPortRefuelButton 1
-#define kPortTradeButton 2
-#define kPortOutfitButton 3
-#define kPortShipyardButton 4
-#define kPortMissionsButton 5
-#define kPortBarButton 6
-#endif
 
 /* TrackPlanetButtons (mac _TrackPlanetButtons). STATE: MATCH 100.0%, exe 309 / obj 309
    instrs, byte-identical yes. OPEN: none */

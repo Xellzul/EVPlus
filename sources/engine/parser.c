@@ -379,11 +379,7 @@ void EvalSetExp(void)
         case 'Y':
         case '^':
             num = 0;
-#if V111 /* V111 spelling */
-            op = toupper(parseBuffer[i]);
-#else
             op = toupper(c);
-#endif
             break;
         case 'R':
             seen = 0;
@@ -391,13 +387,8 @@ void EvalSetExp(void)
             pick = Rand(2);
             break;
         default:
-#if V111 /* V111 spelling */
-            if (parseBuffer[i] >= '0' && parseBuffer[i] <= '9') {
-                num = num * 10 + parseBuffer[i] - '0';
-#else
             if (c >= '0' && c <= '9') {
                 num = num * 10 + c - '0';
-#endif
             } else if (pick != -1 && seen == pick) {
                 if (seen == 0)
                     i++;
@@ -499,21 +490,10 @@ void EvalSetExp(void)
                     saved = SaveBuffer();
                     ShipStatsToSystemInfo();
                     if (op == 'H') {
-#if V111 /* V111 spelling */
-                        for (j = 0; j < kMaxOutfits; j++) {
-                            if ((outfitSystem[j].flags & (kOutfPersistent | kOutfMissionPersistent)) == 0)
-                                shipSystems[j] = 0;
-                        }
-#else
                         for (j = 0; (short)j < kMaxOutfits; j++) {
-#ifdef MAC1010 /* 1.0.10 spelling */
-                            if ((outfitSystem[(short)j].flags & (kOutfPersistent | kOutfMissionPersistent)) == 0)
-#else
                             if ((outfitSystem[j].flags & (kOutfPersistent | kOutfMissionPersistent)) == 0)
-#endif
                                 shipSystems[(short)j] = 0;
                         }
-#endif
                     }
                     SystemInfoToShipStats();
                     shipData->type = num - kFirstResourceID;

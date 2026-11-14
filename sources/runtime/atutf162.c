@@ -273,12 +273,7 @@ ULong _unicode_tocase(ULong c, const FoldRange *table, ULong n)
     unsigned char count;
     unsigned char stride;
     short delta;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    int32_t info;
-    const FoldRange *range;
-#else
     unsigned short info;
-#endif
     ULong mid;
     ULong hi;
 
@@ -289,22 +284,12 @@ ULong _unicode_tocase(ULong c, const FoldRange *table, ULong n)
     hi = n - 1;
     for (mid = -1; lo <= hi; mid = -1) {
         mid = (lo + hi) >> 1;
-#ifdef MAC1010 /* 1.0.10 spelling */
-        range = &table[mid];
-        first = range->first;
-        if (c < first) {
-            hi = mid - 1;
-            continue;
-        }
-        info = range->info;
-#else
         first = table[mid].first;
         if (c < first) {
             hi = mid - 1;
             continue;
         }
         info = table[mid].info;
-#endif
         count = info >> 8;
         if (c > first + count) {
             lo = mid + 1;

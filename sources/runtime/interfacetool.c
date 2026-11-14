@@ -26,11 +26,7 @@ static ITRect gIT_EnableControlZeroRect;                      /* 0x0086bba0 IT_V
 static ITRect gIT_ShowControlZeroRect;                      /* 0x0086bb90 IT_ViewSetItemVisible's empty clip */
 static ITRect DAT_0086bb50[4];                   /* 0x0086bb50, unreferenced */
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-#define INDEX_LEFT(i) ((ULong)i-- != 0)
-#else
 #define INDEX_LEFT(i) (i--)
-#endif
 
 #if defined(MAC1010) && TARGET_API_MAC_CARBON
 #define ParamWideArg unsigned char

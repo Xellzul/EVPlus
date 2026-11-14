@@ -3751,15 +3751,10 @@ Boolean PlayerCanUseAmmoType(short weapIndex)
                 return 1;
             w = weaponStats[weapIndex].ammoType;
 #else
-#ifdef V111 /* V111 spelling */
-            if (weaponStats[i].guidance == kGuidanceBay) {
-                if (weaponStats[i].ammoType == weaponStats[weapIndex].ammoType)
-#else
             int32_t w = weapIndex;
 
             if (weaponStats[i].guidance == kGuidanceBay) {
                 if (weaponStats[i].ammoType == weaponStats[w].ammoType)
-#endif
                     return 1;
                 return 0;
             }
@@ -4323,9 +4318,6 @@ short CalcPortDemand(short commodity, uint32_t flags)
 // MAC: _SetupPortAvailableShipTypes i386 0x0000bbe3 ppc 0x0000e880
 void SetupPortAvailableShipTypes(SpobRecord *port)
 {
-#if V111 /* V111 spelling */
-    short count;
-#endif
     short i;
     short j;
     short k;
@@ -4336,17 +4328,10 @@ void SetupPortAvailableShipTypes(SpobRecord *port)
     if (port == 0)
         return;
 
-#if V111 /* V111 spelling */
-    for (k = 0; k < kMaxShipTypes; k++)
-        dockedPortShipTypes[k] = -1;
-
-    count = 0;
-#else
     for (i = 0; i < kMaxShipTypes; i++)
         dockedPortShipTypes[i] = -1;
 
     k = 0;
-#endif
     for (i = 0; i < kMaxShipTypes; i++) {
         avail[i] = 0;
         if (shipClass[i].techLevel >= 0) {
@@ -4392,15 +4377,9 @@ void SetupPortAvailableShipTypes(SpobRecord *port)
         }
 
         if (avail[i]) {
-#if V111 /* V111 spelling */
-            if (shipClass[i].dispWeight > threshold || count == 0)
-                threshold = shipClass[i].dispWeight;
-            count++;
-#else
             if (shipClass[i].dispWeight > threshold || k == 0)
                 threshold = shipClass[i].dispWeight;
             k++;
-#endif
         }
     }
 
@@ -4511,17 +4490,10 @@ Boolean SetupPortAvailableItems(SpobRecord *port)
 
     for (i = 0; i < kMaxOutfits; i++) {
         if (avail[i] && (outfitSystem[i].flags & kOutfSupersedes)) {
-#if V111 /* V111 spelling */
-            for (j = i + 1; j < kMaxOutfits; j++) {
-                if (outfitSystem[j].dispWeight == outfitSystem[i].dispWeight)
-                    avail[j] = 0;
-            }
-#else
             for (count = i + 1; count < kMaxOutfits; count++) {
                 if (outfitSystem[count].dispWeight == outfitSystem[i].dispWeight)
                     avail[count] = 0;
             }
-#endif
         }
     }
 
@@ -7050,11 +7022,7 @@ Boolean StellarsAreIdentical(short a, short b)
             return 1;
         if (stellarData[a].pos.h == stellarData[b].pos.h &&
             stellarData[a].pos.v == stellarData[b].pos.v &&
-#ifdef V111 /* V111 spelling */
-            *(char *)stellarData[a].name == *(char *)stellarData[b].name) {
-#else
             (char)stellarData[a].name[0] == (char)stellarData[b].name[0]) {
-#endif
             pstrcpy(nameA, stellarData[a].name);
             pstrcpy(nameB, stellarData[b].name);
             PtoCstr(nameA);

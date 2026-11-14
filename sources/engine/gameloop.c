@@ -3891,28 +3891,6 @@ void HandleShot(ShotObj *shot)
 #define kWrapMargin             32
 #define kDeadStrength           (-32000)
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-static inline void AsteroidWrapLimits(short i, short maxW, short maxH)
-{
-    int rangeH;
-    int edgeH;
-    int rangeV;
-    int canWrap;
-    int sum;
-
-    rangeH = maxW;
-    edgeH = screenCenter.h * 2;
-    rangeV = maxH;
-    canWrap = 1;
-    if (i == 0 && miningShipsActive != 0) {
-        canWrap = 0; /* 1.0.10 pad @_HandleAsteroids: a multi-def local the colourer sees, no word, one more neighbour */
-        rangeH = 0; /* 1.0.10 pad @_HandleAsteroids: same, rangeH */
-        edgeH = 0; /* 1.0.10 pad @_HandleAsteroids: same, edgeH */
-        rangeV = 0; /* 1.0.10 pad @_HandleAsteroids: same, rangeV */
-    }
-    sum = i + rangeH + edgeH + rangeV + canWrap; /* 1.0.10 pad @_HandleAsteroids: the read keeps the four locals live to the colourer */
-}
-#endif
 
 
 /* HandleAsteroids (mac _HandleAsteroids). STATE: MATCH 100.0%, exe 442 / obj 442 instrs,
@@ -3991,9 +3969,6 @@ void HandleAsteroids(void)
                                  + screenCenter.h - spriteW / 2),
                          ((short)(asteroidData[i].pos.y - shipData->pos.y)
                                  + screenCenter.v - spriteH / 2));
-#ifdef MAC1010 /* 1.0.10 spelling */
-            AsteroidWrapLimits(i, maxW, maxH);
-#endif
             wrapped = 0;
             if (asteroidData[i].sprite->destFrameRect.left > screenCenter.h * 2 + kWrapMargin) {
                 asteroidData[i].pos.x = shipData->pos.x - screenCenter.h - maxW * 2;

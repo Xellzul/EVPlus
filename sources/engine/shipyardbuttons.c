@@ -25,24 +25,6 @@ enum { kShipyardDoneButton, kShipyardBuyButton, kShipyardInfoButton, kShipyardUp
        kShipyardDownButton };
 enum { kOutfitDoneButton, kOutfitBuyButton, kOutfitSellButton, kOutfitUpButton,
        kOutfitDownButton };
-#ifdef MAC1010 /* 1.0.10 spelling: plain numbers at the sites */
-#define kMapDoneButton 0
-#define kMapZoomOutButton 1
-#define kMapZoomInButton 2
-#define kMapClearRouteButton 3
-#define kMapInfluenceButton 4
-#define kMapSearchButton 5
-#define kShipyardDoneButton 0
-#define kShipyardBuyButton 1
-#define kShipyardInfoButton 2
-#define kShipyardUpButton 3
-#define kShipyardDownButton 4
-#define kOutfitDoneButton 0
-#define kOutfitBuyButton 1
-#define kOutfitSellButton 2
-#define kOutfitUpButton 3
-#define kOutfitDownButton 4
-#endif
 
 /* TrackMapButtons. STATE: MATCH 100%, exe 247 / obj 247, byte-identical.
    The GetDialogItem sites index `box' with the slot enum (-enum min), which keeps their

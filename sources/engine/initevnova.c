@@ -2769,11 +2769,6 @@ void DeleteAllComputerShips(Boolean force, Boolean keepPlayer)
 #define kSpawnOdds              7
 #define kRandomSpawnReserve     8
 
-#if V111 /* V111 spelling */
-#define shipsLeft sysOf
-#else
-#define shipsLeft count
-#endif
 
 /* SetupShipsInSystem (mac _SetupShipsInSystem). STATE: MATCH 100.0%, exe 675 / obj 675 instrs,
    551 exact + 124 reloc-equivalent, 0 mismatched; frame EXACT 0x24, 12/12 slots and refs;
@@ -2855,16 +2850,16 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
             if ((sysOf == sys || currentMissions[m].shipSyst == kMissionShipSystemHere)
                     && currentMissions[m].shipCount > 0
                     && currentMissions[m].shipDelay < 0) {
-                shipsLeft = currentMissions[m].shipCount;
+                count = currentMissions[m].shipCount;
                 if (currentMissions[m].shipSyst == kMissionShipSystemHere
                         && currentMissions[m].shipBehav == kMissionModeEscort) {
                     for (j = 1; j < kMaxShips; j++) {
                         if (shipData[j].active != 0 && m == shipData[j].specialMission)
-                            shipsLeft--;
+                            count--;
                     }
                 }
-                if (shipsLeft > 0) {
-                    for (i = 0; i < shipsLeft; i++) {
+                if (count > 0) {
+                    for (i = 0; i < count; i++) {
                         slot = MissionDudeSpawn(currentMissions[m].shipDude, -1, sys, m);
                         if (slot != -1) {
                             k++;
@@ -3311,11 +3306,6 @@ none:
 #define kEntryShove         50.0f
 #define kEntryDepth         (-999.0f)
 
-#ifdef MACBUILD /* mac spelling */
-#define auxNum n
-#else
-#define auxNum count
-#endif
 
 /* EnterMoreShips (mac _EnterMoreShips). STATE: MATCH 100.0%, exe 702 / obj 702, byte-identical unchecked
    (bytediff covers baseline MATCHes only; next regate); mac MATCH on both slices. OPEN: none */
@@ -3365,7 +3355,7 @@ void EnterMoreShips(short sys)
                         heading = Rand(kEntryHeadings);
                         spot.x = spot.y = 0.0f;
                         Accel(heading, dist + kEntryRadius, &spot);
-                        for (auxNum = 0; auxNum < left; auxNum++) {
+                        for (count = 0; count < left; count++) {
                             which = SpecificDudeSpawn(currentMissions[i].auxShipDude, sys,
                                                       kSpawnReserve, 0);
                             if (which != -1) {
@@ -5140,14 +5130,8 @@ short SpawnPerson(short sys, unsigned char noDisabled, short person)
     return -1;
 }
 
-/* win reads the index in three widths, each a CSE class; the mac's slotL and slotI are the short itself */
+/* win reads the index in three widths, each a CSE class; the mac's slotL and ((int)slotL) are the short itself */
 #define slotR ((int32_t)slot)
-#if defined(MACBUILD) || V111 /* mac spelling */
-#define slotL slot
-#define slotI slot
-#else
-#define slotI ((int)slotL)
-#endif
 
 /* DoShipCapture (mac _DoShipCapture). STATE: MATCH 100%, exe 817 / obj 817; byte-identical
    yes (relocations masked). The three index spellings are CSE classes; the loop counters and
@@ -5198,7 +5182,7 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
         if (val != -1) {
             val = govtData[val].voiceClass;
             if (val != -1)
-                shipData[slotI].voiceClass = val;
+                shipData[((int)slotL)].voiceClass = val;
         }
         for (i = 0; i <= kLastCommodity; i++)
             shipData[slotL].cargo[i] = shipData[0].cargo[i];
@@ -5240,8 +5224,8 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
                         ShipArmorCapacity(&shipData[slotR]) * 0.3333 + 1.0;
             }
             prevParent[slotL] = 0;
-            AISetup(&shipData[slotI]);
-            AIMakeEscortFlyInForm(&shipData[slotI]);
+            AISetup(&shipData[((int)slotL)]);
+            AIMakeEscortFlyInForm(&shipData[((int)slotL)]);
         }
         statusRedraw[kRedrawCargo] = 1;
         statusRedraw[kRedrawTarg] = 1;
@@ -5343,7 +5327,7 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
 }
 #undef slotL
 #undef slotR
-#undef slotI
+#undef ((int)slotL)
 
 
 /* DisasterHandler. STATE: MATCH, byte-identical; mac MATCH both slices. OPEN: none */

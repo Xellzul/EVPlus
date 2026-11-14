@@ -460,11 +460,6 @@ void OpenDataFiles(void)
 #endif
 
 
-#if V111 /* V111 spelling */
-#define junksLoaded found
-#else
-#define junksLoaded loaded
-#endif
 
 /* LoadObjectData (mac _LoadObjectData). STATE: MATCH 100.0% (6170 exact, 2139 reloc-equivalent,
    0 mismatched; exe 8309 / obj 8309), byte-identical (39297 B, 2139 relocated fields masked).
@@ -2300,7 +2295,7 @@ void LoadObjectData(void)
     /* ---------------- jünk: junk commodities ---------------- */
     {
 
-        junksLoaded = 0;
+        loaded = 0;
         count = CountResources(kJunkType);
         for (i = 0; i < kMaxJunks; i++) {
             for (j = 0; j < 8; j++) {
@@ -2313,7 +2308,7 @@ void LoadObjectData(void)
             junkData[i].held = 0;
             junkFileHand = GetResource(kJunkType, i + kFirstResourceID);
             if (junkFileHand != NULL) {
-                junksLoaded++;
+                loaded++;
                 LockAHandle(junkFileHand);
                 ResourceNoPurge(junkFileHand);
                 junkData[i].basePrice = ResRec(JunkRes, junkFileHand)->basePrice;
@@ -2349,7 +2344,7 @@ void LoadObjectData(void)
                 ReleaseResource(junkFileHand);
                 LoadingIntroMusic();
             }
-            if (junksLoaded >= count)
+            if (loaded >= count)
                 break;
         }
 
@@ -3438,11 +3433,6 @@ short SavePilotFile(short stellar)
 }
 #endif
 
-#if V111 /* V111 spelling */
-#define recSlot k
-#else
-#define recSlot i
-#endif
 
 /* WritePilotData. STATE: MATCH 100% (1367 exact, 356 reloc), 1723/1723, byte-identical yes
    (8380 bytes, relocated fields masked), relocregcheck 0 of 356. OPEN: none. see notes */
@@ -3590,15 +3580,15 @@ short WritePilotData(short stellar)
         (*playerFileHand)->month = gameTime.month;
         (*playerFileHand)->day = gameTime.day;
         (*playerFileHand)->year = gameTime.year;
-        for (recSlot = 0; recSlot < kMaxSystems; recSlot++)
-            (*playerFileHand)->explore[recSlot] = systemData[recSlot].exploreLevel;
-        for (recSlot = 0; recSlot < kMaxOutfits; recSlot++)
-            (*playerFileHand)->outfits[recSlot] = shipSystems[recSlot];
-        for (recSlot = 0; recSlot < kMaxSystems; recSlot++)
-            (*playerFileHand)->legalStatus[recSlot] = playerRecord[recSlot];
-        for (recSlot = 0; recSlot < kMaxWeapTypes; recSlot++) {
-            (*playerFileHand)->weapCount[recSlot] = shipData[0].weap[recSlot].count;
-            (*playerFileHand)->weapAmmo[recSlot] = shipData[0].weap[recSlot].ammo;
+        for (i = 0; i < kMaxSystems; i++)
+            (*playerFileHand)->explore[i] = systemData[i].exploreLevel;
+        for (i = 0; i < kMaxOutfits; i++)
+            (*playerFileHand)->outfits[i] = shipSystems[i];
+        for (i = 0; i < kMaxSystems; i++)
+            (*playerFileHand)->legalStatus[i] = playerRecord[i];
+        for (i = 0; i < kMaxWeapTypes; i++) {
+            (*playerFileHand)->weapCount[i] = shipData[0].weap[i].count;
+            (*playerFileHand)->weapAmmo[i] = shipData[0].weap[i].ammo;
         }
         (*playerFileHand)->credits = shipData[0].credits;
         for (j = 0; j < kMaxActiveMissions; j++) {
