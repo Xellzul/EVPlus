@@ -238,6 +238,8 @@ void SetupIntroMusic(void)
     }
 
     resID = 0;
+    // BUG: NewMovieFromFile's result is dropped and the err test below is stale (always 0 here);
+    // a file that opens but is not a playable movie leaves introMusicMovie NULL and it is still used
     NewMovieFromFile(&introMusicMovie, refNum, &resID, 0, newMovieActive, 0);
     CloseMovieFile(refNum);
     if (err != 0)

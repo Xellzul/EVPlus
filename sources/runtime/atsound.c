@@ -224,6 +224,8 @@ ULong ST_PlaySoundParam(SoundRequest *req)
 
         i = 0;
         CriticalEnter(gCriticalSection);
+        // BUG: gTheVoices[i] is read before the i < kSoundChannels test; with all 16 channels busy
+        // and none preemptable this reads gTheVoices[16], one past the array
         while (gTheVoices[i].sound != 0 && i < kSoundChannels && preempt == 0) {
             if (req->priority >= gTheVoices[i].priority
                 && req->rightLevel + req->leftLevel
