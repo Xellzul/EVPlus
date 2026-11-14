@@ -3193,8 +3193,6 @@ void HandlePlayerCommunication(void)
 // MAC: _FirePlayerWeapon i386 0x00062702 ppc 0x0006a510
 void FirePlayerWeapon(short w)
 {
-    unsigned long long key;
-    KeyCheckFlag keyed[4];
     short i;
     Boolean soundOK;
     Boolean didFire;
@@ -3206,18 +3204,6 @@ void FirePlayerWeapon(short w)
     short diff;
     short ammoType;
     short slot;
-
-#ifndef MAC1010
-    key = shipData[5].licenseCode;
-#endif
-    KeyMismatch(keyed[0], key, shipData[5].licenseCode, 0xf6100bf185059c3dULL, 0x0ec22bc220ac327aULL);
-    KeyMismatch(keyed[1], key, shipData[5].licenseCode, 0xa298c3a6ef99fff6ULL, 0x05ac9ee5e4ba1ec7ULL);
-    KeyMismatch(keyed[2], key, shipData[5].licenseCode, 0xa63b2518c45f7e5bULL, 0x010d795bcf7c9f6aULL);
-    KeyMismatch(keyed[3], key, shipData[5].licenseCode, 0xe38ddae6a46ec9deULL, 0x0659dbdcb54d0094ULL);
-    for (i = 0; i < 4; i++) {
-        if (keyed[i] == 0)
-            return;
-    }
 
     if (ShipIsCloaked(shipData)) {
         if ((weaponStats[w].flags2 & kWeapFireWhileCloaked) == 0)

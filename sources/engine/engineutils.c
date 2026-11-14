@@ -6137,7 +6137,6 @@ void ResetPlayerPrecalcedValues(void)
     short j;
     short m;
     short k;
-    KeyCheckFlag keyed[3];
 
     playerShieldCapacity = -1.0f;
     playerShieldRechargeRate = -1.0f;
@@ -6168,16 +6167,6 @@ void ResetPlayerPrecalcedValues(void)
     playerHasPerishableJunk = 0;
     shipData->fuelRegenState = -1;
     shipData->canScoop = 0;
-
-    KeyMismatch(keyed[0], shipData[5].licenseCode, shipData[5].licenseCode, 0x6e1bbb2b46dfcc17ULL, 0x0c9f3b380ff9e811LL);
-    KeyMismatch(keyed[1], shipData[5].licenseCode, shipData[5].licenseCode, 0x1f1e62f77679a8c9ULL, 0x0e1f82a0c71946cbLL);
-    KeyMismatch(keyed[2], shipData[5].licenseCode, shipData[5].licenseCode, 0xa63b2518c45f7e5bULL, 0x010d795bcf7c9f6aLL);
-    for (i = 0; i < 3; i++) {
-        if (keyed[i] == 0) {
-            playerShieldCapacity = 1.0f;
-            playerArmorCapacity = 1.0f;
-        }
-    }
 
     for (i = 0; i < kMaxJunks; i++) {
         if (junkData[i].held > 0) {

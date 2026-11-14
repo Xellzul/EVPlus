@@ -106,7 +106,6 @@ void DoSystemMap(void)
     Point mouse;
     Point prevMouse;
     Point anchor;
-    KeyCheckFlag bad[4];
     short itemHit;
     short itemType;
     Rect *pr;
@@ -120,18 +119,6 @@ void DoSystemMap(void)
     mapDialog = GetNewDialog(kMapDlogID, MapDialogUpdate, MapFilter);
     if (mapDialog == NULL)
         return;
-    key = RT3_GetLicenseCode();
-    KeyMismatch(bad[0], key, key, 0xcb0b794232805675ULL, 0x0b947b5621514203ULL);
-    KeyMismatch(bad[1], key, key, 0xaa30db1ee9c7913aULL, 0x01c38b5f995da87aULL);
-    KeyMismatch(bad[2], key, key, 0xe5a3c8161b574a9fULL, 0x065298576bcd73d9ULL);
-    KeyMismatch(bad[3], key, key, 0x77c04b34263c359eULL, 0x0ee20eb101b08ac5ULL);
-    for (i = 0; i < 4; i++) {
-        if (bad[i] == 0) {
-            for (j = 0; j < kMaxSystemLinks; j++)
-                systemData[shipData->curSystem].links[j] = -1;
-            break;
-        }
-    }
     savedShow = settings.showMapBorders;
     influenceCoordsCached = 0;
     savedStellar = shipData->targetStellar;
