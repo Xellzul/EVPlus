@@ -1,5 +1,4 @@
-"""PE helpers of the Windows link: the large-address-aware bit, and reading the icon resources out
-of the user's exe."""
+"""PE helper of the Windows link: the large-address-aware bit."""
 import struct
 from pathlib import Path
 
@@ -51,38 +50,3 @@ def set_large_address_aware(path):
     chars = struct.unpack_from("<H", d, pe.chars_off)[0]
     struct.pack_into("<H", d, pe.chars_off, chars | LARGE_ADDRESS_AWARE)
     Path(path).write_bytes(_finish(d, pe))
-
-
-def resources(path):
-    """[(type, id, bytes)] of a PE's resource directory, in directory order."""
-    d = Path(path).read_bytes()
-    secs = Pe(d).sections
-    rs = [s for s in secs if s[0] == ".rsrc"]
-    if not rs:
-        return []
-    base = rs[0][3]
-
-    def at_rva(rva):
-        for _n, va, vs, ptr, raw in secs:
-            if va <= rva < va + max(vs, raw):
-                return ptr + rva - va
-        raise ValueError("resource data outside every section")
-
-    def walk(off, keys):
-        o = base + off
-        nnamed, nid = struct.unpack_from("<HH", d, o + 12)
-        out = []
-        for i in range(nnamed + nid):
-            nameid, dataoff = struct.unpack_from("<II", d, o + 16 + i * 8)
-            if nameid & 0x80000000:
-                no = base + (nameid & 0x7FFFFFFF)
-                key = d[no + 2:no + 2 + 2 * struct.unpack_from("<H", d, no)[0]].decode("utf-16le")
-            else:
-                key = nameid
-            if dataoff & 0x80000000:
-                out += walk(dataoff & 0x7FFFFFFF, keys + [key])
-            else:
-                rva, size = struct.unpack_from("<II", d, base + dataoff)
-                out.append((keys[0], keys[1], d[at_rva(rva):at_rva(rva) + size]))
-        return out
-    return walk(0, [])

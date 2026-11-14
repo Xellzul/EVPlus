@@ -7,7 +7,7 @@ The steps:
   2. the eleven QuickTime client-library members, copied with the names the tree also defines
      renamed away (tables/qtorder.tsv)
   3. the link inputs: the game's objects, then rt.lib (sources/runtime/) and qt.lib
-  4. the resources: evnova.rc by mwwinrc, the icons read out of the user's own exe
+  4. the resources: evnova.rc by mwwinrc (version and strings; no icon)
   5. the link with MSL, QuickTime and the Windows libraries, then (CE) the large-address-aware bit
 """
 import concurrent.futures
@@ -142,21 +142,10 @@ def link_inputs(objdir, work, qtmembers):
 
 
 # -- 4. resources ----------------------------------------------------------------------------------
-TYPE_NAME = {3: "ICON", 14: "GROUP_ICON"}
-
-
-def resources(t, exe, work):
-    """novaport.res: VERSION and STRING from sources/rsrc/evnova.rc, ICON and GROUP_ICON read out of the
-    user's exe into work/rsrc/ (never stored anywhere else)."""
-    rsrc = work / "rsrc"
-    rsrc.mkdir(parents=True, exist_ok=True)
-    assets = [(ty, rid, b) for ty, rid, b in pe.resources(exe) if ty in (3, 14)]
-    if sorted((ty, rid) for ty, rid, _b in assets) != [(3, 1), (14, 202)]:
-        raise BuildError("%s: not the 1.0.10 icon set (ICON 1, GROUP_ICON 202)" % exe)
-    for ty, rid, b in assets:
-        (rsrc / ("%s_%s.bin" % (TYPE_NAME.get(ty, ty), rid))).write_bytes(b)
+def resources(t, work):
+    """novaport.res: VERSION and STRING from sources/rsrc/evnova.rc."""
     res = work / "novaport.res"
-    rc, msg = run_exe(t.mwwinrc, ["-cwd", "proj", "-d", "EVNOVA_ASSETS", "-o", winpath(res),
+    rc, msg = run_exe(t.mwwinrc, ["-cwd", "proj", "-o", winpath(res),
                                   winpath(SOURCES / "rsrc" / "evnova.rc")], cwd=work, env=t.env())
     if rc or not res.exists():
         raise BuildError("mwwinrc failed\n" + msg[-2000:])
@@ -172,9 +161,8 @@ LIBS = ["MSL_All_x86.lib", "qtmlClient.lib", "kernel32.lib", "user32.lib", "gdi3
 def link(cfg, objdir, work, out_exe, cefix):
     t = Tools(cfg)
     work.mkdir(parents=True, exist_ok=True)
-    exe = cfg.path("game", "win1010") / "EV Nova.exe"
     qtm = qt_members(cfg.path("win", "quicktime"), objdir, work / "qt")
-    inputs = link_inputs(objdir, work, qtm) + [resources(t, exe, work)]
+    inputs = link_inputs(objdir, work, qtm) + [resources(t, work)]
     # iconv.dll is loaded through an import library made from tables/iconv.def (the hints of the DLL the
     # exe was linked against); CE draws text without it, and then the DLL leaves the import table
     if any("libiconv" in n for o in objdir.glob("*.o") for n in coff.undefined(o.read_bytes())):
@@ -208,7 +196,6 @@ def link(cfg, objdir, work, out_exe, cefix):
     bad = [b[0] for b in blocks if not ("(qtmlClient.lib)" in b[1] and re.match(r"^[A-Za-z0-9_]+\.o$", b[2].strip()))]
     if bad or len(blocks) != log.count("Multiply defined section:"):
         raise BuildError("link: a definition was silently displaced: %s (log: %s)" % (" ".join(bad) or "?", work / "link.log"))
-    return exe
 
 
 def build(cfg, out, cefix=False):

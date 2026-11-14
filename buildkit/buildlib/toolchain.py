@@ -14,8 +14,6 @@ FILES = [
     ("win ce", "win", "codewarrior", "Win32-x86 Support/Libraries/Runtime/Libs/MSL_All_x86.lib", 969696, "0635a099", "9ccc2025c52358ac7bbbe1ef9fd9a617817a41ff8d56c94f538275fe345bd707", "exact"),
     # Apple's QuickTime 6 SDK for Windows: the exe's QTML client library
     ("win ce", "win", "quicktime", "qtmlClient.lib", 774658, "bf1f090c", "9662e541e5e1b30b17888427940602dbe237d24c2199f5ca579a7bb294581faa", "exact"),
-    # the user's own game copies
-    ("win ce", "game", "win1010", "EV Nova.exe", 1703968, "eac2e999", "43e8db386caa0fd32d48e8b5a45b81c894063870a0b52e95ef89a1c6471a248c", "exact"),
 ]
 
 # Folders and files that must exist but have no single hash (headers, licences, SDK trees)

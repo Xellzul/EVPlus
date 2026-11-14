@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""unpack.py INPUTS DEST -- lay out every tool, library and game copy the kit reads, from the original
+"""unpack.py INPUTS DEST -- lay out every tool and library the kit reads, from the original
 downloads in one folder (README.md lists them), the way their installers would, without running any.
 Run by the Dockerfile; DEST is /opt/evnova, and build.ini names the folders below it. Every input is
 optional: a target is laid out when all of its inputs are there, and DEST/targets.txt lists those."""
@@ -17,12 +17,11 @@ INPUTS = {
     "cw93": ("CW_Windows_9.3_Update.exe", "3b23182e13646d076829861f46fa963066f04ec639bc06fba6c02edd2df96467"),
     "cw9lic": ("CW_Windows_9_license.dat", None),
     "qt6": ("QT6SDK_Win.hqx", "fbcb3822ac4a16a5d21fa6575677b17cfa888bf937f4d59e8aa7ad75d72efb11"),
-    "win1010": ("EV_Nova_1.0.10_for_Windows.zip", "ce3650391697be80968cea2527a612e6e8cd836b898c355724d2671af4a5cb05"),
 }
 # the inputs each target needs
 TARGETS = {
-    "win": ["cw92", "cw93", "cw9lic", "qt6", "win1010"],
-    "ce": ["cw92", "cw93", "cw9lic", "qt6", "win1010"],
+    "win": ["cw92", "cw93", "cw9lic", "qt6"],
+    "ce": ["cw92", "cw93", "cw9lic", "qt6"],
 }
 WORK = Path("/var/tmp/unpack")
 
@@ -78,15 +77,8 @@ def qt6(src, dest):
        "QT6 SDK (Win)/Interfaces & Libraries/QTDevWin/Libraries/qtmlClient.lib")
 
 
-def win1010(src, dest):
-    w = fresh("win1010")
-    sh("7z", "x", "-y", "-o%s" % w, src / INPUTS["win1010"][0], "EV Nova 1.0.10 for Windows/EV Nova 1.0.10.exe")
-    sh("7z", "e", "-y", "-o%s" % (dest / "game" / "win-1.0.10"), w / "EV Nova 1.0.10 for Windows" / "EV Nova 1.0.10.exe",
-       "EV Nova.exe")
-
-
 # each unpacking step and the inputs it reads
-STEPS = [(cw9, ["cw92", "cw93", "cw9lic"]), (qt6, ["qt6"]), (win1010, ["win1010"])]
+STEPS = [(cw9, ["cw92", "cw93", "cw9lic"]), (qt6, ["qt6"])]
 
 
 def main(src, dest):
