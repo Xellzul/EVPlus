@@ -546,21 +546,12 @@ char *String2UpperCopySafe(char *dst, const char *src, ULong n)
         }
         gStringUpperReady = 1;
     }
-#ifdef MAC1010 /* 1.0.10 spelling */
-    start = dst - 1;
-    src--;
-    while (--n != 0 && (*++start = gStringUpperFold[(unsigned char)*++src]) != 0)
-        ;
-    if (n == 0)
-        *++start = 0;
-#else
     start = dst;
     while (--n != 0 && (*dst++ = gStringUpperFold[(unsigned char)*src++]) != 0)
         ;
     if (n == 0)
         *dst = 0;
     dst = start;
-#endif
     return dst;
 }
 
@@ -589,21 +580,12 @@ char *String2LowerCopySafe(char *dst, const char *src, ULong n)
         }
         gStringLowerReady = 1;
     }
-#ifdef MAC1010 /* 1.0.10 spelling */
-    start = dst - 1;
-    src--;
-    while (--n != 0 && (*++start = gStringLowerFold[(unsigned char)*++src]) != 0)
-        ;
-    if (n == 0)
-        *++start = 0;
-#else
     start = dst;
     while (--n != 0 && (*dst++ = gStringLowerFold[(unsigned char)*src++]) != 0)
         ;
     if (n == 0)
         *dst = 0;
     dst = start;
-#endif
     return dst;
 }
 

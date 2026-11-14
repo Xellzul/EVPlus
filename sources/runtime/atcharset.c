@@ -784,11 +784,7 @@ ULong _IndirectGetEncoding(void **handle, char *nameOut, ULong *kindOut, ULong *
                 } else if ((set = flags, set &= ~kWinHasMac) == kHasWin) {
                     guess = "Windows-1252";
                     tag = kTagWin;
-#ifdef MAC1010 /* 1.0.10 spelling */
-                } else if (set == kHasMac) {
-#else
                 } else if ((flags &= ~kWinHasMac) == kHasMac) {
-#endif
                     guess = "MacRoman";
                     tag = kTagMac;
                 } else {
