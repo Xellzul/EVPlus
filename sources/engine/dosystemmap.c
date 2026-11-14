@@ -66,12 +66,6 @@ double floatingMapZoom = 0.5625;                 /* 0x005759e0 (see mapZoom abov
 #define kMapBordersItem     9
 #define kMapSearchItem      10
 
-#ifndef MAC1010
-static inline unsigned long long KeyLow60(unsigned long long k)
-{
-    return KeyLow60Bits(k);
-}
-#endif
 
 /* DoSystemMap (mac _DoSystemMap). STATE: win MATCH 100.0%, exe 1413 / obj 1413; mac MATCH on both
    slices, byte-identical. OPEN: none; two pads and five spellings carry free-stack counts, see notes. */
@@ -80,7 +74,6 @@ static inline unsigned long long KeyLow60(unsigned long long k)
 void DoSystemMap(void)
 #ifdef MAC1010
 {
-    unsigned long long key;
     short routeLen;
     short i;
     short j;
@@ -526,8 +519,6 @@ void DoSystemMap(void)
 }
 #else
 {
-    KeyCheckFlag bad[4];
-    unsigned long long key;
     short sys;
     short found;
     short i;
@@ -577,18 +568,6 @@ void DoSystemMap(void)
     mapDialog = GetNewDialog(kMapDlogID, MapDialogUpdate, MapFilter);
     if (mapDialog == NULL)
         return;
-    key = RT3_GetLicenseCode();
-    bad[0] = KeyLow60(key ^ 0xcb0b794232805675ULL) != 0x0b947b5621514203ULL;
-    bad[1] = KeyLow60(key ^ 0xaa30db1ee9c7913aULL) != 0x01c38b5f995da87aULL;
-    bad[2] = KeyLow60(key ^ 0xe5a3c8161b574a9fULL) != 0x065298576bcd73d9ULL;
-    bad[3] = KeyLow60(key ^ 0x77c04b34263c359eULL) != 0x0ee20eb101b08ac5ULL;
-    for (x = 0; x < 4; x++) {
-        if (bad[x] == 0) {
-            for (j = 0; j < kMaxSystemLinks; j++)
-                systemData[shipData->curSystem].links[j] = -1;
-            break;
-        }
-    }
     savedShow = settings.showMapBorders;
     influenceCoordsCached = 0;
     savedStellar = shipData->targetStellar;

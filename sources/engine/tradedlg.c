@@ -6599,23 +6599,6 @@ void CalcShipCanBuy(void)
     int32_t price;
     int32_t need;
     int32_t tradeIn;
-    short i;
-    unsigned long long key;
-    Boolean sig[4];
-
-#ifndef MAC1010
-    key = shipData[5].licenseCode;
-#endif
-    KeyMismatch(sig[0], key, shipData[5].licenseCode, 0xef0971bf3d10d5ddLL, 0x0c302b2a15333394LL);
-    KeyMismatch(sig[1], key, shipData[5].licenseCode, 0x921ec281c26516f7LL, 0x0b5e33bfc5433b83LL);
-    KeyMismatch(sig[2], key, shipData[5].licenseCode, 0xab89232d6fa52638LL, 0x0359021eca0c887fLL);
-    KeyMismatch(sig[3], key, shipData[5].licenseCode, 0x69d6a8458c7c1bd1LL, 0x083ec9282b467090LL);
-    for (i = 0; i < 4; i++) {
-        if (sig[i] == 0) {
-            canBuy = 0;
-            return;
-        }
-    }
 
     if (shipBuyMode == 0) {
         if (selShipyardItem != -1) {

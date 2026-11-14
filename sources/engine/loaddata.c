@@ -3455,16 +3455,7 @@ short WritePilotData(short stellar)
     char name[0x100];
     char path[0x800];
     FILE *f;
-#ifdef MAC1010
-    Boolean sig[5];
-#elif V111
-    Boolean sig[5];
-    int k;
-#else
-    KeyCheckFlag sig[4];
-#endif
     short j;
-    unsigned long long key;
     short i;
 
     if (noUpdatePilotData != 0)
@@ -3517,54 +3508,6 @@ short WritePilotData(short stellar)
 
         (*playerFileHand)->stellar = stellar;
         (*playerFileHand)->shipType = shipData[0].type;
-
-        key = RT3_GetLicenseCode();
-#ifdef MAC1010
-        KeyMismatch(sig[0], key, key, 0xb3deefe6846a1331ULL, 0x00e5b573ac69e57aULL);
-        {
-            unsigned long long want;
-            unsigned long long got;
-
-            want = 0x01ca504ced18b085ULL;
-            got = 0x01175258fee9b4f0ULL;
-            got = key ^ got;
-            got <<= 4;
-            got >>= 4;
-            want <<= 4;
-            want >>= 4;
-            sig[1] = want != got;
-        }
-        KeyMismatch(sig[2], key, key, 0xd9eab6006f7c65a8ULL, 0x0935b4147cad71dfULL);
-        KeyMismatch(sig[3], key, key, 0x847ba0013f907235ULL, 0x0f02fa941793847fULL);
-        KeyMismatch(sig[4], key, key, 0xf6170bf185359c3dULL, 0x068887b12ff1e429ULL);
-        for (i = 0; i < 5; i++) {
-            if (sig[i] == 0)
-                (*playerFileHand)->shipType = 0;
-        }
-#elif V111
-        sig[0] = KeyLow60Bits(key ^ 0xb3deefe6846a1331ULL) != 0x00e5b573ac69e57aULL;
-        sig[1] = KeyLow60Bits(key ^ 0x01175258fee9b4f0ULL) != 0x01ca504ced18b085ULL;
-        sig[2] = KeyLow60Bits(key ^ 0xd9eab6006f7c65a8ULL) != 0x0935b4147cad71dfULL;
-        sig[3] = KeyLow60Bits(key ^ 0x847ba0013f907235ULL) != 0x0f02fa941793847fULL;
-        sig[4] = KeyLow60Bits(key ^ 0xf6170bf185359c3dULL) != 0x068887b12ff1e429ULL;
-        for (k = 0; k < 5; k++) {
-            if (sig[k] == 0)
-                (*playerFileHand)->shipType = 0;
-        }
-#else
-        sig[0] = ((key ^ 0xb3deefe6846a1331ULL) & kKeyMask)
-                     != 0x00e5b573ac69e57aULL;
-        sig[1] = ((key ^ 0x01175258fee9b4f0ULL) & kKeyMask)
-                     != 0x01ca504ced18b085ULL;
-        sig[2] = ((key ^ 0xd9eab6006f7c65a8ULL) & kKeyMask)
-                     != 0x0935b4147cad71dfULL;
-        sig[3] = ((key ^ 0x847ba0013f907235ULL) & kKeyMask)
-                     != 0x0f02fa941793847fULL;
-        for (i = 0; i < 4; i++) {
-            if (sig[i] == 0)
-                (*playerFileHand)->shipType = 0;
-        }
-#endif
 
 #ifdef MAC1010
         for (i = 0; i <= 5; i++)

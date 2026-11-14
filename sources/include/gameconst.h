@@ -105,7 +105,6 @@ enum {
 #define kHyperFuelUnit      100.0   /* one jump costs this much fuel */
 #define kItemAccept                    1
 #define kMaxJunks           128
-#define kKeyMask            0x0fffffffffffffffLL   /* the licence code's low 60 bits */
 #define kMainButtons     6
 #define kMapPictItem   3
 #define kMasterStellarSprites 256

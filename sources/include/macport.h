@@ -788,38 +788,11 @@ extern unsigned char *CtoPstr(char *str);
 /* a byte pointer stepped through a cast lvalue: gcc then keeps the pointer in its stack slot, which 1.1.1's bytes witness */
 #define PtrAddBytes(p, n) ((char *)(p) += (n))
 
-/* a registration key's check. `(k) << 4 >> 4` in one expression is an internal error in every MWCPPC held, so 1.0.10 shifts in statements, the expected value too. A revoked key has no top nibble, so want's is K's */
-#ifdef MAC1010
-#define KeyMismatch(out, local, read, K, Y) { \
-    unsigned long long want; \
-    unsigned long long got; \
-    unsigned long long k; \
-    want = (((Y) ^ (K)) & 0x0FFFFFFFFFFFFFFFULL) ^ (K); \
-    k = (read); \
-    got = k ^ (K); \
-    got <<= 4; \
-    got >>= 4; \
-    want <<= 4; \
-    want >>= 4; \
-    out = want != got; \
-}
-#else
-#define KeyLow60Bits(k) ((k) << 4 >> 4)
-#define KeyMismatch(out, local, read, K, Y) out = KeyLow60Bits(local ^ K) != Y
-#endif
-
 /* a mac virtual key code in the engine's numbering of the KeyMap: 1.0.10 tests it 16 bits at a time, 1.1.1 a byte at a time */
 #ifdef MAC1010
 #define MacKey(k) ((k) ^ 8)
 #else
 #define MacKey(k) (k)
-#endif
-
-/* the key checks' result bytes: tested unsigned in 1.0.10, plain char where 1.1.1's gcc shows the sign */
-#ifdef MAC1010
-typedef Boolean KeyCheckFlag;
-#else
-typedef char KeyCheckFlag;
 #endif
 
 /* the character in a key event: 1.0.10's filters hold it in a char */

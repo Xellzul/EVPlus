@@ -3916,7 +3916,6 @@ void DrawLowGoalAbbreviation(short goal)
 // MAC: _SelectWarshipTarget i386 0x00089d5e ppc 0x000951f0
 void SelectWarshipTarget(ShipObj *ship)
 {
-    unsigned long long key;
     short i;
     short t;
     short s;
@@ -3934,25 +3933,9 @@ void SelectWarshipTarget(ShipObj *ship)
     Boolean hasDestroying;
     Boolean hunts;
     int32_t bestMass;
-    KeyCheckFlag bad[5];
     int32_t dist[kMaxShips];
     short strength[kMaxShips];
     Boolean cand[kMaxShips];
-
-#ifndef MAC1010
-    key = shipData[5].licenseCode;
-#endif
-    KeyMismatch(bad[0], key, shipData[5].licenseCode, 0xf6170bf185359c3dLL, 0x068887b12ff1e429LL);
-    KeyMismatch(bad[1], key, shipData[5].licenseCode, 0xf620d1527b25efd6LL, 0x070575f85a9420d5LL);
-    KeyMismatch(bad[2], key, shipData[5].licenseCode, 0x6e1bbb2b46dfcc17LL, 0x0c9f3b380ff9e811LL);
-    KeyMismatch(bad[3], key, shipData[5].licenseCode, 0x8c0db41cb7473d23LL, 0x0faeaa47b4c5a01eLL);
-    KeyMismatch(bad[4], key, shipData[5].licenseCode, 0x1f1e62f77679a8c9LL, 0x0e1f82a0c71946cbLL);
-    for (i = 0; i < 5; i++) {
-        if (bad[i] == 0) {
-            AIMakeShipAttackPlayer(ship);
-            return;
-        }
-    }
 
     if (ship->targetShip != -1 &&
         ((int32_t)ship->aiState == kAIStateFightSh ||
