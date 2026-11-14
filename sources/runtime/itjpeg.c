@@ -156,15 +156,10 @@ emit_message (j_common_ptr cinfo, int msg_level)
   struct jpeg_error_mgr * err;
   unsigned char show;
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-  show = FALSE;
-  err = cinfo->err;
-#else
   err = cinfo->err;
   show = FALSE;
-#endif
 
-  if (msg_level < 0 && err->num_warnings == 0)
+  if (msg_level < 0 && !err->num_warnings)
     show = TRUE;
   if (show && err->output_message != NULL)
     (*err->output_message) (cinfo);
@@ -180,27 +175,17 @@ format_message (j_common_ptr cinfo, char * buffer)
   struct jpeg_error_mgr * err = cinfo->err;
   int32_t e = 0;
   const char * msgtext = NULL;
-  int msg_code = err->msg_code;
-  const char * const * addon;
 
-  if (msg_code > 0 && msg_code <= err->last_jpeg_message) {
-    msgtext = err->jpeg_message_table[msg_code];
-#ifdef MAC1010 /* 1.0.10 spelling */
-  } else if ((addon = err->addon_message_table) != NULL &&
-	     msg_code >= err->first_addon_message &&
-	     msg_code <= err->last_addon_message) {
-    msgtext = addon[msg_code - err->first_addon_message];
-  }
-#else
+  if (err->msg_code > 0 && err->msg_code <= err->last_jpeg_message) {
+    msgtext = err->jpeg_message_table[err->msg_code];
   } else if (err->addon_message_table != NULL &&
-	     msg_code >= err->first_addon_message &&
-	     msg_code <= err->last_addon_message) {
-    msgtext = err->addon_message_table[msg_code - err->first_addon_message];
+	     err->msg_code >= err->first_addon_message &&
+	     err->msg_code <= err->last_addon_message) {
+    msgtext = err->addon_message_table[err->msg_code - err->first_addon_message];
   }
-#endif
 
   if (msgtext == NULL) {
-    err->msg_parm.i[0] = msg_code;
+    err->msg_parm.i[0] = err->msg_code;
     msgtext = err->jpeg_message_table[0];
   }
 
@@ -276,6 +261,7 @@ int32_t JPEG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     ITImage *mask;
     int32_t e;
     ULong y;
+    ULong x;
     unsigned char locked;
     JSAMPROW scan;
     struct jpeg_decompress_struct cinfo;
@@ -284,7 +270,6 @@ int32_t JPEG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     my_src_ptr src;
     ITColor *pixels;
     ULong j;
-    ULong x;
 
     err = 0;
     spare = mask = NULL;
@@ -294,11 +279,7 @@ int32_t JPEG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     locked = 0;
     *imageOut = NULL;
     if (maskOut != NULL)
-#ifdef MAC1010      /* 1.0.10 spelling */
         *maskOut = NULL;
-#else
-        *maskOut = mask;
-#endif
     if (trans != NULL)
         DT_AlphaInfoDefaults(trans);
     if (bg != NULL)
@@ -309,13 +290,9 @@ int32_t JPEG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     e = setjmp(jerr.setjmp_buffer);
     if (e != 0) {
         if (e == JERR_OUT_OF_MEMORY) {
-#ifdef MAC1010      /* 1.0.10 spelling */
+            err = e;
             err = kOutOfMemory;
             goto done;
-#else
-            err = e;
-            goto nomem;
-#endif
         }
         err = e;
         err = kStreamOverrun;
@@ -368,7 +345,6 @@ int32_t JPEG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
         goto done;
     }
     if ((scan = MemoryAllocate(cinfo.output_width * cinfo.output_components)) == NULL) {
-nomem:
         err = kOutOfMemory;
         goto done;
     }

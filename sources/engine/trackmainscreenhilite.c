@@ -27,7 +27,6 @@
 /* MainScreenRolloverIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048c210
 // MAC: _MainScreenRolloverIdle i386 0x00016462 ppc 0x0001a1f0
-#ifdef MACBUILD
 void MainScreenRolloverIdle(void)
 {
     short i;
@@ -46,7 +45,7 @@ void MainScreenRolloverIdle(void)
             else
                 newIndex = 0;
             lastRolloverAnimTime = TickCount();
-            GetMouse(&pt);
+            GetGlobalMouse(&pt);
             for (i = 0; i < kMainButtons; i++) {
                 if (menuButtonSprite[i] != NULL && SWRLECollisionWithPoint(menuButtonSprite[i], &pt)) {
                     newIndex = i;
@@ -74,58 +73,3 @@ void MainScreenRolloverIdle(void)
         rolloverAlpha = kHiliteFull;
     }
 }
-#else
-void MainScreenRolloverIdle(void)
-{
-    uint32_t now;
-    int i;
-    void *sprite;
-    short sel;
-    Point pt;
-
-    if (inBackground == 0) {
-        if (slideIndex[0] < slideFrameCount[0] || slideIndex[1] < slideFrameCount[1] ||
-            slideIndex[2] < slideFrameCount[2]) {
-            rolloverAlpha = 0;
-            goto done;
-        }
-        now = ReadTick();
-        if (now <= lastRolloverAnimTime)
-            goto done;
-        if (menuRolloverSprite != 0)
-            sel = menuRolloverSprite->numFrames - 1;
-        else
-            sel = 0;
-        lastRolloverAnimTime = ReadTick();
-        GetGlobalMouse(&pt);
-        i = 0;
-        do {
-            sprite = menuButtonSprite[(short)i];
-            if (sprite != 0 && SWRLECollisionWithPoint((SpritePtr)sprite, &pt) != 0) {
-                sel = i;
-                break;
-            }
-            i = i + 1;
-        } while ((short)i < kMainButtons);
-        if (sel != rolloverIndex) {
-            if (rolloverAlpha > 0 && gSpriteWorld->pixelDepth == kDepth16)
-                rolloverAlpha -= kHiliteStep;
-            else
-                rolloverIndex = sel;
-        } else if (rolloverAlpha < kHiliteFull) {
-            rolloverAlpha += kHiliteStep;
-        }
-        if (rolloverAlpha < 0)
-            rolloverAlpha = 0;
-        if (rolloverAlpha <= kHiliteFull)
-            goto done;
-    } else if (menuRolloverSprite != 0) {
-        rolloverIndex = menuRolloverSprite->numFrames - 1;
-    } else {
-        rolloverIndex = 0;
-    }
-    rolloverAlpha = kHiliteFull;
-done:
-    ;
-}
-#endif

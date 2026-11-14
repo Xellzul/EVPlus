@@ -1018,11 +1018,11 @@ skip:
     *d = inverse[dv]
 #ifdef MAC1010 /* big-endian: red is the high channel */
 #define STORE_555                                                               \
-    dv = 0x8000 | (dr & 0x1f) << 10 | (dg & 0x1f) << 5 | (db & 0x1f);           \
-    *(unsigned short *)d = dv
+    dv = r = 0x8000 | (dr & 0x1f) << 10 | (dg & 0x1f) << 5 | (db & 0x1f);       \
+    *(unsigned short *)d = r
 #define STORE_565                                                               \
-    dv = (dr & 0x1f) << 11 | (dg & 0x3f) << 5 | (db & 0x1f);                    \
-    *(unsigned short *)d = dv
+    dv = r = (dr & 0x1f) << 11 | (dg & 0x3f) << 5 | (db & 0x1f);                \
+    *(unsigned short *)d = r
 #define STORE_24                                                                \
     dv = 0xff000000 | (dr & 0xff) << 16 | (dg & 0xff) << 8 | (db & 0xff);       \
     STORE_BYTES(d, dv)
@@ -1031,11 +1031,11 @@ skip:
     *(ULong *)d = dv
 #else
 #define STORE_555                                                               \
-    dv = 0x8000 | (dr & 0x1f) | (dg & 0x1f) << 5 | (db & 0x1f) << 10;           \
-    *(unsigned short *)d = dv
+    dv = r = 0x8000 | (dr & 0x1f) | (dg & 0x1f) << 5 | (db & 0x1f) << 10;       \
+    *(unsigned short *)d = r
 #define STORE_565                                                               \
-    dv = (dr & 0x1f) | (dg & 0x3f) << 5 | (db & 0x1f) << 11;                    \
-    *(unsigned short *)d = dv
+    dv = r = (dr & 0x1f) | (dg & 0x3f) << 5 | (db & 0x1f) << 11;                \
+    *(unsigned short *)d = r
 #define STORE_24                                                                \
     dv = 0xff000000 | (dr & 0xff) | (dg & 0xff) << 8 | (db & 0xff) << 16;      \
     STORE_BYTES(d, dv)
@@ -1057,15 +1057,6 @@ skip:
     int32_t err;                                                                   \
     ULong alpha, da, x, y, i, keyMask, alphaBits, v, dv;                        \
     ULong a, r, g, b, dr, dg, db, wv;
-#ifdef MAC1010 /* 1.0.10 spelling: the PPC needs s, m, d; b335 needs m after d and s */
-#define SPAN_LOCALS_R15     SPAN_LOCALS_R
-#else
-#define SPAN_LOCALS_R15                                                         \
-    unsigned char *d, *s, *m;                                                   \
-    int32_t err;                                                                   \
-    ULong alpha, da, x, y, i, keyMask, alphaBits, v, dv;                        \
-    ULong a, r, g, b, dr, dg, db, wv;
-#endif
 #define SPAN_LOCALS_S                                                           \
     unsigned char *s, *m, *d;                                                   \
     int32_t err;                                                                   \
@@ -1216,9 +1207,7 @@ skip:
 /* ---- the span routines, in link order ---- */
 
 /* The 76 spans (Span<frame><operation><alpha or same-format depth>). STATE: MATCH byte-identical,
-   75 of 78: every span but Rows Mask8 (77, colour: the exe pushes r and the blue group in the first
-   simplify scan, and every dest group last). OPEN: that one; the per-span list SPAN_LOCALS_R15
-   is the lever; one block for the family (notes/itblit.md) */
+   76 of 76. OPEN: none; one block for the family (notes/itblit.md) */
 // FUNCTION: EVNOVA 0x004dbd6a
 AT_STATIC void _DT_ImageBlitNoneIgnore(ROWS_PARAMS)
 ROWS_BODY(PIXEL_COPY_OPAQUE, ANY_DST, ANY_SRC, ALPHA_BITS, NO_SETUP)
@@ -1290,10 +1279,10 @@ AT_STATIC void _DT_ImageBlitNoneBitmap_8(ROWS_PARAMS)
 ROWS_BODY(PIXEL_MASK_8, 1, 1, ALPHA_MASK, NO_SETUP)
 // FUNCTION: EVNOVA 0x004de038
 AT_STATIC void _DT_ImageBlitNoneBitmap_15(ROWS_PARAMS)
-ROWS_BODY_L(SPAN_LOCALS_R15, PIXEL_MASK_15, 2, 2, ALPHA_MASK, NO_SETUP)
+ROWS_BODY(PIXEL_MASK_15, 2, 2, ALPHA_MASK, NO_SETUP)
 // FUNCTION: EVNOVA 0x004de233
 AT_STATIC void _DT_ImageBlitNoneBitmap_16(ROWS_PARAMS)
-ROWS_BODY_L(SPAN_LOCALS_R15, PIXEL_MASK_16, 2, 2, ALPHA_MASK, NO_SETUP)
+ROWS_BODY(PIXEL_MASK_16, 2, 2, ALPHA_MASK, NO_SETUP)
 // FUNCTION: EVNOVA 0x004de429
 AT_STATIC void _DT_ImageBlitNoneBitmap_24(ROWS_PARAMS)
 ROWS_BODY(PIXEL_MASK_24, 3, 3, ALPHA_MASK, NO_SETUP)
@@ -1516,9 +1505,6 @@ int32_t DT_ImageCopy(ITImage *dst, const ITRect *dstRect, unsigned char copy, IT
     int32_t e;
     ULong height;
     int dstWidth, dstHeight;
-#ifndef MAC1010
-    unsigned int srcWidth, srcHeight;
-#endif
     ULong width;
     unsigned char *srcColumn;
     ITPixels *maskPixels;
@@ -1677,41 +1663,18 @@ chosen:
     }
 
     /* the error terms start mid-pixel, advanced to the clipped first row and column */
-#ifdef MAC1010 /* 1.0.10 spelling */
-    dstHeight = dstRect->bottom - dstRect->top;
-    if (dstHeight != srcRect->bottom - srcRect->top) {
+    if ((dstHeight = dstRect->bottom - dstRect->top) != srcRect->bottom - srcRect->top) {
         yDen = srcRect->bottom - srcRect->top;
-        yErr = (yDen >> 1) + yDen * (dr.top - dstRect->top);
+        yErr = yDen * (dr.top - dstRect->top) + (yDen >> 1);
         yErr %= dstHeight;
         scaled = 1;
     }
-    dstWidth = dstRect->right - dstRect->left;
-    if (dstWidth != srcRect->right - srcRect->left) {
+    if ((dstWidth = dstRect->right - dstRect->left) != srcRect->right - srcRect->left) {
         xDen = srcRect->right - srcRect->left;
-        xErr = (xDen >> 1) + xDen * (dr.left - dstRect->left);
+        xErr = xDen * (dr.left - dstRect->left) + (xDen >> 1);
         xErr %= dstWidth;
         scaled = 1;
     }
-#else
-    srcHeight = srcRect->bottom - srcRect->top;
-    dstHeight = dstRect->bottom - dstRect->top;
-    if (dstHeight != srcHeight) {
-        yErr = yDen = srcHeight;
-        yErr >>= 1;
-        yErr += (dr.top - dstRect->top) * srcHeight;
-        yErr %= dstHeight;
-        scaled = 1;
-    }
-    srcWidth = srcRect->right - srcRect->left;
-    dstWidth = dstRect->right - dstRect->left;
-    if (dstWidth != srcWidth) {
-        xErr = xDen = srcWidth;
-        xErr >>= 1;
-        xErr += (dr.left - dstRect->left) * srcWidth;
-        xErr %= dstWidth;
-        scaled = 1;
-    }
-#endif
 
     dstRow = (unsigned char *)dstPixels->baseAddr +
              (dr.left - dstPixels->bounds.left) * dstPixels->bytesPerPixel +

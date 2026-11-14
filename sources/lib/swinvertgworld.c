@@ -10,24 +10,21 @@
 /* SWInvertGWorld (mac _SWInvertGWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004791b0
 // MAC: _SWInvertGWorld i386 0x000a703a ppc 0x000b1c60
+void SWInvertGWorld(CGrafPtr gWorldP)
+{
 #ifdef MACBUILD
-void SWInvertGWorld(CGrafPtr gWorldP)
-{
     SWInvertRect(gWorldP, GetCPortPortRect(gWorldP));
-}
 #else
-void SWInvertGWorld(CGrafPtr gWorldP)
-{
     SWInvertRect(gWorldP, GetWindowPortRect(gWorldP));
-}
 #endif
+}
 
 /* SWInvertRect (mac _SWInvertRect). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004791d0
 // MAC: _SWInvertRect i386 0x000a6fa2 ppc 0x000b1bc4
-#ifdef MACBUILD
 void SWInvertRect(CGrafPtr gWorldP, Rect *rectP)
 {
+#ifdef MACBUILD
     PixMapHandle pixMapH;
     GWorldFlags pixelsState;
     GWorldPtr saveGWorld;
@@ -39,30 +36,27 @@ void SWInvertRect(CGrafPtr gWorldP, Rect *rectP)
 
     GetGWorld(&saveGWorld, &saveDevice);
     SetGWorld(gWorldP, NULL);
-
-    InvertRect(rectP);
-
-    if (useLegacyRenderingPipeline)
-        SetGWorld(saveGWorld, saveDevice);
-    else
-        SetGWorld(saveGWorld, NULL);
-    SetPixelsState(pixMapH, pixelsState);
-}
 #else
-void SWInvertRect(CGrafPtr gWorldP, Rect *rectP)
-{
     CGrafPtr saveGWorld;
     void *saveDevice;
 
     GetPort(&saveGWorld);
     saveDevice = GetGWorldDevice(saveGWorld);
     SetPort(gWorldP);
+#endif
 
     InvertRect(rectP);
 
+#ifdef MACBUILD
+    if (useLegacyRenderingPipeline)
+        SetGWorld(saveGWorld, saveDevice);
+    else
+        SetGWorld(saveGWorld, NULL);
+    SetPixelsState(pixMapH, pixelsState);
+#else
     SetPort(saveGWorld);
-}
 #endif
+}
 
 #ifdef MACBUILD
 /* SWCopyGWorlds (mac _SWCopyGWorlds, mac-only). STATE: see the mac gate. */

@@ -200,7 +200,6 @@ EXTERN_C_BEGIN
 void HandlePlayer(ShipObj *player)
 {
     Boolean jumping;
-    Str255 msg;
     short i;
     short j;
     short n;
@@ -213,26 +212,18 @@ void HandlePlayer(ShipObj *player)
     float heading;
     float angle;
     Point pt;
-    Str255 name;
-    float step;
     float dmg;
     Boolean ok;
+    Rect box;
+    Rect hit;
+    Str255 msg;
+    Str255 name;
+    FloatPoint pos;
+    FloatPoint dest;
+    FloatPoint origin;
+    short groupCount[4];
+    float step;
     Boolean linked[kNavSlots];
-#if defined(MACBUILD) && V111 /* V111 spelling */
-    FloatPoint origin;
-    short groupCount[4];
-    FloatPoint pos;
-    Rect box;
-    FloatPoint dest;
-    Rect hit;
-#else
-    Rect box;
-    Rect hit;
-    FloatPoint pos;
-    FloatPoint dest;
-    FloatPoint origin;
-    short groupCount[4];
-#endif
     Rect *portRect;
     Boolean canJump;
     short lost;
@@ -831,11 +822,7 @@ void HandlePlayer(ShipObj *player)
             weapTargetSelectFlag = 1;
             n = player->targetShip;
             SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-            GetMouse(&pt);
-#else
             GetGlobalMouse(&pt);
-#endif
             portRect = GetCWindowPortRect((WindowRef)gWind);
             box = *portRect;
 #ifdef CEFIX /* F14.02 */
@@ -5481,14 +5468,11 @@ reject:
     }
     goto out;
 
-#if V111 /* V111 spelling */
-#else
 cantBoard:
     PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
     GetIndString(msg, kGameStrList, kStrCannotBoard);
     DisplayComm((PStrChar *)msg, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
     goto out;
-#endif
 notClose:
     PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
     GetIndString(msg, kGameStrList, kStrNotAligned);
@@ -5499,17 +5483,11 @@ tooFast:
     GetIndString(msg, kGameStrList, kStrTooFast);
     DisplayComm((PStrChar *)msg, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
     goto out;
-#ifdef MAC1010
+#if defined(MACBUILD) || V111
 reject:
     PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
     GetIndString(msg, kGameStrList, kStrCannotBoard);
     DisplayComm((PStrChar *)msg, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
-#elif V111 /* V111 spelling */
-reject:
-cantBoard:
-    PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-    GetIndString(msg, kGameStrList, kStrCannotBoard);
-    DisplayComm(msg, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
 #endif
 out:;
 }

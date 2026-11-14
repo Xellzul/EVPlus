@@ -190,13 +190,13 @@ typedef struct DateTimeRec {
     short                  dayOfWeek;
 } DateTimeRec;
 
+#pragma options align=packed
 typedef struct RGBColor {
     unsigned short         red;
     unsigned short         green;
     unsigned short         blue;
 } RGBColor;
 
-#pragma options align=packed
 typedef struct Rect {
     short                  top;
     short                  left;

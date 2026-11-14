@@ -26,15 +26,12 @@ PicHandle keyPic;
 unsigned char DAT_007d1f14[40];
 #endif
 short keyDialogSel;
-#ifdef MACBUILD
+#ifndef MACBUILD
+unsigned char DAT_007d1f3e[4];
+#endif
 short introTextID;
 short introPictID[4];
 short introPictDelay[4];
-#else
-unsigned char DAT_007d1f3e[4];
-short gViewSlot[5];
-short gViewSlotDuration[4];
-#endif
 DialogPtr prefsDialog;
 DialogPtr keyDialog;
 #ifndef MACBUILD

@@ -270,14 +270,9 @@ void MainScreenActivate(Boolean activate)
 /* MainScreenIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00488080
 // MAC: _MainScreenIdle i386 0x00018ae8 ppc 0x0001c6f0
-#if V111
 void MainScreenIdle(void)
 {
-    MainScreenAnimIdle();
-}
-#elif defined(MAC1010)
-void MainScreenIdle(void)
-{
+#if !V111
     unsigned char text[256];
     Rect strip;
     Point mouse;
@@ -287,8 +282,12 @@ void MainScreenIdle(void)
 
     if (reggieStarted != 0 && reggieVersion[0] == 0 &&
         slideIndex[2] >= kAnimDone && inBackground == 0) {
+#ifdef MACBUILD
         GetIndString(text, kUrlStrList, 5);
         PtoCstr(text);
+#else
+        strcpy((char *)text, "EV Nova PC");
+#endif
         reply = ReggieVersionCheck(0, (char *)text);
         if (reply != NULL) {
             latest = HashLookup(reply, "$VERSION", 0);
@@ -314,32 +313,34 @@ void MainScreenIdle(void)
             crashlog("reggie version check returned nil");
         }
         if (reggieSuccess == 0) {
-            if ((TimerGetSeconds() - reggieStarted) > kPollTimeout) {
+            if ((unsigned int)(TimerGetSeconds() - reggieStarted) > kPollTimeout) {
                 crashlog("timeout contacting version server");
                 reggieStarted = 0;
             }
         }
     }
     HandleIntroMusic(0);
+#endif
     MainScreenAnimIdle();
-#if TARGET_API_MAC_OS8
+#if !V111
+#if !defined(MACBUILD) || TARGET_API_MAC_OS8
     strip = *GetCWindowPortRect((WindowRef)gWind);
     strip.bottom = strip.top + kHotStripHeight;
-    GetMouse(&mouse);
-    if ((PtInRect)(mouse, &strip)) {
+    GetGlobalMouse(&mouse);
+    if (PtInRectPoint(mouse, &strip)) {
 #else
     GetMouse(&mouse);
-    if (!(PtInRect)(mouse, &screenMinusDockRect)) {
+    if (!PtInRectPoint(mouse, &screenMinusDockRect)) {
 #endif
         if (mBarHidden != 0) {
             ShowTheMenuBar();
-            InvalWindowRect((WindowRef)gWind, GetCWindowPortRect((WindowRef)gWind));
+            InvalWindowPortRect((WindowRef)gWind);
             mBarHidden = 0;
         }
     } else if (mBarHidden == 0 && inBackground == 0 &&
                settings.windowed == 0) {
         HideTheMenuBar();
-        InvalWindowRect((WindowRef)gWind, GetCWindowPortRect((WindowRef)gWind));
+        InvalWindowPortRect((WindowRef)gWind);
         SetPortWindowPort((WindowRef)gWind);
         ForeColor(blackColor);
         strip = *GetCWindowPortRect((WindowRef)gWind);
@@ -347,89 +348,8 @@ void MainScreenIdle(void)
         PaintRect(&strip);
         mBarHidden = 1;
     }
-}
-#else
-void MainScreenIdle(void)
-{
-    Boolean wanted;
-    void *reply;
-    char *latest;
-    Rect *portRect;
-    int now;
-    Point mouse;
-    unsigned char text[256];
-    Rect strip;
-
-    if (reggieStarted != 0 && reggieVersion[0] == 0 &&
-        slideIndex[2] >= kAnimDone && inBackground == 0) {
-        strcpy((char *)text, "EV Nova PC");
-        reply = ReggieVersionCheck(0, (char *)text);
-        if (reply == NULL) {
-            crashlog("reggie version check returned nil");
-        } else {
-            latest = HashLookup(reply, "$VERSION", 0);
-            if (latest != NULL) {
-                crashlog_print("latest version is ");
-                crashlog_print(latest);
-                crashlog_print("\n");
-                strcpy(reggieVersion, latest);
-                reggieSuccess = 1;
-                reggieStarted = 0;
-                if (memcmp(reggieVersion, kShippingVer,
-                           sizeof(kShippingVer)) > 0) {
-                    GetIndString(text, kAlertStrList, kUpgradePrompt);
-                    wanted = EVYesNoDialog(text);
-                    MainScreenUpdate(1);
-                    if (wanted) {
-                        GetIndString(text, kUrlStrList, kUrlIndex);
-                        PtoCstr(text);
-                        IT_OpenBrowser((char *)text);
-                    }
-                }
-            }
-        }
-        if (reggieSuccess == 0) {
-            now = TimerGetSeconds();
-            if ((unsigned int)(now - reggieStarted) > kPollTimeout) {
-                crashlog("timeout contacting version server");
-                reggieStarted = 0;
-            }
-        }
-    }
-    HandleIntroMusic(0);
-    MainScreenAnimIdle();
-    portRect = GetCWindowPortRect(gWind);
-    strip.top = portRect->top;
-    strip.left = portRect->left;
-    strip.bottom = portRect->bottom;
-    strip.right = portRect->right;
-    strip.bottom = strip.top + kHotStripHeight;
-    GetGlobalMouse(&mouse);
-    if (PtInRect(mouse.h, mouse.v, &strip) != 0) {
-        if (mBarHidden != 0) {
-            ShowTheMenuBar();
-            GetCWindowPortRect(gWind);
-            gNeedUpdateFlag = 1;
-            mBarHidden = 0;
-        }
-    } else if (mBarHidden == 0 && inBackground == 0 &&
-               settings.windowed == 0) {
-        HideTheMenuBar();
-        GetCWindowPortRect(gWind);
-        gNeedUpdateFlag = 1;
-        SetPortWindowPort(gWind);
-        ForeColor(blackColor);
-        portRect = GetCWindowPortRect(gWind);
-        strip.top = portRect->top;
-        strip.left = portRect->left;
-        strip.bottom = portRect->bottom;
-        strip.right = portRect->right;
-        strip.bottom = strip.top + kBarHeight;
-        PaintRect(&strip);
-        mBarHidden = 1;
-    }
-}
 #endif
+}
 
 /*
  * mainMenuCenter is h-then-v, NOT QuickDraw's Point order: +0 takes
@@ -1194,17 +1114,21 @@ void DoPrefsDialog(void)
    907 Classic, 894 of 894 Carbon, padded. OPEN: nothing. */
 // FUNCTION: EVNOVA 0x00489210
 // MAC: _EnterGameFromMainScreen i386 0x00019ca7 ppc 0x0001d988
-#ifdef MACBUILD
 void EnterGameFromMainScreen(void)
 {
     Rect box;
+#ifdef MACBUILD
     Size grow;
     GDHandle device;
     Str255 msg;
     Str255 num;
+#else
+    Str255 pilotName;
+#endif
 
     crashlog("---");
     crashlog("entering game");
+#ifdef MACBUILD
     if (useLegacyRenderingPipeline) {
         device = gSpriteWorld->mainSWGDH;
         if (device != NULL) {
@@ -1237,11 +1161,12 @@ void EnterGameFromMainScreen(void)
             }
         }
     }
+#endif
     SWWindowMoved(gSpriteWorld);
     playerIsLanded = 0;
     crashlog("adjusting sounds");
     AdjustSoundVolume();
-    shipData[17].licenseName = RT3_GetLicenseName();
+    shipData[17].licenseName = (unsigned char *)RT3_GetLicenseName();
     DisposeMainScreenSounds();
     crashlog("showing intro screen");
     if (!seenIntroScreen) {
@@ -1252,12 +1177,14 @@ void EnterGameFromMainScreen(void)
         FadeScreenOut();
     }
     CheckForPiratedCodes();
-#ifdef MAC1010
-    StopIntroMusic(1);
-#else
+#if defined(MACBUILD) && !defined(MAC1010)
     CancelMusicThread();
+#else
+    StopIntroMusic(1);
 #endif
+#ifdef MACBUILD
     MaxMem(&grow);
+#endif
     LICENSE_STEP_BEGIN
     shipData[5].licenseCode = RT3_GetLicenseCode();
     LICENSE_STEP_END
@@ -1285,11 +1212,12 @@ void EnterGameFromMainScreen(void)
     crashlog("drawing more stuff");
     LICENSE_STEP_BEGIN
     shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? 1 : 0;
+        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
     LICENSE_STEP_END
     ResetPlayerPrecalcedValues();
 
     do {
+#ifdef MACBUILD
         unsigned char blob[3] = { 0x49, 0x71, 0xad };
         unsigned char name[17] = "EV NovaEV NovaEV";
         unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
@@ -1307,22 +1235,44 @@ void EnterGameFromMainScreen(void)
         unsigned short rem = 0;
         unsigned char x;
         short dummy;
+#else
+        unsigned char blob[3] = { 0x49, 0x71, 0xad };
+        unsigned char name[17] = "EV NovaEV NovaEV";
+        unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+        int32_t g;
+        char *p;
+        long long mem;
+        unsigned char x;
+        unsigned char c;
+        char b;
+        char t5;
+        int t1;
+        int t2;
+        int t3;
+        int t4;
+        unsigned short rem = 0;
+        Boolean ok;
+#endif
 
+#ifdef MACBUILD
         /* the entry hoists of both indexes: a second name each, no word */
         dummy = gameIsRegisteredIndex;
         dummy = gameIsHackedIndex;
+#endif
         g = shipData[36].licenseCopies;
-#ifdef MAC1010
-        p = (char *)shipData[17].licenseName;
-#else
+#if defined(MACBUILD) && !defined(MAC1010)
         p = RT3_CheckLicenseName(shipData[17].licenseName);
+#else
+        p = (char *)shipData[17].licenseName;
 #endif
         mem = shipData[5].licenseCode;
         x = 0;
 #ifndef MAC1010
         b = 0;
+#ifdef MACBUILD
         if (p != 0 && *p >= '0' && *p <= '9')
             g = 1;
+#endif
 #endif
         if (p != 0) {
             while (StringGetLength(key) + 1 < 17 && *p != 0)
@@ -1355,7 +1305,11 @@ void EnterGameFromMainScreen(void)
         x += 0x42;
         if (x < (char)key[11])
             x = ROTL(x, 8);
+#ifdef MACBUILD
         x ^= name[13];
+#else
+        x ^= t1;
+#endif
         x ^= (unsigned char)g;
         x += -0x6b;
         x = ROTL(x, 1);
@@ -1417,7 +1371,12 @@ void EnterGameFromMainScreen(void)
         x = ROTL(x, 8);
         x ^= t1;
         x = ROTL(x, 3);
+#ifdef MACBUILD
         if (x > (char)(t1 = name[9]))
+#else
+        t1 = name[9];
+        if (x > (char)t1)
+#endif
             x = ROTL(x, 7);
         x = ROTL(x, 5);
         x ^= name[8];
@@ -1491,7 +1450,7 @@ void EnterGameFromMainScreen(void)
 
         shipClass[gameIsHackedIndex].hacked =
             (shipData[36].licenseCopies != 0 && !ok)
-                ? 1 : 0;
+                ? (unsigned char)1 : (unsigned char)0;
     } while (0);
 
     HandleStellarSystemVisibility();
@@ -1503,7 +1462,7 @@ void EnterGameFromMainScreen(void)
     DoPlayGameWork(1);
     ignoreKeys = 0;
     gameFrozen = 0;
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
+#if !defined(MACBUILD) || (defined(MAC1010) && !TARGET_API_MAC_CARBON)
     RedrawStatus(1);
     RefreshSAT();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
@@ -1518,14 +1477,16 @@ void EnterGameFromMainScreen(void)
     fpsCounter = 0;
     lastFPSUpdateTime = TickCount();
     DisposeMainScreenAnim();
-    InitCursor();
+    OSCursorReset();
     cursorHidden = 0;
     ShowTheCursor();
     HideTheCursor();
-    GetMouse(&lastMousePos);
+    GetGlobalMouse(&lastMousePos);
     lastMouseMoveTime = TickCount();
     crashlog("changing window attributes");
+#ifdef MACBUILD
     SetRetainedWindow(gWind, true);
+#endif
     IterateInGameEventLoop(-1);
     RefreshWindowBuffer();
     crashlog("playing game");
@@ -1533,12 +1494,24 @@ void EnterGameFromMainScreen(void)
         PlayGame();
     crashlog("paused");
     crashlog("resetting window attributes");
+#ifdef MACBUILD
     SetRetainedWindow(gWind, false);
+#endif
     if (!settings.windowed)
         HideTheMenuBar();
     if (strictPlay && IsDying(shipData) && shipData->type != kShipTypeEscapePod) {
         crashlog("deleting pilot file due to strict play death");
+#ifdef MACBUILD
         DeletePilotFile(playerName);
+#else
+        pstrcpy(pilotName, playerName);
+#ifdef V111 /* V111: PtoCstr is void */
+        PtoCstr(pilotName);
+        DeletePilotFile((char *)pilotName);
+#else
+        DeletePilotFile(PtoCstr(pilotName));
+#endif
+#endif
     }
     crashlog("restoring stuff");
     KillVoiceSound();
@@ -1568,7 +1541,7 @@ void EnterGameFromMainScreen(void)
     if (!gQuit) {
         crashlog("showing main screen again");
         InvalWindowPortRect((WindowRef)gWind);
-#ifndef MAC1010
+#if defined(MACBUILD) && !defined(MAC1010)
         FadeScreenIn();
 #endif
         MainScreenAppearStart();
@@ -1583,328 +1556,6 @@ void EnterGameFromMainScreen(void)
     FlushEvents(2, 0);
     crashlog("---");
 }
-#else
-void EnterGameFromMainScreen(void)
-{
-    Rect box;
-    Str255 pilotName;
-
-    crashlog("---");
-    crashlog("entering game");
-    SWWindowMoved(gSpriteWorld);
-    playerIsLanded = 0;
-    crashlog("adjusting sounds");
-    AdjustSoundVolume();
-    shipData[17].licenseName = (unsigned char *)RT3_GetLicenseName();
-    DisposeMainScreenSounds();
-    crashlog("showing intro screen");
-    if (seenIntroScreen) {
-        FadeScreenOut();
-    } else {
-        ShowIntroScreen();
-        FadeScreenOut();
-        seenIntroScreen = 1;
-    }
-    CheckForPiratedCodes();
-    StopIntroMusic(1);
-    shipData[5].licenseCode = RT3_GetLicenseCode();
-    crashlog("drawing stuff");
-    LoadIntfResource();
-    SWSetPortToWorkArea(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->workFrameP->frameRect);
-    ForeColor(blackColor);
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->backFrameP->frameRect);
-    ForeColor(blackColor);
-    SWSetPortToWindow(gSpriteWorld);
-    if (!settings.windowed)
-        HideTheMenuBar();
-    RandomizeStars();
-    PropagateMissionBitEffects();
-    if (systemData[shipData->curSystem].murk < 0)
-        ClearStarfield();
-    DrawMapInFloatingFrame();
-    shipData[36].licenseCopies = RT3_GetLicenseCopies();
-    crashlog("drawing more stuff");
-    shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
-    ResetPlayerPrecalcedValues();
-
-    {
-        unsigned char blob[3] = { 0x49, 0x71, 0xad };
-        unsigned char name[17] = "EV NovaEV NovaEV";
-        unsigned char key[17] = "";
-        int32_t g;
-        unsigned char *p;
-        long long mem;
-        unsigned char x;
-        unsigned char c;
-        char b;
-        int t1;
-        int t2;
-        int t3;
-        int t4;
-        unsigned short rem;
-        Boolean ok;
-
-        g = shipData[36].licenseCopies;
-        p = shipData[17].licenseName;
-        mem = shipData[5].licenseCode;
-        x = 0;
-        b = 0;
-        if (p != 0) {
-            while (StringGetLength(key) + 1 < 17 && *p != 0)
-                StringAppendSafe(key, p, 17);
-        }
-        c = key[3];
-        x ^= c;
-        x ^= name[14];
-        x += 0xf1;
-        x ^= key[10];
-        x ^= key[8];
-        x ^= key[15];
-        x = ROTL(x, 4);
-        x = ROTL(x, 2);
-        x = ROTL(x, 7);
-        x ^= key[1];
-        x = ROTL(x, 2);
-        x = ROTL(x, 1);
-        x += 0x5f;
-        x = ROTL(x, 4);
-        t1 = name[13];
-        x ^= t1;
-        t2 = name[5];
-        x ^= t2;
-        x ^= g;
-        x ^= g;
-        x ^= g;
-        x += 0x42;
-        if (x < (char)key[11])
-            x = ROTL(x, 8);
-        x ^= t1;
-        x ^= g;
-        x += -0x6b;
-        x = ROTL(x, 1);
-        x ^= key[7];
-        x += 0x1e;
-        x ^= key[12];
-        x = ROTL(x, 6);
-        x ^= name[3];
-        x += 0xac;
-        x ^= c;
-        x ^= key[13];
-        rem = RT3_ExtractLicenseBlock1(mem);
-        x = ROTL(x, 6);
-        x ^= g;
-        x = ROTL(x, 2);
-        x ^= key[4];
-        x = ROTL(x, 3);
-        x = ROTL(x, 5);
-        x ^= g;
-        b = x;
-        x = RegScramD3(&b);
-        x += 0x19;
-        x = ROTL(x, 3);
-        x ^= key[15];
-        RegScramB3(x);
-        x = ROTL(x, 6);
-        RegScramF3();
-        x = ROTL(x, 5);
-        x ^= g;
-        x ^= key[14];
-        t3 = name[0];
-        x ^= t3;
-        x ^= t2;
-        x += 7;
-        x ^= key[8];
-        x += -0x60;
-        x = ROTL(x, 4);
-        x += -0x23;
-        x = ROTL(x, 1);
-        x ^= key[13];
-        RegScramB3(x);
-        x += 0x3e;
-        x ^= g;
-        t4 = name[1];
-        x ^= t4;
-        if (x < (char)key[6])
-            x = ROTL(x, 3);
-        x ^= g;
-        x += 0xe1;
-        x ^= name[7];
-        x ^= RegScramE3();
-        x ^= t3;
-        x ^= key[8];
-        x = ROTL(x, 8);
-        x ^= t1;
-        x = ROTL(x, 3);
-        t1 = name[9];
-        if (x > (char)t1)
-            x = ROTL(x, 7);
-        x = ROTL(x, 5);
-        x ^= name[8];
-        x ^= key[7];
-        x ^= g;
-        if (x > 0x5f) {
-            b = x;
-            x = RegScramD3(&b);
-        }
-        x = ROTL(x, 6);
-        x += -0x53;
-        x = ROTL(x, 7);
-        x ^= key[2];
-        x += 0x5b;
-        x ^= t3;
-        x = ROTL(x, 6);
-        x += 0xc2;
-        x ^= key[14];
-        if (x < 0x94)
-            x = ROTL(x, 6);
-        x ^= g;
-        x = ROTL(x, 1);
-        x = ROTL(x, 2);
-        x += 0x45;
-        x = ROTL(x, 4);
-        x = ROTL(x, 2);
-        x += 0x62;
-        x ^= key[10];
-        if (x < (char)key[1])
-            x = ROTL(x, 5);
-        if (x > (char)key[9])
-            x ^= key[9];
-        x ^= g;
-        x += 0x6c;
-        x = ROTL(x, 6);
-        x += 3;
-        x ^= key[9];
-        x += -0x6d;
-        x = ROTL(x, 3);
-        x = ROTL(x, 1);
-        x ^= key[15];
-        x ^= key[4];
-        x += 0x99;
-        if (x > 0x47)
-            x ^= key[0];
-        if (x < 3)
-            x = blob[x];
-        while (rem >= x)
-            rem -= x;
-        ok = (g != 0 && rem == 0);
-        x ^= g;
-        x += 0xd9;
-        RegScramC3(x);
-        x ^= t2;
-        x = ROTL(x, 6);
-        x += 0xa;
-        x ^= g;
-        x ^= t4;
-        x ^= key[10];
-        x += 0x96;
-        x ^= name[2];
-        x ^= name[4];
-        x ^= t1;
-        x += 0xb;
-        if (x != 0)
-            RegScramA3(x);
-
-        shipClass[gameIsHackedIndex].hacked =
-            (shipData[36].licenseCopies != 0 && !ok)
-                ? (unsigned char)1 : (unsigned char)0;
-    }
-
-    HandleStellarSystemVisibility();
-    HandleStellarSprites();
-    totalDaysPlayed = RT3_GetDaysHad();
-    PrepareAllSprites();
-    gameFrozen = 1;
-    ignoreKeys = 1;
-    DoPlayGameWork(1);
-    ignoreKeys = 0;
-    gameFrozen = 0;
-    RedrawStatus(1);
-    RefreshSAT();
-    SWUpdateSpriteWorld(gSpriteWorld, 1);
-    RedrawComm(0);
-    statusRedraw[kRedrawCargo] = 1;
-    escortMenuOnscreen = 0;
-    mBarHidden = 1;
-    gPause = 0;
-    SWSetPortToWindow(gSpriteWorld);
-    AdjustSoundVolume();
-    fpsCounter = 0;
-    lastFPSUpdateTime = ReadTick();
-    DisposeMainScreenAnim();
-    OSCursorReset();
-    cursorHidden = 0;
-    ShowTheCursor();
-    HideTheCursor();
-    GetGlobalMouse(&lastMousePos);
-    lastMouseMoveTime = ReadTick();
-    crashlog("changing window attributes");
-    IterateInGameEventLoop(-1);
-    RefreshWindowBuffer();
-    crashlog("playing game");
-    if (!EVBugResourceFieldTest(10))
-        PlayGame();
-    crashlog("paused");
-    crashlog("resetting window attributes");
-    if (!settings.windowed)
-        HideTheMenuBar();
-    if (strictPlay && IsDying(shipData) && shipData->type != kShipTypeEscapePod) {
-        crashlog("deleting pilot file due to strict play death");
-        pstrcpy(pilotName, playerName);
-#ifdef V111 /* V111: PtoCstr is void */
-        PtoCstr(pilotName);
-        DeletePilotFile((char *)pilotName);
-#else
-        DeletePilotFile(PtoCstr(pilotName));
-#endif
-    }
-    crashlog("restoring stuff");
-    KillVoiceSound();
-    RestoreOrigClut();
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect(gWind));
-    SetRect(&box, 0, 0, GetCWindowPortRect(gWind)->right, 20);
-    PaintRect(&box);
-    GetCWindowPortRect(gWind);
-    gNeedUpdateFlag = 1;
-    if (!gQuit) {
-        SetupInterfaceBackground();
-        LoadMainScreenAnim();
-        while (StillDown())
-            BusyIdle();
-        FlushEvents(3, 0);
-        FlushEvents(5, 0);
-        FlushEvents(1, 0);
-        FlushEvents(2, 0);
-    }
-    ShowTheCursor();
-    if (!settings.windowed)
-        HideTheMenuBar();
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect(gWind));
-    if (!gQuit) {
-        crashlog("showing main screen again");
-        GetCWindowPortRect(gWind);
-        gNeedUpdateFlag = 1;
-        MainScreenAppearStart();
-        MainScreenAppear();
-        SetupInterfaceBackground();
-        MainScreenAnimDraw();
-        MainScreenUpdate(1);
-    }
-    FlushEvents(3, 0);
-    FlushEvents(5, 0);
-    FlushEvents(1, 0);
-    FlushEvents(2, 0);
-    crashlog("---");
-}
-#endif
 
 #define kNewNameStrList  128
 
@@ -2101,11 +1752,7 @@ void DoNewPilot(void)
     SetupShipsInSystem(shipData->curSystem, 1);
     HandleStellarSystemVisibility();
     CreateAsteroids();
-#ifdef MACBUILD
     GetCharResourceIntroIDs(newPilotPopupChoice[0], &introTextID, introPictID, introPictDelay);
-#else
-    GetCharResourceIntroIDs(newPilotPopupChoice[0], gViewSlot, &gViewSlot[1], gViewSlotDuration);
-#endif
     SWHideAllSprites(gSpriteWorld);
     creatingPilotFile = 0;
     SetupInterfaceBackground();

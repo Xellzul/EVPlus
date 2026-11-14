@@ -230,7 +230,6 @@ extern Boolean reggieSuccess;
 extern Boolean didSpeak;
 extern Boolean doMainScreenAnim;
 extern Rect standardPicRect;
-extern short gViewSlotDuration[];
 extern Boolean gameFrozen;
 extern short gameIsRegisteredIndex;
 extern DateTimeRec gameTime;
@@ -292,9 +291,6 @@ extern void PropagateMissionBitEffects(void);
 extern void OnTheFlyWhiteFade(short pct);
 extern void ExploreNebulaeFromSystem(short sys);
 #pragma cplusplus on
-EXTERN_CPP_BEGIN
-extern short gViewSlot[5];
-EXTERN_CPP_END
 #ifdef MACBUILD
 extern EventRecord gEvent;
 extern void MainScreenMouse(EventRecord *event);
@@ -311,10 +307,12 @@ extern void CancelMusicThread(void);
 extern short ScanForKeys(void);
 extern OSStatus MoreAECreateAppleEventSelfTarget(AEEventClass eventClass, AEEventID eventID,
                                                  AppleEvent *event);
+#endif
+EXTERN_CPP_BEGIN
 extern short introTextID;
 extern short introPictID[4];
 extern short introPictDelay[4];
-#endif
+EXTERN_CPP_END
 #pragma cplusplus reset
 #pragma cplusplus on
 EXTERN_CPP_BEGIN

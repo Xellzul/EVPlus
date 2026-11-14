@@ -11,33 +11,22 @@ EXTERN_C_BEGIN
 // MAC: _BlitPixieRLECollisionWithPoint i386 0x000c0ebf ppc 0x000ccd04
 Boolean BlitPixieRLECollisionWithPoint(unsigned char *rleData, Point *pt, Rect *r)
 {
-#ifdef MAC1010 /* 1.0.10 spelling */
     uint32_t token;
-    uint32_t opcode;
     uint32_t op;
     uint32_t count;
     int32_t runStart;
     int32_t i;
     int32_t x;
-#else
-    int32_t runStart;
-    uint32_t opcode;
-    uint32_t op;
-    uint32_t count;
-    int32_t i;
-    uint32_t token;
-    int32_t x;
-#endif
 
     for (i = 0; i < pt->v - r->top; i++) {
         token = *(uint32_t *)rleData;
         rleData += 4;
-        opcode = token >> 24;
+        op = token >> 24;
         count = token & 0xffffff;
 
-        if (opcode == 1)
+        if (op == 1)
             rleData += count;
-        else if (opcode == 0)
+        else if (op == 0)
             return 0;
     }
 

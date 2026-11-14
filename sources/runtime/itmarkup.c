@@ -374,10 +374,7 @@ int32_t PT_ParseTreeLoad(void **text, const char *rawTags, const char *emptyTags
     unsigned char isTag;
     unsigned char isNamed;
     unsigned char isOpen;
-    ULong n;
     ULong last;
-    ULong limit;
-    ITElement *e;
     ITElement *tree;
     char c;
     unsigned char raw;
@@ -454,8 +451,8 @@ int32_t PT_ParseTreeLoad(void **text, const char *rawTags, const char *emptyTags
         const unsigned short *next;
         ULong i;
         ULong size;
-        ULong step;
         const unsigned short *u;
+        ULong step;
 
         next = *text;
         u = *text;
@@ -589,7 +586,7 @@ advanced:
             while (raw && q < end) {
                 /* BUG: one byte past q, not one character: a `<' at q is missed, and a
                    UTF-16 text is read off its character boundary */
-                q = _PT_ParseFindDelim(&parser, p = q + 1, end, '<');
+                q = _PT_ParseFindDelim(&parser, q + 1, end, '<');
                 mark = q;
                 if (q == end)
                     break;
@@ -601,17 +598,22 @@ advanced:
                     continue;
                 if (q == end)
                     break;
-#ifdef MAC1010 /* 1.0.10 spelling */
                 if (wide) {
-                    limit = end - q + 1;
-                    n = limit > sizeof(wideName) ? sizeof(wideName) : limit;
-                    Unicode2UpperCopySafe(wideName, (const unsigned short *)q, n,
+                    ULong n;
+                    ULong limit;
+
+                    n = end - q + 1;
+                    limit = n > sizeof(wideName) ? sizeof(wideName) : n;
+                    Unicode2UpperCopySafe(wideName, (const unsigned short *)q, limit,
                                  UnicodeGetCharCount((unsigned short *)parser.open->name));
                     r = UnicodeCompare((unsigned short *)parser.open->name, wideName);
                     if (r != 0)
                         continue;
-                    q += n;
+                    q += limit;
                 } else {
+                    ULong n;
+                    ULong limit;
+
                     limit = end - q + 1;
                     n = limit > sizeof(name) ? sizeof(name) : limit;
                     if (n > StringGetLength((unsigned char *)parser.open->name) + 1)
@@ -624,31 +626,6 @@ advanced:
                 }
                 q = mark;
                 raw = 0;
-#else
-                if (wide) {
-                    n = end - q + 1;
-                    if (n > sizeof(wideName))
-                        n = sizeof(wideName);
-                    limit = n;
-                    Unicode2UpperCopySafe(wideName, (const unsigned short *)q, n,
-                                 UnicodeGetCharCount((unsigned short *)parser.open->name));
-                    r = UnicodeCompare((unsigned short *)parser.open->name, wideName);
-                } else {
-                    limit = end - q + 1;
-                    if (limit > sizeof(name))
-                        limit = sizeof(name);
-                    n = limit;
-                    if (limit > StringGetLength((unsigned char *)parser.open->name) + 1)
-                        n = StringGetLength((unsigned char *)parser.open->name) + 1;
-                    String2UpperCopySafe(name, q, n);
-                    r = StringCompare(parser.open->name, name);
-                }
-                if (r == 0) {
-                    q += n;
-                    q = mark;
-                    raw = 0;
-                }
-#endif
             }
             raw = 0;
             r = IT_ParseCommentNode(&parser, errors, pos, q);
@@ -658,33 +635,28 @@ advanced:
             }
         }
     }
-#ifdef MAC1010 /* 1.0.10 spelling */
     while (parser.open != 0) {
-        e = parser.open;
-#else
-    while ((e = parser.open) != 0) {
-#endif
-        if (e->tag > 0)
+        if (parser.open->tag > 0)
             isTag = 1;
         else
             isTag = 0;
-        r = (e->tag > 2 && e->tag < 0x7f);
+        r = (parser.open->tag > 2 && parser.open->tag < 0x7f);
         if (r)
             isNamed = 1;
         else
             isNamed = 0;
-        node = e;
-        parser.open = e->next;
-        e->next = 0;
-        r = _PT_ParseError(text, errors, 0, 1, 1, e->sourceOffset,
-                         e->wide ? UnicodeGetByteCount((unsigned short *)e->name)
-                                 : StringGetLength((unsigned char *)e->name),
-                         0, "Unbalanced or badly nested tag <%s>", e->name, e->wide);
+        node = parser.open;
+        parser.open = node->next;
+        node->next = 0;
+        r = _PT_ParseError(text, errors, 0, 1, 1, node->sourceOffset,
+                         node->wide ? UnicodeGetByteCount((unsigned short *)node->name)
+                                 : StringGetLength((unsigned char *)node->name),
+                         0, "Unbalanced or badly nested tag <%s>", node->name, node->wide);
         if (r != 0) {
             err = r;
             goto done;
         }
-        _PT_ParseTreeLoad(&parser, e, errors, 0, 0);
+        _PT_ParseTreeLoad(&parser, node, errors, 0, 0);
         node = 0;
     }
     if (parser.root == 0) {

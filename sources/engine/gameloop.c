@@ -1660,16 +1660,11 @@ void HandleStars(void)
 // MAC: _HandleNavTargetSprites i386 0x0002fcaf ppc 0x00034f18
 void HandleNavTargetSprites(void)
 {
-#ifdef V111 /* V111 spelling */
-    int i;
-#else
     short i;
-#endif
     short frame;
     short size;
     short half;
-    short x;
-    short y;
+    Point pt;
 
     if (shipData[0].targetStellar != -1 && shipData[0].navTargetKind == kNavTargetStellar) {
         if (navTargetExpand > 0.0F)
@@ -1684,28 +1679,10 @@ void HandleNavTargetSprites(void)
             frame = kFrameUnvisited;
         for (i = 0; i < kNavTargetCorners; i++)
             SWSetCurrentFrameIndex(navTargetSprite[i], i + frame);
-#if V111 /* V111 spelling */
-        x = stellarData[shipData[0].targetStellar].pos.h
-            - (short)shipData[0].pos.x;
-        x = x + screenCenter.h;
-        y = stellarData[shipData[0].targetStellar].pos.v
-            - (short)shipData[0].pos.y;
-        y = y + screenCenter.v;
-        half = kNoSpriteHalfSize;
-        for (i = 0; i < kStellarSprites; i++) {
-            if (stellarSprite[i]->isVisible != 0
-                && stellarSprite[i]->userData == shipData[0].targetStellar) {
-                half = (GetSpriteXSize(stellarSprite[i]) > GetSpriteYSize(stellarSprite[i])
-                        ? GetSpriteXSize(stellarSprite[i])
-                        : GetSpriteYSize(stellarSprite[i])) / 2;
-                break;
-            }
-        }
-#else
-        x = screenCenter.h + (stellarData[shipData[0].targetStellar].pos.h
-            - (short)shipData[0].pos.x);
-        y = screenCenter.v + (stellarData[shipData[0].targetStellar].pos.v
-            - (short)shipData[0].pos.y);
+        pt.h = (stellarData[shipData[0].targetStellar].pos.h - (short)shipData[0].pos.x)
+            + screenCenter.h;
+        pt.v = (stellarData[shipData[0].targetStellar].pos.v - (short)shipData[0].pos.y)
+            + screenCenter.v;
         half = kNoSpriteHalfSize;
         for (frame = 0; frame < kStellarSprites; frame++) {
             if (stellarSprite[frame]->isVisible != 0
@@ -1716,15 +1693,14 @@ void HandleNavTargetSprites(void)
                 break;
             }
         }
-#endif
         half += (short)navTargetExpand;
-        SWSetSpriteLocation(navTargetSprite[0], x - half - kBracketInset,
-                            y - half - kBracketInset);
-        SWSetSpriteLocation(navTargetSprite[1], x + half,
-                            y - half - kBracketInset);
-        SWSetSpriteLocation(navTargetSprite[2], x + half, y + half);
-        SWSetSpriteLocation(navTargetSprite[3], x - half - kBracketInset,
-                            y + half);
+        SWSetSpriteLocation(navTargetSprite[0], pt.h - half - kBracketInset,
+                            pt.v - half - kBracketInset);
+        SWSetSpriteLocation(navTargetSprite[1], pt.h + half,
+                            pt.v - half - kBracketInset);
+        SWSetSpriteLocation(navTargetSprite[2], pt.h + half, pt.v + half);
+        SWSetSpriteLocation(navTargetSprite[3], pt.h - half - kBracketInset,
+                            pt.v + half);
     } else {
         navTargetExpand = 0.0F;
         for (i = 0; i < kNavTargetCorners; i++)
@@ -1778,21 +1754,11 @@ void HandleWeapTargetSprites(void)
             + screenCenter.h;
         y = (short)(shipData[shipData[0].targetShip].pos.y - shipData[0].pos.y)
             + screenCenter.v;
-#ifdef V111 /* V111 spelling */
         half = (GetSpriteXSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)
                     > GetSpriteYSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)
                 ? GetSpriteXSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)
-                : GetSpriteYSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)) / 2
-               + (short)weapTargetExpand;
-#else
-        if (GetSpriteXSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)
-                > GetSpriteYSize((SpriteRec *)shipData[shipData[0].targetShip].sprite))
-            half = GetSpriteXSize((SpriteRec *)shipData[shipData[0].targetShip].sprite);
-        else
-            half = GetSpriteYSize((SpriteRec *)shipData[shipData[0].targetShip].sprite);
-        half = half / 2;
+                : GetSpriteYSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)) / 2;
         half += (short)weapTargetExpand;
-#endif
         SWSetSpriteLocation(weapTargetSprite[0], x - half - kBracketInset,
                             y - half - kBracketInset);
         SWSetSpriteLocation(weapTargetSprite[1], x + half,
@@ -1858,27 +1824,21 @@ void HandleBeams(unsigned char advance)
     FloatPoint off;
     FloatPoint drawPt;
     FloatPoint muzzle;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    Boolean notSelf;
-#endif
     short i;
     short roid;
     short j;
     short angle;
-#ifdef MAC1010 /* 1.0.10 spelling */
     short massDmg;
-#else
+    short energyDmg;
     short impact;
-#endif
     short best;
     short bestRoid;
-    int32_t range;
-    int32_t bestDist;
 #ifdef MAC1010 /* 1.0.10 spelling */
     int32_t jOff;
-#else
-    Boolean notSelf;
 #endif
+    int32_t range;
+    int32_t bestDist;
+    Boolean notSelf;
     Boolean corona;
     Boolean isAlly;
     Boolean reachable;
@@ -1887,15 +1847,7 @@ void HandleBeams(unsigned char advance)
     short shipAngle;
     short size;
     int32_t dist;
-#ifdef MAC1010 /* 1.0.10 spelling */
     int32_t len;
-    short energyDmg;
-    short impact;
-#else
-    short massDmg;
-    short energyDmg;
-    int32_t len;
-#endif
     short hitAngle;
     short parent;
     short diff;
@@ -2993,16 +2945,7 @@ void HandleTimeAdjustment(void)
         aiComplexity = 1;
 }
 
-#ifdef V111 /* V111 spelling */
-#define JumpDrift(s, fast, push) \
-    d = (ReadTick() - (s)->jumpTick) \
-        * (doubleTime ? fast : 1.0) \
-        * shipClass[(s)->type].mobilityFactor \
-        / (WarpSoundDuration() * 0.01); \
-    if (shipClass[(s)->type].mobilityFactor != 0) \
-        d = d - push / shipClass[(s)->type].mobilityFactor
-#else
-#ifdef MAC1010 /* 1.0.10 spelling */
+#if defined(MACBUILD) || V111 /* mac spelling */
 #define JumpDrift(s, fast, push) \
     d = (ReadTick() - (s)->jumpTick) \
         * (doubleTime ? fast : 1.0) \
@@ -3012,7 +2955,7 @@ void HandleTimeAdjustment(void)
         d = d - push / shipClass[(s)->type].mobilityFactor
 #else
 #define JumpDrift(s, fast, push) \
-    span = WarpSoundDuration() * 0.01; \
+    span =WarpSoundDuration() * 0.01; \
     factor = doubleTime ? fast : 1.0; \
     { \
         double t; \
@@ -3027,7 +2970,6 @@ void HandleTimeAdjustment(void)
         if (mobility != 0) \
             d = d - push / mobility; \
     }
-#endif
 #endif
 
 static inline void TractorDrag(ShipObj *ship, float *drag)
@@ -4388,17 +4330,12 @@ void CheckShotProximities(void)
     int32_t range;
     int32_t dx;
     int32_t dy;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    int32_t ax;
-    int32_t ay;
-#else
-    int32_t ay;
-    int32_t ax;
-#endif
     float f;
     short i;
     short k;
     short j;
+    int32_t ax;
+    int32_t ay;
     short stel;
     Boolean hit;
 
@@ -4945,13 +4882,8 @@ void HandleMouse(void)
     Boolean hit;
 
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    GetMouse(&mouse);
-    port = GetCWindowPortRect((WindowRef)gWind);
-#else
     GetGlobalMouse(&mouse);
-    port = GetCWindowPortRect(gWind);
-#endif
+    port = GetCWindowPortRect((WindowRef)gWind);
     box = *port;
     if (PtInRectPoint(mouse, &box))
         HideTheCursor();

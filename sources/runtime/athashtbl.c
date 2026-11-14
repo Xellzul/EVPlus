@@ -51,15 +51,13 @@ struct HashTable {
 
 #ifdef MAC1010 /* 1.0.10 spelling */
 typedef ULong HashChar;
-#define HashLocal static            /* local symbols in the 1.1.1 framework */
 #else
 typedef unsigned char HashChar;
-#define HashLocal
 #endif
 
 /* _Hash. STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9c86
-HashLocal ULong _Hash(const void *key, ULong len)
+static ULong _Hash(const void *key, ULong len)
 {
     const unsigned char *p;
     ULong h;
@@ -78,7 +76,7 @@ HashLocal ULong _Hash(const void *key, ULong len)
 
 /* _HashUpper. STATE: MATCH 100%, exe 24 / obj 24, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9cad
-HashLocal ULong _HashUpper(const void *key, ULong len)
+static ULong _HashUpper(const void *key, ULong len)
 {
     const unsigned char *p;
     ULong h;
@@ -99,14 +97,14 @@ HashLocal ULong _HashUpper(const void *key, ULong len)
 
 /* _Match. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9ce1
-HashLocal unsigned char _Match(const void *a, ULong lenA, const void *b, ULong lenB)
+static unsigned char _Match(const void *a, ULong lenA, const void *b, ULong lenB)
 {
     return StringCompare(a, b) == 0;
 }
 
 /* _MatchUpper. STATE: MATCH 100%, exe 21 / obj 21, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9cf9
-HashLocal unsigned char _MatchUpper(const void *a, ULong lenA, const void *b, ULong lenB)
+static unsigned char _MatchUpper(const void *a, ULong lenA, const void *b, ULong lenB)
 {
     const unsigned char *s1;
     const unsigned char *s2;
@@ -129,7 +127,7 @@ HashLocal unsigned char _MatchUpper(const void *a, ULong lenA, const void *b, UL
 
 /* _HashUnicode. STATE: MATCH 100%, exe 36 / obj 36, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9d23
-HashLocal ULong _HashUnicode(const void *key, ULong len)
+static ULong _HashUnicode(const void *key, ULong len)
 {
     const unsigned short *p;
     ULong h;
@@ -160,7 +158,7 @@ HashLocal ULong _HashUnicode(const void *key, ULong len)
 
 /* _HashUpperUnicode. STATE: MATCH 100%, exe 41 / obj 41, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9d76
-HashLocal ULong _HashUpperUnicode(const void *key, ULong len)
+static ULong _HashUpperUnicode(const void *key, ULong len)
 {
     const unsigned short *p;
     ULong h;
@@ -187,14 +185,14 @@ HashLocal ULong _HashUpperUnicode(const void *key, ULong len)
 
 /* _MatchUnicode. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9dd4
-HashLocal unsigned char _MatchUnicode(const void *a, ULong lenA, const void *b, ULong lenB)
+static unsigned char _MatchUnicode(const void *a, ULong lenA, const void *b, ULong lenB)
 {
     return UnicodeCompare(a, b) == 0;
 }
 
 /* _MatchUpperUnicode. STATE: MATCH 100%, exe 55 / obj 55, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9dec
-HashLocal unsigned char _MatchUpperUnicode(const void *a, ULong lenA, const void *b, ULong lenB)
+static unsigned char _MatchUpperUnicode(const void *a, ULong lenA, const void *b, ULong lenB)
 {
     const unsigned short *s1;
     const unsigned short *s2;
@@ -230,7 +228,7 @@ HashLocal unsigned char _MatchUpperUnicode(const void *a, ULong lenA, const void
 
 /* _HashBinary. STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9e77
-HashLocal ULong _HashBinary(const void *key, ULong len)
+static ULong _HashBinary(const void *key, ULong len)
 {
     const unsigned char *s;
     ULong count;
@@ -257,7 +255,7 @@ HashLocal ULong _HashBinary(const void *key, ULong len)
 
 /* _MatchBinary. STATE: MATCH 100%, exe 25 / obj 25, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9ea1
-HashLocal MatchResult _MatchBinary(const void *a, ULong lenA, const void *b, ULong lenB)
+static MatchResult _MatchBinary(const void *a, ULong lenA, const void *b, ULong lenB)
 {
     int32_t err;
     const unsigned char *s1;
@@ -288,6 +286,7 @@ HashLocal MatchResult _MatchBinary(const void *a, ULong lenA, const void *b, ULo
 #define kKindBinary     0x02000000
 #define kKindMask       0xff000000
 #define kFoldOrWide     (kKeyFold | kKeyWide)
+#define HashIsWide(flags) ((flags) & kKindUTF16)
 
 #define kSmallBuckets   0x17
 #define kLargeBuckets   0x3e5
@@ -372,24 +371,22 @@ int32_t _HashDataEncode(void *ref)
 // FUNCTION: EVNOVA 0x004f9fb9
 int32_t _HashDataDecode(void *ref)
 {
-    void **h;
+    char **h;
     int32_t err;
     ULong i;
     ULong d;
     ULong c;
     ULong length;
-    char *p;
     ULong n;
     int32_t e;
 
     err = 0;
     h = ref;
-    length = IndirectGetSize(h);
+    length = IndirectGetSize((void **)h);
     for (i = 0; i + 2 < length; i++) {
-        p = *h;
-        if (p[i] != kEscapeMark)
+        if ((*h)[i] != kEscapeMark)
             continue;
-        d = p[i + 1];
+        d = (*h)[i + 1];
         if (d >= '0' && d <= '9')
             c = (d - '0') << 4;
         else if (d >= 'a' && d <= 'f')
@@ -398,7 +395,7 @@ int32_t _HashDataDecode(void *ref)
             c = (d - 'A' + 10) << 4;
         else
             continue;
-        d = p[i + 2];
+        d = (*h)[i + 2];
         if (d >= '0' && d <= '9')
             c += d - '0';
         else if (d >= 'a' && d <= 'f')
@@ -408,14 +405,8 @@ int32_t _HashDataDecode(void *ref)
         else
             continue;
         n = 3;
-#ifdef MAC1010 /* 1.0.10 spelling */
-        p[i] = c == 0 ? ' ' : c;
-#else
-        if (c == 0)
-            c = ' ';
-        p[i] = c;
-#endif
-        MemoryMove((char *)*h + i + 1, (char *)*h + i + n, length - i - n);
+        (*h)[i] = c == 0 ? ' ' : c;
+        MemoryMove(*h + i + 1, *h + i + n, length - i - n);
         length -= n - 1;
         e = IndirectSetSize(ref, length);
         if (e != 0) {
@@ -502,7 +493,7 @@ HashTable *HashCreate(ULong flags)
         if ((flags & kKindBinary) != 0 && (flags & kFoldOrWide) == 0) {
             t->hash = _HashBinary;
             t->compare = (CompareProc)_MatchBinary;
-        } else if ((flags & kKindUTF16) != 0) {
+        } else if (HashIsWide(flags) != 0) {
             if ((flags & kKeyFold) != 0) {
                 t->hash = _HashUpperUnicode;
                 t->compare = _MatchUpperUnicode;
@@ -543,7 +534,7 @@ HashTable *HashInitialize(ULong flags, const char *text)
     t = 0;
     SystemCheckCallback();
     HashIsValidRef((HashTable *)text);
-    if ((flags & kKindUTF16) != 0) {
+    if (HashIsWide(flags) != 0) {
         err = kBadArgument;
         goto done;
     }
@@ -626,30 +617,26 @@ done:
    100%, exe 760 / obj 760, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fa351
 HashTable *HashLoad(ULong flags, void **text)
-#ifdef MAC1010 /* 1.0.10 spelling */
-#include "../runtime/hashload1010.inc"
-#else
 {
     char message[0x100];
-    ULong keyStart;
-    ULong sep;
-    char *data;
+    ULong valueLen;
     void *t;
+    ULong keyStart;
     ULong keyLen;
+    ULong sep;
     ULong valueStart;
+    int32_t err, e;
     ULong pos;
     ULong length;
     ULong quote;
+    ULong state;
+    ULong c;
     ULong keyClass;
     void **value;
+    char *data;
     unsigned char wasLocked;
     unsigned char bad;
-    ULong wide;
     HashTable *table;
-    ULong valueLen;
-    ULong c;
-    ULong state;
-    int32_t err, e;
 
     err = 0;
     t = 0;
@@ -666,8 +653,7 @@ HashTable *HashLoad(ULong flags, void **text)
     }
     table = t;
     wasLocked = IndirectSetLock(text, 1);
-    wide = flags & kKindUTF16;
-    if (wide != 0)
+    if (HashIsWide(flags) != 0)
         length = UnicodeGetCharCountFromBytes(*text, IndirectGetSize(text));
     else
         length = IndirectGetSize(text);
@@ -678,17 +664,17 @@ HashTable *HashLoad(ULong flags, void **text)
     state = kParseSkip;
     sep = 0;
 
-    for (; pos <= length; pos += wide != 0 ? CHAR_SIZE(c) : 1) {
-        if (wide != 0)
+    for (; pos <= length; pos += HashIsWide(flags) != 0 ? CHAR_SIZE(c) : 1) {
+        if (HashIsWide(flags) != 0)
             c = pos < length ? UnicodeGetCharByIndex((const unsigned short *)data, pos) : 0;
         else
             c = pos < length ? (unsigned char)data[pos] : 0;
     dispatch:
         switch (state) {
         case kParseSkip:
-            if (c == 0 || CHAR_IN(wide, c, kClassBlank))
+            if (c == 0 || CHAR_IN(HashIsWide(flags), c, kClassBlank))
                 break;
-            if (KEY_CHAR(wide, c, keyClass)) {
+            if (KEY_CHAR(HashIsWide(flags), c, keyClass)) {
                 keyStart = pos;
                 state = kParseKey;
                 break;
@@ -697,17 +683,17 @@ HashTable *HashLoad(ULong flags, void **text)
             break;
 
         case kParseKey:
-            if (KEY_CHAR(wide, c, keyClass))
+            if (KEY_CHAR(HashIsWide(flags), c, keyClass))
                 break;
             keyLen = pos - keyStart;
             if (c == 0)
                 break;
-            if (SEPARATOR(wide, c, flags & kKeyWide)) {
+            if (SEPARATOR(HashIsWide(flags), c, flags & kKeyWide)) {
                 state = kParseSeparator;
                 sep = c;
                 break;
             }
-            if (CHAR_IN(wide, c, kClassBlank)) {
+            if (CHAR_IN(HashIsWide(flags), c, kClassBlank)) {
                 state = kParseAfterKey;
                 sep = 0;
                 break;
@@ -716,15 +702,15 @@ HashTable *HashLoad(ULong flags, void **text)
             break;
 
         case kParseAfterKey:
-            if (CHAR_IN(wide, c, kClassBlank))
+            if (CHAR_IN(HashIsWide(flags), c, kClassBlank))
                 break;
-            if (SEPARATOR(wide, c, flags & kKeyWide)) {
+            if (SEPARATOR(HashIsWide(flags), c, flags & kKeyWide)) {
                 state = kParseSeparator;
                 sep = c;
                 break;
             }
-            if (c == 0 || KEY_CHAR(wide, c, keyClass)) {
-                if (wide != 0) {
+            if (c == 0 || KEY_CHAR(HashIsWide(flags), c, keyClass)) {
+                if (HashIsWide(flags) != 0) {
                     err = _HashInsertAppend(t, data + keyStart * 2, keyLen,
                                        0, 0, sep, 0, flags & kKindMask);
                     if (err == kDuplicateKey)
@@ -745,37 +731,37 @@ HashTable *HashLoad(ULong flags, void **text)
             break;
 
         case kParseSeparator:
-            if (IS_CHAR(wide, c, '='))
+            if (IS_CHAR(HashIsWide(flags), c, '='))
                 break;
-            if (CHAR_IN(wide, c, kClassSeparator)) {
+            if (CHAR_IN(HashIsWide(flags), c, kClassSeparator)) {
                 bad = 1;
                 break;
             }
-            if (CHAR_IN(wide, c, kClassBlank)) {
+            if (CHAR_IN(HashIsWide(flags), c, kClassBlank)) {
                 state = kParseAfterSeparator;
                 break;
             }
             valueStart = pos;
             quote = c;
-            state = QUOTE_CHAR(wide, c) ? kParseQuoted : kParseValue;
+            state = QUOTE_CHAR(HashIsWide(flags), c) ? kParseQuoted : kParseValue;
             break;
 
         case kParseAfterSeparator:
-            if (c == 0 || CHAR_IN(wide, c, kClassBlank))
+            if (c == 0 || CHAR_IN(HashIsWide(flags), c, kClassBlank))
                 break;
             valueStart = pos;
             quote = c;
-            state = QUOTE_CHAR(wide, c) ? kParseQuoted : kParseValue;
+            state = QUOTE_CHAR(HashIsWide(flags), c) ? kParseQuoted : kParseValue;
             break;
 
         case kParseValue:
         case kParseQuoted:
-            if (state == kParseValue && c != 0 && !CHAR_IN(wide, c, kClassBlank))
+            if (state == kParseValue && c != 0 && !CHAR_IN(HashIsWide(flags), c, kClassBlank))
                 break;
             if (state == kParseQuoted && c != 0 && c != quote)
                 break;
             valueLen = pos - valueStart;
-            if (wide != 0) {
+            if (HashIsWide(flags) != 0) {
                 if (state == kParseQuoted) {
                     valueStart += CHAR_SIZE(c);
                     valueLen -= CHAR_SIZE(c);
@@ -787,8 +773,7 @@ HashTable *HashLoad(ULong flags, void **text)
                         goto done;
                     }
                 }
-                valueLen += valueLen;
-                e = IndirectSetSize(value, valueLen);
+                e = IndirectSetSize(value, valueLen <<= 1);
                 if (e != 0) {
                     err = e;
                     goto done;
@@ -805,6 +790,12 @@ HashTable *HashLoad(ULong flags, void **text)
                                    sep, 0, flags & kKindMask);
                 if (err == kDuplicateKey)
                     err = 0;
+                IndirectSetLock(value, 0);
+                e = err;
+                if (0 == e)
+                    goto setsize;
+                else
+                    goto done;
             } else {
                 if (state == kParseQuoted) {
                     valueStart++;
@@ -833,9 +824,14 @@ HashTable *HashLoad(ULong flags, void **text)
                                    sep, 0, flags & kKindMask);
                 if (err == kDuplicateKey)
                     err = 0;
+                IndirectSetLock(value, 0);
+                e = err;
+                if (0 == e)
+                    goto setsize;
+                else
+                    goto done;
             }
-            IndirectSetLock(value, 0);
-            require_noerr(err, done);
+setsize:
             e = IndirectSetSize(value, 0);
             if (e != 0) {
                 err = e;
@@ -852,7 +848,11 @@ HashTable *HashLoad(ULong flags, void **text)
                          : (c <= ' ' || c >= kMaxAscii) ? "Unexpected character 0x%2.2lX at offset %ld"
                          : "Unexpected character '%c' at offset %ld", c, pos);
             bad = 0;
-            if ((wide != 0 && c != ' ') || c != ' ') {
+            if (HashIsWide(flags) != 0 && c != ' ') {
+                c = ' ';
+                goto dispatch;
+            }
+            if (c != ' ') {
                 c = ' ';
                 goto dispatch;
             }
@@ -860,7 +860,7 @@ HashTable *HashLoad(ULong flags, void **text)
     }
 
     if (c == 0 && keyLen != 0) {
-        if (wide != 0) {
+        if (HashIsWide(flags) != 0) {
             err = _HashInsertAppend(t, data + keyStart * 2, keyLen, 0, 0, sep, 0,
                                flags & kKindMask);
             if (err == kDuplicateKey)
@@ -887,7 +887,6 @@ done:
     }
     return t;
 }
-#endif
 
 #define kClassPunct     0x10
 #define kClassBare      (kClassBlank | kClassPunct)
@@ -1163,7 +1162,7 @@ void **_HashSaveUnicode(void *ref)
         n = 0;
         while ((n << 1) < (length = e->valueLen)) {
             NEXT_CHAR((unsigned short *)value, n, c);
-            if (((flags & kKindUTF16) != 0 ? (c >= kMaxAscii || (gHashKeyClasses[c] & kClassBare) != 0)
+            if ((HashIsWide(flags) != 0 ? (c >= kMaxAscii || (gHashKeyClasses[c] & kClassBare) != 0)
                                            : (gHashKeyClasses[c] & kClassBare)) != 0)
                 break;
         }
@@ -1318,7 +1317,7 @@ void **HashSave(void *ref)
     HashTable *t;
 
     t = ref;
-    if (t != 0 && (t->flags & kKindUTF16) != 0)
+    if (t != 0 && HashIsWide(t->flags) != 0)
         return _HashSaveUnicode(ref);
     return _HashSaveText(ref);
 }
@@ -1453,15 +1452,12 @@ int32_t _HashInsertAppend(void *ref, const void *key, ULong keyLen,
                   unsigned char front, ULong kind)
 {
     HashTable *t;
-    ULong keySpace;
     ULong charSize;
     int32_t err;
-    ULong valueSpace;
-    ULong size;
     HashEntry **link;
     HashEntry *e;
     HashEntry *p;
-    ULong i;
+    unsigned int i;
     ULong keyClass;
     ULong h;
     int wide;
@@ -1522,24 +1518,13 @@ int32_t _HashInsertAppend(void *ref, const void *key, ULong keyLen,
         }
     }
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-    keySpace = keyLen + charSize;
-    valueSpace = (valueLen + charSize + 3) & ~3;
-    size = kEntryOverhead + valueSpace + keySpace;
-#else
-    valueSpace = (valueLen + charSize + 3) & ~3;
-    size = valueSpace + kEntryOverhead;
-    keySpace = keyLen;
-    keySpace += charSize;
-    size += keySpace;
-#endif
-    e = MemoryAllocate(size);
+    e = MemoryAllocate(keyLen + charSize + (((valueLen + charSize + 3) & ~3) + kEntryOverhead));
     if (e == 0) {
         err = kOutOfMemory;
         goto done;
     }
     MemoryClear(e, kEntryHeader);
-    e->key = e->data + valueSpace;
+    e->key = e->data + ((valueLen + charSize + 3) & ~3);
     MemoryCopy(e->data, value, valueLen);
     e->valueLen = valueLen;
     i = charSize;
@@ -1548,7 +1533,7 @@ int32_t _HashInsertAppend(void *ref, const void *key, ULong keyLen,
 
     if ((kind & kKindMask) == kKindUTF16) {
         if ((t->flags & kKeyFold) != 0)
-            Unicode2UpperCopySafe((unsigned short *)e->key, key, keySpace, kNoLength);
+            Unicode2UpperCopySafe((unsigned short *)e->key, key, keyLen + charSize, kNoLength);
         else
             MemoryCopy(e->key, key, keyLen);
     } else {
@@ -1558,14 +1543,9 @@ int32_t _HashInsertAppend(void *ref, const void *key, ULong keyLen,
             MemoryCopy(e->key, key, keyLen);
     }
     e->keyLen = keyLen;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    while (charSize--)
-        e->key[keyLen + charSize] = 0;
-#else
     i = charSize;
     while (i--)
         e->key[keyLen + i] = 0;
-#endif
     e->tag = tag;
 
     h = t->hash(e->key, e->keyLen) % t->nBuckets;

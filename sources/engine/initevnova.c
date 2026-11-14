@@ -506,17 +506,23 @@ fail:
 #endif
 
 /* InitEVNova (mac _InitEVNova). STATE: win MATCH 100.0%, exe 1393 / obj 1393, byte-identical yes
-   (relocs masked); mac MATCH both slices (the MACBUILD body).
+   (relocs masked); mac MATCH both slices; 1.0.10 MATCH both fragments.
    OPEN: nothing. */
 // FUNCTION: EVNOVA 0x00416100
 // MAC: _InitEVNova i386 0x0004666c ppc 0x0004eb44
 void InitEVNova(void)
-#ifdef MAC1010
+#if !defined(MACBUILD) || defined(MAC1010)
 {
     unsigned char alertText[256];
+#ifdef MACBUILD
     FSSpec licenseSpec;
+#endif
     Boolean blk[kBlacklistCount];
-    Size grow;
+    long grow;
+#ifndef MACBUILD
+    int32_t qtVersion;
+    ComponentDescription cd;
+#endif
     long long key;
     int err;
     short i;
@@ -527,17 +533,33 @@ void InitEVNova(void)
     gSpriteWorld = 0;
     screenFaded = 0;
 
+#ifdef MACBUILD
     SetupToolbox();
     CarbonHackInit();
+#else
+    ScrambleRand();
+    PlatformOpen();
+    KeyboardInit();
+    MouseInit();
+    InitMemory();
+    SetDefaultPrefixs();
+    OpenPrefs();
+#endif
 
     crashlog_open("debuglog.txt");
     crashlog_print("game engine was compiled ");
+#ifdef MACBUILD
     crashlog_print("Apr 24 2006");
+#else
+    crashlog_print("Jun 24 2006");
+#endif
     crashlog_print("\n");
     gameIsRegisteredIndex = Rand(0x300);
     crashlog_print("game engine version is ");
     crashlog_print("1.0.A");
-#if TARGET_API_MAC_CARBON
+#if !defined(MACBUILD)
+    crashlog_print(" Windows");
+#elif TARGET_API_MAC_CARBON
     crashlog_print(" Carbon");
 #else
     crashlog_print(" PPC");
@@ -547,12 +569,46 @@ void InitEVNova(void)
 
     crashlog("opening data files & loading prefs");
     InitDataFiles();
+#ifdef CEFIX /* F20.01 */
+    CE_ReadX2Hotkey();
+#endif
     LoadPrefs();
+#ifdef MACBUILD
     Microseconds((UnsignedWide *)&fakeLicenseCode);
+#else
+    fakeLicenseCode = TimerGetMicroseconds();
+    Gestalt(kQuickTimeGestalt, &qtVersion);
+    if (qtVersion < kQuickTime5) {
+        ShowTheCursor();
+        ShowAlert("QuickTime v5.0 or Newer Required",
+                  "EV Nova requires QuickTime v5.0 or newer.  You can get the latest version of QuickTime from http://www.apple.com/quicktime/");
+        ExitToShell();
+    }
+
+    cd.componentType = kRLEDecompressor;
+    cd.componentSubType = kRLECodec;
+    cd.componentManufacturer = kAppleManufacturer;
+    cd.componentFlags = 0;
+    cd.componentFlagsMask = kComponentFlagsMask;
+    if (FindNextComponent(0, &cd) == 0) {
+        ShowTheCursor();
+        ShowAlert("QuickTime requires Internet Extras",
+                  "EV Nova requires QuickTime v5.0 or newer with the Internet Extras component.  You can install the component from the QuickTime settings panel, under Update Check.");
+        ExitToShell();
+    }
+#endif
 
     crashlog("initializing monitor");
+#ifdef CEFIX /* F03.01 */
+    CE_InitializeMonitor();
+#else
     SetupMonitor();
+#endif
+#ifdef MACBUILD
     CheckSystem();
+#else
+    ResetScreenRect();
+#endif
 
     crashlog("initializing QuickTime");
     err = EnterMovies();
@@ -561,9 +617,15 @@ void InitEVNova(void)
 
     crashlog("building trig table");
     BuildTrigTable();
+#ifndef MACBUILD
+    if (settings.gamma > kMaxGamma)
+        settings.gamma = kDefaultGamma;
+    BuildGammaRamp((settings.gamma * 10.0 + 70.0));
+#endif
     gWind = 0;
     SavePrefs();
 
+#ifdef MACBUILD
     if (KeyCheck(kScanOption) && AreWeFrontProcess()) {
         crashlog("showing prefs dialog before window creation");
         smallTextFont = 3;
@@ -572,6 +634,7 @@ void InitEVNova(void)
         settings.windowed = settings.windowedPending;
     }
     GetMainDevice();
+#endif
 
     crashlog("opening platform tool");
     err = PlatformOpen();
@@ -626,9 +689,13 @@ void InitEVNova(void)
     LICENSE_STEP_BEGIN
     shipData[5].licenseCode = RT3_GetLicenseCode();
     LICENSE_STEP_END
+#ifdef MACBUILD
     InitAEVTHandlers();
+#else
+    FUN_0049e420();
+#endif
     LICENSE_STEP_BEGIN
-    shipData[17].licenseName = RT3_GetLicenseName();
+    shipData[17].licenseName = (unsigned char *)RT3_GetLicenseName();
     LICENSE_STEP_END
     IterateInGameEventLoop(kEventLoopTicks);
     LICENSE_STEP_BEGIN
@@ -638,15 +705,23 @@ void InitEVNova(void)
 
     LICENSE_STEP_BEGIN
     shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? 1 : 0;
+        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
     LICENSE_STEP_END
     SetupDialogs();
 
     key = shipData[5].licenseCode;
 
+#ifdef MACBUILD
     pluginCount = CountEVPlugins(gARef, "\pNova Plug-Ins", kPlugInFileType, 0);
+#else
+    pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
+#endif
     OpenDataFiles();
+#ifdef MACBUILD
     pluginCount = CountEVPlugins(gARef, "\pNova Plug-Ins", kPlugInFileType, 0);
+#else
+    pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
+#endif
     if (pluginCount != 0) {
         if ((shipClass[gameIsRegisteredIndex].registered ? 1 : 0) == 0
                 != (pluginCount == 0)) {
@@ -700,11 +775,15 @@ void InitEVNova(void)
 
     for (i = 0; i < kBlacklistCount; i++) {
         if (blk[i] != 0) {
+#ifdef MACBUILD
             strcpy((char *)alertText, "EV Nova");
             strcat((char *)alertText, " License");
             CtoPstr((char *)alertText);
             if (FSMakeFSSpec(prefsVRefNum, prefsDirID, alertText, &licenseSpec) == noErr)
                 FSpDelete(&licenseSpec);
+#else
+            FT_FileDelete(-3, "EV Nova License.lcs");
+#endif
             break;
         }
     }
@@ -714,7 +793,7 @@ void InitEVNova(void)
         HideTheCursor();
     FUN_00486ec0();
     CheckForPiratedCodes();
-#if !TARGET_API_MAC_CARBON
+#if defined(MACBUILD) && !TARGET_API_MAC_CARBON
     if (settings.windowed == 0)
         HideControlStrip();
 #endif
@@ -771,7 +850,7 @@ void InitEVNova(void)
     HideAmbrosiaLogo();
     LICENSE_STEP_BEGIN
     shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? 1 : 0;
+        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
     LICENSE_STEP_END
 
     crashlog("showing splash screen");
@@ -787,9 +866,11 @@ void InitEVNova(void)
     LoadSprites();
 
     crashlog("checking memory");
+#ifdef MACBUILD
     grow = 0x7fffffff;
     startupMemoryFree = MaxMem(&grow);
-#if !TARGET_API_MAC_CARBON
+#endif
+#if defined(MACBUILD) && !TARGET_API_MAC_CARBON
     {
         uint32_t memNeeded;
 
@@ -863,168 +944,7 @@ void InitEVNova(void)
     DoMainScreen();
 
     crashlog("main screen disposed");
-    do {
-        unsigned char blob[3] = { 0x49, 0x71, 0xad };
-        unsigned char name[17] = "EV NovaEV NovaEV";
-        unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-        unsigned char t1;
-        int32_t g;
-        long long mem;
-        unsigned char x;
-        char *p;
-        unsigned char y;
-        unsigned char c;
-        char t2;
-        unsigned short rem;
-        Boolean ok;
-
-        g = shipData[36].licenseCopies;
-        p = (char *)shipData[17].licenseName;
-        mem = shipData[5].licenseCode;
-        x = 0;
-        if (p != 0 && *p != 0) {
-            while (StringGetLength((const unsigned char *)p) != 0 && StringGetLength(key) + 1 < 17)
-                StringAppendSafe(key, (const unsigned char *)p, 17);
-        }
-        x ^= (unsigned char)g;
-        x += (char)0xe7;
-        x ^= (unsigned char)g;
-        x = ROTL(x, 3);
-        x ^= name[5];
-        x += 0x31;
-        x = ROTL(x, 7);
-        c = key[0];
-        x ^= c;
-        x = ROTL(x, 4);
-        x = ROTL(x, 8);
-        x += 0x0b;
-        t1 = name[2];
-        x ^= t1;
-        x ^= key[13];
-        x ^= name[13];
-        x += (char)0xa6;
-        x ^= (unsigned char)g;
-        x ^= name[12];
-        x ^= (unsigned char)g;
-        t2 = key[1];
-        x ^= t2;
-        x ^= (unsigned char)g;
-        x ^= c;
-        x ^= key[4];
-        x += 0x67;
-        x ^= name[6];
-        x ^= (unsigned char)g;
-        x += 0x58;
-        if (x > t2)
-            x ^= (unsigned char)g;
-        x = ROTL(x, 2);
-        x = ((x + (char)0xa0) & 0xff) + 0x7d;
-        x ^= (unsigned char)g;
-        x += 0x5a;
-        x = ROTL(x, 7);
-        x ^= (unsigned char)g;
-        x += (char)0x93;
-        x ^= (unsigned char)g;
-        x = ROTL(x, 4);
-        x = ROTL(x, 2);
-        x ^= name[9];
-        rem = RT3_ExtractLicenseBlock2(mem);
-        x += 0x78;
-        x = ROTL(x, 2);
-        x ^= key[2];
-        x ^= t1;
-        x ^= (unsigned char)g;
-        x ^= (unsigned char)g;
-        x = ROTL(x, 5);
-        x = ROTL(x, 5);
-        x ^= (unsigned char)g;
-        if (x < (char)key[14])
-            x ^= (unsigned char)g;
-        if (x > (char)key[4])
-            x ^= name[4];
-        x ^= (unsigned char)g;
-        x = ROTL(x, 4);
-        x ^= key[15];
-        x ^= name[14];
-        x = ROTL(x, 2);
-        x += 0x75;
-        x = ROTL(x, 1);
-        x = ROTL(x, 4);
-        x = ROTL(x, 8);
-        x = ROTL(x, 1);
-        x += -0x65;
-        x = ROTL(x, 1);
-        x ^= (unsigned char)g;
-        x += 0x58;
-        x ^= key[15];
-        LICENSE_STEP_BEGIN
-        y = x * IsPlatformOpen() + -0x61;
-        RegScramB2(y);
-        x = ROTL(y, 5);
-        LICENSE_STEP_END
-        x ^= key[3];
-        TimerGetSeconds();
-        x += (char)0xa4;
-        x ^= key[1];
-        x ^= key[14];
-        x += 0x29;
-        x = ROTL(x, 2);
-        x += (char)0xd1;
-        x ^= (unsigned char)g;
-        x += 0x82;
-        x ^= name[0];
-        x ^= name[1];
-        x ^= (unsigned char)g;
-        x += -0x7c;
-        RegScramB2(x);
-        y = x & 0xff;
-        x = ROTL(y, 5);
-        x += -0x4e;
-        x = ROTL(x, 1);
-        x ^= (unsigned char)g;
-        x = ROTL(x, 5);
-        x += 0x5a;
-        x ^= name[11];
-        x ^= (unsigned char)g;
-        x = ROTL(x, 5);
-        x ^= (unsigned char)g;
-        x += (char)0xe8;
-        x ^= key[7];
-        x += (char)0xdd;
-#if TARGET_API_MAC_CARBON /* 1.0.10 spelling */
-        x ^= (y = key[2]);
 #else
-        x ^= key[2];
-#endif
-        x ^= key[5];
-        x = ROTL(x, 1);
-        x ^= (unsigned char)g;
-        x ^= (unsigned char)g;
-        x = ROTL(x, 7);
-        x = ROTL(x, 1);
-        x ^= (unsigned char)g;
-        x += 0x36;
-        x ^= (unsigned char)g;
-        if (x < 0x23)
-            x = ROTL(x, 4);
-        x ^= (unsigned char)g;
-        x ^= (unsigned char)g;
-        x ^= key[11];
-        if (x < 3)
-            x = blob[x];
-        while (rem >= x)
-            rem -= x;
-        ok = (g != 0 && rem == 0);
-        grow = (shipData[36].licenseCopies != 0 && ok == 0) != 0;
-        if (grow)
-            RT3_RunReminder(1, 0);
-    } while (0);
-
-    FadeScreenOut();
-    ShowTheCursor();
-    Bye();
-}
-#elif defined(MACBUILD)
 {
     unsigned char alertText[256];
     Boolean blk[kBlacklistCount];
@@ -1331,37 +1251,52 @@ void InitEVNova(void)
     }
 
     crashlog_print("main screen disposed\n");
-    {
+#endif
+    do {
         unsigned char blob[3] = { 0x49, 0x71, 0xad };
         unsigned char name[17] = "EV NovaEV NovaEV";
         unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-        uint32_t g;
-        char *p;
+        unsigned char t1;
+        int32_t g;
         long long mem;
         unsigned char x;
+        char *p;
         unsigned char y;
+#ifdef MACBUILD
         unsigned char c;
-        char b;
-        unsigned char t1;
+#else
+        int c;
+#endif
         char t2;
         unsigned short rem;
         Boolean ok;
+#ifndef MAC1010
+        char b;
         unsigned int v;
+#endif
 
         g = shipData[36].licenseCopies;
+#if defined(MACBUILD) && !defined(MAC1010)
         p = RT3_CheckLicenseName(shipData[17].licenseName);
+#else
+        p = (char *)shipData[17].licenseName;
+#endif
         mem = shipData[5].licenseCode;
         x = 0;
+#ifndef MAC1010
         b = 0;
+#endif
+#if defined(MACBUILD) && !defined(MAC1010)
         if (p != 0 && *p >= '0' && *p <= '9')
             g = 1;
+#endif
         if (p != 0 && *p != 0) {
-            while (StringGetLength(p) != 0 && StringGetLength(key) + 1 < 17)
-                StringAppendSafe(key, p, 17);
+            while (StringGetLength((const unsigned char *)p) != 0 && StringGetLength(key) + 1 < 17)
+                StringAppendSafe(key, (const unsigned char *)p, 17);
         }
-        x ^= g;
-        x += 0xe7;
-        x ^= g;
+        x ^= (unsigned char)g;
+        x += (char)0xe7;
+        x ^= (unsigned char)g;
         x = ROTL(x, 3);
         x ^= name[5];
         x += 0x31;
@@ -1375,118 +1310,154 @@ void InitEVNova(void)
         x ^= t1;
         x ^= key[13];
         x ^= name[13];
-        x += 0xa6;
-        x ^= g;
+        x += (char)0xa6;
+        x ^= (unsigned char)g;
         x ^= name[12];
-        x ^= g;
+        x ^= (unsigned char)g;
         t2 = key[1];
         x ^= (unsigned char)t2;
-        x ^= g;
+        x ^= (unsigned char)g;
         x ^= c;
         x ^= key[4];
         x += 0x67;
         x ^= name[6];
-        x ^= g;
+        x ^= (unsigned char)g;
         x += 0x58;
-        if (x > t2)
-            x ^= g;
+        if (x > (char)t2)
+            x ^= (unsigned char)g;
         x = ROTL(x, 2);
+#ifndef MAC1010
         x ^= RegScramE2();
-        y = x + 0x1d;
-        y ^= g;
-        y += 0x5a;
-        x = ROTL(y, 7);
-        x ^= g;
-        x += 0x93;
-        x ^= g;
+#endif
+        x = ((x + (char)0xa0) & 0xff) + 0x7d;
+        x ^= (unsigned char)g;
+        x += 0x5a;
+        x = ROTL(x, 7);
+        x ^= (unsigned char)g;
+        x += (char)0x93;
+        x ^= (unsigned char)g;
         x = ROTL(x, 4);
         x = ROTL(x, 2);
         x ^= name[9];
+#ifdef MACBUILD
         rem = RT3_ExtractLicenseBlock2(mem);
+#else
+        rem = DRHash64(mem);
+#endif
         x += 0x78;
         x = ROTL(x, 2);
         x ^= key[2];
         x ^= t1;
-        x ^= g;
-        x ^= g;
+        x ^= (unsigned char)g;
+        x ^= (unsigned char)g;
         x = ROTL(x, 5);
         x = ROTL(x, 5);
-        x ^= g;
+        x ^= (unsigned char)g;
         if (x < (char)key[14])
-            x ^= g;
+            x ^= (unsigned char)g;
         if (x > (char)key[4])
             x ^= name[4];
-        x ^= g;
+        x ^= (unsigned char)g;
         x = ROTL(x, 4);
         x ^= key[15];
         x ^= name[14];
         x = ROTL(x, 2);
         x += 0x75;
+#ifndef MAC1010
         RegScramC2(x);
+#endif
         x = ROTL(x, 1);
         x = ROTL(x, 4);
         x = ROTL(x, 8);
         x = ROTL(x, 1);
         x += -0x65;
         x = ROTL(x, 1);
-        x ^= g;
+        x ^= (unsigned char)g;
         x += 0x58;
         x ^= key[15];
+#ifdef MAC1010
+        LICENSE_STEP_BEGIN
+        y = x * IsPlatformOpen() + -0x61;
+        RegScramB2(y);
+        x = ROTL(y, 5);
+        LICENSE_STEP_END
+#else
         x = RegScramA2(x);
         x += -0x61;
         RegScramB2(x);
         RegScramC2(x);
         x = ROTL(x, 5);
+#endif
         x ^= key[3];
+#ifdef MAC1010
+        TimerGetSeconds();
+#else
         b = x;
         x = RegScramD2(&b);
-        x += 0xa4;
+#endif
+        x += (char)0xa4;
         x ^= key[1];
         x ^= key[14];
         x += 0x29;
         x = ROTL(x, 2);
-        x += 0xd1;
-        x ^= g;
+        x += (char)0xd1;
+        x ^= (unsigned char)g;
+#if defined(MACBUILD) && !defined(MAC1010)
         x = (x + 0x82) % 256;
+#else
+        x += 0x82;
+#endif
         x ^= name[0];
         x ^= name[1];
-        x ^= g;
+        x ^= (unsigned char)g;
         x += -0x7c;
         RegScramB2(x);
+#ifdef MAC1010
+        y = x & 0xff;
+        x = ROTL(y, 5);
+#else
+#ifdef MACBUILD
         x = ROTL(x, 0);
+#endif
         x = ROTL(x, 5);
+#endif
         x += -0x4e;
         x = ROTL(x, 1);
-        x ^= g;
+        x ^= (unsigned char)g;
         x = ROTL(x, 5);
         x += 0x5a;
         x ^= name[11];
-        x ^= g;
+        x ^= (unsigned char)g;
         x = ROTL(x, 5);
-        x ^= g;
-        x += 0xe8;
+        x ^= (unsigned char)g;
+        x += (char)0xe8;
         x ^= key[7];
-        x += 0xdd;
+        x += (char)0xdd;
+#if defined(MAC1010) && TARGET_API_MAC_CARBON /* 1.0.10 spelling */
+        x ^= (y = key[2]);
+#else
         x ^= key[2];
+#endif
         x ^= key[5];
         x = ROTL(x, 1);
-        x ^= g;
-        x ^= g;
+        x ^= (unsigned char)g;
+        x ^= (unsigned char)g;
         x = ROTL(x, 7);
         x = ROTL(x, 1);
-        x ^= g;
+        x ^= (unsigned char)g;
         x += 0x36;
-        x ^= g;
+        x ^= (unsigned char)g;
         if (x < 0x23)
             x = ROTL(x, 4);
-        x ^= g;
-        x ^= g;
+        x ^= (unsigned char)g;
+        x ^= (unsigned char)g;
         x ^= key[11];
         if (x < 3)
             x = blob[x];
         while (rem >= x)
             rem -= x;
         ok = (g != 0 && rem == 0);
+#ifndef MAC1010
         x ^= key[10];
         x += 0x4d;
         x = ROTL(x, 3);
@@ -1506,527 +1477,36 @@ void InitEVNova(void)
         x = v;
         if (x != 0)
             RegScramC2(v);
+#endif
 
-        grow = shipData[36].licenseCopies != 0 && ok == 0;
-    }
-
-#if V111
+        grow = shipData[36].licenseCopies != 0 && ok == 0
+                ? (unsigned char)1 : (unsigned char)0;
+#if !defined(MACBUILD) || defined(MAC1010)
+        if (grow) {
+#ifndef MACBUILD
+            if (settings.windowed == 0)
+                ReleaseVideo();
+#endif
+            RT3_RunReminder(1, 0);
+        }
+#endif
+    } while (0);
+#if defined(MACBUILD) && !defined(MAC1010)
     if (grow)
         ASWReg_ShowDialogWithOptions(true, true);
 #endif
-    FadeScreenOut();
-    ShowTheCursor();
-    Bye();
-}
-#else
-{
-    unsigned char alertText[256];
-    Boolean blk[kBlacklistCount];
-    int32_t qtVersion;
-    ComponentDescription cd;
-    long long key;
-    int err;
-    short i;
-
-    gameLoaded = gameInProgress = 0;
-    preventStatusCopy = 0;
-    gWind = 0;
-    gSpriteWorld = 0;
-    screenFaded = 0;
-
-    ScrambleRand();
-    PlatformOpen();
-    KeyboardInit();
-    MouseInit();
-    InitMemory();
-    SetDefaultPrefixs();
-    OpenPrefs();
-
-    crashlog_open("debuglog.txt");
-    crashlog_print("game engine was compiled ");
-    crashlog_print("Jun 24 2006");
-    crashlog_print("\n");
-    gameIsRegisteredIndex = Rand(0x300);
-    crashlog_print("game engine version is ");
-    crashlog_print("1.0.A");
-    crashlog_print(" Windows");
-    crashlog_print("\n\n");
-    gameIsHackedIndex = Rand(0x300);
-
-    crashlog("opening data files & loading prefs");
-    InitDataFiles();
-#ifdef CEFIX /* F20.01 */
-    CE_ReadX2Hotkey();
-#endif
-    LoadPrefs();
-    fakeLicenseCode = TimerGetMicroseconds();
-    Gestalt(kQuickTimeGestalt, &qtVersion);
-    if (qtVersion < kQuickTime5) {
-        ShowTheCursor();
-        ShowAlert("QuickTime v5.0 or Newer Required",
-                  "EV Nova requires QuickTime v5.0 or newer.  You can get the latest version of QuickTime from http://www.apple.com/quicktime/");
-        ExitToShell();
-    }
-
-    cd.componentType = kRLEDecompressor;
-    cd.componentSubType = kRLECodec;
-    cd.componentManufacturer = kAppleManufacturer;
-    cd.componentFlags = 0;
-    cd.componentFlagsMask = kComponentFlagsMask;
-    if (FindNextComponent(0, &cd) == 0) {
-        ShowTheCursor();
-        ShowAlert("QuickTime requires Internet Extras",
-                  "EV Nova requires QuickTime v5.0 or newer with the Internet Extras component.  You can install the component from the QuickTime settings panel, under Update Check.");
-        ExitToShell();
-    }
-
-    crashlog("initializing monitor");
-#ifdef CEFIX /* F03.01 */
-    CE_InitializeMonitor();
-#else
-    SetupMonitor();
-#endif
-    ResetScreenRect();
-
-    crashlog("initializing QuickTime");
-    err = EnterMovies();
-    if (err != 0)
-        FatalStartupError(kAlertQuickTime);
-
-    crashlog("building trig table");
-    BuildTrigTable();
-
-    if (settings.gamma > kMaxGamma)
-        settings.gamma = kDefaultGamma;
-    BuildGammaRamp((settings.gamma * 10.0 + 70.0));
-    gWind = 0;
-    SavePrefs();
-
-    crashlog("opening platform tool");
-    err = PlatformOpen();
-    if (err != 0) {
-        crashlog_print("Platform_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertPlatformOpen);
-    }
-
-    crashlog("opening file tool");
-    err = FT_Open();
-    if (err != 0) {
-        crashlog_print("FT_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertFileOpen);
-    }
-
-    crashlog("opening draw tool");
-    err = DT_Open();
-    if (err != 0) {
-        crashlog_print("DT_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertDrawOpen);
-    }
-
-    crashlog("opening interface tool");
-    err = IT_Open();
-    if (err != 0) {
-        crashlog_print("IT_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertInterfaceOpen);
-    }
-
-    crashlog("opening registration tool");
-    err = RT3_Open(1, 3, "EV Nova", "EV Nova");
-    if (err != 0) {
-        crashlog_print("RT3_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertRegOpen);
-    }
-
-    crashlog("initializing arrays");
-    InitArrays();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("opening data files");
-    shipData[5].licenseCode = RT3_GetLicenseCode();
-    FUN_0049e420();
-    shipData[17].licenseName = (unsigned char *)RT3_GetLicenseName();
-    IterateInGameEventLoop(kEventLoopTicks);
-    shipData[36].licenseCopies = RT3_GetLicenseCopies();
-    InitColors();
-
-    shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
-    SetupDialogs();
-
-    key = shipData[5].licenseCode;
-
-#ifdef MACBUILD
-    pluginCount = CountEVPlugins(pluginsFolder, kPlugInFileType);
-    OpenDataFiles();
-    pluginCount = CountEVPlugins(pluginsFolder, kPlugInFileType);
-#else
-    pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
-    OpenDataFiles();
-    pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
-#endif
-    if (pluginCount != 0) {
-        if ((shipClass[gameIsRegisteredIndex].registered ? 1 : 0) == 0
-                != (pluginCount == 0)) {
-            ShowTheCursor();
-            GetIndString(alertText, kPlugMismatchSTR, kPlugMismatchIndex);
-            EVNoteAlert(alertText);
-        }
-    }
-    FadeScreenOut();
-
-    blk[0] = KEYHIT(0x0284801349262406LL);
-    blk[1] = KEYHIT(0x0101e057b160ee02LL);
-    blk[2] = KEYHIT(0x07365c430b23e131LL);
-    blk[3] = KEYHIT(0x07345d430b23e131LL);
-    blk[4] = KEYHIT(0x05d4013a1123c94aLL);
-    blk[5] = KEYHIT(0x08d22033a5a9ae47LL);
-    blk[6] = KEYHIT(0x08d02133a5a9ae47LL);
-    blk[7] = KEYHIT(0x0940f13e07262d74LL);
-    blk[8] = KEYHIT(0x01e8616da73a6b41LL);
-    blk[9] = KEYHIT(0x03395a952823e649LL);
-    blk[10] = KEYHIT(0x033b5a952803f64bLL);
-    blk[11] = KEYHIT(0x0b795a952803f64aLL);
-    blk[12] = KEYHIT(0x00dd021413f10475LL);
-    blk[13] = KEYHIT(0x00df021413d11477LL);
-    blk[14] = KEYHIT(0x009f021413d11476LL);
-    blk[15] = KEYHIT(0x09224585278cbf5bLL);
-    blk[16] = KEYHIT(0x0bf35041709a3940LL);
-    blk[17] = KEYHIT(0x03f15041709a3946LL);
-    blk[18] = KEYHIT(0x0125a4aa21b1cf03LL);
-    blk[19] = KEYHIT(0x03a31e5b03829d3dLL);
-    blk[20] = KEYHIT(0x009f8c40aac47814LL);
-    blk[21] = KEYHIT(0x045ac4b40fb08b36LL);
-    blk[22] = KEYHIT(0x0c1ac5bc0b909b37LL);
-    blk[23] = KEYHIT(0x02a974140d644b4dLL);
-    blk[24] = KEYHIT(0x02a9741409644b49LL);
-    blk[25] = KEYHIT(0x0aab751c09445b49LL);
-    blk[26] = KEYHIT(0x02eb751c09445b4aLL);
-    blk[27] = KEYHIT(0x01e24b6c4b56f67eLL);
-    blk[28] = KEYHIT(0x048c30d71f489e43LL);
-    blk[29] = KEYHIT(0x0c8c31d71f489e45LL);
-    blk[30] = KEYHIT(0x04cc31d71f489e46LL);
-    blk[31] = KEYHIT(0x0c8e31d71f489e47LL);
-    blk[32] = KEYHIT(0x0cce31d71f489e40LL);
-    blk[33] = KEYHIT(0x0561f87749b27666LL);
-    blk[34] = KEYHIT(0x090a1452e822bd05LL);
-    blk[35] = KEYHIT(0x04c23c3d8c45fe08LL);
-    blk[36] = KEYHIT(0x03e90792a484de04LL);
-    blk[37] = KEYHIT(0x000881643da5fb73LL);
-
-    for (i = 0; i < kBlacklistCount; i++) {
-        if (blk[i] != 0) {
-            FT_FileDelete(-3, "EV Nova License.lcs");
-            break;
-        }
-    }
-
-    cursorHidden = 0;
-    if (settings.windowed == 0)
-        HideTheCursor();
-    FUN_00486ec0();
-    CheckForPiratedCodes();
-    ST_Open(8, 0);
-    oldVolume = ST_GetSysVolume();
-
-    crashlog("loading sounds");
-    LoadSounds();
-    SWEnterSpriteWorld();
-
-    crashlog("creating window");
-    SetupWind();
-
-    crashlog("initializing sprite world");
-    SetupSpriteWorld();
-    inBackground = 0;
-    AdjustSoundVolume();
-
-    crashlog("creating offscreen buffers");
-    InitOffscreen();
-
-    crashlog("starting music");
-    SetupIntroMusic();
-    ShowAmbrosiaLogo();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("initializing strings");
-    LoadStrings();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("initializing status bar");
-    InitStatus();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("initializing objects");
-    InitObjects();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("initializing buttons");
-    InitButtons();
-
-    crashlog("loading object data");
-    LoadObjectData();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("loading mission data");
-    InitMissions();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("propagating mission bit effects");
-    PropagateMissionBitEffects();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    HideAmbrosiaLogo();
-    shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
-
-    crashlog("showing splash screen");
-    ShowSplashScreen();
-    HandleIntroMusic(1);
-    FadeScreenIn();
-    IterateInGameEventLoop(kEventLoopTicks);
-    VerifyResourceChecksums();
-    IterateInGameEventLoop(kEventLoopTicks);
-    InitIntroProgressBar();
-
-    crashlog("loading sprites");
-    LoadSprites();
-
-    crashlog("checking memory");
-
-    crashlog("loading ship sprites");
-    LoadShipSprites();
-
-    crashlog("configuring sprites");
-    InitSprites();
-
-    crashlog("initializing player");
-    ResetPlayer(1);
-    ResetPlayerRecord(1);
-    gameLoaded = gameInProgress = 0;
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("initializing main screen");
-    HandleIntroMusic(1);
-    FadeScreenOut();
-    DisposeIntroProgressBar();
-    InitMainScreen();
-
-    crashlog("opening last pilot file");
-    OpenLastPilotFile();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog("propagating mission bit effects");
-    PropagateMissionBitEffects();
-    gameLoaded = 1;
-
-    crashlog("---");
-    gPause = 1;
-    HandleIntroMusic(1);
-    DoMainScreen();
-
-    crashlog("main screen disposed");
-
-    {
-        unsigned char blob[3] = { 0x49, 0x71, 0xad };
-        unsigned char name[17] = "EV NovaEV NovaEV";
-        unsigned char key[17] = "";
-        unsigned char *p;
-        long long mem;
-        unsigned char x;
-        unsigned char y;
-        int c;
-        char b;
-        int t1;
-        int t2;
-        int32_t g;
-        unsigned short rem;
-        Boolean ok;
-        int bail;
-        unsigned int v;
-
-        g = shipData[36].licenseCopies;
-        p = shipData[17].licenseName;
-        mem = shipData[5].licenseCode;
-        x = 0;
-        b = 0;
-        if (p != 0 && *p != 0) {
-            while (StringGetLength(p) != 0 && StringGetLength(key) + 1 < 17)
-                StringAppendSafe(key, p, 17);
-        }
-        x ^= g;
-        x += 0xe7;
-        x ^= g;
-        x = ROTL(x, 3);
-        x ^= name[5];
-        x += 0x31;
-        x = ROTL(x, 7);
-        c = key[0];
-        x ^= c;
-        x = ROTL(x, 4);
-        x = ROTL(x, 8);
-        x += 0x0b;
-        t1 = name[2];
-        x ^= t1;
-        x ^= key[13];
-        x ^= name[13];
-        x += 0xa6;
-        x ^= g;
-        x ^= name[12];
-        x ^= g;
-        t2 = key[1];
-        x ^= t2;
-        x ^= g;
-        x ^= c;
-        x ^= key[4];
-        x += 0x67;
-        x ^= name[6];
-        x ^= g;
-        x += 0x58;
-        if (x > (char)t2)
-            x ^= g;
-        x = ROTL(x, 2);
-        x ^= RegScramE2();
-        y = x + 0x1d;
-        y ^= g;
-        y += 0x5a;
-        x = ROTL(y, 7);
-        x ^= g;
-        x += 0x93;
-        x ^= g;
-        x = ROTL(x, 4);
-        x = ROTL(x, 2);
-        x ^= name[9];
-        rem = DRHash64(mem);
-        x += 0x78;
-        x = ROTL(x, 2);
-        x ^= key[2];
-        x ^= t1;
-        x ^= g;
-        x ^= g;
-        x = ROTL(x, 5);
-        x = ROTL(x, 5);
-        x ^= g;
-        if (x < (char)key[14])
-            x ^= g;
-        if (x > (char)key[4])
-            x ^= name[4];
-        x ^= g;
-        x = ROTL(x, 4);
-        x ^= key[15];
-        x ^= name[14];
-        x = ROTL(x, 2);
-        x += 0x75;
-        RegScramC2(x);
-        x = ROTL(x, 1);
-        x = ROTL(x, 4);
-        x = ROTL(x, 8);
-        x = ROTL(x, 1);
-        x += -0x65;
-        x = ROTL(x, 1);
-        x ^= g;
-        x += 0x58;
-        x ^= key[15];
-        x = RegScramA2(x);
-        x += -0x61;
-        RegScramB2(x);
-        RegScramC2(x);
-        x = ROTL(x, 5);
-        x ^= key[3];
-        b = x;
-        x = RegScramD2(&b);
-        x += 0xa4;
-        x ^= key[1];
-        x ^= key[14];
-        x += 0x29;
-        x = ROTL(x, 2);
-        x += 0xd1;
-        x ^= g;
-        x += 0x82;
-        x ^= name[0];
-        x ^= name[1];
-        x ^= g;
-        x += -0x7c;
-        RegScramB2(x);
-        x = ROTL(x, 5);
-        x += -0x4e;
-        x = ROTL(x, 1);
-        x ^= g;
-        x = ROTL(x, 5);
-        x += 0x5a;
-        x ^= name[11];
-        x ^= g;
-        x = ROTL(x, 5);
-        x ^= g;
-        x += 0xe8;
-        x ^= key[7];
-        x += 0xdd;
-        x ^= key[2];
-        x ^= key[5];
-        x = ROTL(x, 1);
-        x ^= g;
-        x ^= g;
-        x = ROTL(x, 7);
-        x = ROTL(x, 1);
-        x ^= g;
-        x += 0x36;
-        x ^= g;
-        if (x < 0x23)
-            x = ROTL(x, 4);
-        x ^= g;
-        x ^= g;
-        x ^= key[11];
-        if (x < 3)
-            x = blob[x];
-        while (rem >= x)
-            rem -= x;
-        ok = (g != 0 && rem == 0);
-        x ^= key[10];
-        x += 0x4d;
-        x = ROTL(x, 3);
-        x = ROTL(x, 4);
-        x += 0xee;
-        x ^= key[9];
-        x ^= RegScramE2();
-        x += -0x4c;
-        x = ROTL(x, 4);
-        x = ROTL(x, 4);
-        x = ROTL(x, 8);
-        x ^= key[8];
-        x = ROTL(x, 6);
-        x ^= key[2];
-        x = ROTL(x, 7);
-        v = x + 0x57;
-        x = v;
-        if (x != 0)
-            RegScramC2(v);
-
-        bail = shipData[36].licenseCopies != 0 && ok == 0
-                ? (unsigned char)1 : (unsigned char)0;
-        if (bail) {
-            if (settings.windowed == 0)
-                ReleaseVideo();
-            RT3_RunReminder(1, 0);
-        }
-    }
 
     FadeScreenOut();
     ShowTheCursor();
+#ifndef MACBUILD
     KeyboardDestroy();
     MouseDestroy();
-    Bye();
-    ClosePrefs();
-}
 #endif
+    Bye();
+#ifndef MACBUILD
+    ClosePrefs();
+#endif
+}
 
 #define kEscapePodType  0x2ff
 
@@ -2060,7 +1540,6 @@ void InitEVNova(void)
 // FUNCTION: EVNOVA 0x00417600
 // MAC: _PlayGame i386 0x000457ba ppc 0x0004da00
 void PlayGame(void)
-#ifdef MACBUILD
 {
     unsigned char str[256];
     unsigned char numStr[256];
@@ -2068,8 +1547,10 @@ void PlayGame(void)
     float dx;
     float dy;
     float deathTime;
+#ifdef MACBUILD
     GDHandle device;
     Rect box;
+#endif
     short doIt;
 
     GetTime(&d);
@@ -2092,7 +1573,7 @@ void PlayGame(void)
     if (useLegacyRenderingPipeline)
 #endif
         RefreshSAT();
-#ifdef MAC1010
+#if !V111
     FadeScreenIn();
 #endif
     lastLoMemWarningTime = 0;
@@ -2100,7 +1581,7 @@ void PlayGame(void)
     lastSmokeUpdateTime = ReadTick();
     lastEventLoopTime = ReadTick();
     lastKeypressTime = ReadTick();
-#ifndef MAC1010
+#if V111
     FadeScreenIn();
 #endif
     AdjustSoundVolume();
@@ -2134,6 +1615,7 @@ void PlayGame(void)
 
     while (gQuit == 0 && gPause == 0) {
         MyProfileEnter(kProfGameLoop);
+#ifdef MACBUILD
 #if V111
         if (useLegacyRenderingPipeline)
 #endif
@@ -2152,6 +1634,7 @@ void PlayGame(void)
                 }
             }
         }
+#endif
         HandleTimeAdjustment();
         keyPressedThisFrame = 0;
         if (inBackground == 0) {
@@ -2219,6 +1702,9 @@ void PlayGame(void)
                 QDFlushPortBuffer(GetCWindowGrafPort(gWind), 0);
                 MyProfileExit(kProfLocking);
 #endif
+#ifndef MACBUILD
+                ScreenEndScene();
+#endif
                 MyProfileExit(kProfDrawing);
                 MyProfileEnter(kProfPostDraw);
                 if (KeyCheck(keyPrefs.pause)) {
@@ -2249,7 +1735,11 @@ void PlayGame(void)
                         unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
                         unsigned char t6;
                         unsigned char t2;
+#ifdef MACBUILD
                         unsigned char t3;
+#else
+                        int t3;
+#endif
                         unsigned char t4;
                         unsigned char t1;
                         int32_t g;
@@ -2263,15 +1753,17 @@ void PlayGame(void)
                         unsigned char x;
 
                         g = shipData[36].licenseCopies;
-#ifdef MAC1010
-                        p = (char *)shipData[17].licenseName;
-#else
+#if defined(MACBUILD) && !defined(MAC1010)
                         p = RT3_CheckLicenseName(shipData[17].licenseName);
+#else
+                        p = (char *)shipData[17].licenseName;
 #endif
                         mem = shipData[5].licenseCode;
                         x = 0;
 #ifndef MAC1010
                         b = 0;
+#endif
+#if defined(MACBUILD) && !defined(MAC1010)
                         if (p != 0 && *p >= '0' && *p <= '9')
                             g = 1;
 #endif
@@ -2363,7 +1855,12 @@ void PlayGame(void)
                         x = ROTL(x, 8);
                         x ^= t1;
                         x = ROTL(x, 3);
+#ifdef MACBUILD
                         if (x > (char)(t6 = name[9]))
+#else
+                        t6 = name[9];
+                        if (x > (char)t6)
+#endif
                             x = ROTL(x, 7);
                         x = ROTL(x, 5);
                         x ^= name[8];
@@ -2461,7 +1958,11 @@ void PlayGame(void)
                 missionSoundID = -1;
                 if (ST_IsSoundPlaying(warpUpSnd[1]) != 0) {
                     doubleTime = 1;
-                } else if (QuickKeyCheck(MacKey(0x39))) {
+#ifdef CEFIX /* F20.02 */
+                } else if (GetKeyState(ceX2Hotkey) & 1) {
+#else
+                } else if (CapsLockIsOn()) {
+#endif
                     if (abs(AngularDifference(shipData[0].heading,
                                 shipData[0].desiredHeading)) <= 10
                             && ST_IsSoundPlaying(warpUpSnd[0]) != 0) {
@@ -2477,6 +1978,7 @@ void PlayGame(void)
                     gameFrozen = 0;
                 if (keyPressedThisFrame != 0)
                     lastKeypressTime = ReadTick();
+#ifdef MACBUILD
 #if !TARGET_API_MAC_CARBON
                 if (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0) {
                     if (Button() || (QuickKeyCheck(4) && QuickKeyCheck(0x3f))) {
@@ -2500,6 +2002,16 @@ void PlayGame(void)
                             IterateInGameEventLoop(kEventLoopTicks);
                         else
                             IterateInGameEventLoop(1);
+                        lastEventLoopTime = ReadTick();
+                    }
+                } else {
+                    BusyIdle();
+                }
+#endif
+#else
+                if (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0) {
+                    if (ReadTick() - lastEventLoopTime > 30) {
+                        IterateInGameEventLoop(1);
                         lastEventLoopTime = ReadTick();
                     }
                 } else {
@@ -2538,413 +2050,6 @@ void PlayGame(void)
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect((WindowRef)gWind));
 }
-#else
-{
-    unsigned char numStr[256];
-    unsigned char str[256];
-    DateTimeRec d;
-    float dx;
-    float dy;
-    float deathTime;
-
-    GetTime(&d);
-    RedrawStatus(1);
-    RedrawComm(0);
-    PropagateMissionBitEffects();
-    HandleStellarSystemVisibility();
-    gameFrozen = 1;
-    ignoreKeys = 1;
-    DoPlayGameWork(1);
-    gameFrozen = 0;
-    ignoreKeys = 0;
-    hyperGamma = -1.0f;
-    cursorAlpha = 0;
-    playerKilledByHector = 0;
-    PrepareAllSprites();
-    RefreshWindowBuffer();
-    SWUpdateSpriteWorld(gSpriteWorld, 1);
-    RefreshSAT();
-    FadeScreenIn();
-    lastLoMemWarningTime = 0;
-    CheckLoMem();
-    lastSmokeUpdateTime = ReadTick();
-    lastEventLoopTime = ReadTick();
-    lastKeypressTime = ReadTick();
-    AdjustSoundVolume();
-    MyProfileInit();
-    MyProfileSetName(kProfGameLoop, "game loop");
-    MyProfileSetName(kProfPreDraw, "pre draw tasks");
-    MyProfileSetName(kProfDrawing, "drawing");
-    MyProfileSetName(kProfPostDraw, "post draw tasks");
-    MyProfileSetName(kProfShip, "HandleShip");
-    MyProfileSetName(kProfShipDisp, "HandleShipDisplay");
-    MyProfileSetName(kProfAI, "AI routines");
-    MyProfileSetName(kProfShots, "HandleShot");
-    MyProfileSetName(kProfSprites, "misc handlers");
-    MyProfileSetName(kProfCollide, "collisions");
-    MyProfileSetName(kProfPlayer, "player");
-    MyProfileSetName(kProfHandlers, "misc handlers2");
-    MyProfileSetName(kProfStatus, "DrawStatus");
-    MyProfileSetName(kProfProcessSW, "ProcessSpriteWorld");
-    MyProfileSetName(kProfAnimateSW, "AnimateSpriteWorld");
-    MyProfileSetName(kProfPostAnimate, "PostAnimate");
-    MyProfileSetName(kProfLocking, "locking");
-    MyProfileSetName(kProfErase, "erase");
-    MyProfileSetName(kProfDraw, "draw");
-    MyProfileSetName(kProfUpdate, "update");
-    MyProfileSetName(kProfOdds, "calc AI odds");
-    gSpriteWorld->fastBlit = 1;
-    inBackground = 0;
-    gPause = 0;
-    FlushEvents(8, 0);
-    FlushEvents(0xf, 0);
-
-    for (;;) {
-        if (gQuit != 0 || gPause != 0)
-            break;
-        MyProfileEnter(kProfGameLoop);
-        HandleTimeAdjustment();
-        keyPressedThisFrame = 0;
-        if (inBackground == 0) {
-            if (gSpriteWorld->fastBlit != 0) {
-                MyProfileEnter(kProfPreDraw);
-                lastFramePlayerPos.x = shipData[0].pos.x;
-                lastFramePlayerPos.y = shipData[0].pos.y;
-                if (frameCounter % 3 != 0) {
-                    updateSmokeThisFrame = 0;
-                } else {
-                    updateSmokeThisFrame = 1;
-                    lastSmokeUpdateTime = ReadTick();
-                }
-                DoPlayGameWork(1);
-                fpsCounter += 1;
-                if (showFPS != 0) {
-                    if (ReadTick() > lastFPSUpdateTime + 120) {
-                        if (lastFPSUpdateTime == 0) {
-                            GetIndString(str, kGameStrList, 282);
-                            DisplayComm(str, 100, 0, kCommTextSize, &rgbWhite, 0, 0);
-                        } else {
-                            NumToString((fpsCounter * 60.0 /
-                                    (ReadTick() - lastFPSUpdateTime)),
-                                    numStr);
-                            PtoCstr(numStr);
-                            strcpy((char *)str, (char *)numStr);
-                            strcat((char *)str, " ");
-                            StrcatIndCString((char *)str, kGameStrList, 283);
-                            CtoPstr((char *)str);
-                            DisplayComm(str, 999, 0, kCommTextSize, &rgbWhite, 0, 0);
-                        }
-                        lastFPSUpdateTime = ReadTick();
-                        fpsCounter = 0;
-                    }
-                } else {
-                    lastFPSUpdateTime = ReadTick();
-                }
-                dx = lastFramePlayerPos.x - shipData[0].pos.x;
-                dy = lastFramePlayerPos.y - shipData[0].pos.y;
-                if (doubleTime != 0) {
-                    dx *= 2.0f;
-                    dy *= 2.0f;
-                }
-                ScrollStarfield(dx, dy);
-                HandleMouse();
-                MyProfileExit(kProfPreDraw);
-                MyProfileEnter(kProfDrawing);
-                MyProfileEnter(kProfProcessSW);
-                SWProcessSpriteWorld(gSpriteWorld);
-                MyProfileExit(kProfProcessSW);
-                MyProfileEnter(kProfAnimateSW);
-                SWAnimateSpriteWorld(gSpriteWorld);
-                MyProfileExit(kProfAnimateSW);
-                MyProfileEnter(kProfPostAnimate);
-                PostAnimateHandler();
-                MyProfileExit(kProfPostAnimate);
-                ScreenEndScene();
-                MyProfileExit(kProfDrawing);
-                MyProfileEnter(kProfPostDraw);
-                if (KeyCheck(keyPrefs.pause)) {
-                    if (pauseKeyFlag == 0 && gPause == 0) {
-                        pauseKeyFlag = 1;
-                        if (shipData[0].jumpTimer <= 0.0f
-                                && shipData[0].type != kEscapePodType
-                                && (deathTime = shipData[0].deathTimer) <= 0.0f
-                                && shipData[0].escapePods <= 0) {
-                            if (shipData[0].active != 0 || deathTime < -250.0f)
-                                gPause = 1;
-                        }
-                    }
-                } else {
-                    pauseKeyFlag = 0;
-                }
-                if (doubleTime != 0)
-                    DoPlayGameWork(0);
-                frameCounter += 1;
-                if (frameCounter > 1024) {
-                    frameCounter = 0;
-                    if (d.day == 30 && d.month == 6 && commCount <= 0)
-                        DisplayComm("\pHappy birthday Matt",
-                                    5, 3, 9, &rgbDarkGrey, 0, 0);
-                    {
-                        unsigned char blob[3] = { 0x49, 0x71, 0xad };
-                        unsigned char name[17] = "EV NovaEV NovaEV";
-                        unsigned char key[17] = "";
-                        int32_t g;
-                        unsigned char *p;
-                        long long mem;
-                        unsigned char x;
-                        char b;
-                        int t1;
-                        int t2;
-                        int t3;
-                        int t4;
-                        unsigned short rem;
-                        Boolean ok;
-                        short doIt;
-
-                        g = shipData[36].licenseCopies;
-                        p = shipData[17].licenseName;
-                        mem = shipData[5].licenseCode;
-                        x = 0;
-                        b = 0;
-                        if (p != 0) {
-                            while (StringGetLength(key) + 1 < 17 && *p != 0)
-                                StringAppendSafe(key, p, 17);
-                        }
-                        x ^= key[3];
-                        x ^= name[14];
-                        x += 0xf1;
-                        x ^= key[10];
-                        x ^= key[8];
-                        x ^= key[15];
-                        x = ROTL(x, 4);
-                        x = ROTL(x, 2);
-                        x = ROTL(x, 7);
-                        x ^= key[1];
-                        x = ROTL(x, 2);
-                        x = ROTL(x, 1);
-                        x += 0x5f;
-                        x = ROTL(x, 4);
-                        t1 = name[13];
-                        x ^= t1;
-                        t2 = name[5];
-                        x ^= t2;
-                        x ^= g;
-                        x ^= g;
-                        x ^= g;
-                        x += 0x42;
-                        if (x < (char)key[11])
-                            x = ROTL(x, 8);
-                        x ^= t1;
-                        x ^= g;
-                        x += -0x6b;
-                        x = ROTL(x, 1);
-                        x ^= key[7];
-                        x += 0x1e;
-                        x ^= key[12];
-                        x = ROTL(x, 6);
-                        x ^= name[3];
-                        x += 0xac;
-                        x ^= key[3];
-                        x ^= key[13];
-                        rem = RT3_ExtractLicenseBlock1(mem);
-                        x = ROTL(x, 6);
-                        x ^= g;
-                        x = ROTL(x, 2);
-                        x ^= key[4];
-                        x = ROTL(x, 3);
-                        x = ROTL(x, 5);
-                        x ^= g;
-                        b = x;
-                        x = RegScramD2(&b);
-                        x += 0x19;
-                        x = ROTL(x, 3);
-                        x ^= key[15];
-                        RegScramB2(x);
-                        x = ROTL(x, 6);
-                        RegScramF2();
-                        x = ROTL(x, 5);
-                        t3 = name[0];
-                        x ^= g;
-                        x ^= key[14];
-                        x ^= t3;
-                        x ^= t2;
-                        x += 7;
-                        x ^= key[8];
-                        x += -0x60;
-                        x = ROTL(x, 4);
-                        x += -0x23;
-                        x = ROTL(x, 1);
-                        x ^= key[13];
-                        RegScramB2(x);
-                        x += 0x3e;
-                        x ^= g;
-                        t4 = name[1];
-                        x ^= t4;
-                        if (x < (char)key[6])
-                            x = ROTL(x, 3);
-                        x ^= g;
-                        x += 0xe1;
-                        x ^= name[7];
-                        x ^= RegScramE2();
-                        x ^= t3;
-                        x ^= key[8];
-                        x = ROTL(x, 8);
-                        x ^= t1;
-                        x = ROTL(x, 3);
-                        t1 = name[9];
-                        if (x > (char)t1)
-                            x = ROTL(x, 7);
-                        x = ROTL(x, 5);
-                        x ^= name[8];
-                        x ^= key[7];
-                        x ^= g;
-                        if (x > 0x5f) {
-                            b = x;
-                            x = RegScramD2(&b);
-                        }
-                        x = ROTL(x, 6);
-                        x += -0x53;
-                        x = ROTL(x, 7);
-                        x ^= key[2];
-                        x += 0x5b;
-                        x ^= t3;
-                        x = ROTL(x, 6);
-                        x += 0xc2;
-                        x ^= key[14];
-                        if (x < 0x94)
-                            x = ROTL(x, 6);
-                        x ^= g;
-                        x = ROTL(x, 1);
-                        x = ROTL(x, 2);
-                        x += 0x45;
-                        x = ROTL(x, 4);
-                        x = ROTL(x, 2);
-                        x += 0x62;
-                        x ^= key[10];
-                        if (x < (char)key[1])
-                            x = ROTL(x, 5);
-                        if (x > (char)key[9])
-                            x ^= key[9];
-                        x ^= g;
-                        x += 0x6c;
-                        x = ROTL(x, 6);
-                        x += 3;
-                        x ^= key[9];
-                        x += -0x6d;
-                        x = ROTL(x, 3);
-                        x = ROTL(x, 1);
-                        x ^= key[15];
-                        x ^= key[4];
-                        x += 0x99;
-                        if (x > 0x47)
-                            x ^= key[0];
-                        if (x < 3)
-                            x = blob[x];
-                        while (rem >= x)
-                            rem -= x;
-                        ok = (g != 0 && rem == 0);
-                        x ^= g;
-                        x += 0xd9;
-                        RegScramC2(x);
-                        x ^= t2;
-                        x = ROTL(x, 6);
-                        x += 0xa;
-                        x ^= g;
-                        x ^= t4;
-                        x ^= key[10];
-                        x += 0x96;
-                        x ^= name[2];
-                        x ^= name[4];
-                        x ^= t1;
-                        x += 0xb;
-                        if (x != 0)
-                            RegScramA2(x);
-
-                        doIt = (shipData[36].licenseCopies != 0
-                                && ok == 0 ? (unsigned char)1 : (unsigned char)0);
-                        if (doIt) {
-                            shipData[0].credits *= 0.1;
-                            statusRedraw[kRedrawCargo] = 1;
-                        }
-                    }
-                }
-                if (missionSoundID != -1 && missionSnd == 0) {
-                    missionSnd = ST_LoadSndResource(missionSoundID);
-                    if (missionSnd != 0)
-                        PlaySound(missionSnd, 50, gSoundVolume, gSoundVolume);
-                    missionSoundID = -1;
-                }
-                if (missionSnd != 0 && ST_IsSoundPlaying(missionSnd) == 0) {
-                    ST_DisposeSound(missionSnd);
-                    missionSnd = 0;
-                }
-                killShots = 0;
-                killBoxes = 0;
-                killExplods = 0;
-                killSmoke = 0;
-                killAsteroids = 0;
-                missionSoundID = -1;
-                if (ST_IsSoundPlaying(warpUpSnd[1]) != 0) {
-                    doubleTime = 1;
-#ifdef CEFIX /* F20.02 */
-                } else if (!(GetKeyState(ceX2Hotkey) & 1)) {
-#else
-                } else if (!CapsLockIsOn()) {
-#endif
-                    doubleTime = 0;
-                    gameFrozen = 0;
-                } else if (abs(AngularDifference(shipData[0].heading,
-                            shipData[0].desiredHeading)) > 10
-                        || ST_IsSoundPlaying(warpUpSnd[0]) == 0) {
-                    doubleTime = 1;
-                } else {
-                    doubleTime = 0;
-                }
-                if (cheatsActive == 0)
-                    gameFrozen = 0;
-                if (keyPressedThisFrame != 0)
-                    lastKeypressTime = ReadTick();
-                if (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0) {
-                    if (ReadTick() - lastEventLoopTime > 30) {
-                        IterateInGameEventLoop(1);
-                        lastEventLoopTime = ReadTick();
-                    }
-                } else {
-                    BusyIdle();
-                }
-                MyProfileExit(kProfPostDraw);
-            } else {
-                SWUpdateSpriteWorld(gSpriteWorld, 0);
-                IterateInGameEventLoop(3);
-                if (gSpriteWorld->fastBlit != 0) {
-                    RefreshSAT();
-                    RedrawStatus(1);
-                }
-            }
-        } else {
-            IterateInGameEventLoop(-1);
-            if (inBackground == 0)
-                RefreshWindowBuffer();
-        }
-        if (absquatulateStr[0] != 0) {
-            PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-            DisplayComm((unsigned char *)absquatulateStr, 500, 0, kCommTextSize, &rgbWhite, 0, 0);
-            RedrawComm(1);
-            absquatulateStr[0] = 0;
-        }
-        MyProfileExit(kProfGameLoop);
-    }
-
-    MyProfileDump("profile.txt");
-    FadeScreenOut();
-    ShowTheCursor();
-    playerKilledByHector = 0;
-    FlushEvents(everyEvent - diskMask, 0);
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect(gWind));
-}
-#endif
 
 #define kMaxNavDefaults 0x10
 
@@ -3684,10 +2789,7 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
     short i;
     short j;
     short m;
-#ifdef MAC1010 /* 1.0.10 spelling */
     short k;
-    short n;
-#endif
     short slot;
     short sysOf;
 #if !V111
@@ -3742,9 +2844,7 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
         }
     }
 
-#ifdef MAC1010 /* 1.0.10 spelling */
     k = 0;
-#endif
     for (m = 0; m < kMaxActiveMissions; m++) {
         if (currentMissionObjectives[m].active != 0) {
             shipSyst = currentMissions[m].shipSyst;
@@ -3765,54 +2865,9 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
                 }
                 if (shipsLeft > 0) {
                     for (i = 0; i < shipsLeft; i++) {
-#ifdef MAC1010 /* 1.0.10 spelling */
-                        n = MissionDudeSpawn(currentMissions[m].shipDude, -1, sys, m);
-                        if (n != -1) {
-                            k++;
-                            if (currentMissions[m].shipGoal == kMissionGoalEscort) {
-                                shipData[n].pos.x = Rand(0x200) - 0x100;
-                                shipData[n].pos.y = Rand(0x200) - 0x100;
-                            }
-                            if (currentMissions[m].shipGoal == kMissionGoalRescue) {
-                                shipData[n].heading = Rand(kFullCircle);
-                                shipData[n].vel.x = shipData[n].vel.y = 0.0f;
-                                shipData[n].accelMag = 0.0f;
-                                shipData[n].shield = 0.0f;
-                                if ((shipClass[shipData[n].type].flags
-                                        & kShipArmorDisableTenth) != 0)
-                                    shipData[n].armor =
-                                        shipClass[shipData[n].type].armor * 0.1 - 1.0;
-                                else
-                                    shipData[n].armor =
-                                        shipClass[shipData[n].type].armor * 0.33 - 1.0;
-                                if (currentMissions[m].timeLimit <= 0
-                                        && currentMissions[m].timeLimit > -32000)
-                                    shipData[n].boarded = 1;
-                            }
-                            if (currentMissions[m].shipStart <= kNavStelFirst
-                                    && currentMissions[m].shipStart >= kNavStelLast) {
-                                navIndex = -1 - currentMissions[m].shipStart;
-                                if (systemData[sys].navDefault[navIndex] != -1) {
-                                    shipData[n].pos.x = stellarData[
-                                        systemData[sys].navDefault[navIndex]].pos.h;
-                                    shipData[n].pos.y = stellarData[
-                                        systemData[sys].navDefault[navIndex]].pos.v;
-                                }
-                            }
-                            if (currentMissions[m].shipBehav == kMissionModeEscort) {
-                                shipData[n].aiType = kShipTypeEscort;
-                                shipData[n].parentShip = 0;
-                                shipData[n].formLeader = 0;
-                                shipData[n].swarmLeader = 0;
-                                if (arriving != 0)
-                                    shipData[n].heading = shipData->heading;
-                            }
-                            shipData[n].lastStellar = -2;
-                            if (currentMissions[m].shipStart == kMissionShipCloaked)
-                                DoShipCloak(&shipData[n]);
-#else
                         slot = MissionDudeSpawn(currentMissions[m].shipDude, -1, sys, m);
                         if (slot != -1) {
+                            k++;
                             if (currentMissions[m].shipGoal == kMissionGoalEscort) {
                                 shipData[slot].pos.x = Rand(0x200) - 0x100;
                                 shipData[slot].pos.y = Rand(0x200) - 0x100;
@@ -3854,7 +2909,6 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
                             shipData[slot].lastStellar = -2;
                             if (currentMissions[m].shipStart == kMissionShipCloaked)
                                 DoShipCloak(&shipData[slot]);
-#endif
                         } else {
                             crashlog_print("warning: couldn't create ship for mission ID ");
                             crashlog_print_num(currentMissions[m].misnIndex + kFirstResourceID);
@@ -5012,19 +4066,14 @@ short SpawnShot(short ship, short target, short weapType, Boolean flag)
     }
 
     /* an AI that is trying to disable its prey marks the shot disable-only */
-#if V111 /* V111 spelling */
     if (0 < ship && ship < kMaxShips) {
         if (AIIsShipAttemptingDisable(&shipData[ship]) != 0) {
             shotData[slot].disableOnly = 1;
         }
-        target = (target << 16) >> 16; /* V111 pad: shift pair, buys i386 block J at PRE (combine deletes its insns) */
-    }
-#else
-    if (0 < ship && ship < kMaxShips &&
-        AIIsShipAttemptingDisable(&shipData[ship]) != 0) {
-        shotData[slot].disableOnly = 1;
-    }
+#if V111 /* V111 pad: shift pair, buys i386 block J at PRE (combine deletes its insns) */
+        target = (target << 16) >> 16;
 #endif
+    }
 
     if (0 <= ship && ship < kMaxShips) {
         shotData[slot].curSystem = shipData[ship].curSystem;
@@ -6091,13 +5140,12 @@ short SpawnPerson(short sys, unsigned char noDisabled, short person)
     return -1;
 }
 
-/* the mac's index is the short itself; win reads it in three widths, each a CSE class */
+/* win reads the index in three widths, each a CSE class; the mac's slotL and slotI are the short itself */
+#define slotR ((int32_t)slot)
 #if defined(MACBUILD) || V111 /* mac spelling */
 #define slotL slot
-#define slotR slot
 #define slotI slot
 #else
-#define slotR ((int32_t)slot)
 #define slotI ((int)slotL)
 #endif
 
@@ -6551,8 +5599,8 @@ short GenericRandomShipSpawn(short sys, short reserve)
                                                          /* 0x00413990 */
 
 /* HyperSpawnFleet (mac _HyperSpawnFleet). STATE: win MATCH 100.0%, 982/982, byte-identical
-   yes; mac MATCH on both slices. The fleet index is held twice, int `f' and long `idx' (the copy
-   differs in type, so it survives copy propagation); one holder scores 98.4-98.5 (notes). OPEN:
+   yes; mac MATCH on both slices. The fleet index is held twice, size_t `f' and uint32_t `idx'
+   (two classes on x86, one on PPC); the first test reads fleetData through `fd' (notes). OPEN:
    none. */
 // FUNCTION: EVNOVA 0x004259b0
 // MAC: _HyperSpawnFleet i386 0x00041c8d ppc 0x0004960c
@@ -6562,8 +5610,9 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
     short i;
     float speed;
     float dist;
-    int32_t idx;
-    int f;
+    FletRecord *fd = fleetData;
+    size_t f = fleet;
+    uint32_t idx = f;
     short j;
     short k;
     short slot;
@@ -6576,14 +5625,7 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
     Boolean digit;
     unsigned char c;
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-#define f fleet
-#define idx fleet
-#else
-    f = fleet;
-    idx = f;
-#endif
-    if (fleetData[f].leadShipType == -1)
+    if (fd[f].leadShipType == -1)
         return;
     if (fleetData[f].usable == 0)
         return;
@@ -6733,8 +5775,6 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
         }
     }
 }
-#undef f
-#undef idx
 
 /* SpeakVoiceMessage. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00426ce0
@@ -7251,16 +6291,6 @@ void SpawnEscapePod(ShipObj *ship)
 #define kPirateSTR   140
 #define kPirateIndex 50
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-typedef struct KeyTable {
-    UnsignedWide key[kBlacklistCount];
-} KeyTable;
-#else
-typedef struct KeyTable {
-    long long key[kBlacklistCount];
-} KeyTable;
-#endif
-
 #define kRevokedKeys \
     0x0284801349262406LL, 0x0101e057b160ee02LL, \
     0x07365c430b23e131LL, 0x07345d430b23e131LL, \
@@ -7282,60 +6312,21 @@ typedef struct KeyTable {
     0x090a1452e822bd05LL, 0x04c23c3d8c45fe08LL, \
     0x03e90792a484de04LL, 0x000881643da5fb73LL
 
-#ifdef MAC1010 /* 1.0.10 spelling: the same keys as {hi, lo} */
-#define kRevokedKeyWords \
-    {0x02848013, 0x49262406}, {0x0101e057, 0xb160ee02}, \
-    {0x07365c43, 0x0b23e131}, {0x07345d43, 0x0b23e131}, \
-    {0x05d4013a, 0x1123c94a}, {0x08d22033, 0xa5a9ae47}, \
-    {0x08d02133, 0xa5a9ae47}, {0x0940f13e, 0x07262d74}, \
-    {0x01e8616d, 0xa73a6b41}, {0x03395a95, 0x2823e649}, \
-    {0x033b5a95, 0x2803f64b}, {0x0b795a95, 0x2803f64a}, \
-    {0x00dd0214, 0x13f10475}, {0x00df0214, 0x13d11477}, \
-    {0x009f0214, 0x13d11476}, {0x09224585, 0x278cbf5b}, \
-    {0x0bf35041, 0x709a3940}, {0x03f15041, 0x709a3946}, \
-    {0x0125a4aa, 0x21b1cf03}, {0x03a31e5b, 0x03829d3d}, \
-    {0x009f8c40, 0xaac47814}, {0x045ac4b4, 0x0fb08b36}, \
-    {0x0c1ac5bc, 0x0b909b37}, {0x02a97414, 0x0d644b4d}, \
-    {0x02a97414, 0x09644b49}, {0x0aab751c, 0x09445b49}, \
-    {0x02eb751c, 0x09445b4a}, {0x01e24b6c, 0x4b56f67e}, \
-    {0x048c30d7, 0x1f489e43}, {0x0c8c31d7, 0x1f489e45}, \
-    {0x04cc31d7, 0x1f489e46}, {0x0c8e31d7, 0x1f489e47}, \
-    {0x0cce31d7, 0x1f489e40}, {0x0561f877, 0x49b27666}, \
-    {0x090a1452, 0xe822bd05}, {0x04c23c3d, 0x8c45fe08}, \
-    {0x03e90792, 0xa484de04}, {0x00088164, 0x3da5fb73}
-
-static const KeyTable revokedKeyTable = {{ kRevokedKeyWords }};
-#elif !defined(MACBUILD) || !V111
-static const KeyTable revokedKeyTable = {{ kRevokedKeys }};
-#endif
-
 /* CheckForPiratedCodes. STATE: MATCH, byte-identical. 1.0.10 MATCH 65 of 65 on both fragments,
    padded. OPEN: none */
 // FUNCTION: EVNOVA 0x00428260
 // MAC: _CheckForPiratedCodes i386 0x000456cd ppc 0x0004d910
 void CheckForPiratedCodes(void)
 {
-#if V111 /* V111 spelling */
-    KeyTable keys = {{ kRevokedKeys }};
-#else
-    KeyTable keys;
-#endif
+    long long keys[kBlacklistCount] = { kRevokedKeys };
     unsigned char msg[256];
     short i;
     unsigned long long code;
     unsigned long long k;
 
-#if V111 /* V111 spelling */
-#else
-    keys = revokedKeyTable;
-#endif
     for (i = 0; i < kBlacklistCount; i++) {
         code = RT3_GetLicenseCode();
-#ifdef MAC1010 /* 1.0.10 spelling */
-        k = *(unsigned long long *)&keys.key[i];
-#else
-        k = keys.key[i];
-#endif
+        k = keys[i];
         k <<= 4;
         k >>= 4;
         code <<= 4;

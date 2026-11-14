@@ -237,7 +237,6 @@ void AIDispatch(ShipObj *ship, Boolean noBrains)
 void ScanPlayer(ShipObj *ship)
 {
     short i;
-    short fine;
     int32_t amt;
     float speed;
     short j;
@@ -317,27 +316,14 @@ void ScanPlayer(ShipObj *ship)
                         strcat((char *)msg, " ");
                         StrcatIndCString((char *)msg, kGameStrList, 0x17c);
                         strcat((char *)msg, " ");
-#ifdef MAC1010 /* 1.0.10 spelling */
                         if (govtData[ship->govt].scanFine > 0)
                             amt = govtData[ship->govt].scanFine;
                         else {
-                            amt = shipData->credits * (-govtData[ship->govt].scanFine * 0.0001);
+                            amt = -govtData[ship->govt].scanFine * 0.0001 * shipData->credits;
                             amt = amt * 100;
                             if (amt < 1)
                                 amt = 1;
                         }
-#else
-                        fine = govtData[ship->govt].scanFine;
-                        if (fine <= 0) {
-                            double scale = -fine * 0.0001;
-
-                            amt = shipData->credits * scale;
-                            amt = amt * 100;
-                            if (amt < 1)
-                                amt = 1;
-                        } else
-                            amt = fine;
-#endif
                         StrcatCommaNumber(amt, (char *)msg);
                         strcat((char *)msg, " ");
                         if (amt > 1)
@@ -392,27 +378,14 @@ void ScanPlayer(ShipObj *ship)
                             strcat((char *)msg, " ");
                             StrcatIndCString((char *)msg, kGameStrList, 0x17c);
                             strcat((char *)msg, " ");
-#ifdef MAC1010 /* 1.0.10 spelling */
                             if (govtData[ship->govt].scanFine > 0)
                                 amt = govtData[ship->govt].scanFine;
                             else {
-                                amt = shipData->credits * (-govtData[ship->govt].scanFine * 0.0001);
+                                amt = -govtData[ship->govt].scanFine * 0.0001 * shipData->credits;
                                 amt = amt * 100;
                                 if (amt < 1)
                                     amt = 1;
                             }
-#else
-                            fine = govtData[ship->govt].scanFine;
-                            if (fine <= 0) {
-                                double scale = -fine * 0.0001;
-
-                                amt = shipData->credits * scale;
-                                amt = amt * 100;
-                                if (amt < 1)
-                                    amt = 1;
-                            } else
-                                amt = fine;
-#endif
                             StrcatCommaNumber(amt, (char *)msg);
                             strcat((char *)msg, " ");
                             if (amt > 1)
@@ -2426,35 +2399,19 @@ void HighLevelAIHandler(ShipObj *ship)
 // MAC: _LowLevelAIHandler i386 0x000851da ppc 0x000901c4
 void LowLevelAIHandler(ShipObj *ship)
 {
-#ifdef MAC1010 /* 1.0.10 spelling */
-    float outer;
-    float inner;
-    float ax;
-    float px;
-    unsigned char msg[256];
-    char tmp[256];
+    short outer = 150;
+    short inner = 80;
     FloatPoint pt;
     FloatPoint scaled;
     FloatPoint aim;
     FloatPoint delta;
     FloatPoint anchor;
-    short best;
-    short i;
-    short box;
-    short bestBox;
-#else
-    char tmp[256];
-    short bestBox;
     unsigned char msg[256];
-    FloatPoint pt;
-    FloatPoint delta;
-    FloatPoint anchor;
-    FloatPoint scaled;
-    FloatPoint aim;
-    short i;
+    char tmp[256];
     short box;
+    short bestBox;
     short best;
-#endif
+    short i;
     short angle;
     short course;
     short limit;
@@ -3213,55 +3170,26 @@ doneFollow:
             ship->vel.y = ship->vel.y + step;
         else
             ship->vel.y = asteroidData->vel.y;
-#ifdef MAC1010 /* 1.0.10 spelling */
-        px = ship->pos.x;
-        ax = asteroidData->pos.x;
-        outer = 150.0F;
-        if (px > ax + outer)
-            ship->pos.x = px - step;
-        else if (px < ax - outer)
-            ship->pos.x = px + step;
-        px = ship->pos.y;
-        ax = asteroidData->pos.y;
-        outer = 150.0F;
-        if (px > ax + outer)
-            ship->pos.y = px - step;
-        else if (px < ax - outer)
-            ship->pos.y = px + step;
+        if (ship->pos.x > asteroidData->pos.x + outer)
+            ship->pos.x -= step;
+        else if (ship->pos.x < asteroidData->pos.x - outer)
+            ship->pos.x += step;
+        if (ship->pos.y > asteroidData->pos.y + outer)
+            ship->pos.y -= step;
+        else if (ship->pos.y < asteroidData->pos.y - outer)
+            ship->pos.y += step;
         if (ship->pos.x > asteroidData->pos.x &&
-                ship->pos.x < asteroidData->pos.x + (inner = 80.0F))
+                ship->pos.x < asteroidData->pos.x + inner)
             ship->pos.x = ship->pos.x + step;
         else if (ship->pos.x < asteroidData->pos.x &&
-                ship->pos.x > asteroidData->pos.x - 80.0F)
+                ship->pos.x > asteroidData->pos.x - inner)
             ship->pos.x -= step;
         if (ship->pos.y > asteroidData->pos.y &&
-                ship->pos.y < asteroidData->pos.y + (inner = 80.0F))
+                ship->pos.y < asteroidData->pos.y + inner)
             ship->pos.y = ship->pos.y + step;
         else if (ship->pos.y < asteroidData->pos.y &&
-                ship->pos.y > asteroidData->pos.y - 80.0F)
+                ship->pos.y > asteroidData->pos.y - inner)
             ship->pos.y -= step;
-#else
-        if (ship->pos.x > 150.0F + asteroidData->pos.x)
-            ship->pos.x = ship->pos.x - step;
-        else if (ship->pos.x < asteroidData->pos.x - 150.0F)
-            ship->pos.x = ship->pos.x + step;
-        if (ship->pos.y > 150.0F + asteroidData->pos.y)
-            ship->pos.y = ship->pos.y - step;
-        else if (ship->pos.y < asteroidData->pos.y - 150.0F)
-            ship->pos.y = ship->pos.y + step;
-        if (ship->pos.x > asteroidData->pos.x &&
-                ship->pos.x < 80.0F + asteroidData->pos.x)
-            ship->pos.x = ship->pos.x + step;
-        else if (ship->pos.x < asteroidData->pos.x &&
-                ship->pos.x > asteroidData->pos.x - 80.0F)
-            ship->pos.x = ship->pos.x - step;
-        if (ship->pos.y > asteroidData->pos.y &&
-                ship->pos.y < 80.0F + asteroidData->pos.y)
-            ship->pos.y = ship->pos.y + step;
-        else if (ship->pos.y < asteroidData->pos.y &&
-                ship->pos.y > asteroidData->pos.y - 80.0F)
-            ship->pos.y = ship->pos.y - step;
-#endif
         ship->desiredHeading = CalcObjectLeadAngle(
             ship, &asteroidData->pos,
             &asteroidData->vel, ship->selectedWeapon,
@@ -4675,16 +4603,14 @@ Boolean IsShipThreatenedByMyEnemy(ShipObj *ship, ShipObj *me)
 {
     short i;
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-    assert(ship != 0);
-#endif
     if (ship->index == 0)
         return IsPlayerThreatenedByMyEnemy(me);
     if (ExtendedIsThreatToPlayer(ship) != 0)
         return 1;
     for (i = 1; i < kMaxShips; i++) {
-        if (shipData[i].active != 0 && i != me->index && i != ship->index
-            && ExtendedIsThreatToShip(&shipData[i], ship) != 0
+        if (shipData[i].active == 0 || i == me->index || i == ship->index)
+            continue;
+        if (ExtendedIsThreatToShip(&shipData[i], ship) != 0
             && IsShipMyEnemy(me, &shipData[i]) != 0)
             return 1;
     }

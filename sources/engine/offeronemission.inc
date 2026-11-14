@@ -69,9 +69,7 @@
     short savedRoute;
     short shown;
     short savedScroll;
-#ifndef V111
     unsigned char labelChar;
-#endif
     Boolean accepted;
     Boolean savedUp;
     Boolean savedDown;
@@ -229,13 +227,9 @@
         strcpy((char *)missionButtonLabel[0], ((MisnRes *)*missionFileHand)->acceptButton);
         strcpy((char *)missionButtonLabel[1], ((MisnRes *)*missionFileHand)->refuseButton);
         for (i = 0; i <= kMissionButtonLabelCount - 1; i++) {
-#ifdef V111 /* V111 spelling */
-            if (tolower(missionButtonLabel[i][0]) < 'a'
-                    || tolower(missionButtonLabel[i][0]) > 'z')
-#else
             labelChar = missionButtonLabel[i][0];
-            if (tolower(labelChar) < 'a' || tolower(labelChar) > 'z')
-#endif
+            if (tolower(HeldChar(labelChar, missionButtonLabel[i][0])) < 'a'
+                    || tolower(HeldChar(labelChar, missionButtonLabel[i][0])) > 'z')
                 strcpy((char *)missionButtonLabel[i], "");
         }
         refuseDescID = ((MisnRes *)*missionFileHand)->refuseText;

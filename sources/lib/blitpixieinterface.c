@@ -1261,21 +1261,34 @@ void BlitPixieAllBitPartialMaskDrawProc(
 /* SWGetValueFromColor (mac _SWGetValueFromColor). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004719d0
 // MAC: _SWGetValueFromColor i386 0x000bd4a0 ppc 0x000c8e14
-#ifdef MACBUILD
 uint32_t SWGetValueFromColor(FramePtr dstFrameP, RGBColor *color)
 {
+#ifdef MACBUILD
     GWorldPtr saveGWorld;
     GDHandle saveGDevice;
     UInt32 pixelValue;
+#else
+    CGrafPtr saveGWorld;
+    void *saveGDevice;
+    uint32_t pixelValue;
+#endif
 
-    SW_ASSERT(dstFrameP != NULL, 1927);
-    SW_ASSERT(dstFrameP->framePort != NULL, 1928);
+    if (dstFrameP == 0)
+        SW_ASSERT_FAIL("BlitPixieInterface.c", 1929, 1927);
+    if (dstFrameP->framePort == 0)
+        SW_ASSERT_FAIL("BlitPixieInterface.c", 1930, 1928);
 
+#ifdef MACBUILD
     GetGWorld(&saveGWorld, &saveGDevice);
     if (useLegacyRenderingPipeline)
         SetGWorld(dstFrameP->framePort, dstFrameP->frameDevice);
     else
         SetGWorld(dstFrameP->framePort, NULL);
+#else
+    GetPort(&saveGWorld);
+    saveGDevice = GetGWorldDevice(saveGWorld);
+    SetPort(dstFrameP->framePort);
+#endif
 
     pixelValue = Color2Index(color);
 
@@ -1284,40 +1297,16 @@ uint32_t SWGetValueFromColor(FramePtr dstFrameP, RGBColor *color)
     if (dstFrameP->frameDepth < 32)
         pixelValue |= pixelValue << 16;
 
+#ifdef MACBUILD
     if (useLegacyRenderingPipeline)
         SetGWorld(saveGWorld, saveGDevice);
     else
         SetGWorld(saveGWorld, NULL);
-    return pixelValue;
-}
 #else
-uint32_t SWGetValueFromColor(SWFrameRec *dstFrameP, RGBColor *color)
-{
-    CGrafPtr saveGWorld;
-    void *saveGDevice;
-    uint32_t pixelValue;
-
-    if (dstFrameP == 0)
-        SWAssertFail("BlitPixieInterface.c", 1929);
-    if (dstFrameP->framePort == 0)
-        SWAssertFail("BlitPixieInterface.c", 1930);
-
-    GetPort(&saveGWorld);
-    saveGDevice = GetGWorldDevice(saveGWorld);
-    SetPort(dstFrameP->framePort);
-
-    pixelValue = Color2Index(color);
-
-    if (dstFrameP->frameDepth < 16)
-        pixelValue |= pixelValue << 8;
-    if (dstFrameP->frameDepth < 32)
-        pixelValue |= pixelValue << 16;
-
     SetPort(saveGWorld);
-
+#endif
     return pixelValue;
 }
-#endif
 
 #ifdef MACBUILD
 /* SWGetColorFromValue (mac _SWGetColorFromValue, mac-only). STATE: see the mac gate. */

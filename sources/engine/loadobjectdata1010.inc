@@ -1427,9 +1427,9 @@
                 personData[i].flags = ResRec(PersRes, personFileHand)->flags;
                 personData[i].flags2 = ResRec(PersRes, personFileHand)->flags2;
                 personData[i].hailPict = ResRec(PersRes, personFileHand)->hailPict;
-                personData[i].rgb5[0] = (ResRec(PersRes, personFileHand)->shipColor >> 19) & 0x1f;
-                personData[i].rgb5[1] = (ResRec(PersRes, personFileHand)->shipColor >> 11) & 0x1f;
-                personData[i].rgb5[2] = (ResRec(PersRes, personFileHand)->shipColor >> 3) & 0x1f;
+                personData[i].shipColor.red = (ResRec(PersRes, personFileHand)->shipColor >> 19) & 0x1f;
+                personData[i].shipColor.green = (ResRec(PersRes, personFileHand)->shipColor >> 11) & 0x1f;
+                personData[i].shipColor.blue = (ResRec(PersRes, personFileHand)->shipColor >> 3) & 0x1f;
                 if (personData[i].linkMission >= kFirstResourceID)
                     personData[i].linkMission -= kFirstResourceID;
                 else
@@ -1513,7 +1513,7 @@
         personData[kPersCaptainHector].hailQuote = -1;
         personData[kPersCaptainHector].linkMission = -1;
         personData[kPersCaptainHector].flags = 2;
-        personData[kPersCaptainHector].rgb5[0] = personData[kPersCaptainHector].rgb5[1] = personData[kPersCaptainHector].rgb5[2] = 0;
+        personData[kPersCaptainHector].shipColor.red = personData[kPersCaptainHector].shipColor.green = personData[kPersCaptainHector].shipColor.blue = 0;
         personData[kPersCaptainHector].loaded = 1;
         k = kPersCaptainHector;
         strncpy(personData[k].name, (char *)"\pCaptain Hector", 16);

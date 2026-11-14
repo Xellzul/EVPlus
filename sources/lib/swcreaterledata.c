@@ -29,7 +29,6 @@ short SWCompileFrame(FramePtr srcFrameP)
    OPEN: none */
 // FUNCTION: EVNOVA 0x004760c0
 // MAC: _SWCreateRLEData i386 0x000aec89 ppc 0x000ba1fc
-#ifdef MACBUILD
 short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
 {
     short err = noErr;
@@ -42,6 +41,10 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
     Rect *rectP;
     Boolean lockedState;
     uint32_t srcBaseOffset;
+#ifndef MACBUILD
+    uint32_t spriteDataSize;
+    uint32_t frameDataSize;
+#endif
 
     if (requestedDepth > 0) {
         depth = requestedDepth;
@@ -56,7 +59,7 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
     maxWidth = 0;
     maxHeight = 0;
 
-    for (frame = 0; (err == noErr) && (frame < srcSpriteP->numFrames); frame++) {
+    for (frame = 0; ((int)err == noErr) && (frame < srcSpriteP->numFrames); frame++) {
         srcFrameP = srcSpriteP->frameArray[frame];
 
         rectP = &srcFrameP->frameRect;
@@ -69,8 +72,8 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
         }
     }
 
-    spriteData = (RLEPixelDataHdl)NewHandle(kRLEResourceHeaderSize);
-    if (err == noErr && spriteData != NULL) {
+    spriteData = (RLEPixelDataHdl)AllocAHandle2(kRLEResourceHeaderSize, 0);
+    if ((int)err == noErr && spriteData != NULL) {
         (**spriteData).width = maxWidth;
         (**spriteData).height = maxHeight;
         (**spriteData).depth = depth;
@@ -80,7 +83,7 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
         (**spriteData).reserved2 = 0;
         (**spriteData).reserved3 = 0;
 
-        for (frame = 0; (err == noErr) && (frame < srcSpriteP->numFrames); frame++) {
+        for (frame = 0; ((int)err == noErr) && (frame < srcSpriteP->numFrames); frame++) {
             srcFrameP = srcSpriteP->frameArray[frame];
             rectP = &srcFrameP->frameRect;
 
@@ -111,134 +114,14 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
                     depth,
                     &frameData);
 
-            if (err == noErr && frameData != NULL) {
+            if ((int)err == noErr && frameData != NULL) {
                 srcFrameP->rleDataH = spriteData;
-                srcFrameP->rleTokenStart = *spriteData + GetHandleSize((Handle)spriteData);
+                srcFrameP->rleTokenStart = *spriteData + GetAHandleSize((Handle)spriteData);
 
-                HLock((Handle)frameData);
-                err = HandAndHand((Handle)frameData, (Handle)spriteData);
-
-                DisposeHandle((Handle)frameData);
-            }
-
-            if (lockedState == false)
-                SWUnlockFrame(srcFrameP);
-        }
-
-        if (err != noErr)
-            DisposeHandle((Handle)spriteData);
-        else {
-            if (oldData != NULL)
-                DisposeHandle((Handle)oldData);
-
-            srcSpriteP->rleDataH = (char **)spriteData;
-            srcSpriteP->ownsRLEData = true;
-        }
-    } else {
-        if (err == noErr)
-            err = MemError();
-    }
-
-    SWSetStickyIfError(err);
-    return err;
-}
-#else
-short SWCreateRLEData(SpritePtr srcSpriteP, short depth)
-{
-    short frame;
-    FramePtr srcFrameP;
-    RLEPixelDataHdl spriteData;
-    RLEPixelDataHdl oldData;
-    void **frameData;
-    short maxWidth;
-    short maxHeight;
-    short err;
-    Rect *rectP;
-    unsigned char lockedState;
-    uint32_t srcBaseOffset;
-    uint32_t spriteDataSize;
-    uint32_t frameDataSize;
-
-    err = 0;
-
-    if (depth <= 0) {
-        depth = srcSpriteP->frameArray[0]->frameDepth;
-        if (depth != 8 && depth != 16 && depth != 32)
-            err = kWrongDepthErr;
-    }
-
-    oldData = (RLEPixelDataHdl)srcSpriteP->frameArray[0]->rleDataH;
-
-    maxWidth = 0;
-    maxHeight = 0;
-
-    frame = 0;
-    while (((int)err == noErr) && (frame < srcSpriteP->numFrames)) {
-        srcFrameP = srcSpriteP->frameArray[frame];
-
-        rectP = &srcFrameP->frameRect;
-
-        if (rectP->right - rectP->left > maxWidth) {
-            maxWidth = rectP->right - rectP->left;
-        }
-        if (rectP->bottom - rectP->top > maxHeight) {
-            maxHeight = rectP->bottom - rectP->top;
-        }
-        frame++;
-    }
-
-    spriteData = (RLEPixelDataHdl)AllocAHandle2(kRLEResourceHeaderSize, 0);
-    if ((int)err == noErr && spriteData != 0) {
-        (*spriteData)->width = maxWidth;
-        (*spriteData)->height = maxHeight;
-        (*spriteData)->depth = depth;
-        (*spriteData)->palette = 0;
-        (*spriteData)->frames = srcSpriteP->numFrames;
-        (*spriteData)->reserved1 = 0;
-        (*spriteData)->reserved2 = 0;
-        (*spriteData)->reserved3 = 0;
-
-        for (frame = 0; ((int)err == noErr) && (frame < srcSpriteP->numFrames); frame++) {
-            srcFrameP = srcSpriteP->frameArray[frame];
-            rectP = &srcFrameP->frameRect;
-
-            if (srcFrameP->maskPort == 0) {
-                err = kWrongMaskErr;
-                break;
-            }
-
-            lockedState = srcFrameP->isFrameLocked;
-            if (lockedState == 0)
-                SWLockFrame(srcFrameP);
-
-            srcBaseOffset =
-                    SW_ROWBYTES(srcFrameP, rectP->top) +
-                    SW_PIXELBYTES(srcFrameP, rectP->left);
-
-            if (srcFrameP->frameBaseAddr == 0)
-                SW_ASSERT_FAIL("SpriteCompiler.c", 241, 239);
-            if (srcFrameP->maskBaseAddr == 0)
-                SW_ASSERT_FAIL("SpriteCompiler.c", 242, 240);
-
-            err = BlitPixieRLEParsePixels(
-                    (unsigned char *)(srcFrameP->frameBaseAddr + srcBaseOffset),
-                    (unsigned char *)(srcFrameP->maskBaseAddr + srcBaseOffset),
-                    srcFrameP->frameRowBytes,
-                    SW_PIXELBYTES(srcFrameP, rectP->right - rectP->left),
-                    (rectP->bottom - rectP->top),
-                    depth,
-                    &frameData);
-
-            if ((int)err == noErr && frameData != 0) {
-                srcFrameP->rleDataH = spriteData;
-                srcFrameP->rleTokenStart =
-                        *spriteData + GetAHandleSize((Handle)spriteData);
-
-#ifdef MACBUILD
-                HLock(frameData);
-                err = HandAndHand(frameData, spriteData);
-#else
                 LockAHandle((Handle)frameData);
+#ifdef MACBUILD
+                err = HandAndHand((Handle)frameData, (Handle)spriteData);
+#else
                 frameDataSize = GetAHandleSize((Handle)frameData);
                 spriteDataSize = GetAHandleSize((Handle)spriteData);
                 ResizeAHandle((Handle)spriteData, frameDataSize + spriteDataSize);
@@ -249,18 +132,18 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short depth)
                 DeallocAHandle(frameData);
             }
 
-            if (lockedState == 0)
+            if (lockedState == false)
                 SWUnlockFrame(srcFrameP);
         }
 
         if ((int)err != noErr)
             DeallocAHandle(spriteData);
         else {
-            if (oldData != 0)
+            if (oldData != NULL)
                 DeallocAHandle(oldData);
 
             srcSpriteP->rleDataH = (char **)spriteData;
-            srcSpriteP->ownsRLEData = 1;
+            srcSpriteP->ownsRLEData = true;
         }
     } else {
         if ((int)err == noErr)
@@ -270,4 +153,3 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short depth)
     SWSetStickyIfError(err);
     return err;
 }
-#endif

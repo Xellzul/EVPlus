@@ -201,11 +201,7 @@ static inline void Notify(SessionContext *ctx, SessionEntry *entry, int32_t even
 static inline int32_t TableNumber(struct HashTable *t, const char *key)
 {
     const char *s;
-#ifdef MAC1010 /* 1.0.10 spelling */
     int32_t value;
-#else
-    ULong value;
-#endif
 
     s = 0;
     value = 0;
@@ -857,21 +853,13 @@ void ReggieOnHello(SessionContext *ctx, const char *instance, const char *motd,
     SessionEntry *messages;
     int32_t err;
     int32_t e;
-    const char *text;
 
+    ReggieAssert(ctx != 0);
     err = 0;
     e = 0;
     StringCopySafe(ctx->instance, instance != 0 ? instance : "", kSessionNameLen);
     StringCopySafe(ctx->motd, motd != 0 ? motd : "", kSessionNameLen);
-#ifdef MAC1010 /* 1.0.10 spelling */
     StringCopySafe(ctx->motdUrl, motdUrl != 0 ? motdUrl : "", kSessionNameLen);
-#else
-    if (motdUrl != 0)
-        text = motdUrl;
-    else
-        text = "";
-    StringCopySafe(ctx->motdUrl, text, kSessionNameLen);
-#endif
     if (probe != 0 && *probe != 0) {
         e = SimpleResolve(0, probe, &ctx->probe);
         if (e != 0)
@@ -990,7 +978,6 @@ void _ReggiePrivateTickle(void)
     packet = 0;
     reply = 0;
     found = spare = 0;
-    ReggieAssert(gVersionList == 0 || gVersionList->name[0] != 0);
     product = 0;
     e = 0;
     if (gReggiePrivateRef == 0)
@@ -1265,9 +1252,9 @@ void _ReggieLookupRequest(SessionContext *ctx, SessionEntry *entry, ULong max, c
     ULong now;
     ULong timeout;
     ULong i;
+    ULong best;
     ULong n;
     ULong end;
-    ULong best;
     ULong listed;
     ULong asked;
 
@@ -1294,21 +1281,10 @@ void _ReggieLookupRequest(SessionContext *ctx, SessionEntry *entry, ULong max, c
     end = entry->recordCount;
     for (; i < end; i++) {
         if (entry->records[i].askedAt == kNeverAsked) {
-#ifdef MAC1010 /* 1.0.10 spelling */
-            n = i + kAskSpan;
-            if (end <= n)
-                n = end;
-            StringFormat(out, i + 1 < n ? "%lu-%lu" : "%lu", i + 1, n);
+            best = end <= i + kAskSpan ? end : i + kAskSpan;
+            StringFormat(out, i + 1 < best ? "%lu-%lu" : "%lu", i + 1, best);
             /* BUG: both runs count one record too many, and the second marks one past its end */
-            listed += n - i + 1;
-#else
-            if (end > i + kAskSpan)
-                end = i + kAskSpan;
-            best = end;
-            StringFormat(out, i + 1 < end ? "%lu-%lu" : "%lu", i + 1, end);
-            /* BUG: both runs count one record too many, and the second marks one past its end */
-            listed += end - i + 1;
-#endif
+            listed += best - i + 1;
             end = i;
             break;
         }
@@ -1762,27 +1738,11 @@ int32_t ReggieResultMatch(SessionContext *ctx, SessionEntry *entry, struct HashT
 // FUNCTION: EVNOVA 0x004f578e
 int32_t _ReggieRecv_RESULT_LOOKUP(SessionContext *ctx, SessionEntry *entry, struct HashTable *reply)
 {
-#ifdef MAC1010 /* 1.0.10 spelling */
     char kindName[kSessionNameLen];
     const char *s;
-    ULong i;
-    char *value;
-    char *key;
-    ULong index;
     int32_t err;
     struct HashTable *copy;
-    int32_t result;
-#else
-    char kindName[kSessionNameLen];
-    struct HashTable *copy;
-    const char *s;
-    char *value;
-    char *key;
     ULong index;
-    ULong i;
-    int32_t err;
-    int32_t result;
-#endif
 
     err = 0;
     copy = 0;
@@ -1796,7 +1756,7 @@ int32_t _ReggieRecv_RESULT_LOOKUP(SessionContext *ctx, SessionEntry *entry, stru
         _ReggieSearchEnd(ctx, entry, 0);
         goto done;
     }
-    if ((s = HashLookup(reply, "$KIND", 0)) == 0 || HashLookup(reply, "$UNIQUEID", 0) == 0)
+    if (HashLookup(reply, "$KIND", 0) == 0 || HashLookup(reply, "$UNIQUEID", 0) == 0)
         goto done;
     s = HashLookup(reply, "$KIND", 0);
     StringCopySafe(kindName, s, sizeof(kindName));
@@ -1805,13 +1765,7 @@ int32_t _ReggieRecv_RESULT_LOOKUP(SessionContext *ctx, SessionEntry *entry, stru
     index = TableNumber(reply, "RECORD") - 1;
     if (index >= entry->recordCount)
         goto done;
-    result = 0;
-    for (i = 0; HashIndex(reply, i, &key, &value) != 0; i++) {
-        if (*key != '$') {
-            HashRemove(reply, key);
-            i--;
-        }
-    }
+    StripOtherKeys(reply);
     TRY(_ReggieHashTimestamp(reply, 1, ctx->clockOffset));
     copy = HashClone(reply);
     if (copy == 0) {
@@ -1891,12 +1845,9 @@ int32_t _ReggieRecv_RESULT_HELLO(SessionContext *ctx, SessionEntry *entry, struc
     int32_t err = 0;
     void *packet = 0;
     const char *s;
-    int32_t hostId;
     int32_t e;
     int32_t result;
-#ifdef MAC1010 /* 1.0.10 spelling */
     const char *text;
-#endif
 
     if (ctx->state != kStateHelloSent)
         goto done;
@@ -1905,19 +1856,14 @@ int32_t _ReggieRecv_RESULT_HELLO(SessionContext *ctx, SessionEntry *entry, struc
         ReggieRefused(ctx, s);
         goto done;
     }
-    hostId = TableNumber(reply, "$HOSTID");
     ReggieOnHello(ctx, HashLookup(reply, "$INSTANCE", 0), HashLookup(reply, "$MOTD", 0),
                  HashLookup(reply, "$MOTD$URL", 0), HashLookup(reply, "$PROBE", 0),
-                 HashLookup(reply, "$ADDRESS", 0), hostId, TableNumber(reply, "$TIME"));
+                 HashLookup(reply, "$ADDRESS", 0), TableNumber(reply, "$HOSTID"),
+                 TableNumber(reply, "$TIME"));
     if (ctx->natType <= kNatRestrictive && ctx->mode == kModeShared &&
         AddressIsEmpty(&ctx->probe) == 0) {
-#ifdef MAC1010 /* 1.0.10 spelling */
         text = "REGGIE PROBE=UDP SIMPLE";
         packet = IndirectInitialize(text, StringGetLength((const unsigned char *)text));
-#else
-        packet = "REGGIE PROBE=UDP SIMPLE";
-        packet = IndirectInitialize(packet, StringGetLength(packet));
-#endif
         if (packet == 0) {
             err = kOutOfMemory;
             goto done;
@@ -3443,9 +3389,8 @@ int32_t _ReggieChannelTickle(SessionContext *ctx, SessionEntry *entry)
         TRYE(_ReggieSendHash(ctx, entry->request));
         ctx->sentAt = entry->requestedAt = TimerGetElapsedSeconds();
         entry->cancelledAt = 0;
-#ifdef MAC1010 /* 1.0.10 spelling */
         entry->retries++;
-#endif
+        goto done;
     } else {
         if (entry->cancelledAt == 0)
             goto done;
@@ -3467,13 +3412,8 @@ int32_t _ReggieChannelTickle(SessionContext *ctx, SessionEntry *entry)
                          ctx->hostSource));
         ctx->sentAt = entry->cancelledAt = TimerGetElapsedSeconds();
         entry->requestedAt = 0;
-#ifdef MAC1010 /* 1.0.10 spelling */
         entry->retries++;
     }
-#else
-    }
-    entry->retries++;
-#endif
 done:
     return err;
 }

@@ -922,61 +922,44 @@ Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
 /* SWDisposeWindowFrame (mac _SWDisposeWindowFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476c70
 // MAC: _SWDisposeWindowFrame i386 0x000ad197 ppc 0x000b8574
-#ifdef MACBUILD
 void SWDisposeWindowFrame(SWFrameRec **oldFramePP)
 {
     FramePtr oldFrameP = *oldFramePP;
 
     if (oldFrameP != NULL) {
-        SW_ASSERT(oldFrameP->isWindowFrame, 770);
+        if (!oldFrameP->isWindowFrame)
+            SW_ASSERT_FAIL("SpriteFrame.c", 802, 770);
 
+#ifdef MACBUILD
         DisposePtr((Ptr)oldFrameP);
+#else
+        DeallocAPointer(oldFrameP);
+#endif
         *oldFramePP = NULL;
     }
 }
-#else
-void SWDisposeWindowFrame(SWFrameRec **oldFramePP)
-{
-    SWFrameRec *oldFrameP = *oldFramePP;
-
-    if (oldFrameP != 0) {
-        if (!oldFrameP->isWindowFrame)
-            SWAssertFail("SpriteFrame.c", 802);
-
-        DeallocAPointer(oldFrameP);
-        *oldFramePP = 0;
-    }
-}
-#endif
 
 /* SWSetPortToFrame (mac _SWSetPortToFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476cb0
 // MAC: _SWSetPortToFrame i386 0x000ad1dc ppc 0x000b85dc
-#ifdef MACBUILD
 void SWSetPortToFrame(SWFrameRec *dstFrameP)
 {
-    SW_ASSERT(dstFrameP != NULL, 786);
-    SW_ASSERT(dstFrameP->framePort != NULL, 787);
-    SW_ASSERT(dstFrameP->isFrameLocked, 788);
+    if (dstFrameP == NULL)
+        SW_ASSERT_FAIL("SpriteFrame.c", 818, 786);
+    if (dstFrameP->framePort == NULL)
+        SW_ASSERT_FAIL("SpriteFrame.c", 819, 787);
+    if (!dstFrameP->isFrameLocked)
+        SW_ASSERT_FAIL("SpriteFrame.c", 820, 788);
 
+#ifdef MACBUILD
     if (useLegacyRenderingPipeline)
         SetGWorld(dstFrameP->framePort, dstFrameP->frameDevice);
     else
         SetGWorld(dstFrameP->framePort, NULL);
-}
 #else
-void SWSetPortToFrame(SWFrameRec *dstFrameP)
-{
-    if (dstFrameP == 0)
-        SWAssertFail("SpriteFrame.c", 818);
-    if (dstFrameP->framePort == 0)
-        SWAssertFail("SpriteFrame.c", 819);
-    if (!dstFrameP->isFrameLocked)
-        SWAssertFail("SpriteFrame.c", 820);
-
     SetPort(dstFrameP->framePort);
-}
 #endif
+}
 
 #ifdef MACBUILD
 /* SWAlignFrameToWindow (mac _SWAlignFrameToWindow, mac-only). STATE: see the mac gate. */
@@ -1053,66 +1036,40 @@ Boolean SWAlignFrameToWindow(FramePtr dstFrameP, FramePtr windowFrameP)
 /* SWInitializeFrame (mac _SWInitializeFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476d10
 // MAC: _SWInitializeFrame i386 0x000ad25d ppc 0x000b8678
-#ifdef MACBUILD
 void SWInitializeFrame(SWFrameRec *tempFrameP)
 {
     int32_t curScanLine;
     int32_t rowOffset;
     short depth;
+#ifdef MACBUILD
     PixMapHandle pixmap;
+#else
+    PixMapPtr pixmap;
+#endif
 
-    SW_ASSERT(tempFrameP != NULL, 891);
+    if (tempFrameP == NULL)
+        SW_ASSERT_FAIL("SpriteFrame.c", 920, 891);
     if (tempFrameP->framePixHndl == NULL) {
         if (tempFrameP->framePort != NULL)
+#ifdef MACBUILD
             tempFrameP->framePixHndl = GetPortPixMap(tempFrameP->framePort);
-    }
-    SW_ASSERT(tempFrameP->framePixHndl != NULL, 899);
-    SW_ASSERT(tempFrameP->frameDepth != 0, 900);
-
-    pixmap = tempFrameP->framePixHndl;
-    depth = tempFrameP->frameDepth;
-
-    tempFrameP->frameRowBytes = SWGetPixRowBytes(pixmap);
-
-    tempFrameP->rightAlignFactor = (32 / depth) - 1;
-    tempFrameP->leftAlignFactor = ~(tempFrameP->rightAlignFactor);
-
-    tempFrameP->pixelShift = depth >> 4;
-
-    tempFrameP->scanLinePtrArray = (uint32_t *)(tempFrameP + 1);
-
-    rowOffset = tempFrameP->frameRect.top * tempFrameP->frameRowBytes;
-    for (curScanLine = 0; curScanLine < tempFrameP->numScanLines; curScanLine++) {
-        tempFrameP->scanLinePtrArray[curScanLine] = rowOffset;
-        rowOffset += tempFrameP->frameRowBytes;
-    }
-}
 #else
-void SWInitializeFrame(SWFrameRec *tempFrameP)
-{
-    int32_t curScanLine;
-    int32_t rowOffset;
-    short depth;
-    PixMapPtr pixmap;
-
-    if (tempFrameP == 0)
-        SWAssertFail("SpriteFrame.c", 920);
-
-    if (tempFrameP->framePixHndl == 0) {
-        if (tempFrameP->framePort != 0)
-            tempFrameP->framePixHndl =
-                    GetCWindowPixMap(tempFrameP->framePort);
+            tempFrameP->framePixHndl = GetCWindowPixMap(tempFrameP->framePort);
+#endif
     }
-
-    if (tempFrameP->framePixHndl == 0)
-        SWAssertFail("SpriteFrame.c", 928);
+    if (tempFrameP->framePixHndl == NULL)
+        SW_ASSERT_FAIL("SpriteFrame.c", 928, 899);
     if (tempFrameP->frameDepth == 0)
-        SWAssertFail("SpriteFrame.c", 929);
+        SW_ASSERT_FAIL("SpriteFrame.c", 929, 900);
 
     pixmap = tempFrameP->framePixHndl;
     depth = tempFrameP->frameDepth;
 
+#ifdef MACBUILD
+    tempFrameP->frameRowBytes = SWGetPixRowBytes(pixmap);
+#else
     tempFrameP->frameRowBytes = GetPixRowBytes(pixmap);
+#endif
 
     tempFrameP->rightAlignFactor = (32 / depth) - 1;
     tempFrameP->leftAlignFactor = ~(tempFrameP->rightAlignFactor);
@@ -1127,7 +1084,6 @@ void SWInitializeFrame(SWFrameRec *tempFrameP)
         rowOffset += tempFrameP->frameRowBytes;
     }
 }
-#endif
 
 #ifdef MACBUILD
 /* SWSetFrameMaskRgn (mac _SWSetFrameMaskRgn, mac-only). STATE: see the mac gate. */
@@ -1470,51 +1426,37 @@ void SWLockFrame(SWFrameRec *srcFrameP)
 /* SWUnlockFrame (mac _SWUnlockFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476f10
 // MAC: _SWUnlockFrame i386 0x000ae5b1 ppc 0x000b9a6c
-#ifdef MACBUILD
 void SWUnlockFrame(SWFrameRec *srcFrameP)
 {
-    SW_ASSERT(srcFrameP != NULL, 1345);
-    SW_ASSERT(!srcFrameP->isWindowFrame, 1346);
+    if (srcFrameP == NULL)
+        SW_ASSERT_FAIL("SpriteFrame.c", 1389, 1345);
+    if (srcFrameP->isWindowFrame)
+        SW_ASSERT_FAIL("SpriteFrame.c", 1390, 1346);
 
     if (srcFrameP->isFrameLocked) {
         srcFrameP->isFrameLocked = false;
 
+#ifdef MACBUILD
         if (srcFrameP->framePort != NULL && srcFrameP->framePixHndl != NULL) {
             HUnlock((Handle)srcFrameP->framePixHndl);
             UnlockPixels(srcFrameP->framePixHndl);
         }
 
+#endif
         srcFrameP->framePix = NULL;
         srcFrameP->frameBaseAddr = NULL;
 
+#ifdef MACBUILD
         if (srcFrameP->maskPort != NULL && srcFrameP->maskPixHndl != NULL) {
             HUnlock((Handle)srcFrameP->maskPixHndl);
             UnlockPixels(srcFrameP->maskPixHndl);
         }
 
+#endif
         srcFrameP->maskPix = NULL;
         srcFrameP->maskBaseAddr = NULL;
     }
 }
-#else
-void SWUnlockFrame(SWFrameRec *srcFrameP)
-{
-    if (srcFrameP == 0)
-        SWAssertFail("SpriteFrame.c", 1389);
-    if (srcFrameP->isWindowFrame)
-        SWAssertFail("SpriteFrame.c", 1390);
-
-    if (srcFrameP->isFrameLocked) {
-        srcFrameP->isFrameLocked = 0;
-
-        srcFrameP->framePix = 0;
-        srcFrameP->frameBaseAddr = 0;
-
-        srcFrameP->maskPix = 0;
-        srcFrameP->maskBaseAddr = 0;
-    }
-}
-#endif
 
 /* The dead Rect is real and must be written: the exe still brackets a
    GetWindowPortRect(framePort) whose result goes nowhere, because mwcc keeps the call and
@@ -1624,31 +1566,19 @@ void SWLockWindowFrame(SWFrameRec *windowFrameP)
 /* SWUnlockWindowFrame (mac _SWUnlockWindowFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477070
 // MAC: _SWUnlockWindowFrame i386 0x000aeb78 ppc 0x000ba0c0
-#ifdef MACBUILD
 void SWUnlockWindowFrame(SWFrameRec *windowFrameP)
 {
-    SW_ASSERT(windowFrameP != NULL, 1475);
-    SW_ASSERT(windowFrameP->isWindowFrame, 1476);
+    if (windowFrameP == NULL)
+        SW_ASSERT_FAIL("SpriteFrame.c", 1528, 1475);
+    if (!windowFrameP->isWindowFrame)
+        SW_ASSERT_FAIL("SpriteFrame.c", 1529, 1476);
 
     if (windowFrameP->isFrameLocked) {
         windowFrameP->isFrameLocked = false;
+#ifdef MACBUILD
         HUnlock((Handle)windowFrameP->framePixHndl);
+#endif
         windowFrameP->framePix = NULL;
         windowFrameP->frameBaseAddr = NULL;
     }
 }
-#else
-void SWUnlockWindowFrame(SWFrameRec *windowFrameP)
-{
-    if (windowFrameP == 0)
-        SWAssertFail("SpriteFrame.c", 1528);
-    if (!windowFrameP->isWindowFrame)
-        SWAssertFail("SpriteFrame.c", 1529);
-
-    if (windowFrameP->isFrameLocked) {
-        windowFrameP->isFrameLocked = 0;
-        windowFrameP->framePix = 0;
-        windowFrameP->frameBaseAddr = 0;
-    }
-}
-#endif

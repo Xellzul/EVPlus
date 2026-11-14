@@ -317,7 +317,7 @@ _EndpointGetElem
 __ReggieNetworkFromString
 _VideoGetCurrentMode
 _UnlockMe
-__Hash
+__HashDataEncode
 _StripLeadingAndTrailingWhiteSpace
 _CodecManagerVersion
 _PBReadSync

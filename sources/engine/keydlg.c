@@ -1,10 +1,5 @@
 // COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
 /* keydlg.c -- the key-binding dialog's update proc (win 0x0048b860). Notes: Research/notes/keydlg.md */
-/*
- * picBox must be declared before name: with a large array in the frame mwcc
- * orders stack slots by reference count, and picBox/name tie at 4, so the
- * declaration order is what breaks the tie and gives name the +0x08 slot.
- */
 #include <stddef.h>
 
 #include "macport.h"
@@ -251,30 +246,37 @@ Boolean KeyFilter(int32_t unused, EventRecord *ev, short *itemHit)
 /* KeyDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b860
 // MAC: _KeyDialogUpdate i386 0x00017199 ppc 0x0001adf8
-#ifdef MACBUILD
 void KeyDialogUpdate(void)
 {
     short itemType;
     Handle item;
     Rect itemBox;
     Rect fill;
-    Rect picBox;
     Str255 name;
+    Rect picBox;
     short i;
 
-    SetPort((GrafPtr)GetDialogPort(keyDialog));
+    SetDialogGWorld(keyDialog);
     GetDialogItem(keyDialog, 4, &itemType, &item, &picBox);
+#ifdef MACBUILD
 #ifdef MAC1010
     if (gWind != NULL)
         SWSetPortToWorkArea(gSpriteWorld);
 #endif
+#else
+    SWSetPortToWorkArea(gSpriteWorld);
+#endif
     ForeColor(blackColor);
     TextFont(0);
     TextSize(12);
+#ifdef MACBUILD
     DrawPicture(keyPic, &picBox);
+#else
+    DrawPicHandle(keyPic, &picBox);
+#endif
     for (i = 0; i < kBindingCount; i++) {
         GetDialogItem(keyDialog, i + kFirstBindingItem, &itemType, &item, &itemBox);
-        if (RectInRgn(&itemBox, GetWindowVisRgn(GetDialogWindow(keyDialog)))) {
+        if (RectInRgn(&itemBox, GetWindowVisRgn(FrontWindow(keyDialog)))) {
             if (keyDialogSel == i) {
                 fill = itemBox;
                 InsetRect(&fill, 1, 1);
@@ -297,7 +299,12 @@ void KeyDialogUpdate(void)
                 ForeColor(blackColor);
                 MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
             }
+#ifdef MACBUILD
             GetIndString(name, kKeyNameStrList, newKeyPrefs[i] + 1);
+#else
+            KeyboardScanCodeToString((char *)name, sizeof(name), newKeyPrefs[i]);
+            CtoPstr((char *)name);
+#endif
             if (name[0] == 0)
                 DrawIndString(kGameStrList, kNoNameStrIndex);
             else
@@ -305,12 +312,13 @@ void KeyDialogUpdate(void)
         }
     }
     ForeColor(blackColor);
-#ifdef MAC1010
+#if !defined(MACBUILD) || defined(MAC1010)
     if (gWind != NULL)
         SWSetPortToWindow(gSpriteWorld);
 #endif
-    SetPort((GrafPtr)GetDialogPort(keyDialog));
+    SetDialogGWorld(keyDialog);
     ForeColor(blackColor);
+#ifdef MACBUILD
 #ifdef MAC1010
     if (gWind != NULL)
         CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
@@ -318,81 +326,12 @@ void KeyDialogUpdate(void)
                  &picBox, &picBox, 0, NULL);
 #endif
     DrawDialog(keyDialog);
-}
 #else
-void KeyDialogUpdate(void)
-{
-    short itemType;
-    void *item;
-    Rect picBox;
-    char name[256];
-    Rect fill;
-    Rect itemBox;
-    Boolean inside;
-    int i;
-
-    SetDialogGWorld(keyDialog);
-    GetDialogItem(keyDialog, 4, &itemType, (Handle *)&item, &picBox);
-    SWSetPortToWorkArea(gSpriteWorld);
-    ForeColor(blackColor);
-    TextFont(0);
-    TextSize(12);
-    DrawPicHandle(keyPic, &picBox);
-    i = 0;
-    do {
-        GetDialogItem(keyDialog, (short)i + kFirstBindingItem, &itemType, (Handle *)&item,
-                      &itemBox);
-        inside = RectInRgn(&itemBox, GetCWindowVisRgn(FrontWindow(keyDialog)));
-        if (inside) {
-            if (keyDialogSel == (short)i) {
-                fill.top = itemBox.top;
-                fill.left = itemBox.left;
-                fill.bottom = itemBox.bottom;
-                fill.right = itemBox.right;
-                InsetRect(&fill, 1, 1);
-                ForeColor(whiteColor);
-                FrameRect(&itemBox);
-                InsetRect(&fill, 1, 1);
-                ForeColor(blackColor);
-                PaintRect(&fill);
-                ForeColor(blackColor);
-                FrameRect(&itemBox);
-                ForeColor(whiteColor);
-                MoveTo(itemBox.left + kRowTextInset,
-                       itemBox.top + kRowBaseline);
-            } else {
-                fill.top = itemBox.top;
-                fill.left = itemBox.left;
-                fill.bottom = itemBox.bottom;
-                fill.right = itemBox.right;
-                InsetRect(&fill, 1, 1);
-                ForeColor(whiteColor);
-                PaintRect(&fill);
-                ForeColor(blackColor);
-                FrameRect(&itemBox);
-                ForeColor(blackColor);
-                MoveTo(itemBox.left + kRowTextInset,
-                       itemBox.top + kRowBaseline);
-            }
-            KeyboardScanCodeToString(name, 0x100, newKeyPrefs[(short)i]);
-            CtoPstr(name);
-            if (name[0] == 0)
-                DrawIndString(kGameStrList, kNoNameStrIndex);
-            else
-                DrawString((unsigned char *)name);
-        }
-        i = i + 1;
-    } while ((short)i < kBindingCount);
-    ForeColor(blackColor);
-    if (gWind != NULL)
-        SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(keyDialog);
-    ForeColor(blackColor);
-    CopyBits(GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
+    CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
              GetPortBitMapForCopyBits(GetDialogPort(keyDialog)),
              &picBox, &picBox, 0, NULL);
-}
 #endif
+}
 
 #ifdef MACBUILD
 /* AdjustMenus (mac _AdjustMenus): mac only. */

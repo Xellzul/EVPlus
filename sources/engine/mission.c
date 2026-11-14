@@ -453,52 +453,24 @@ void DoMissionDialog(void)
 // MAC: _SetupMissionList i386 0x000a069e ppc 0x000ac360
 void SetupMissionList(void)
 {
-#ifdef MAC1010
-    Str255 buf;
     short i;
     short count;
     int32_t len;
     Rect box3;
     Rect box;
     Rect cellBounds;
+    short itemType;
+    Handle itemHandle;
+    Str255 buf;
+#ifdef MACBUILD
     FontInfo fontInfo;
 #if TARGET_API_MAC_CARBON
     ListDefSpec ldefSpec;
 #endif
-    Handle itemHandle;
-    unsigned char visible;
-    Point cellSize;
-    Point rowPt;
-    short itemType;
-#elif defined(MACBUILD)
-    Str255 buf;
-    short i;
-    short count;
-    int32_t len;
-    FontInfo fontInfo;
-    Rect cellBounds;
-    ListDefSpec ldefSpec;
-    Rect box3;
-    Handle itemHandle;
-    Rect box;
-    unsigned char visible;
-    Point cellSize;
-    Point rowPt;
-    short itemType;
-#else
-    char buf[256];
-    short i;
-    short count;
-    int32_t len;
-    Rect box3;
-    Rect cellBounds;
-    void *itemHandle;
-    Rect box;
-    unsigned char visible;
-    Point cellSize;
-    Point rowPt;
-    short itemType;
 #endif
+    unsigned char visible;
+    Point cellSize;
+    Point rowPt;
 
     selMissionListItem = 0;
 
@@ -509,7 +481,7 @@ void SetupMissionList(void)
     }
 
     SetDialogGWorld(missionDialog);
-    GetDialogItem(missionDialog, 2, &itemType, (Handle *)&itemHandle, &box);
+    GetDialogItem(missionDialog, 2, &itemType, &itemHandle, &box);
     SetRect(&cellBounds, 0, 0, 1, count);
 
     TextFont(smallTextFont);
@@ -518,6 +490,13 @@ void SetupMissionList(void)
 #ifdef MACBUILD
     GetFontInfo(&fontInfo);
     cellSize.v = fontInfo.ascent + fontInfo.descent + fontInfo.leading;
+#else
+#ifdef CEFIX /* F12.01 */
+    cellSize.v = (ceListItemBaseHeight * 1.5);
+#else
+    cellSize.v = (smallTextSize * 1.5);
+#endif
+#endif
     if (cellSize.v * count <= box.bottom - box.top) {
         visible = 0;
         GetDialogItem(missionDialog, 3, &itemType, &itemHandle, &box3);
@@ -527,6 +506,7 @@ void SetupMissionList(void)
     }
     cellSize.h = box.right - box.left;
 
+#ifdef MACBUILD
 #if TARGET_API_MAC_OS8
     missionList = LNew(&box, &cellBounds, cellSize, 128, missionDialog,
                        false, false, false, visible);
@@ -541,21 +521,6 @@ void SetupMissionList(void)
     (*missionList)->refCon = (int32_t)ldefColors;
     HUnlock((Handle)missionList);
 #else
-#ifdef CEFIX /* F12.01 */
-    cellSize.v = (ceListItemBaseHeight * 1.5);
-#else
-    cellSize.v = (smallTextSize * 1.5);
-#endif
-
-    if (cellSize.v * count <= box.bottom - box.top) {
-        visible = 0;
-        GetDialogItem(missionDialog, 3, &itemType, (Handle *)&itemHandle, &box3);
-        box.right = box3.right;
-    } else {
-        visible = 1;
-    }
-    cellSize.h = box.right - box.left;
-
     missionList = nv_NewDialog(&box, &cellBounds, cellSize,
         (ListDrawProcPtr)MissionListDefinition, (CGrafPtr)missionDialog, visible);
     LockAHandle((Handle)missionList);
@@ -567,7 +532,7 @@ void SetupMissionList(void)
     for (rowPt.v = 0; rowPt.v < count; rowPt.v++) {
         if (dockedPortMissions[0][rowPt.v] != -1) {
             strncpy((char *)buf, (char *)missionName[dockedPortMissions[0][rowPt.v]], 0xfa);
-            PtoCstr((unsigned char *)buf);
+            PtoCstr(buf);
             strncpy(briefingTextPtr, (char *)buf, 0xfa);
             MungeBriefing(1, dockedPortMissions[0][rowPt.v]);
             strncpy((char *)buf, briefingTextPtr, 0xfa);
@@ -2487,7 +2452,6 @@ void MissionDialogUpdate(void)
 // MAC: _IsMissionAvailable i386 0x0009b152 ppc 0x000a7000
 Boolean IsMissionAvailable(short mission, Boolean offer)
 {
-    int want;
     Boolean cond[kMissionConds];
     short n;
     short syst;
@@ -2550,12 +2514,7 @@ Boolean IsMissionAvailable(short mission, Boolean offer)
     if (loc == -1 || offeringFromShip != 0) {
         cond[0] = 1;
     } else if (loc >= kFirstResourceID && loc < kAvailLinkBase) {
-#if V111 /* V111 spelling */
-        want = loc - kFirstResourceID;
-        if (shipData->targetStellar == want)
-#else
-        if (shipData->targetStellar == loc - kFirstResourceID)
-#endif
+        if (missionAvailData[mission].availStel - kFirstResourceID == shipData->targetStellar)
             cond[0] = 1;
     } else if (loc >= kAvailLinkBase && loc < kAvailOwnerBase - 1) {
         for (n = 0; n < kNavSlots; n++) {
@@ -2565,25 +2524,17 @@ Boolean IsMissionAvailable(short mission, Boolean offer)
                 break;
             }
         }
-    } else if (loc >= kAvailOwnerBase - 1 && loc < kAvailAlliedBase) {
-#if V111 /* V111 spelling */
-        want = loc - kAvailOwnerBase;
-        if (dockedPort->govt == want)
-#else
-        if (dockedPort->govt == loc - kAvailOwnerBase)
-#endif
+    } else if (missionAvailData[mission].availStel >= kAvailOwnerBase - 1
+               && missionAvailData[mission].availStel < kAvailAlliedBase) {
+        if (missionAvailData[mission].availStel - kAvailOwnerBase == dockedPort->govt)
             cond[0] = 1;
     } else if (loc >= kAvailAlliedBase && loc < kAvailGovtBase) {
         if (dockedPort->govt != -1
             && GovtAllies(loc - kAvailAlliedBase, dockedPort->govt) != 0)
             cond[0] = 1;
-    } else if (loc >= kAvailGovtBase && loc < kAvailEnemyBase) {
-#if V111 /* V111 spelling */
-        want = loc - kAvailGovtBase;
-        if (dockedPort->govt != want)
-#else
-        if (dockedPort->govt != loc - kAvailGovtBase)
-#endif
+    } else if (missionAvailData[mission].availStel >= kAvailGovtBase
+               && missionAvailData[mission].availStel < kAvailEnemyBase) {
+        if (missionAvailData[mission].availStel - kAvailGovtBase != dockedPort->govt)
             cond[0] = 1;
     } else if (loc >= kAvailEnemyBase && loc < kAvailClassBase) {
         if (dockedPort->govt != -1
@@ -2760,14 +2711,12 @@ Boolean IsMissionAvailable(short mission, Boolean offer)
 #define kBriefScrollStep               10
 
 
+#ifndef MAC1010
 /* OfferOneMission (mac _OfferOneMission). STATE: MATCH, 1186/1186, byte-identical yes.
    OPEN: none */
 // FUNCTION: EVNOVA 0x00442510
 // MAC: _OfferOneMission i386 0x000a21ac ppc 0x000adfd8
 short OfferOneMission(short mission)
-#ifdef MAC1010
-;
-#else
 #include "../engine/offeronemission.inc"
 #endif
 
@@ -4160,9 +4109,7 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
     int acceptKey;
     int refuseKey;
     EventChar c;
-#ifndef MAC1010 /* 1.0.10 spelling */
     int what;
-#endif
 #endif
 
     QuickKeyCheckHandler();
@@ -4198,17 +4145,11 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
             }
         }
 #else
-#ifdef MAC1010 /* 1.0.10 spelling */
+    what = ev->what;
     if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
         c = EventCharOf(ev);
         c = tolower(c);
-        if ((int)ev->what == kKeyDown) {
-#else
-    what = ev->what;
-    if (what == kKeyDown || what == kAutoKey) {
-        c = tolower(EventCharOf(ev));
         if (what == kKeyDown) {
-#endif
             if (IsReturnChar(c)) {
                 *itemHit = kItemAccept;
                 return 1;
@@ -4269,11 +4210,7 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
 #if V111
     if (ev->what == kMouseDown) {
 #else
-#ifdef MAC1010 /* 1.0.10 spelling */
-    if ((int)ev->what == kMouseDown) {
-#else
     if (what == kMouseDown) {
-#endif
 #endif
         where = ev->where;
 #ifdef MACBUILD
@@ -4339,11 +4276,7 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
 #if V111
     if (ev->what == kUpdateEvt) {
 #else
-#ifdef MAC1010 /* 1.0.10 spelling */
-    if ((int)ev->what == kUpdateEvt) {
-#else
     if (what == kUpdateEvt) {
-#endif
 #endif
         SetDialogGWorld(missionDialog);
 #ifdef MACBUILD
@@ -4464,7 +4397,6 @@ Boolean ValidAuxShipSystem(short sys, short mission)
 {
     short spec;
     short i;
-    int32_t xenophobic;
 
     spec = currentMissions[mission].auxShipSyst;
     if (spec == -1 || spec == -6) {
@@ -4507,12 +4439,7 @@ Boolean ValidAuxShipSystem(short sys, short mission)
             return 1;
     } else if (spec >= kSystemEnemy && spec < kSystemClass) {
         if (systemData[sys].govt >= 0) {
-#ifdef MAC1010 /* 1.0.10 spelling */
-            if ((govtData[spec - kSystemEnemy].flags & kGovtXenophobic) && systemData[sys].govt != spec - kSystemEnemy &&
-#else
-            xenophobic = govtData[spec - kSystemEnemy].flags & kGovtXenophobic;
-            if (xenophobic && systemData[sys].govt != spec - kSystemEnemy &&
-#endif
+            if ((govtData[spec - kSystemEnemy].flags & kGovtXenophobic) > 0U && systemData[sys].govt != spec - kSystemEnemy &&
                 !GovtAllies(systemData[sys].govt, spec - kSystemEnemy))
                 return 1;
             if (GovtEnemies(systemData[sys].govt, spec - kSystemEnemy))

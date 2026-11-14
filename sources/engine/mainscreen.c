@@ -813,22 +813,14 @@ void MainScreenKey(char key, int32_t a, int32_t b)
 }
 #endif
 
-#ifdef MACBUILD
+#if defined(MACBUILD) && !defined(MAC1010)
 /* DoMenuClick (mac _DoMenuClick): mac only. */
 // MAC: _DoMenuClick i386 0x00019c49 ppc 0x0001d8f8
 void DoMenuClick(int32_t menuChoice)
-#ifdef MAC1010
-;
-#else
 #include "../engine/domenuclick.inc"
-#endif
 
 /* MainScreenActivate (mac _MainScreenActivate): mac only. */
 // MAC: _MainScreenActivate i386 0x000193ea ppc 0x0001d0cc
 void MainScreenActivate(Boolean activate)
-#ifdef MAC1010
-;
-#else
 #include "../engine/mainscreenactivate.inc"
-#endif
 #endif

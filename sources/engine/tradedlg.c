@@ -2652,15 +2652,6 @@ Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
 #undef InvalDialogItem
 #endif
 
-/* win reads the character once; on the mac the two ctype calls read it each */
-#if V111 /* V111 spelling */
-#define LineLeadChar(line)
-#define LineLeadsAlnum(line) (isalpha((line)[1]) || isdigit((line)[1]))
-#else
-#define LineLeadChar(line) c = (line)[1]
-#define LineLeadsAlnum(line) (isalpha(c) || isdigit(c))
-#endif
-
 /* OutfitDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00490c70
 // MAC: _OutfitDialogUpdate i386 0x000572cb ppc 0x0005f680
@@ -2734,8 +2725,8 @@ void OutfitDialogUpdate(void)
                 }
                 if (SplitTwoLineString(outfitShortNames[dockedPortItems[i]],
                                        line1, line2)) {
-                    LineLeadChar(line1);
-                    if (LineLeadsAlnum(line1))
+                    c = line1[1];
+                    if (isalpha(HeldChar(c, line1[1])) || isdigit(HeldChar(c, line1[1])))
                         ForeColor(whiteColor);
                     else
                         RGBForeColor(&rgbLessDarkGrey);
@@ -2751,8 +2742,8 @@ void OutfitDialogUpdate(void)
                            (listScreenRect[i - outfitScroll].bottom - 14));
 #endif
                     DrawString(line1);
-                    LineLeadChar(line2);
-                    if (LineLeadsAlnum(line2))
+                    c = line2[1];
+                    if (isalpha(HeldChar(c, line2[1])) || isdigit(HeldChar(c, line2[1])))
                         ForeColor(whiteColor);
                     else
                         RGBForeColor(&rgbLessDarkGrey);
@@ -3886,17 +3877,11 @@ void DoShipyardDialog(void)
 {
     void *item;
     short halfHeight;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    unsigned char msgText[256];
-    int hireCost;
-    unsigned char defaultName[256];
-#else
-    unsigned char defaultName[256];
-    int hireCost;
-    unsigned char msgText[256];
-#endif
     Rect box;
     short itemHit;
+    unsigned char msgText[256];
+    int hireCost;
+    unsigned char defaultName[256];
     short i;
     short itemType;
     short outf;
@@ -4603,8 +4588,8 @@ void ShipyardDialogUpdate(void)
                     }
                     if (SplitTwoLineString(shipyardShortNames[dockedPortShipTypes[i]],
                                            line1, line2)) {
-                        LineLeadChar(line1);
-                        if (LineLeadsAlnum(line1))
+                        c = line1[1];
+                        if (isalpha(HeldChar(c, line1[1])) || isdigit(HeldChar(c, line1[1])))
                             ForeColor(whiteColor);
                         else
                             RGBForeColor(&rgbLessDarkGrey);
@@ -4620,8 +4605,8 @@ void ShipyardDialogUpdate(void)
                                (listScreenRect[i - shipyardScroll].bottom - 14));
 #endif
                         DrawString(line1);
-                        LineLeadChar(line2);
-                        if (LineLeadsAlnum(line2))
+                        c = line2[1];
+                        if (isalpha(HeldChar(c, line2[1])) || isdigit(HeldChar(c, line2[1])))
                             ForeColor(whiteColor);
                         else
                             RGBForeColor(&rgbLessDarkGrey);
@@ -9820,15 +9805,11 @@ void ForceWindowOnscreen(void)
             h -= bounds.right - screen.right;
         if (bounds.bottom > screen.bottom)
             v -= bounds.bottom - screen.bottom;
-#ifdef MAC1010 /* 1.0.10 spelling */
-        if (h != left || v != top)
-            MoveWindow((WindowRef)gWind, h, v, false);
-#else
-        if (h != left)
-            MoveWindow(gWind, h, v, false);
-        else if (v != top)
-            MoveWindow(gWind, h, v, false);
-#endif
+        if (h == left) {
+            if (v == top)
+                return;
+        }
+        MoveWindow((WindowRef)gWind, h, v, false);
     }
 }
 #endif

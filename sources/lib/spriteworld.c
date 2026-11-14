@@ -340,12 +340,12 @@ SpriteLayerPtr SWGetNextSpriteLayer(SpriteWorldPtr spriteWorldP, SpriteLayerPtr 
 /* SWLockSpriteWorld. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477ba0
 // MAC: _SWLockSpriteWorld i386 0x000b734d ppc 0x000c2ef4
-#ifdef MACBUILD
 void SWLockSpriteWorld(SpriteWorldPtr spriteWorldP)
 {
     SpriteLayerPtr curSpriteLayerP;
 
-    SW_ASSERT(spriteWorldP != NULL, 609);
+    if (spriteWorldP == NULL)
+        SW_ASSERT_FAIL("SpriteWorld.c", 624, 609);
 
     SWLockWindowFrame(spriteWorldP->windowFrameP);
     SWLockFrame(spriteWorldP->workFrameP);
@@ -353,8 +353,10 @@ void SWLockSpriteWorld(SpriteWorldPtr spriteWorldP)
     if (spriteWorldP->extraBackFrameP != NULL)
         SWLockFrame(spriteWorldP->extraBackFrameP);
 
+#ifdef MACBUILD
     SWLockTiles(spriteWorldP);
 
+#endif
     curSpriteLayerP = spriteWorldP->headSpriteLayerP;
 
     while (curSpriteLayerP != NULL) {
@@ -363,27 +365,6 @@ void SWLockSpriteWorld(SpriteWorldPtr spriteWorldP)
         curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
     }
 }
-#else
-void SWLockSpriteWorld(SpriteWorldPtr spriteWorld)
-{
-    SpriteLayerPtr curSpriteLayerP;
-    SWFrameRec *extraBackFrameP;
-
-    if (spriteWorld == NULL)
-        SWAssertFail("SpriteWorld.c", 0x270);
-    SWLockWindowFrame(spriteWorld->windowFrameP);
-    SWLockFrame(spriteWorld->workFrameP);
-    SWLockFrame(spriteWorld->backFrameP);
-    extraBackFrameP = spriteWorld->extraBackFrameP;
-    if (extraBackFrameP != NULL)
-        SWLockFrame(extraBackFrameP);
-    curSpriteLayerP = spriteWorld->headSpriteLayerP;
-    while (curSpriteLayerP != NULL) {
-        SWLockSpriteLayer(curSpriteLayerP);
-        curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
-    }
-}
-#endif
 
 #ifdef MACBUILD
 /* SWUnlockSpriteWorld (mac _SWUnlockSpriteWorld, mac-only). STATE: see the mac gate. */
@@ -547,10 +528,10 @@ void SWSetPostDrawCallBack(SpriteWorldPtr spriteWorld, WorldProcPtr proc)
 /* SWSetSpriteWorldMaxFPS. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477d00
 // MAC: _SWSetSpriteWorldMaxFPS i386 0x000b76c4 ppc 0x000c32b0
-#ifdef MACBUILD
 void SWSetSpriteWorldMaxFPS(SpriteWorldPtr spriteWorldP, short framesPerSec)
 {
-    SW_ASSERT(spriteWorldP != NULL, 811);
+    if (spriteWorldP == NULL)
+        SW_ASSERT_FAIL("SpriteWorld.c", 822, 811);
 
     if (framesPerSec > 0 && framesPerSec <= 1000) {
         spriteWorldP->frameInterval = 1000/framesPerSec;
@@ -560,49 +541,20 @@ void SWSetSpriteWorldMaxFPS(SpriteWorldPtr spriteWorldP, short framesPerSec)
         spriteWorldP->frameInterval = 0;
     }
 }
-#else
-void SWSetSpriteWorldMaxFPS(SpriteWorldPtr spriteWorld, short maxFPS)
-{
-    if (spriteWorld == NULL) {
-        SWAssertFail("SpriteWorld.c", 0x336);
-    }
-    if (maxFPS <= 0 || maxFPS > 1000)
-        spriteWorld->frameInterval = 0;
-    else
-        spriteWorld->frameInterval = 1000 / maxFPS;
-}
-#endif
-
-#define bgRed(sw)   (*(unsigned short *)((char *)(sw) + 0xdf))
-#define bgGreen(sw) (*(unsigned short *)((char *)(sw) + 0xe1))
-#define bgBlue(sw)  (*(unsigned short *)((char *)(sw) + 0xe3))
 
 /* SWSetBackgroundColor (mac _SWSetBackgroundColor). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477d60
 // MAC: _SWSetBackgroundColor i386 0x000b7737 ppc 0x000c3324
-#ifdef MACBUILD
 void SWSetBackgroundColor(SpriteWorldPtr spriteWorldP, RGBColor *color)
 {
-    SW_ASSERT(spriteWorldP != NULL, 834);
-    SW_ASSERT(spriteWorldP->workFrameP != NULL, 835);
+    if (spriteWorldP == NULL)
+        SW_ASSERT_FAIL("SpriteWorld.c", 845, 834);
+    if (spriteWorldP->workFrameP == NULL)
+        SW_ASSERT_FAIL("SpriteWorld.c", 846, 835);
 
     spriteWorldP->backgroundColor = *color;
     spriteWorldP->backgroundValue = SWGetValueFromColor(spriteWorldP->workFrameP, color);
 }
-#else
-void SWSetBackgroundColor(SpriteWorldPtr spriteWorldP, RGBColor *color)
-{
-    if (spriteWorldP == 0)
-        SWAssertFail("SpriteWorld.c", 845);
-    if (spriteWorldP->workFrameP == 0)
-        SWAssertFail("SpriteWorld.c", 846);
-
-    bgRed(spriteWorldP) = color->red;
-    bgGreen(spriteWorldP) = color->green;
-    bgBlue(spriteWorldP) = color->blue;
-    spriteWorldP->backgroundValue = SWGetValueFromColor(spriteWorldP->workFrameP, color);
-}
-#endif
 
 #ifdef MACBUILD
 /* SWStdWorldClearDrawProc (mac _SWStdWorldClearDrawProc, mac-only). STATE: see the mac gate. */
@@ -2479,7 +2431,6 @@ void SWCheckIdleSpritesWithRects(SpriteWorldPtr spriteWorldP, SpritePtr headIdle
 /* SWFindSpritesToBeRemoved (mac _SWFindSpritesToBeRemoved). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478cf0
 // MAC: _SWFindSpritesToBeRemoved i386 0x000b8042 ppc 0x000c3be8
-#ifdef MACBUILD
 void SWFindSpritesToBeRemoved(SpriteWorldPtr spriteWorldP)
 {
     SpritePtr curSpriteP, nextSpriteP;
@@ -2489,7 +2440,8 @@ void SWFindSpritesToBeRemoved(SpriteWorldPtr spriteWorldP)
     while (curSpriteP != NULL) {
         nextSpriteP = curSpriteP->nextSpriteP;
 
-        SW_ASSERT(curSpriteP->spriteRemoval != kSWDontRemoveSprite, 2600);
+        if (curSpriteP->spriteRemoval == kSWDontRemoveSprite)
+            SW_ASSERT_FAIL("SpriteWorld.c", 2613, 2600);
 
         if (curSpriteP->needsToBeErased == false) {
             SWRemoveSprite(curSpriteP);
@@ -2503,32 +2455,6 @@ void SWFindSpritesToBeRemoved(SpriteWorldPtr spriteWorldP)
         curSpriteP = nextSpriteP;
     }
 }
-#else
-void SWFindSpritesToBeRemoved(SpriteWorldPtr spriteWorldP)
-{
-    SpritePtr curSpriteP, nextSpriteP;
-
-    curSpriteP = spriteWorldP->deadSpriteLayerP->headSpriteP;
-
-    while (curSpriteP != 0) {
-        nextSpriteP = curSpriteP->nextSpriteP;
-
-        if (curSpriteP->spriteRemoval == kSWDontRemoveSprite)
-            SWAssertFail("SpriteWorld.c", 2613);
-
-        if (curSpriteP->needsToBeErased == 0) {
-            SWRemoveSprite(curSpriteP);
-
-            if (curSpriteP->spriteRemoval == kSWRemoveAndDisposeSprite)
-                SWDisposeSprite(&curSpriteP);
-            else
-                curSpriteP->spriteRemoval = kSWDontRemoveSprite;
-        }
-
-        curSpriteP = nextSpriteP;
-    }
-}
-#endif
 
 /* SWFlagRectAsChanged (mac _SWFlagRectAsChanged). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478d70

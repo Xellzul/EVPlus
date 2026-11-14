@@ -64,9 +64,6 @@ Boolean RegScramE3(void)
 // MAC: _DoAboutBox i386 0x00015fb7 ppc 0x00019cc8
 void DoAboutBox(void)
 {
-#ifdef MAC1010 /* 1.0.10 spelling */
-    assert(didSpeak == 0 || didSpeak == 1);
-#endif
 #if V111
 #ifdef MACBUILD
     CancelMusicThread();
@@ -90,17 +87,18 @@ void DoAboutBox(void)
 #endif
         didSpeak = 1;
         return;
+    } else {
+#ifdef MACBUILD
+        mainScreenBackgroundDirty = 1;
+#endif
+        LoadDescription(briefingTextPtr, kIntroDescID);
+        MungeBriefing(0, -1);
+        strcpy(textShowString, briefingTextPtr);
+        ShowTextDialog(0, 0, 1);
+#ifdef MACBUILD
+        mainScreenBackgroundDirty = 1;
+#endif
     }
-#ifdef MACBUILD
-    mainScreenBackgroundDirty = 1;
-#endif
-    LoadDescription(briefingTextPtr, kIntroDescID);
-    MungeBriefing(0, -1);
-    strcpy(textShowString, briefingTextPtr);
-    ShowTextDialog(0, 0, 1);
-#ifdef MACBUILD
-    mainScreenBackgroundDirty = 1;
-#endif
 }
 
 /* --- TrackMainScreenButtons (0x004861b0) --- */
@@ -120,7 +118,6 @@ void DoAboutBox(void)
 /* TrackMainScreenButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004861b0
 // MAC: _TrackMainScreenButtons i386 0x000195b9 ppc 0x0001d30c
-#ifdef MACBUILD
 short TrackMainScreenButtons(Point where)
 {
     Rect box;
@@ -169,7 +166,10 @@ short TrackMainScreenButtons(Point where)
         SWSetPortToWindow(gSpriteWorld);
         while (Button()) {
             BusyIdle();
-            GetMouse(&pt);
+#ifndef MACBUILD
+            HandleIntroMusic(0);
+#endif
+            GetGlobalMouse(&pt);
             CopyBits(GWorldContainerBits(&loadPort),
                      GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
                      &rolloverDestRect, &rolloverDestRect, 0, NULL);
@@ -232,143 +232,13 @@ short TrackMainScreenButtons(Point where)
     return hit;
 }
 
-#else
-short TrackMainScreenButtons(Point where)
-{
-    Rect box;
-    Point pt;
-    Rect *fr;
-    Rect *fr2;
-    short i;
-    short hit;
-    short over;
-
-    SWSetPortToWindow(gSpriteWorld);
-    for (i = 0; i < kMainButtons; i++)
-        SWSetSpriteLocation(menuButtonSprite[i],
-                            (menuButtonPos[i].h + menuTopCorner.h),
-                            (menuButtonPos[i].v + menuTopCorner.v));
-    hit = -1;
-    for (i = 0; i < kMainButtons; i++) {
-        if (menuButtonSprite[i] != NULL
-            && SWRLECollisionWithPoint(menuButtonSprite[i], &where)) {
-            hit = i;
-            break;
-        }
-    }
-    if (hit != -1) {
-        PlaySound(mainScreenSnd[kButtonDownSnd], kSoundChannel,
-                  gSoundVolume, gSoundVolume);
-        for (over = 0; over < kMainButtons; over++) {
-            if (menuButtonSprite[over] != NULL) {
-                fr = &menuButtonSprite[over]->frameArray[0]->frameRect;
-                box.top = fr->top;
-                box.left = fr->left;
-                box.bottom = fr->bottom;
-                box.right = fr->right;
-                OffsetRect(&box, menuButtonPos[over].h + menuTopCorner.h,
-                           menuButtonPos[over].v + menuTopCorner.v);
-                SWSetSpriteLocation(menuButtonSprite[over],
-                                    (menuButtonPos[over].h + menuTopCorner.h),
-                                    (menuButtonPos[over].v + menuTopCorner.v));
-                if (hit == over)
-                    BlitPixieRLEDrawProc(menuButtonSprite[over]->frameArray[1],
-                                         gSpriteWorld->workFrameP, &box, &box);
-                else
-                    BlitPixieRLEDrawProc(menuButtonSprite[over]->frameArray[0],
-                                         gSpriteWorld->workFrameP, &box, &box);
-                ForeColor(blackColor);
-                CopyBits(GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
-                         GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                         &box, &box, 0, NULL);
-                ScreenEndScene();
-            }
-        }
-        SWSetPortToWindow(gSpriteWorld);
-        while (Button()) {
-            BusyIdle();
-            HandleIntroMusic(0);
-            GetGlobalMouse(&pt);
-            CopyBits((BitMapPtr)GetGWCPixMap(&loadPort),
-                     GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
-                     &rolloverDestRect, &rolloverDestRect, 0, NULL);
-            MainScreenRolloverIdle();
-            MainScreenRolloverDraw();
-            CopyBits(GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
-                     GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                     &rolloverDestRect, &rolloverDestRect, 0, NULL);
-            over = -1;
-            for (i = 0; i < kMainButtons; i++) {
-                if (menuButtonSprite[i] != NULL
-                    && SWRLECollisionWithPoint(menuButtonSprite[i], &pt)) {
-                    over = i;
-                    break;
-                }
-            }
-            if (over != hit) {
-                if (over <= kMainButtons - 1 && over >= 0) {
-                    PlaySound(mainScreenSnd[kButtonDownSnd], kSoundChannel,
-                              gSoundVolume, gSoundVolume);
-                    fr2 = &menuButtonSprite[over]->frameArray[0]->frameRect;
-                    box.top = fr2->top;
-                    box.left = fr2->left;
-                    box.bottom = fr2->bottom;
-                    box.right = fr2->right;
-                    OffsetRect(&box, menuButtonPos[over].h + menuTopCorner.h,
-                               menuButtonPos[over].v + menuTopCorner.v);
-                    SWSetSpriteLocation(menuButtonSprite[over],
-                                        (menuButtonPos[over].h + menuTopCorner.h),
-                                        (menuButtonPos[over].v + menuTopCorner.v));
-                    BlitPixieRLEDrawProc(menuButtonSprite[over]->frameArray[1],
-                                         gSpriteWorld->workFrameP, &box, &box);
-                    ForeColor(blackColor);
-                    CopyBits(GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
-                             GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                             &box, &box, 0, NULL);
-                    ScreenEndScene();
-                } else {
-                    PlaySound(mainScreenSnd[kButtonUpSnd], kSoundChannel,
-                              gSoundVolume, gSoundVolume);
-                }
-                if (hit <= kMainButtons - 1 && hit >= 0) {
-                    fr = &menuButtonSprite[hit]->frameArray[0]->frameRect;
-                    box.top = fr->top;
-                    box.left = fr->left;
-                    box.bottom = fr->bottom;
-                    box.right = fr->right;
-                    OffsetRect(&box, menuButtonPos[hit].h + menuTopCorner.h,
-                               menuButtonPos[hit].v + menuTopCorner.v);
-                    SWSetSpriteLocation(menuButtonSprite[hit],
-                                        (menuButtonPos[hit].h + menuTopCorner.h),
-                                        (menuButtonPos[hit].v + menuTopCorner.v));
-                    BlitPixieRLEDrawProc(menuButtonSprite[hit]->frameArray[0],
-                                         gSpriteWorld->workFrameP, &box, &box);
-                    ForeColor(blackColor);
-                    CopyBits(GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
-                             GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                             &box, &box, 0, NULL);
-                    ScreenEndScene();
-                }
-            }
-            hit = over;
-        }
-    }
-    if (hit != -1)
-        PlaySound(mainScreenSnd[kButtonUpSnd], kSoundChannel,
-                  gSoundVolume, gSoundVolume);
-    return hit;
-}
-#endif
-
 /* InitMainScreen (mac _InitMainScreen). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00486790
 // MAC: _InitMainScreen i386 0x00016071 ppc 0x00019d9c
 void InitMainScreen(void)
 {
-#ifdef MACBUILD
     short i;
 
-#endif
     didSpeak = 0;
     onPlanet = 0;
     doMainScreenAnim = 1;
@@ -380,17 +250,9 @@ void InitMainScreen(void)
     standardPicRect.right = standardPicRect.left + kViewWidth;
     standardPicRect.bottom = standardPicRect.top + kViewHeight;
 
-#ifdef MACBUILD
     introTextID = -1;
     for (i = 0; i < 4; i++)
         introPictID[i] = -1;
-#else
-    gViewSlot[0] = -1;
-    gViewSlot[1] = -1;
-    gViewSlot[2] = -1;
-    gViewSlot[3] = -1;
-    gViewSlot[4] = -1;
-#endif
 
     creatingPilotFile = 0;
     majorPrefsChange = 0;

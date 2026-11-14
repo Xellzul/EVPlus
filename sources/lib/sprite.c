@@ -1116,7 +1116,6 @@ typedef uint32_t TokenDataType;
 /* SWLockSprite (mac _SWLockSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475550
 // MAC: _SWLockSprite i386 0x000aa965 ppc 0x000b5710
-#ifdef MACBUILD
 void SWLockSprite(SpritePtr srcSpriteP)
 {
     register int32_t curFrame;
@@ -1146,7 +1145,7 @@ void SWLockSprite(SpritePtr srcSpriteP)
                                    - ((int32_t)(*spriteData + kRLEResourceHeaderSize) & 3));
 #else
         tokens = (TokenDataType *)(*spriteData + kRLEResourceHeaderSize);
-#ifndef MAC1010
+#if defined(MACBUILD) && V111
         (int32_t)tokens &= ~3;
 #endif
 #endif
@@ -1162,9 +1161,9 @@ void SWLockSprite(SpritePtr srcSpriteP)
                 if ((*tokens >> kTokenShift) != kLineStartToken)
                     SW_ASSERT_FAIL("Sprite.c", 1665, 1627);
 
-                offset = (*tokens & kCountMask) + offset;
-                tokens = (TokenDataType *)((char *)tokens + (*tokens & kCountMask) + sizeof(TokenDataType));
-                offset += sizeof(TokenDataType);
+                offset += (*tokens & kCountMask) + sizeof(TokenDataType);
+                tokens = (TokenDataType *)((char *)tokens + sizeof(TokenDataType) +
+                                           (*tokens & kCountMask));
 
                 if (offset > dataLength)
                     SW_ASSERT_FAIL("Sprite.c", 1672, 1634);
@@ -1175,59 +1174,6 @@ void SWLockSprite(SpritePtr srcSpriteP)
         }
     }
 }
-#else
-void SWLockSprite(SpritePtr srcSpriteP)
-{
-    register int32_t curFrame;
-    FramePtr srcFrameP;
-    Handle spriteData;
-    int32_t dataLength;
-    TokenDataType *tokens;
-    int32_t offset;
-
-    if (srcSpriteP == 0)
-        SWAssertFail("Sprite.c", 1623);
-
-    for (curFrame = 0; curFrame < srcSpriteP->numFrames; curFrame++) {
-        SWLockFrame(srcSpriteP->frameArray[curFrame]);
-    }
-
-    spriteData = srcSpriteP->rleDataH;
-    if (spriteData != 0) {
-        LockAHandle(spriteData);
-
-        dataLength = GetAHandleSize(spriteData) - kRLEResourceHeaderSize;
-        if (dataLength <= 0)
-            SWAssertFail("Sprite.c", 1642);
-
-        offset = 0;
-        tokens = (TokenDataType *)(*spriteData + kRLEResourceHeaderSize);
-
-        for (curFrame = 0; curFrame < srcSpriteP->numFrames; curFrame++) {
-            srcFrameP = srcSpriteP->frameArray[curFrame];
-            if (srcFrameP->rleDataH != spriteData)
-                SWAssertFail("Sprite.c", 1656);
-
-            srcFrameP->rleTokenStart = tokens;
-
-            while (*tokens != (kEndShapeToken << kTokenShift)) {
-                if ((*tokens >> kTokenShift) != kLineStartToken)
-                    SWAssertFail("Sprite.c", 1665);
-
-                offset += (*tokens & kCountMask) + sizeof(TokenDataType);
-                tokens = (TokenDataType *)((char *)tokens + sizeof(TokenDataType) +
-                                           (*tokens & kCountMask));
-
-                if (offset > dataLength)
-                    SWAssertFail("Sprite.c", 1672);
-            }
-
-            offset += sizeof(TokenDataType);
-            tokens = (TokenDataType *)((char *)tokens + sizeof(TokenDataType));
-        }
-    }
-}
-#endif
 
 /* SWUnlockSprite (mac _SWUnlockSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004756c0

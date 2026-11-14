@@ -13,7 +13,6 @@
 #include "ittoolkit.h"
 
 static ITRect DAT_0086bb20[2];                   /* 0x0086bb20, unreferenced */
-static ITRect gIT_SetInsertTextZeroRect;                      /* 0x0086bb10 _IT_ParamModify's empty clip */
 
 ITControl *_IT_GetPreviousItem(ITControlList *list, ITControl *control);
 extern unsigned short *UnicodeFindDelimiter(const unsigned short *s, const unsigned short *set);
@@ -595,26 +594,25 @@ done:
 // FUNCTION: EVNOVA 0x0051e3a0
 int32_t _IT_ItemListHandleDraw(WindowNode *window, ITControlList *list, const ITRect *area)
 {
+#ifdef MAC1010      /* 1.0.10 spelling */
     int32_t err;
     int32_t e;
     ITControl *c;
-#ifdef MAC1010      /* 1.0.10 spelling */
     ULong param;
+#else
+    ULong param;
+    int32_t err;
+    int32_t e;
+    ITControl *c;
 #endif
     ITRect common;
 
+    param = (ULong)area;
     err = 0;
     c = 0;
-#ifdef MAC1010      /* 1.0.10 spelling */
-    param = (ULong)area;
-#endif
     for (c = list->first; c != 0; c = c->next) {
-        if (area == 0 || !DT_IsRectEmpty(DT_RectIntersect(&common, area, &c->bounds))) {
-#ifdef MAC1010      /* 1.0.10 spelling */
+        if (param == 0 || !DT_IsRectEmpty(DT_RectIntersect(&common, (const ITRect *)param, &c->bounds))) {
             e = _IT_ItemCallback(window, c, kMsgPaint, param, 0);
-#else
-            e = _IT_ItemCallback(window, c, kMsgPaint, (ULong)area, 0);
-#endif
             if (e != 0) {
                 err = e;
                 goto done;
@@ -1185,41 +1183,25 @@ static inline unsigned char IsElement(ITElement *e)
    elements recorded, the tree linked in as the element's first children; drawing clipped to
    nothing meanwhile, the window refreshed). STATE: MATCH 100%, exe 222 / obj 222, byte-identical
    yes (647 bytes). OPEN: none; `link' / `child' are dead locals the exe's entry proves (names
-   invented), the fourth argument is never read; notes/ittoolkit.md */
+   invented), the fourth argument is never read; notes/ittoolkit3.md */
 // FUNCTION: EVNOVA 0x0051ed23
 int32_t _IT_ParamModify(WindowNode *window, ULong index, const char *value, ParamWideArg unused)
 {
-    int32_t err;
-    ITInsert **link;
-    ITElement *child;
-    int32_t e;
-    ITInsert *insert;
+    int32_t err = 0;
+    ITElement *tree = 0;
+    ITInsert **link = 0;
+    ITElement *child = 0;
+    ITElement *element = 0;
+    ITElement *limit = 0;
+    ITInsert *insert = 0;
     ITInsert *p;
     ITElement *after;
-    ITElement *limit;
-    ITElement *tree;
-    ITElement *element;
-    void **text;
-    void *saved;
-#ifdef MAC1010 /* 1.0.10 spelling */
+    int32_t e;
+    void **text = 0;
+    void *saved = 0;
     ITRect clip = {0, 0, 0, 0};
-#else
-    ITRect clip;
-#endif
     ULong order;
 
-    err = 0;
-    tree = 0;
-    link = 0;
-    child = 0;
-    child = 0;
-    limit = 0;
-    insert = 0;
-    text = 0;
-    saved = 0;
-#ifndef MAC1010
-    clip = gIT_SetInsertTextZeroRect;
-#endif
     for (insert = window->controls->inserts; insert != 0 && index--; insert = insert->next)
         ;
     if (insert == 0) {

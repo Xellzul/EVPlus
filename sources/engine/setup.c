@@ -642,11 +642,7 @@ void SetupWind(void)
 #endif
 }
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-#define AllocFailed(var, expr) (var = (expr), !var)
-#else
-#define AllocFailed(var, expr) (!(var = (expr)))
-#endif
+#define AllocFailed(var, expr) (var = (expr), !(var != NULL))
 
 /* InitArrays (mac _InitArrays). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ac560
@@ -2221,16 +2217,10 @@ void LoadSounds(void)
 void LoadMasterStellarSprite(short type)
 {
     short spriteID, maskID, xSize, ySize, xTiles, yTiles;
-#if V111 /* V111 spelling */
-    short resID;
-#else
-    int32_t resID;
-#endif
     short err;
     SpriteRec *entry;
 
-    resID = type + kStellarSpinResBase;
-    if (GetSpriteInfo(resID, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
+    if (GetSpriteInfo(type + kStellarSpinResBase, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
         if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
             err = SWCreateSpriteFromRLEResource(&masterStellarSprite[type], NULL, spriteID,
                                 xTiles * yTiles, 0);
@@ -2238,7 +2228,7 @@ void LoadMasterStellarSprite(short type)
                 crashlog_print("error loading stellar sprite from RLE, type ");
                 crashlog_print_num(type);
                 crashlog_print("\n");
-                ReportSpriteLoadError(2, resID, err);
+                ReportSpriteLoadError(2, type + kStellarSpinResBase, err);
             }
             SWLockSprite(masterStellarSprite[type]);
         } else {
@@ -2248,7 +2238,7 @@ void LoadMasterStellarSprite(short type)
                 crashlog_print("error loading stellar sprite from PICT, type ");
                 crashlog_print_num(type);
                 crashlog_print("\n");
-                ReportSpriteLoadError(3, resID, err);
+                ReportSpriteLoadError(3, type + kStellarSpinResBase, err);
             }
             SWLockSprite(masterStellarSprite[type]);
             err = ConvertSpriteToRLE(masterStellarSprite[type]);
@@ -2256,7 +2246,7 @@ void LoadMasterStellarSprite(short type)
                 crashlog_print("error converting stellar sprite to RLE, type ");
                 crashlog_print_num(type);
                 crashlog_print("\n");
-                ReportSpriteLoadError(4, resID, err);
+                ReportSpriteLoadError(4, type + kStellarSpinResBase, err);
             }
         }
         entry = masterStellarSprite[type];
@@ -2274,14 +2264,6 @@ void LoadMasterStellarSprite(short type)
 #define kRoidGrey          0x8012   /* 8-bit asteroid colour, run through Color2Index */
 #define kRoidPixel         0x1ce7   /* the direct 15-bit pixel otherwise */
 
-
-
-#if V111 /* V111 spelling */
-#define roid n
-#else
-#define roid i
-#endif
-
 /* InitObjects (mac _InitObjects). STATE: win MATCH, byte-identical; mac MATCH both slices.
    OPEN: none; notes */
 // FUNCTION: EVNOVA 0x004b0c20
@@ -2292,7 +2274,6 @@ void InitObjects(void)
     RGBColor c;
     Str255 buf;
     int32_t value;
-    int n;
 
     for (i = 0; i < kMaxShips; i++) {
         shipData[i].index = i;
@@ -2518,20 +2499,20 @@ void InitObjects(void)
     for (i = 0; i < kMaxAsteroids; i++)
         asteroidData[i].active = 0;
 
-    for (roid = 0; roid < kMaxRoidTypes; roid++) {
-        asteroidType[roid].strength = 100;
-        asteroidType[roid].yieldQty = 0;
-        asteroidType[roid].yieldType = -1;
-        asteroidType[roid].fragType[0] = -1;
-        asteroidType[roid].fragType[1] = -1;
-        asteroidType[roid].fragCount = 0;
-        asteroidType[roid].partCount = 50;
-        asteroidType[roid].frameRate = 1.0f;
+    for (i = 0; i < kMaxRoidTypes; i++) {
+        asteroidType[i].strength = 100;
+        asteroidType[i].yieldQty = 0;
+        asteroidType[i].yieldType = -1;
+        asteroidType[i].fragType[0] = -1;
+        asteroidType[i].fragType[1] = -1;
+        asteroidType[i].fragCount = 0;
+        asteroidType[i].partCount = 50;
+        asteroidType[i].frameRate = 1.0f;
         if (gSpriteWorld->pixelDepth == 8) {
             c.red = c.green = c.blue = kRoidGrey;
-            asteroidType[roid].color = Color2Index(&c);
+            asteroidType[i].color = Color2Index(&c);
         } else {
-            asteroidType[roid].color = kRoidPixel;
+            asteroidType[i].color = kRoidPixel;
         }
     }
 
@@ -2640,8 +2621,7 @@ void InitObjects(void)
     lastCursorAnimTime = 0;
     lastFrameTime = 0;
 #ifdef MACBUILD
-    lastFrameMicroseconds.hi = 0;
-    lastFrameMicroseconds.lo = 0;
+    lastFrameMicroseconds.lo = lastFrameMicroseconds.hi = 0;
 #else
     Microseconds(&lastFrameMicroseconds);
 #endif
@@ -4421,13 +4401,11 @@ short FindPriorLoadedShipSprite(short value, short count, short field)
     return -1;
 }
 
+#ifndef MAC1010
 /* DisposeClonedSprite (mac _DisposeClonedSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6810
 // MAC: _DisposeClonedSprite i386 0x0001b3d0 ppc 0x0001f450
 void DisposeClonedSprite(SpritePtr *p)
-#ifdef MAC1010
-;
-#else
 #include "../engine/disposeclonedsprite.inc"
 #endif
 
@@ -4643,13 +4621,11 @@ void DisposeClonedSprite(SpritePtr *p)
 #include "../engine/disposeclonedsprite.inc"
 #endif
 
+#ifndef MAC1010
 /* PreflightMemoryUsageTotal (mac _PreflightMemoryUsageTotal, mac-only). STATE: mac MATCH i386
    and ppc. OPEN: none */
 // MAC: _PreflightMemoryUsageTotal i386 0x00022438 ppc 0x000268b0
 int32_t PreflightMemoryUsageTotal(void)
-#ifdef MAC1010
-;
-#else
 #include "../engine/preflighttotal.inc"
 #endif
 

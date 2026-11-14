@@ -919,11 +919,7 @@ void *SaveBuffer(void)
 
     saved = AllocAPointer(kParseBufSize);
     if (saved == NULL)
-#ifdef MACBUILD
-        SWAssertFail(kEngineSourceDir "Parser.c", 1117);
-#else
-        SWAssertFail("Parser.c", 0x45c);
-#endif
+        EV_ASSERT_FAIL("Parser.c", 1116, 1117);
     BlockMove(parseBuffer, saved, kParseBufSize);
     return saved;
 }
@@ -934,11 +930,7 @@ void *SaveBuffer(void)
 void RestoreBuffer(void *saved)
 {
     if (saved == NULL)
-#ifdef MACBUILD
-        SWAssertFail(kEngineSourceDir "Parser.c", 1127);
-#else
-        SWAssertFail("Parser.c", 0x466);
-#endif
+        EV_ASSERT_FAIL("Parser.c", 1126, 1127);
     BlockMove(saved, parseBuffer, kParseBufSize);
     DeallocAPointer(saved);
 }

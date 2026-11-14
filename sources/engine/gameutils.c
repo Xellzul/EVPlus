@@ -33,19 +33,13 @@ void CenterWindow(void *front, void *window)
 {
     Point center;
     GrafPtr savePort;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    short halfWidth;
-    short halfHeight;
-#else
-    short halfHeight;
-    short halfWidth;
-#endif
+    Point half;
 
     if (front == NULL)
         return;
     GetPort(&savePort);
-    halfWidth = (GetWindowPortRect(front)->right - GetWindowPortRect(front)->left) / 2;
-    halfHeight = (GetWindowPortRect(front)->bottom - GetWindowPortRect(front)->top) / 2;
+    half.h = (GetWindowPortRect(front)->right - GetWindowPortRect(front)->left) / 2;
+    half.v = (GetWindowPortRect(front)->bottom - GetWindowPortRect(front)->top) / 2;
     if (window != NULL) {
         center.h = (GetWindowPortRect(window)->right - GetWindowPortRect(window)->left) / 2;
         center.v = (GetWindowPortRect(window)->bottom - GetWindowPortRect(window)->top) / 2;
@@ -55,7 +49,7 @@ void CenterWindow(void *front, void *window)
         center.h = ((*mainScreenDevice)->gdRect.right - (*mainScreenDevice)->gdRect.left) / 2;
         center.v = ((*mainScreenDevice)->gdRect.bottom - (*mainScreenDevice)->gdRect.top) / 2;
     }
-    MoveWindow(front, center.h - halfWidth, center.v - halfHeight, false);
+    MoveWindow(front, center.h - half.h, center.v - half.v, false);
     SetPort(savePort);
 }
 #else

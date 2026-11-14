@@ -245,24 +245,10 @@ void BlitPixieRLEDitherClipped(unsigned char *rleTokens, unsigned char *dstPixel
 // MAC: _BlitPixieDitherInit i386 0x000c0ad1 ppc 0x000cc8c0
 void BlitPixieDitherInit(void)
 {
-    uint32_t *p;
-#ifdef MAC1010 /* 1.0.10 spelling */
     short i;
 
     Randomize();
-    i = 0;
-    for (p = randomTable; i < kRandomTableSize; i++) {
-        *p = GetRandom(0, 31);
-        p++;
-    }
-#else
-
-    Randomize();
-    p = randomTable;
-    do {
-        *p = GetRandom(0, 31);
-        p++;
-    } while (p != randomTable + kRandomTableSize);
-#endif
+    for (i = 0; i < kRandomTableSize; i++)
+        randomTable[i] = GetRandom(0, 31);
     randomIndex = GetRandom(0, kRandomTableSize - 1);
 }

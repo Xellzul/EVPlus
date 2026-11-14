@@ -801,14 +801,7 @@ typedef struct PersRecord {
     short grantProb;
     short grantCount;
     short sameNameIndex;
-#ifdef MAC1010
-    union {
-        unsigned short rgb5[3];
-        RGBColor shipColor;
-    };
-#else
-    unsigned short rgb5[3];
-#endif
+    RGBColor shipColor;
     char pad792[2];
 } PersRecord;
 

@@ -558,7 +558,6 @@ void DoSystemMap(void)
     short y;
     short w;
     short h;
-#if V111 /* V111 spelling */
     short itemType;
     short itemHit;
     Handle item;
@@ -568,28 +567,14 @@ void DoSystemMap(void)
     unsigned char savedShow;
     Boolean done;
     Rect r;
-    Rect box2;
-    Rect box;
     Point mouse;
+    Rect box;
+    Rect box2;
     Point anchor;
+#if V111
     Point prevMouse;
-    MapScroll savedScroll;
-#else
-    MapScroll savedScroll;
-    unsigned char savedShow;
-    short itemType;
-    Handle item;
-    Boolean done;
-    Boolean inRoute;
-    Boolean selected;
-    Boolean hyperlinked;
-    Rect box;
-    Rect box2;
-    Point mouse;
-    short itemHit;
-    Rect r;
-    Point anchor;
 #endif
+    MapScroll savedScroll;
     Rect *pr;
 #if V111
     short (*route)[kMaxHyperRoute] = &hyperRoute; /* V111 pad: 11 fewer into-SSA PHIs, with ms savedScroll's two names */
@@ -606,17 +591,10 @@ void DoSystemMap(void)
     if (mapDialog == NULL)
         return;
     key = RT3_GetLicenseCode();
-#ifdef MAC1010
-    KeyMismatch(bad[0], key, key, 0xcb0b794232805675ULL, 0x0b947b5621514203ULL);
-    KeyMismatch(bad[1], key, key, 0xaa30db1ee9c7913aULL, 0x01c38b5f995da87aULL);
-    KeyMismatch(bad[2], key, key, 0xe5a3c8161b574a9fULL, 0x065298576bcd73d9ULL);
-    KeyMismatch(bad[3], key, key, 0x77c04b34263c359eULL, 0x0ee20eb101b08ac5ULL);
-#else /* 1.0.10 spelling */
     bad[0] = KeyLow60(key ^ 0xcb0b794232805675ULL) != 0x0b947b5621514203ULL;
     bad[1] = KeyLow60(key ^ 0xaa30db1ee9c7913aULL) != 0x01c38b5f995da87aULL;
     bad[2] = KeyLow60(key ^ 0xe5a3c8161b574a9fULL) != 0x065298576bcd73d9ULL;
     bad[3] = KeyLow60(key ^ 0x77c04b34263c359eULL) != 0x0ee20eb101b08ac5ULL;
-#endif
     for (x = 0; x < 4; x++) {
         if (bad[x] == 0) {
             for (j = 0; j < kMaxSystemLinks; j++)
@@ -1647,10 +1625,13 @@ void MapDialogUpdate(void)
     unsigned char text[256];
     Rect r2;
     Handle item;
+    short found;
     short i;
-#if V111 /* V111 spelling */
+    short j;
+    short count;
     short drawn;
     short fit;
+#if V111 /* V111 spelling */
     short xoff;
 #endif
     short savedY;
@@ -1661,15 +1642,7 @@ void MapDialogUpdate(void)
     Rect nebR;
     unsigned char buf[256];
     Rect box6;
-    short j;
-    short count;
-#if V111 /* V111 spelling */
-#else
-    short drawn;
-    short fit;
-#endif
     short st2;
-    short found;
     Boolean ok;
     Boolean linked;
     float sy;
@@ -1680,7 +1653,6 @@ void MapDialogUpdate(void)
     short xoff;
 #endif
     short k;
-    short st;
     short n;
     short sw;
 
@@ -1733,6 +1705,8 @@ void MapDialogUpdate(void)
         TextSize(smallTextSize - 2);
         if (mapZoom >= 1.1)
             TextSize(smallTextSize - 2);
+        else if (mapZoom >= 0.9)
+            TextSize(smallTextSize);
         else
             TextSize(smallTextSize);
         for (i = 0; i < kMaxNebulae; i++) {
@@ -2041,24 +2015,15 @@ void MapDialogUpdate(void)
             } else {
                 DrawIndString(kGameStrList, 0x153);
             }
-#if V111 /* V111 spelling */
-            MoveTo(r2.left + 0xf, r2.top + 0x1a);
-            ForeColor(whiteColor);
-#endif
         } else {
             if (hypergateMapMode != 0 && hypergateMapModeStellar >= 0
                 && hypergateMapModeStellar < kMaxStellars) {
                 for (j = 0; j < kSpobHyperLinks; j++) {
-                    st = stellarData[hypergateMapModeStellar].hyperLinks[j];
                     /* BUG: i is the finished name loop's counter (0x800), so an empty link is never skipped */
-#if V111 /* V111 spelling */
-                    if (st != -i) {
-#else
-                    if (-i != st) {
-#endif
-                        st2 = stellarData[st].system;
+                    if (stellarData[hypergateMapModeStellar].hyperLinks[j] != -i) {
+                        st2 = stellarData[stellarData[hypergateMapModeStellar].hyperLinks[j]].system;
                         if (st2 < 0 || st2 >= kMaxSystems)
-                            st2 = FindSystemFromStellar(st);
+                            st2 = FindSystemFromStellar(stellarData[hypergateMapModeStellar].hyperLinks[j]);
                         found = FindActiveCoLocatedSystem(st2);
                         if (found == selSystem) {
                             linked = 1;
@@ -2074,15 +2039,9 @@ void MapDialogUpdate(void)
             } else {
                 DrawIndString(kGameStrList, 0x152);
             }
-#if V111 /* V111 spelling */
-            MoveTo(r2.left + 0xf, r2.top + 0x1a);
-            ForeColor(whiteColor);
-        }
-#else
         }
         MoveTo(r2.left + 0xf, r2.top + 0x1a);
         ForeColor(whiteColor);
-#endif
         if (systemData[sel].exploreLevel <= 0) {
             if (cheatsActive != 0) {
                 NumToString(sel + kFirstResourceID, buf);

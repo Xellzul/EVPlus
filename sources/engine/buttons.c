@@ -1075,28 +1075,22 @@ short TrackPlunderButtons(Point where)
 }
 #else
 {
-    short drawnButton;
-    int downH;
-    int downV;
-    short overButton;
-    Rect *walk;
-    Rect *r;
-    Rect *fill;
-    short over;
     short i;
+    short drawnButton;
+    short downButton;
+    short over;
     Rect box[6];
     Boolean enabled[6];
     Handle item;
     Rect *first;
     Point mouse;
     short itemType;
-    short downButton;
 
     ForeColor(blackColor);
-    for (over = 0, fill = box; over <= 3; over++, fill++)
-        GetDialogItem(plunderDialog, over + 1, &itemType, &item, fill);
-    for (over = 4, fill = &box[4]; over <= 5; over++, fill++)
-        GetDialogItem(plunderDialog, over + 2, &itemType, &item, fill);
+    for (i = 0, first = box; i <= 3; i++)
+        GetDialogItem(plunderDialog, i + 1, &itemType, &item, &first[i]);
+    for (i = 4; i <= 5; i++)
+        GetDialogItem(plunderDialog, i + 2, &itemType, &item, &box[i]);
     enabled[0] = 1;
     if (salvageType != -1)
         enabled[1] = 1;
@@ -1119,18 +1113,9 @@ short TrackPlunderButtons(Point where)
     else
         enabled[5] = 0;
     drawnButton = -1;
-    overButton = 0;
-    first = box;
-    walk = box;
-    downV = *(short *)&where;
-    downH = ((short *)&where)[1];
-    for (; overButton <= 5; overButton++, walk++) {
-#if V111 /* V111 spelling */
-        if (enabled[overButton] != 0 && PtInRectPoint(where, &box[overButton]) != 0)
-#else
-        if (enabled[overButton] != 0 && PtInRect(downH, downV, walk) != 0)
-#endif
-            drawnButton = overButton;
+    for (i = 0; i <= 5; i++) {
+        if (enabled[i] != 0 && PtInRectPoint(where, &box[i]) != 0)
+            drawnButton = i;
     }
     downButton = drawnButton;
     if (drawnButton != -1) {
@@ -1139,22 +1124,18 @@ short TrackPlunderButtons(Point where)
         while (StillDown() != 0) {
             BusyIdle();
             GetMouse(&mouse);
-            i = -1;
-            for (overButton = 0, r = first; overButton <= 5; overButton++, r++) {
-#if V111 /* V111 spelling */
-                if (enabled[overButton] != 0 && PtInRectPoint(mouse, &box[overButton]) != 0)
-#else
-                if (enabled[overButton] != 0 && PtInRectPoint(mouse, r) != 0)
-#endif
-                    i = overButton;
+            over = -1;
+            for (i = 0; i <= 5; i++) {
+                if (enabled[i] != 0 && PtInRectPoint(mouse, &box[i]) != 0)
+                    over = i;
             }
-            if (i != drawnButton && i != downButton)
-                i = -1;
-            if (i != drawnButton) {
-                DrawPlunderButtons(i);
+            if (over != drawnButton && over != downButton)
+                over = -1;
+            if (over != drawnButton) {
+                DrawPlunderButtons(over);
                 nv_UpdateDialogWindow(0);
             }
-            drawnButton = i;
+            drawnButton = over;
         }
     }
     return drawnButton;

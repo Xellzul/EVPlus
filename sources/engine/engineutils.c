@@ -4114,18 +4114,13 @@ void FlushKeys(void)
 /* QuickKeyCheckHandler. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469c90
 // MAC: _QuickKeyCheckHandler i386 0x00005d5a ppc 0x000074b8
+void QuickKeyCheckHandler(void)
+{
 #ifdef MACBUILD
-void QuickKeyCheckHandler(void)
-{
     GetKeys((void *)keyMap);
-    quickKeyCheckResult = 0;
-}
-#else
-void QuickKeyCheckHandler(void)
-{
-    quickKeyCheckResult = 0;
-}
 #endif
+    quickKeyCheckResult = 0;
+}
 
 #if defined(MACBUILD) && !defined(MAC1010)
 /* ScanForKeys (mac _ScanForKeys, mac-only). STATE: see the mac gate. */
@@ -4146,10 +4141,11 @@ short ScanForKeys(void)
 /* QuickKeyCheck (mac _QuickKeyCheck). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469ca0
 // MAC: _QuickKeyCheck i386 0x0000a0f5 ppc 0x0000c6e4
-#ifdef MACBUILD
 unsigned char QuickKeyCheck(short scanCode)
 {
-#ifdef MAC1010 /* 1.0.10 real: 0x100af67c word and bit split from the scan code, no isPressed */
+#ifndef MACBUILD
+    short i;
+#elif defined(MAC1010) /* 1.0.10 real: 0x100af67c word and bit split from the scan code, no isPressed */
     short i;
     short word;
     short bit;
@@ -4166,7 +4162,9 @@ unsigned char QuickKeyCheck(short scanCode)
                 return 0;
         }
     }
-#ifdef MAC1010
+#ifndef MACBUILD
+    return KeyIsDown(scanCode);
+#elif defined(MAC1010)
     word = (scanCode >> 4) & 0xf;
     bit = scanCode & 0xf;
     if (keyMap[word] & (1 << bit)) {
@@ -4181,22 +4179,6 @@ unsigned char QuickKeyCheck(short scanCode)
     return result;
 #endif
 }
-#else
-unsigned char QuickKeyCheck(short scanCode)
-{
-    short i;
-
-    if (ignoreKeys)
-        return 0;
-    if (escortMenuOnscreen > 0) {
-        for (i = 0; i < 5; i++) {
-            if (scanCode == keyPrefs.quickKey[i])
-                return 0;
-        }
-    }
-    return KeyIsDown(scanCode);
-}
-#endif
 
 #ifdef MACBUILD
 /* QuickKeyCheckPlusEscorts (mac _QuickKeyCheckPlusEscorts, mac-only). STATE: see the mac gate. */
@@ -4779,11 +4761,7 @@ void RefreshSAT(void)
         FloaterDrawCallback(gSpriteWorld);
     }
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
     QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-#else
-    ScreenEndScene();
-#endif
 }
 
 /* PlaySound (mac _PlaySound). STATE: MATCH, byte-identical. OPEN: none */
@@ -5357,18 +5335,12 @@ short FindNearestValidShotTarget(ShotObj *shot)
 // MAC: _SetSystemBackgroundColor i386 0x00006af4 ppc 0x00008568
 void SetSystemBackgroundColor(void)
 {
-#ifdef MAC1010 /* 1.0.10 spelling */
-    short sys, x;
-
-    sys = x = shipData[0].curSystem;
-    sys &= ~(x >> 31);
-#else
     short sys;
 
-    sys = shipData[0].curSystem;
-    if (sys < 0)
+    if (shipData[0].curSystem < 0)
         sys = 0;
-#endif
+    else
+        sys = shipData[0].curSystem;
     RGBForeColor(&systemData[sys].rgb);
     SWSetBackgroundColor(gSpriteWorld, &systemData[sys].rgb);
 }
@@ -5598,7 +5570,6 @@ short ModifyShotStartPosition(ShipObj *ship, FloatPoint *base, short weapType, F
     short divisor;
     short angle;
     short result;
-    short lane;
 
     if (ship == 0 || base == 0)
         return -1;
@@ -5619,14 +5590,8 @@ short ModifyShotStartPosition(ShipObj *ship, FloatPoint *base, short weapType, F
 
         ModifyShotStartPosition2(ship, base, angle, group, ship->weapGroupLane[group]);
 
-#ifdef V111 /* V111 spelling */
         result = ship->weapGroupLane[group];
-        ship->weapGroupLane[group] = ((result + 1) % 4);
-#else
-        lane = ship->weapGroupLane[group];
-        result = lane;
-        ship->weapGroupLane[group] = ((lane + 1) % 4);
-#endif
+        ship->weapGroupLane[group] = (ship->weapGroupLane[group] + 1) % 4;
 
         if (ship->weapGroupLane[group] < 0 || ship->weapGroupLane[group] > 3)
             ship->weapGroupLane[group] = Rand(4);
@@ -6557,13 +6522,12 @@ Boolean StellarIsNormalLandable(SpobRecord *spob)
 
 #define kNeutralComponent 0x20
 
-/* GetShipPaintColor (mac _GetShipPaintColor). STATE: win MATCH, byte-identical; mac MATCH on both slices
-   (V111 spelling). OPEN: none */
+/* GetShipPaintColor (mac _GetShipPaintColor). STATE: win MATCH, byte-identical; mac MATCH on both slices;
+   1.0.10 MATCH on both fragments; one body. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e470
 // MAC: _GetShipPaintColor i386 0x00007d0c ppc 0x00009adc
 void GetShipPaintColor(ShipObj *ship, unsigned short *red, unsigned short *green,
                   unsigned short *blue)
-#ifdef MAC1010
 {
     RGBColor c;
 
@@ -6581,58 +6545,6 @@ void GetShipPaintColor(ShipObj *ship, unsigned short *red, unsigned short *green
     *green = c.green;
     *blue = c.blue;
 }
-#else
-{
-    unsigned short b;
-    unsigned short g;
-    unsigned short r;
-#if V111 /* V111 spelling */
-#else
-    unsigned short *rgb;
-
-    r = g = b = kNeutralComponent;
-#endif
-
-    if (ship->index == 0) {
-        r = playerPaint.red;
-        g = playerPaint.green;
-        b = playerPaint.blue;
-#if V111 /* V111 spelling */
-    } else if (ship->persType != -1) {
-        r = personData[ship->persType].rgb5[0];
-        g = personData[ship->persType].rgb5[1];
-        b = personData[ship->persType].rgb5[2];
-    } else if (ship->govt != -1) {
-        r = govtData[ship->govt].rgb2.red;
-        g = govtData[ship->govt].rgb2.green;
-        b = govtData[ship->govt].rgb2.blue;
-    } else {
-        r = g = b = kNeutralComponent;
-    }
-#else
-    } else if (ship->persType != -1) {
-        rgb = personData[ship->persType].rgb5;
-        r = rgb[0];
-        g = rgb[1];
-        b = rgb[2];
-    } else if (ship->govt != -1) {
-        rgb = (unsigned short *)&govtData[ship->govt].rgb2;
-        r = rgb[0];
-        g = rgb[1];
-        b = rgb[2];
-    }
-#endif
-    if (r == 0) {
-        if (g == 0) {
-            if (b == 0)
-                r = g = b = kNeutralComponent;
-        }
-    }
-    *red = r;
-    *green = g;
-    *blue = b;
-}
-#endif
 
 #define kOutfModType49 0x31
 
@@ -6886,33 +6798,16 @@ void DisposeDialogNoFlash(void *dlg)
 int32_t AdjustedItemCost(OutfRecord *outf, ShipRec *ship)
 {
     int32_t cost;
-    int32_t adjusted;
-#ifdef V111 /* V111 spelling */
-    int32_t scaled;
 
     cost = outf->cost;
-    if (cost <= 0)
-        return 0;
-    scaled = OutfCostScaled(outf);
-    if (!scaled)
-        return cost;
-    adjusted = cost * ship->mass;
-    if (adjusted < cost)
-        return cost;
-    return adjusted;
-#else
-
-    cost = outf->cost;
-    adjusted = cost;
     if (cost <= 0)
         return 0;
     if (OutfCostScaled(outf)) {
-        adjusted = adjusted * ship->mass;
-        if (adjusted < cost)
-            adjusted = cost;
+        cost *= ship->mass;
+        if (cost < outf->cost)
+            cost = outf->cost;
     }
-    return adjusted;
-#endif
+    return cost;
 }
 
 /* AdjustedItemMass (mac _AdjustedItemMass). STATE: MATCH, byte-identical. OPEN: none */
@@ -7155,12 +7050,10 @@ Boolean StellarsAreIdentical(short a, short b)
             return 1;
         if (stellarData[a].pos.h == stellarData[b].pos.h &&
             stellarData[a].pos.v == stellarData[b].pos.v &&
-#ifdef MAC1010 /* 1.0.10 spelling */
-            (char)stellarData[a].name[0] == (char)stellarData[b].name[0]) {
-#elif defined(V111) /* V111 spelling */
+#ifdef V111 /* V111 spelling */
             *(char *)stellarData[a].name == *(char *)stellarData[b].name) {
 #else
-            stellarData[a].name[0] == stellarData[b].name[0]) {
+            (char)stellarData[a].name[0] == (char)stellarData[b].name[0]) {
 #endif
             pstrcpy(nameA, stellarData[a].name);
             pstrcpy(nameB, stellarData[b].name);

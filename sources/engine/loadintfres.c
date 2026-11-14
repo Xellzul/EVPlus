@@ -12,22 +12,14 @@
 #include "cefix.h"
 
 
-#if V111 /* V111 spelling */
-#define kIntfRec (*(IntfRec **)intfFileHand)
+#define kIntfRec ((IntfRec *)*intfFileHand)
+
 #define GovtInterfaceID(g) \
-    id = govtData[g].interfaceID; \
-    if (id < kFirstResourceID) \
-        id = kFirstResourceID
-#else
-#define kIntfRec (*rec)
-#define GovtInterfaceID(g) \
-    pid = govtData[g].interfaceID; \
-    if (pid >= kFirstResourceID) \
-        id = pid
-#endif
+    if (govtData[g].interfaceID >= kFirstResourceID) \
+        id = govtData[g].interfaceID
 
 #define CopyStatusRect(n, area) \
-    p = &(*rec)->area; \
+    p = &((IntfRec *)*rec)->area; \
     statusOffRect[n] = *p
 
 /* LoadIntfResource (mac _LoadIntfResource). STATE: MATCH 100.0% (269 exact, 94
@@ -37,13 +29,11 @@
 void LoadIntfResource(void)
 {
     short type;
-    short govt;
     short id;
-    short pid;
     short picID;
     PicHandle pict;
     Rect *p;
-    IntfRec **rec;
+    Handle rec;
     IntfRec **rec2;
     Rect pictRect;
     char fontName[256];
@@ -51,21 +41,16 @@ void LoadIntfResource(void)
     id = kFirstResourceID;
     type = shipData->type;
     if (type >= 0 && type < kMaxShipTypes) {
-        govt = shipClass[type].inherentGovtB;
-        if (govt != -1) {
-            GovtInterfaceID(govt);
-        } else {
-            govt = shipClass[type].inherentGovt;
-            if (govt != -1) {
-                GovtInterfaceID(govt);
-            }
+        if (shipClass[type].inherentGovtB != -1) {
+            GovtInterfaceID(shipClass[type].inherentGovtB);
+        } else if (shipClass[type].inherentGovt != -1) {
+            GovtInterfaceID(shipClass[type].inherentGovt);
         }
     }
     if (id != lastIntfResourceID) {
     intfFileHand = GetResource(kIntfType, id);
     if (intfFileHand != NULL) {
         LockAHandle(intfFileHand);
-        rec = (IntfRec **)intfFileHand;
 
         statusColor[0].blue = (kIntfRec->brightText.rgb & 0xff) * 256;
         statusColor[0].green = (kIntfRec->brightText.rgb >> 8 & 0xff) * 256;
@@ -92,9 +77,7 @@ void LoadIntfResource(void)
         statusColor[7].green = (kIntfRec->fuelPartial.rgb >> 8 & 0xff) * 256;
         statusColor[7].red = (kIntfRec->fuelPartial.rgb >> 16 & 0xff) * 256;
 
-#if V111 /* V111 spelling */
-        rec = (IntfRec **)intfFileHand;
-#endif
+        rec = intfFileHand;
         CopyStatusRect(0, radarArea);
         CopyStatusRect(1, shieldArea);
         CopyStatusRect(2, armorArea);
@@ -104,7 +87,7 @@ void LoadIntfResource(void)
         CopyStatusRect(6, targArea);
         CopyStatusRect(7, cargoArea);
 
-        strcpy(fontName, (*rec)->statusFont);
+        strcpy(fontName, ((IntfRec *)*rec)->statusFont);
         CtoPstr(fontName);
         GetFNum((StringPtr)fontName, &statusFontID);
 

@@ -843,6 +843,13 @@ typedef int EventChar;
 #define EventWhat int
 #endif
 
+/* a character held in a local across tolower's calls in the win port and 1.0.10; 1.1.1 reads its source again */
+#if V111
+#define HeldChar(held, src) (src)
+#else
+#define HeldChar(held, src) (held)
+#endif
+
 #define kRLE8ResType 0x726c9138UL
 #define kRLEDResType 0x726c9144UL
 
@@ -1002,9 +1009,13 @@ extern void RGBForeColor(const RGBColor *color);
 extern void ForeColor(int32_t color);
 extern void *NewPtr(int32_t size);
 extern void DisposePtr(void *ptr);
-extern uint32_t TickCount(void);
+#define TickCount() ReadTick()
 extern CGrafPtr GetWindowPort(CWindowPtr window);
+#if V111
 extern void QDFlushPortBuffer(CGrafPtr port, void *region);
+#else
+#define QDFlushPortBuffer(port, region) ScreenEndScene()
+#endif
 extern void PtToAngle(const Rect *r, Point pt, short *angle);
 extern Boolean RectInRgn(Rect *r, void *rgn);
 #endif
@@ -1304,6 +1315,7 @@ static inline short EV_NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, v
 #define ShowMacWindow(window) ShowWindow(window)
 #define InvalDialogRect(dlg, box) InvalWindowRect(GetDialogWindow(dlg), box)
 #define SetDialogGWorld(dlg) SetPort((GrafPtr)GetDialogPort(dlg))
+#define GetGlobalMouse(pt) GetMouse(pt)
 extern FSRef pluginsFolder;
 extern FSRef novaFilesFolder;
 /* MoreFilesX (Apple sample code, linked into the mac build) */

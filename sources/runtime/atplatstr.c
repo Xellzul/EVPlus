@@ -843,7 +843,7 @@ char *StringFormatVarg(char *out, ULong size, const char *format, va_list args)
             }
             uval = sval;
             _StringFormatNumber(buf, uval, 10, "0123456789", flags, width,
-                         precision == kNoWidth ? 1 : precision);
+                         kNoWidth == precision ? 1 : precision);
             outPtr = _StringFormatString((FmtChar *)outPtr, (FmtChar *)buf, &size, flags, kNoWidth, kNoWidth);
             fmt = fmt + (i + 1);
             continue;
@@ -853,12 +853,8 @@ char *StringFormatVarg(char *out, ULong size, const char *format, va_list args)
             precision = width = kPointerDigits;
             ptr = va_arg(args, void *);
             uval = (ULong)ptr;
-#ifdef MAC1010 /* 1.0.10 spelling */
-            _StringFormatNumber(buf, uval, 16, kHexUpper, flags, width, precision);
-#else
-            _StringFormatNumber(buf, uval, 16, kHexUpper, flags, kPointerDigits,
-                         precision == kNoWidth ? 1 : precision);
-#endif
+            _StringFormatNumber(buf, uval, 16, kHexUpper, flags, width,
+                         kNoWidth == precision ? 1 : precision);
             outPtr = _StringFormatString((FmtChar *)outPtr, (FmtChar *)buf, &size, flags, kNoWidth, kNoWidth);
             fmt = fmt + (i + 1);
             continue;
@@ -879,14 +875,14 @@ char *StringFormatVarg(char *out, ULong size, const char *format, va_list args)
                 if ((uval ? 1 : 0) && (flags & kFlagPlus) != 0)
                     buf[0] = '+';
                 _StringFormatNumber(buf, uval, 10, "0123456789", flags, width,
-                             precision == kNoWidth ? 1 : precision);
+                             kNoWidth == precision ? 1 : precision);
             } else if (conv == 'o') {
                 _StringFormatNumber(buf, uval, 8, "01234567", flags, width,
-                             precision == kNoWidth ? 1 : precision);
+                             kNoWidth == precision ? 1 : precision);
             } else {
                 _StringFormatNumber(buf, uval, 16,
                              conv == 'x' ? "0123456789abcdef" : kHexUpper,
-                             flags, width, precision == kNoWidth ? 1 : precision);
+                             flags, width, kNoWidth == precision ? 1 : precision);
             }
             outPtr = _StringFormatString((FmtChar *)outPtr, (FmtChar *)buf, &size, flags, kNoWidth, kNoWidth);
             fmt = fmt + (i + 1);

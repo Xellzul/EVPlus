@@ -461,10 +461,8 @@ void OpenDataFiles(void)
 
 
 #if V111 /* V111 spelling */
-#define mountSlot k
 #define junksLoaded found
 #else
-#define mountSlot count
 #define junksLoaded loaded
 #endif
 
@@ -1310,15 +1308,9 @@ void LoadObjectData(void)
                     if (weaponStats[n].subCount > 0) {
                         short nxt = weaponStats[n].subType;
                         if (n == nxt) {
-                            short lim = weaponStats[n].subLimit;
-                            if (lim > 0)
-#if V111 /* V111 spelling */
-                                weaponStats[i].totalRange += (double)(lim * weaponStats[n].speed100 *
-                                                                      weaponStats[n].lifetime);
-#else
-                                weaponStats[i].totalRange += (double)(weaponStats[n].lifetime *
-                                                    (lim * weaponStats[n].speed100));
-#endif
+                            if (weaponStats[n].subLimit > 0)
+                                weaponStats[i].totalRange += (double)(weaponStats[n].subLimit *
+                                    weaponStats[n].speed100 * weaponStats[n].lifetime);
                             n = -1;
                         } else {
                             n = nxt;
@@ -1525,33 +1517,33 @@ void LoadObjectData(void)
                 tradeEst = shipClass[i].cost * 0.25;
                 gunTally = 0;
                 turretTally = 0;
-                for (k = 0; k < 8; k++) {
-                    if (mountID[k] >= kFirstResourceID && mountID[k] < kFirstResourceID + kMaxWeapTypes) {
-                        shipClass[i].weapCount[mountID[k] - kFirstResourceID] = mountCount[k];
-                        shipClass[i].weapAmmo[mountID[k] - kFirstResourceID] = mountAmmo[k];
-                        if (mountCount[k] > 0) {
+                for (count = 0; count < 8; count++) {
+                    if (mountID[count] >= kFirstResourceID && mountID[count] < kFirstResourceID + kMaxWeapTypes) {
+                        shipClass[i].weapCount[mountID[count] - kFirstResourceID] = mountCount[count];
+                        shipClass[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
+                        if (mountCount[count] > 0) {
                             for (j = 0; j < kMaxOutfits; j++) {
                                 if (outfitSystem[j].modType[0] == kOutfModWeapon &&
-                                    outfitSystem[j].modVal[0] == mountID[k] - kFirstResourceID &&
+                                    outfitSystem[j].modVal[0] == mountID[count] - kFirstResourceID &&
                                     outfitSystem[j].techLevel < kOutfTechAbsent) {
-                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountCount[k];
+                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountCount[count];
                                     shipClass[i].freeMass += mass;
                                     if (!outfitSystem[j].persistent)
                                         tradeEst = tradeEst +
-                                            (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[k]) * 0.5;
+                                            (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[count]) * 0.5;
                                     if (outfitSystem[j].flags & kOutfFixedGun)
-                                        gunTally += mountCount[k];
+                                        gunTally += mountCount[count];
                                     if (outfitSystem[j].flags & kOutfTurret)
-                                        turretTally += mountCount[k];
+                                        turretTally += mountCount[count];
                                     break;
                                 }
                             }
                         }
-                        if (mountAmmo[k] > 0) {
-                            if (weaponStats[mountID[k] - kFirstResourceID].guidance == kGuidanceBay)
-                                n = mountID[k] - kFirstResourceID;
+                        if (mountAmmo[count] > 0) {
+                            if (weaponStats[mountID[count] - kFirstResourceID].guidance == kGuidanceBay)
+                                n = mountID[count] - kFirstResourceID;
                             else {
-                                n = weaponStats[mountID[k] - kFirstResourceID].ammoType;
+                                n = weaponStats[mountID[count] - kFirstResourceID].ammoType;
                                 if (n < 0 || n >= kMaxWeapTypes)
                                     n = -1;
                             }
@@ -1560,11 +1552,11 @@ void LoadObjectData(void)
                                     if (outfitSystem[j].modType[0] == kOutfModAmmo &&
                                         outfitSystem[j].modVal[0] == n &&
                                         outfitSystem[j].techLevel < kOutfTechAbsent) {
-                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountAmmo[k];
+                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountAmmo[count];
                                     shipClass[i].freeMass += mass;
                                         if (!outfitSystem[j].persistent)
                                             tradeEst = tradeEst +
-                                                (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[k]) * 0.5;
+                                                (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[count]) * 0.5;
                                         break;
                                     }
                                 }
@@ -1958,14 +1950,14 @@ void LoadObjectData(void)
                 personData[i].flags = ResRec(PersRes, personFileHand)->flags;
                 personData[i].flags2 = ResRec(PersRes, personFileHand)->flags2;
                 personData[i].hailPict = ResRec(PersRes, personFileHand)->hailPict;
-                personData[i].rgb5[0] = (ResRec(PersRes, personFileHand)->shipColor >> 19) & 0x1f;
+                personData[i].shipColor.red = (ResRec(PersRes, personFileHand)->shipColor >> 19) & 0x1f;
 #ifdef MACBUILD
-                personData[i].rgb5[1] = (ResRec(PersRes, personFileHand)->shipColor >> 11) & 0x1f;
+                personData[i].shipColor.green = (ResRec(PersRes, personFileHand)->shipColor >> 11) & 0x1f;
 #else
                 /* BUG: takes bits 5-9 (green low, blue high); the mac takes green's top five, >> 11 */
-                personData[i].rgb5[1] = (ResRec(PersRes, personFileHand)->shipColor >> 5) & 0x1f;
+                personData[i].shipColor.green = (ResRec(PersRes, personFileHand)->shipColor >> 5) & 0x1f;
 #endif
-                personData[i].rgb5[2] = (ResRec(PersRes, personFileHand)->shipColor >> 3) & 0x1f;
+                personData[i].shipColor.blue = (ResRec(PersRes, personFileHand)->shipColor >> 3) & 0x1f;
                 if (personData[i].linkMission >= kFirstResourceID)
                     personData[i].linkMission -= kFirstResourceID;
                 else
@@ -2007,10 +1999,10 @@ void LoadObjectData(void)
                     personData[i].weapCount[j] = 0;
                     personData[i].weapAmmo[j] = 0;
                 }
-                for (mountSlot = 0; mountSlot <= 3; mountSlot++) {
-                    if (mountID[mountSlot] >= kFirstResourceID) {
-                        personData[i].weapCount[mountID[mountSlot] - kFirstResourceID] = mountCount[mountSlot];
-                        personData[i].weapAmmo[mountID[mountSlot] - kFirstResourceID] = mountAmmo[mountSlot];
+                for (count = 0; count <= 3; count++) {
+                    if (mountID[count] >= kFirstResourceID) {
+                        personData[i].weapCount[mountID[count] - kFirstResourceID] = mountCount[count];
+                        personData[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
                     }
                 }
                 strcpy(personData[i].subtitle, ResRec(PersRes, personFileHand)->subtitle);
@@ -2049,7 +2041,7 @@ void LoadObjectData(void)
         personData[kPersCaptainHector].hailQuote = -1;
         personData[kPersCaptainHector].linkMission = -1;
         personData[kPersCaptainHector].flags = 2;
-        personData[kPersCaptainHector].rgb5[0] = personData[kPersCaptainHector].rgb5[1] = personData[kPersCaptainHector].rgb5[2] = 0;
+        personData[kPersCaptainHector].shipColor.red = personData[kPersCaptainHector].shipColor.green = personData[kPersCaptainHector].shipColor.blue = 0;
         personData[kPersCaptainHector].loaded = 1;
 #if V111 /* V111 spelling */
         strcpy(personData[kPersCaptainHector].name, (char *)"\pCaptain Hector");
@@ -2655,7 +2647,6 @@ void LoadDescription(char *dst, short id)
 {
     short size;
     short count;
-    int p;
 
     textFileHand = GetResource(kDescType, id);
     if (textFileHand != NULL) {
@@ -2669,25 +2660,12 @@ void LoadDescription(char *dst, short id)
             descResourcePictId += ResRec(DescRes, textFileHand)->text[size + 2];
 
             descMovieName[0] = 0;
-#if V111 /* V111 spelling */
-            count = 0;
-            p = size + 3;
-            do {
-                if (ResRec(DescRes, textFileHand)->text[p] == 0)
-                    break;
-                descMovieName[0]++;
-                descMovieName[count + 1] = ResRec(DescRes, textFileHand)->text[p];
-                count++;
-                p++;
-            } while (count < 0x20);
-#else
             for (count = 0; count < 0x20; count++) {
-                if ((*textFileHand)[size + 3 + count] == 0)
+                if ((char)ResRec(DescRes, textFileHand)->text[size + 3 + count] == 0)
                     break;
                 descMovieName[0]++;
-                descMovieName[count + 1] = (*textFileHand)[size + 3 + count];
+                descMovieName[count + 1] = ResRec(DescRes, textFileHand)->text[size + 3 + count];
             }
-#endif
 
             descFlags = ResRec(DescRes, textFileHand)->text[size + 0x23] << 8;
             descFlags += ResRec(DescRes, textFileHand)->text[size + 0x24];
@@ -2740,12 +2718,12 @@ void LoadDescription(char *dst, short id)
     } else {
 #if V111 /* V111 spelling */
         memset(dst, 0, 4);
-        pstrcpy(descMovieName, "\p");
-#elif defined(MACBUILD)
-        strcpy(dst, "");
-        pstrcpy(descMovieName, "\p");
 #else
         strcpy(dst, "");
+#endif
+#ifdef MACBUILD
+        pstrcpy(descMovieName, "\p");
+#else
         pstrcpy(descMovieName, (unsigned char *)"");
 #endif
         descResourcePictId = 0;
@@ -2866,32 +2844,23 @@ void LoadStrings(void)
 // FUNCTION: EVNOVA 0x004c73b0
 // MAC: _LoadPluginString i386 0x00071a8e ppc 0x0007a5b0
 Boolean LoadPluginString(short id, void *dst)
-#ifdef MACBUILD
 {
     Handle h;
 
     h = GetResource(kStringType, id);
     if (h != NULL) {
+#ifdef MACBUILD
         HNoPurge(h);
         BlockMoveData(*h, dst, GetHandleSize(h));
         HPurge(h);
+#else
+        memcpy(dst, *h, GetAHandleSize(h));
+#endif
         ReleaseResource(h);
         return 1;
     }
     return 0;
 }
-#else
-{
-    Handle h;
-
-    h = GetResource(kStringType, id);
-    if (h == NULL)
-        return 0;
-    memcpy(dst, *h, GetAHandleSize(h));
-    ReleaseResource(h);
-    return 1;
-}
-#endif
 
 #ifdef MAC1010
 #define kPrefsResType 0x4d70a8c4        /* 'Mp' 0xa8 0xc4, MacRoman */
@@ -4990,7 +4959,6 @@ void AdjustHandleSize(Handle h, int32_t newSize)
 // FUNCTION: EVNOVA 0x004cd140
 // MAC: _GetRandomIndString i386 0x00072ef7 ppc 0x0007bd74
 void GetRandomIndString(unsigned char *str, short strListID)
-#ifdef MACBUILD
 {
     Handle h;
     short count;
@@ -4998,30 +4966,19 @@ void GetRandomIndString(unsigned char *str, short strListID)
     str[0] = 0;
     h = GetResource(kStringListType, strListID);
     if (h != NULL) {
+#ifdef MACBUILD
         HLock(h);
         BlockMove(*h, &count, sizeof(short));
         HUnlock(h);
         HPurge(h);
-        ReleaseResource(h);
-        if (count > 0)
-            GetIndString(str, strListID, Rand(count) + 1);
-    }
-}
 #else
-{
-    Handle h;
-    short count;
-
-    str[0] = 0;
-    h = GetResource(kStringListType, strListID);
-    if (h != NULL) {
         count = SwapEndianShort(&ResRec(StringListRec, h)->count);
+#endif
         ReleaseResource(h);
         if (count > 0)
             GetIndString(str, strListID, Rand(count) + 1);
     }
 }
-#endif
 
 /* StrcatIndCString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd1a0

@@ -143,7 +143,6 @@ int32_t GIF_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     GIFRows rows;
     unsigned char (*map)[3];
     ULong depth;
-    ULong is89;
     ULong i;
 
     err = 0;
@@ -189,15 +188,11 @@ int32_t GIF_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
 
     useTransparent = 0;
 #ifdef MAC1010 /* 1.0.10 spelling */
-    if (StringCompare(signature, "GIF89a") == 0 && (screen.hasMap || image.hasTransparent))
-        useTransparent = 1;
+    if (!StringCompare(signature, "GIF89a") != 0 && (screen.hasMap || image.hasTransparent))
 #else
-    is89 = 0;
-    if (StringCompare(signature, "GIF89a") == 0)
-        is89 = 1;
-    if (is89 && ((screen.hasMap || image.hasTransparent) != 0))
-        useTransparent = 1;
+    if (!StringCompare(signature, "GIF89a") != 0 && ((screen.hasMap || image.hasTransparent) != 0))
 #endif
+        useTransparent = 1;
     rows.hasTransparent = useTransparent ? (unsigned char)1 : (unsigned char)0;
     rows.transparent = image.hasTransparent ? image.transparent : screen.background;
     rows.interlaced = image.interlaced;

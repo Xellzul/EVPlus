@@ -159,23 +159,14 @@ void MemoryClear(void *p, ULong n)
 void MemoryFill(void *p, int c, ULong n)
 {
     int32_t err;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    unsigned char b;
-    ULong fill;
-    ULong count;
-    ULong i;
-    unsigned char *d;
-#else
     ULong fill;
     ULong count;
     ULong i;
     unsigned char *d;
     unsigned char b;
-#endif
 
     err = 0;
-    b = c;
-    fill = b;
+    fill = b = (ULong)(unsigned char)c;
     d = p;
     count = n;
     fill |= fill << 16;

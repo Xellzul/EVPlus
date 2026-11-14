@@ -23,7 +23,6 @@ CleanUpCallBackPtr gSWCleanUpCallBackP;              /* 0x008700d0 */
 /* SWAssertFail (mac _SWAssertFail). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004794d0
 // MAC: _SWAssertFail i386 0x000a7a50 ppc 0x000b2850
-#ifdef MACBUILD
 void SWAssertFail(char *filename, int lineNum)
 {
     Str255 fileString = "\p";
@@ -31,7 +30,9 @@ void SWAssertFail(char *filename, int lineNum)
     short n, result;
     uint32_t junkTime;
 
+#ifdef MACBUILD
     FadeScreenIn();
+#endif
 
     NumToString(lineNum, lineString);
 
@@ -43,7 +44,7 @@ void SWAssertFail(char *filename, int lineNum)
     if (gSWCleanUpCallBackP != NULL)
         (*gSWCleanUpCallBackP)();
 
-    InitCursor();
+    OSCursorReset();
     ParamText("\pAssertion failure! Nova will now quit. The failure occurred here:",
               fileString, lineString, "\pN/A");
     result = StopAlert(kAssertAlertID, NULL);
@@ -55,36 +56,5 @@ void SWAssertFail(char *filename, int lineNum)
 
     ExitToShell();
 }
-#else
-void SWAssertFail(char *filename, int lineNum)
-{
-    Str255 fileString = "\p";
-    Str15 lineString;
-    short n, result;
-    uint32_t junkTime;
-
-    NumToString(lineNum, lineString);
-
-    for (n = 0; filename[n] != 0; n++)
-        fileString[n + 1] = filename[n];
-
-    fileString[0] += n;
-
-    if (gSWCleanUpCallBackP != 0)
-        (*gSWCleanUpCallBackP)();
-
-    OSCursorReset();
-    ParamText("\pAssertion failure! Nova will now quit. The failure occurred here:",
-              fileString, lineString, "\pN/A");
-    result = Alert(kAssertAlertID, 0);
-
-    if (result < 0) {
-        SysBeep(1);
-        Delay(15, &junkTime);
-    }
-
-    ExitToShell();
-}
-#endif
 
 EXTERN_C_END

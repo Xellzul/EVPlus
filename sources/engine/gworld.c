@@ -188,21 +188,15 @@ void UnsetGWorldContainer(GWorldContainer *gwc)
 /* DisposeGWorldContainer (mac _DisposeGWorldContainer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f920
 // MAC: _DisposeGWorldContainer i386 0x000a4669 ppc 0x000b0194
-#ifdef MACBUILD
 void DisposeGWorldContainer(GWorldContainer *gwc)
 {
     if (gwc->world != NULL) {
+#ifdef MACBUILD
         UnlockPixels(GetGWorldPixMap(gwc->world));
+#endif
         DisposeGWorld(gwc->world);
     }
 }
-#else
-void DisposeGWorldContainer(GWorldContainer *gwc)
-{
-    if (gwc->world != 0)
-        DisposeGWorld(gwc->world);
-}
-#endif
 
 /* GetGWCPixMap (mac _GetGWCPixMap). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f940
