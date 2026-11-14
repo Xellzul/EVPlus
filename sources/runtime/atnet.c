@@ -268,18 +268,7 @@ AT_STATIC void BufferedGatherData(NetSocket *s, NetFramed *w, NetChunk **cur, Mu
     ULong len;
 
     second = AsByte(cur == &w->partial2);
-#ifdef MAC1010 /* 1.0.10 spelling */
-    {
-        int32_t e;
-
-        e = kEventReceived2;
-        if (!second)
-            e = kEventReceived;
-        event = e;
-    }
-#else
     event = !second ? kEventReceived : kEventReceived2;
-#endif
     len = 0;
     if (*cur == 0)
         *cur = (NetChunk *)NetworkQueuePoll(queue);

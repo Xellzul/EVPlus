@@ -386,9 +386,6 @@ int32_t _IT_ItemListHandleKey(WindowNode *window, ITControlList *list, const ITK
 {
     int32_t err;
     int32_t e;
-#ifdef MAC1010      /* 1.0.10 spelling */
-    ULong param;
-#endif
     char accel;
     unsigned char mnemonic;
     ITControl *c;
@@ -473,16 +470,9 @@ int32_t _IT_ItemListHandleKey(WindowNode *window, ITControlList *list, const ITK
         }
     }
     if (accel != 0 && !click->followed) {
-#ifdef MAC1010      /* 1.0.10 spelling */
-        param = (ULong)key;
-#endif
         for (c = list->first; c != 0 && !click->followed; c = c->next) {
             if (c->proc == IT_FrameHandler) {
-#ifdef MAC1010      /* 1.0.10 spelling */
-                e = _IT_ItemCallback(window, c, kMsgKey, param, click);
-#else
                 e = _IT_ItemCallback(window, c, kMsgKey, (ULong)key, click);
-#endif
                 if (e != 0) {
                     err = e;
                     goto done;
@@ -594,17 +584,10 @@ done:
 // FUNCTION: EVNOVA 0x0051e3a0
 int32_t _IT_ItemListHandleDraw(WindowNode *window, ITControlList *list, const ITRect *area)
 {
-#ifdef MAC1010      /* 1.0.10 spelling */
-    int32_t err;
-    int32_t e;
-    ITControl *c;
-    ULong param;
-#else
     ULong param;
     int32_t err;
     int32_t e;
     ITControl *c;
-#endif
     ITRect common;
 
     param = (ULong)area;

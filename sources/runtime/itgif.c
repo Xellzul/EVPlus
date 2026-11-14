@@ -187,11 +187,7 @@ int32_t GIF_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     }
 
     useTransparent = 0;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    if (!StringCompare(signature, "GIF89a") != 0 && (screen.hasMap || image.hasTransparent))
-#else
     if (!StringCompare(signature, "GIF89a") != 0 && ((screen.hasMap || image.hasTransparent) != 0))
-#endif
         useTransparent = 1;
     rows.hasTransparent = useTransparent ? (unsigned char)1 : (unsigned char)0;
     rows.transparent = image.hasTransparent ? image.transparent : screen.background;

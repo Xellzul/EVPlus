@@ -5327,7 +5327,6 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
 }
 #undef slotL
 #undef slotR
-#undef ((int)slotL)
 
 
 /* DisasterHandler. STATE: MATCH, byte-identical; mac MATCH both slices. OPEN: none */

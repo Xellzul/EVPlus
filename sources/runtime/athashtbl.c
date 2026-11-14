@@ -1470,14 +1470,10 @@ int32_t _HashInsertAppend(void *ref, const void *key, ULong keyLen,
     wide = 0;
     if (kind != 0 && kind != kKindBinary)
         wide = 1;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    charSize = (wide != 0) + 1;
-#else
     if (wide != 0)
         charSize = 2;
     else
         charSize = 1;
-#endif
     SystemCheckCallback();
     HashIsValidRef(ref);
 

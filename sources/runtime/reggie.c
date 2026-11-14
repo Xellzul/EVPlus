@@ -961,9 +961,7 @@ void _ReggiePrivateTickle(void)
     char *key;
     NetPacket *packet;
     struct HashTable *reply;
-#ifndef MAC1010
     const char *prefix;
-#endif
     char *version;
     ULong i;
     GlobalEntry **link;
@@ -984,24 +982,14 @@ void _ReggiePrivateTickle(void)
         goto done;
 
     while ((packet = (NetPacket *)QueueRemove(&gReggiePrivateRecvQ)) != 0) {
-#ifdef MAC1010 /* 1.0.10 spelling */
-        product = "REGGIE RESULT VERSION ";
-#else
         prefix = "REGGIE RESULT VERSION ";
-#endif
         if (packet->length == packet->capacity)
             packet->length--;
         packet->data[packet->length] = 0;
         if (!AddressCompare(&packet->from, &gReggiePrivateAddress))
             goto next;
-#ifdef MAC1010 /* 1.0.10 spelling */
-        e = StringCompareSafe(packet->data, product, StringGetLength((const unsigned char *)product));
-        if (e != 0)
-            goto next;
-#else
         if (StringCompareSafe(packet->data, prefix, StringGetLength((const unsigned char *)prefix)) != 0)
             goto next;
-#endif
         if ((reply = HashInitialize(kReplyFlags, packet->data)) == 0) {
             err = kOutOfMemory;
             goto done;
@@ -1021,20 +1009,11 @@ void _ReggiePrivateTickle(void)
         if (version == 0)
             goto next;
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-        e = removed = 0;
-#else
         e = 0;
         removed = 0;
-#endif
         link = &gVersionList;
         while ((entry = *link) != 0) {
-#ifdef MAC1010 /* 1.0.10 spelling */
-            e = StringCompare(product, entry->name);
-            if (e == 0) {
-#else
             if (StringCompare(product, (*link)->name) == 0) {
-#endif
                 if (entry->payload != 0)
                     HashDispose(entry->payload);
                 *link = (*link)->next;
@@ -1083,21 +1062,12 @@ done:
 // FUNCTION: EVNOVA 0x004f4513
 int32_t ReggieBeginVersionDirect(const char *name)
 {
-#ifdef MAC1010 /* 1.0.10 spelling */
-    GlobalEntry **link;
-    GlobalEntry *entry;
-    NetPacket *packet;
-    unsigned char found;
-    int32_t result;
-    int32_t err;
-#else
     int32_t err;
     NetPacket *packet;
     GlobalEntry **link;
     GlobalEntry *entry;
     unsigned char found;
     int32_t result;
-#endif
 
     err = 0;
     packet = 0;
@@ -1105,11 +1075,7 @@ int32_t ReggieBeginVersionDirect(const char *name)
     found = false;
     link = &gVersionList;
     while ((entry = *link) != 0) {
-#ifdef MAC1010 /* 1.0.10 spelling */
-        if (StringCompare(name, entry->name) == 0) {
-#else
         if (StringCompare(name, (*link)->name) == 0) {
-#endif
             if (entry->payload != 0)
                 HashDispose(entry->payload);
             *link = (*link)->next;
