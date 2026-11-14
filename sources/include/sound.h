@@ -35,20 +35,14 @@ EXTERN_CPP_END
 
 
 /* --- one declaration per name --- */
-#ifndef MAC1010
 extern void SetMovieVolume(Movie movie, short volume); /* 0x004d9fb0 */
-#endif
 
 
 extern void SetupIntroMusic(void);                   /* 0x004ab5d0 */
 extern void StopIntroMusic(Boolean fadeOut);            /* 0x004ab820 */
 extern void HandleIntroMusic(Boolean force);            /* 0x004ab8d0 */
-/* the engine's calls that keep the intro music fed: 1.1.1 plays it on its own thread */
-#if V111 /* POTENTIAL BUG (win V111): nothing services the intro music on win */
-#define ServiceIntroMusic(force)
-#else
+/* the engine's calls that keep the intro music fed */
 #define ServiceIntroMusic(force) HandleIntroMusic(force)
-#endif
 #pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern SoundRequest warpUpSoundSpec;                 /* 0x00591a98 (mac name) */

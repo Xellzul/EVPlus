@@ -267,7 +267,6 @@ extern void CERunPrefsDialog(void);
 extern void GetWindowDragBounds(Rect *bounds, Point where);
 extern void ForceWindowOnscreen(void);
 extern void FlushKeys(void);
-extern void CancelMusicThread(void);
 extern short ScanForKeys(void);
 extern OSStatus MoreAECreateAppleEventSelfTarget(AEEventClass eventClass, AEEventID eventID,
                                                  AppleEvent *event);

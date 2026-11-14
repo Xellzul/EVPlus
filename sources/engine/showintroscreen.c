@@ -48,9 +48,7 @@ void ShowIntroScreen(void)
     Rect rect;
     Point pt;
 
-#if !V111
     HandleIntroMusic(1);
-#endif
     FadeScreenOut();
 
     pictSkipped = 0;
@@ -95,22 +93,15 @@ void ShowIntroScreen(void)
         if (introPictID[i] > 0) {
             snd = ST_LoadSndResource(0x7533);
             if (snd != NULL) {
-#if defined(MACBUILD) && V111
-                CancelMusicThread();
-#endif
                 PlaySound(snd, 0xa, gSoundVolume, gSoundVolume);
             }
 
-#if !V111
             HandleIntroMusic(1);
-#endif
             FadeScreenIn();
 
             while (Button() || KeyCheck(kKeyReturn) || KeyCheck(kKeySpace) || KeyCheck(keyPrefs.pause)) {
                 BusyIdle();
-#if !V111
                 HandleIntroMusic(0);
-#endif
             }
 
             hit = 0;
@@ -119,9 +110,7 @@ void ShowIntroScreen(void)
             while (ReadTick() - startTick < (introPictDelay[i] * 0x3c)
                    && !hit && !KeyCheck(kKeyReturn) && !KeyCheck(kKeySpace) && !pictSkipped) {
                 BusyIdle();
-#if !V111
                 HandleIntroMusic(0);
-#endif
                 if (Button()) {
                     rect = *GetCWindowPortRect((WindowRef)gWind);
 #if defined(MACBUILD) && (!defined(MAC1010) || TARGET_API_MAC_CARBON)
@@ -133,9 +122,7 @@ void ShowIntroScreen(void)
                     } else {
                         while (Button()) {
                             BusyIdle();
-#if !V111
                             HandleIntroMusic(0);
-#endif
                             if (ReadTick() - startTick > (introPictDelay[i] * 0x3c))
                                 break;
                             if (KeyCheck(kKeyReturn) || KeyCheck(kKeySpace))
@@ -156,9 +143,7 @@ void ShowIntroScreen(void)
                 ST_DisposeSound(snd);
             }
 
-#if !V111
             HandleIntroMusic(1);
-#endif
             FadeScreenOut();
 
             if (pictSkipped)
@@ -166,15 +151,9 @@ void ShowIntroScreen(void)
         }
     }
 
-#if !V111
     HandleIntroMusic(1);
-#endif
     if (!pictSkipped) {
-#if defined(MACBUILD) && V111
-        CancelMusicThread();
-#else
         StopIntroMusic(1);
-#endif
         if (introTextID != -1) {
             ShowTheCursor();
             showingIntroText = 1;

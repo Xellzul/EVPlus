@@ -29,13 +29,7 @@
 // MAC: _DoAboutBox i386 0x00015fb7 ppc 0x00019cc8
 void DoAboutBox(void)
 {
-#if V111
-#ifdef MACBUILD
-    CancelMusicThread();
-#endif
-#else
     StopIntroMusic(1);
-#endif
 #ifdef MACBUILD
     if (KeyCheck(kMacKeyShift) && didSpeak == 0 && gPause == 0) {
         CheckSpeechMgr();

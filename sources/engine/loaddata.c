@@ -452,12 +452,7 @@ void OpenDataFiles(void)
 #define ResourceNoPurge(h)
 #define ResourcePurge(h)
 #endif
-/* 1.1.1 no longer services the intro music between resource loads */
-#if V111
-#define LoadingIntroMusic()
-#else
 #define LoadingIntroMusic() HandleIntroMusic(0)
-#endif
 
 
 

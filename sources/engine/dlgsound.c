@@ -24,11 +24,8 @@ void DisposeMainScreenSounds(void)
 
     for (i = 0; i < 4; i++) {
         if (mainScreenSnd[i] != NULL) {
-#if V111
-#else
             while (ST_IsSoundPlaying(mainScreenSnd[i]) != 0)
                 BusyIdle();
-#endif
             ST_HaltSound(mainScreenSnd[i]);
             ST_DisposeSound(mainScreenSnd[i]);
             mainScreenSnd[i] = NULL;

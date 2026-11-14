@@ -112,7 +112,6 @@ Rect gMovieBox;
 #endif
 #ifdef MACBUILD
 extern int32_t gSystemVersion;
-extern Boolean introMusicPaused;
 extern void SetRetainedWindow(WindowRef window, Boolean retained);
 extern void KeepMenuBarHidden(GrafPtr port);
 extern void AdjustMenus(void);
@@ -6012,13 +6011,8 @@ void SwitchedIn(EventRecord *ev)
     OSCursorReset();
     cursorHidden = 0;
     ShowTheCursor();
-#if defined(MACBUILD) && V111
-    if (introMusicMovie != NULL)
-        introMusicPaused = 0;
-#else
     if (introMusicMovie != NULL)
         StartMovie(introMusicMovie);
-#endif
 }
 
 /* SwitchedOut. STATE: MATCH, byte-identical. OPEN: none */
@@ -6029,13 +6023,8 @@ void SwitchedOut(EventRecord *ev)
     void *snd;
 
     inBackground = 1;
-#if defined(MACBUILD) && V111
-    if (introMusicMovie != NULL)
-        introMusicPaused = 1;
-#else
     if (introMusicMovie != NULL)
         StopMovie(introMusicMovie);
-#endif
 #ifdef MAC1010
 #if TARGET_API_MAC_CARBON
     if (warpUpSnd[0] != NULL && ST_IsSoundPlaying(warpUpSnd[0]) != 0)

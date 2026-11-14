@@ -42,7 +42,6 @@ extern CFStringRef relative2absolute(CFStringRef path);
 #endif
 extern FSRef *novaSupportFolder;
 extern int32_t startupMemoryFree;
-extern void SpawnIntroMusicThread(void);
 #endif
 extern void InitAEVTHandlers(void);
 extern int32_t PreflightMemoryUsageTotal(void);
@@ -926,7 +925,6 @@ void InitEVNova(void)
 
         crashlog_print("starting music\n");
         SetupIntroMusic();
-        SpawnIntroMusicThread();
         ShowAmbrosiaLogo();
         FadeScreenIn();
         IterateInGameEventLoop(0x3c);

@@ -30,7 +30,6 @@
 #include "ships.h"
 #include "sound.h"
 #ifdef MACBUILD
-extern void CancelMusicThread(void);
 extern void CarbonHackCleanup(void);
 extern FSRef *novaSupportFolder;
 extern short startupDepth;
@@ -784,9 +783,6 @@ void Bye(void)
     ByeLog("doing cleanup");
     DisposeIntroProgressBar();
     FlushEvents(everyEvent - diskMask, 0);
-#if defined(MACBUILD) && V111
-    CancelMusicThread();
-#endif
 
     ByeLog("disposing sounds");
     ST_HaltSound(0);
@@ -2109,13 +2105,7 @@ void LoadSounds(void)
     short msg;
     short i;
     short set;
-#ifdef MACBUILD
-    SoundComponentData info;
-    uint32_t frames;
-    uint32_t offset;
-#else
     AudioDesc info;
-#endif
     Handle h;
     unsigned short vol;
 
@@ -2137,15 +2127,10 @@ void LoadSounds(void)
         jumpSoundLength[msg] = kDefaultLoopTicks;
         h = GetResource(kSoundType, msg + kFirstResourceID);
         if (h != NULL) {
-#ifdef MACBUILD
-            ParseSndHeader((SndListHandle)h, &info, &frames, &offset);
-            jumpSoundLength[msg] = info.sampleCount * kTicksPerSecond / (info.sampleRate >> 16);
-#else
             LockAHandle(h);
             if (ParseSoundFileImage(&info, (Word8 *)*h, GetAHandleSize(h)) == 0)
                 jumpSoundLength[msg] = (info.SampleCount * kTicksPerSecond
                                             / info.SampleRate);
-#endif
             ReleaseResource(h);
         }
     }

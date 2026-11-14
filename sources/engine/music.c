@@ -14,12 +14,6 @@
 #include "burger.h"
 #include "gameutil.h"
 #include "cefix.h"
-#ifdef MACBUILD
-#include <assert.h>
-#if V111
-#include <pthread.h>
-#endif
-#endif
 
 #define kMusicIdleTicks   0x28   /* HandleIntroMusic services at most this often */
 #define kMaxVolume        0x100
@@ -51,135 +45,14 @@ Rect gLoadBarBase;
 #endif
 RGBColor progressColor[3];
 uint32_t lastMoviesTaskTime;
-#ifdef MACBUILD
-Boolean introMusicPaused = false;
-Movie introMusicMovie = NULL;
-static Boolean gStopMusic;
-#else
 Movie introMusicMovie;
 
 /* "", ".mov", ".mp3" — tried in turn under each folder */
 char *gMusicExtensions[kExtensionCount] = { "", ".mov", ".mp3" };  /* 0x00575a70 (name invented) */
-#endif
-
-#ifdef MACBUILD
-#if V111
-static void *MusicThread(void *arg);
-
-/* <assert.h>'s assert as the 1.1.1 Intro.c expands it: the build machine's __FILE__, the original's line */
-#define IntroAssert(e, line) \
-    ((__builtin_expect(!(e), 0) ? __assert(#e, kEngineSourceDir "Intro.c", line) : 0))
-
-/* SpawnIntroMusicThread (mac _SpawnIntroMusicThread): mac only. */
-// MAC: _SpawnIntroMusicThread i386 0x00061a5c ppc 0x00069810
-void SpawnIntroMusicThread(void)
-{
-    pthread_attr_t attr;
-    pthread_t thread;
-
-    if (settings.introMusic) {
-        IntroAssert(!pthread_attr_init(&attr), 468);
-        IntroAssert(!pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED), 469);
-        pthread_create(&thread, &attr, MusicThread, NULL);
-        pthread_attr_destroy(&attr);
-    }
-}
-#endif
-#endif
 
 /* SetupIntroMusic (mac _SetupIntroMusic). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab5d0
 // MAC: _SetupIntroMusic i386 0x00061af8 ppc 0x000698d4
-#ifdef MAC1010
-void SetupIntroMusic(void)
-{
-    short fileRef;
-    short resID;
-    short vRefNum;
-    int32_t dirID;
-    FSSpec spec;
-    Str255 songName;
-    OSErr err;
-    short volume;
-
-    if (settings.introMusic == 0)
-        return;
-    GetIndString(songName, kMusicStrings, kIntroSongName);
-    introMusicMovie = NULL;
-    err = GetPluginSubfolder(gARef, "\pNova Plug-Ins", &dirID, &vRefNum);
-    if (err != noErr)
-        err = GetPluginSubfolder(gARef, "\pNova Files", &dirID, &vRefNum);
-    if (err != noErr)
-        return;
-    FSMakeFSSpec(vRefNum, dirID, songName, &spec);
-    err = OpenMovieFile(&spec, &fileRef, fsRdPerm);
-    if (err != noErr) {
-        if (GetPluginSubfolder(gARef, "\pNova Files", &dirID, &vRefNum) != noErr)
-            return;
-        FSMakeFSSpec(vRefNum, dirID, songName, &spec);
-        err = OpenMovieFile(&spec, &fileRef, fsRdPerm);
-        if (err != noErr)
-            return;
-    }
-    resID = 0;
-    NewMovieFromFile(&introMusicMovie, fileRef, &resID, NULL, newMovieActive, NULL);
-    CloseMovieFile(fileRef);
-    if (err != noErr)
-        return;
-    volume = settings.volume * kStartVolumeScale;
-    if (volume > kMaxVolume)
-        volume = kMaxVolume;
-    SetMovieVolume(introMusicMovie, volume);
-    StartMovie(introMusicMovie);
-    lastMoviesTaskTime = 0;
-}
-#elif defined(MACBUILD)
-void SetupIntroMusic(void)
-{
-    Handle dataRef = NULL;
-    OSType dataRefType;
-    short resID = -1;
-    FSRef ref;
-    Str255 songName;
-    HFSUniStr255 uniName;
-
-    introMusicMovie = NULL;
-    if (settings.introMusic == '\0')
-        return;
-
-    GetIndString(songName, kMusicStrings, kIntroSongName);
-    HFSNameGetUnicodeName(songName, kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(&pluginsFolder, uniName.length, uniName.unicode, kTextEncodingUnknown, &ref) == noErr
-        || FSMakeFSRefUnicode(&novaFilesFolder, uniName.length, uniName.unicode, kTextEncodingUnknown,
-                              &ref) == noErr) {
-        if (QTNewDataReferenceFromFSRef(&ref, 0, &dataRef, &dataRefType) == noErr)
-            NewMovieFromDataRef(&introMusicMovie, newMovieActive, &resID, dataRef, dataRefType);
-    }
-    if (dataRef != NULL)
-        DisposeHandle(dataRef);
-}
-
-/* StartIntroMusic (mac _StartIntroMusic): mac only. */
-// MAC: _StartIntroMusic i386 0x00061c29 ppc 0x000699ec
-void StartIntroMusic(void)
-{
-    short volume;
-
-    volume = settings.volume * kStartVolumeScale;
-    if (volume > kMaxVolume)
-        volume = kMaxVolume;
-    SetMovieVolume(introMusicMovie, volume);
-    StartMovie(introMusicMovie);
-    lastMoviesTaskTime = 0;
-}
-
-/* CancelMusicThread (mac _CancelMusicThread): mac only. */
-// MAC: _CancelMusicThread i386 0x00061c76 ppc 0x00069a60
-void CancelMusicThread(void)
-{
-    gStopMusic = true;
-}
-#else
 void SetupIntroMusic(void)
 {
     short result;
@@ -252,7 +125,6 @@ void SetupIntroMusic(void)
     StartMovie(introMusicMovie);
     lastMoviesTaskTime = 0;
 }
-#endif
 
 /* StopIntroMusic (mac _StopIntroMusic). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab820
@@ -261,9 +133,6 @@ void StopIntroMusic(Boolean fade)
 {
     short volume;
     int32_t start;
-#if defined(MACBUILD) && V111
-    EventRecord event;
-#endif
 
     if (introMusicMovie != 0) {
         if (fade != 0 && IsMovieDone(introMusicMovie) == 0) {
@@ -273,17 +142,9 @@ void StopIntroMusic(Boolean fade)
             while (volume > 0) {
                 SetMovieVolume(introMusicMovie, volume);
                 start = ReadTick();
-#ifdef MAC1010
-                while (TickCount() <= start)
-                    BusyIdle();
-#elif defined(MACBUILD)
-                while (TickCount() <= start)
-                    WaitNextEvent(0, &event, (gameLoaded && inBackground) ? 30 : 0, NULL);
-#else
                 do {
                     BusyIdle();
                 } while (start == ReadTick());
-#endif
                 volume -= kFadeStep;
                 if (volume < 0)
                     volume = 0;
@@ -319,17 +180,3 @@ void HandleIntroMusic(Boolean force)
     }
 }
 
-#ifdef MACBUILD
-/* MusicThread (mac _MusicThread): mac only. */
-// MAC: _MusicThread i386 0x00061e10 ppc 0x00069c40
-static void *MusicThread(void *arg)
-{
-    EnterMoviesOnThread(0);
-    StartIntroMusic();
-    while (!IsMovieDone(introMusicMovie) && !gStopMusic && !introMusicPaused)
-        HandleIntroMusic(1);
-    StopIntroMusic(1);
-    ExitMoviesOnThread();
-    return NULL;
-}
-#endif

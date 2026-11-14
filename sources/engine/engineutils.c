@@ -52,7 +52,6 @@ extern Boolean isG4(void);
 extern Boolean meetsMinimumRequirements(void);
 extern short ScanForKeys(void);
 extern Boolean QuickKeyCheckPlusEscorts(short code);
-extern void PlaySoundWait(void *snd);
 extern Boolean HasMaxFightersOnBoard(short shipType);
 extern void UnsplitTwoLineString(const unsigned char *src, unsigned char *dst);
 extern void FadeWhiteIn(void);
@@ -3775,17 +3774,6 @@ Boolean PlaySoundDistance(int32_t unused, void *sound, short flags, FloatPoint *
     PlaySound(sound, flags, leftVol, rightVol);
     return 1;
 }
-
-#ifdef MACBUILD
-/* PlaySoundWait (mac _PlaySoundWait, mac-only). STATE: see the mac gate. */
-// MAC: _PlaySoundWait i386 0x0000e131 ppc 0x0001185c
-void PlaySoundWait(void *snd)
-{
-    PlaySound(snd, 9999, gSoundVolume, gSoundVolume);
-    while (ST_IsSoundPlaying(snd))
-        ;
-}
-#endif
 
 /* CheckSpeechMgr (mac _CheckSpeechMgr). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469480

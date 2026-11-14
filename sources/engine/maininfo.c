@@ -1122,11 +1122,7 @@ void EnterGameFromMainScreen(void)
     } else {
         FadeScreenOut();
     }
-#if defined(MACBUILD) && !defined(MAC1010)
-    CancelMusicThread();
-#else
     StopIntroMusic(1);
-#endif
 #ifdef MACBUILD
     MaxMem(&grow);
 #endif
