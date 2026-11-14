@@ -86,13 +86,7 @@ extern void LoadPrefs(Boolean loadWindowed);
 extern void LoadPrefs(void);
 #endif
 extern void LoadResponse(short which);
-#ifdef MAC1010
-extern OSErr DoEncryption(Handle h, uint32_t key);
-#elif defined(MACBUILD)
-extern OSErr DoEncryption(void *buf, uint32_t len, uint32_t key);
-#else
 extern int32_t DoEncryption(void *buf, uint32_t len, uint32_t key);
-#endif
 extern int32_t SaveAFile(const char *path, const void *data, uint32_t length);
 #ifdef MAC1010
 extern short LoadPilotData(FSSpec *spec);

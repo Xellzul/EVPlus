@@ -3659,13 +3659,8 @@ short WritePilotData(short stellar)
         FlipNpil(kPilotResID, *playerFileHand, GetHandleSize((Handle)playerFileHand), 1);
         FlipNpil(kPilotResID + 1, *altPlayerFileHand, GetHandleSize((Handle)altPlayerFileHand), 1);
 #endif
-#ifdef MAC1010
-        DoEncryption((Handle)playerFileHand, kPilotCryptKey);
-        DoEncryption((Handle)altPlayerFileHand, kPilotCryptKey);
-#else
         DoEncryption(*playerFileHand, GetHandleSize((Handle)playerFileHand), kPilotCryptKey);
         DoEncryption(*altPlayerFileHand, GetHandleSize((Handle)altPlayerFileHand), kPilotCryptKey);
-#endif
         AddResource((Handle)playerFileHand, kPilotFileType, kPilotResID, "\pPilot Data");
         AddResource((Handle)altPlayerFileHand, kPilotFileType, kPilotResID + 1, (unsigned char *)name);
         UseResFile(savedResFile);
@@ -4418,11 +4413,7 @@ short LoadPilotData(char *path)
     playerFileHand = (PilotRec **)GetResource(kPilotFileType, kPilotResID);
     if (playerFileHand != NULL) {
         HNoPurge((Handle)playerFileHand);
-#ifdef MAC1010
-        err = DoEncryption((Handle)playerFileHand, kPilotCryptKey);
-#else
         err = DoEncryption(*playerFileHand, GetHandleSize((Handle)playerFileHand), kPilotCryptKey);
-#endif
         if (err == 0) {
 #if TARGET_RT_LITTLE_ENDIAN
             FlipNpil(kPilotResID, *playerFileHand, GetHandleSize((Handle)playerFileHand), 0);
@@ -4667,12 +4658,8 @@ short LoadPilotData(char *path)
     altPlayerFileHand = (PilotRec2 **)GetResource(kPilotFileType, kPilotResID + 1);
     if (altPlayerFileHand != NULL) {
         HNoPurge((Handle)altPlayerFileHand);
-#ifdef MAC1010
-        err = DoEncryption((Handle)altPlayerFileHand, kPilotCryptKey);
-#else
         err = DoEncryption(*altPlayerFileHand, GetHandleSize((Handle)altPlayerFileHand),
                            kPilotCryptKey);
-#endif
         if (err == 0) {
 #if TARGET_RT_LITTLE_ENDIAN
             FlipNpil(kPilotResID + 1, *altPlayerFileHand,
