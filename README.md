@@ -6,10 +6,6 @@ A matching decompilation of
 
 **EV Nova 1.0.10 for Windows x86 Community Edition** (Not complete, not tested)
 
-**EV Nova 1.0.10 for Mac**
-
-**EV Nova 1.1.1 for Mac**
-
 
 You need:
 Provide files from input-files/README.md
@@ -29,7 +25,7 @@ Or targeted runs:
 
 `docker run --rm --platform linux/amd64 --security-opt seccomp=unconfined -v "$PWD":/repo evnova-buildkit python3 /repo/buildkit/build.py {TARGET} {{--OPTIONS}}`
 
-Target can be: all, win, ce, mac1010, mac111, check
+Target can be: all, win, ce, check
 
 Options can be: --twice, --no-pin-date, --unsigned, --config FILE
 

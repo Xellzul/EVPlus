@@ -4,14 +4,12 @@
     python buildkit/build.py check              verify every tool and original build.ini names
     python buildkit/build.py win                EV Nova.exe 1.0.10 for Windows
     python buildkit/build.py ce                 the EV Nova CE build of the same sources (-DCEFIX)
-    python buildkit/build.py mac1010            the mac 1.0.10 application's data fork (Classic + Carbon)
-    python buildkit/build.py mac111             the mac 1.1.1 Universal binary (i386 + ppc)
-    python buildkit/build.py all                all four (those the image has the inputs of)
+    python buildkit/build.py all                both (those the image has the inputs of)
 
 Options:
     --config FILE    another build.ini (default: buildkit/build.ini)
     --no-pin-date    keep the link time in the headers instead of the original's date
-    --unsigned       leave the code signature off (win, mac111): runs the same, not identical
+    --unsigned       leave the code signature off (win): runs the same, not identical
     --twice          build each target twice and compare (the 2.4.7 b335 compiler is not always
                      deterministic; a second build tells a flaky compile from a real difference)
 
@@ -32,22 +30,14 @@ from buildlib.host import BuildError, say  # noqa: E402
 PINS = {
     "win": "43e8db386caa0fd32d48e8b5a45b81c894063870a0b52e95ef89a1c6471a248c",      # EV Nova.exe 1.0.10, signed
     "ce": "f5d8d90ffa93cce502d7404b8135e06b236b860ba722929f4d259983f0351120",       # the repository's CE link, dated as 1.0.10
-    "mac1010": "b81b382b28bb539991f2097371fd596ef2d8ae2e312aeefc2d3f104f01c8ed10",  # EV Nova 1.0.10, data fork
-    "mac111": "3f880767606bb9219c0f541b747c334d09b70723cc07f11fe1bdf962ec2a1942",   # EV Nova.app 1.1.1, Contents/MacOS/EV Nova
 }
-TARGETS = ["win", "ce", "mac1010", "mac111"]
+TARGETS = ["win", "ce"]
 
 
 def build_one(cfg, target, out, a):
     """Build TARGET into OUT; returns the output file."""
-    if target in ("win", "ce"):
-        from buildlib import win
-        return win.build(cfg, out, cefix=target == "ce", pin_date=not a.no_pin_date, signed=not a.unsigned)
-    if target == "mac1010":
-        from buildlib import mac1010
-        return mac1010.build(cfg, out, pin_date=not a.no_pin_date)
-    from buildlib import mac111
-    return mac111.build(cfg, out, signed=not a.unsigned)
+    from buildlib import win
+    return win.build(cfg, out, cefix=target == "ce", pin_date=not a.no_pin_date, signed=not a.unsigned)
 
 
 def main():
