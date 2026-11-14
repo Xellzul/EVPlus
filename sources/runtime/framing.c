@@ -1,5 +1,4 @@
-// COMPILE: -opt level=4,intrinsics,noieeefp -inline auto -align 4 -Cpp_exceptions off -proc pentium4 -lang c++ -bool off -str pool
-// COMPILE-WHY: -str pool, the band's string literals are one packed pool per TU (exe .rdata, Burger archive members); noieeefp, the band's float model; C++ with bool support off, BurgerLib's own build of it (mangled statics in the archive members; float fabs/floor overloads and int-typed && results in the exe); runtime P band, one line for BurgerLib and its Ogg/Vorbis (user ruling 2026-09-27: -proc pentium4 for the one big band, no per-file flags); BurgerLib's Ogg/Vorbis is one build unit in forward source order with its small same-TU callees inlined (the exe's ogg_stream_pagein calls none of the page accessors nor _os_lacing_expand/_os_body_expand; dropping -inline auto loses a MATCH here), built with long (4-byte) struct alignment (vorbis_dsp_state's backend_state at +0x64, bitrate_manager_state's queue_packet_buffers at +0x74); Research/notes/burgervorbis.md
+// COMPILE: -lang c++ -bool off
 /* framing.c -- libogg 1.0rc3 src/framing.c, (C) COPYRIGHT 1994-2001 by the XIPHOPHORUS Company; licence in ogg.h. BurgerLib's copy (allocation checks, FastMemSet, unconditional frees); altered: comments and the functions the exe does not link removed. Notes: Research/notes/burgervorbis.md */
 
 #include <stdlib.h>

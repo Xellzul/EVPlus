@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* comm.c -- the communication message strip (win TU region 0x0047e2d0-0x0047e463). Notes: Research/notes/comm.md */
 /*
  * The two SpriteWorld frame offsets are the real ones from SpriteWorld's own

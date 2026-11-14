@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* gameloop.c -- the main-loop object (tu-map O3, win 0x00428340..0x0043b170). Notes: Research/notes/gameloop.md */
 #include <stdlib.h>
 #include <string.h>
@@ -2871,7 +2871,6 @@ void HandleStellarSystemVisibility(void)
     }
 }
 
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -proc generic
 /* framepace -- hold the frame to a floor length and track how fast the machine is running (win 0x00432ea0). Notes: Research/notes/framepace.md */
 
 /* HandleTimeAdjustment (mac _HandleTimeAdjustment). STATE: MATCH 100.0%, exe 105 / obj 105
@@ -4091,7 +4090,6 @@ void HandleAsteroidHit(ShotObj *shot, AsteroidObj *roid)
     ((SpriteRec *)shot->sprite)->needsToBeErased = 1;
 }
 
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -proc generic
 /* shipcollide -- the SpriteWorld collision callback for a ship sprite (win 0x004374f0, mac _ShipCollisionHandler). Notes: Research/notes/shipcollide.md */
 /* A box is picked up into shipData[ship->unk86], i.e. the OWNER's hold rather
    than the toucher's, with cargo 0..5 going to the six commodity counts and

@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* music.c -- the intro-music song (win 0x004ab5d0..0x004ab960). Notes: Research/notes/music.md */
 /*
  * Both volume computations read settings.volume through movzx even though the pref

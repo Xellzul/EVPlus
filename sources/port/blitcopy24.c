@@ -1,7 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
-// COMPILE-WHY: `#pragma opt_repositioncode off' (pragma-only) around CopyBitsScale16Average alone, on
-// after CopyBitsScale8 and reset before CopyBitsScale24. Without it the block mover parks the
-// nearest-neighbour arm; left on past CopyBitsScale16Average it moves LoadPictResource's dispose arm.
+// COMPILE: -lang c++ -bool off
 /* blitcopy24.c --tu-map object O27: the 24-bit and scaled blitters, the blit dispatch, and the QuickDraw port, rect, pen, oval, picture and cicn emulation. Notes: Research/notes/blitcopy24.md */
 #include <time.h>
 #include <math.h>

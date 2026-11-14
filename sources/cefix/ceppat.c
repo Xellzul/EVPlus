@@ -1,4 +1,3 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off
 /* ceppat.c -- EV Nova CE: the 'ppat' decoder behind the radar interference, 1, 2, 4 and
    8 bits per pixel, in place of BurgerLib's 8-bit-only ImageParsePPat (CEFIX only).
    Notes: Research/cefix-plan.md */

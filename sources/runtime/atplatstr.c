@@ -1,6 +1,3 @@
-// COMPILE: -opt level=2,intrinsics,space -enum min -align 8 -Cpp_exceptions off
-// COMPILER: mwccsym2 2.4.7 build 335 + MSL 2001
-// COMPILE-WHY: AmbrosiaTools (the mac build imports it as AmbrosiaTools.framework) on its own compiler as one library: its platform, network, file and interface parts inline memset (rep stos in the exe), so ,intrinsics; -enum min -align 8 are the library's struct layout (jpeglib.h's structs in itjpeg.c, a double at 8); build 335 has no -proc; Research/runtime-compiler-ceiling.md
 /* atplatstr.c -- the platform layer's own string helpers: a strlen, a strcpy, a three-way strcmp, an upper-casing strncpy, a strpbrk, a bounded sprintf, and the formatter behind it with its two helpers (the number-to-digits writer and the padded field copy). Notes: Research/notes/atplatstr.md */
 
 #include <stdarg.h>

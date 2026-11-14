@@ -1,5 +1,4 @@
-// COMPILE: -opt level=4,intrinsics,noieeefp -inline auto -align 4 -Cpp_exceptions off -proc pentium4 -lang c++ -bool off -str pool
-// COMPILE-WHY: BurgerLib's P band line (burgermace.c's COMPILE-WHY); a data table, object-identical under it but for the C++ -defaultlib .drectve the band's other objects carry
+// COMPILE: -lang c++ -bool off
 // LINK: before burgermace; data EVNOVA 0x00571814
 /* burgeralaw.c -- BurgerLib's A-law expansion table (PkALaw): a byte to a 16-bit sample. Notes: Research/notes/burgerdigsong.md */
 

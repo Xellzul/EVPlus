@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* prefstr.c -- the prefs file: OpenPrefs, ClosePrefs, GetIniIndString, FlushPrefs (win 0x004bcfa0..0x004bd0c0, tu-map object O28; the next function starts the loaddata.c object). Notes: Research/notes/prefstr.md */
 /*
  * prefstr.c — read one indexed string out of the port's prefs file

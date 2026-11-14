@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* statusradar.c -- DrawStatusRadar (win link order 0x0045d600), the fifth member of the status-painter run and the one function of it that is NOT in statusparts.c. Notes: Research/notes/statusradar.md */
 #include <math.h>
 #include <stddef.h>

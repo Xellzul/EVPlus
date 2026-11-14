@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* construct8bitalphatable.c -- Construct8BitAlphaTable (win 0x004740d0). Notes: Research/notes/construct8bitalphatable.md */
 #include "macport.h"
 #include "burger.h"

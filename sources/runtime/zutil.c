@@ -1,6 +1,3 @@
-// COMPILE: -opt level=2,intrinsics,space -inline auto,deferred -enum min -align 8 -Cpp_exceptions off
-// COMPILER: mwccsym2 2.4.7 build 335 + MSL 2001
-// COMPILE-WHY: zlib 1.2.1 on libjpeg's line and compiler (-align 8 is object-inert on all ten zlib TUs, Research/flag-census.md); build 335 has no -proc switch, its default is generic x86; Research/runtime-compiler-ceiling.md
 /* zutil.c -- zlib 1.2.1 zutil.c, Copyright (C) 1995-2003 Jean-loup Gailly; zlib licence in zlib.h; altered: comments removed (the functions the exe does not link stay, unmarked), the heap through zlibcrt.c. Notes: Research/notes/zdeflate.md */
 
 #include "zutil.h"

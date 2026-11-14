@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* ai.c -- the AI object (tu-map O1, win 0x00401000..0x004160f0). Notes: Research/notes/ai.md */
 #include <stdlib.h>
 #include <math.h>

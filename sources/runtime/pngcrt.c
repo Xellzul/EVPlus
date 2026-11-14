@@ -1,6 +1,3 @@
-// COMPILE: -opt level=2,intrinsics,space -inline auto,deferred -g -Cpp_exceptions off
-// COMPILER: mwccsym2 2.4.7 build 335 + MSL 2001
-// COMPILE-WHY: libpng 1.2.7's one line, compiler and headers (zlib's compiler, built with debug information on, against the 2.4-era MSL). -g moves jump threading and register choice; the 2.4-era math_x87.h makes fabs an asm inline; build 335 has no -proc generic, its default is generic x86; Research/runtime-compiler-ceiling.md
 /* pngcrt.c -- the C-runtime calls the exe's libpng 1.2.7 build links privately (heap, byte copies, strings, abs; not MSL's). Notes: Research/notes/png.md */
 
 #include "png.h"

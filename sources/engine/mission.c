@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* mission.c -- the mission object (tu-map O5, win 0x0043bbb0..0x00447f20). Notes: Research/notes/mission.md */
 #include <stdlib.h>
 #include <math.h>
@@ -549,7 +549,6 @@ void SetupMissionList(void)
     LAutoScroll(missionList);
 }
 
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -proc generic
 /* randmissions -- rebuild both mission-computer lists from scratch and sort; then the two choice resolvers SelectMissionCargoType/SelectMissionCargoQty. Notes: Research/notes/randmissions.md */
 
 /*
@@ -2681,7 +2680,6 @@ Boolean IsMissionAvailable(short mission, Boolean offer)
     return 1;
 }
 
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -proc generic
 /* offeronemission -- the mission BRIEFING/offer dialog (win 0x00442510, mac _OfferOneMission). Notes: Research/notes/offeronemission.md */
 
 
@@ -4868,7 +4866,6 @@ void SingleMissionDialogUpdate(void)
              GetWindowVisRgn(FrontWindow(missionDialog)));
 }
 
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -proc generic
 /* validauxsys -- may a mission's auxiliary ships appear in this system? (win 0x00447a30, mac twin _ValidAuxShipSystem @ 0x000992b5). Notes: Research/notes/validauxsys.md */
 
 /* mïsn runtime record window, stride 0x8e6; byte-packed, since the exe reads

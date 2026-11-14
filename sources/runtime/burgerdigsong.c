@@ -1,5 +1,4 @@
-// COMPILE: -opt level=4,intrinsics,noieeefp -inline auto -align 4 -Cpp_exceptions off -proc pentium4 -lang c++ -bool off -str pool
-// COMPILE-WHY: -str pool, the band's string literals are one packed pool per TU (exe .rdata, Burger archive members);noieeefp, the band's float model; runtime P band, one line for BurgerLib and its Ogg/Vorbis (user ruling 2026-09-27: -proc pentium4 for the one big band, no per-file flags); -inline auto listing-identical here; -align 4 is BurgerLib's long struct alignment, which the Vorbis state inside OggState_t needs (vorbis_block at +0x24c); -lang c++ -bool off: BurgerLib is C++ (the archive's mangled statics, COM calls as virtual calls)/* burgerdigsong.c -- BurgerLib's streamed-song front end (SnDigitalSong): the song file name, and the dispatch onto a format's decoder. Notes: Research/notes/burgerdigsong.md */
+// COMPILE: -lang c++ -bool off
 
 #include "burgertypes.h"
 #include "burger.h"

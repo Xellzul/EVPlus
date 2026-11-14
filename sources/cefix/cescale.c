@@ -1,4 +1,3 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off
 /* cescale.c -- EV Nova CE: the ui_scale factor and the dialog scaling core (CEFIX only).
    Notes: Research/cefix-plan.md */
 #ifdef CEFIX

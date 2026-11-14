@@ -1,4 +1,3 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off
 /* cedialog.c -- EV Nova CE: the rounding helpers of the shipyard and player-info stat
    displays, also used by the map borders (CEFIX only). Notes: Research/cefix-plan.md */
 #ifdef CEFIX

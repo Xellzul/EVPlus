@@ -1,5 +1,4 @@
-// COMPILE: -opt level=4,intrinsics,noieeefp -inline auto -align 4 -Cpp_exceptions off -proc pentium4 -lang c++ -bool off -str pool
-// COMPILE-WHY: -str pool, the band's string literals are one packed pool per TU (exe .rdata, Burger archive members); runtime P band, the one line for BurgerLib (user ruling 2026-09-27; Research/runtime-compiler-ceiling.md)
+// COMPILE: -lang c++ -bool off
 /* burgerppat.c -- BurgerLib ImImageParsePPat: a Mac 'ppat' resource into an 8-bit Image_t. Notes: Research/notes/burgerppat.md */
 
 #include "burgertypes.h"

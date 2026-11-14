@@ -1,4 +1,3 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off
 /* ceblit.c -- EV Nova CE: GDI+ bicubic blitters in the CopyBits and CopyMask tables, and the
    true row stride of a new GWorld (CEFIX only). Notes: Research/cefix-plan.md */
 #ifdef CEFIX

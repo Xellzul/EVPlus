@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* resmgr.c -- the Mac Resource Manager shims the win port implements over BurgerLib's REZ container (win 0x004cdfa0..0x004ce480). Notes: Research/notes/resmgr.md */
 #include <stddef.h>
 

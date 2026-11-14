@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* mainscreenrollover.c -- MainScreenRolloverDraw; exe 0x0048c580..0x0048c720. Notes: Research/notes/mainscreen.md */
 
 #include <stddef.h>

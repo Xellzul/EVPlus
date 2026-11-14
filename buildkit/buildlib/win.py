@@ -1,10 +1,9 @@
 """EV Nova.exe 1.0.10 for Windows, and the EV Nova CE build (-DCEFIX), with the original
-Metrowerks tools: mwcc 3.2.4 b418 for the game, mwccsym2 2.4.7 b335 for zlib/libpng/REGGIE,
-mwwinrc for the resources, mwld for the archives and the link.
+Metrowerks tools: mwcc 3.2.4 b418 for every source, mwwinrc for the resources, mwld for the archives and the link.
 
 The steps are those of tools/build.ps1 and tools/link.ps1 (Research/the-link-step.md):
-  1. compile every sources/**.c (not include/, mac/, v111/; cefix/ only for CE), each on the flag
-     line of its `// COMPILE:` marker and the compiler of its `// COMPILER:` marker
+  1. compile every sources/**.c (not include/, mac/, v111/; cefix/ only for CE), each on BASELINE
+     plus the flags of its `// COMPILE:` marker (`-lang c++ -bool off` for the C++ files)
   2. math_x87.obj: MSL's own source with cbrt's coefficient spelled as the exe's (tools/mslmath.py)
   3. the eleven QuickTime client-library members the exe interleaves, copied with the names the tree
      also defines renamed away (tools/qtorder.py)
@@ -25,8 +24,6 @@ from .host import KIT, REPO, BuildError, exe_env, run_exe, say, winlist, winpath
 SOURCES = REPO / "sources"
 BASELINE = ["-opt", "level=4,intrinsics", "-enum", "min", "-Cpp_exceptions", "off"]
 MARKER = re.compile(r"^\s*//\s*COMPILE:\s*(.+)$")
-COMPILER = re.compile(r"^\s*//\s*COMPILER:\s*(.+)$")
-SYM335_MSL2001 = "mwccsym2 2.4.7 build 335 + MSL 2001"
 QT_SHADOW = "__qtmlshadow"
 
 
@@ -37,9 +34,7 @@ class Tools:
         cw = self.cw = cfg.path("win", "codewarrior")
         cli = cw / "Other Metrowerks Tools" / "Command Line Tools"
         self.mwcc, self.mwld, self.mwwinrc = cli / "mwcc.exe", cli / "mwld.exe", cli / "mwwinrc.exe"
-        self.mwccsym2 = cfg.path("win", "symbian") / "Other_Metrowerks_Tools" / "Command Line Tools" / "mwccsym2.exe"
-        self.sym_msl = cfg.path("win", "symbian3") / "Symbian_Support" / "MSL"
-        self.dlls = [cw / "Bin", cfg.path("win", "flexlm326")]       # LMGR8C.dll (418), LMGR326B.dll (335)
+        self.dlls = [cw / "Bin"]                                     # LMGR8C.dll
         self.license = cfg.path("win", "license")
         self.includes = [cw / p for p in (
             "MSL/MSL_C/MSL_Common/Include", "MSL/MSL_C/MSL_Win32/Include", "MSL/MSL_C/MSL_X86",
@@ -47,11 +42,6 @@ class Tools:
             "Win32-x86 Support/Headers/Win32 SDK", "Win32-x86 Support/Headers/Precompiled Headers",
             "Win32-x86 Support/Headers/Prefix Files", "Win32-x86 Support/Headers/VCPP Headers",
             "Win32-x86 Support/Headers/Alloca", "Win32-x86 Support/Headers/Intrinsics", "MSL/MSL_C++/MSL_Precompiled_Headers")]
-        # libpng 1.2.7 was built against the 2001 MSL that CodeWarrior for Symbian v3.0 ships
-        self.includes_msl2001 = [self.sym_msl / p for p in (
-            "MSL_C/MSL_Common/include", "MSL_C/MSL_Win32/include", "MSL_C/MSL_x86", "MSL_CPP/MSL_Common/include")] + \
-            [cw / p for p in ("Win32-x86 Support/Headers/Win32 SDK", "Win32-x86 Support/Headers/Prefix Files",
-                              "Win32-x86 Support/Headers/VCPP Headers")]
         self.libdirs = [cw / p for p in (
             "Win32-x86 Support/Libraries/Runtime/Libs", "Win32-x86 Support/Libraries/Win32 SDK",
             "MSL/MSL_C/MSL_Win32/Lib/x86", "MSL/MSL_C++/MSL_Win32/Lib/x86", "MSL/MSL_Extras/MSL_Win32/Lib/x86")]
@@ -79,19 +69,12 @@ def sources_for(cefix):
 
 def compile_one(t, src, objdir, cefix):
     head = src.read_text(encoding="latin-1").splitlines()[:30]
-    flags = next((MARKER.match(l).group(1).split() for l in head if MARKER.match(l)), list(BASELINE))
+    flags = BASELINE + next((MARKER.match(l).group(1).split() for l in head if MARKER.match(l)), [])
     flags = flags + ["-i", winpath(SOURCES / "include")] + (["-DCEFIX"] if cefix else [])
-    which = next((COMPILER.match(l).group(1).strip() for l in head if COMPILER.match(l)), None)
-    cc, includes = t.mwcc, t.includes
-    if which == SYM335_MSL2001:
-        cc, includes = t.mwccsym2, t.includes_msl2001
-        flags.append("-D_MSL_TRUE=1")            # that MSL's cerrno names a macro its ansi_parms.h never defines
-    elif which:
-        raise BuildError("%s: unknown // COMPILER: %r" % (src.name, which))
     obj = objdir / (src.stem + ".o")
     if obj.exists():
         obj.unlink()
-    rc, msg = run_exe(cc, ["-c"] + flags + ["-o", winpath(obj), winpath(src)], env=t.env(MWCSym2Includes=winlist(includes)))
+    rc, msg = run_exe(t.mwcc, ["-c"] + flags + ["-o", winpath(obj), winpath(src)], env=t.env())
     if rc or not obj.exists():
         if obj.exists():
             obj.unlink()                         # never leave an object that would link as if current

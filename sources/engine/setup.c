@@ -1,6 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
-// COMPILE-WHY: two scoped `#pragma opt_repositioncode off' regions (pragma-only, no -opt
-// spelling), over SetupMonitor and over ConvertSpriteToRLE; each matches only with it.
+// COMPILE: -lang c++ -bool off
 /* setup.c --tu-map object O26, the original Setup.c: SpriteWorld and sprite setup, loading, cleanup and game-state reset, then the QuickDraw state shims. Notes: Research/notes/setup.md */
 #if defined(MACBUILD) && V111
 #define IMPLICIT_RESOURCEEXISTS

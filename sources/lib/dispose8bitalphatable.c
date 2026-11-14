@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* dispose8bitalphatable.c -- Dispose8BitAlphaTable (win 0x00474300). Notes: Research/notes/dispose8bitalphatable.md */
 /* Frees the 5 x 256 array of pointers Construct8BitAlphaTable (0x004740d0) builds: the
    mac's `_alphaTable'. Both loop counters are SHORTS (`cmp bp, 0x100' and `cmp si, 5',

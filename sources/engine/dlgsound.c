@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* dlgsound.c -- the dialog sound bank's stop-all and its two-part chime (win 0x0048bbb0 and 0x0048bc20). Notes: Research/notes/dlgsound.md */
 #include "gametypes.h"
 

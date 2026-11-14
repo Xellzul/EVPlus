@@ -1,5 +1,4 @@
-// COMPILE: -opt level=4,intrinsics,noieeefp -inline auto -align 4 -Cpp_exceptions off -proc pentium4 -lang c++ -bool off -str pool
-// COMPILE-WHY: -str pool, the band's string literals are one packed pool per TU (exe .rdata, Burger archive members); runtime P band's line, data only: the GUIDs are Microsoft's dxguid.lib, linked inside BurgerLib's run (user ruling 2026-09-27; Research/runtime-compiler-ceiling.md)
+// COMPILE: -lang c++ -bool off
 // LINK: before atfilespec2; data EVNOVA 0x005713e8
 /* dxguid.c -- the three DirectDraw interface IDs the game links from dxguid.lib. Notes: Research/notes/burgervideomode.md */
 

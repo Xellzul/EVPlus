@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* engineutils.c -- the engine's utility object (tu-map O10, win 0x00462550..0x0046f3f0). Notes: Research/notes/engineutils.md */
 #include <stdlib.h>
 #include <math.h>

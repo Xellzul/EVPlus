@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* crashlog.c -- debug logging. Notes: Research/notes/crashlog.md */
 #include <stdio.h>
 

@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* blitpixierlecollision.c -- BlitPixieRLECollision (win 0x00472190), the two-stream RLE overlap test. Notes: Research/notes/blitpixierlecollision.md */
 #include "macport.h"
 #include "shipobj.h"

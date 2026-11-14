@@ -1,5 +1,4 @@
-// COMPILE: -opt level=4,intrinsics,noieeefp -inline auto -align 4 -Cpp_exceptions off -proc pentium4 -lang c++ -bool off -str pool
-// COMPILE-WHY: BurgerLib's P band line (burgermace.c's COMPILE-WHY); naked asm, object-identical under it but for the C++ -defaultlib .drectve the band's other objects carry
+// COMPILE: -lang c++ -bool off
 /* burgerpow2.c -- BurgerLib's PowerOf2 and FastStrLen (the game's strlen), hand assembly in the library itself (the 2007 archive's ClMicrosoftVC5.obj is the same streams, register-passed). Notes: Research/notes/burgerpow2.md */
 
 #include "burgertypes.h"

@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* computepixelvalues.c -- ComputePixelValues (win 0x00479210, donor SpriteWorldUtils.c line 900). Notes: Research/notes/computepixelvalues.md */
 /* Names two SpriteWorldUtils.c globals outright, because one function writes both in
    both arms with the values swapped: 0x007d0500 SWMaskedRGBValue (<= 8 bit 0x0000,

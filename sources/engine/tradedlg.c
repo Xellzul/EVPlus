@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* tradedlg.c -- tu-map object O24: the trade, outfit, shipyard, port, player-info and description dialogs, then the escort menu, quantity dialog and map world, ending at the .CRT hook. Notes: Research/notes/tradedlg.md */
 #include <stddef.h>
 #include <stdio.h>

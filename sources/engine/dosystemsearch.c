@@ -1,5 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -D_MSL_USE_INLINE=0 -lang c++ -bool off
-// COMPILE-WHY: -D_MSL_USE_INLINE=0 (Win32Headers.pch): <ctype.h> declares tolower pure, so the name loop's systemData load ranks invariant.
+// COMPILE: -lang c++ -bool off
 /* dosystemsearch.c -- DoSystemSearch; exe 0x004aab30..0x004aaf50. Notes: Research/notes/mapdlg.md */
 
 #include <ctype.h>

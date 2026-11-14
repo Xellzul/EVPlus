@@ -1,5 +1,3 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off
-// COMPILE-WHY: MSL library code (excrtl.obj of MSL_All_x86.lib): MSL's own line (Research/msl-version.md) is this one plus -lang c99 and the avoid_ebp prefix, both object-inert here
 /* excrtl.c -- MSL's x86 exception runtime: the structured-exception unwind handler. Notes: Research/notes/excrtl.md */
 #include "int32.h"
 

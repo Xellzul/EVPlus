@@ -1,6 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
-// COMPILE-WHY: ModalDialog alone is built under `#pragma opt_lifetimes off'; not
-// `-opt ...,nolifetimes' because file-wide it breaks PopUpListSelect and nv_NewDialog.
+// COMPILE: -lang c++ -bool off
 /* dialogmgr.c -- the port's Dialog, Control and List Manager (win 0x004cea90..0x004d2950, in exe order). Notes: Research/notes/dialogmgr.md */
 #include "burgerplat.h"
 #ifndef MACBUILD

@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* commdlg.c -- the hail, haggle and plunder dialog object (tu-map O22, win 0x0047e470..0x004860f0). Notes: Research/notes/commdlg.md */
 #include <stddef.h>
 #include <string.h>

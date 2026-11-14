@@ -1,6 +1,3 @@
-// COMPILE: -opt level=2,intrinsics,space -inline auto,deferred -enum min -align 8 -Cpp_exceptions off
-// COMPILER: mwccsym2 2.4.7 build 335 + MSL 2001
-// COMPILE-WHY: libjpeg 6b's one line and compiler (zlib's compiler and line, plus -align 8). -align 8 puts output_gamma (double) at 0x38, sizeof(struct jpeg_decompress_struct) 0x1a0 as the exe checks (335's default -align 4 gives 0x19c); -enum min: its enums are one byte; build 335 has no -proc generic, its default is generic x86; Research/notes/jpeg.md
 /* jpegcrt.c -- the C-runtime calls the exe's libjpeg 6b build links privately (MEMZERO, MEMCOPY, jmemnobs.c's malloc and free; not MSL's); pngcrt.c's file, its unlinked half kept unmarked for the class table the exe keeps. Notes: Research/notes/jpeg.md */
 
 #include <stddef.h>

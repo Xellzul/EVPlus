@@ -1,5 +1,4 @@
-// COMPILE: -opt level=4,intrinsics,noieeefp -inline auto -align 4 -Cpp_exceptions off -proc pentium4 -lang c++ -bool off -str pool
-// COMPILE-WHY: -str pool, the band's string literals are one packed pool per TU (exe .rdata, Burger archive members);runtime P band, the one line for BurgerLib (user ruling 2026-09-27; Research/runtime-compiler-ceiling.md)
+// COMPILE: -lang c++ -bool off
 /* burgerimage.c -- BurgerLib ImImageManager: freeing an image and remapping its indexed pixels. Notes: Research/notes/burgerimage.md */
 
 #include "burgertypes.h"

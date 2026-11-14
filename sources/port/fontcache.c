@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* fontcache.c -- the port's font family/size cache (win 0x004bc600-0x004bc75d). Notes: Research/notes/fontcache.md */
 #include <stddef.h>
 

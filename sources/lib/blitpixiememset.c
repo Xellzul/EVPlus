@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* blitpixiememset.c -- BlitPixieMemSet (win 0x00474410). Notes: Research/notes/blitpixiememset.md */
 #include "macport.h"
 #include "shipobj.h"

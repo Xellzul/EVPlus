@@ -1,6 +1,3 @@
-// COMPILE: -opt level=2,intrinsics,space -enum min -align 8 -Cpp_exceptions off
-// COMPILER: mwccsym2 2.4.7 build 335 + MSL 2001
-// COMPILE-WHY: AmbrosiaTools (the mac build imports it as AmbrosiaTools.framework) on its own compiler as one library: its platform, network, file and interface parts inline memset (rep stos in the exe), so ,intrinsics; -enum min -align 8 are the library's struct layout (jpeglib.h's structs in itjpeg.c, a double at 8); build 335 has no -proc; Research/runtime-compiler-ceiling.md
 /* ittoolkit.c -- the interface tool proper, from 0x0051a038: regions, colours and rectangles, the window records, page loading, focus, painting and the window and dialog procedures (to 0x0051c936). Notes: Research/notes/ittoolkit.md */
 
 #include "burgertypes.h"

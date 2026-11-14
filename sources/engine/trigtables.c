@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* trigtables.c -- angle-indexed trig tables, TableSin/TableCos, and the arctan ramp TableArcTan's atan2-by-table helper walks (win 0x00461830..0x004619b0). Notes: Research/notes/trigtables.md */
 #include <math.h>
 #include "gameconst.h"

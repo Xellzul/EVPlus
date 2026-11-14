@@ -1,4 +1,4 @@
-// COMPILE: -opt level=4,intrinsics -enum min -Cpp_exceptions off -lang c++ -bool off
+// COMPILE: -lang c++ -bool off
 /* handleplayer.c -- the player-ship object (tu-map O7, win 0x0044aa70..0x0045c880). Notes: Research/notes/handleplayer.md */
 #include <stdlib.h>
 #include <math.h>
