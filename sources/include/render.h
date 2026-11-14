@@ -172,11 +172,6 @@ extern short gMainPicWidthDelta;
 #endif
 extern short loopingMovieResRefNum;
 extern short planetPicId;
-#ifdef MAC1010
-extern uint32_t reggieStarted;
-#else
-extern int32_t reggieStarted;
-#endif
 extern unsigned char weapName[256][256];
 extern Rect interfacePicRect;
 extern short interferenceThisFrame;

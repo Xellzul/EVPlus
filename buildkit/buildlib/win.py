@@ -26,7 +26,6 @@ SOURCES = REPO / "sources"
 BASELINE = ["-opt", "level=4,intrinsics", "-enum", "min", "-Cpp_exceptions", "off"]
 MARKER = re.compile(r"^\s*//\s*COMPILE:\s*(.+)$")
 COMPILER = re.compile(r"^\s*//\s*COMPILER:\s*(.+)$")
-SYM335 = "mwccsym2 2.4.7 build 335"
 SYM335_MSL2001 = "mwccsym2 2.4.7 build 335 + MSL 2001"
 QT_SHADOW = "__qtmlshadow"
 
@@ -84,11 +83,9 @@ def compile_one(t, src, objdir, cefix):
     flags = flags + ["-i", winpath(SOURCES / "include")] + (["-DCEFIX"] if cefix else [])
     which = next((COMPILER.match(l).group(1).strip() for l in head if COMPILER.match(l)), None)
     cc, includes = t.mwcc, t.includes
-    if which in (SYM335, SYM335_MSL2001):
-        cc = t.mwccsym2
-        if which == SYM335_MSL2001:
-            includes = t.includes_msl2001
-            flags.append("-D_MSL_TRUE=1")        # that MSL's cerrno names a macro its ansi_parms.h never defines
+    if which == SYM335_MSL2001:
+        cc, includes = t.mwccsym2, t.includes_msl2001
+        flags.append("-D_MSL_TRUE=1")            # that MSL's cerrno names a macro its ansi_parms.h never defines
     elif which:
         raise BuildError("%s: unknown // COMPILER: %r" % (src.name, which))
     obj = objdir / (src.stem + ".o")

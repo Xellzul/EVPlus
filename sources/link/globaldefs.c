@@ -7,7 +7,6 @@
 #include "burger.h"
 #include "burgerchan.h"
 #include "burgerddraw.h"
-#include "reggiesession.h"
 #include "crashlog.h"
 #include "render.h"
 #include "ships.h"

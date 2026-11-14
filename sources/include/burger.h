@@ -186,11 +186,6 @@ extern int32_t DT_ImageTile(struct ITImage *dst, const struct ITRect *dstRect,
                          struct ITImage *srcMask, const struct ITTransparent *trans);
 extern int32_t DT_ImagePreflightTile(struct ITImage *image, struct ITImage *mask);
 
-/* the REGGIE client (reggie.c) */
-struct GlobalEntry;
-extern void _ReggiePrivateTickle(void);
-extern struct GlobalEntry *_ReggieVersionInsert(const char *name, struct HashTable *reply);
-
 /* string helpers (atplatstr.c) */
 extern uint32_t StringGetLength(const unsigned char *s);
 extern unsigned char *StringAppendSafe(unsigned char *dst, const unsigned char *src, uint32_t n);
@@ -952,7 +947,6 @@ extern int32_t _ST_GetSystemVolume(ULong *left, ULong *right, ULong *max);
 extern ULong UFix32_To_UInt32(ULong rate);
 extern void CriticalEnter(void *lock);
 extern void CriticalLeave(void *lock);
-extern void _ReggieFixProductName(char *out, const char *src);
 extern int32_t HashInsert(struct HashTable *t, const char *key, const char *value);
 extern int32_t HashAppend(struct HashTable *t, const char *key, const char *value);
 extern unsigned char HashRemove(struct HashTable *t, const char *key);
@@ -1052,7 +1046,6 @@ extern unsigned char NetworkStackGetActive(unsigned short mode);
 #else
 extern char NetworkStackGetActive(unsigned short mode);
 #endif
-extern int32_t ReggieVersionBegin(struct SessionContext *ctx, const char *name);
 extern void VideoGetCurrentMode(int32_t *out);
 extern int32_t VideoSetMode(int32_t *rec);
 extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);

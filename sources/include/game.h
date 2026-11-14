@@ -129,7 +129,6 @@ extern int32_t RT3_Open(unsigned char tracked, short mode, const char *product,
 #endif
 extern uint32_t ST_GetSysVolume(void);
 extern int32_t RT3_RunReminder(unsigned char force, unsigned char *registered);
-extern void *ReggieVersionCheck(void *ref, const char *name);
 extern short FirstKeyDown(void);
 extern Boolean GovtSharedClass(short a, short b);
 extern void HandleAlertSprite(void);
@@ -219,14 +218,12 @@ extern int32_t fullScreenRestore;
 extern void *escapePodSnd;
 extern void *cloakSnd[2];
 extern Boolean redrawEscortMenu;
-extern char reggieVersion[];
 extern void *warpUpSnd[2];
 extern short playerEffectiveMurk;
 extern Boolean warpSoundDone;
 extern Boolean gPause;
 extern short pluginCount;
 extern Boolean majorPrefsChange;
-extern Boolean reggieSuccess;
 extern Boolean didSpeak;
 extern Boolean doMainScreenAnim;
 extern Rect standardPicRect;

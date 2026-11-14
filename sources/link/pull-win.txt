@@ -314,7 +314,6 @@ _AllocAHandleClear
 _OpenPort
 _NetworkStackLoad
 _EndpointGetElem
-__ReggieNetworkFromString
 _VideoGetCurrentMode
 _UnlockMe
 __HashDataEncode

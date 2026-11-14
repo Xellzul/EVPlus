@@ -154,7 +154,6 @@ rt burgerfilemgr
 rt burgersavefile
 rt atnetup
 rt atnetinfo
-rt reggie
 rt burgergraphics
 rt burgeronce
 rt athashtbl

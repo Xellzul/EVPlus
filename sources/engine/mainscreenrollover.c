@@ -93,17 +93,6 @@ uint32_t lastLogoAnimTime;
 uint32_t lastRolloverAnimTime;
 uint32_t lastSlideAnimTime;
 Boolean mainScreenBackgroundDirty;
-#ifdef MACBUILD
-#ifndef MAC1010 /* 1.0.10: at the head of Main Screen.c */
-int32_t reggieStarted = 0;
-char reggieVersion[256] = "";
-Boolean reggieSuccess = 0;
-#endif
-#else
-int32_t reggieStarted;
-char reggieVersion[256];
-Boolean reggieSuccess;
-#endif
 #ifndef MACBUILD
 unsigned char DAT_007d2665[258];
 #endif
