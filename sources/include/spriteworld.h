@@ -451,8 +451,6 @@ extern void SWFlipPixelsVertically(CGrafPtr dstGWorldP, Rect *rectP);
 extern short SWBlackenGWorld(CGrafPtr oldGWorld);
 extern short SWWhitenGWorld(CGrafPtr oldGWorld);
 extern short SWFastWhitenGWorld(CGrafPtr pictureGWorld);
-extern short SWStickyError(void);
-extern Boolean SWHasSystem7(void);
 
 /* the masking blitters' alpha-free colour masks */
 #define kAlphaMask16    0x7FFF
@@ -610,7 +608,6 @@ typedef enum {
 extern RgnHandle gSWCollisionSpareRgn;
 extern RgnHandle gSWCollisionSectRgn;
 
-extern void DebugInteger(int32_t n);
 extern OSErr SWCreateSpriteFromPictResource(SpriteWorldPtr destSpriteWorldP, SpritePtr *newSpriteP,
         void *spriteStorageP, short pictResID, short maskResID, short maxFrames,
         MaskType maskType);

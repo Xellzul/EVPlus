@@ -706,17 +706,6 @@ void InitArrays(void)
         EV_ASSERT_FAIL("Setup.c", 0x1cf, 772);
     if (AllocFailed(currentMissionObjectives, (MissionState *)AllocAPointer(0x140)))
         EV_ASSERT_FAIL("Setup.c", 0x1d0, 773);
-#ifdef MACBUILD
-    if (EVBugResourceFieldTest(4)) {
-        strcpy((char *)msg, "After creating arrays, stackspace is ");
-        NumToString(StackSpace(), num);
-        PtoCstr(num);
-        strcat((char *)msg, (char *)num);
-        strcat((char *)msg, " bytes");
-        CtoPstr((char *)msg);
-        DebugStr(msg);
-    }
-#endif
 }
 
 /* InitOffscreen (mac _InitOffscreen). STATE: MATCH, byte-identical. OPEN: none */
@@ -2886,89 +2875,6 @@ void ResetPlayerRecord(Boolean newPilot)
     }
     recentActivatedRank = 0xffff;
 }
-
-#ifdef MACBUILD
-#define kMinSystemVersion    0x810       /* Mac OS 8.1 */
-#define kMinCarbonVersion    0x131       /* CarbonLib 1.3.1, before Mac OS X */
-#define kMinQuickTimeVersion 0x3000000   /* QuickTime 3.0 */
-
-/* CheckSystem (mac _CheckSystem, mac-only). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _CheckSystem i386 0x0001dc00 ppc 0x000223e8
-void CheckSystem(void)
-{
-    Str255 msg;
-    int32_t response;
-    OSErr err;
-
-    err = Gestalt(gestaltSystemVersion, &gSystemVersion);
-    crashlog_print("system software version is ");
-    sprintf((char *)msg, "%04X", gSystemVersion);
-    crashlog_print((char *)msg);
-    crashlog_print("\n");
-    if (gSystemVersion < kMinSystemVersion || err != noErr) {
-        FadeScreenIn();
-        GetIndString(msg, kAlertStrList, 40);
-        EVNoteAlert(msg);
-        ShowTheMenuBar();
-        ST_Close();
-        ExitToShell();
-    }
-#if TARGET_API_MAC_CARBON
-    if (gSystemVersion < kMacOSXSystemVersion) {
-        Gestalt(gestaltCarbonVersion, &response);
-        if (response < kMinCarbonVersion) {
-            FadeScreenIn();
-            GetIndString(msg, kAlertStrList, 41);
-            EVNoteAlert(msg);
-            ShowTheMenuBar();
-            ST_Close();
-            ExitToShell();
-        }
-    }
-#endif
-    oldDepth = 8;
-    err = Gestalt(gestaltQuickTimeVersion, &response);
-    if (response < kMinQuickTimeVersion || err != noErr) {
-        FadeScreenIn();
-        GetIndString(msg, kAlertStrList, 42);
-        EVNoteAlert(msg);
-        ShowTheMenuBar();
-        ST_Close();
-        ExitToShell();
-    }
-#if V111
-    {
-        CGRect bounds;
-
-        bounds = CGDisplayBounds(CGMainDisplayID());
-        mainWindRect.top = bounds.origin.x;
-        mainWindRect.left = bounds.origin.y;
-        mainWindRect.bottom = bounds.size.height;
-        mainWindRect.right = bounds.size.width;
-    }
-#elif defined(MAC1010)
-    mainWindRect = (*mainScreenDevice)->gdRect;
-    if (mainWindRect.right - mainWindRect.left < 800 || mainWindRect.bottom - mainWindRect.top < 600) {
-        GetIndString(msg, kAlertStrList, 38);
-        if (!EVYesNoDialog(msg))
-            ExitToShell();
-    }
-#endif
-}
-
-/* BailCheck (mac _BailCheck, mac-only). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _BailCheck i386 0x0001ddd0 ppc 0x000225e0
-void BailCheck(void)
-{
-    if (KeyCheck(kEscapeKeyCode)) {
-        FlushEvents(everyEvent - diskMask, 0);
-        ShowTheMenuBar();
-        ST_Close();
-        ExitToShell();
-    }
-}
-
-#endif
 /*
  * The bounds come from the video layer's current mode rather than from a
  * window, which is why the two sources are BurgerLib globals.

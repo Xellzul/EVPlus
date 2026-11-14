@@ -5,18 +5,6 @@
 #include "spriteworld.h"
 
 
-#ifdef MACBUILD
-/* DebugInteger (mac _DebugInteger, mac-only). STATE: see the mac gate. */
-// MAC: _DebugInteger i386 0x000a8b30 ppc 0x000b3b20
-void DebugInteger(int32_t n)
-{
-    Str255 s;
-
-    NumToString(n, s);
-    DebugStr(s);
-}
-#endif
-
 /* SWCreateSprite (mac _SWCreateSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004744a0
 // MAC: _SWCreateSprite i386 0x000a8b60 ppc 0x000b3b4c

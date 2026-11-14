@@ -35,7 +35,6 @@
 extern void SetupToolbox(void);
 extern void CarbonHackInit(void);
 extern void SelectNovaSupport(void);
-extern void CheckSystem(void);
 extern OSStatus EVInstallEndianFlippers(void);
 #if V111
 extern CFStringRef CFStringCreateFromString(const char *str, int32_t len);
@@ -534,11 +533,7 @@ void InitEVNova(void)
 #else
     SetupMonitor();
 #endif
-#ifdef MACBUILD
-    CheckSystem();
-#else
     ResetScreenRect();
-#endif
 
     crashlog("initializing QuickTime");
     err = EnterMovies();
@@ -733,46 +728,6 @@ void InitEVNova(void)
     grow = 0x7fffffff;
     startupMemoryFree = MaxMem(&grow);
 #endif
-#if defined(MACBUILD) && !TARGET_API_MAC_CARBON
-    {
-        uint32_t memNeeded;
-
-        memNeeded = PreflightMemoryUsageTotal() + 10000000;
-        crashlog_print("free memory before loading ship sprites: ");
-        crashlog_print_num(startupMemoryFree);
-        crashlog_print(" bytes\n");
-        crashlog_print("memory needed for ship sprites: ");
-        crashlog_print_num(memNeeded);
-        crashlog_print(" bytes\n");
-        if (memNeeded > startupMemoryFree) {
-            if (settings.shipAnimations || settings.engineGlows || settings.weaponGlows || settings.runningLights)
-                DoPrefsDialog();
-            CopyBits(GWorldContainerBits(&loadPort),
-                     GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                     GetCWindowPortRect((WindowRef)gWind), GetCWindowPortRect((WindowRef)gWind),
-                     srcCopy, GetCWindowVisRgn((WindowRef)gWind));
-            memNeeded = PreflightMemoryUsageTotal() + 10000000;
-            if (memNeeded > startupMemoryFree) {
-                GetIndString(alertText, kAlertStrList, 0x1c);
-                ParamText(alertText, "\p", "\p", "\p");
-                StopAlert(128, 0);
-                SWExitSpriteWorld();
-                ExitMovies();
-                CarbonHackCleanup();
-                DisposeGammaTools();
-                ST_Close();
-                IT_Close();
-                DT_Close();
-                FT_Close();
-                PlatformClose();
-                crashlog("out of memory bailout complete");
-                crashlog("\n\n- end of log -");
-                crashlog_close();
-                ExitToShell();
-            }
-        }
-    }
-#endif
 
     crashlog("loading ship sprites");
     LoadShipSprites();
@@ -922,7 +877,6 @@ void InitEVNova(void)
 
         crashlog_print("initializing monitor\n");
         SetupMonitor();
-        CheckSystem();
 
         crashlog_print("initializing QuickTime\n");
         if (EnterMovies() != 0)

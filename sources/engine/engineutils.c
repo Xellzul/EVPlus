@@ -46,15 +46,12 @@ extern void InstantFighterRecall(void);
 extern void ShowFreeMem(void);
 extern void *LoadFrameFromCICN(short id);
 extern float FindDecayedShotPower(ShotObj *shot);
-extern void DebugInt(int32_t n);
 extern Boolean isPowerPC(void);
 extern Boolean isG3(void);
 extern Boolean isG4(void);
 extern Boolean meetsMinimumRequirements(void);
 extern short ScanForKeys(void);
 extern Boolean QuickKeyCheckPlusEscorts(short code);
-extern void DebugCStr(char *s);
-extern void DebugStrInt(StringPtr s, short n);
 extern void PlaySoundWait(void *snd);
 extern Boolean HasMaxFightersOnBoard(short shipType);
 extern void UnsplitTwoLineString(const unsigned char *src, unsigned char *dst);
@@ -66,7 +63,6 @@ extern struct ITRect Sys2DT_Rect(const Rect *r);
 extern int32_t DT_DrawImage(struct ITImage *dst, const struct ITRect *dstRect, struct ITImage *image,
                          struct ITImage *mask, const struct ITTransparent *trans, const struct ITRect *srcRect);
 extern void DateToShortString(DateTimeRec date, char *out);
-extern void GraphicsEmergencyBail(void);
 #endif
 
 #define kRoidYieldBase   0x32
@@ -980,23 +976,6 @@ Boolean HasEscapePod(ShipObj *ship)
         return 1;
     return 0;
 }
-
-#ifdef MACBUILD
-/* GraphicsEmergencyBail (mac _GraphicsEmergencyBail, mac-only). STATE: see the mac gate. */
-// MAC: _GraphicsEmergencyBail i386 0x0000b8f8 ppc 0x0000e4d0
-void GraphicsEmergencyBail(void)
-{
-    Str255 msg;
-
-    ShowTheCursor();
-    FadeScreenIn();
-    GetIndString(msg, kAlertStrList, 48);
-    EVNoteAlert(msg);
-    ShowTheMenuBar();
-    ST_Close();
-    ExitToShell();
-}
-#endif
 
 /* HasEscapeShip (mac _HasEscapeShip). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464520
@@ -2205,35 +2184,6 @@ void CullNameString(unsigned char *name)
     CtoPstr((char *)culled);
     pstrcpy(name, culled);
 }
-
-#ifdef MACBUILD
-/* DebugCStr (mac _DebugCStr, mac-only). STATE: see the mac gate. */
-// MAC: _DebugCStr i386 0x0000dd2d ppc 0x000112f4
-void DebugCStr(char *s)
-{
-    Str255 p;
-
-    strcpy((char *)p, s);
-    CtoPstr((char *)p);
-    DebugStr(p);
-}
-
-/* DebugStrInt (mac _DebugStrInt, mac-only). STATE: see the mac gate. */
-// MAC: _DebugStrInt i386 0x0000dd82 ppc 0x00011368
-void DebugStrInt(StringPtr s, short n)
-{
-    Str255 str;
-    Str255 num;
-
-    pstrcpy(str, s);
-    PtoCstr(str);
-    NumToString(n, num);
-    PtoCstr(num);
-    strcat((char *)str, (char *)num);
-    CtoPstr((char *)str);
-    DebugStr(str);
-}
-#endif
 
 #ifdef MAC1010
 /* ScanForKeys (mac _ScanForKeys, mac-only): 1.0.10 defines it where win has FirstKeyDown.
@@ -5184,18 +5134,6 @@ Boolean AlliedWithPlayer(ShipObj *ship)
         return 1;
     return 0;
 }
-
-#ifdef MACBUILD
-/* DebugInt (mac _DebugInt, mac-only). STATE: see the mac gate. */
-// MAC: _DebugInt i386 0x000069d1 ppc 0x000083d8
-void DebugInt(int32_t n)
-{
-    Str255 s;
-
-    NumToString(n, s);
-    DebugStr(s);
-}
-#endif
 
 /* the first system of the group that has actually been loaded */
 /* FindActiveCoLocatedSystem (mac _FindActiveCoLocatedSystem). STATE: MATCH, byte-identical. OPEN: none */
