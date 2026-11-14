@@ -192,7 +192,6 @@ extern SpriteLayerRec *explodLayer;
 extern short firstShipAltIndex;
 extern short firstShipGlowIndex;
 extern short firstShipLightIndex;
-extern unsigned long long fakeLicenseCode;
 extern short firstShipShieldIndex;
 extern short firstShipWeapIndex;
 extern Boolean forceRandom;

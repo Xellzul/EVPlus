@@ -392,7 +392,6 @@ Boolean playerHasIllegalOutfits;
 Boolean allReinforcementsInhibited;
 Boolean playerHasTribbles;
 Boolean playerHasPerishableJunk;
-unsigned long long fakeLicenseCode;
 short gameIsRegisteredIndex;
 short gameIsHackedIndex;
 #endif
@@ -519,10 +518,7 @@ void InitEVNova(void)
     CE_ReadX2Hotkey();
 #endif
     LoadPrefs();
-#ifdef MACBUILD
-    Microseconds((UnsignedWide *)&fakeLicenseCode);
-#else
-    fakeLicenseCode = TimerGetMicroseconds();
+#ifndef MACBUILD
     Gestalt(kQuickTimeGestalt, &qtVersion);
     if (qtVersion < kQuickTime5) {
         ShowTheCursor();
@@ -935,7 +931,6 @@ void InitEVNova(void)
         crashlog_print("\n");
 
         crashlog_print("opening data files & loading prefs\n");
-        Microseconds(&fakeLicenseCode);
 
         crashlog_print("initializing monitor\n");
         SetupMonitor();

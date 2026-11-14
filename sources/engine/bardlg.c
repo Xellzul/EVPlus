@@ -64,22 +64,6 @@ int32_t raceBetAmount;
 
 EXTERN_C_BEGIN
 
-#ifdef MACBUILD
-static inline void LicenseParity(void)
-{
-    short parity;
-    uint32_t code;
-
-    code = fakeLicenseCode;
-    parity = 0;
-    code ^= (fakeLicenseCode >> 32);
-    while (code != 0) {
-        code &= code - 1;
-        parity = 1 - parity;
-    }
-}
-#endif
-
 /* DoBarDialog (mac _DoBarDialog). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047c8e0
 // MAC: _DoBarDialog i386 0x00048ef5 ppc 0x00051898
@@ -607,8 +591,7 @@ Boolean NewsDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
 #define kRaceButtonCount 6
 
 /* RandomizeNewsDialog. STATE: MATCH 100.0%, exe 404 / obj 404, frame 0x80c 6/6 slots and refs,
-   byte-identical yes, relocregcheck 0 of 91. OPEN: none. The dead licence parity counts in
-   `pick'. see notes */
+   byte-identical yes, relocregcheck 0 of 91. OPEN: none */
 // FUNCTION: EVNOVA 0x0047d600
 // MAC: _RandomizeNewsDialog i386 0x00048238 ppc 0x00050bd0
 void RandomizeNewsDialog(void)
@@ -625,8 +608,6 @@ void RandomizeNewsDialog(void)
     Boolean anyActiveCron;
     short eligible;
     short matching;
-
-    LicenseParity();
 #else
     Boolean cronActive[kMaxCrons];
     Boolean anyGovtNews;
@@ -635,21 +616,10 @@ void RandomizeNewsDialog(void)
     short cronNewsID[kMaxCrons];
     Str255 line;
     Str255 tmp;
-    uint32_t code;
     short eligible;
     short matching;
     short j;
     short pick;
-    unsigned long long mem;
-
-    mem = fakeLicenseCode;
-    pick = 0;
-    code = mem;
-    code ^= (mem >> 32);
-    while (code != 0) {
-        code &= code - 1;
-        pick = 1 - pick;
-    }
 #endif
 
     GetRandomIndString((unsigned char *)sponsorString, kSponsorStrList);
