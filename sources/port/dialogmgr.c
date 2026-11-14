@@ -2367,8 +2367,6 @@ int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
         if (Win95ApplsActive != 0 && gWind != NULL)
             gNeedUpdateFlag = 1;
         if (Win95ApplsActive != 0)
-            RT3_Idle();
-        if (Win95ApplsActive != 0)
             SwitchedIn(0);
         else
             SwitchedOut(0);

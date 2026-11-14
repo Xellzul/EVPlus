@@ -41,7 +41,6 @@ extern void MissionPostLoadValidCheck(void);     /* 0x0043c3e0 */
 extern short OfferOneMission(short mission);                  /* 0x00442510 */
 extern Boolean PlayerMeetsRequirements(uint32_t reqLo, uint32_t reqHi); /* 0x0046cd80 */
 extern void QuickMissionFailure(short mission);                  /* 0x00440bf0 */
-extern char *RT3_GetDisplayName(void);                       /* 0x004d45a0 */
 extern void RandomizeMissionData(void);                         /* 0x0043cf00 */
 extern void RandomizeOneMission(short mission);          /* 0x0043d240 mac _RandomizeOneMission */
 extern void RestoreBuffer(void *saved);                 /* 0x0044a9d0 */

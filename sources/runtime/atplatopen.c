@@ -60,7 +60,6 @@ void *_PlatformFindConsoleWindow(void);                        /* 0x004d36b9 */
 #define EXCEPTION_CONTINUE_EXECUTION (-1)
 
 ULong gInterruptIndex = kNoTlsIndex;                /* 0x00576140 TLS index */
-const void *gRT3_IsRegisteredPtr1 = "";          /* 0x00576148 license data, rt3.c's */
 void *gPlatWindow = (void *)0xffffffff;         /* 0x0057614c window */
 ULong gPlatMainThreadId = kNoTlsIndex;                /* 0x00576150 main thread */
 

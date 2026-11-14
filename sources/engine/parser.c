@@ -922,47 +922,10 @@ void RestoreBuffer(void *saved)
  */
 
 #ifndef MACBUILD
-/* RegScramA. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x0044aa10
-unsigned char RegScramA(unsigned int x)
-{
-    return (IsPlatformOpen() * x);
-}
-
-/* RegScramB. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x0044aa20
-void RegScramB(unsigned char x)
-{
-    gRT3Table[x]++;
-}
-
-/* RegScramC. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x0044aa30
-int RegScramC(unsigned char x)
-{
-    int n = x;
-    return ((n >> (8 - n)) | (n << n)) & 0xff;
-}
-
-/* RegScramD. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x0044aa50
-Boolean RegScramD(char *p)
-{
-    TimerGetSeconds();
-    return *p;
-}
-
-/* RegScramE. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x0044aa60
-Boolean RegScramE(void)
-{
-    return 0;
-}
 #endif
 
 char parseBuffer[8192];
 short lastInteger;
 #ifndef MACBUILD
 unsigned char DAT_007caa12[6];
-unsigned char gRT3Table[256];
 #endif

@@ -3374,7 +3374,7 @@ tokens:
     MungeForSymbol("<SRK>", srkStr);
     MungeForSymbol("<RRK>", rrkStr);
     MungeForSymbol("<PAY>", payStr);
-    MungeForSymbol("<REG>", RT3_GetDisplayName());
+    MungeForSymbol("<REG>", kRegisteredName);
 
     if (descRankGovt[0] != -1) {
         sprintf(tokenStr, "<PRK%i>", descRankGovt[0] + kFirstResourceID);

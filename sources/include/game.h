@@ -8,6 +8,9 @@
 #include "gameconst.h"
 #include "spriteworld.h"
 
+/* the registered name <REG> shows (mission text, the loading bar): EV Nova CE's unlicensed default */
+#define kRegisteredName "EV Nova Community"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -108,8 +111,6 @@ extern short InitParticles(int numElements, int gravity);
 #endif
 extern void DisposeParticles(void);
 #ifndef MACBUILD /* inline on mac: sources/mac/include/rt3_ev_nova.h */
-extern Boolean RegScramD3(char *p);
-extern Boolean RegScramE3(void);
 #endif
 extern void DoAboutBox(void);
 extern void InitMainScreen(void);
@@ -119,16 +120,7 @@ extern void FUN_0049e420(void);
 extern void CreateMapTriggerRgn(void);
 extern void RedrawNebulaeOffscreen(void);
 extern void DisposeIntroProgressBar(void);
-extern void RT3_Close(void);
-#ifdef MACBUILD
-extern int32_t RT3_Open(unsigned char tracked, unsigned short mode, const char *product,
-                         const char *company);
-#else
-extern int32_t RT3_Open(unsigned char tracked, short mode, const char *product,
-                         const char *company);
-#endif
 extern uint32_t ST_GetSysVolume(void);
-extern int32_t RT3_RunReminder(unsigned char force, unsigned char *registered);
 extern short FirstKeyDown(void);
 extern Boolean GovtSharedClass(short a, short b);
 extern void HandleAlertSprite(void);
@@ -160,15 +152,7 @@ extern void PlayGame(void);
 extern Boolean PlayerCanUseAmmoType(short weapon);
 #endif
 extern Boolean PlayerHasJettisonableCargo(void);
-#if defined(MACBUILD) && !defined(MAC1010) /* the mac librt3 returns ULongLong (sources/mac/rt3/reg_tool_3.c) */
-extern unsigned long long RT3_GetLicenseCode(void);
-#else
-extern long long RT3_GetLicenseCode(void);
-#endif
 extern void RefreshWindowBuffer(void);
-extern void RegScramB(unsigned char x);
-extern Boolean RegScramD(char *p);
-extern Boolean RegScramE(void);
 extern void ReportSpriteLoadError(short label, short value, short special);
 extern void ResetGameData(void);
 extern short SelectDudeFieldFromSystem(SystRecord *syst);

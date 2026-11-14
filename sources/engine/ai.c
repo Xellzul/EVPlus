@@ -39,7 +39,6 @@ short prevParent[kMaxShips];
 short aiComplexity;
 #ifndef MACBUILD
 short DAT_00591186;
-unsigned char gRT3Table2[256];
 #endif
 
 #ifdef MACBUILD
@@ -7068,58 +7067,5 @@ Boolean AIIsShipDoingCountWait(ShipObj *ship)
     return 0;
 }
 
-/*
- * The four functions below are not AI state predicates: their only callers
- * are InitEVNova and PlayGame (RT3 registration-library scrambling, same as
- * sources/engine/parser.c 0x0044aa10-0x0044aa50). No mac symbol exists for any
- * of the four.
- */
-
-#ifndef MACBUILD
-/* RegScramA2. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x00416090
-Boolean RegScramA2(unsigned int x)
-{
-    return (IsPlatformOpen() * x);
-}
-
-/* RegScramB2. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004160a0
-void RegScramB2(unsigned char x)
-{
-    gRT3Table2[x]++;
-}
-
-/* RegScramC2. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004160b0
-int RegScramC2(unsigned char x)
-{
-    int n = x;
-    return ((n >> (8 - n)) | (n << n)) & 0xff;
-}
-
-/* RegScramF2. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004160d0
-void *RegScramF2(void)
-{
-    char buf[4];
-    return buf;
-}
-
-/* RegScramD2. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004160e0
-Boolean RegScramD2(char *p)
-{
-    TimerGetSeconds();
-    return *p;
-}
-
-/* RegScramE2. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004160f0
-Boolean RegScramE2(void)
-{
-    return 0;
-}
-#endif
 
 EXTERN_C_END

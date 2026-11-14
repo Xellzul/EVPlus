@@ -108,8 +108,6 @@ extern void QuickKeyCheckHandler(void);
 extern unsigned char RawKeyCheck(short scanCode);
 extern void RecursivePenaltySlap(short sys, short govt, short type,
                                  double amount);
-extern unsigned char RegScramA(unsigned int x);
-extern int RegScramC(unsigned char x);
 extern void ResetPlayerPrecalcedValues(void);
 extern short SWFlagRectAsChanged(SpriteWorldPtr sw, Rect *r);
 extern void SWHideAllSprites(SpriteWorldPtr sw);

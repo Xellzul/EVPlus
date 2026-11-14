@@ -379,13 +379,6 @@ extern int32_t GetTimeBaseFlags(void *timeBase);
 extern void SetTimeBaseFlags(void *timeBase, int32_t flags);
 #endif
 
-extern ULong RT3_GetDaysHad(void);
-extern int32_t RT3_GetLicenseCopies(void);
-#if defined(MACBUILD) && !defined(MAC1010)
-extern char *RT3_GetLicenseName(void);
-#else
-extern void *RT3_GetLicenseName(void);
-#endif
 extern void KeyboardInit(void);
 extern void KeyboardDestroy(void);
 extern void MouseDestroy(void);
@@ -394,13 +387,6 @@ extern void DT_Close(void);
 extern void ST_DisposeSound(void *snd);
 extern unsigned short ST_IsSoundPlaying(void *snd);
 
-#ifdef MAC1010
-extern int32_t RT3_ExtractLicenseBlock1(unsigned long long v);
-#elif defined(MACBUILD)
-extern ULong RT3_ExtractLicenseBlock1(unsigned long long v);
-#else
-extern unsigned short RT3_ExtractLicenseBlock1(unsigned long long v);
-#endif
 extern int32_t DT_Open(void);
 extern int32_t IT_Open(void);
 extern int32_t IT_OpenBrowser(const char *command);
@@ -427,7 +413,6 @@ extern void PlatformClose(void);
 extern void ST_Close(void);
 extern void FT_Close(void);
 extern void IT_Close(void);
-extern uint32_t DRHash64(unsigned long long lic);
 extern ULong UFix32_Divide(ULong device, ULong rate);
 extern ULong UFix32_Multiply(ULong ratio, ULong rate);
 extern unsigned char (*gIndirectBusy)(void *p);
@@ -786,7 +771,6 @@ extern int32_t FT_ResourceLoad(void *module, unsigned short id, const char *resT
 extern int32_t FT_VirtualPathMount(void **handle, unsigned char mode, struct FolderSpec ***result);
 extern unsigned char DT_IsOpen(void);         /* atpalinit.c */
 extern unsigned char IT_IsOpen(void);         /* atcursor.c */
-extern ULong RT3_GetHoursUsed(void);             /* rt3.c */
 extern int32_t IT_ViewCreateModal(void *folder, const char *file, const char *path,
                          int32_t (*proc)(struct WindowNode *window, int32_t refcon, int32_t event,
                                       void *where, int32_t index, const char *name),
@@ -856,7 +840,6 @@ extern int32_t HashAppend(struct HashTable *t, const char *key, const char *valu
 extern unsigned char HashRemove(struct HashTable *t, const char *key);
 struct WindowNode;
 extern int32_t IT_ViewParamText(struct WindowNode *window, const char *key, const char *value);
-extern ULong RT3_GetNumLaunches(void);
 extern int32_t IT_SetCursor(short cursorId);
 extern void MemoryMove(void *dst, const void *src, ULong n);
 extern int32_t IndirectAppendData(void **handle, const void *data, ULong length);
@@ -888,14 +871,6 @@ static inline char *CopyString(char *dst, const char *src)
 extern void **IndirectDuplicate(void **handle);
 extern ULong TimerGetUTCSeconds(void);
 extern uint32_t TimerGetElapsedSeconds(void);
-extern int32_t _RT3_LicenseRefresh(void);
-extern struct RT3License gRT3_License;
-extern struct RT3LogEntry gLogEntry;
-extern char gPrivateLicenseName[256];
-extern char gPrivateProductName[256];
-extern char gDisplayProductName[256];
-extern unsigned char gRT3_Open;
-extern const void *gRT3_IsRegisteredPtr1;        /* atplatopen.c, license data */
 struct FTFileInfo;
 typedef struct PackInfo {       /* filled by the handle packers when not NULL */
     ULong magic;                /* 'sqsh' */
@@ -939,12 +914,6 @@ extern char *ConvertNativePathToPath(const char *path);
 extern void *LoadAFileHandle(const char *path);
 extern void **AllocAHandleClear(ULong size);
 extern void _PlatformSetWindow(void *window);
-#ifdef MAC1010
-extern uint32_t RT3_IsRegistered(void);
-#else
-extern int32_t RT3_IsRegistered(void);
-#endif
-extern void RT3_Idle(void);
 extern void VideoGetCurrentMode(int32_t *out);
 extern int32_t VideoSetMode(int32_t *rec);
 extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);

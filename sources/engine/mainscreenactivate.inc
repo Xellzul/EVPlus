@@ -23,15 +23,6 @@
             MainScreenUpdate(1);
         if (!regNoticeShown) {
             regNoticeShown = 1;
-            if (!RT3_IsRegistered()) {
-#if V111
-                ASWReg_ShowDialogWithOptions(true, true);
-#elif defined(MAC1010)
-                RT3_RunReminder(0, 0);
-#endif
-                if (useLegacyRenderingPipeline)
-                    MainScreenUpdate(1);
-            }
         }
     } else if (!settings.windowed) {
         ShowTheMenuBar();

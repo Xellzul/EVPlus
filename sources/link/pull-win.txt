@@ -274,7 +274,6 @@ __imp__libiconv_open
 __imp__libiconv
 _PlatformOpen
 _TimerGetSeconds
-_RT3_GetNumLaunches
 _ReadTick
 _strlen
 _isalnum
@@ -292,7 +291,6 @@ _DT_Open
 _IT_Open
 _StringGetLength
 _GetDDRAWDLL
-_RT3_LaunchRegister
 ___msl_count_leading_zero32
 _FUN_004eed20
 _GetDateTime

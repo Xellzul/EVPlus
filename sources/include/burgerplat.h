@@ -636,27 +636,6 @@ typedef struct ITClick {
 /* a condition stored as a byte flag: the exe builds it `mov al,1 / xor al,al`, not setcc */
 #define AsByte(c)           ((c) ? (unsigned char)1 : (unsigned char)0)
 
-/* the registration toolkit's license record and usage record; maps in the notes */
-typedef struct RT3License {
-    char name[256];
-    char code[256];
-    int32_t copies;
-    ULong machine;
-    ULong level;
-    ULong user;
-    ULong reserved[2];
-} RT3License;
-
-typedef struct RT3LogEntry {
-    char product[256];
-    ULong firstLaunch;
-    ULong secondsUsed;
-    ULong launches;
-    ULong closeStamp;
-    ULong saveStamp;
-    ULong reserved[2];
-} RT3LogEntry;
-
 typedef struct FTFileInfo {
     char name[256];
     unsigned char flags[5];     /* readable, writable, folder, hidden, archive */

@@ -128,7 +128,6 @@ obj imagecicn
 obj globaldefs
 rt atplatopen
 rt atticks
-rt rt3
 rt burgertick
 rt atsound
 rt burgerkbwin
@@ -141,7 +140,6 @@ rt itblit
 rt atcursor
 rt atplatstr
 rt burgervideomode
-rt rt3nag
 msl math_x87.obj
 rt burgersqrt
 rt burgerpow2

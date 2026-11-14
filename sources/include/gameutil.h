@@ -17,7 +17,6 @@ extern void DrawCommaNumber(int32_t value);
 extern void StrcatCommaNumber(int32_t value, char *dst);
 #pragma cplusplus on
 EXTERN_CPP_BEGIN
-extern unsigned char gRT3Table[];
 EXTERN_CPP_END
 #pragma cplusplus reset
 #pragma cplusplus on

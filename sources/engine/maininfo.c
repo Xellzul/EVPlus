@@ -1058,9 +1058,6 @@ void DoPrefsDialog(void)
 /* far arrays inside the one big 0x005912a0 allocation, reached at raw offsets
    because no header names them yet */
 
-/* RT3 library string helpers, NOT MSL: the game's strlen is BurgerLib's FastStrLen
-   0x004eedb0, so these keep FUN_ names. */
-
 /* EnterGameFromMainScreen (mac _EnterGameFromMainScreen). STATE: MATCH 100.0%, exe 763 / obj 763,
    byte-identical yes (2912 bytes, relocs masked), relocregcheck 0 of 194. 1.0.10 MATCH 907 of
    907 Classic, 894 of 894 Carbon, padded. OPEN: nothing. */
@@ -1118,7 +1115,7 @@ void EnterGameFromMainScreen(void)
     playerIsLanded = 0;
     crashlog("adjusting sounds");
     AdjustSoundVolume();
-    shipData[17].licenseName = (unsigned char *)RT3_GetLicenseName();
+    shipData[17].licenseName = (unsigned char *)"";
     DisposeMainScreenSounds();
     crashlog("showing intro screen");
     if (!seenIntroScreen) {
@@ -1128,7 +1125,6 @@ void EnterGameFromMainScreen(void)
     } else {
         FadeScreenOut();
     }
-    CheckForPiratedCodes();
 #if defined(MACBUILD) && !defined(MAC1010)
     CancelMusicThread();
 #else
@@ -1138,7 +1134,7 @@ void EnterGameFromMainScreen(void)
     MaxMem(&grow);
 #endif
     LICENSE_STEP_BEGIN
-    shipData[5].licenseCode = RT3_GetLicenseCode();
+    shipData[5].licenseCode = 0;
     LICENSE_STEP_END
     crashlog("drawing stuff");
     LoadIntfResource();
@@ -1159,7 +1155,7 @@ void EnterGameFromMainScreen(void)
         ClearStarfield();
     DrawMapInFloatingFrame();
     LICENSE_STEP_BEGIN
-    shipData[36].licenseCopies = RT3_GetLicenseCopies();
+    shipData[36].licenseCopies = 1;
     LICENSE_STEP_END
     crashlog("drawing more stuff");
     LICENSE_STEP_BEGIN
@@ -1168,246 +1164,11 @@ void EnterGameFromMainScreen(void)
     LICENSE_STEP_END
     ResetPlayerPrecalcedValues();
 
-    do {
-#ifdef MACBUILD
-        unsigned char blob[3] = { 0x49, 0x71, 0xad };
-        unsigned char name[17] = "EV NovaEV NovaEV";
-        unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-        unsigned char t2;
-        int32_t g;
-        unsigned char t3;
-        unsigned char t4;
-        unsigned char t1;
-        char *p;
-        long long mem;
-        unsigned char c;
-        char b;
-        char t5;
-        Boolean ok;
-        unsigned short rem = 0;
-        unsigned char x;
-        short dummy;
-#else
-        unsigned char blob[3] = { 0x49, 0x71, 0xad };
-        unsigned char name[17] = "EV NovaEV NovaEV";
-        unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-        int32_t g;
-        char *p;
-        long long mem;
-        unsigned char x;
-        unsigned char c;
-        char b;
-        char t5;
-        int t1;
-        int t2;
-        int t3;
-        int t4;
-        unsigned short rem = 0;
-        Boolean ok;
-#endif
-
-#ifdef MACBUILD
-        /* the entry hoists of both indexes: a second name each, no word */
-        dummy = gameIsRegisteredIndex;
-        dummy = gameIsHackedIndex;
-#endif
-        g = shipData[36].licenseCopies;
-#if defined(MACBUILD) && !defined(MAC1010)
-        p = RT3_CheckLicenseName(shipData[17].licenseName);
-#else
-        p = (char *)shipData[17].licenseName;
-#endif
-        mem = shipData[5].licenseCode;
-        x = 0;
-#ifndef MAC1010
-        b = 0;
-#ifdef MACBUILD
-        if (p != 0 && *p >= '0' && *p <= '9')
-            g = 1;
-#endif
-#endif
-        if (p != 0) {
-            while (StringGetLength(key) + 1 < 17 && *p != 0)
-                StringAppendSafe(key, (const unsigned char *)p, 17);
-        }
-        c = key[3];
-        x ^= c;
-        x ^= name[14];
-        x += (char)0xf1;
-        x ^= key[10];
-        x ^= key[8];
-        x = ROTL(x, 0);
-        x ^= key[15];
-        x = ROTL(x, 4);
-        x = ROTL(x, 2);
-        x = ROTL(x, 7);
-        x ^= key[1];
-        x = ROTL(x, 2);
-        x = ROTL(x, 1);
-        x += 0x5f;
-        x = ROTL(x, 4);
-        t1 = name[13];
-        x ^= t1;
-        t2 = name[5];
-        x ^= t2;
-        x = ROTL(x, 0);
-        x ^= (unsigned char)g;
-        x ^= (unsigned char)g;
-        x ^= (unsigned char)g;
-        x += 0x42;
-        if (x < (char)key[11])
-            x = ROTL(x, 8);
-#ifdef MACBUILD
-        x ^= name[13];
-#else
-        x ^= t1;
-#endif
-        x ^= (unsigned char)g;
-        x += -0x6b;
-        x = ROTL(x, 1);
-        x ^= key[7];
-        x += 0x1e;
-        x ^= key[12];
-        x = ROTL(x, 6);
-        x ^= name[3];
-        x += (char)0xac;
-        x ^= c;
-        x ^= key[13];
-        rem = RT3_ExtractLicenseBlock1(mem);
-        x = ROTL(x, 6);
-        x ^= (unsigned char)g;
-        x = ROTL(x, 2);
-        x ^= key[4];
-        x = ROTL(x, 3);
-#ifdef MAC1010
-        x = (unsigned)x >> 3 | x << 5; /* 1.0.10 pad: ROTL(x, 5) by a logical shift, so no srawi stands between the read below and the call */
-        dummy = mem >> 32; /* 1.0.10 pad: mem's high half read past the licence call; its srawi keeps the read to the colourer, deleted after it */
-#else
-        x = ROTL(x, 5);
-#endif
-        x ^= (unsigned char)g;
-        b = x;
-        x = RegScramD3(&b);
-        x += 0x19;
-        x = ROTL(x, 3);
-        x ^= key[15];
-        RegScramB3(x);
-        x = ROTL(x, 6);
-        RegScramF3();
-        x = ROTL(x, 5);
-        x ^= (unsigned char)g;
-        x ^= key[14];
-        t3 = (unsigned char)name[0];
-        x ^= t3;
-        x ^= t2;
-        x += 7;
-        x ^= key[8];
-        x += -0x60;
-        x = ROTL(x, 4);
-        x += -0x23;
-        x = ROTL(x, 1);
-        x ^= key[13];
-        RegScramB3(x);
-        x += 0x3e;
-        x ^= (unsigned char)g;
-        t4 = name[1];
-        x ^= t4;
-        if (x < (char)key[6])
-            x = ROTL(x, 3);
-        x ^= (unsigned char)g;
-        x += (char)0xe1;
-        x ^= name[7];
-        x ^= RegScramE3();
-        x ^= t3;
-        x ^= key[8];
-        x = ROTL(x, 8);
-        x ^= t1;
-        x = ROTL(x, 3);
-#ifdef MACBUILD
-        if (x > (char)(t1 = name[9]))
-#else
-        t1 = name[9];
-        if (x > (char)t1)
-#endif
-            x = ROTL(x, 7);
-        x = ROTL(x, 5);
-        x ^= name[8];
-        x ^= key[7];
-        x ^= (unsigned char)g;
-        if (x > 0x5f) {
-            b = x;
-            x = RegScramD3(&b);
-        }
-        x = ROTL(x, 6);
-        x += -0x53;
-        x = ROTL(x, 7);
-        x = ROTL(x, 0);
-        x ^= key[2];
-        x += -0x53;
-        x = ROTL(x, 0);
-        x += 0xae;
-        x ^= t3;
-        x = ROTL(x, 6);
-        x += (char)0xc2;
-        x ^= key[14];
-        if (x < 0x94)
-            x = ROTL(x, 6);
-        x ^= (unsigned char)g;
-        x = ROTL(x, 1);
-        x = ROTL(x, 2);
-        x += 0x45;
-        x = ROTL(x, 4);
-        x = ROTL(x, 2);
-        x = ROTL(x, 0);
-        x += 0x62;
-        x ^= key[10];
-        if (x < (char)key[1])
-            x = ROTL(x, 5);
-        if (x > (t5 = key[9]))
-            x ^= (unsigned char)t5;
-        x ^= (unsigned char)g;
-        x += 0x6c;
-        x = ROTL(x, 6);
-        x += 3;
-        x ^= (unsigned char)t5;
-        x += -0x6d;
-        x = ROTL(x, 3);
-        x = ROTL(x, 1);
-        x ^= key[15];
-        x ^= key[4];
-        x += (char)0x99;
-        if (x > 0x47)
-            x ^= key[0];
-        if (x < 3)
-            x = blob[x];
-        while (rem >= x)
-            rem -= x;
-        ok = (g != 0 && rem == 0);
-        x ^= (unsigned char)g;
-        x += (char)0xd9;
-        RegScramC3(x);
-        x ^= t2;
-        x = ROTL(x, 6);
-        x += 0xa;
-        x ^= (unsigned char)g;
-        x ^= name[1];
-        x ^= key[10];
-        x += (char)0x96;
-        x ^= name[2];
-        x ^= name[4];
-        x ^= t1;
-        x += 0xb;
-        if (x != 0)
-            RegScramA3(x);
-
-        shipClass[gameIsHackedIndex].hacked =
-            (shipData[36].licenseCopies != 0 && !ok)
-                ? (unsigned char)1 : (unsigned char)0;
-    } while (0);
+    shipClass[gameIsHackedIndex].hacked = 0;
 
     HandleStellarSystemVisibility();
     HandleStellarSprites();
-    totalDaysPlayed = RT3_GetDaysHad();
+    totalDaysPlayed = 0;
     PrepareAllSprites();
     gameFrozen = 1;
     ignoreKeys = 1;

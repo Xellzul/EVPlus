@@ -30,10 +30,6 @@
 #include "prototypes.h"
 #include "gametypes.h"
 #ifdef MACBUILD
-#ifdef MAC1010
-#define RT3_HELPERS_IN_UNIT
-#endif
-#include "../mac/include/rt3_ev_nova.h"
 #include "../mac/include/ASWRegistrationCarbonAPI.h"
 
 extern void SetupToolbox(void);
@@ -54,10 +50,6 @@ extern int32_t PreflightMemoryUsageTotal(void);
 extern void HideControlStrip(void);
 extern void CarbonHackCleanup(void);
 extern void DisposeGammaTools(void);
-
-#define kKeyHitMask     0x07bdfef7fbdfef78LL
-
-#define KEYHIT(k)  ((((key ^ (k)) & kKeyHitMask) != 0) ? 0 : 1)
 
 #define kQuickTimeGestalt   'qtim'
 #define kQuickTime5         0x05000000
@@ -81,48 +73,6 @@ extern void DisposeGammaTools(void);
 #define kAlertQuickTime     0x15
 
 #define kEventLoopTicks     10
-
-#ifdef MAC1010
-/* plain functions ahead of the globals: -inline auto expands every call and the linker strips the copies, which rank `table` before InitEVNova and lay it first in the object's BSS */
-char RegScramA2(short x)
-{
-    return IsPlatformOpen() * x;
-}
-
-void RegScramB2(unsigned char x)
-{
-    static unsigned char table[256];
-
-    table[x]++;
-}
-
-short RegScramC2(unsigned char x)
-{
-    int n = x;
-
-    return ((n >> (8 - n)) | (n << n)) & 0xff;
-}
-
-void *RegScramF2(void)
-{
-    char buf[4];
-
-    return buf;
-}
-
-char RegScramD2(char *p)
-{
-    unsigned char c = *p;
-
-    TimerGetSeconds();
-    return c;
-}
-
-char RegScramE2(void)
-{
-    return 0;
-}
-#endif
 
 short oldVolume;
 short pluginCount;
@@ -452,7 +402,6 @@ EXTERN_C_BEGIN
 
 
                                                          /* 0x004d9e10 BurgerLib */
-                                                         /* 0x004d4740 RT3_Open */
                                                          /* 0x0046f690 */
 
 #if V111
@@ -517,13 +466,11 @@ void InitEVNova(void)
 #ifdef MACBUILD
     FSSpec licenseSpec;
 #endif
-    Boolean blk[kBlacklistCount];
     long grow;
 #ifndef MACBUILD
     int32_t qtVersion;
     ComponentDescription cd;
 #endif
-    long long key;
     int err;
     short i;
 
@@ -672,22 +619,13 @@ void InitEVNova(void)
         FatalStartupError(kAlertInterfaceOpen);
     }
 
-    crashlog("opening registration tool");
-    err = RT3_Open(1, 3, "EV Nova", "EV Nova");
-    if (err != 0) {
-        crashlog_print("RT3_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertRegOpen);
-    }
-
     crashlog("initializing arrays");
     InitArrays();
     IterateInGameEventLoop(kEventLoopTicks);
 
     crashlog("opening data files");
     LICENSE_STEP_BEGIN
-    shipData[5].licenseCode = RT3_GetLicenseCode();
+    shipData[5].licenseCode = 0;
     LICENSE_STEP_END
 #ifdef MACBUILD
     InitAEVTHandlers();
@@ -695,11 +633,11 @@ void InitEVNova(void)
     FUN_0049e420();
 #endif
     LICENSE_STEP_BEGIN
-    shipData[17].licenseName = (unsigned char *)RT3_GetLicenseName();
+    shipData[17].licenseName = (unsigned char *)"";
     LICENSE_STEP_END
     IterateInGameEventLoop(kEventLoopTicks);
     LICENSE_STEP_BEGIN
-    shipData[36].licenseCopies = RT3_GetLicenseCopies();
+    shipData[36].licenseCopies = 1;
     LICENSE_STEP_END
     InitColors();
 
@@ -709,7 +647,6 @@ void InitEVNova(void)
     LICENSE_STEP_END
     SetupDialogs();
 
-    key = shipData[5].licenseCode;
 
 #ifdef MACBUILD
     pluginCount = CountEVPlugins(gARef, "\pNova Plug-Ins", kPlugInFileType, 0);
@@ -732,67 +669,10 @@ void InitEVNova(void)
     }
     FadeScreenOut();
 
-    LICENSE_STEP_BEGIN
-        blk[0] = KEYHIT(0x0284801349262406LL);
-        blk[1] = KEYHIT(0x0101e057b160ee02LL);
-        blk[2] = KEYHIT(0x07365c430b23e131LL);
-        blk[3] = KEYHIT(0x07345d430b23e131LL);
-        blk[4] = KEYHIT(0x05d4013a1123c94aLL);
-        blk[5] = KEYHIT(0x08d22033a5a9ae47LL);
-        blk[6] = KEYHIT(0x08d02133a5a9ae47LL);
-        blk[7] = KEYHIT(0x0940f13e07262d74LL);
-        blk[8] = KEYHIT(0x01e8616da73a6b41LL);
-        blk[9] = KEYHIT(0x03395a952823e649LL);
-        blk[10] = KEYHIT(0x033b5a952803f64bLL);
-        blk[11] = KEYHIT(0x0b795a952803f64aLL);
-        blk[12] = KEYHIT(0x00dd021413f10475LL);
-        blk[13] = KEYHIT(0x00df021413d11477LL);
-        blk[14] = KEYHIT(0x009f021413d11476LL);
-        blk[15] = KEYHIT(0x09224585278cbf5bLL);
-        blk[16] = KEYHIT(0x0bf35041709a3940LL);
-        blk[17] = KEYHIT(0x03f15041709a3946LL);
-        blk[18] = KEYHIT(0x0125a4aa21b1cf03LL);
-        blk[19] = KEYHIT(0x03a31e5b03829d3dLL);
-        blk[20] = KEYHIT(0x009f8c40aac47814LL);
-        blk[21] = KEYHIT(0x045ac4b40fb08b36LL);
-        blk[22] = KEYHIT(0x0c1ac5bc0b909b37LL);
-        blk[23] = KEYHIT(0x02a974140d644b4dLL);
-        blk[24] = KEYHIT(0x02a9741409644b49LL);
-        blk[25] = KEYHIT(0x0aab751c09445b49LL);
-        blk[26] = KEYHIT(0x02eb751c09445b4aLL);
-        blk[27] = KEYHIT(0x01e24b6c4b56f67eLL);
-        blk[28] = KEYHIT(0x048c30d71f489e43LL);
-        blk[29] = KEYHIT(0x0c8c31d71f489e45LL);
-        blk[30] = KEYHIT(0x04cc31d71f489e46LL);
-        blk[31] = KEYHIT(0x0c8e31d71f489e47LL);
-        blk[32] = KEYHIT(0x0cce31d71f489e40LL);
-        blk[33] = KEYHIT(0x0561f87749b27666LL);
-        blk[34] = KEYHIT(0x090a1452e822bd05LL);
-        blk[35] = KEYHIT(0x04c23c3d8c45fe08LL);
-        blk[36] = KEYHIT(0x03e90792a484de04LL);
-        blk[37] = KEYHIT(0x000881643da5fb73LL);
-    LICENSE_STEP_END
-
-    for (i = 0; i < kBlacklistCount; i++) {
-        if (blk[i] != 0) {
-#ifdef MACBUILD
-            strcpy((char *)alertText, "EV Nova");
-            strcat((char *)alertText, " License");
-            CtoPstr((char *)alertText);
-            if (FSMakeFSSpec(prefsVRefNum, prefsDirID, alertText, &licenseSpec) == noErr)
-                FSpDelete(&licenseSpec);
-#else
-            FT_FileDelete(-3, "EV Nova License.lcs");
-#endif
-            break;
-        }
-    }
-
     cursorHidden = 0;
     if (settings.windowed == 0)
         HideTheCursor();
     FUN_00486ec0();
-    CheckForPiratedCodes();
 #if defined(MACBUILD) && !TARGET_API_MAC_CARBON
     if (settings.windowed == 0)
         HideControlStrip();
@@ -898,7 +778,6 @@ void InitEVNova(void)
                 CarbonHackCleanup();
                 DisposeGammaTools();
                 ST_Close();
-                RT3_Close();
                 IT_Close();
                 DT_Close();
                 FT_Close();
@@ -947,8 +826,6 @@ void InitEVNova(void)
 #else
 {
     unsigned char alertText[256];
-    Boolean blk[kBlacklistCount];
-    long long key;
     Size grow;
     char *path;
     char *envPath;
@@ -977,10 +854,10 @@ void InitEVNova(void)
     IterateInGameEventLoop(kEventLoopTicks);
 
     crashlog_print("opening data files\n");
-    shipData[5].licenseCode = RT3_GetLicenseCode();
-    shipData[17].licenseName = (unsigned char *)RT3_GetLicenseName();
+    shipData[5].licenseCode = 0;
+    shipData[17].licenseName = (unsigned char *)"";
     IterateInGameEventLoop(kEventLoopTicks);
-    shipData[36].licenseCopies = RT3_GetLicenseCopies();
+    shipData[36].licenseCopies = 1;
     IterateInGameEventLoop(kEventLoopTicks);
 
     LoadPrefs(1);
@@ -1078,7 +955,6 @@ void InitEVNova(void)
             shipData[36].licenseCopies ? 1 : 0;
         SetupDialogs();
 
-        key = shipData[5].licenseCode;
 
         pluginCount = CountEVPlugins(pluginsFolder, kPlugInFileType);
         OpenDataFiles();
@@ -1091,65 +967,9 @@ void InitEVNova(void)
             }
         }
 
-        blk[0] = KEYHIT(0x0284801349262406LL);
-        blk[1] = KEYHIT(0x0101e057b160ee02LL);
-        blk[2] = KEYHIT(0x07365c430b23e131LL);
-        blk[3] = KEYHIT(0x07345d430b23e131LL);
-        blk[4] = KEYHIT(0x05d4013a1123c94aLL);
-        blk[5] = KEYHIT(0x08d22033a5a9ae47LL);
-        blk[6] = KEYHIT(0x08d02133a5a9ae47LL);
-        blk[7] = KEYHIT(0x0940f13e07262d74LL);
-        blk[8] = KEYHIT(0x01e8616da73a6b41LL);
-        blk[9] = KEYHIT(0x03395a952823e649LL);
-        blk[10] = KEYHIT(0x033b5a952803f64bLL);
-        blk[11] = KEYHIT(0x0b795a952803f64aLL);
-        blk[12] = KEYHIT(0x00dd021413f10475LL);
-        blk[13] = KEYHIT(0x00df021413d11477LL);
-        blk[14] = KEYHIT(0x009f021413d11476LL);
-        blk[15] = KEYHIT(0x09224585278cbf5bLL);
-        blk[16] = KEYHIT(0x0bf35041709a3940LL);
-        blk[17] = KEYHIT(0x03f15041709a3946LL);
-        blk[18] = KEYHIT(0x0125a4aa21b1cf03LL);
-        blk[19] = KEYHIT(0x03a31e5b03829d3dLL);
-        blk[20] = KEYHIT(0x009f8c40aac47814LL);
-        blk[21] = KEYHIT(0x045ac4b40fb08b36LL);
-        blk[22] = KEYHIT(0x0c1ac5bc0b909b37LL);
-        blk[23] = KEYHIT(0x02a974140d644b4dLL);
-        blk[24] = KEYHIT(0x02a9741409644b49LL);
-        blk[25] = KEYHIT(0x0aab751c09445b49LL);
-        blk[26] = KEYHIT(0x02eb751c09445b4aLL);
-        blk[27] = KEYHIT(0x01e24b6c4b56f67eLL);
-        blk[28] = KEYHIT(0x048c30d71f489e43LL);
-        blk[29] = KEYHIT(0x0c8c31d71f489e45LL);
-        blk[30] = KEYHIT(0x04cc31d71f489e46LL);
-        blk[31] = KEYHIT(0x0c8e31d71f489e47LL);
-        blk[32] = KEYHIT(0x0cce31d71f489e40LL);
-        blk[33] = KEYHIT(0x0561f87749b27666LL);
-        blk[34] = KEYHIT(0x090a1452e822bd05LL);
-        blk[35] = KEYHIT(0x04c23c3d8c45fe08LL);
-        blk[36] = KEYHIT(0x03e90792a484de04LL);
-        blk[37] = KEYHIT(0x000881643da5fb73LL);
-
-
-        for (i = 0; i < kBlacklistCount; i++) {
-            if (blk[i] != 0) {
-                HFSUniStr255 uniName;
-                FSRef prefRef;
-                FSRef licRef;
-
-                HFSNameGetUnicodeName("\pEV Nova License", kTextEncodingUnknown, &uniName);
-                if (FSFindFolder(kOnSystemDisk, kPreferencesFolderType, kCreateFolder, &prefRef) == noErr
-                        && FSMakeFSRefUnicode(&prefRef, uniName.length, uniName.unicode,
-                                              kTextEncodingUnknown, &licRef) == noErr)
-                    FSDeleteObject(&licRef);
-                break;
-            }
-        }
-
         cursorHidden = 0;
         if (settings.windowed == 0)
             HideTheCursor();
-        CheckForPiratedCodes();
         if (!screenFaded)
             FadeScreenOut();
 
@@ -1252,249 +1072,6 @@ void InitEVNova(void)
 
     crashlog_print("main screen disposed\n");
 #endif
-    do {
-        unsigned char blob[3] = { 0x49, 0x71, 0xad };
-        unsigned char name[17] = "EV NovaEV NovaEV";
-        unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-        unsigned char t1;
-        int32_t g;
-        long long mem;
-        unsigned char x;
-        char *p;
-        unsigned char y;
-#ifdef MACBUILD
-        unsigned char c;
-#else
-        int c;
-#endif
-        char t2;
-        unsigned short rem;
-        Boolean ok;
-#ifndef MAC1010
-        char b;
-        unsigned int v;
-#endif
-
-        g = shipData[36].licenseCopies;
-#if defined(MACBUILD) && !defined(MAC1010)
-        p = RT3_CheckLicenseName(shipData[17].licenseName);
-#else
-        p = (char *)shipData[17].licenseName;
-#endif
-        mem = shipData[5].licenseCode;
-        x = 0;
-#ifndef MAC1010
-        b = 0;
-#endif
-#if defined(MACBUILD) && !defined(MAC1010)
-        if (p != 0 && *p >= '0' && *p <= '9')
-            g = 1;
-#endif
-        if (p != 0 && *p != 0) {
-            while (StringGetLength((const unsigned char *)p) != 0 && StringGetLength(key) + 1 < 17)
-                StringAppendSafe(key, (const unsigned char *)p, 17);
-        }
-        x ^= (unsigned char)g;
-        x += (char)0xe7;
-        x ^= (unsigned char)g;
-        x = ROTL(x, 3);
-        x ^= name[5];
-        x += 0x31;
-        x = ROTL(x, 7);
-        c = key[0];
-        x ^= c;
-        x = ROTL(x, 4);
-        x = ROTL(x, 8);
-        x += 0x0b;
-        t1 = name[2];
-        x ^= t1;
-        x ^= key[13];
-        x ^= name[13];
-        x += (char)0xa6;
-        x ^= (unsigned char)g;
-        x ^= name[12];
-        x ^= (unsigned char)g;
-        t2 = key[1];
-        x ^= (unsigned char)t2;
-        x ^= (unsigned char)g;
-        x ^= c;
-        x ^= key[4];
-        x += 0x67;
-        x ^= name[6];
-        x ^= (unsigned char)g;
-        x += 0x58;
-        if (x > (char)t2)
-            x ^= (unsigned char)g;
-        x = ROTL(x, 2);
-#ifndef MAC1010
-        x ^= RegScramE2();
-#endif
-        x = ((x + (char)0xa0) & 0xff) + 0x7d;
-        x ^= (unsigned char)g;
-        x += 0x5a;
-        x = ROTL(x, 7);
-        x ^= (unsigned char)g;
-        x += (char)0x93;
-        x ^= (unsigned char)g;
-        x = ROTL(x, 4);
-        x = ROTL(x, 2);
-        x ^= name[9];
-#ifdef MACBUILD
-        rem = RT3_ExtractLicenseBlock2(mem);
-#else
-        rem = DRHash64(mem);
-#endif
-        x += 0x78;
-        x = ROTL(x, 2);
-        x ^= key[2];
-        x ^= t1;
-        x ^= (unsigned char)g;
-        x ^= (unsigned char)g;
-        x = ROTL(x, 5);
-        x = ROTL(x, 5);
-        x ^= (unsigned char)g;
-        if (x < (char)key[14])
-            x ^= (unsigned char)g;
-        if (x > (char)key[4])
-            x ^= name[4];
-        x ^= (unsigned char)g;
-        x = ROTL(x, 4);
-        x ^= key[15];
-        x ^= name[14];
-        x = ROTL(x, 2);
-        x += 0x75;
-#ifndef MAC1010
-        RegScramC2(x);
-#endif
-        x = ROTL(x, 1);
-        x = ROTL(x, 4);
-        x = ROTL(x, 8);
-        x = ROTL(x, 1);
-        x += -0x65;
-        x = ROTL(x, 1);
-        x ^= (unsigned char)g;
-        x += 0x58;
-        x ^= key[15];
-#ifdef MAC1010
-        LICENSE_STEP_BEGIN
-        y = x * IsPlatformOpen() + -0x61;
-        RegScramB2(y);
-        x = ROTL(y, 5);
-        LICENSE_STEP_END
-#else
-        x = RegScramA2(x);
-        x += -0x61;
-        RegScramB2(x);
-        RegScramC2(x);
-        x = ROTL(x, 5);
-#endif
-        x ^= key[3];
-#ifdef MAC1010
-        TimerGetSeconds();
-#else
-        b = x;
-        x = RegScramD2(&b);
-#endif
-        x += (char)0xa4;
-        x ^= key[1];
-        x ^= key[14];
-        x += 0x29;
-        x = ROTL(x, 2);
-        x += (char)0xd1;
-        x ^= (unsigned char)g;
-#if defined(MACBUILD) && !defined(MAC1010)
-        x = (x + 0x82) % 256;
-#else
-        x += 0x82;
-#endif
-        x ^= name[0];
-        x ^= name[1];
-        x ^= (unsigned char)g;
-        x += -0x7c;
-        RegScramB2(x);
-#ifdef MAC1010
-        y = x & 0xff;
-        x = ROTL(y, 5);
-#else
-#ifdef MACBUILD
-        x = ROTL(x, 0);
-#endif
-        x = ROTL(x, 5);
-#endif
-        x += -0x4e;
-        x = ROTL(x, 1);
-        x ^= (unsigned char)g;
-        x = ROTL(x, 5);
-        x += 0x5a;
-        x ^= name[11];
-        x ^= (unsigned char)g;
-        x = ROTL(x, 5);
-        x ^= (unsigned char)g;
-        x += (char)0xe8;
-        x ^= key[7];
-        x += (char)0xdd;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON /* 1.0.10 spelling */
-        x ^= (y = key[2]);
-#else
-        x ^= key[2];
-#endif
-        x ^= key[5];
-        x = ROTL(x, 1);
-        x ^= (unsigned char)g;
-        x ^= (unsigned char)g;
-        x = ROTL(x, 7);
-        x = ROTL(x, 1);
-        x ^= (unsigned char)g;
-        x += 0x36;
-        x ^= (unsigned char)g;
-        if (x < 0x23)
-            x = ROTL(x, 4);
-        x ^= (unsigned char)g;
-        x ^= (unsigned char)g;
-        x ^= key[11];
-        if (x < 3)
-            x = blob[x];
-        while (rem >= x)
-            rem -= x;
-        ok = (g != 0 && rem == 0);
-#ifndef MAC1010
-        x ^= key[10];
-        x += 0x4d;
-        x = ROTL(x, 3);
-        x = ROTL(x, 4);
-        x += 0xee;
-        x ^= key[9];
-        x ^= RegScramE2();
-        x += -0x4c;
-        x = ROTL(x, 4);
-        x = ROTL(x, 4);
-        x = ROTL(x, 8);
-        x ^= key[8];
-        x = ROTL(x, 6);
-        x ^= key[2];
-        x = ROTL(x, 7);
-        v = x + 0x57;
-        x = v;
-        if (x != 0)
-            RegScramC2(v);
-#endif
-
-        grow = shipData[36].licenseCopies != 0 && ok == 0
-                ? (unsigned char)1 : (unsigned char)0;
-#if !defined(MACBUILD) || defined(MAC1010)
-        if (grow) {
-#ifndef MACBUILD
-            if (settings.windowed == 0)
-                ReleaseVideo();
-#endif
-            RT3_RunReminder(1, 0);
-        }
-#endif
-    } while (0);
-#if defined(MACBUILD) && !defined(MAC1010)
-    if (grow)
-        ASWReg_ShowDialogWithOptions(true, true);
-#endif
 
     FadeScreenOut();
     ShowTheCursor();
@@ -1551,7 +1128,6 @@ void PlayGame(void)
     GDHandle device;
     Rect box;
 #endif
-    short doIt;
 
     GetTime(&d);
     RedrawStatus(1);
@@ -1729,216 +1305,6 @@ void PlayGame(void)
                     if (d.day == 30 && d.month == 6 && commCount <= 0)
                         DisplayComm((PStrChar *)"\pHappy birthday Matt",
                                     5, 3, 9, &rgbDarkGrey, 0, 0);
-                    do {
-                        unsigned char blob[3] = { 0x49, 0x71, 0xad };
-                        unsigned char name[17] = "EV NovaEV NovaEV";
-                        unsigned char key[17] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-                        unsigned char t6;
-                        unsigned char t2;
-#ifdef MACBUILD
-                        unsigned char t3;
-#else
-                        int t3;
-#endif
-                        unsigned char t4;
-                        unsigned char t1;
-                        int32_t g;
-                        char *p;
-                        long long mem;
-                        unsigned char c;
-                        char b;
-                        char t5;
-                        Boolean ok;
-                        unsigned short rem = 0;
-                        unsigned char x;
-
-                        g = shipData[36].licenseCopies;
-#if defined(MACBUILD) && !defined(MAC1010)
-                        p = RT3_CheckLicenseName(shipData[17].licenseName);
-#else
-                        p = (char *)shipData[17].licenseName;
-#endif
-                        mem = shipData[5].licenseCode;
-                        x = 0;
-#ifndef MAC1010
-                        b = 0;
-#endif
-#if defined(MACBUILD) && !defined(MAC1010)
-                        if (p != 0 && *p >= '0' && *p <= '9')
-                            g = 1;
-#endif
-                        if (p != 0) {
-                            while (StringGetLength(key) + 1 < 17 && *p != 0)
-                                StringAppendSafe(key, (const unsigned char *)p, 17);
-                        }
-                        c = key[3];
-                        x ^= c;
-                        x ^= name[14];
-                        x += (char)0xf1;
-                        x ^= key[10];
-                        x ^= key[8];
-                        x = ROTL(x, 0);
-                        x ^= key[15];
-                        x = ROTL(x, 4);
-                        x = ROTL(x, 2);
-                        x = ROTL(x, 7);
-                        x ^= key[1];
-                        x = ROTL(x, 2);
-                        x = ROTL(x, 1);
-                        x += 0x5f;
-                        x = ROTL(x, 4);
-                        t1 = name[13];
-                        x ^= t1;
-                        t2 = name[5];
-                        x ^= t2;
-                        x = ROTL(x, 0);
-                        x ^= (unsigned char)g;
-                        x ^= (unsigned char)g;
-                        x ^= (unsigned char)g;
-                        x += 0x42;
-                        if (x < (char)key[11])
-                            x = ROTL(x, 8);
-                        x ^= t1;
-                        x ^= (unsigned char)g;
-                        x += -0x6b;
-                        x = ROTL(x, 1);
-                        x ^= key[7];
-                        x += 0x1e;
-                        x ^= key[12];
-                        x = ROTL(x, 6);
-                        x ^= name[3];
-                        x += (char)0xac;
-                        x ^= c;
-                        x ^= key[13];
-                        rem = RT3_ExtractLicenseBlock1(mem);
-                        x = ROTL(x, 6);
-                        x ^= (unsigned char)g;
-                        x = ROTL(x, 2);
-                        x ^= key[4];
-                        x = ROTL(x, 3);
-                        x = ROTL(x, 5);
-                        x ^= (unsigned char)g;
-                        b = x;
-                        x = RegScramD2(&b);
-                        x += 0x19;
-                        x = ROTL(x, 3);
-                        x ^= key[15];
-                        RegScramB2(x);
-                        x = ROTL(x, 6);
-                        RegScramF2();
-                        x = ROTL(x, 5);
-                        x ^= (unsigned char)g;
-                        x ^= key[14];
-                        t3 = (unsigned char)name[0];
-                        x ^= t3;
-                        x ^= t2;
-                        x += 7;
-                        x ^= key[8];
-                        x += -0x60;
-                        x = ROTL(x, 4);
-                        x += -0x23;
-                        x = ROTL(x, 1);
-                        x ^= key[13];
-                        RegScramB2(x);
-                        x += 0x3e;
-                        x ^= (unsigned char)g;
-                        t4 = name[1];
-                        x ^= t4;
-                        if (x < (char)key[6])
-                            x = ROTL(x, 3);
-                        x ^= (unsigned char)g;
-                        x += (char)0xe1;
-                        x ^= name[7];
-                        x ^= RegScramE2();
-                        x ^= t3;
-                        x ^= key[8];
-                        x = ROTL(x, 8);
-                        x ^= t1;
-                        x = ROTL(x, 3);
-#ifdef MACBUILD
-                        if (x > (char)(t6 = name[9]))
-#else
-                        t6 = name[9];
-                        if (x > (char)t6)
-#endif
-                            x = ROTL(x, 7);
-                        x = ROTL(x, 5);
-                        x ^= name[8];
-                        x ^= key[7];
-                        x ^= (unsigned char)g;
-                        if (x > 0x5f) {
-                            b = x;
-                            x = RegScramD2(&b);
-                        }
-                        x = ROTL(x, 6);
-                        x += -0x53;
-                        x = ROTL(x, 7);
-                        x = ROTL(x, 0);
-                        x ^= key[2];
-                        x += -0x53;
-                        x = ROTL(x, 0);
-                        x += 0xae;
-                        x ^= t3;
-                        x = ROTL(x, 6);
-                        x += (char)0xc2;
-                        x ^= key[14];
-                        if (x < 0x94)
-                            x = ROTL(x, 6);
-                        x ^= (unsigned char)g;
-                        x = ROTL(x, 1);
-                        x = ROTL(x, 2);
-                        x += 0x45;
-                        x = ROTL(x, 4);
-                        x = ROTL(x, 2);
-                        x = ROTL(x, 0);
-                        x += 0x62;
-                        x ^= key[10];
-                        if (x < (char)key[1])
-                            x = ROTL(x, 5);
-                        if (x > (t5 = key[9]))
-                            x ^= (unsigned char)t5;
-                        x ^= (unsigned char)g;
-                        x += 0x6c;
-                        x = ROTL(x, 6);
-                        x += 3;
-                        x ^= (unsigned char)t5;
-                        x += -0x6d;
-                        x = ROTL(x, 3);
-                        x = ROTL(x, 1);
-                        x ^= key[15];
-                        x ^= key[4];
-                        x += (char)0x99;
-                        if (x > 0x47)
-                            x ^= key[0];
-                        if (x < 3)
-                            x = blob[x];
-                        while (rem >= x)
-                            rem -= x;
-                        ok = (g != 0 && rem == 0);
-                        x ^= (unsigned char)g;
-                        x += (char)0xd9;
-                        RegScramC2(x);
-                        x ^= t2;
-                        x = ROTL(x, 6);
-                        x += 0xa;
-                        x ^= (unsigned char)g;
-                        x ^= t4;
-                        x ^= key[10];
-                        x += (char)0x96;
-                        x ^= name[2];
-                        x ^= name[4];
-                        x ^= t6;
-                        x += 0xb;
-                        if (x != 0)
-                            RegScramA2(x);
-
-                        doIt = (shipData[36].licenseCopies != 0
-                                && ok == 0 ? (unsigned char)1 : (unsigned char)0);
-                    } while (0);
-                    if (doIt) {
-                        shipData[0].credits *= 0.1;
-                        statusRedraw[kRedrawCargo] = 1;
-                    }
                 }
                 if (missionSoundID != -1 && missionSnd == 0) {
                     missionSnd = ST_LoadSndResource(missionSoundID);
@@ -4453,13 +3819,8 @@ void SpawnAsteroid(unsigned char type)
     short w;
     float radius;
     short h;
-    unsigned long long mem;
-    uint32_t diff;
-    int32_t parity;
     short i;
     short active;
-    unsigned char odd;
-    short x;
 
     if (systemData[shipData[0].curSystem].asteroidCount <= 0
         || systemData[shipData[0].curSystem].astTypes == 0)
@@ -4473,25 +3834,7 @@ void SpawnAsteroid(unsigned char type)
     if (active >= systemData[shipData[0].curSystem].asteroidCount)
         return;
 
-    mem = shipData[5].licenseCode;
-    parity = 0;
-    diff = mem;
-    diff ^= mem >> 32;
-    while (diff) {
-        diff &= diff - 1;
-        parity = 1 - parity;
-    }
-    odd = parity;
-#ifdef CEFIX /* F01.01 */
-    shipClass[gameIsHackedIndex].hacked =
-        (shipData[36].licenseCopies != 1 && odd == 0)
-            ? (unsigned char)1 : (unsigned char)0;
-#else
-    shipClass[gameIsHackedIndex].hacked =
-        (shipData[36].licenseCopies != 0 && odd == 0)
-            ? (unsigned char)1 : (unsigned char)0;
-#endif
-    x = shipClass[gameIsHackedIndex].hacked;
+    shipClass[gameIsHackedIndex].hacked = 0;
 
     for (i = 0; i < kMaxAsteroids; i++) {
         if (asteroidData[i].active == 0) {
@@ -6271,74 +5614,6 @@ void SpawnEscapePod(ShipObj *ship)
 
 /* The exe's const table at 0x0056b910: the same 38 revoked keys that InitEVNova tests inline
    (transcription allowed by the user, 2026-09-16). */
-#define kPirateSTR   140
-#define kPirateIndex 50
-
-#define kRevokedKeys \
-    0x0284801349262406LL, 0x0101e057b160ee02LL, \
-    0x07365c430b23e131LL, 0x07345d430b23e131LL, \
-    0x05d4013a1123c94aLL, 0x08d22033a5a9ae47LL, \
-    0x08d02133a5a9ae47LL, 0x0940f13e07262d74LL, \
-    0x01e8616da73a6b41LL, 0x03395a952823e649LL, \
-    0x033b5a952803f64bLL, 0x0b795a952803f64aLL, \
-    0x00dd021413f10475LL, 0x00df021413d11477LL, \
-    0x009f021413d11476LL, 0x09224585278cbf5bLL, \
-    0x0bf35041709a3940LL, 0x03f15041709a3946LL, \
-    0x0125a4aa21b1cf03LL, 0x03a31e5b03829d3dLL, \
-    0x009f8c40aac47814LL, 0x045ac4b40fb08b36LL, \
-    0x0c1ac5bc0b909b37LL, 0x02a974140d644b4dLL, \
-    0x02a9741409644b49LL, 0x0aab751c09445b49LL, \
-    0x02eb751c09445b4aLL, 0x01e24b6c4b56f67eLL, \
-    0x048c30d71f489e43LL, 0x0c8c31d71f489e45LL, \
-    0x04cc31d71f489e46LL, 0x0c8e31d71f489e47LL, \
-    0x0cce31d71f489e40LL, 0x0561f87749b27666LL, \
-    0x090a1452e822bd05LL, 0x04c23c3d8c45fe08LL, \
-    0x03e90792a484de04LL, 0x000881643da5fb73LL
-
-/* CheckForPiratedCodes. STATE: MATCH, byte-identical. 1.0.10 MATCH 65 of 65 on both fragments,
-   padded. OPEN: none */
-// FUNCTION: EVNOVA 0x00428260
-// MAC: _CheckForPiratedCodes i386 0x000456cd ppc 0x0004d910
-void CheckForPiratedCodes(void)
-{
-    long long keys[kBlacklistCount] = { kRevokedKeys };
-    unsigned char msg[256];
-    short i;
-    unsigned long long code;
-    unsigned long long k;
-
-    for (i = 0; i < kBlacklistCount; i++) {
-        code = RT3_GetLicenseCode();
-        k = keys[i];
-        k <<= 4;
-        k >>= 4;
-        code <<= 4;
-        code >>= 4;
-        if (k == code) {
-#ifdef MAC1010
-            {
-                unsigned long long sum = k + code; /* 1.0.10 pad: the masked halves read past the compare, so none takes r0 */
-            }
-#endif
-            FadeScreenIn();
-            ShowTheCursor();
-            GetIndString(msg, kPirateSTR, kPirateIndex);
-#ifdef MACBUILD
-            ParamText(msg, "\p", "\p", "\p");
-            StopAlert(128, NULL);
-#else
-#ifdef V111 /* V111: PtoCstr is void */
-            PtoCstr(msg);
-            ShowAlert("", (char *)msg);
-#else
-            ShowAlert("", PtoCstr(msg));
-#endif
-#endif
-            ExitToShell();
-        }
-    }
-}
-
 #ifndef MACBUILD
 /* CrtInitHook1. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00428330

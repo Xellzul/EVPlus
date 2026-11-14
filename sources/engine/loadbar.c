@@ -235,7 +235,7 @@ unsigned char ShowScrollingText(short strListID)
             if (text[1] == '<' && text[2] == 'R' && text[3] == 'E' && text[4] == 'G'
                 && text[5] == '>') {
                 strcpy((char *)text, "   ");
-                strcat((char *)text, RT3_GetDisplayName());
+                strcat((char *)text, kRegisteredName);
                 CtoPstr((char *)text);
             }
             strncpy(line[i], (char *)text, 250);

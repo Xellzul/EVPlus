@@ -75,14 +75,8 @@ extern Boolean AIInGunRange(ShipObj *me, ShipObj *target,
 extern Boolean AIDoSwarming(ShipObj *ship);
 extern Boolean AIShipIsScooping(ShipObj *ship);
 #ifndef MACBUILD /* inline on mac: sources/mac/include/rt3_ev_nova.h */
-extern Boolean RegScramA2(unsigned int x);
-extern void RegScramB2(unsigned char x);
-extern int RegScramC2(unsigned char x);
 #endif
 #ifndef MACBUILD
-extern void *RegScramF2(void);
-extern Boolean RegScramD2(char *p);
-extern Boolean RegScramE2(void);
 #endif
 extern short FindNearestShipToPlayer(void);
 extern short FindNearestThreatToParent(ShipObj *me, short spob);
@@ -128,7 +122,6 @@ EXTERN_CPP_END
 EXTERN_CPP_BEGIN
 extern Boolean scanActive;
 extern short aiComplexity;
-extern unsigned char gRT3Table2[];
 EXTERN_CPP_END
 #pragma cplusplus reset
 

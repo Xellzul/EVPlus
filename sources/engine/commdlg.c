@@ -80,7 +80,6 @@ unsigned char shipGovtStr[256];
 short commDialogMode;
 #ifndef MACBUILD
 unsigned char DAT_007d1e0e[2];
-unsigned char gRT3Table3[256];
 #endif
 
 #define kCommDlgID2      0x3ef
@@ -2899,42 +2898,3 @@ void EscortDialogUpdate(void)
              GetWindowVisRgn(FrontWindow(commDialog)));
 }
 
-/*
- * The four functions below are not escort-dialog code: their only caller is
- * EnterGameFromMainScreen (RT3 registration-library scrambling, same family
- * as sources/engine/parser.c 0x0044aa10-0x0044aa50 and
- * sources/engine/ai.c 0x00416090-0x004160d0). No mac symbol exists for
- * any of the four.
- */
-
-#ifndef MACBUILD
-/* RegScramA3. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004860b0
-Boolean RegScramA3(unsigned int x)
-{
-    return (IsPlatformOpen() * x);
-}
-
-/* RegScramB3. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004860c0
-void RegScramB3(unsigned char x)
-{
-    gRT3Table3[x]++;
-}
-
-/* RegScramC3. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004860d0
-short RegScramC3(unsigned char x)
-{
-    int n = x;
-    return ((n >> (8 - n)) | (n << n)) & 0xff;
-}
-
-/* RegScramF3. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004860f0
-void *RegScramF3(void)
-{
-    char buf[4];
-    return buf;
-}
-#endif

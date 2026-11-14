@@ -20,41 +20,6 @@
 #define kMacKeyShift   MacKey(0x38)
 #define kIntroDescID   0x7fff
 
-#ifdef MAC1010
-/* a plain function: -inline auto expands each call and the linker strips the copy; the first reference to `table` in the unit */
-#define RT3_HELPERS3_IN_UNIT
-void RegScramB3(unsigned char x)
-{
-    static unsigned char table[256];
-
-    table[x]++;
-}
-#endif
-
-/*
- * Not gameview.c code: the only caller is EnterGameFromMainScreen, the
- * fifth member of the RT3 registration-library scramble family whose other
- * four sit in commdlg.c (0x004860b0-0x004860f0, right before this address).
- * No mac symbol exists for it.
- */
-
-#ifndef MACBUILD
-/* RegScramD3. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x00486100
-Boolean RegScramD3(char *p)
-{
-    TimerGetSeconds();
-    return *p;
-}
-
-/* RegScramE3. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x00486110
-Boolean RegScramE3(void)
-{
-    return 0;
-}
-#endif
-
 /*
  * Both log calls are stubs in the shipped build, so holding shift only
  * suppresses the briefing.

@@ -141,15 +141,6 @@ void DoMainScreen(void)
 #endif
     if (!inBackground) {
         regNoticeShown = 1;
-#ifdef MAC1010
-        if (!RT3_IsRegistered()) {
-            RT3_RunReminder(0, 0);
-            MainScreenUpdate(1);
-        }
-#else
-        if (!RT3_IsRegistered())
-            MainScreenUpdate(1);
-#endif
     } else {
         regNoticeShown = 0;
     }
@@ -157,7 +148,6 @@ void DoMainScreen(void)
     InvalWindowPortRect((WindowRef)gWind);
     AdjustSoundVolume();
     ShowTheCursor();
-    RT3_Idle();
     IterateInGameEventLoop(kStartupIterations);
     gUpdateFlag = 0;
 
@@ -252,7 +242,6 @@ void DoMainScreen(void)
     int32_t mouseV;
     Str255 confirm;
     int32_t mouseH;
-    int32_t mode[4];
     Point where;
     short delay;
     int key;
@@ -318,36 +307,10 @@ void DoMainScreen(void)
     gNeedUpdateFlag = 1;
     regNoticeShown = 1;
 
-    if (RT3_IsRegistered() == 0) {
-        VideoGetCurrentMode(mode);
-        if ((mode[3] & kModeFlagOwned) != 0) {
-            ReleaseScreenDC();
-            SetDisplayToSize(mode[0], mode[1], mode[2], mode[3] & ~kModeFlagOwned);
-            AcquireScreenDC();
-            MainScreenUpdate(1);
-            ScreenEndScene();
-        }
-        _PlatformSetWindow(Win95MainWindow);
-        RT3_RunReminder(0, 0);
-        SetForegroundWindow(Win95MainWindow);
-        SetFocus(Win95MainWindow);
-        while (Win95ApplsActive == 0) {
-            Sleep(0);
-            KeyboardKbhit();
-        }
-        if ((mode[3] & kModeFlagOwned) != 0) {
-            ReleaseScreenDC();
-            VideoSetMode(mode);
-            AcquireScreenDC();
-        }
-        MainScreenUpdate(1);
-    }
-
     GetCWindowPortRect(gWind);
     gNeedUpdateFlag = 1;
     AdjustSoundVolume();
     ShowTheCursor();
-    RT3_Idle();
     IterateInGameEventLoop(kStartupIterations);
     gUpdateFlag = 0;
 
@@ -587,7 +550,6 @@ void MainScreenChoice(short which)
         MainScreenAnimDraw();
         MainScreenUpdate(1);
     }
-    RT3_Idle();
 }
 
 #ifdef MACBUILD

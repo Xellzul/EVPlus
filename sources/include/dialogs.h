@@ -76,10 +76,6 @@ extern void DrawTradeButtons(short hilited);
 extern Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial,
                               short maxLen);
 #ifndef MACBUILD /* inline on mac: sources/mac/include/rt3_ev_nova.h */
-extern Boolean RegScramA3(unsigned int x);
-extern void RegScramB3(unsigned char x);
-extern short RegScramC3(unsigned char x);
-extern void *RegScramF3(void);
 #endif
 extern Boolean DoNewPilotNameDialog(Boolean *wantStrictPlay);
 void HaggleDialogUpdate(void);
@@ -195,7 +191,6 @@ extern short selMissionInfoListItem;
 extern PicHandle missionInfoBackgroundPic;
 extern PicHandle outfitBackgroundPic;
 extern short selOutfitListItem;
-extern unsigned char gRT3Table3[];
 extern short keyDialogSel;
 extern short selOutfitItem;
 extern short selShipyardItem;
