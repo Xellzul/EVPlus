@@ -198,12 +198,9 @@ rt itpopup
 rt ittextbox
 rt itinput
 rt itmarkup
-rt regcomp
-rt burgerscreenshape
 rt burgertextbuf
 rt atmutexlist
 rt atutf162
-rt burgerfloatingpoint
 rt burgersndwin2
 rt zcrc32
 rt zdeflate
@@ -222,7 +219,6 @@ rt excrtl
 rt jdapimin
 rt jdmarker
 rt jdapistd
-rt jcparam
 rt pngerror
 rt png
 rt pngread
@@ -231,18 +227,13 @@ rt pngget
 rt pngset
 rt pngrtran
 rt pngtrans
-rt pngwrite
-rt pngwio
 rt pngmem
 rt itattr
-rt crt4
-rt burgeropengl
 rt convertutf
 rt ztrees
 rt zlibcrt
 rt zadler32
 rt zutil
-rt uncompr
 rt zinftrees
 rt zinffast
 rt bitwise
@@ -264,7 +255,6 @@ rt jutils
 rt jdmaster
 rt pngcrt
 rt pngrutil
-rt pngwutil
 rt time0
 rt floor1
 rt floor0
@@ -283,7 +273,6 @@ rt jdpostct
 rt jddctmgr
 rt jdphuff
 rt jdhuff
-rt jcdctmgr
 rt jdcoefct
 rt jdmainct
 rt lsp
@@ -291,7 +280,6 @@ rt jidctred
 rt jidctint
 rt jidctfst
 rt jidctflt
-rt jfdctflt
 qt GestaltShim.obj
 qt ThingWin32Glue.obj
 qt MoviesWin32Glue.obj

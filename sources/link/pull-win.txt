@@ -372,8 +372,6 @@ _IT_PopupHandler
 _IT_EditIdEnumProc@8
 _IT_ButtonsUpEnumProc@8
 __PT_ParseTreeInsert
-_cclasses
-_ScreenForceFilteringMode
 _StreamHandleInitPut
 ___float_nan
 ___strtold
@@ -398,7 +396,6 @@ _connect@12
 _getsockname@12
 _QueueCreate
 _unicode_bytecount
-_FloatATan2
 _StopASound
 _abs
 ___systemtime_to_time_t
@@ -432,7 +429,6 @@ _setlocale
 _jpeg_finish_decompress
 _jpeg_set_marker_processor
 _jpeg_finish_output
-_jpeg_simple_progression
 _png_set_strip_error_numbers
 _png_mmx_support
 _png_read_png
@@ -441,12 +437,8 @@ _png_get_user_height_max
 _png_set_user_limits
 _png_do_read_intrapixel
 _png_get_user_transform_ptr
-_png_write_png
-_png_set_write_fn
 _png_get_mem_ptr
 __IT_ParseTreeFindNextTag
-_crt4_abs
-_OpenGLInit
 ___wFileWrite
 _getsockopt@20
 _setsockopt@20
@@ -462,7 +454,6 @@ __tr_tally
 _zlib_abs
 _adler32
 _zcfree
-_uncompress
 _inflate_table
 _inflate_fast
 _oggpack_writeinit
@@ -487,7 +478,6 @@ _jzero_far
 _jinit_master_decompress
 _pngcrt_abs
 _png_read_start_row
-_png_write_filtered_row
 _gethostbyaddr@12
 ?time0_exportbundle@@3Uvorbis_func_time@@A
 ?floor1_exportbundle@@3Uvorbis_func_floor@@A
@@ -507,7 +497,6 @@ _jinit_d_post_controller
 _jinit_inverse_dct
 _jinit_phuff_decoder
 _jinit_huff_decoder
-_jinit_forward_dct
 _jinit_d_coef_controller
 _jinit_d_main_controller
 _vorbis_lsp_to_curve
@@ -515,4 +504,3 @@ _jpeg_idct_1x1
 _jpeg_idct_islow
 _jpeg_idct_ifast
 _jpeg_idct_float
-_jpeg_fdct_float

@@ -606,8 +606,6 @@ extern ULong fgetfilesize(evn_FILE *fp);     /* BurgerLib fgetfilesize */
 extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib CreateDirectoryPathNative */
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
 extern void MouseSetRange(int32_t width, int32_t height);   /* BurgerLib MouseSetRange */
-extern void OpenGLTextureDraw2DSubRect(Word TexNum, int x, int y, Word Width, Word Height,
-                                       const float *UVPtr);
 extern unsigned char IndirectSetLock(void **handle, unsigned char lock);
 extern ULong IndirectGetSize(void **handle);
 extern int32_t IndirectSetSize(void **handle, ULong size);

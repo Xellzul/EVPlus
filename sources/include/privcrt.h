@@ -1,4 +1,4 @@
-/* privcrt.h -- the character-class bits of the private C runtime that crt4.c, jpegcrt.c, pngcrt.c and
+/* privcrt.h -- the character-class bits of the private C runtime that jpegcrt.c, pngcrt.c and
    zlibcrt.c each carry a copy of. */
 #ifndef PRIVCRT_H
 #define PRIVCRT_H
