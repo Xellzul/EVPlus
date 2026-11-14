@@ -1741,14 +1741,8 @@ void LoadCurrentMissionData(short mission, short slot)
             h = GetResource(kStringListType, currentMissions[slot].destStrList);
             if (h != NULL) {
                 LockAHandle(h);
-#ifdef MACBUILD
-                BlockMove(*h, &strCount, sizeof(strCount));
-                UnlockAHandle(h);
-                HPurge(h);
-#else
                 strCount = SwapEndianShort((const unsigned short *)*h);
                 UnlockAHandle(h);
-#endif
                 ReleaseResource(h);
                 n = Rand(strCount) + 1;
                 GetIndString(buf, ((MisnRes *)*missionFileHand)->shipNameID, n);
@@ -1761,14 +1755,8 @@ void LoadCurrentMissionData(short mission, short slot)
             h = GetResource(kStringListType, currentMissions[slot].shipStrList);
             if (h != NULL) {
                 LockAHandle(h);
-#ifdef MACBUILD
-                BlockMove(*h, &strCount, sizeof(strCount));
-                UnlockAHandle(h);
-                HPurge(h);
-#else
                 strCount = SwapEndianShort((const unsigned short *)*h);
                 UnlockAHandle(h);
-#endif
                 ReleaseResource(h);
                 n = Rand(strCount) + 1;
                 GetIndString(buf, ((MisnRes *)*missionFileHand)->shipSubtitle, n);
@@ -1793,9 +1781,6 @@ void LoadCurrentMissionData(short mission, short slot)
             currentMissions[slot].specialShipsJumpedIn = currentMissions[slot].initialShipCount;
         currentMissions[slot].auxShipsSpawned = 0;
         UnlockAHandle(missionFileHand);
-#ifdef MACBUILD
-        HPurge(missionFileHand);
-#endif
         ReleaseResource(missionFileHand);
     }
     currentMissions[slot].misnIndex = mission;
@@ -3890,20 +3875,11 @@ tokens:
         MungeForSymbol("L", "7");
     }
 
-#ifdef MACBUILD
-    if ((uint32_t)GetAHandleSize(stringHandle) <= kBriefingSize) {
-        BlockMoveData(*stringHandle, briefingTextPtr, GetAHandleSize(stringHandle));
-    } else {
-        BlockMoveData(*stringHandle, briefingTextPtr, kBriefingSize);
-    }
-    HPurge(stringHandle);
-#else
     if (GetAHandleSize(stringHandle) <= kBriefingSize) {
         memmove(briefingTextPtr, *stringHandle, GetAHandleSize(stringHandle));
     } else {
         memmove(briefingTextPtr, *stringHandle, kBriefingSize);
     }
-#endif
     DeallocAHandle(stringHandle);
     stringHandle = NULL;
 }

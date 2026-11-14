@@ -438,9 +438,6 @@ void DoCommDialog(short shipIndex)
         commBackgroundPic = NULL;
     }
     if (commShipPic != NULL) {
-#ifdef MACBUILD
-        HPurge((Handle)commShipPic);
-#endif
         QDReleaseResource(commShipPic);
         commShipPic = NULL;
     }
@@ -1392,14 +1389,8 @@ void LoadAdvice(void)
                                  & kDudeStringMask) + kDudeStrings));
         if (h != NULL) {
             LockAHandle(h);
-#ifdef MACBUILD
-            BlockMove(*h, &strCount, sizeof(strCount));
-            UnlockAHandle(h);
-            HPurge(h);
-#else
             strCount = SwapEndianShort((const unsigned short *)*h);
             UnlockAHandle(h);
-#endif
             ReleaseResource(h);
         }
         if (strCount > 0) {
@@ -2630,9 +2621,6 @@ void DoEscortDialog(ShipObj *ship)
     } while (!done);
 
     if (commShipPic != NULL) {
-#ifdef MACBUILD
-        HPurge((Handle)commShipPic);
-#endif
         QDReleaseResource(commShipPic);
         commShipPic = NULL;
     }

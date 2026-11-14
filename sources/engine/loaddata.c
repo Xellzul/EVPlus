@@ -72,7 +72,6 @@ extern int CGSGetWindowList(int cid, int owner, int size, int *list, int *count)
 extern int CGSSetWindowLevel(int cid, int window, int level);
 extern Boolean ColorSearchProc(RGBColor *rgb, int32_t *position);
 extern OSErr MyOpenDocument(const FSSpec *defaultSpec, FSSpec *outSpec);
-extern short pilotResNum;
 #define kPilotResID 128
 extern OSStatus FlipNpil(short resID, void *data, int32_t size, Boolean toDisk);
 /* AmbrosiaTools */
@@ -144,84 +143,6 @@ void SelectNovaSupport(void)
 // FUNCTION: EVNOVA 0x004bd0c0
 // MAC: _InitDataFiles i386 0x0007138b ppc 0x00079dc4
 void InitDataFiles(void)
-#ifdef MAC1010
-{
-    Str255 name;
-
-    gARef = CurResFile();
-    noSavePilotFiles = EVBugResourceFieldTest(12);
-    noUpdatePilotData = EVBugResourceFieldTest(13);
-    GetIndString(name, kPilotDirList, 3);
-    GetSubfolderOfFile(gARef, name, &pilotsDirID, &pilotsVRefNum);
-    FindFolder(kOnSystemDisk, kPreferencesFolderType, kCreateFolder, &prefsVRefNum, &prefsDirID);
-    lastIntfResourceID = -1;
-}
-#elif defined(MACBUILD)
-{
-    FSRef asupRef;
-    FSRef ref;
-    Str255 unusedName;
-    Str255 name;
-    HFSUniStr255 uniName;
-    CFURLRef url;
-    CFURLRef filesURL;
-    int32_t err;
-    int32_t count;
-
-    url = CFBundleCopyResourceURL(CFBundleGetMainBundle(), CFSTR("Nova-DF"), CFSTR("rsrc"), NULL);
-    if (url != NULL) {
-        CFURLGetFSRef(url, &ref);
-        gARef = EVOpenResourceFile(&ref, 1);
-        UseResFile(gARef);
-        CFRelease(url);
-    }
-    noSavePilotFiles = EVBugResourceFieldTest(12);
-    noUpdatePilotData = EVBugResourceFieldTest(13);
-    if (novaSupportFolder == NULL) {
-        GetIndString(unusedName, kPilotDirList, 3);
-        if (FSFindFolder(kUserDomain, kApplicationSupportFolderType, kCreateFolder, &asupRef) != noErr)
-            return;
-        novaSupportFolder = malloc(sizeof(FSRef));
-        HFSNameGetUnicodeName("\pEV Nova", kTextEncodingUnknown, &uniName);
-        if (FSMakeFSRefUnicode(&asupRef, uniName.length, uniName.unicode, kTextEncodingUnknown,
-                               novaSupportFolder) != noErr)
-            FSCreateDirectoryUnicode(&asupRef, uniName.length, uniName.unicode, kFSCatInfoNone, NULL,
-                                     novaSupportFolder, NULL, NULL);
-    }
-    GetIndString(name, kPilotDirList, 3);
-    HFSNameGetUnicodeName(name, kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(novaSupportFolder, uniName.length, uniName.unicode, kTextEncodingUnknown,
-                           &pilotsFolder) != noErr)
-        FSCreateDirectoryUnicode(novaSupportFolder, uniName.length, uniName.unicode, kFSCatInfoNone,
-                                 NULL, &pilotsFolder, NULL, NULL);
-    HFSNameGetUnicodeName("\pPlug-Ins", kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(novaSupportFolder, uniName.length, uniName.unicode, kTextEncodingUnknown,
-                           &pluginsFolder) != noErr)
-        FSCreateDirectoryUnicode(novaSupportFolder, uniName.length, uniName.unicode, kFSCatInfoNone,
-                                 NULL, &pluginsFolder, NULL, NULL);
-    HFSNameGetUnicodeName("\pNova Files", kTextEncodingUnknown, &uniName);
-    err = FSMakeFSRefUnicode(novaSupportFolder, uniName.length, uniName.unicode,
-                             kTextEncodingUnknown, &novaFilesFolder);
-    count = 0;
-    if (shipClass[gameIsRegisteredIndex].registered != 0)
-        count = CountEVPlugins(novaFilesFolder, kAnyPluginType);
-    if (err != noErr || count == 0) {
-        url = CFBundleCopyResourcesDirectoryURL(CFBundleGetMainBundle());
-        if (url != NULL) {
-            filesURL = CFURLCreateCopyAppendingPathComponent(kCFAllocatorDefault, url,
-                                                             CFSTR("Nova Files"), true);
-            if (filesURL != NULL) {
-                if (CFURLGetFSRef(filesURL, &novaFilesFolder))
-                    OpenEVPlugins(novaFilesFolder, kAnyPluginType);
-                CFRelease(filesURL);
-            }
-            CFRelease(url);
-        }
-    } else
-        OpenEVPlugins(novaFilesFolder, kAnyPluginType);
-    lastIntfResourceID = -1;
-}
-#else
 {
     char name[kPrefStringMax];
 
@@ -238,7 +159,6 @@ void InitDataFiles(void)
     strcpy(gPrefsDirectory, "@:");
     lastIntfResourceID = -1;
 }
-#endif
 
 /* prints/logs the Pascal string GetIndString just filled; NOT the same
    address as crashlog_print_pstr (0x00470150) despite the similar role */
@@ -253,115 +173,6 @@ void InitDataFiles(void)
 // FUNCTION: EVNOVA 0x004bd160
 // MAC: _OpenDataFiles i386 0x00076a76 ppc 0x0007f85c
 void OpenDataFiles(void)
-#ifdef MAC1010
-{
-    Str255 alertText;
-    Str255 name;
-    short count;
-    short vRefNum;
-    int32_t dirID;
-    FSSpec spec;
-    Str255 path;
-    Handle h;
-
-    if (HGetVol(alertText, &vRefNum, &dirID) == noErr) {
-        GetIndString(name, kPilotDirList, 3);
-        path[1] = ':';
-        path[0] = name[0] + 1;
-        for (count = 1; count <= name[0]; count++)
-            path[count + 1] = name[count];
-        if (FSMakeFSSpec(vRefNum, 0, path, &spec) != noErr) {
-            DirCreate(0, 0, name, &dirID);
-            if (FSMakeFSSpec(vRefNum, 0, path, &spec) != noErr) {
-                FadeScreenIn();
-                GetIndString(alertText, kAlertStrList, 0x1d);
-                EVNoteAlert(alertText);
-                ExitToShell();
-            }
-        }
-    }
-
-    crashlog_print("opening files in ");
-    crashlog_print_pstr("\pNova Files");
-    crashlog_print(" folder:\n");
-    if (OpenEVPlugins(gARef, "\pNova Files", kAnyPluginType, crashlog_get_file()) != noErr) {
-        DirCreate(0, 0, "\pNova Files", &dirID);
-        if (OpenEVPlugins(gARef, "\pNova Files", kAnyPluginType, crashlog_get_file()) != noErr) {
-            FadeScreenIn();
-            GetIndString(alertText, kAlertStrList, 0x1e);
-            EVNoteAlert(alertText);
-            ExitToShell();
-        }
-    }
-    if (shipClass[gameIsRegisteredIndex].registered != 0 ? 1 : 0) {
-        if (pluginCount > 0) {
-            crashlog_print("opening files in ");
-            crashlog_print_pstr("\pNova Plug-Ins");
-            crashlog_print(" folder:\n");
-        }
-        if (OpenEVPlugins(gARef, "\pNova Plug-Ins", kPlugInFileType, crashlog_get_file()) != noErr) {
-            DirCreate(0, 0, "\pNova Plug-Ins", &dirID);
-            if (OpenEVPlugins(gARef, "\pNova Plug-Ins", kPlugInFileType, crashlog_get_file()) != noErr) {
-                FadeScreenIn();
-                GetIndString(alertText, kAlertStrList, 0x1f);
-                EVNoteAlert(alertText);
-                ExitToShell();
-            }
-        }
-    }
-    if (crashlog_isactive()) {
-        h = GetResource(kStringListType, kGameStrList);
-        if (h != NULL) {
-            HLock(h);
-            BlockMove(*h, &count, sizeof(short));
-            HUnlock(h);
-            HPurge(h);
-            ReleaseResource(h);
-            if (count != 0x18c) {
-                crashlog_print("warning: STR# resource ");
-                crashlog_print_num(kGameStrList);
-                crashlog_print(" is missing strings (");
-                crashlog_print_num(0x18c - count);
-                crashlog_print(")\n");
-            }
-        }
-    }
-}
-#elif defined(MACBUILD)
-{
-    Handle h;
-    short count;
-
-    crashlog_print("opening files in ");
-    crashlog_print_pstr("\pNova Files");
-    crashlog_print(" folder:\n");
-    if (shipClass[gameIsRegisteredIndex].registered != 0 ? 1 : 0) {
-        if (pluginCount > 0) {
-            crashlog_print("opening files in ");
-            crashlog_print_pstr("\pPlug-Ins");
-            crashlog_print(" folder:\n");
-        }
-        OpenEVPlugins(pluginsFolder, kPlugInFileType);
-    }
-    if (crashlog_isactive()) {
-        h = GetResource(kStringListType, kGameStrList);
-        if (h != NULL) {
-            HLock(h);
-            BlockMove(*h, &count, sizeof(short));
-            HUnlock(h);
-            HPurge(h);
-            ReleaseResource(h);
-            if (count != 0x18c) {
-                crashlog_print("warning: STR# resource ");
-                crashlog_print_num(kGameStrList);
-                crashlog_print(" is missing strings (");
-                crashlog_print_num(0x18c - count);
-                crashlog_print(")\n");
-            }
-        }
-    }
-}
-#else
 {
     char name[kPrefStringMax];
     char path[0x800];
@@ -437,7 +248,6 @@ void OpenDataFiles(void)
         }
     }
 }
-#endif
 
 /* NebuRecord is loaded without LockAHandle or AdjustHandleSize. */
 
@@ -445,13 +255,8 @@ void OpenDataFiles(void)
 
 /* the mac keeps a resource unpurgeable while it is read and purgeable again after; the port's
    resources never purge */
-#ifdef MACBUILD
-#define ResourceNoPurge(h) HNoPurge(h)
-#define ResourcePurge(h) HPurge(h)
-#else
 #define ResourceNoPurge(h)
 #define ResourcePurge(h)
-#endif
 #define LoadingIntroMusic() HandleIntroMusic(0)
 
 
@@ -2649,9 +2454,6 @@ void LoadDescription(char *dst, short id)
 
     textFileHand = GetResource(kDescType, id);
     if (textFileHand != NULL) {
-#ifdef MACBUILD
-        HNoPurge(textFileHand);
-#endif
         strcpy(parseBuffer, *textFileHand);
         size = strlen(*textFileHand);
         if (GetAHandleSize(textFileHand) > size) {
@@ -2678,9 +2480,6 @@ void LoadDescription(char *dst, short id)
             descFlags = 0;
         }
 
-#ifdef MACBUILD
-        HPurge(textFileHand);
-#endif
         ReleaseResource(textFileHand);
         descRankGovt[0] = -1;
         descRankGovt[1] = -1;
@@ -2848,261 +2647,13 @@ Boolean LoadPluginString(short id, void *dst)
 
     h = GetResource(kStringType, id);
     if (h != NULL) {
-#ifdef MACBUILD
-        HNoPurge(h);
-        BlockMoveData(*h, dst, GetHandleSize(h));
-        HPurge(h);
-#else
         memcpy(dst, *h, GetAHandleSize(h));
-#endif
         ReleaseResource(h);
         return 1;
     }
     return 0;
 }
 
-#ifdef MAC1010
-#define kPrefsResType 0x4d70a8c4        /* 'Mp' 0xa8 0xc4, MacRoman */
-#define kPrefsFileType 0x4e70a8c4       /* 'Np' 0xa8 0xc4 */
-#define kPrefsCreator 0x4e9a768a        /* 'N' 0x9a 'v' 0x8a */
-#define kPrefsResID 128
-#define kPrefsSig1010 0x68
-#define kPrefsRecSize1010 0x8c
-
-void LoadPrefs(void)
-{
-    DateTimeRec dtr;
-    FSSpec spec;
-    Str255 name;
-    OSErr err;
-    short sig;
-    short i;
-
-    GetTime(&dtr);
-    GetIndString(name, kPrefsStrList, 1);
-    err = FSMakeFSSpec(prefsVRefNum, prefsDirID, name, &spec);
-    if (err == fnfErr) {
-        SetDefaultPrefs();
-        SetDefaultKeys();
-    } else if (err == noErr) {
-        gPrefsRefNum = FSpOpenResFile(&spec, fsRdWrPerm);
-        if (gPrefsRefNum != -1) {
-            gPrefsHandle = NULL;
-            gPrefsHandle = (PrefsRecord **)GetResource(kPrefsResType, kPrefsResID);
-            if (gPrefsHandle != NULL) {
-                HNoPurge((Handle)gPrefsHandle);
-                HLock((Handle)gPrefsHandle);
-                settings.introMusic = 0;
-                settings.voicesOn = 0;
-                settings.clipping = 0;
-                settings.noMovies = 0;
-                settings.noDebris = 0;
-                settings.parallaxStars = 0;
-                settings.yieldEvents = 0;
-                settings.windowed = 0;
-                settings.ambientSounds = 0;
-                settings.showMapBorders = 0;
-                settings.noHyperGamma = 0;
-                settings.noVersionCheck = 0;
-                settings.shipAnimations = 0;
-                settings.engineGlows = 0;
-                settings.weaponGlows = 0;
-                settings.runningLights = 0;
-                sig = (*gPrefsHandle)->sig;
-                if (sig == kPrefsSig1010) {
-                    if ((*gPrefsHandle)->musicEnabled != 0)
-                        settings.introMusic = 1;
-                    if ((*gPrefsHandle)->unk4 != 0)
-                        settings.voicesOn = 1;
-                    if ((*gPrefsHandle)->earlyOut != 0)
-                        settings.noMovies = 1;
-                    if ((*gPrefsHandle)->noDebris != 0)
-                        settings.noDebris = 1;
-                    if ((*gPrefsHandle)->windowed != 0)
-                        settings.windowed = 1;
-                    if ((*gPrefsHandle)->loadShipSets != 0)
-                        settings.shipAnimations = 1;
-                    if ((*gPrefsHandle)->loadShipGlow != 0)
-                        settings.engineGlows = 1;
-                    if ((*gPrefsHandle)->loadShipWeapons != 0)
-                        settings.weaponGlows = 1;
-                    if ((*gPrefsHandle)->loadShipLights != 0)
-                        settings.runningLights = 1;
-                    if ((*gPrefsHandle)->parallaxStars != 0)
-                        settings.parallaxStars = 1;
-                    if ((*gPrefsHandle)->planetSounds != 0)
-                        settings.ambientSounds = 1;
-                    if ((*gPrefsHandle)->showInfluence != 0)
-                        settings.showMapBorders = 1;
-                    if ((*gPrefsHandle)->noHyperGamma != 0)
-                        settings.noHyperGamma = 1;
-                    if ((*gPrefsHandle)->noVersionCheck != 0)
-                        settings.noVersionCheck = 1;
-                    if ((*gPrefsHandle)->unk64 != 0)
-                        settings.yieldEvents = 1;
-                    settings.volume = (*gPrefsHandle)->volume;
-                    DAT_00735488 = (*gPrefsHandle)->unk60 != 0;
-                    settings.windowedPending = settings.windowed;
-                    SetDefaultKeys();
-                    for (i = 0; i <= 35; i++)
-                        newKeyPrefs[i] = (*gPrefsHandle)->keys[i];
-                    SlotTableToKeyPrefs();
-                    DAT_00735450 = (*gPrefsHandle)->unk50;
-                    DAT_00735450 *= 0.01;
-                }
-                HUnlock((Handle)gPrefsHandle);
-                HPurge((Handle)gPrefsHandle);
-                CloseResFile(gPrefsRefNum);
-                if (sig != kPrefsSig1010) {
-                    GetIndString(name, kPrefsStrList, 1);
-                    if (FSMakeFSSpec(prefsVRefNum, prefsDirID, name, &spec) == noErr) {
-                        if (FSpDelete(&spec) == noErr) {
-                            SetDefaultPrefs();
-                            SetDefaultKeys();
-                            FadeScreenIn();
-                            GetIndString(name, kAlertStrList, 0x20);
-                            EVNoteAlert(name);
-                        } else {
-                            FadeScreenIn();
-                            GetIndString(name, kAlertStrList, 0x21);
-                            EVNoteAlert(name);
-                            ShowTheMenuBar();
-                            ST_Close();
-                            ExitToShell();
-                        }
-                    } else {
-                        FadeScreenIn();
-                        GetIndString(name, kAlertStrList, 0x21);
-                        EVNoteAlert(name);
-                        ShowTheMenuBar();
-                        ST_Close();
-                        ExitToShell();
-                    }
-                }
-            } else {
-                CloseResFile(gPrefsRefNum);
-                SetDefaultPrefs();
-                SetDefaultKeys();
-            }
-        } else {
-            SetDefaultPrefs();
-            SetDefaultKeys();
-        }
-    } else {
-        SetDefaultPrefs();
-        SetDefaultKeys();
-    }
-}
-
-void SavePrefs(void)
-{
-    FSSpec spec;
-    Str255 name;
-    short savedResFile;
-    short i;
-
-    gPrefsHandle = NULL;
-    savedResFile = CurResFile();
-    GetIndString(name, kPrefsStrList, 1);
-    if (FSMakeFSSpec(prefsVRefNum, prefsDirID, name, &spec) == fnfErr) {
-        FSpCreateResFile(&spec, kPrefsCreator, kPrefsFileType, smRoman);
-        gPrefsRefNum = FSpOpenResFile(&spec, fsRdWrPerm);
-        if (gPrefsRefNum == -1)
-            return;
-    } else if (FSpDelete(&spec) == noErr) {
-        FSpCreateResFile(&spec, kPrefsCreator, kPrefsFileType, smRoman);
-        gPrefsRefNum = FSpOpenResFile(&spec, fsRdWrPerm);
-        if (gPrefsRefNum == -1)
-            return;
-    } else
-        return;
-    gPrefsHandle = (PrefsRecord **)NewHandle(kPrefsRecSize1010);
-    if (gPrefsHandle != NULL) {
-        HNoPurge((Handle)gPrefsHandle);
-        HLock((Handle)gPrefsHandle);
-        (*gPrefsHandle)->sig = kPrefsSig1010;
-        if (settings.introMusic != 0)
-            (*gPrefsHandle)->musicEnabled = 1;
-        else
-            (*gPrefsHandle)->musicEnabled = 0;
-        if (settings.voicesOn != 0)
-            (*gPrefsHandle)->unk4 = 1;
-        else
-            (*gPrefsHandle)->unk4 = 0;
-        if (settings.noMovies != 0)
-            (*gPrefsHandle)->earlyOut = 1;
-        else
-            (*gPrefsHandle)->earlyOut = 0;
-        if (settings.noDebris != 0)
-            (*gPrefsHandle)->noDebris = 1;
-        else
-            (*gPrefsHandle)->noDebris = 0;
-        if (settings.windowedPending != 0)
-            (*gPrefsHandle)->windowed = 1;
-        else
-            (*gPrefsHandle)->windowed = 0;
-        if (settings.shipAnimations != 0)
-            (*gPrefsHandle)->loadShipSets = 1;
-        else
-            (*gPrefsHandle)->loadShipSets = 0;
-        if (settings.engineGlows != 0)
-            (*gPrefsHandle)->loadShipGlow = 1;
-        else
-            (*gPrefsHandle)->loadShipGlow = 0;
-        if (settings.weaponGlows != 0)
-            (*gPrefsHandle)->loadShipWeapons = 1;
-        else
-            (*gPrefsHandle)->loadShipWeapons = 0;
-        if (settings.runningLights != 0)
-            (*gPrefsHandle)->loadShipLights = 1;
-        else
-            (*gPrefsHandle)->loadShipLights = 0;
-        if (settings.yieldEvents != 0)
-            (*gPrefsHandle)->unk64 = 1;
-        else
-            (*gPrefsHandle)->unk64 = 0;
-        if (settings.parallaxStars != 0)
-            (*gPrefsHandle)->parallaxStars = 1;
-        else
-            (*gPrefsHandle)->parallaxStars = 0;
-        if (settings.ambientSounds != 0)
-            (*gPrefsHandle)->planetSounds = 1;
-        else
-            (*gPrefsHandle)->planetSounds = 0;
-        if (settings.showMapBorders != 0)
-            (*gPrefsHandle)->showInfluence = 1;
-        else
-            (*gPrefsHandle)->showInfluence = 0;
-        if (settings.noHyperGamma != 0)
-            (*gPrefsHandle)->noHyperGamma = 1;
-        else
-            (*gPrefsHandle)->noHyperGamma = 0;
-        if (settings.noVersionCheck != 0)
-            (*gPrefsHandle)->noVersionCheck = 1;
-        else
-            (*gPrefsHandle)->noVersionCheck = 0;
-        (*gPrefsHandle)->volume = settings.volume;
-        KeyPrefsToSlotTable();
-        for (i = 0; i <= 35; i++)
-            (*gPrefsHandle)->keys[i] = newKeyPrefs[i];
-        (*gPrefsHandle)->unk50 = (100.0 * DAT_00735450);
-        if (DAT_00735488 != 0)
-            (*gPrefsHandle)->unk60 = 1;
-        else
-            (*gPrefsHandle)->unk60 = 0;
-        for (i = 0; i <= 5; i++)
-            (*gPrefsHandle)->reserved[i] = 0;
-        UseResFile(gPrefsRefNum);
-        AddResource((Handle)gPrefsHandle, kPrefsResType, kPrefsResID, "\pEV Prefs");
-        UseResFile(savedResFile);
-        HUnlock((Handle)gPrefsHandle);
-        HPurge((Handle)gPrefsHandle);
-    }
-    UpdateResFile(gPrefsRefNum);
-    CloseResFile(gPrefsRefNum);
-    FlushVol(NULL, prefsVRefNum);
-}
-#endif
 #ifndef MACBUILD /* the mac keeps its preferences in EVPrefsDialogWrapper.o */
 /* LoadPrefs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c7400
@@ -3318,43 +2869,6 @@ void SavePrefs(void)
 /* MakeAlias. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c7d40
 // MAC: _MakeAlias i386 0x00071e36 ppc 0x0007a9bc
-#if defined(MACBUILD) && V111
-void MakeAlias(const FSRef *target)
-{
-    AliasHandle alias;
-    FinderInfo info;
-    FSRef aliasRef;
-    Str255 aliasName;
-    HFSUniStr255 uniName;
-    HFSUniStr255 forkName;
-    short savedResFile;
-    short refNum;
-
-    savedResFile = CurResFile();
-    GetIndString(aliasName, kPilotDirList, 4);
-    HFSNameGetUnicodeName(aliasName, kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(&pilotsFolder, uniName.length, uniName.unicode,
-                           kTextEncodingUnknown, &aliasRef) == noErr)
-        FSDeleteObject(&aliasRef);
-    FSGetResourceForkName(&forkName);
-    FSCreateResourceFile(&pilotsFolder, uniName.length, uniName.unicode, kFSCatInfoNone, NULL,
-                         forkName.length, forkName.unicode, &aliasRef, NULL);
-    FSNewAlias(NULL, target, &alias);
-    if (alias != NULL) {
-        FSGetFinderInfo(target, &info, NULL, NULL);
-        refNum = EVOpenResourceFile(&aliasRef, 0);
-        if (refNum != -1) {
-            UseResFile(refNum);
-            AddResource((Handle)alias, rAliasType, 0, aliasName);
-            WriteResource((Handle)alias);
-            CloseResFile(refNum);
-            info.file.finderFlags = kIsAlias;
-            FSSetFinderInfo(&aliasRef, &info, NULL);
-        }
-        UseResFile(savedResFile);
-    }
-}
-#elif !defined(MACBUILD)
 void MakeAlias(char *name)
 {
     char base[0x100];
@@ -3365,7 +2879,6 @@ void MakeAlias(char *name)
     strcat(path, base);
     SaveAFile(path, name, strlen(name) + 1);
 }
-#endif
 
 /* mac twin _SavePilotFile. 0x004c7dd0 demonstrably WRITES the .plt (see
    WritePilotData), so the older `LoadPilot' / `LoadPilotFile' names were
@@ -3467,37 +2980,6 @@ short WritePilotData(short stellar)
 
     playerFileHand = NULL;
     altPlayerFileHand = NULL;
-#ifdef MACBUILD
-#ifdef MAC1010
-    savedResFile = CurResFile();
-    FSMakeFSSpec(pilotsVRefNum, pilotsDirID, playerName, &spec);
-    FSpCreateResFile(&spec, kNovaCreator, kPilotFileType, smRoman);
-    pilotResNum = FSpOpenResFile(&spec, fsRdWrPerm);
-#else
-    HFSNameGetUnicodeName(playerName, kTextEncodingUnknown, &uniName);
-    nameStr = CFStringCreateWithCharacters(kCFAllocatorDefault, uniName.unicode, uniName.length);
-    if (nameStr == NULL)
-        return -1;
-    tmpNameStr = CFStringCreateMutableCopy(kCFAllocatorDefault, uniName.length + 10, nameStr);
-    CFStringAppend(tmpNameStr, CFSTR("-tmp"));
-    CFStringGetCharacters(tmpNameStr, CFRangeMake(0, CFStringGetLength(tmpNameStr)), tmpUni);
-    savedResFile = CurResFile();
-    FSGetResourceForkName(&forkName);
-    FSCreateResourceFile(&pilotsFolder, CFStringGetLength(tmpNameStr), tmpUni, kFSCatInfoNone,
-                         NULL, forkName.length, forkName.unicode, &tmpRef, NULL);
-    FSChangeCreatorType(&tmpRef, kNovaCreator, kPilotFileType);
-    pilotResNum = EVOpenResourceFile(&tmpRef, fsRdWrPerm);
-#endif
-    if (pilotResNum == -1)
-        return kPilotUnreadable;
-    playerFileHand = (PilotRec **)NewHandle(sizeof(PilotRec));
-    altPlayerFileHand = (PilotRec2 **)NewHandle(sizeof(PilotRec2));
-    if (playerFileHand != NULL && altPlayerFileHand != NULL) {
-        HLock((Handle)playerFileHand);
-        HLock((Handle)altPlayerFileHand);
-        HNoPurge((Handle)playerFileHand);
-        HNoPurge((Handle)altPlayerFileHand);
-#else
     strcpy(path, pilotsFolder);
     PStr2CStr(name, playerName);
     strcat(path, name);
@@ -3508,7 +2990,6 @@ short WritePilotData(short stellar)
     if (f != NULL && playerFileHand != NULL && altPlayerFileHand != NULL) {
         LockAHandle((Handle)playerFileHand);
         LockAHandle((Handle)altPlayerFileHand);
-#endif
 
         (*playerFileHand)->stellar = stellar;
         (*playerFileHand)->shipType = shipData[0].type;
@@ -3660,38 +3141,6 @@ short WritePilotData(short stellar)
         for (i = 0; i < 0x400; i++)
             (*altPlayerFileHand)->unk5efe[i] = 0;
 
-#ifdef MACBUILD
-        strncpy(name, (char *)shipName, 0x20);
-        UseResFile(pilotResNum);
-#if TARGET_RT_LITTLE_ENDIAN
-        FlipNpil(kPilotResID, *playerFileHand, GetHandleSize((Handle)playerFileHand), 1);
-        FlipNpil(kPilotResID + 1, *altPlayerFileHand, GetHandleSize((Handle)altPlayerFileHand), 1);
-#endif
-        DoEncryption(*playerFileHand, GetHandleSize((Handle)playerFileHand), kPilotCryptKey);
-        DoEncryption(*altPlayerFileHand, GetHandleSize((Handle)altPlayerFileHand), kPilotCryptKey);
-        AddResource((Handle)playerFileHand, kPilotFileType, kPilotResID, "\pPilot Data");
-        AddResource((Handle)altPlayerFileHand, kPilotFileType, kPilotResID + 1, (unsigned char *)name);
-        UseResFile(savedResFile);
-        UpdateResFile(pilotResNum);
-        HUnlock((Handle)playerFileHand);
-        HUnlock((Handle)altPlayerFileHand);
-        HPurge((Handle)playerFileHand);
-        HPurge((Handle)altPlayerFileHand);
-        CloseResFile(pilotResNum);
-    }
-#ifdef MAC1010
-    MakeAlias(&spec);
-    UseResFile(savedResFile);
-    FlushVol(NULL, pilotsVRefNum);
-#else
-    FSMoveObjectSync(&tmpRef, &pilotsFolder, nameStr, NULL, kFSFileOperationOverwrite);
-    CFRelease(tmpNameStr);
-    CFRelease(nameStr);
-    MakeAlias(&tmpRef);
-    UseResFile(savedResFile);
-#endif
-    return 0;
-#else
         PStr2CStr(name, shipName);
         LockAHandle((Handle)playerFileHand);
 #ifndef CEFIX /* F02.01 */
@@ -3716,40 +3165,8 @@ short WritePilotData(short stellar)
     }
     MakeAlias(path);
     return 0;
-#endif
 }
 
-#ifdef MAC1010
-void MakeAlias(const FSSpec *target)
-{
-    AliasHandle alias;
-    FInfo info;
-    FSSpec aliasSpec;
-    short refNum;
-    short savedResFile;
-
-    savedResFile = CurResFile();
-    aliasSpec.vRefNum = target->vRefNum;
-    aliasSpec.parID = target->parID;
-    GetIndString(aliasSpec.name, kPilotDirList, 4);
-    FSpDelete(&aliasSpec);
-    NewAlias(NULL, target, &alias);
-    if (alias != NULL) {
-        FSpGetFInfo(target, &info);
-        FSpCreateResFile(&aliasSpec, info.fdCreator, info.fdType, smRoman);
-        refNum = FSpOpenResFile(&aliasSpec, fsCurPerm);
-        if (refNum != -1) {
-            UseResFile(refNum);
-            AddResource((Handle)alias, rAliasType, 0, aliasSpec.name);
-            WriteResource((Handle)alias);
-            CloseResFile(refNum);
-            info.fdFlags = kIsAlias;
-            FSpSetFInfo(&aliasSpec, &info);
-        }
-        UseResFile(savedResFile);
-    }
-}
-#endif
 
 /* VideoGetCurrentMode fills a four-long display mode: width, height, depth, flags.
    mainscreen.c reads the same block the same way. */
@@ -4402,31 +3819,6 @@ short LoadPilotData(char *path)
     altPlayerFileHand = NULL;
     junk = 0;
 
-#ifdef MACBUILD
-#ifdef MAC1010
-    parID = spec->parID;
-    if (ResolveAliasFile(spec, true, &targetIsFolder, &wasAliased) == noErr
-        && !targetIsFolder && spec->parID == parID) {
-    pilotResNum = FSpOpenResFile(spec, fsRdWrPerm);
-    if (pilotResNum != -1) {
-#else
-    if (FSResolveAliasFile((FSRef *)ref, true, &targetIsFolder, &wasAliased) != noErr
-        || targetIsFolder)
-        goto badFile;
-    pilotResNum = EVOpenResourceFile(ref, fsRdWrPerm);
-    if (pilotResNum == -1)
-        goto badFile;
-#endif
-    crashlog("load pilot data 1");
-    playerFileHand = (PilotRec **)GetResource(kPilotFileType, kPilotResID);
-    if (playerFileHand != NULL) {
-        HNoPurge((Handle)playerFileHand);
-        err = DoEncryption(*playerFileHand, GetHandleSize((Handle)playerFileHand), kPilotCryptKey);
-        if (err == 0) {
-#if TARGET_RT_LITTLE_ENDIAN
-            FlipNpil(kPilotResID, *playerFileHand, GetHandleSize((Handle)playerFileHand), 0);
-#endif
-#else
     f = FOpenExpandedPath(path, "rb");
     if (f == NULL)
         goto badFile;
@@ -4451,7 +3843,6 @@ short LoadPilotData(char *path)
         UnlockAHandle((Handle)playerFileHand);
 
         if (err == 0) {
-#endif
             crashlog("load pilot data 2");
             PropagateMissionBitEffects();
             HandleStellarSystemVisibility();
@@ -4643,50 +4034,15 @@ short LoadPilotData(char *path)
                 }
             }
 
-#ifdef MACBUILD
-            HPurge((Handle)playerFileHand);
-            ReleaseResource((Handle)playerFileHand);
-#else
             DeallocAHandle(playerFileHand);
-#endif
             crashlog("load pilot data 4");
         }
     } else {
-#ifdef MACBUILD
-        CloseResFile(pilotResNum);
-        return kPilotUnreadable;
-#else
         fclose(f);
         return kPilotUnreadable;
-#endif
     }
 
     crashlog("load pilot data 5");
-#ifdef MACBUILD
-    altPlayerFileHand = (PilotRec2 **)GetResource(kPilotFileType, kPilotResID + 1);
-    if (altPlayerFileHand != NULL) {
-        HNoPurge((Handle)altPlayerFileHand);
-        err = DoEncryption(*altPlayerFileHand, GetHandleSize((Handle)altPlayerFileHand),
-                           kPilotCryptKey);
-        if (err == 0) {
-#if TARGET_RT_LITTLE_ENDIAN
-            FlipNpil(kPilotResID + 1, *altPlayerFileHand,
-                     GetHandleSize((Handle)altPlayerFileHand), 0);
-#endif
-            crashlog("load pilot data 6");
-            if ((*altPlayerFileHand)->version == kBetaPilotVersion) {
-                HUnlock((Handle)altPlayerFileHand);
-                HPurge((Handle)altPlayerFileHand);
-                CloseResFile(pilotResNum);
-                return kPilotBetaFile;
-            }
-            if ((*altPlayerFileHand)->version < kMinPilotVersion) {
-                HUnlock((Handle)altPlayerFileHand);
-                HPurge((Handle)altPlayerFileHand);
-                CloseResFile(pilotResNum);
-                return kPilotWrongVersion;
-            }
-#else
     len = fgetlong(f);
     if (len > 0) {
         altPlayerFileHand = (PilotRec2 **)AllocAHandle2(len, 0);
@@ -4719,7 +4075,6 @@ short LoadPilotData(char *path)
                 fclose(f);
                 return kPilotWrongVersion;
             }
-#endif
 
             if ((*altPlayerFileHand)->strict == 1)
                 strictPlay = 1;
@@ -4860,53 +4215,15 @@ short LoadPilotData(char *path)
             datePrefix[0xf] = 0;
             dateSuffix[0xf] = 0;
 
-#ifdef MACBUILD
-            HPurge((Handle)altPlayerFileHand);
-            ReleaseResource((Handle)altPlayerFileHand);
-#else
             DeallocAHandle(altPlayerFileHand);
-#endif
             crashlog("load pilot data 8");
         }
     } else {
-#ifdef MAC1010
-        CloseResFile(pilotResNum);
-        return kPilotUnreadable;
-#elif defined(MACBUILD)
-        CloseResFile(pilotResNum);
-        goto badFile;
-#else
         fclose(f);
         return kPilotUnreadable;
-#endif
     }
 
     crashlog("load pilot data 9");
-#ifdef MACBUILD
-    h = GetResource(kPilotFileType, kPilotResID + 1);
-    if (h != NULL) {
-        HNoPurge(h);
-        GetResInfo(h, &resID, &resType, text);
-        strncpy((char *)shipName, (char *)text, 0x40);
-        HPurge(h);
-        ReleaseResource(h);
-    }
-#ifdef MAC1010
-    strncpy((char *)playerName, (char *)spec->name, 0x1f);
-    CloseResFile(pilotResNum);
-
-    crashlog("making alias");
-    MakeAlias(spec);
-#else
-    FSGetCatalogInfo(ref, kFSCatInfoNone, NULL, &uniName, NULL, NULL);
-    UnicodeNameGetHFSName(uniName.length, uniName.unicode, kTextEncodingUnknown, false, hfsName);
-    strncpy((char *)playerName, (char *)hfsName, 0x1f);
-    CloseResFile(pilotResNum);
-
-    crashlog("making alias");
-    MakeAlias(ref);
-#endif
-#else
     fgetstr(buf, 0x40, f);
     CStr2PStr((char *)shipName, buf);
 
@@ -4920,7 +4237,6 @@ short LoadPilotData(char *path)
 
     crashlog("making alias");
     MakeAlias(path);
-#endif
 
     shipData[0].foldDir = 0;
     shipData[0].frameTimer = 0;
@@ -5150,33 +4466,6 @@ OSErr GetSubfolderOfFile(short refNum, ConstStr255Param name, int32_t *dirID, sh
 // FUNCTION: EVNOVA 0x004cd100
 // MAC: _AdjustHandleSize i386 0x00076bca ppc 0x0007f9fc
 void AdjustHandleSize(Handle h, int32_t newSize)
-#ifdef MACBUILD
-{
-    int32_t oldSize;
-    Handle temp;
-
-    if (h == NULL)
-        return;
-    if (GetHandleSize(h) == newSize)
-        return;
-    oldSize = GetHandleSize(h);
-    temp = NewHandleClear(newSize);
-    if (temp == NULL)
-        return;
-    HLock(temp);
-    HLock(h);
-    BlockMove(*h, *temp, oldSize < newSize ? oldSize : newSize);
-    HUnlock(h);
-    SetHandleSize(h, newSize);
-    HLock(h);
-    BlockMove(*temp, *h, newSize);
-    HUnlock(h);
-    HUnlock(temp);
-    DisposeHandle(temp);
-    ChangedResource(h);
-    WriteResource(h);
-}
-#else
 {
     int32_t size;
 
@@ -5189,7 +4478,6 @@ void AdjustHandleSize(Handle h, int32_t newSize)
             memset(*h + size, 0, newSize - size);
     }
 }
-#endif
 
 /* leaves the buffer empty if the list is missing or has no entries */
 /* GetRandomIndString. STATE: MATCH, byte-identical. OPEN: none */
@@ -5203,14 +4491,7 @@ void GetRandomIndString(unsigned char *str, short strListID)
     str[0] = 0;
     h = GetResource(kStringListType, strListID);
     if (h != NULL) {
-#ifdef MACBUILD
-        HLock(h);
-        BlockMove(*h, &count, sizeof(short));
-        HUnlock(h);
-        HPurge(h);
-#else
         count = SwapEndianShort(&ResRec(StringListRec, h)->count);
-#endif
         ReleaseResource(h);
         if (count > 0)
             GetIndString(str, strListID, Rand(count) + 1);
@@ -5240,128 +4521,6 @@ void DrawIndString(short strListID, short index)
     DrawString(str);
 }
 
-#ifdef MACBUILD
-/* DeleteResourceByID (mac _DeleteResourceByID): mac only. */
-// MAC: _DeleteResourceByID i386 0x00073011 ppc 0x0007be84
-OSErr DeleteResourceByID(ResType type, short id)
-{
-    short savedResFile;
-    short homeFile;
-    Handle h;
-
-    savedResFile = CurResFile();
-    h = GetResource(type, id);
-    if (h != NULL) {
-        homeFile = HomeResFile(h);
-        UseResFile(homeFile);
-        RemoveResource(h);
-        UpdateResFile(homeFile);
-        UseResFile(savedResFile);
-    }
-    return ResError();
-}
-
-/* DeleteResourceType (mac _DeleteResourceType): mac only. */
-// MAC: _DeleteResourceType i386 0x0007307f ppc 0x0007bef4
-void DeleteResourceType(ResType type)
-{
-    short i;
-    short savedResFile;
-    short curFile;
-    short homeFile;
-    Handle h;
-
-    curFile = savedResFile = CurResFile();
-    for (i = 1; CountResources(type) > 0; i++) {
-        h = GetIndResource(type, i);
-        if (h != NULL) {
-            homeFile = HomeResFile(h);
-            if (curFile != homeFile) {
-                UpdateResFile(curFile);
-                curFile = homeFile;
-                UseResFile(homeFile);
-            }
-            RemoveResource(h);
-            DisposeHandle(h);
-        }
-    }
-    UpdateResFile(curFile);
-    UseResFile(savedResFile);
-}
-
-/* navEventHandler (mac _navEventHandler): mac only. Lifts every window to the shielding level
-   while the navigation dialog runs. */
-// MAC: _navEventHandler i386 0x00073123 ppc 0x0007bf9c
-void navEventHandler(NavEventCallbackMessage selector, NavCBRecPtr parms, void *userData)
-{
-    int count;
-    int *windows;
-    int i;
-
-    CGSGetWindowCount(_CGSDefaultConnection(), _CGSDefaultConnection(), &count);
-    windows = malloc(count * sizeof(int));
-    CGSGetWindowList(_CGSDefaultConnection(), _CGSDefaultConnection(), count, windows, &count);
-    for (i = 0; i < count; i++)
-        CGSSetWindowLevel(_CGSDefaultConnection(), windows[i], CGShieldingWindowLevel());
-    free(windows);
-}
-
-/* MyOpenDocument (mac _MyOpenDocument): mac only. The pilot-file open dialog. */
-// MAC: _MyOpenDocument i386 0x000731c5 ppc 0x0007c058
-#ifndef MAC1010
-OSErr MyOpenDocument(const FSSpec *defaultSpec, FSSpec *outSpec)
-{
-    NavDialogCreationOptions options;
-    AEDesc defaultLocation;
-    NavTypeListHandle typeList;
-    int32_t count;
-    NavReplyRecord reply;
-    DescType actualType;
-    int32_t index;
-    Size actualSize;
-    NavDialogRef dialog;
-    AEKeyword keyword;
-    FSSpec spec;
-    OSErr err;
-
-    err = NavGetDefaultDialogCreationOptions(&options);
-    if (err == noErr) {
-        options.optionFlags |= kNavNoTypePopup | kNavSelectDefaultLocation;
-        options.optionFlags ^= kNavAllowPreviews | kNavAllowMultipleFiles;
-        err = AECreateDesc(typeFSS, defaultSpec, sizeof(FSSpec), &defaultLocation);
-        if (err == noErr) {
-            typeList = (NavTypeListHandle)NewHandleClear(sizeof(NavTypeList) + sizeof(OSType));
-            HLock((Handle)typeList);
-            (*typeList)->componentSignature = kNovaCreator;
-            (*typeList)->osTypeCount = 1;
-            (*typeList)->osType[0] = kPilotFileType;
-            HUnlock((Handle)typeList);
-            err = NavCreateGetFileDialog(&options, typeList, NULL, NULL, NULL, NULL, &dialog);
-            NavCustomControl(dialog, kNavCtlSetLocation, &defaultLocation);
-            NavDialogRun(dialog);
-            NavDialogGetReply(dialog, &reply);
-            DisposeHandle((Handle)typeList);
-            if (err == noErr && reply.validRecord) {
-                err = AECountItems(&reply.selection, &count);
-                if (err == noErr) {
-                    for (index = 1; index <= count; index++) {
-                        if (AEGetNthPtr(&reply.selection, index, typeFSS, &keyword, &actualType,
-                                        &spec, sizeof(FSSpec), &actualSize) == noErr)
-                            memcpy(outSpec, &spec, sizeof(FSSpec));
-                    }
-                }
-                err = NavDisposeReply(&reply);
-            } else
-                err = fnfErr;
-            NavDialogDispose(dialog);
-            ReleaseResource((Handle)typeList);    /* BUG: the handle was disposed above */
-            AEDisposeDesc(&defaultLocation);
-        }
-    }
-    return err;
-}
-#endif
-#endif
 
 /*
  * Pascal resource names carry a ';'-introduced comment (Nova Bible

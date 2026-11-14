@@ -201,9 +201,6 @@ extern double gSpeedMult;
 extern unsigned char shipName[256];
 extern PilotRec2 **altPlayerFileHand;
 extern PrefsRecord **gPrefsHandle;
-#ifdef MAC1010
-extern short gPrefsRefNum;
-#endif
 extern PilotRec **playerFileHand;
 EXTERN_CPP_END
 #pragma cplusplus reset

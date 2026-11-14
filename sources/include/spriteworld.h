@@ -608,14 +608,6 @@ typedef enum {
 extern RgnHandle gSWCollisionSpareRgn;
 extern RgnHandle gSWCollisionSectRgn;
 
-extern OSErr SWCreateSpriteFromPictResource(SpriteWorldPtr destSpriteWorldP, SpritePtr *newSpriteP,
-        void *spriteStorageP, short pictResID, short maskResID, short maxFrames,
-        MaskType maskType);
-extern OSErr SWCreateSpriteFromSinglePict(SpriteWorldPtr destSpriteWorldP, SpritePtr *newSpriteP,
-        void *spriteStorageP, short pictResID, short maskResID, short frameDimension,
-        short borderWidth, MaskType maskType);
-extern OSErr SWUpdateSpriteFromPictResource(SpritePtr theSpriteP, short pictResID);
-extern OSErr SWSaveRLESprite(SpritePtr srcSpriteP, short rleResID);
 extern OSErr SWCloneSpriteFromTile(SpriteWorldPtr spriteWorldP, SpritePtr *newSpriteP,
         void *spriteStorageP, short firstTileID, short lastTileID);
 extern void SWRemoveSpriteFromAnimation(SpriteWorldPtr spriteWorldP, SpritePtr spriteP,

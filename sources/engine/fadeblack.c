@@ -28,9 +28,6 @@ void ShowSplashScreen(void)
     if (pic != 0) {
         CenterPict(pic, &box);
         DrawPicHandle((PicHandle)pic, &box);
-#ifdef MACBUILD
-        HPurge(pic);
-#endif
         QDReleaseResource((PicHandle)pic);
     }
     UnsetGWorldContainer(&loadPort);

@@ -1507,10 +1507,6 @@ void LoadSprites(void)
 
     for (i = 0; i < kMaxShipTypes; i++) {
         targetInfoPic[i] = GetPicture(i + 3000);
-#ifdef MACBUILD
-        if (targetInfoPic[i] != NULL)
-            HNoPurge(targetInfoPic[i]);
-#endif
     }
 
     for (i = 0; i < 10; i++)
@@ -4489,17 +4485,11 @@ void PreflightMemoryUsage(int32_t *base, int32_t *engineGlow, int32_t *runningLi
             }
             if (id == -1)
                 continue;
-#ifdef MAC1010
-            SetResLoad(false);
-#endif
             h = GetResource((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, id);
             if (h != NULL) {
                 sizes[j] = GetResourceSizeOnDisk(h);
                 ReleaseResource(h);
             }
-#ifdef MAC1010
-            SetResLoad(true);
-#endif
             shipSpriteLoaded[i][j] = id;
         }
         *base = *base + sizes[0];

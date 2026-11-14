@@ -339,95 +339,6 @@ short SWCreateWindowFrame(CWindowPtr srcWindowP, SWFrameRec **newFrameP,
 /* SWCreateFrameFromCicnResource (mac _SWCreateFrameFromCicnResource). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476800
 // MAC: _SWCreateFrameFromCicnResource i386 0x000add00 ppc 0x000b91f4
-#ifdef MACBUILD
-short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
-                                    SWFrameRec **newFrameP, short iconResID,
-                                    MaskType maskType)
-{
-    OSErr err;
-    GWorldPtr saveGWorld;
-    GDHandle saveGDH;
-    GDHandle theGDH;
-    FramePtr tempFrameP;
-    CIconHandle cIconH;
-    RgnHandle maskRgn;
-    Rect frameRect;
-
-    *newFrameP = NULL;
-    tempFrameP = NULL;
-
-    SW_ASSERT(destSpriteWorld != NULL, 278);
-
-    GetGWorld(&saveGWorld, &saveGDH);
-
-    cIconH = GetCIcon(iconResID);
-
-    if (cIconH != NULL) {
-        HNoPurge((Handle)cIconH);
-        frameRect = (**cIconH).iconPMap.bounds;
-
-        theGDH = destSpriteWorld->mainSWGDH;
-
-        err = SWCreateFrame(theGDH, &tempFrameP, &frameRect, destSpriteWorld->pixelDepth, kCreateGWorld);
-    } else {
-        err = MemError();
-        if (err == noErr)
-            err = resNotFound;
-    }
-
-    if (err == noErr) {
-        LockPixels(tempFrameP->framePixHndl);
-        SetGWorld(tempFrameP->framePort, NULL);
-        EraseRect(&frameRect);
-        PlotCIcon(&frameRect, cIconH);
-        UnlockPixels(tempFrameP->framePixHndl);
-
-        if ((maskType & kRegionMask) != 0) {
-            err = SWCreateRegionFromCIconMask(&maskRgn, cIconH);
-
-            if (err == noErr) {
-                SWSetFrameMaskRgn(tempFrameP, maskRgn);
-            }
-        }
-    }
-
-    if (err == noErr) {
-        if ((maskType & kPixelMask) != 0) {
-            err = SWCreateGWorldFromCIconMask(destSpriteWorld, &tempFrameP->maskPort, (struct Image_t *)cIconH);
-
-            if (err == noErr) {
-                tempFrameP->maskDevice = GetGWorldDevice(tempFrameP->maskPort);
-                tempFrameP->maskPixHndl = GetGWorldPixMap(tempFrameP->maskPort);
-
-                SWFixImageGWorld(tempFrameP->framePort, tempFrameP->maskPort, NULL);
-            }
-
-            if (err == noErr && destSpriteWorld->pixelDepth <= 8) {
-                SWInvertGWorld(tempFrameP->maskPort);
-            }
-        }
-    }
-
-    if (cIconH != NULL) {
-        DisposeCIcon(cIconH);
-    }
-
-    if (err == noErr) {
-        *newFrameP = tempFrameP;
-    }
-
-    if (err != noErr) {
-        if (tempFrameP != NULL) {
-            SWDisposeFrame(&tempFrameP);
-        }
-    }
-
-    SetGWorld(saveGWorld, NULL);
-
-    SWSetStickyIfError(err);
-    return err;
-}
-#else
 short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
                                     SWFrameRec **newFrameP, short iconResID,
                                     unsigned char maskType)
@@ -504,7 +415,6 @@ short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
     SWSetStickyIfError(err);
     return err;
 }
-#endif
 
 #ifdef MACBUILD
 /* SWCreateFrameFromPictResource (mac _SWCreateFrameFromPictResource, mac-only). STATE: see the mac gate. */

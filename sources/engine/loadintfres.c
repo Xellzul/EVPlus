@@ -107,9 +107,6 @@ void LoadIntfResource(void)
 #else
         UnlockAHandle(intfFileHand);
 #endif
-#ifdef MACBUILD
-        HPurge(intfFileHand);
-#endif
         ReleaseResource(intfFileHand);
     } else {
         picID = kFirstResourceID;
@@ -132,9 +129,6 @@ void LoadIntfResource(void)
         OffsetRect(&pictRect, -statusOffPort.bounds.left, -statusOffPort.bounds.top);
 #endif
         DrawPicHandle(pict, &pictRect);
-#ifdef MACBUILD
-        HPurge((Handle)pict);
-#endif
         QDReleaseResource(pict);
         UnsetGWorldContainer(&statusOffPort);
         RedrawStatus(1);

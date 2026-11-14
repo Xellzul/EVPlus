@@ -463,9 +463,6 @@ void DoNewsDialog(void)
         if (itemHit == kNewsDoneItem)
             done = 1;
     } while (done == 0);
-#ifdef MACBUILD
-    HPurge((Handle)newsPic);
-#endif
     QDReleaseResource(newsPic);
     newsPic = NULL;
     DisposeDialogNoFlash(newsDialog);

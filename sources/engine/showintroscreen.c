@@ -73,9 +73,6 @@ void ShowIntroScreen(void)
         if (picHandle != NULL) {
             CenterPict(picHandle, &rect);
             DrawPicHandle(picHandle, &rect);
-#ifdef MACBUILD
-            HPurge((Handle)picHandle);
-#endif
             QDReleaseResource(picHandle);
         }
 

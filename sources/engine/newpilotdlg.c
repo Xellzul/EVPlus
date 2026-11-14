@@ -90,9 +90,6 @@ Boolean DoNewPilotNameDialog(Boolean *strictPlay)
     strict = *strictPlay;
     n = CountResources(kCharType);
     if (n > 1) {
-#ifdef MAC1010
-        SetResLoad(false);
-#endif
         count = 0;
         for (i = 0; i < n; i++) {
             res = GetIndResource(kCharType, (i + 1));
@@ -103,9 +100,6 @@ Boolean DoNewPilotNameDialog(Boolean *strictPlay)
                 ReleaseResource(res);
             }
         }
-#ifdef MAC1010
-        SetResLoad(true);
-#endif
     } else {
         count = 0;
     }

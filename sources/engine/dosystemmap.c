@@ -995,9 +995,6 @@ void DoSystemMap(void)
     for (x = 0; x < kMaxNebulae; x++) {
         for (j = 0; j < 7; j++) {
             if (nebulaPic[x][j] != NULL) {
-#ifdef MACBUILD
-                HPurge((Handle)nebulaPic[x][j]);
-#endif
                 QDReleaseResource(nebulaPic[x][j]);
                 nebulaPic[x][j] = 0;
             }

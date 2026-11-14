@@ -2790,6 +2790,8 @@ void ExploreNebulaeFromSystem(short sys)
 
 #ifdef MACBUILD
 /* ShowHint (mac _ShowHint, mac-only). STATE: see the mac gate. */
+// KEPT: a cut feature (nothing calls it, even on mac) -- a random STR# 7000 hint shown as a comm
+// message; possible future use, not enabled on win
 // MAC: _ShowHint i386 0x000051be ppc 0x00006724
 void ShowHint(void)
 {
