@@ -4400,13 +4400,24 @@ short FindPriorLoadedShipSprite(short value, short count, short field)
     return -1;
 }
 
-#ifndef MAC1010
 /* DisposeClonedSprite (mac _DisposeClonedSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6810
 // MAC: _DisposeClonedSprite i386 0x0001b3d0 ppc 0x0001f450
 void DisposeClonedSprite(SpritePtr *p)
-#include "../engine/disposeclonedsprite.inc"
-#endif
+{
+    SpritePtr q;
+
+    if (p == NULL)
+        return;
+    q = *p;
+    if (q == NULL)
+        return;
+    if (q->isEmptySprite != 0) {
+        q->frameArray = NULL;
+        q->numFrames = 0;
+    }
+    SWDisposeSprite(p);
+}
 
 #ifndef MACBUILD
 /* ScreenEndScene (mac @ScreenEndScene@0). STATE: MATCH, byte-identical. OPEN: none */
@@ -4614,11 +4625,6 @@ void PreflightMemoryUsage(int32_t *base, int32_t *engineGlow, int32_t *runningLi
         ReleaseResource((Handle)shipSpriteInfoHand);
     }
 }
-
-#ifdef MAC1010
-void DisposeClonedSprite(SpritePtr *p)
-#include "../engine/disposeclonedsprite.inc"
-#endif
 
 #ifndef MAC1010
 /* PreflightMemoryUsageTotal (mac _PreflightMemoryUsageTotal, mac-only). STATE: mac MATCH i386

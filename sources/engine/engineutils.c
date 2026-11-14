@@ -2144,10 +2144,20 @@ void ColorCodeSystem(short sys, RGBColor *color)
 /* CenterPict. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466540
 // MAC: _CenterPict i386 0x00008652 ppc 0x0000a6c8
-#if !defined(MACBUILD) || !V111
 void CenterPict(void *pict, Rect *bounds)
-#include "../engine/centerpict.inc"
-#endif
+{
+    Rect r;
+    Rect frame;
+
+    if (pict != 0) {
+        r = *bounds;
+        QDGetPictureBounds((PicHandle)pict, &frame);
+        bounds->top = ((r.bottom - r.top) - (frame.bottom - frame.top)) / 2 + r.top;
+        bounds->bottom = (frame.bottom - frame.top) + bounds->top;
+        bounds->left = ((r.right - r.left) - (frame.right - frame.left)) / 2 + r.left;
+        bounds->right = (frame.right - frame.left) + bounds->left;
+    }
+}
 
 #ifdef MACBUILD
 /* KeyCodeToString (mac _KeyCodeToString, mac-only). STATE: see the mac gate. */
@@ -6967,10 +6977,18 @@ void pstrcpy(unsigned char *dst, unsigned char *src)
 /* pstrcmp. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ef00
 // MAC: _pstrcmp i386 0x000084d2 ppc 0x0000a554
-#if !defined(MACBUILD) || !V111
 short pstrcmp(const unsigned char *a, const unsigned char *b)
-#include "../engine/pstrcmp.inc"
-#endif
+{
+    short i;
+
+    if (a[0] != b[0])
+        return -1;
+    for (i = 0; i < (a[0] && b[0]); i++) {
+        if (a[i] != b[i])
+            return -1;
+    }
+    return 0;
+}
 
 /* HideCursorSprite. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ef80
@@ -7156,11 +7174,6 @@ void IonizeShip(ShipObj *ship, WeapRecord *weap, FloatPoint *pos)
 }
 
 #ifdef MACBUILD
-#if V111
-short pstrcmp(const unsigned char *a, const unsigned char *b)
-#include "../engine/pstrcmp.inc"
-#endif
-
 /* DrawPicHandle (mac _DrawPicHandle, mac-only). STATE: see the mac gate. */
 // MAC: _DrawPicHandle i386 0x0000850d ppc 0x0000a5a8
 short DrawPicHandle(PicHandle pic, Rect *dstRect)
@@ -7193,11 +7206,6 @@ short DrawPicHandle(PicHandle pic, Rect *dstRect)
     }
     return err;
 }
-
-#if V111
-void CenterPict(void *pict, Rect *bounds)
-#include "../engine/centerpict.inc"
-#endif
 
 #if V111
 /* isPowerPC (mac _isPowerPC, mac-only). STATE: see the mac gate. */

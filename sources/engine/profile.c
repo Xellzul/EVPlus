@@ -24,10 +24,31 @@ EXTERN_C_BEGIN
 /* print_dependents (mac _print_dependents). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046fa30
 // MAC: _print_dependents i386 0x000a4e86 ppc 0x000b0b80
-#ifndef MACBUILD
 void print_dependents(FILE *f, short slot, short depth)
-#include "../engine/printdependents.inc"
-#endif
+{
+    short i;
+
+    for (i = 0; i < depth * 2; i++)
+        fprintf(f, " ");
+    fprintf(f, "%s:", name[slot]);
+    for (i = strlen(name[slot]) + depth * 2; i < 32; i++)
+        fprintf(f, " ");
+    fprintf(f, " %8i iterations  %8i ms  %8.1f ms average",
+            iterations[slot], totalMilliseconds[slot],
+            totalMilliseconds[slot] / (float)iterations[slot]);
+    if (dependency[slot] != -1) {
+        for (i = 0; i < (depth + 1) * 2; i++)
+            fprintf(f, " ");
+        fprintf(f, "(%.1f%%)",
+                totalMilliseconds[slot] * 100.0 / (float)totalMilliseconds[dependency[slot]]);
+    }
+    fprintf(f, "\n");
+    done[slot] = 1;
+    for (i = 0; i < kProfileSlots; i++) {
+        if (done[i] == 0 && dependency[i] == slot)
+            print_dependents(f, i, depth + 1);
+    }
+}
 
 /* MyProfileInit (mac _MyProfileInit). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046fbf0
@@ -122,11 +143,6 @@ void MyProfileExit(short slot)
             lastEntered = -1;
     }
 }
-
-#ifdef MACBUILD
-void print_dependents(FILE *f, short slot, short depth)
-#include "../engine/printdependents.inc"
-#endif
 
 /* MyProfileDump (mac _MyProfileDump). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ff00

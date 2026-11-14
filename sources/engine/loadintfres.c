@@ -144,9 +144,6 @@ void LoadIntfResource(void)
 }
 
 #ifdef MACBUILD
-void DumpPilotLog(void)
-#include "../engine/dumppilotlog.inc"
-
 /* ColorSearchProc (mac _ColorSearchProc): mac only. */
 // MAC: _ColorSearchProc i386 0x000767b4 ppc 0x0007f604
 Boolean ColorSearchProc(RGBColor *rgb, int32_t *position)
