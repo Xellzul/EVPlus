@@ -49,9 +49,6 @@
 #include "ships.h"
 #include "crashlog.h"
 #include "game.h"
-#ifdef MACBUILD
-#include "../mac/include/ASWRegistrationCarbonAPI.h"
-#endif
 
 #define kStrListMainScreen   0x8c
 #define kStrNewPilotConfirm     8
@@ -382,42 +379,11 @@ void DoMainScreen(void)
 }
 #endif
 
-#ifdef MAC1010
-/* the mac body of win's empty FUN_00486ec0 */
-#define kMainMenuBar 128
-#define kAquaMenuBar 129
-#define kAppleMenu 1000
-void FUN_00486ec0(void)
-{
-    Handle bar;
-    MenuHandle menu;
-#if TARGET_API_MAC_CARBON
-    int32_t response;
-
-    Gestalt(gestaltMenuMgrAttr, &response);
-    if (response & gestaltMenuMgrAquaLayoutMask)
-        bar = GetNewMBar(kAquaMenuBar);
-    else
-        bar = GetNewMBar(kMainMenuBar);
-#else
-
-    bar = GetNewMBar(kMainMenuBar);
-#endif
-    if (bar != NULL) {
-        SetMenuBar(bar);
-        menu = GetMenuHandle(kAppleMenu);
-        if (menu != NULL)
-            AppendResMenu(menu, 'DRVR');
-    }
-    DrawMenuBar();
-}
-#elif !defined(MACBUILD)
 /* FUN_00486ec0. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00486ec0
 void FUN_00486ec0(void)
 {
 }
-#endif
 
 /* MainScreenChoice (mac _MainScreenChoice). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00486ed0
@@ -429,10 +395,6 @@ void MainScreenChoice(short which)
     unsigned char msg[256];
     short i;
     short j;
-#if defined(MACBUILD) && V111
-    AppleEvent quitEvent;
-    OSErr err;
-#endif
 
     if (which == kMainScreenNew) {
         if (gameInProgress) {
@@ -498,12 +460,6 @@ void MainScreenChoice(short which)
     if (which == kMainScreenQuit) {
         Delay(0xf, &tix);
         gQuit = 1;
-#if defined(MACBUILD) && V111
-        err = MoreAECreateAppleEventSelfTarget(kCoreEventClass, kAEQuitApplication, &quitEvent);
-        if (err != noErr)
-            ExitToShell();
-        AESendMessage(&quitEvent, NULL, kAENoReply, kNoTimeOut);
-#endif
     }
 
     if (which == kMainScreenEnter) {
@@ -552,93 +508,6 @@ void MainScreenChoice(short which)
     }
 }
 
-#ifdef MACBUILD
-/* MainScreenMouse (mac _MainScreenMouse): mac only. */
-// MAC: _MainScreenMouse i386 0x0001aced ppc 0x0001ec14
-void MainScreenMouse(EventRecord *event)
-{
-    WindowPtr window;
-    Point where;
-    Rect dragBounds;
-    BitMap screenBits;
-    Str255 prompt;
-    short i;
-    Boolean animCut;
-
-    where = event->where;
-    switch (FindWindow(where, &window)) {
-    case inDesk:
-        SysBeep(1);
-        break;
-    case inDrag:
-        if (window == (WindowPtr)gWind) {
-            if (useLegacyRenderingPipeline) {
-                GetWindowDragBounds(&dragBounds, event->where);
-                if (dragBounds.right <= dragBounds.left || dragBounds.bottom <= dragBounds.top)
-                    break;
-                DragWindow(window, event->where, &dragBounds);
-            } else {
-                DragWindow(window, event->where, NULL);
-            }
-            ForceWindowOnscreen();
-            SWWindowMoved(gSpriteWorld);
-        } else {
-            if (useLegacyRenderingPipeline) {
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-                DragWindow(window, event->where, &qd.screenBits.bounds);
-#else
-                GetQDGlobalsScreenBits(&screenBits);
-                DragWindow(window, event->where, &screenBits.bounds);
-#endif
-            } else {
-                DragWindow(window, event->where, NULL);
-            }
-            ForceWindowOnscreen();
-        }
-        break;
-    case inMenuBar:
-        InitCursor();
-        cursorHidden = 0;
-        ShowTheCursor();
-        AdjustMenus();
-        DoMenuClick(MenuSelect(event->where));
-        break;
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    case inSysWindow:
-        SystemClick(event, window);
-        break;
-#endif
-    case inContent:
-        animCut = 0;
-        for (i = 0; i < 3; i++) {
-            if (slideIndex[i] < kAnimDone) {
-                slideIndex[i] = kAnimDone;
-                animCut = 1;
-            }
-        }
-        SWSetPortToWindow(gSpriteWorld);
-        GlobalToLocal(&where);
-        if (animCut) {
-            SetupInterfaceBackground();
-            MainScreenAnimDraw();
-            MainScreenUpdate(1);
-        } else {
-            MainScreenAnimDraw();
-            MainScreenUpdate(0);
-        }
-        MainScreenChoice(TrackMainScreenButtons(where));
-        break;
-    case inGoAway:
-        if ((FrontWindow)() == (WindowRef)gWind) {
-            ShowTheCursor();
-            GetIndString(prompt, kStrListMainScreen, kStrQuitConfirm);
-            if (EVYesNoDialog(prompt))
-                gQuit = 1;
-        }
-        break;
-    }
-}
-#endif
 
 /* MainScreenKey (mac _MainScreenKey). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004872a0
