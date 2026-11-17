@@ -16,7 +16,11 @@ if(NOT QTML_CLIENT_LIB)
   set(_qt ${CMAKE_BINARY_DIR}/qtsdk)
   set(QTML_CLIENT_LIB ${_qt}/qtmlClient.lib)
   if(NOT EXISTS ${QTML_CLIENT_LIB})
-    find_program(UNAR unar REQUIRED)
+    find_program(UNAR unar)
+    if(NOT UNAR)
+      message(FATAL_ERROR "qtmlClient.lib is unpacked from input-files/QT6SDK_Win.hqx with `unar`, which is not "
+                          "installed: install it or pass -DQTML_CLIENT_LIB=/path/to/qtmlClient.lib")
+    endif()
     execute_process(COMMAND ${UNAR} -q -f -o ${_qt} ${CMAKE_SOURCE_DIR}/input-files/QT6SDK_Win.hqx
                     RESULT_VARIABLE rc)
     if(rc OR NOT EXISTS ${_qt}/QT6SDK.zip)
