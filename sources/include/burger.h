@@ -571,6 +571,11 @@ extern int32_t Win95MouseY;
 extern Word JoystickPresent;                     /* globaldefs.c */
 extern Word32 Win95MouseButton;                  /* burgerkbwin.c */
 extern int32_t VideoFullScreen;                     /* burgervideomode.c */
+/* the hyperspace white-out (port addition, burgervideomode.c): blend from..to of 256 over 60 Hz ticks */
+#define kWhiteNone          0
+#define kWhiteSolid         256
+#define kWhiteFadeTicks     90                      /* 1.1.1's CGDisplayFade duration, 1.5 s */
+extern void VideoFadeWhite(Word from, Word to, uint32_t ticks);
 extern int32_t Win95DestScreenX;                    /* burgervideomode.c */
 extern int32_t Win95DestScreenY;                    /* burgervideomode.c */
 

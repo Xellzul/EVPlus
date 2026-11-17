@@ -234,11 +234,70 @@ void UnlockVideoPage(void)
     }
 }
 
+/* Port addition (not in the exe): 1.1.1's hyperspace white-out. 1.1.1 has CGDisplayFade blend the whole
+   display to and from solid white over 1.5 s while the game runs on; here the page is blended toward
+   white after the offscreen is copied in, by the fade's position at that moment. The offscreen the game
+   draws into is untouched. */
+static Word whiteFrom;
+static Word whiteTo;
+static Word32 whiteStart;
+static uint32_t whiteTicks;
+
+void VideoFadeWhite(Word from, Word to, uint32_t ticks)
+{
+    whiteFrom = from;
+    whiteTo = to;
+    whiteTicks = ticks;
+    whiteStart = ReadTick();
+}
+
+static Word CurrentWhite(void)
+{
+    uint32_t elapsed;
+
+    elapsed = ReadTick() - whiteStart;
+    if (elapsed >= whiteTicks)
+        return whiteTo;
+    return whiteFrom + ((int32_t)whiteTo - (int32_t)whiteFrom) * (int32_t)elapsed / (int32_t)whiteTicks;
+}
+
+/* the blend linear in each channel, as CGDisplayFade's kCGDisplayBlendSolidColor mix */
+static void BlendPageToWhite(Word a)
+{
+    unsigned short lut5[32];
+    unsigned short lut6[64];
+    unsigned short *row;
+    unsigned short p;
+    ULong x;
+    ULong y;
+    Word i;
+
+    for (i = 0; i < 32; i++)
+        lut5[i] = i + (((31 - i) * a + 128) >> 8);
+    for (i = 0; i < 64; i++)
+        lut6[i] = i + (((63 - i) * a + 128) >> 8);
+    for (y = 0; y < VideoTrueScreenHeight; y++) {
+        row = (unsigned short *)(VideoPointer + y * VideoWidth);
+        if (VideoTrueScreenDepth == 16) {           /* 5-6-5 */
+            for (x = 0; x < VideoTrueScreenWidth; x++) {
+                p = row[x];
+                row[x] = lut5[p >> 11] << 11 | lut6[(p >> 5) & 63] << 5 | lut5[p & 31];
+            }
+        } else {                                    /* 5-5-5 */
+            for (x = 0; x < VideoTrueScreenWidth; x++) {
+                p = row[x];
+                row[x] = lut5[(p >> 10) & 31] << 10 | lut5[(p >> 5) & 31] << 5 | lut5[p & 31];
+            }
+        }
+    }
+}
+
 /* UpdateAndNoPageFlip (BurgerLib GrWin95Code). */
 // FUNCTION: EVNOVA 0x004ec6c0
 void UpdateAndNoPageFlip(void)
 {
     char *offscreen;
+    Word white;
     ULong bytes;
     void *memDC;
     void *hdc;
@@ -260,6 +319,9 @@ void UpdateAndNoPageFlip(void)
                         DrawShapeLowLevel(0, 0, VideoTrueScreenWidth * bytes, VideoTrueScreenHeight, 0,
                                           offscreen);
                     }
+                    white = CurrentWhite();
+                    if (white != kWhiteNone && (VideoColorDepth == 15 || VideoColorDepth == 16))
+                        BlendPageToWhite(white);     /* port addition, see VideoFadeWhite */
                     UnlockVideoPage();
                 }
                 VideoOffscreen = offscreen;

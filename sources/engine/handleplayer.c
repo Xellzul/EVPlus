@@ -30,8 +30,6 @@
 #ifdef MACBUILD
 
 extern void SetRetainedWindow(WindowRef window, Boolean retained);
-extern void FadeWhiteOut(void);
-extern void FadeWhiteIn(void);
 extern Boolean QuickKeyCheckPlusEscorts(short code);
 #else
 /* the port keeps no retained-window state */
@@ -221,25 +219,12 @@ void HandlePlayer(ShipObj *player)
                 hyperGamma = 0;
             if (hyperGamma > 100.0)
                 hyperGamma = 100.0f;
-#if defined(MACBUILD) && V111
+            /* 1.1.1 */
             if (!screenFaded && hyperGamma > 0.0)
                 FadeWhiteIn();
-#else
-            OnTheFlyWhiteFade(hyperGamma);
-#endif
         } else if (hyperGamma >= 0.0) {
             hyperGamma = -1.0f;
-#ifdef MAC1010
-#if TARGET_API_MAC_CARBON
-            SetGamma(gScreenRef, &gOrigGamma);
-#else
-            GammaFadeTo(1, 100, 0);
-#endif
-#elif defined(MACBUILD)
             FadeWhiteOut();
-#else
-            FadeGammaTo(100, 0);
-#endif
         }
     }
     if (cheatsActive == 0)
@@ -1680,11 +1665,7 @@ void HandlePlayer(ShipObj *player)
             }
             if (step > 0.0) {
                 if (settings.noHyperGamma == 0)
-#if V111 || TARGET_API_MAC_CARBON
-                    hyperGamma = 5.0f * (step - 55.0f);
-#else
-                    hyperGamma = step * 0.3 - 15.0;
-#endif
+                    hyperGamma = 5.0f * (step - 55.0f);   /* 1.1.1 */
                 if (step > 50.0f)
                     step = 50.0f;
                 Accel(player->heading, step * gSpeedMult,

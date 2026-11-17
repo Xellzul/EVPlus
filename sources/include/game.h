@@ -242,7 +242,8 @@ extern void SpeakIt(char *msg, short flag);
 extern Boolean CanBuyGoods(short item);
 extern Boolean CanSellGoods(short item);
 extern void PropagateMissionBitEffects(void);
-extern void OnTheFlyWhiteFade(short pct);
+extern void FadeWhiteIn(void);
+extern void FadeWhiteOut(void);
 extern void ExploreNebulaeFromSystem(short sys);
 #ifdef MACBUILD
 extern EventRecord gEvent;

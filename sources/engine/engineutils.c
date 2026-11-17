@@ -52,8 +52,6 @@ extern short ScanForKeys(void);
 extern Boolean QuickKeyCheckPlusEscorts(short code);
 extern Boolean HasMaxFightersOnBoard(short shipType);
 extern void UnsplitTwoLineString(const unsigned char *src, unsigned char *dst);
-extern void FadeWhiteIn(void);
-extern void FadeWhiteOut(void);
 /* the AmbrosiaTools DrawTools calls DrawPicHandle makes that burger.h does not declare */
 #include "burgerplat.h"
 extern struct ITRect Sys2DT_Rect(const Rect *r);
@@ -2704,6 +2702,8 @@ void FadeGammaTo(uint32_t percent, uint32_t duration)
     uint32_t elapsed;
     int32_t delta;
 
+    /* 1.1.1 */
+    VideoFadeWhite(kWhiteNone, kWhiteNone, 0);
     target = (percent << 16) / 100;
     delta = target - screenGamma;
     if (duration != 0) {
@@ -2838,55 +2838,25 @@ void FadeScreenIn(void)
         FadeGammaTo(100, kFadeMillis);
     screenFaded = 0;
 }
-#endif
 
-/* Note: `pct' is pushed by the caller and never read here. */
-// FUNCTION: EVNOVA 0x00467e60
-// MAC: _OnTheFlyWhiteFade i386 0x00005528 ppc 0x00006b18
-void OnTheFlyWhiteFade(short pct)
+/* 1.1.1's FadeWhiteIn/Out */
+static Boolean whiteReserved;
+
+void FadeWhiteIn(void)
 {
-    // BUG (win): the only body is the mac 1.0.10 gamma one below, so on windows the hyperspace white-out
-    // never happens and settings.noHyperGamma does nothing (1.1.1 uses FadeWhiteIn/Out instead)
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    ScreenGamma gamma;
-    float scale;
-    float white;
-    short i;
-
-    if (settings.windowed != 0)
-        return;
-    if (pct < 0)
-        pct = 0;
-    if (pct > 100)
-        pct = 100;
-    scale = (100 - pct) * 0.01;
-    white = pct * 0.01;
-    for (i = 0; i < 256; i++) {
-        gamma.red[i] = scale * gOrigGamma.red[i] + white;
-        gamma.green[i] = gOrigGamma.green[i] * scale + white;
-        gamma.blue[i] = gOrigGamma.blue[i] * scale + white;
-        if (gamma.red[i] > 1.0)
-            gamma.red[i] = 1.0f;
-        if (gamma.green[i] > 1.0)
-            gamma.green[i] = 1.0f;
-        if (gamma.blue[i] > 1.0)
-            gamma.blue[i] = 1.0f;
-    }
-    SetGamma(gScreenRef, &gamma);
-#elif defined(MAC1010)
-    int32_t white[3];
-
-    if (settings.windowed != 0)
-        return;
-    if (pct < 0)
-        pct = 0;
-    if (pct > 100)
-        pct = 100;
-    white[0] = white[1] = white[2] = -1;
-    GammaFadeToColor(1, white, pct, 1, 1);
-#endif
+    screenFaded = true;
+    whiteReserved = true;
+    VideoFadeWhite(kWhiteNone, kWhiteSolid, kWhiteFadeTicks);
 }
 
+void FadeWhiteOut(void)
+{
+    if (whiteReserved)
+        VideoFadeWhite(kWhiteSolid, kWhiteNone, kWhiteFadeTicks);
+    whiteReserved = false;
+    screenFaded = false;
+}
+#endif
 
 // FUNCTION: EVNOVA 0x00467e70
 // MAC: _RestoreOrigClut i386 0x00005537 ppc 0x00006b24
