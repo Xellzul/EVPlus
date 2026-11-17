@@ -39,17 +39,10 @@ void DoKeyDialog(void)
     if (gWind != NULL)
         CenterWindow(FrontWindow(keyDialog), gWind);
     ShowMacWindow(FrontWindow(keyDialog));
-#ifdef MAC1010
-    SelectWindow(FrontWindow(keyDialog));
-    SetDialogGWorld(keyDialog);
-    RedrawDialog(keyDialog);
-    keyPic = GetPicture(0x85);
-#else
     FrontWindow(keyDialog);
     SetDialogGWorld(keyDialog);
     RedrawDialog(keyDialog);
     keyPic = GetPicture(0x8b);
-#endif
 
     done = 0;
     KeyDialogUpdate();
@@ -110,7 +103,6 @@ void DoKeyDialog(void)
 #define kNoNameStrIndex  0x119
 #define kRowTextInset       5
 #define kRowBaseline      0xf
-#define kKeyNameStrList     129
 
 /*
  * v and h must be signed `short`, and v must be declared first. PtInRect widens
@@ -180,14 +172,7 @@ void KeyDialogUpdate(void)
 
     SetDialogGWorld(keyDialog);
     GetDialogItem(keyDialog, 4, &itemType, &item, &picBox);
-#ifdef MACBUILD
-#ifdef MAC1010
-    if (gWind != NULL)
-        SWSetPortToWorkArea(gSpriteWorld);
-#endif
-#else
     SWSetPortToWorkArea(gSpriteWorld);
-#endif
     ForeColor(blackColor);
     TextFont(0);
     TextSize(12);
@@ -217,12 +202,8 @@ void KeyDialogUpdate(void)
                 ForeColor(blackColor);
                 MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
             }
-#ifdef MACBUILD
-            GetIndString(name, kKeyNameStrList, newKeyPrefs[i] + 1);
-#else
             KeyboardScanCodeToString((char *)name, sizeof(name), newKeyPrefs[i]);
             CtoPstr((char *)name);
-#endif
             if (name[0] == 0)
                 DrawIndString(kGameStrList, kNoNameStrIndex);
             else
@@ -230,60 +211,11 @@ void KeyDialogUpdate(void)
         }
     }
     ForeColor(blackColor);
-#if !defined(MACBUILD) || defined(MAC1010)
     if (gWind != NULL)
         SWSetPortToWindow(gSpriteWorld);
-#endif
     SetDialogGWorld(keyDialog);
     ForeColor(blackColor);
-#ifdef MACBUILD
-#ifdef MAC1010
-    if (gWind != NULL)
-        CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
-                 GetPortBitMapForCopyBits(GetDialogPort(keyDialog)),
-                 &picBox, &picBox, 0, NULL);
-#endif
-    DrawDialog(keyDialog);
-#else
     CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
              GetPortBitMapForCopyBits(GetDialogPort(keyDialog)),
              &picBox, &picBox, 0, NULL);
-#endif
 }
-
-#ifdef MACBUILD
-/* AdjustMenus (mac _AdjustMenus): mac only. */
-// MAC: _AdjustMenus i386 0x000176b4 ppc 0x0001b254
-void AdjustMenus(void)
-{
-    int32_t response;
-    MenuHandle fileMenu;
-    MenuHandle menu;
-
-    Gestalt(gestaltMenuMgrAttr, &response);
-#if TARGET_API_MAC_CARBON
-    if (response & gestaltMenuMgrAquaLayoutMask) {
-        if (!gameLoaded || creatingPilotFile)
-            DisableMenuCommand(NULL, kHICommandPreferences);
-        else
-            EnableMenuCommand(NULL, kHICommandPreferences);
-    } else
-#endif
-    {
-        fileMenu = GetMenuHandle(kFileMenu);
-        if (fileMenu != NULL) {
-            if (!gameLoaded || creatingPilotFile)
-                DisableMenuItem(fileMenu, 1);
-            else
-                EnableMenuItem(fileMenu, 1);
-        }
-    }
-    menu = GetMenuHandle(kAppleMenu);
-    if (menu != NULL) {
-        if (!gameLoaded || !gPause || creatingPilotFile)
-            DisableMenuItem(menu, kAboutItem);
-        else
-            EnableMenuItem(menu, kAboutItem);
-    }
-}
-#endif
