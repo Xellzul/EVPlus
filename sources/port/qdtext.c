@@ -170,6 +170,29 @@ short TextWidth(const char *text, int byteCount)
     return r.right;
 }
 
+/* TextWidth measured the way DrawTextRun draws: MacRoman converted to UTF-16 (TextWidth
+   measures the bytes as ANSI, so non-ASCII characters such as the ellipsis come out wrong) */
+short TextWidthMacRoman(const char *text, int byteCount)
+{
+    WinRect r;
+    char *buf;
+
+    if (CurrentGrafPort == NULL || text == NULL || byteCount <= 0)
+        return 0;
+    buf = (char *)AllocAPointer(byteCount * sizeof(unsigned short));
+    if (buf == NULL)
+        return 0;
+    CE_MacRomanToWide(text, byteCount, buf, byteCount);
+    SelectObject(CurrentGrafPort->hdc,
+                 GetFont(CurrentGrafPort->txFont, CurrentGrafPort->txSize,
+                         CurrentGrafPort->txFace));
+    r.top = r.left = r.bottom = r.right = 0;
+    CE_DrawTextW(CurrentGrafPort->hdc, buf, byteCount, &r,
+                 DT_CALCRECT | DT_NOCLIP | DT_SINGLELINE | DT_NOPREFIX);
+    DeallocAPointer(buf);
+    return r.right;
+}
+
 // FUNCTION: EVNOVA 0x004bcc70
 int MeasureWrappedText(const char *text, int byteCount, int width)
 {

@@ -1037,6 +1037,7 @@ extern void TextFace(short face);
 extern void TextFont(short font);
 extern void TextSize(short size);
 extern short TextWidth(const char *text, int byteCount);
+extern short TextWidthMacRoman(const char *text, int byteCount);
 #endif
 extern void UpdateAndPageFlip(void);
 #ifndef MACBUILD

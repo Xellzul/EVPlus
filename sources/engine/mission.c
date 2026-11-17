@@ -457,12 +457,7 @@ void SetupMissionList(void)
     TextFont(smallTextFont);
     TextSize(smallTextSize);
 
-#ifdef MACBUILD
-    GetFontInfo(&fontInfo);
-    cellSize.v = fontInfo.ascent + fontInfo.descent + fontInfo.leading;
-#else
     cellSize.v = (ceListItemBaseHeight * 1.5);
-#endif
     if (cellSize.v * count <= box.bottom - box.top) {
         visible = 0;
         GetDialogItem(missionDialog, 3, &itemType, &itemHandle, &box3);
@@ -2116,6 +2111,22 @@ Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
+/* The mac's TruncString(width, title, smTruncEnd) for the mission title: cut the end and add an
+   ellipsis until it fits. Done after MungeBriefing, so expanded tags fit too (the mac truncated
+   before expanding them). */
+static void TruncateTextToWidth(char *text, short width)
+{
+    short len;
+
+    len = strlen(text);
+    if (TextWidthMacRoman(text, len) <= width)
+        return;
+    while (len > 0 && TextWidthMacRoman(text, len) + TextWidthMacRoman("\xc9", 1) > width)
+        len--;
+    text[len] = '\xc9';
+    text[len + 1] = 0;
+}
+
 // FUNCTION: EVNOVA 0x00441620
 // MAC: _MissionDialogUpdate i386 0x0009f156 ppc 0x000aaf3c
 void MissionDialogUpdate(void)
@@ -2148,15 +2159,13 @@ void MissionDialogUpdate(void)
             TextSize(18);
             strncpy((char *)text, (char *)missionName[dockedPortMissions[missionsOutside]
                                                                [selMissionListItem]], 0xfa);
-#ifdef MACBUILD
-            TruncString(box.right - box.left - 1, text, smTruncEnd);
-#endif
             PtoCstr((unsigned char *)text);
             strncpy(savedBriefing, briefingTextPtr, kBriefingTextMax);
             strncpy(briefingTextPtr, (char *)text, 0xfa);
             MungeBriefing(1, dockedPortMissions[missionsOutside][selMissionListItem]);
             strncpy((char *)text, briefingTextPtr, 0xfa);
             strncpy(briefingTextPtr, savedBriefing, kBriefingTextMax);
+            TruncateTextToWidth(text, box.right - box.left - 1);
             CE_SetPen(box.left, box.top + CurrentGrafPort->txSize);
             DrawTextRun(text, strlen(text), NULL, 0, 0);
         } else {
@@ -3615,65 +3624,6 @@ void SetupMissionInfoList(void)
     TextFont(smallTextFont);
     TextSize(smallTextSize);
 
-#ifdef MACBUILD
-    GetFontInfo(&fontInfo);
-    cellSize.v = fontInfo.ascent + fontInfo.descent + fontInfo.leading;
-    if (cellSize.v * count <= box.bottom - box.top) {
-        hasScrollbar = 0;
-    } else {
-        box.right -= 15;
-        hasScrollbar = 1;
-    }
-    cellSize.h = box.right - box.left;
-#if TARGET_API_MAC_OS8
-    missionInfoList = LNew(&box, &cellBounds, cellSize, 128, missionInfoDialog,
-                           false, false, false, hasScrollbar);
-#else
-    ldefSpec.defType = kListDefUserProcType;
-    ldefSpec.u.userProc = NewListDefUPP((ListDefProcPtr)MissionListDefinition);
-    CreateCustomList(&box, &cellBounds, cellSize, &ldefSpec, GetDialogWindow(missionInfoDialog),
-                     true, false, false, hasScrollbar, &missionInfoList);
-#endif
-    HLock((Handle)missionInfoList);
-    (*missionInfoList)->selFlags = lOnlyOne;
-    (*missionInfoList)->refCon = (int32_t)ldefColors;
-    HUnlock((Handle)missionInfoList);
-
-    rowPt.h = rowPt.v = 0;
-    for (i = 0; i < kMaxActiveMissions; i++) {
-        if (currentMissionObjectives[i].active == 0
-                || (currentMissionObjectives[i].flags & kMissionHidden) != 0)
-            continue;
-
-#ifdef MAC1010
-        strncpy(marker, "", 3);
-        if (currentMissionObjectives[i].failed != 0)
-            strncpy(marker, "\xa5 ", 4);
-
-        strncpy(nameBuf, currentMissions[i].name, kMissionInfoTextSize);
-        PtoCstr((unsigned char *)nameBuf);
-        strncpy(briefingTextPtr, nameBuf, kMissionInfoTextSize);
-        MungeBriefing(0, i);
-        // BUG: no NUL when the expanded name is kMissionInfoTextSize or longer; the strcat below then overruns
-        strncpy(nameBuf, briefingTextPtr, kMissionInfoTextSize);
-        strcat(marker, nameBuf);
-        len = strlen(marker);
-        LSetCell(marker, len, rowPt, missionInfoList);
-#else
-        LClrCell(rowPt, missionInfoList);
-        if (currentMissionObjectives[i].failed != 0) {
-            bullet[0] = '\xa5';
-            bullet[1] = ' ';
-            LAddToCell(bullet, 2, rowPt, missionInfoList);
-        }
-        memcpy(briefingTextPtr, &currentMissions[i].name[1], (unsigned char)currentMissions[i].name[0]);
-        briefingTextPtr[(unsigned char)currentMissions[i].name[0]] = 0;
-        MungeBriefing(0, i);
-        LAddToCell(briefingTextPtr, strlen(briefingTextPtr), rowPt, missionInfoList);
-#endif
-        rowPt.v++;
-    }
-#else
     cellSize.v = (ceListItemBaseHeight * 1.5);
 
     if (cellSize.v * count <= box.bottom - box.top) {
@@ -3709,7 +3659,6 @@ void SetupMissionInfoList(void)
         LSetCell(marker, len, rowPt, missionInfoList);
         rowPt.v++;
     }
-#endif
 
     rowPt.h = rowPt.v = 0;
     LSetSelect(1, rowPt, missionInfoList);
