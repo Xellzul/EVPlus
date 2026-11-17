@@ -452,11 +452,7 @@ void InitEVNova(void)
 #endif
 
     crashlog("initializing monitor");
-#ifdef CEFIX /* F03.01 */
     CE_InitializeMonitor();
-#else
-    SetupMonitor();
-#endif
     ResetScreenRect();
 
     crashlog("initializing QuickTime");

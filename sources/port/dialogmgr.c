@@ -2425,11 +2425,7 @@ void CreateGameWindow(void *hInstance, int32_t nCmdShow)
 
     FastMemSet(&wc, 0, sizeof(wc));
     wc.style = CS_OWNDC | CS_DBLCLKS;
-#ifdef CEFIX /* F05.01 */
     wc.lpfnWndProc = (void *)CE_WndProc;
-#else
-    wc.lpfnWndProc = (void *)WinGameWndProc;
-#endif
     wc.hInstance = hInstance;
     wc.lpszClassName = "WinGameClass";
     classAtom = RegisterClassA(&wc);

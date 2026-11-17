@@ -31,8 +31,6 @@
 #define kSHCNFIDList        0
 #define kWineOverride       "native, builtin"
 #define kGameIconGroup      202
-/* TODO: sources/rsrc/evnova.rc has no icon at all, so both groups are missing (both exes and .nplay
-   files show the generic icon); add our own 202 (game) and 203 (.nplay) -- not CE's Mac icon. */
 #define kNplayIconGroup     203                 /* CE's .nplay icon */
 #define kRTGroupIcon        ((const char *)14)  /* RT_GROUP_ICON */
 

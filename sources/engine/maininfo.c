@@ -786,15 +786,8 @@ void DoPrefsDialog(void)
             SetControlValue((ControlPtr)ctl, 0);
         GetDialogItem(prefsDialog, kItemSmoothing, &itemType, (Handle *)&item, &box);
         ctl = item;
-#ifdef CEFIX /* F04.01 */
         ceRunInAWindow = CE_IsWindowed();
         SetControlValue((ControlPtr)ctl, ceRunInAWindow);
-#else
-        if (settings.windowedPending != 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-#endif
         GetDialogItem(prefsDialog, kItemEarlyOut, &itemType, (Handle *)&item, &box);
         ctl = item;
         if (settings.noMovies == 0)
@@ -901,12 +894,8 @@ void DoPrefsDialog(void)
             RedrawDialog(prefsDialog);
         }
         if (itemHit == kItemSmoothing) {
-#ifdef CEFIX /* F04.02-04 */
             ceRunInAWindow = (ceRunInAWindow == 0);
             CE_ToggleFullscreen();
-#else
-            settings.windowedPending = (settings.windowedPending == 0);
-#endif
             RedrawDialog(prefsDialog);
         }
         if (itemHit == kItemEarlyOut) {

@@ -2557,10 +2557,6 @@ void LoadPrefs(void)
                 settings.noMovies = 1;
             if ((*gPrefsHandle)->noDebris != 0)
                 settings.noDebris = 1;
-#ifndef CEFIX /* F04.05 */
-            if ((*gPrefsHandle)->windowed != 0)
-                settings.windowed = 1;
-#endif
             if ((*gPrefsHandle)->loadShipSets != 0)
                 settings.shipAnimations = 1;
             if ((*gPrefsHandle)->loadShipGlow != 0)
@@ -2922,15 +2918,7 @@ short WritePilotData(short stellar)
 
         PStr2CStr(name, shipName);
         LockAHandle((Handle)playerFileHand);
-#ifndef CEFIX /* F02.01 */
-        DoEncryption(*playerFileHand, GetAHandleSize((Handle)playerFileHand),
-                     kPilotCryptKey);
-#endif
         LockAHandle((Handle)altPlayerFileHand);
-#ifndef CEFIX /* F02.02 */
-        DoEncryption(*altPlayerFileHand, GetAHandleSize((Handle)altPlayerFileHand),
-                     kPilotCryptKey);
-#endif
         fwritelong(GetAHandleSize((Handle)playerFileHand), f);
         fwrite(*playerFileHand, GetAHandleSize((Handle)playerFileHand), 1, f);
         fwritelong(GetAHandleSize((Handle)altPlayerFileHand), f);
@@ -3405,13 +3393,8 @@ short LoadPilotData(char *path)
     }
     if (playerFileHand != NULL) {
         LockAHandle((Handle)playerFileHand);
-#ifdef CEFIX /* F02.03 */
         err = CE_DecryptIfNecessary(*playerFileHand, GetAHandleSize((Handle)playerFileHand),
                                     kPilotCryptKey);
-#else
-        err = DoEncryption(*playerFileHand, GetAHandleSize((Handle)playerFileHand),
-                           kPilotCryptKey);
-#endif
         UnlockAHandle((Handle)playerFileHand);
 
         if (err == 0) {
@@ -3618,13 +3601,8 @@ short LoadPilotData(char *path)
     }
     if (altPlayerFileHand != NULL) {
         LockAHandle((Handle)altPlayerFileHand);
-#ifdef CEFIX /* F02.04 */
         err = CE_DecryptIfNecessary(*altPlayerFileHand,
                                     GetAHandleSize((Handle)altPlayerFileHand), kPilotCryptKey);
-#else
-        err = DoEncryption(*altPlayerFileHand, GetAHandleSize((Handle)altPlayerFileHand),
-                           kPilotCryptKey);
-#endif
         UnlockAHandle((Handle)altPlayerFileHand);
 
         if (err == 0) {

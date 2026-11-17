@@ -3016,23 +3016,6 @@ done:
     }
     GetPixBounds((*mainScreenDevice)->gdPMap, &mainDeviceInitBounds);
     InitCluts();
-#else
-    int32_t flags;
-    int32_t width;
-    int32_t height;
-
-    flags = (settings.windowed != 0 ? 0 : 1) | kModeFlagBase;
-    width = GetSystemMetrics(SM_CXSCREEN);
-    height = GetSystemMetrics(SM_CYSCREEN);
-    if (((flags & 1) == 0 && width <= 1024)
-        || SetDisplayToSize(1024, 768, kModeDepth, flags) != 0) {
-        if (SetDisplayToSize(800, 600, kModeDepth, flags) != 0)
-            FatalStartupError(kModeFailAlert);
-    }
-    screenMinusDockRect.top = 0;
-    screenMinusDockRect.left = 0;
-    screenMinusDockRect.bottom = gVideoHeight;
-    screenMinusDockRect.right = gVideoWidth;
 #endif
 }
 
