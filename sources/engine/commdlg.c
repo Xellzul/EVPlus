@@ -1705,7 +1705,6 @@ void LoadStellarResponse(short which)
  * explicit tests rather than an offset.
  */
 
-#define kRegisterStrList 30000
 
 
 #define kOutfitModPlunder    0x19    /* modType that shifts the capture odds */
@@ -2325,8 +2324,6 @@ void SetPlunderValues(void)
     if (shipData[shipData->targetShip].govt != -1
         && (govtData[shipData[shipData->targetShip].govt].flags & kGovtAlwaysDisabled) != 0)
         captureOdds = 0;
-    if (((shipClass[gameIsRegisteredIndex].registered != 0) ? 1 : 0) == 0)
-        captureOdds = 0;
     if (CanHireEscorts() == 0)
         captureOdds = 0;
 }
@@ -2508,11 +2505,6 @@ void PlunderDialogUpdate(void)
     NumToString(captureOdds, text);
     DrawString(text);
     DrawString("\p%");
-    if (((shipClass[gameIsRegisteredIndex].registered != 0) ? 1 : 0) == 0) {
-        DrawString("\p  (");
-        DrawIndString(kRegisterStrList, 1);
-        DrawString("\p)");
-    }
     ForeColor(blackColor);
     DrawPlunderButtons(-1);
     SWSetPortToWindow(gSpriteWorld);

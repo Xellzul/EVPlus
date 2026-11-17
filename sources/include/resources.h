@@ -146,8 +146,6 @@ typedef struct ShipRec {
     char padAA2[2];
     FloatPoint compress[2];
     short *frameAngles;
-    short registered;
-    short hacked;
 } ShipRec;
 
 /* Nova's resource types, four Mac Roman characters each */

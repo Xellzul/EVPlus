@@ -57,7 +57,6 @@ extern void *explodSnd[];
 extern void *klaxxonSnd;
 extern void *clickSnd;
 extern short lastShipAIDispatched;
-extern short gameIsHackedIndex;
 EXTERN_CPP_END
 #pragma cplusplus reset
 extern unsigned int DeleteAFile(const char *path);
@@ -195,7 +194,6 @@ extern Boolean didSpeak;
 extern Boolean doMainScreenAnim;
 extern Rect standardPicRect;
 extern Boolean gameFrozen;
-extern short gameIsRegisteredIndex;
 extern DateTimeRec gameTime;
 extern Image_t *greenMapArrow;
 extern Boolean ignoreKeys;

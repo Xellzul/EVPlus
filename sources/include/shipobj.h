@@ -112,9 +112,6 @@ typedef struct ShipObj {
     short fuelRegenState;
     short jamming[4];
     short formLeader;
-    unsigned char *licenseName;
-    long long licenseCode;
-    uint32_t licenseCopies;
 } ShipObj;
 
 typedef struct ShotObj {
@@ -148,14 +145,6 @@ extern short shipSystems[512];
 EXTERN_CPP_END
 #pragma cplusplus reset
 
-/* a step of the licence checks */
-#ifdef MAC1010
-#define LICENSE_STEP_BEGIN do {
-#define LICENSE_STEP_END   } while (0);
-#else
-#define LICENSE_STEP_BEGIN
-#define LICENSE_STEP_END
-#endif
 
 #ifdef __cplusplus
 }

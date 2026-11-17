@@ -1,5 +1,5 @@
 // COMPILE: -lang c++ -bool off
-/* loaddata.c -- pilot-folder setup, OpenDataFiles, LoadObjectData, LoadStrings, LoadPrefs/SavePrefs, the pilot file, the resource utilities, the chär record readers and VerifyResourceChecksums. Notes: Research/notes/loaddata.md */
+/* loaddata.c -- pilot-folder setup, OpenDataFiles, LoadObjectData, LoadStrings, LoadPrefs/SavePrefs, the pilot file, the resource utilities, the chär record readers. Notes: Research/notes/loaddata.md */
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -212,7 +212,7 @@ void OpenDataFiles(void)
         }
     }
 
-    if (shipClass[gameIsRegisteredIndex].registered != 0 ? 1 : 0) {
+    {
         if (pluginCount > 0) {
             crashlog_print("opening files in ");
             crashlog_print("Nova Plug-Ins");
@@ -3470,9 +3470,6 @@ void DumpPilotLog(void)
     uint32_t contribute[2];
 #endif
 
-    if ((shipClass[gameIsRegisteredIndex].registered != 0 ? 1 : 0) == 0)
-        return;
-
 #if defined(MACBUILD) && V111
     if (novaSupportFolder != NULL) {
         dir = malloc(512);
@@ -4790,93 +4787,3 @@ OSErr MyOpenDocument(const FSSpec *defaultSpec, FSSpec *outSpec)
 }
 #endif
 
-/* ---- VerifyResourceChecksums (0x004cd7e0) ---- */
-
-#define kCheckedTypes        0x17
-#define kChecksumResType 0x63739f6d   /* 'cs.m' */
-#define kStrBadChecksum         7
-
-/*
- * The type list is twenty-three separate assignments into a local array, not
- * an aggregate initialiser -- the exe stores twenty-three immediates rather
- * than copying a .rdata blob.
- */
-/* VerifyResourceChecksums. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x004cd7e0
-// MAC: _VerifyResourceChecksums i386 0x000733f8 ppc 0x0007c224
-void VerifyResourceChecksums(void)
-{
-    unsigned char alert[256];
-    uint32_t resType[kCheckedTypes];
-    uint32_t type;
-    short t;
-    short i;
-    Handle h;
-    short n;
-    int32_t sum;
-    uint32_t expected;
-
-    resType[0] = kBoomType;
-    resType[1] = kCharType;
-    resType[2] = kColrType;
-    resType[3] = kCronType;
-    resType[4] = kDudeType;
-    resType[5] = kFletType;
-    resType[6] = kGovtType;
-    resType[7] = kIntfType;
-    resType[8] = kJunkType;
-    resType[9] = kMisnType;
-    resType[10] = kNebuType;
-    resType[11] = kOutfType;
-    resType[12] = kOopsType;
-    resType[13] = kPersType;
-    resType[14] = kRankType;
-    resType[15] = kRoidType;
-    resType[16] = kShipType;
-    resType[17] = kSpinType;
-    resType[18] = kSpobType;
-    resType[19] = kSystType;
-    resType[20] = kWeapType;
-    resType[21] = kYearType;
-    resType[22] = kIntfType;
-
-    if (shipClass[gameIsRegisteredIndex].registered != 0 ? 1 : 0)
-        return;
-
-    sum = 0;
-    expected = 0;
-    for (t = 0; t < kCheckedTypes; t++) {
-        IterateInGameEventLoop(1);
-        type = resType[t];
-        n = CountResources(type);
-        if (n > 0) {
-            for (i = 0; i < n; i++) {
-                h = GetIndResource(type, (i + 1));
-                if (h != NULL) {
-                    LockAHandle(h);
-                    sum += MemoryChecksum(*h, GetAHandleSize(h));
-                    UnlockAHandle(h);
-                    ReleaseResource(h);
-                }
-            }
-        }
-    }
-
-    h = GetIndResource(kChecksumResType, 1);
-    if (h != NULL) {
-        LockAHandle(h);
-#ifdef MACBUILD
-        expected = EndianU32_BtoN(**(uint32_t **)h);
-#else
-        expected = **(uint32_t **)h;
-#endif
-        UnlockAHandle(h);
-        ReleaseResource(h);
-    }
-    if (sum != expected) {
-        ShowTheCursor();
-        GetIndString(alert, kAlertStrList, kStrBadChecksum);
-        EVNoteAlert(alert);
-        ExitToShell();
-    }
-}

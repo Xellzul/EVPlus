@@ -65,7 +65,6 @@ extern void SpawnNagShip(void);
 extern void SpawnScoopableBox(FloatPoint *pos, short cargoType, short pict);
 extern void SystemInfoToShipStats(void);
 extern short TotalMissionCargoSpace(void);
-extern void VerifyResourceChecksums(void);
 extern Boolean WeaponHasAmmo(ShipObj *ship, short weaponIndex);
 extern short WeaponMaxSimultShots(ShipObj *ship, short w);
 #pragma cplusplus on

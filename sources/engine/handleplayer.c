@@ -724,10 +724,6 @@ void HandlePlayer(ShipObj *player)
         navTargetSelectFlag = 0;
     }
 
-    LICENSE_STEP_BEGIN
-    shipClass[gameIsRegisteredIndex].registered =
-        (shipData[36].licenseCopies != 0) ? (unsigned char)1 : (unsigned char)0;
-    LICENSE_STEP_END
 
     if (player->jumpTimer <= 0.0f) {
         j = -1;

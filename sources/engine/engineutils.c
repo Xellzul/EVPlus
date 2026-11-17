@@ -4302,9 +4302,7 @@ void SetupPortAvailableShipTypes(SpobRecord *port)
                     avail[i] = 0;
             } else {
                 if (shipClass[i].hireRandom == 0
-                        || shipClass[i].dailyHireRoll
-                                * (shipClass[gameIsRegisteredIndex].registered != 0 ? 1 : 0)
-                                > shipClass[i].hireRandom)
+                        || shipClass[i].dailyHireRoll > shipClass[i].hireRandom)
                     avail[i] = 0;
             }
         }
@@ -4794,20 +4792,12 @@ void SpawnNagShip(void)
     else
         chance = 500;
 
-    chance = chance * (1 - ((shipClass[gameIsRegisteredIndex].registered != 0) ? 1 : 0));
-
-    if (chance == 0) {
-        if (((shipClass[gameIsHackedIndex].hacked != 0) ? 1 : 0) == 0)
-            return;
-    }
-
     for (w = 1; (short)w < kMaxShips; w++) {
         if (shipData[w].active != 0 && shipData[w].persType == kPersCaptainHector)
             return;
     }
 
-    if ((chance > 0 && Rand(chance) == 0) ||
-        ((shipClass[gameIsHackedIndex].hacked != 0) ? 1 : 0)) {
+    if (chance > 0 && Rand(chance) == 0) {
         slot = GenericRandomShipSpawn(shipData->curSystem, 2);
         if (slot != -1) {
             if (totalDaysPlayed > 30) {

@@ -60,9 +60,6 @@ extern void DisposeGammaTools(void);
 #define kMaxGamma     6
 #define kDefaultGamma 3
 
-#define kPlugMismatchSTR    140
-#define kPlugMismatchIndex  27
-
 #define kAlertPlatformOpen  0x16
 #define kAlertFileOpen      0x17
 #define kAlertDrawOpen      0x18
@@ -378,8 +375,6 @@ Boolean playerHasIllegalOutfits;
 Boolean allReinforcementsInhibited;
 Boolean playerHasTribbles;
 Boolean playerHasPerishableJunk;
-short gameIsRegisteredIndex;
-short gameIsHackedIndex;
 #endif
 
 EXTERN_C_BEGIN
@@ -426,12 +421,10 @@ void InitEVNova(void)
     crashlog_print("game engine was compiled ");
     crashlog_print("Jun 24 2006");
     crashlog_print("\n");
-    gameIsRegisteredIndex = Rand(0x300);
     crashlog_print("game engine version is ");
     crashlog_print("1.0.A");
     crashlog_print(" Windows");
     crashlog_print("\n\n");
-    gameIsHackedIndex = Rand(0x300);
 
     crashlog("opening data files & loading prefs");
     InitDataFiles();
@@ -536,37 +529,16 @@ void InitEVNova(void)
     IterateInGameEventLoop(kEventLoopTicks);
 
     crashlog("opening data files");
-    LICENSE_STEP_BEGIN
-    shipData[5].licenseCode = 0;
-    LICENSE_STEP_END
     FUN_0049e420();
-    LICENSE_STEP_BEGIN
-    shipData[17].licenseName = (unsigned char *)"";
-    LICENSE_STEP_END
     IterateInGameEventLoop(kEventLoopTicks);
-    LICENSE_STEP_BEGIN
-    shipData[36].licenseCopies = 1;
-    LICENSE_STEP_END
     InitColors();
 
-    LICENSE_STEP_BEGIN
-    shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
-    LICENSE_STEP_END
     SetupDialogs();
 
 
     pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
     OpenDataFiles();
     pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
-    if (pluginCount != 0) {
-        if ((shipClass[gameIsRegisteredIndex].registered ? 1 : 0) == 0
-                != (pluginCount == 0)) {
-            ShowTheCursor();
-            GetIndString(alertText, kPlugMismatchSTR, kPlugMismatchIndex);
-            EVNoteAlert(alertText);
-        }
-    }
     FadeScreenOut();
 
     cursorHidden = 0;
@@ -624,17 +596,12 @@ void InitEVNova(void)
     IterateInGameEventLoop(kEventLoopTicks);
 
     HideAmbrosiaLogo();
-    LICENSE_STEP_BEGIN
-    shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
-    LICENSE_STEP_END
 
     crashlog("showing splash screen");
     ShowSplashScreen();
     HandleIntroMusic(1);
     FadeScreenIn();
     IterateInGameEventLoop(kEventLoopTicks);
-    VerifyResourceChecksums();
     IterateInGameEventLoop(kEventLoopTicks);
     InitIntroProgressBar();
 
@@ -698,18 +665,13 @@ void InitEVNova(void)
 
     SetupToolbox();
     CarbonHackInit();
-    gameIsRegisteredIndex = Rand(0x300);
-    gameIsHackedIndex = Rand(0x300);
 
     crashlog_print("initializing arrays\n");
     InitArrays();
     IterateInGameEventLoop(kEventLoopTicks);
 
     crashlog_print("opening data files\n");
-    shipData[5].licenseCode = 0;
-    shipData[17].licenseName = (unsigned char *)"";
     IterateInGameEventLoop(kEventLoopTicks);
-    shipData[36].licenseCopies = 1;
     IterateInGameEventLoop(kEventLoopTicks);
 
     LoadPrefs(1);
@@ -723,10 +685,8 @@ void InitEVNova(void)
     }
     IterateInGameEventLoop(kEventLoopTicks);
 
-    shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? 1 : 0;
 #if V111
-    if (shipClass[gameIsRegisteredIndex].registered) {
+    {
         envPath = getenv("EVNOVA_SUPPORT_FOLDER_PATH");
         if (envPath != NULL) {
             novaSupportFolder = malloc(sizeof(FSRef));
@@ -752,17 +712,9 @@ void InitEVNova(void)
             SelectNovaSupport();
             CountEVPlugins(*novaSupportFolder, 0);
         }
-        if (novaSupportFolder != NULL && shipClass[gameIsRegisteredIndex].registered == 0) {
-            ShowTheCursor();
-            GetIndString(alertText, kAlertStrList, 0x35);
-            EVNoteAlert(alertText);
-            free(novaSupportFolder);
-            novaSupportFolder = NULL;
-        }
     }
 #endif
     InitDataFiles();
-    VerifyResourceChecksums();
     if (EVInstallEndianFlippers() == 0) {
         if (novaSupportFolder != NULL) {
             dir = malloc(0x200);
@@ -801,21 +753,12 @@ void InitEVNova(void)
         gWind = 0;
         GetMainDevice();
         InitColors();
-        shipClass[gameIsRegisteredIndex].registered =
-            shipData[36].licenseCopies ? 1 : 0;
         SetupDialogs();
 
 
         pluginCount = CountEVPlugins(pluginsFolder, kPlugInFileType);
         OpenDataFiles();
         pluginCount = CountEVPlugins(pluginsFolder, kPlugInFileType);
-        if (pluginCount != 0) {
-            if (shipClass[gameIsRegisteredIndex].registered == 0) {
-                ShowTheCursor();
-                GetIndString(alertText, kAlertStrList, 0x1b);
-                EVNoteAlert(alertText);
-            }
-        }
 
         cursorHidden = 0;
         if (settings.windowed == 0)
@@ -873,8 +816,6 @@ void InitEVNova(void)
 
         FadeScreenOut();
         HideAmbrosiaLogo();
-        shipClass[gameIsRegisteredIndex].registered =
-            shipData[36].licenseCopies ? 1 : 0;
 
         crashlog_print("showing splash screen\n");
         ShowSplashScreen();
@@ -1226,7 +1167,6 @@ void DoPlayGameWork(unsigned char advance)
 {
     short i;
     short n;
-    short x;
 
     MyProfileEnter(kProfPlayer);
     QuickKeyCheckHandler();
@@ -1340,11 +1280,6 @@ void DoPlayGameWork(unsigned char advance)
             HandleShot(&shotData[i]);
         }
     }
-    LICENSE_STEP_BEGIN
-    shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies != 0 ? (unsigned char)1 : (unsigned char)0;
-    LICENSE_STEP_END
-    x = shipClass[gameIsRegisteredIndex].registered;
     MyProfileExit(kProfShots);
 
     for (i = 0; i < kMaxNavDefaults; i++) {
@@ -3605,8 +3540,6 @@ void SpawnAsteroid(unsigned char type)
 
     if (active >= systemData[shipData[0].curSystem].asteroidCount)
         return;
-
-    shipClass[gameIsHackedIndex].hacked = 0;
 
     for (i = 0; i < kMaxAsteroids; i++) {
         if (asteroidData[i].active == 0) {

@@ -1112,7 +1112,6 @@ void EnterGameFromMainScreen(void)
     playerIsLanded = 0;
     crashlog("adjusting sounds");
     AdjustSoundVolume();
-    shipData[17].licenseName = (unsigned char *)"";
     DisposeMainScreenSounds();
     crashlog("showing intro screen");
     if (!seenIntroScreen) {
@@ -1126,9 +1125,6 @@ void EnterGameFromMainScreen(void)
 #ifdef MACBUILD
     MaxMem(&grow);
 #endif
-    LICENSE_STEP_BEGIN
-    shipData[5].licenseCode = 0;
-    LICENSE_STEP_END
     crashlog("drawing stuff");
     LoadIntfResource();
     SWSetPortToWorkArea(gSpriteWorld);
@@ -1147,17 +1143,8 @@ void EnterGameFromMainScreen(void)
     if (systemData[shipData->curSystem].murk < 0)
         ClearStarfield();
     DrawMapInFloatingFrame();
-    LICENSE_STEP_BEGIN
-    shipData[36].licenseCopies = 1;
-    LICENSE_STEP_END
     crashlog("drawing more stuff");
-    LICENSE_STEP_BEGIN
-    shipClass[gameIsRegisteredIndex].registered =
-        shipData[36].licenseCopies ? (unsigned char)1 : (unsigned char)0;
-    LICENSE_STEP_END
     ResetPlayerPrecalcedValues();
-
-    shipClass[gameIsHackedIndex].hacked = 0;
 
     HandleStellarSystemVisibility();
     HandleStellarSprites();
