@@ -181,7 +181,11 @@ typedef struct ShipRec {
 #define kResUnloaded        9999
 
 /* the resource records as stored (Nova Bible layouts) */
+#ifdef __MWERKS__
 #pragma options align=mac68k
+#else
+#pragma pack(push, 2)
+#endif
 
 typedef struct SpinRec {
     short spriteID;
@@ -724,7 +728,11 @@ typedef struct DescRes {
     unsigned char text[1];
 } DescRes;
 
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 
 /* WeapRecord.guidance, the Nova Bible's wëap Guidance values */
 #define kGuidanceUnguided   (-1)
@@ -968,7 +976,11 @@ EXTERN_CPP_END
 #pragma cplusplus reset
 
 /* chär resource, 0x16a bytes, read in place through charFileHand. */
+#ifdef __MWERKS__
 #pragma options align=mac68k
+#else
+#pragma pack(push, 2)
+#endif
 typedef struct CharRecord {
     int32_t cash;
     short shipType;
@@ -988,7 +1000,11 @@ typedef struct CharRecord {
     char suffix[0x10];
     short unk15a[8];
 } CharRecord;
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 
 /* Resource flag bits, one name per bit, named for the Nova Bible's meaning.
    Table and the uses that read a bit differently: Research/flag-names.md */

@@ -71,7 +71,7 @@ void Halt(void)
 // FUNCTION: EVNOVA 0x004d9d10
 void DebugXString(const char *string)
 {
-    evn_FILE *log;
+    FILE *log;
     unsigned int length;
 
     if (Inited == kDebugLockNone) {

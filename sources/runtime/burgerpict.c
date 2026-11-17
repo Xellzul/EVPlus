@@ -14,7 +14,11 @@ extern "C" {
 
 /* QuickTime's own records. The port's PixMap (macport.h) is a different layout, so a
    QuickTime GWorld is only ever touched through these. */
+#ifdef __MWERKS__
 #pragma options align=mac68k
+#else
+#pragma pack(push, 2)
+#endif
 typedef struct QTPixMap {
     char *baseAddr;                              /* +0x00 */
     short rowBytes;                              /* +0x04 top two bits are flags */
@@ -54,7 +58,11 @@ typedef struct QTImageDescription {
     short depth;                                 /* +0x52 */
     short clutID;                                /* +0x54 */
 } QTImageDescription, **QTImageDescriptionHandle;
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 
 typedef struct QTGWorld *QTGWorldPtr;            /* opaque: QuickTime owns it */
 typedef struct QTGDevice **QTGDHandle;

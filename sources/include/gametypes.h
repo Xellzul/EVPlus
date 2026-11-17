@@ -190,7 +190,11 @@ typedef struct DateTimeRec {
     short                  dayOfWeek;
 } DateTimeRec;
 
+#ifdef __MWERKS__
 #pragma options align=packed
+#else
+#pragma pack(push, 1)
+#endif
 typedef struct RGBColor {
     unsigned short         red;
     unsigned short         green;
@@ -203,7 +207,11 @@ typedef struct Rect {
     short                  bottom;
     short                  right;
 } Rect;
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 #endif
 
 #ifndef MACBUILD
@@ -384,7 +392,11 @@ typedef struct Settings {
 #endif
 } Settings;
 
+#ifdef __MWERKS__
 #pragma options align=packed
+#else
+#pragma pack(push, 1)
+#endif
 typedef struct PrefsRecord {
     short sig;
     short musicEnabled;
@@ -419,7 +431,11 @@ typedef struct PrefsRecord {
 #endif
     short unk88;
 } PrefsRecord;
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 
 /* one offerable mission in missionAvailData, stride 0x12c */
 typedef struct MissionAvailRec {
@@ -459,7 +475,11 @@ typedef struct BriefMissionRec {
 
 /* one entry of the mission table, stride 0x8e6; the pilot file holds sixteen */
 #ifndef MACBUILD
+#ifdef __MWERKS__
 #pragma options align=packed
+#else
+#pragma pack(push, 1)
+#endif
 #endif
 typedef struct MissionRecord {
     short                  travelStellar;
@@ -526,7 +546,11 @@ typedef struct MissionRecord {
     char                   name[0x100];
 } MissionRecord;
 #ifndef MACBUILD
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 #endif
 
 typedef struct MissionState {

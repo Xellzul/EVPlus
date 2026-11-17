@@ -7,11 +7,7 @@ typedef char **Handle;
 #endif
 #include "burgertypes.h"
 
-/* C++ (BurgerLib's own build) takes stdio from MSL and its FILE by name. */
-#ifdef __cplusplus
 #include <stdio.h>
-using std::_FILE;
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +26,7 @@ extern void * AllocAPointer(Word32 MemSize);
 #else
 extern void DeallocAPointer(void *MemPtr);
 #endif
-extern evn_FILE *FOpenExpandedPath(const char *path, const char *mode);
+extern FILE *FOpenExpandedPath(const char *path, const char *mode);
 #ifdef MACBUILD
 #define AllocAPointerClear(size) NewPtrClear(size)
 #else
@@ -585,7 +581,6 @@ extern Word MusicVolume;
 extern Word SystemState;
 extern ULong BurgerVoiceCount;                       /* BurgerVoiceCount */
 
-struct _FILE;
 struct adpcm_state;
 struct AdpcmVoice;
 struct TextBuilder;
@@ -597,12 +592,12 @@ extern void AtomicLeaveCritical(void *token);
 extern ULongLong TimerGetMilliseconds(void);
 extern void SystemIdle(void);
 extern int32_t ST_Open(unsigned short channels, ULong device);
-extern int32_t fgetstr(char *buf, int32_t size, evn_FILE *stream);
-extern void fwritelong(int32_t value, evn_FILE *stream);
-extern void fwritestr(const char *s, evn_FILE *stream);
-extern int32_t fgetlong(evn_FILE *stream);
-extern void *LoadAFileFP(evn_FILE *fp, uint32_t *length);
-extern ULong fgetfilesize(evn_FILE *fp);     /* BurgerLib fgetfilesize */
+extern int32_t fgetstr(char *buf, int32_t size, FILE *stream);
+extern void fwritelong(int32_t value, FILE *stream);
+extern void fwritestr(const char *s, FILE *stream);
+extern int32_t fgetlong(FILE *stream);
+extern void *LoadAFileFP(FILE *fp, uint32_t *length);
+extern ULong fgetfilesize(FILE *fp);     /* BurgerLib fgetfilesize */
 extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib CreateDirectoryPathNative */
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
 extern void MouseSetRange(int32_t width, int32_t height);   /* BurgerLib MouseSetRange */
@@ -939,20 +934,20 @@ static inline void BlockMoveData(const void *src, void *dst, ULong size)
 #endif
 #ifdef MACBUILD
 #ifdef MAC1010
-extern short OpenEVPlugins(short refNum, ConstStr255Param folderName, OSType type, evn_FILE *log);
+extern short OpenEVPlugins(short refNum, ConstStr255Param folderName, OSType type, FILE *log);
 #else
 extern short OpenEVPlugins(FSRef folder, OSType type);
 #endif
 #else
 extern short OpenEVPlugins(const char *path, const char *ext,
-                           evn_FILE *log);
+                           FILE *log);
 #endif
 #if defined(__MWERKS__) && !defined(MACBUILD) && !defined(__cplusplus)
-extern int fclose(evn_FILE *file);
+extern int fclose(FILE *file);
 extern unsigned int fread(void *ptr, unsigned int size, unsigned int count,
-                          evn_FILE *stream);
+                          FILE *stream);
 extern unsigned int fwrite(const void *ptr, unsigned int size, unsigned int count,
-                           evn_FILE *stream);
+                           FILE *stream);
 #endif
 #if defined(__MWERKS__) && !defined(MACBUILD) && (!defined(__cplusplus) || !defined(_MSL_CSTDLIB))
 extern int atexit(void (*fn)(void));

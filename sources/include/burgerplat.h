@@ -445,7 +445,11 @@ struct WindowNode;
 struct ITControl;
 
 #ifdef MAC1010
+#ifdef __MWERKS__
 #pragma options align=mac68k
+#else
+#pragma pack(push, 2)
+#endif
 #endif
 typedef struct ITElement {
     struct ITElement *next;
@@ -629,7 +633,11 @@ typedef struct ITClick {
     char link[0x400];
 } ITClick;
 #ifdef MAC1010
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 #endif
 
 /* a condition stored as a byte flag: the exe builds it `mov al,1 / xor al,al`, not setcc */

@@ -6821,13 +6821,21 @@ short IntroMovieIdleProc(void)
 }
 #endif
 
+#ifdef __MWERKS__
 #pragma options align=packed
+#else
+#pragma pack(push, 1)
+#endif
 typedef struct FileSpec {
     short vRefNum;
     int32_t parID;
     char name[256];
 } FileSpec;
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 
 
 #define SC_SPACE        0x39

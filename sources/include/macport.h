@@ -24,7 +24,11 @@ typedef struct Point {
 #endif
 
 #ifndef MACBUILD
+#ifdef __MWERKS__
 #pragma options align=packed
+#else
+#pragma pack(push, 1)
+#endif
 typedef struct EventRecord {
     unsigned short what;
     int32_t message;
@@ -32,7 +36,11 @@ typedef struct EventRecord {
     Point where;
     short modifiers;
 } EventRecord;
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 #endif
 
 #ifndef MACBUILD
@@ -240,7 +248,11 @@ extern PixMapPtr GetGWCPixMap(GWorldContainer *gwc);
 #endif
 
 #if defined(MAC1010) && !TARGET_API_MAC_CARBON /* SpriteWorld's records: 68k alignment on 1.0.10 Classic */
+#ifdef __MWERKS__
 #pragma options align=mac68k
+#else
+#pragma pack(push, 2)
+#endif
 #endif
 typedef struct SWFrameRec {
     CGrafPtr framePort;
@@ -562,7 +574,11 @@ struct SpriteRec {
     Boolean srD3;
 };
 #if defined(MAC1010) && !TARGET_API_MAC_CARBON
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 #endif
 
 #ifndef MACBUILD
@@ -633,7 +649,11 @@ typedef struct DialogRecord {
 } DialogRecord;
 
 #if defined(MAC1010) && !TARGET_API_MAC_CARBON /* as SpriteWorld's records */
+#ifdef __MWERKS__
 #pragma options align=mac68k
+#else
+#pragma pack(push, 2)
+#endif
 #endif
 typedef struct Particle {
     short lifeRemaining;
@@ -649,7 +669,11 @@ typedef struct Particle {
     uint32_t color;
 } Particle, *ParticlePtr;
 #if defined(MAC1010) && !TARGET_API_MAC_CARBON
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 #endif
 
 /* Toolbox GetTime shim — port implementation at 0x004bbb10 */

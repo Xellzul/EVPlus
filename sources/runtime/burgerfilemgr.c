@@ -14,8 +14,8 @@ extern "C" {
 
 #define kFirstHardDrive 2                        /* C: */
 
-int32_t SaveAFileFP(evn_FILE *file, const void *data, uint32_t length);
-void *LoadAFileHandleFP(evn_FILE *file);
+int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length);
+void *LoadAFileHandleFP(FILE *file);
 
 Handle PrefixHandles[PREFIXMAX];                /* 0x0087071c */
 static Word8 SetPfxInited;                       /* 0x00867488 */
@@ -323,7 +323,7 @@ void PopAPrefix(unsigned int num)
 /* fwritelong (BurgerLib's void signature). STATE: MATCH 100.0%, exe 10 / obj 10, byte-identical yes.
    OPEN: none */
 // FUNCTION: EVNOVA 0x004f22b0
-void fwritelong(int32_t value, evn_FILE *stream)
+void fwritelong(int32_t value, FILE *stream)
 {
     fwrite(&value, 1, 4, stream);
 }
@@ -332,7 +332,7 @@ void fwritelong(int32_t value, evn_FILE *stream)
 /* fwritestr (BurgerLib's void signature). STATE: MATCH 100.0%, exe 16 / obj 16, byte-identical yes.
    OPEN: none */
 // FUNCTION: EVNOVA 0x004f22e0
-void fwritestr(const char *s, evn_FILE *stream)
+void fwritestr(const char *s, FILE *stream)
 {
     fwrite(s, 1, strlen(s) + 1, stream);
 }
@@ -340,7 +340,7 @@ void fwritestr(const char *s, evn_FILE *stream)
 /* fgetlong (BurgerLib fgetlong). STATE: MATCH 100.0%, exe 12 / obj 12, byte-identical yes.
    OPEN: none */
 // FUNCTION: EVNOVA 0x004f2310
-int32_t fgetlong(evn_FILE *stream)
+int32_t fgetlong(FILE *stream)
 {
     int32_t value;
 
@@ -387,7 +387,7 @@ int32_t SaveAFile(const char *path, const void *data, uint32_t length)
 
 /* SaveAFileFP. STATE: MATCH 100%, exe 39 / obj 39 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f2430
-int32_t SaveAFileFP(evn_FILE *file, const void *data, uint32_t length)
+int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length)
 {
     uint32_t written;
     int closed;
@@ -499,7 +499,7 @@ void *LoadAFileHandle(const char *path)
 /* Read the whole file into a new handle and close it. */
 /* LoadAFileHandleFP. STATE: MATCH 100.0%, exe 62 / obj 62, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f2650
-void *LoadAFileHandleFP(evn_FILE *file)
+void *LoadAFileHandleFP(FILE *file)
 {
     ULong size;
     ULong got;

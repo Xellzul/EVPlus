@@ -109,20 +109,19 @@ extern short WarpSoundDuration(void);
 extern int32_t ResourceInit(RezFile *rez, const char *path, uint32_t start);
 extern char *ResourceLoadByName(RezFile *rez, const char *name);
 extern void *SaveBuffer(void);
-struct _FILE;
 #ifdef MACBUILD
 /* the plug-in scan's file type: any */
 /* a plug-in file's type, 'Np' 0x95 'f' (MacRoman) */
 #define kPlugInFileType 0x4e709566
 #ifdef MAC1010
-extern short CountEVPlugins(short refNum, ConstStr255Param folderName, OSType type, evn_FILE *log);
+extern short CountEVPlugins(short refNum, ConstStr255Param folderName, OSType type, FILE *log);
 extern OSErr GetPluginSubfolder(short refNum, ConstStr255Param name, int32_t *dirID, short *vRefNum);
 extern short gARef;
 #else
 extern short CountEVPlugins(FSRef folder, OSType type);
 #endif
 #else
-extern short CountEVPlugins(const char *path, const char *ext, evn_FILE *log);
+extern short CountEVPlugins(const char *path, const char *ext, FILE *log);
 #endif
 extern void ResourceDetach(RezFile *rez, int32_t index);
 extern Word ResourceGetIDFromHandle(RezFile *rez, Handle h, int32_t *idFound,

@@ -18,14 +18,22 @@ typedef struct RawTypeEntry {
     uint32_t count;      /* +0x08 */
 } RawTypeEntry;
 
+#ifdef __MWERKS__
 #pragma options align=mac68k
+#else
+#pragma pack(push, 2)
+#endif
 typedef struct RawResRecord {
     uint32_t index;    /* +0x00 */
     uint32_t type;      /* +0x04 */
     unsigned short id;        /* +0x08 */
     char name[256];             /* +0x0a */
 } RawResRecord;
+#ifdef __MWERKS__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 
 typedef struct RawRezMap {
     uint32_t typeListOffset; /* +0x00 from this record's own base */
