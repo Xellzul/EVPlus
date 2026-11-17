@@ -82,12 +82,6 @@ set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-e
     -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double -fcommon -w
     $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
 
-# iconv.dll's import library (the exe loads iconv.dll; cmake/iconv.def has its hints)
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/libiconv_imp.a
-  COMMAND ${EVNOVA_DLLTOOL} -d ${CMAKE_SOURCE_DIR}/cmake/iconv.def -D iconv.dll -l ${CMAKE_BINARY_DIR}/libiconv_imp.a
-  DEPENDS ${CMAKE_SOURCE_DIR}/cmake/iconv.def)
-add_custom_target(iconv_imp DEPENDS ${CMAKE_BINARY_DIR}/libiconv_imp.a)
-
 set(WIN_LIBS kernel32 user32 gdi32 winmm wsock32 advapi32 comctl32 shell32 version comdlg32 iphlpapi ole32
     oleaut32 opengl32)
 
@@ -106,9 +100,8 @@ function(evnova_exe target outname cefix)
     target_compile_options(${t} PRIVATE ${EVNOVA_FLAGS})
     target_compile_definitions(${t} PRIVATE ${defs})
   endforeach()
-  add_dependencies(${target} iconv_imp)
   set_target_properties(${target} PROPERTIES OUTPUT_NAME "${outname}" LINKER_LANGUAGE CXX)
-  target_link_libraries(${target} PRIVATE ${target}_rt ${QT_RENAMED} ${QTML_CLIENT_LIB} ${CMAKE_BINARY_DIR}/libiconv_imp.a
+  target_link_libraries(${target} PRIVATE ${target}_rt ${QT_RENAMED} ${QTML_CLIENT_LIB}
                         ${WIN_LIBS} $<$<BOOL:${cefix}>:gdiplus>)
   target_link_options(${target} PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/${target}.map"
     # qtmlClient.lib was built with MSVC and asks for its C runtime; mingw's is linked instead

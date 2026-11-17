@@ -67,11 +67,7 @@ void SetupIntroMusic(void)
     do {
         PStr2CStr(name, songName);
         sprintf(path, "9:Nova Plug-ins:%s%s", name, gMusicExtensions[i]);
-#ifdef CEFIX /* F07.05 */
         CE_ExpandPlugInsPath(path, path);
-#else
-        ExpandAPathToBufferNative(path, path);
-#endif
         CStr2PStr(path, path);
         result = FSMakeFSSpec(0, 0, path, &spec);
         specErr = result;
@@ -85,11 +81,7 @@ void SetupIntroMusic(void)
         do {
             PStr2CStr(name, songName);
             sprintf(path, "9:Nova Files:%s%s", name, gMusicExtensions[i]);
-#ifdef CEFIX /* F07.06 */
             CE_ExpandFilesPath(path, path);
-#else
-            ExpandAPathToBufferNative(path, path);
-#endif
             CStr2PStr(path, path);
             result = FSMakeFSSpec(0, 0, path, &spec);
             specErr = result;

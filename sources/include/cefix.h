@@ -72,7 +72,6 @@ void CE_ExpandFilesPath(char *dst, const char *path);
 void CE_ExpandPlugInsPath(char *dst, const char *path);
 
 /* cetext.c */
-#define kCEFontMapCount     1           /* Times -> Times New Roman only */
 
 struct WinRect;
 

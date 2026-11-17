@@ -194,26 +194,16 @@ extern void CopyBitsOr8(PixMapPtr src, PixMapPtr dst,
         Rect *srcRect, Rect *dstRect);
 extern void CopyBitsCopy16(PixMapPtr src, PixMapPtr dst,
         Rect *srcRect, Rect *dstRect);
-extern void CopyBitsCopy24(PixMapPtr src, PixMapPtr dst,
-        Rect *srcRect, Rect *dstRect);
 extern void CopyBitsAddOver16(PixMapPtr src, PixMapPtr dst,
         Rect *srcRect, Rect *dstRect);
 extern void CopyBitsAdMax16(PixMapPtr src, PixMapPtr dst,
         Rect *srcRect, Rect *dstRect);
 extern void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
         int32_t xStep, int32_t yStep, int32_t xStart, int32_t yStart);
-extern void CopyBitsScale16Average(PixMapPtr srcBits, PixMapPtr dstBits, Rect *srcRect,
-        Rect *dstRect, int32_t xStep, int32_t yStep, int32_t xFrac,
-        int32_t yFrac);
-extern void CopyBitsScale24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyMaskNone(PixMapPtr src, PixMapPtr mask, PixMapPtr dst,
         Rect *srcRect, Rect *maskRect, Rect *dstRect);
 extern void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
         Rect *srcRect, Rect *maskRect, Rect *dstRect);
-extern void CopyMaskScale16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
-        Rect *srcRect, Rect *maskRect, Rect *dstRect,
-        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 
 #ifdef MACBUILD
 /* EVCarbonHack's accessors, as sources/mac/port/evcarbonhack*.c define them */
@@ -1070,7 +1060,6 @@ extern DialogPtr gCurDialog;
 extern unsigned char gGammaRamp[32];
 extern void *gKeyboardHook;
 extern int32_t gLastModifiers;
-extern void *gMacRomanToCP1252;
 extern SpriteWorldPtr gSpriteWorld;
 
 extern SpriteRec *masterShipSprite[768];

@@ -62,11 +62,7 @@ void InitDataFiles(void)
     noSavePilotFiles = EVBugResourceFieldTest(12);
     noUpdatePilotData = EVBugResourceFieldTest(13);
     GetIniIndString(name, kPilotDirList, 3);
-#ifdef CEFIX /* F07.07 */
     strcpy(pilotsFolder, "");
-#else
-    strcpy(pilotsFolder, "9:");
-#endif
     strcat(pilotsFolder, name);
     strcat(pilotsFolder, ":");
     strcpy(gPrefsDirectory, "@:");
@@ -93,11 +89,7 @@ void OpenDataFiles(void)
     short count;
 
     GetIniIndString(name, kPilotDirList, 3);
-#ifdef CEFIX /* F07.08 */
     strcpy(path, "");
-#else
-    strcpy(path, "9:");
-#endif
     strcat(path, name);
     if (CreateDirectoryPath(path) != 0) {
         FadeScreenIn();
@@ -111,12 +103,7 @@ void OpenDataFiles(void)
     crashlog_print(" folder:\n");
 
     if (OpenEVPlugins("Nova Files", ".rez", NULL) != 0) {
-#ifdef CEFIX /* F07.09-10 */
         if (CE_OpenNovaFilesFallback("Nova Files", ".rez", NULL) != 0) {
-#else
-        CreateDirectoryPath("Nova Files");
-        if (OpenEVPlugins("Nova Files", ".rez", NULL) != 0) {
-#endif
             FadeScreenIn();
             GetIndString(str, kAlertStrList, 0x1e);
             EVNoteAlert(str);
@@ -130,11 +117,7 @@ void OpenDataFiles(void)
             crashlog_print("Nova Plug-Ins");
             crashlog_print(" folder:\n");
         }
-#ifdef CEFIX /* F07.11 */
         if (CE_OpenPlugInsFallback("Nova Plug-Ins", ".rez", NULL) != 0) {
-#else
-        if (OpenEVPlugins("Nova Plug-Ins", ".rez", NULL) != 0) {
-#endif
             CreateDirectoryPath("Nova Plug-Ins");
             if (OpenEVPlugins("Nova Plug-Ins", ".rez", NULL) != 0) {
                 FadeScreenIn();

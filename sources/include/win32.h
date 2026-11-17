@@ -761,10 +761,6 @@ __declspec(dllimport) int32_t __stdcall RegSetValueExA(void *key, const char *na
 __declspec(dllimport) int32_t __stdcall RegFlushKey(void *key);
 __declspec(dllimport) int __stdcall GetUserNameA(char *buf, uint32_t *size);
 
-/* iconv */
-__declspec(dllimport) void *libiconv_open(const char *tocode, const char *fromcode);
-__declspec(dllimport) uint32_t libiconv(void *cd, char **inbuf, uint32_t *inbytesleft,
-                                             char **outbuf, uint32_t *outbytesleft);
 
 /* winmm */
 __declspec(dllimport) uint32_t __stdcall timeGetTime(void);

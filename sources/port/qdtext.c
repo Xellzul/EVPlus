@@ -13,7 +13,6 @@
 #define DT_NOCLIP     0x0100
 #define DT_CALCRECT   0x0400
 #define DT_NOPREFIX   0x0800
-#define iconv libiconv                                    /* as GNU iconv.h does */
 
 // FUNCTION: EVNOVA 0x004bc760
 void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, int height)
@@ -37,11 +36,7 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
     if (text == NULL || byteCount == 0)
         return;
 
-#ifdef CEFIX /* F08.02 */
     buf = (char *)AllocAPointer(byteCount * sizeof(unsigned short));
-#else
-    buf = (char *)AllocAPointer(byteCount);
-#endif
     n = byteCount;
     outPtr = (char *)text;
     lines = 0;
@@ -52,11 +47,7 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
     } while (n != 0);
     inLeft = outLeft = byteCount;
     outPtr = buf;
-#ifdef CEFIX /* F08.03 */
     CE_MacRomanToWide(text, inLeft, outPtr, outLeft);
-#else
-    iconv(gMacRomanToCP1252, (char **)&text, &inLeft, &outPtr, &outLeft);
-#endif
 
     width = CurrentGrafPort->pnLoc.h - CurrentGrafPort->pix.bounds.left;
     vpos = CurrentGrafPort->pnLoc.v - CurrentGrafPort->pix.bounds.top;
@@ -102,21 +93,12 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
         r.top -= height;
     }
     flags |= DT_NOPREFIX;
-#ifdef CEFIX /* F08.04 */
     CE_DrawTextW(hdc, buf, byteCount, &r, flags);
-#else
-    DrawTextA(hdc, buf, byteCount, &r, flags);
-#endif
     if (clipped != 0) {
         SelectClipRgn(hdc, NULL);
     } else {
-#ifdef CEFIX /* F08.05 */
         if (CE_DrawTextW(hdc, buf, byteCount, &r, DT_CALCRECT) != 0)
             CurrentGrafPort->pnLoc.h += (r.right - r.left);
-#else
-        if (DrawTextA(hdc, buf, byteCount, &r, DT_CALCRECT) != 0)
-            CurrentGrafPort->pnLoc.h += (r.right - r.left);
-#endif
     }
 
     DeallocAPointer(buf);

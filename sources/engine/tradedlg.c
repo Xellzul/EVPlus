@@ -6676,11 +6676,7 @@ void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
     PStr2CStr(cname, name);
 
     sprintf(path, "9:Nova Plug-ins:%s", cname);
-#ifdef CEFIX /* F07.01 */
     CE_ExpandPlugInsPath(path, path);
-#else
-    ExpandAPathToBufferNative(path, path);
-#endif
     CStr2PStr(path, path);
     found = FSMakeFSSpec(0, 0, path, scratch);
     if ((int)found == 0)
@@ -6688,11 +6684,7 @@ void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
     if ((int)found != 0) {
         PStr2CStr(cname, name);
         sprintf(path, "9:Nova Files:%s", cname);
-#ifdef CEFIX /* F07.02 */
         CE_ExpandFilesPath(path, path);
-#else
-        ExpandAPathToBufferNative(path, path);
-#endif
         CStr2PStr(path, path);
         found = FSMakeFSSpec(0, 0, path, scratch);
         if ((int)found == 0)
@@ -6960,11 +6952,7 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
     if (settings.noMovies == 0) {
         PStr2CStr(nameBuf, name);
         sprintf(pathBuf, "9:Nova Plug-ins:%s", nameBuf);
-#ifdef CEFIX /* F07.03 */
         CE_ExpandPlugInsPath(pathBuf, pathBuf);
-#else
-        ExpandAPathToBufferNative(pathBuf, pathBuf);
-#endif
         CStr2PStr(pathBuf, pathBuf);
         r = FSMakeFSSpec(0, 0, pathBuf, &spec);
         if ((int32_t)r == 0)
@@ -6974,11 +6962,7 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
             goto found;
         PStr2CStr(nameBuf, name);
         sprintf(pathBuf, "9:Nova Files:%s", nameBuf);
-#ifdef CEFIX /* F07.04 */
         CE_ExpandFilesPath(pathBuf, pathBuf);
-#else
-        ExpandAPathToBufferNative(pathBuf, pathBuf);
-#endif
         CStr2PStr(pathBuf, pathBuf);
         r = FSMakeFSSpec(0, 0, pathBuf, &spec);
         if ((int32_t)r == 0)

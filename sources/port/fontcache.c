@@ -25,7 +25,6 @@ typedef struct FontFamily {
 short gChicagoFont;
 short gTimesFont;
 ListRec gFontFamilies;
-void *gMacRomanToCP1252;
 
 /* the Mac-to-Windows substitution table the port ships */
 typedef struct FontMap {
@@ -38,10 +37,9 @@ typedef struct FontMap {
     char useDeviceCaps;         /* +0x18 */
 } FontMap;
 
-#define kFontMapCount 7
+#define kFontMapCount 1
 #define OUT_TT_PRECIS 5
 
-#define iconv_open libiconv_open                          /* as GNU iconv.h does */
 
 static FontEntry *MakeFontEntry(FontFamily *family, int size, int style);
 
@@ -57,19 +55,10 @@ void InitFonts(void)
     GetFNum("\pTimes", &gTimesFont);
     GetFNum("\pNewYork", &scratch);
     GetFNum("\pGeneva", &scratch);
-#ifndef CEFIX /* F08.01 */
-    gMacRomanToCP1252 = iconv_open("CP1252", "MacRoman");
-#endif
 }
 
 FontMap gFontMap[kFontMapCount] = {                      /* 0x00575d80 (name invented) */
-    { "Times",     "Times New Roman", 0, FW_BOLD, FW_NORMAL, 0, 0 },
-    { "Helvetica", "Arial",           0, FW_BOLD, FW_NORMAL, 0, 0 },
-    { "Geneva",    "Arial",           0, FW_BOLD, FW_NORMAL, 0, 0 },
-    { "Courier",   "Courier New",     0, FW_BOLD, FW_NORMAL, 0, 0 },
-    { "Chicago",   "Arial",           0, FW_BOLD, FW_NORMAL, 0, 0 },
-    { "Charcoal",  "Arial",           0, FW_BOLD, FW_NORMAL, 0, 0 },
-    { "New York",  "Georgia",         0, FW_BOLD, FW_NORMAL, 0, 0 }
+    { "Times",     "Times New Roman", 0, FW_BOLD, FW_NORMAL, 0, 0 }
 };
 
 // FUNCTION: EVNOVA 0x004bc450
@@ -87,11 +76,7 @@ static FontEntry *MakeFontEntry(FontFamily *family, int size, int style)
     void *hdc;
 
     useDeviceCaps = 0;
-#ifdef CEFIX /* F09.01 */
-    for (i = 0; i < kCEFontMapCount; i++) {
-#else
     for (i = 0; i < kFontMapCount; i++) {
-#endif
         if (stricmp(family->name, gFontMap[i].macName) == 0) {
             if ((style & kFontBold) != 0)
                 weight = gFontMap[i].boldWeight;
@@ -104,11 +89,7 @@ static FontEntry *MakeFontEntry(FontFamily *family, int size, int style)
             break;
         }
     }
-#ifdef CEFIX /* F09.02 */
-    if (i == kCEFontMapCount) {
-#else
     if (i == kFontMapCount) {
-#endif
         if ((style & kFontBold) != 0)
             weight = FW_BOLD;
         else

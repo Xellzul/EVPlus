@@ -20,62 +20,6 @@
 #include "endianswap.h"
 
 #ifndef MACBUILD
-// FUNCTION: EVNOVA 0x004b76d0
-void CopyBitsCopy24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
-{
-    int32_t width;
-    int32_t height;
-    int32_t srcRow;
-    int32_t dstRow;
-    unsigned char *srcP;
-    unsigned short *dstP;
-    uint32_t rgb;
-    uint32_t rgb2;
-    int32_t n;
-    uint32_t raw;
-    uint32_t raw2;
-
-    width = dstRect->right - dstRect->left;
-    height = dstRect->bottom - dstRect->top;
-    srcP = (unsigned char *)src->baseAddr
-        + (srcRect->top - src->bounds.top) * src->rowBytes
-        + (srcRect->left - src->bounds.left) * 3;
-    srcRow = src->rowBytes - width * 3;
-    dstP = (unsigned short *)((unsigned char *)dst->baseAddr
-        + (dstRect->top - dst->bounds.top) * dst->rowBytes)
-        + (dstRect->left - dst->bounds.left);
-    dstRow = dst->rowBytes - width * 2;
-    if (width != 0 && height != 0) {
-        do {
-            n = width;
-            if (n > 1) {
-                do {
-                    raw = *(uint32_t *)srcP;
-                    raw2 = *(uint32_t *)(srcP + 3);
-                    rgb = (raw << 7 & 0x7c00) + (raw >> 6 & 0x3e0) +
-                        (raw >> 0x13 & 0x1f);
-                    rgb2 = (raw2 << 7 & 0x7c00) + (raw2 >> 6 & 0x3e0) +
-                        (raw2 >> 0x13 & 0x1f);
-                    *(uint32_t *)dstP = rgb + (rgb2 << 16);
-                    srcP += 6;
-                    dstP += 2;
-                    n -= 2;
-                } while (n > 1);
-            }
-            if (n != 0) {
-                rgb = *(uint32_t *)srcP;
-                *dstP = ((rgb << 7 & 0x7c00) +
-                    (rgb >> 6 & 0x3e0) + (rgb >> 0x13 & 0x1f));
-                srcP += 3;
-                dstP++;
-            }
-            srcP += srcRow;
-            dstP = (unsigned short *)((unsigned char *)dstP + dstRow);
-            height--;
-        } while (height != 0);
-    }
-}
-
 // FUNCTION: EVNOVA 0x004b7b90
 void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
                     int32_t xStep, int32_t yStep, int32_t xStart, int32_t yStart)
@@ -117,283 +61,6 @@ void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
                 n--;
             } while (n != 0);
             yStart += yStep;
-            dstP = (unsigned short *)((char *)dstP + dstRow);
-            height--;
-        } while (height != 0);
-    }
-}
-
-/* CopyBitsScale16: not linked, dead-stripped in the exe. The 16-bit cell of the scale table
-   before CopyBitsScale16Average took it over (1.0.6 still points it at a plain 16-bit scaler); it stays
-   because CopyBitsScale16Average is compiled after it (Research/notes/blitscalearea.md) */
-void CopyBitsScale16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-                     int32_t xStep, int32_t yStep, int32_t xStart, int32_t yStart)
-{
-    int32_t width;
-    int32_t height;
-    int32_t srcRowBytes;
-    int32_t dstRow;
-    unsigned short *dstP;
-    unsigned char *srcBase;
-    unsigned short *srcP;
-    uint32_t a;
-    uint32_t b;
-    int32_t x;
-    int32_t n;
-
-    width = dstRect->right - dstRect->left;
-    height = dstRect->bottom - dstRect->top;
-    srcRowBytes = src->rowBytes;
-    srcBase = (unsigned char *)src->baseAddr
-        + (srcRect->top - src->bounds.top) * srcRowBytes
-        + (srcRect->left - src->bounds.left) * 2;
-    dstP = (unsigned short *)((unsigned char *)dst->baseAddr
-        + (dstRect->top - dst->bounds.top) * dst->rowBytes
-        + (dstRect->left - dst->bounds.left) * 2);
-    dstRow = dst->rowBytes - width * 2;
-    if (width != 0 && height != 0) {
-        do {
-            srcP = (unsigned short *)(srcBase + (yStart >> 16) * srcRowBytes);
-            n = width;
-            x = xStart;
-            if (n > 1) {
-                do {
-                    a = srcP[x >> 16];
-                    x += xStep;
-                    b = srcP[x >> 16];
-                    x += xStep;
-                    *(uint32_t *)dstP = a + (b << 16);
-                    dstP += 2;
-                    n -= 2;
-                } while (n > 1);
-            }
-            if (n != 0) {
-                *dstP = srcP[x >> 16];
-                dstP++;
-            }
-            yStart += yStep;
-            dstP = (unsigned short *)((char *)dstP + dstRow);
-            height--;
-        } while (height != 0);
-    }
-}
-
-// FUNCTION: EVNOVA 0x004b7cb0
-void CopyBitsScale16Average(PixMapPtr srcBits, PixMapPtr dstBits, Rect *srcRect,
-                  Rect *dstRect, int32_t xStep, int32_t yStep, int32_t xFrac,
-                  int32_t yFrac)
-{
-    int32_t rowBytes;
-    int32_t dstP;
-    int32_t width;
-    int32_t height;
-    int32_t srcRow;
-    int dstRow;
-    int32_t srcBase;
-    int32_t n;
-    int32_t x;
-    int32_t y;
-    int32_t xEnd;
-    int32_t yEnd;
-    int32_t xStart;
-    int32_t cnt;
-    int32_t yStart;
-    int32_t xStartAligned;
-    int32_t yStartAligned;
-    int32_t xpos;
-    int32_t yEndAligned;
-    int32_t pixel;
-    int32_t srcRow2;
-    int32_t w;
-    int32_t ys;
-    int xs;
-    float red;
-    float green;
-    float blue;
-    float total;
-    float rowRed;
-    float rowGreen;
-    float rowBlue;
-    float colWeight;
-    float rowWeight;
-    float rowTotal;
-    unsigned short *rowP;
-    unsigned short *rowP2;
-    int32_t xEndAligned;
-    int32_t dst;
-    int32_t y2;
-
-    n = dstRect->left;
-    width = dstRect->right - n;
-    y = dstRect->top;
-    height = dstRect->bottom - y;
-
-    srcRow = srcBits->rowBytes;
-    srcBase = srcRect->left - srcBits->bounds.left;
-    srcBase *= 2;
-    srcBase += (srcRect->top - srcBits->bounds.top) * srcRow
-        + (int32_t)srcBits->baseAddr;
-
-    srcRow2 = srcRow;
-    rowBytes = dstBits->rowBytes;
-    dstP = n - dstBits->bounds.left;
-    dstP *= 2;
-    y -= dstBits->bounds.top;
-    y *= rowBytes;
-    y += (int32_t)dstBits->baseAddr;
-    dstP += y;
-    dstRow = rowBytes - width * 2;
-
-    if (width == 0)
-        goto done;
-    if (height == 0)
-        goto done;
-
-    if (xStep > 0x10000)
-        goto scaled;
-
-nearest:
-        {
-            do {
-                rowP = (unsigned short *)((yFrac >> 16) * srcRow + srcBase);
-                cnt = width;
-                xpos = xFrac;
-                dst = dstP;
-                do {
-                    *(unsigned short *)dst = rowP[xpos >> 16];
-                    dst += 2;
-                    xpos += xStep;
-                    cnt--;
-                } while (cnt != 0);
-                dst += dstRow;
-                dstP = dst;
-                yFrac += yStep;
-                height--;
-            } while (height != 0);
-            goto done;
-        }
-
-scaled:
-    if (xStep <= 0x10000)
-        goto nearest;
-
-        {
-            w = width;
-            ys = yStep;
-            xs = xStep;
-            do {
-                dst = dstP;
-                n = w;
-                yEnd = dstRect->bottom - dstRect->top;
-                yEnd -= height;
-                yEnd += 1;
-                yEnd *= ys;
-                yStart = yEnd - yStep;
-                yEndAligned = yEnd & 0xffff0000;
-                yStartAligned = yStart & 0xffff0000;
-                do {
-                    xEnd = width;
-                    xEnd -= n;
-                    xEnd += 1;
-                    xEnd *= xs;
-                    xStart = xEnd - xStep;
-                    xEndAligned = xEnd & 0xffff0000;
-                    xStartAligned = xStart & 0xffff0000;
-                    red = green = blue = total = 0.0f;
-                    rowWeight = 1.0
-                        - (yStart - yStartAligned) / 65536.0f;
-                    for (y2 = yStartAligned; y2 <= yEndAligned; y2 += 0x10000) {
-                        if (y2 == yEndAligned) {
-                            if (yEnd == yEndAligned)
-                                break;
-                            rowWeight = (yEnd - yEndAligned) / 65536.0f;
-                        }
-                        rowP2 = (unsigned short *)((y2 >> 16) * srcRow2
-                            + srcBase);
-                        rowRed = rowGreen = rowBlue = rowTotal = 0.0f;
-                        colWeight = 1.0 - (xStart - xStartAligned) / 65536.0f;
-                        for (x = xStartAligned; x <= xEndAligned;
-                                x += 0x10000) {
-                            if (x == xEndAligned) {
-                                if (xEnd == xEndAligned)
-                                    break;
-                                colWeight = (xEnd - xEndAligned) / 65536.0f;
-                            }
-                            pixel = rowP2[x >> 16];
-                            rowRed += ((pixel >> 10) & 0x1f)
-                                * colWeight;
-                            rowGreen += ((pixel >> 5) & 0x1f)
-                                * colWeight;
-                            rowBlue += (pixel & 0x1f) * colWeight;
-                            rowTotal += colWeight;
-                            colWeight = 1.0f;
-                        }
-                        red += rowWeight * rowRed;
-                        green += rowWeight * rowGreen;
-                        blue += rowWeight * rowBlue;
-                        total += rowWeight * rowTotal;
-                        rowWeight = 1.0f;
-                    }
-                    red /= total;
-                    green /= total;
-                    blue /= total;
-                    *(unsigned short *)dst =
-                        (((int32_t)red << 10) | ((int32_t)green << 5)
-                        | (int32_t)blue);
-                    dst += 2;
-                    n--;
-                } while (n != 0);
-                dstP = dst + dstRow;
-                height--;
-            } while (height != 0);
-        }
-
-done:
-    ;
-}
-
-// FUNCTION: EVNOVA 0x004b81e0
-void CopyBitsScale24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-                   int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
-{
-    int32_t width;
-    int32_t height;
-    int32_t srcRow;
-    int32_t dstRow;
-    unsigned char *srcBase;
-    unsigned short *dstP;
-    uint32_t pixel;
-    int32_t n;
-    unsigned char *rowP;
-    int32_t x;
-
-    width = dstRect->right - dstRect->left;
-    height = dstRect->bottom - dstRect->top;
-
-    srcRow = src->rowBytes;
-    srcBase = (unsigned char *)src->baseAddr
-        + (srcRect->top - src->bounds.top) * srcRow
-        + (srcRect->left - src->bounds.left) * 3;
-
-    dstP = (unsigned short *)((unsigned char *)dst->baseAddr
-        + (dstRect->top - dst->bounds.top) * dst->rowBytes
-        + (dstRect->left - dst->bounds.left) * 2);
-    dstRow = dst->rowBytes - width * 2;
-
-    if (width != 0 && height != 0) {
-        do {
-            n = width;
-            rowP = srcBase + (yFrac >> 16) * srcRow;
-            x = xFrac;
-            do {
-                pixel = *(uint32_t *)(rowP + (x >> 16) * 3);
-                *dstP = ((pixel << 7) & kRed555) + ((pixel >> 6) & kGreen555)
-                      + ((pixel >> 0x13) & kBlue555);
-                dstP++;
-                x += xStep;
-                n--;
-            } while (n != 0);
-            yFrac += yStep;
             dstP = (unsigned short *)((char *)dstP + dstRow);
             height--;
         } while (height != 0);
@@ -516,29 +183,17 @@ typedef void (*BlitProc)(PixMapPtr srcBits, PixMapPtr dstBits,
 BlitProc copyBitsProcs[5][5] = {             /* 0x00575b28 same-size srcCopy */
     { NULL, NULL,             NULL,                NULL,             NULL             },
     { NULL, BP CopyBitsNone, BP CopyBitsCopy8,    BP CopyBitsNone, BP CopyBitsNone },
-#ifdef CEFIX /* F10.02-06 */
     { NULL, BP CopyBitsNone, BP CopyBitsCopy16,     BP CopyBitsNone, BP CE_Blit16    },
     { NULL, BP CopyBitsNone, BP CE_Blit24,        BP CopyBitsNone, BP CE_Blit24    },
     { NULL, BP CopyBitsNone, BP CE_Blit32,        BP CopyBitsNone, BP CE_Blit32    }
-#else
-    { NULL, BP CopyBitsNone, BP CopyBitsCopy16,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsCopy24,   BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsNone,     BP CopyBitsNone, BP CopyBitsNone }
-#endif
 };
 
 BlitProc scaleBitsCopyProcs[5][5] = {        /* 0x00575b8c scaled srcCopy */
     { NULL, NULL,             NULL,                NULL,             NULL             },
     { NULL, BP CopyBitsNone, BP CopyBitsScale8,   BP CopyBitsNone, BP CopyBitsNone },
-#ifdef CEFIX /* F10.07-12 */
     { NULL, BP CopyBitsNone, BP CE_Blit16,        BP CopyBitsNone, BP CE_Blit16    },
     { NULL, BP CopyBitsNone, BP CE_Blit24,        BP CopyBitsNone, BP CE_Blit24    },
     { NULL, BP CopyBitsNone, BP CE_Blit32,        BP CopyBitsNone, BP CE_Blit32    }
-#else
-    { NULL, BP CopyBitsNone, BP CopyBitsScale16Average,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsScale24,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsNone,     BP CopyBitsNone, BP CopyBitsNone }
-#endif
 };
 
 BlitProc copyBitsAddOverProcs[5][5] = {      /* 0x00575bf0 same-size addOver */
@@ -988,11 +643,7 @@ PicHandle LoadPictResource(int picID, char gamma)
 // FUNCTION: EVNOVA 0x004b9050
 PicHandle GetPicture(int picID)
 {
-#ifdef CEFIX /* F10.01 */
     return LoadPictResource(picID, 0);
-#else
-    return LoadPictResource(picID, 1);
-#endif
 }
 
 /*
@@ -1067,67 +718,6 @@ void *GetCWindowVisRgn(void *window)
 }
 
 #ifndef MACBUILD
-/* Classic Toolbox parameter order (srcBits, maskBits, dstBits, srcRect, maskRect,
-   dstRect) with a 16.16 scale accumulator appended; reached only from the
-   mode-indexed table at 0x00575d20, so there is no mac twin. */
-
-// FUNCTION: EVNOVA 0x004b9180
-void CopyMaskScale16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
-                   Rect *srcRect, Rect *maskRect, Rect *dstRect,
-                   int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
-{
-    int32_t width;
-    int32_t height;
-    int32_t srcRow;
-    int32_t maskRow;
-    int32_t dstRow;
-    unsigned char *srcBase;
-    unsigned char *maskBase;
-    int32_t n;
-    unsigned short *srcRowP;
-    unsigned short *maskRowP;
-    unsigned short *dstP;
-    int32_t x;
-
-    width = dstRect->right - dstRect->left;
-    height = dstRect->bottom - dstRect->top;
-
-    srcRow = srcBits->rowBytes;
-    srcBase = (unsigned char *)srcBits->baseAddr
-        + (srcRect->top - srcBits->bounds.top) * srcRow
-        + (srcRect->left - srcBits->bounds.left) * 2;
-
-    maskRow = maskBits->rowBytes;
-    maskBase = (unsigned char *)maskBits->baseAddr
-        + (maskRect->top - maskBits->bounds.top) * maskRow
-        + (maskRect->left - maskBits->bounds.left) * 2;
-
-    dstP = (unsigned short *)((unsigned char *)dstBits->baseAddr
-        + (dstRect->top - dstBits->bounds.top) * dstBits->rowBytes
-        + (dstRect->left - dstBits->bounds.left) * 2);
-    dstRow = dstBits->rowBytes - width * 2;
-
-    if (width != 0 && height != 0) {
-        do {
-            srcRowP = (unsigned short *)(srcBase + (yFrac >> 16) * srcRow);
-            maskRowP = (unsigned short *)(maskBase + (yFrac >> 16) * maskRow);
-            n = width;
-            x = xFrac;
-            do {
-                if (maskRowP[x >> 16] == 0)
-                    *dstP = srcRowP[x >> 16];
-                dstP++;
-                x += xStep;
-                n--;
-            } while (n != 0);
-            yFrac += yStep;
-            dstP = (unsigned short *)((char *)dstP + dstRow);
-            height--;
-        } while (height != 0);
-    }
-}
-
-
 // FUNCTION: EVNOVA 0x004b92d0
 void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
                 Rect *srcRect, Rect *maskRect, Rect *dstRect)
@@ -1196,11 +786,7 @@ typedef void (*BlitMaskProc)(PixMapPtr srcBits, PixMapPtr maskBits,
 BlitMaskProc copyMaskProcs[5][5] = {    /* 0x00575cb8 */
     { NULL, NULL,                      NULL,                      NULL,                      NULL                      },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-#ifdef CEFIX /* F10.13 */
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMask16,   (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CE_Blit16Mask },
-#else
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMask16,   (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-#endif
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone }
 };
@@ -1208,11 +794,7 @@ BlitMaskProc copyMaskProcs[5][5] = {    /* 0x00575cb8 */
 BlitMaskProc scaleMaskProcs[5][5] = {   /* 0x00575d1c */
     { NULL, NULL,                      NULL,                      NULL,                      NULL                      },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-#ifdef CEFIX /* F10.14-15 */
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CE_Blit16Mask, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CE_Blit16Mask },
-#else
-    { NULL, (BlitMaskProc)CopyMaskNone, CopyMaskScale16, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-#endif
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone }
 };

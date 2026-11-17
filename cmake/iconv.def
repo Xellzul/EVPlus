@@ -1,4 +1,0 @@
-LIBRARY iconv.dll
-EXPORTS
-libiconv @1
-libiconv_open @3
