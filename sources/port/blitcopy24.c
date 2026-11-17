@@ -2109,11 +2109,7 @@ Image_t *GetPixPat(short id)
     if (h != NULL) {
         pat = (Image_t *)AllocAPointer(sizeof(Image_t));
         LockAHandle(h);
-#ifdef CEFIX /* F18.01 */
         err = CE_ImageParsePPat(pat, *h);
-#else
-        err = ImageParsePPat(pat, (Word8 *)*h);
-#endif
         UnlockAHandle(h);
         ReleaseResource(h);
         if (err != 0) {

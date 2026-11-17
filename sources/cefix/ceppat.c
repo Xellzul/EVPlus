@@ -11,9 +11,9 @@
 
 #define kPixPatFullColor    1                   /* patType */
 
-/* CE bug: the swaps shift the signed value right, so a field whose last byte is >= 0x80
-   reads with 0xFF above that byte; such a plug-in ppat fails validation, gets a black
-   palette (ctSize >= 128) or writes before the palette (a colour index >= 128). */
+// BUG (CE F18): the swaps shift the signed value right, so a field whose last byte is >= 0x80
+// reads with 0xFF above that byte; such a plug-in ppat fails validation, gets a black
+// palette (ctSize >= 128) or writes before the palette (a colour index >= 128)
 #define SWAP16(val) (val >> 8 | val << 8)
 #define SWAP32(val) (val >> 24 | (val & 0xff0000) >> 8 | (val & 0xff00) << 8 | val << 24)
 

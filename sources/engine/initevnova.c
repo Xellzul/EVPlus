@@ -425,9 +425,7 @@ void InitEVNova(void)
 
     crashlog("opening data files & loading prefs");
     InitDataFiles();
-#ifdef CEFIX /* F20.01 */
     CE_ReadX2Hotkey();
-#endif
     LoadPrefs();
 #ifndef MACBUILD
     Gestalt(kQuickTimeGestalt, &qtVersion);
@@ -1087,11 +1085,7 @@ void PlayGame(void)
                 missionSoundID = -1;
                 if (ST_IsSoundPlaying(warpUpSnd[1]) != 0) {
                     doubleTime = 1;
-#ifdef CEFIX /* F20.02 */
                 } else if (GetKeyState(ceX2Hotkey) & 1) {
-#else
-                } else if (CapsLockIsOn()) {
-#endif
                     if (abs(AngularDifference(shipData[0].heading,
                                 shipData[0].desiredHeading)) <= 10
                             && ST_IsSoundPlaying(warpUpSnd[0]) != 0) {

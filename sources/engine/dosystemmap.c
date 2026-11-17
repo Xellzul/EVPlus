@@ -164,15 +164,8 @@ void DoSystemMap(void)
             settings.showMapBorders = (settings.showMapBorders == 0);
             InvalDialogItem(mapDialog, kMapBordersItem);
             InvalDialogItem(mapDialog, kMapPictItem);
-#ifdef CEFIX /* F16.01 */
             if (settings.showMapBorders != 0)
                 RecalcAllMapInfluence(&box);
-#else
-            // BUG: box2 is stale/uninitialised here (win's InvalDialogItem does not fill it like the mac macro;
-            // it is first set by a map click) -- CE's F16.01 passes &box
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box2);
-#endif
         }
         if (itemHit == kMapZoomOutItem && canZoomOut != 0) {
             mapZoom = mapZoom * 1.333333;
@@ -615,29 +608,15 @@ void MapDialogUpdate(void)
                                       + nebulaData[i].height / (float)mapZoom);
                 if (SectRect(&nebR, &box, &box6)) {
                     fit = 0;
-#ifdef CEFIX /* F17.01-02 */
                     for (j = 0; j < 7; j++) {
                         if (nebulaPic[i][j] != 0) {
                             QDGetPictureBounds(nebulaPic[i][j], &r2);
                             fit = j;
-                            if (r2.right - r2.left >= nebR.right - nebR.left)
+                            if (r2.right - r2.left >= nebR.right - nebR.left
+                                    || r2.bottom - r2.top >= nebR.bottom - nebR.top)
                                 break;
-                            /* CE bug: CE's height jge (7d 0d) lands inside a movsx, on out dx,eax:
-                               a fault when a picture is narrower than the rect but as tall. */
-                            if (r2.bottom - r2.top >= nebR.bottom - nebR.top)
-                                RaiseException(kCEPrivilegedInstruction, 0, 0, NULL);
                         }
                     }
-#else
-                    for (j = 0; j < 7; j++) {
-                        if (nebulaPic[i][j] != 0) {
-                            QDGetPictureBounds(nebulaPic[i][j], &r2);
-                            if (r2.right - r2.left <= nebR.right - nebR.left
-                                && r2.bottom - r2.top <= nebR.bottom - nebR.top)
-                                fit = j;
-                        }
-                    }
-#endif
                     if (nebulaPic[i][fit] != 0) {
                         SectRect(&box, &nebR, &r2);
                         if (partialMapDialogUpdate != 0) {
@@ -1174,54 +1153,6 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
                 else
                     selSystem = shipData[0].curSystem;
             }
-#if V111
-        } else if (what == kKeyDown && key == kSpaceKeyCode) {
-            PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-            mapScroll.h = systemData[shipData[0].curSystem].pos.h;
-            mapScroll.v = systemData[shipData[0].curSystem].pos.v;
-            selSystem = shipData[0].curSystem;
-            InvalDialogItem(mapDialog, kMapInfoItem);
-            InvalDialogItem(mapDialog, kMapRouteItem);
-            InvalDialogItem(mapDialog, kMapPictItem);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == kBKeyCode) {
-            *itemHit = kMapBordersItem;
-            return 1;
-        } else if (key == kCKeyCode) {
-            *itemHit = kMapClearRouteItem;
-            return 1;
-        } else if (key == kMinusKeyCode || key == kPadMinusKeyCode) {
-            *itemHit = kMapZoomOutItem;
-            return 1;
-        } else if (key == kPadPlusKeyCode || key == kEqualKeyCode) {
-            *itemHit = kMapZoomInItem;
-            return 1;
-        } else if (key == kLeftArrowKeyCode) {
-            mapScroll.h -= 10;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == kRightArrowKeyCode) {
-            mapScroll.h += 10;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == kUpArrowKeyCode) {
-            mapScroll.v -= 10;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == kDownArrowKeyCode) {
-            mapScroll.v += 10;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (what == kKeyDown && (key == kFKeyCode || key == kSKeyCode)) {
-            *itemHit = kMapSearchItem;
-            return 1;
-#else
-#ifdef CEFIX /* F19.03 */
         } else if (what == kKeyDown && key == 'c') {
             *itemHit = kMapClearRouteItem;
             return 1;
@@ -1229,9 +1160,6 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
             *itemHit = kMapBordersItem;
             return 1;
         } else if (what == kKeyDown && key == ' ') {
-#else
-        } else if (what == kKeyDown && (key == 'c' || key == ' ')) {
-#endif
             PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
             mapScroll.h = systemData[shipData[0].curSystem].pos.h;
             mapScroll.v = systemData[shipData[0].curSystem].pos.v;
@@ -1275,7 +1203,6 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
         } else if (what == kKeyDown && (key == 'f' || key == 's')) {
             *itemHit = kMapSearchItem;
             return 1;
-#endif
         } else if (what == kKeyDown && KeyCheck(keyPrefs.map) != 0) {
             *itemHit = kItemAccept;
             return 1;
@@ -1319,7 +1246,6 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
     }
     if ((int)event->what == kNullEvent && settings.showMapBorders != 0
         && influenceCoordsCached != 0) {
-#ifdef CEFIX /* F15.06-10 F16.02-04 */
         if (nextInfluenceSyst < 0) {
             nextInfluenceSyst = 0;
         } else if (nextInfluenceSyst <= kMaxSystems) {
@@ -1345,35 +1271,6 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
                 InvalDialogItem(mapDialog, kMapPictItem);
             }
         }
-#else
-        if (nextInfluenceSyst < 0) {
-            nextInfluenceSyst = 0;
-            influenceStepSize = 1;
-            for (i = 0; i < 256; i++) {
-                for (j = 0; j < 256; j++) {
-                    for (k = 0; k < 4; k++) {
-                        influenceOwner[i][j][k] = 0;
-                        influenceValue[i][j][k] = 0;
-                    }
-                }
-            }
-        } else {
-            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
-            while (nextInfluenceSyst < kMaxSystems) {
-                nextInfluenceSyst += 1;
-                sys = FindActiveCoLocatedSystem(nextInfluenceSyst - 1);
-                if (sys != -1) {
-                    if (AddSystemInfluenceToMap(sys, &box) != 0)
-                        break;
-                }
-            }
-            if (nextInfluenceSyst == kMaxSystems) {
-                nextInfluenceSyst = kMaxSystems + 1;
-                SetDialogGWorld(mapDialog);
-                InvalDialogItem(mapDialog, kMapPictItem);
-            }
-        }
-#endif
     }
     return 0;
 }
@@ -1872,7 +1769,6 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
     }
 
     if (influenceStepSize > 1) {
-#ifdef CEFIX /* F15.24-31 F16.05-06 */
         for (x = 0; x < kCEBordersWidth; x += influenceStepSize) {
             for (y = 0; y < kCEBordersHeight; y += influenceStepSize) {
                 for (i = 0; i < influenceStepSize; i++) {
@@ -1890,25 +1786,6 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
                 }
             }
         }
-#else
-        for (x = 0; x < kInfluenceGridSize; x += influenceStepSize) {
-            for (y = 0; y < kInfluenceGridSize; y += influenceStepSize) {
-                for (i = 0; i < influenceStepSize; i++) {
-                    for (dy = 0; dy < influenceStepSize; dy++) {
-                        if (x + i < kInfluenceGridSize
-                            && y + dy < kInfluenceGridSize) {
-                            for (group = 0; group < kInfluenceLayers; group++) {
-                                influenceOwner[x + i][y + dy][group] =
-                                    influenceOwner[x][y][group];
-                                influenceValue[x + i][y + dy][group] =
-                                    influenceValue[x][y][group];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-#endif
     }
 
     influenceCoordsCached = 1;
@@ -1967,7 +1844,6 @@ Boolean AddSystemInfluenceToMap(short sys, Rect *r)
             radius -= radius % influenceStepSize;
         r2 = radius * radius;
 
-#ifdef CEFIX /* F15.34-45 F16.07-09 */
         if (mapX >= -radius && mapX <= radius + ceMapBordersVisibleWidth
             && mapY >= -radius && mapY <= radius + ceMapBordersVisibleHeight) {
             for (gx = mapX - radius; gx <= mapX + radius; gx += influenceStepSize) {
@@ -2041,81 +1917,6 @@ Boolean AddSystemInfluenceToMap(short sys, Rect *r)
             }
             return 1;
         }
-#else
-        if (mapX >= -radius && mapX <= radius + kInfluenceGridSize
-            && mapY >= -radius && mapY <= radius + kInfluenceGridSize) {
-            for (gx = mapX - radius; gx <= mapX + radius; gx += influenceStepSize) {
-                for (gy = mapY - radius; gy <= mapY + radius;
-                     gy += influenceStepSize) {
-                    if (gx >= 0 && gx < kInfluenceGridSize
-                        && gy >= 0 && gy < kInfluenceGridSize) {
-                        distX = gx - mapX;
-                        distY = gy - mapY;
-                        if (distX < 0)
-                            distX *= -1;
-                        if (distY < 0)
-                            distY *= -1;
-                        d2 = distX * distX + distY * distY;
-                        if (d2 > r2)
-                            continue;
-
-                        if ((govtData[govt].flags2 & kGovtMinor) != 0)
-                            level = ((r2 - d2) * kTightInfluenceFalloff
-                                              * mapZoom);
-                        else
-                            level = ((r2 - d2) * kInfluenceFalloff * mapZoom);
-                        if (level < 1)
-                            level = 1;
-                        if (level > 255)
-                            level = 255;
-                        strength = level;
-
-                        placed = 0;
-                        for (k = 0; k < kInfluenceSlots; k++) {
-                            if (influenceValue[gx][gy][k] != 0) {
-                                if (GovtAllies(govt, influenceOwner[gx][gy][k]) != 0) {
-                                    if (strength
-                                        > influenceValue[gx][gy][k]) {
-                                        influenceOwner[gx][gy][k] = govt;
-                                        influenceValue[gx][gy][k] =
-                                            strength;
-                                    }
-                                    placed = 1;
-                                    break;
-                                }
-                            }
-                        }
-                        if (placed == 0) {
-                            for (k = 0; k < kInfluenceSlots; k++) {
-                                if (influenceValue[gx][gy][k] == 0) {
-                                    influenceValue[gx][gy][k] = strength;
-                                    influenceOwner[gx][gy][k] = govt;
-                                    placed = 1;
-                                    break;
-                                }
-                            }
-                        }
-                        if (placed == 0) {
-                            lowest = 0;
-                            lowestSlot = 3;
-                            for (k = 0; k < kInfluenceSlots; k++) {
-                                if (lowest == 0 || influenceValue[gx][gy][k] < lowest) {
-                                    lowest = influenceValue[gx][gy][k];
-                                    lowestSlot = k;
-                                }
-                            }
-                            if (lowest != 0) {
-                                influenceValue[gx][gy][lowestSlot] =
-                                    strength;
-                                influenceOwner[gx][gy][lowestSlot] = govt;
-                            }
-                        }
-                    }
-                }
-            }
-            return 1;
-        }
-#endif
     }
     return 0;
 }

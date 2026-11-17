@@ -20,7 +20,6 @@ struct DialogRecord;
 /* the faults CE's own code takes (the CE bug sites) */
 #define kCEIntDivideByZero      0xc0000094UL    /* STATUS_INTEGER_DIVIDE_BY_ZERO */
 #define kCEIntOverflow          0xc0000095UL    /* STATUS_INTEGER_OVERFLOW: a DIV quotient too wide */
-#define kCEPrivilegedInstruction 0xc0000096UL   /* STATUS_PRIVILEGED_INSTRUCTION */
 
 __declspec(dllimport) void __stdcall RaiseException(uint32_t code, uint32_t flags,
     uint32_t count, const uint32_t *args);

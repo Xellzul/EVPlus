@@ -9,7 +9,9 @@
 int ceMapBordersVisibleWidth = kCEBordersWidth;
 int ceMapBordersVisibleHeight = kCEBordersHeight;
 
-/* The map item's size in grid cells, taken before each rebuild. As in CE it only shrinks. */
+/* The map item's size in grid cells, taken before each rebuild. */
+// BUG (CE F15.12/F16): the limit only ever shrinks, so one rebuild with a smaller rect would keep every
+// later rebuild cut to it; every caller passes the map item's rect today, so it stays the dialog size
 void CE_RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom, Rect *r)
 {
     short width;

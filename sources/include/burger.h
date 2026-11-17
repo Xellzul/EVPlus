@@ -269,7 +269,6 @@ extern void *LinkedListGetEntryData(struct ListRec *list, ULong index);
 extern void LinkedListAddNewEntryBegin(struct ListRec *list, void *data);   /* prepend */
 extern int ImageParseCicn(struct Image_t *out, const Word8 *in);
 extern Word ImageParsePict(struct Image_t *ImagePtr, const Word8 *InputPtr);
-extern Word ImageParsePPat(struct Image_t *image, const Word8 *input);
 extern Word OpenADirectory(struct DirectorySearch_t *dir, const char *name);
 extern Word GetADirectoryEntryExtension(struct DirectorySearch_t *dir,
                                         const char *ext);

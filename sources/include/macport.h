@@ -744,9 +744,6 @@ extern unsigned char *CtoPstr(char *str);
 #define kScanCapsLock MacKey(0x39)
 #define kScanOption MacKey(0x3a)
 #define kScanControl MacKey(0x3b)
-#define CapsLockIsOn() QuickKeyCheck(kScanCapsLock)
-#else
-#define CapsLockIsOn() (GetKeyState(VK_CAPITAL) & 1)
 #endif
 
 #ifndef MACBUILD

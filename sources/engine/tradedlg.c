@@ -2932,26 +2932,6 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     *itemHit = -1;
     CalcShipCanBuy();
     if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
-#if V111
-        c = (ev->message & kKeyCodeMask) >> 8;
-        if ((int)ev->what == kKeyDown) {
-            if (c == kReturnKeyCode || c == kEnterKeyCode || c == kEscapeKeyCode) {
-                ev->what = kMouseDown;
-                *itemHit = 7;
-                return 1;
-            }
-            if ((c == kBKeyCode && shipBuyMode == 0) || (c == kHKeyCode && shipBuyMode == 1)) {
-                ev->what = kMouseDown;
-                *itemHit = 1;
-                return 1;
-            }
-            if (c == kSpaceKeyCode) {
-                ev->what = kMouseDown;
-                *itemHit = 10;
-                return 1;
-            }
-        }
-#else
         c = EventCharOf(ev);
         if ((int)ev->what == kKeyDown) {
             if (IsReturnChar(c) || c == kEscapeChar) {
@@ -2965,15 +2945,12 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                 *itemHit = 1;
                 return 1;
             }
-#ifdef CEFIX /* F19.01 */
             if (c == ' ') {
                 ev->what = kMouseDown;
                 *itemHit = 10;
                 return 1;
             }
-#endif
         }
-#endif
         if (c == kGridLeftKey || c == kGridRightKey || c == kGridUpKey ||
             c == kGridDownKey || c == kGridPageUpKey || c == kGridPageDownKey) {
             old = selShipyardItem;
@@ -3522,11 +3499,7 @@ Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         }
         c = EventCharOf(ev);
         c = tolower(c);
-#ifdef CEFIX /* F19.02 */
         if (IsReturnChar(c) || c == kEscapeChar || c == ' ') {
-#else
-        if (IsReturnChar(c) || c == kEscapeChar) {
-#endif
             ev->what = kMouseDown;
             *itemHit = 1;
             return 1;
