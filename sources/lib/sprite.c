@@ -416,7 +416,7 @@ typedef uint32_t TokenDataType;
 // MAC: _SWLockSprite i386 0x000aa965 ppc 0x000b5710
 void SWLockSprite(SpritePtr srcSpriteP)
 {
-    register int32_t curFrame;
+    int32_t curFrame;
     FramePtr srcFrameP;
     Handle spriteData;
     int32_t dataLength;
@@ -470,7 +470,7 @@ void SWLockSprite(SpritePtr srcSpriteP)
 // MAC: _SWUnlockSprite i386 0x000aad04 ppc 0x000b5aa8
 void SWUnlockSprite(SpritePtr srcSpriteP)
 {
-    register int32_t curFrame;
+    int32_t curFrame;
     Handle spriteData;
     FramePtr srcFrameP;
 
@@ -566,7 +566,7 @@ void SWTempSpriteMoveProc(SpritePtr srcSpriteP)
 // MAC: _SWSetCurrentFrameIndex i386 0x000a90b6 ppc 0x000b3f88
 void SWSetCurrentFrameIndex(SpritePtr srcSpriteP, short frameIndex)
 {
-    register FramePtr newFrameP;
+    FramePtr newFrameP;
     short horizOffset, vertOffset;
 
     if (srcSpriteP == 0)
@@ -762,8 +762,8 @@ void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible)
 Boolean SWRadiusCollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
 {
     Point centerOne, centerTwo;
-    register short radiusOne, radiusTwo;
-    register short horizDistance, vertDistance;
+    short radiusOne, radiusTwo;
+    short horizDistance, vertDistance;
 
     if (srcSpriteP == 0 || dstSpriteP == 0)
         SW_ASSERT_FAIL("Sprite.c", 2670, 2610);

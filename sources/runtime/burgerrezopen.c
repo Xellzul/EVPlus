@@ -46,10 +46,18 @@ typedef struct RezHeader {
 /* BurgerLib's SwapEndian for the x86 mwcc target. */
 static __inline ULong SwapLong(ULong v)
 {
+#ifdef __MWERKS__
     register ULong t;
+#else
+    ULong t;
+#endif
 
     t = v;
+#ifdef __MWERKS__
     asm { bswap t }
+#else
+    t = __builtin_bswap32(t);
+#endif
     return t;
 }
 

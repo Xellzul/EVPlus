@@ -130,19 +130,35 @@ extern QTPixMapHandle FUN_004fc3b0(QTGWorldPtr gworld);              /* GetGWorl
 
 static __inline Word16 SwapShort(Word16 v)
 {
+#ifdef __MWERKS__
     register Word16 t;
+#else
+    Word16 t;
+#endif
 
     t = v;
+#ifdef __MWERKS__
     asm { ror t, 8 }
+#else
+    t = __builtin_bswap16(t);
+#endif
     return t;
 }
 
 static __inline Word32 SwapLong(Word32 v)
 {
+#ifdef __MWERKS__
     register Word32 t;
+#else
+    Word32 t;
+#endif
 
     t = v;
+#ifdef __MWERKS__
     asm { bswap t }
+#else
+    t = __builtin_bswap32(t);
+#endif
     return t;
 }
 

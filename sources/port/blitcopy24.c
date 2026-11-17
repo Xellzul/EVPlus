@@ -2833,7 +2833,12 @@ void SysBeep(short duration)
 
 /* BuildGammaRamp. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc310
+/* MW keeps `register' parameters in an FPU register (it changes this function's code); C++17 dropped it */
+#ifdef __MWERKS__
 void BuildGammaRamp(register float gamma)
+#else
+void BuildGammaRamp(float gamma)
+#endif
 {
     int i;
     double e;

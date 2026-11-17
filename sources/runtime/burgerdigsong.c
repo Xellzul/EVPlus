@@ -27,10 +27,18 @@ extern "C" {
 /* BurgerLib's SwapEndian for the x86 mwcc target. */
 static __inline Word16 SwapShort(Word16 v)
 {
+#ifdef __MWERKS__
     register Word16 t;
+#else
+    Word16 t;
+#endif
 
     t = v;
+#ifdef __MWERKS__
     asm { ror t, 8 }
+#else
+    t = __builtin_bswap16(t);
+#endif
     return t;
 }
 
