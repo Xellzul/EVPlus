@@ -74,8 +74,8 @@ EXTERN_CPP_END
 
 /* the two mission-list ModalDialog filter procs; MyModalDialog takes the address
    as void *, so nothing at a call site checks these */
-extern Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit);      /* 0x00440c90 */
-extern Boolean SingleMissionFilter(int32_t unused, EventRecord *ev,
+extern Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit);      /* 0x00440c90 */
+extern Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev,
                                 short *itemHit);                              /* 0x00447170 */
 
 #ifdef __cplusplus

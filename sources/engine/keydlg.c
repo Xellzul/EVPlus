@@ -122,7 +122,7 @@ void DoKeyDialog(void)
 /* KeyFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b6d0
 // MAC: _KeyFilter i386 0x00017482 ppc 0x0001b030
-Boolean KeyFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;

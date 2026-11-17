@@ -102,7 +102,7 @@ EXTERN_CPP_END
 #pragma cplusplus reset
 extern short pstrcmp(const unsigned char *a, const unsigned char *b);
 
-extern void pstrcpy(unsigned char *dst, unsigned char *src);
+extern void pstrcpy(unsigned char *dst, const unsigned char *src);
 extern void CullNameString(unsigned char *name);
 extern short WarpSoundDuration(void);
 

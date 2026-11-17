@@ -377,7 +377,7 @@ static inline void GrabMemRange(void *MemPtr, Word32 Length, MyHandle *Parent, M
         return;
     }
     Scan->Flags = (Word32)Parent;
-    Scan->Length = (Word8 *)MemPtr - Scan->MemPtr;
+    Scan->Length = (Word8 *)MemPtr - (Word8 *)Scan->MemPtr;
 }
 
 /* AllocAHandle2 (BurgerLib MMMemoryManager): fixed memory from the top of the heap, movable

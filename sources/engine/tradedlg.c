@@ -361,7 +361,7 @@ void DoTradeDialog(void)
 /* TradeFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048d190
 // MAC: _TradeFilter i386 0x0004e092 ppc 0x00056d08
-Boolean TradeFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -1503,7 +1503,7 @@ void DoOutfitDialog(void)
    OPEN: none. */
 // FUNCTION: EVNOVA 0x004903c0
 // MAC: _OutfitFilter i386 0x00058039 ppc 0x00060298
-Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -2443,7 +2443,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
 /* PortFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004928a0
 // MAC: _PortFilter i386 0x0004f041 ppc 0x00057c18
-Boolean PortFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -2640,7 +2640,7 @@ void PortDialogUpdate(void)
 /* MyModalDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00492f10
 // MAC: _MyModalDialog i386 0x00059954 ppc 0x00061ac4
-void MyModalDialog(DialogPtr dlg, void *eventProc, short *itemHit,
+void MyModalDialog(DialogPtr dlg, DialogEventProc eventProc, short *itemHit,
                     short *modifiers)
 {
     ModalDialog(NULL, itemHit);
@@ -3012,7 +3012,7 @@ void DoShipyardDialog(void)
    OPEN: none */
 // FUNCTION: EVNOVA 0x00493fc0
 // MAC: _ShipyardFilter i386 0x00060449 ppc 0x00068154
-Boolean ShipyardFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     Rect movieBox;
@@ -3630,7 +3630,7 @@ void DoShipyardDescription(short ship)
 /* ShipDescFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004959d0
 // MAC: _ShipDescFilter i386 0x000510e5 ppc 0x00059a0c
-Boolean ShipDescFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     short itemType;
     void *item;
@@ -4699,7 +4699,7 @@ void RefreshWindowBuffer(void)
 
 #define kCaptureStrIdx  0x76
 
-Boolean CapturedAssignmentFilter(int32_t unused, EventRecord *ev, short *itemHit);
+Boolean CapturedAssignmentFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 
 #define kCaptureDlogID   0x3fa
 #define kCapturePictID   0x2144
@@ -4755,7 +4755,7 @@ Boolean DoCapturedShipAssignmentDialog(void)
 /* CapturedAssignmentFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00498040
 // MAC: _CapturedAssignmentFilter i386 0x00051782 ppc 0x0005a024
-Boolean CapturedAssignmentFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean CapturedAssignmentFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
@@ -5304,7 +5304,7 @@ void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean
 /* TextDialogFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00499440
 // MAC: _TextDialogFilter i386 0x00051f77 ppc 0x0005a820
-Boolean TextDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     Point where;
@@ -5682,7 +5682,7 @@ void DoPlayerInfoDialog(void)
 /* PlayerInfoFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049a3a0
 // MAC: _PlayerInfoFilter i386 0x00053ae9 ppc 0x0005c1b8
-Boolean PlayerInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;

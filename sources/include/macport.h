@@ -794,7 +794,11 @@ extern unsigned char *CtoPstr(char *str);
 #endif
 
 /* a byte pointer stepped through a cast lvalue: gcc then keeps the pointer in its stack slot, which 1.1.1's bytes witness */
-#define PtrAddBytes(p, n) ((char *)(p) += (n))
+#ifdef __MWERKS__
+#define PtrAddBytes(p, n) ((char *)(p) += (n))   /* MW's lvalue-cast extension */
+#else
+#define PtrAddBytes(p, n) (*(char **)&(p) += (n))
+#endif
 
 /* a mac virtual key code in the engine's numbering of the KeyMap: 1.0.10 tests it 16 bits at a time, 1.1.1 a byte at a time */
 #ifdef MAC1010
@@ -913,11 +917,15 @@ extern void *GetCWindowVisRgn(void *window);
 #endif
 extern Rect *GetDialogPortRect(DialogPtr dlg);
 extern void *GetFont(short fontID, short size, short style);
+/* the procs a dialog record carries: its update (draw) proc and its event filter */
+typedef void (*DialogUpdateProc)(void);
+typedef Boolean (*DialogEventProc)(DialogPtr dlg, EventRecord *ev, short *itemHit);
+
 #ifndef MACBUILD
 extern void GetGlobalMouse(Point *pt);
 extern void GetMouse(Point *pt);
-extern DialogPtr GetNewDialog(short dlogID, void *updateProc,
-                              void *eventProc);
+extern DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc,
+                              DialogEventProc eventProc);
 extern PicHandle GetPicture(int picID);
 extern Image_t *GetPixPat(short id);
 extern void GetPort(CGrafPtr *port);

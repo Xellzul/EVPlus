@@ -484,7 +484,7 @@ short DoShipCommPayment(void)
 /* CommFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047fa40
 // MAC: _CommFilter i386 0x000908ed ppc 0x0009c440
-Boolean CommFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
@@ -938,7 +938,7 @@ void DoPlanetCommDialog(short stellar)
 /* PlanetCommFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00481140
 // MAC: _PlanetCommFilter i386 0x000911a9 ppc 0x0009cc58
-Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
@@ -1461,7 +1461,7 @@ short DoHaggleDialog(Boolean raise, short chance)
 /* HaggleFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004825d0
 // MAC: _HaggleFilter i386 0x00091d9d ppc 0x0009d8e8
-Boolean HaggleFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
@@ -2197,7 +2197,7 @@ void SetPlunderValues(void)
 /* PlunderFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00484c20
 // MAC: _PlunderFilter i386 0x00092f20 ppc 0x0009ee40
-Boolean PlunderFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean PlunderFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
@@ -2492,7 +2492,7 @@ void DoEscortDialog(ShipObj *ship)
 /* EscortFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00485840
 // MAC: _EscortFilter i386 0x000950e9 ppc 0x000a0d7c
-Boolean EscortFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;

@@ -898,6 +898,7 @@ extern PNG_EXPORT(void,png_set_compression_method) PNGARG((png_structp png_ptr,
 extern PNG_EXPORT(void,png_set_error_fn) PNGARG((png_structp png_ptr,
    png_voidp error_ptr, png_error_ptr error_fn, png_error_ptr warning_fn));
 
+extern PNG_EXPORT(png_uint_32,png_get_rowbytes) PNGARG((png_structp png_ptr, png_infop info_ptr));
 extern PNG_EXPORT(png_voidp,png_get_error_ptr) PNGARG((png_structp png_ptr));
 
 extern PNG_EXPORT(void,png_set_write_fn) PNGARG((png_structp png_ptr,

@@ -682,7 +682,7 @@ int32_t _FT_ChunkCreate(FTFile *archive, FTFileInfo *info)
     slot->length = 0;
     slot->type = Swap32(info->type);
     e = archive->procs.proc[kFTSeek](archive,
-                                (char *)slot + h.tableOffset - *archive->buffer2);
+                                (char *)slot + h.tableOffset - (char *)*archive->buffer2);
     if (e != 0) {
         err = e;
         goto done;

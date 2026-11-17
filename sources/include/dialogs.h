@@ -88,7 +88,7 @@ extern void PrefsDialogUpdate(void);
 extern void RandomizeNewsDialog(void);
 extern void ScrollMapDisplay(short dh, short dv);
 extern void CueNextHyperRouteDest(void);
-extern void MyModalDialog(DialogPtr dlg, void *eventProc, short *itemHit,
+extern void MyModalDialog(DialogPtr dlg, DialogEventProc eventProc, short *itemHit,
                            short *modifiers);
 #ifndef MACBUILD
 extern void SetDialogGWorld(DialogPtr dlg);
@@ -315,34 +315,34 @@ extern Boolean screenFaded;
 EXTERN_CPP_END
 #pragma cplusplus reset
 
-Boolean ShipDescFilter(int32_t unused, EventRecord *ev, short *itemHit);
-Boolean NewsDialogFilter(int32_t unused, EventRecord *ev, short *itemHit);
+Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+Boolean NewsDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 #pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern ShortPoint menuTopCorner;
 EXTERN_CPP_END
 #pragma cplusplus reset
 
-extern Boolean BarFilter(int32_t unused, EventRecord *ev, short *itemHit);
-Boolean CommFilter(int32_t unused, EventRecord *ev, short *itemHit);
-extern Boolean EscortFilter(int32_t unused, EventRecord *ev, short *itemHit);
-Boolean HaggleFilter(int32_t unused, EventRecord *ev, short *itemHit);
+extern Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+extern Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit);
-Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit);
-extern Boolean PortFilter(int32_t unused, EventRecord *ev, short *itemHit);
-extern Boolean TextDialogFilter(int32_t unused, EventRecord *ev, short *itemHit);
+Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+extern Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+extern Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 #ifdef MACBUILD
 Boolean KeyFilter(DialogPtr dialog, EventRecord *ev, short *itemHit);
 #else
-Boolean KeyFilter(int32_t unused, EventRecord *ev, short *itemHit);
+Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 #endif
-Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit);
-Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit);
-Boolean PlayerInfoFilter(int32_t unused, EventRecord *ev, short *itemHit);
-Boolean PlunderFilter(int32_t unused, EventRecord *ev, short *itemHit);
-Boolean RaceFilter(int32_t unused, EventRecord *ev, short *itemHit);
-Boolean ShipyardFilter(int32_t unused, EventRecord *ev, short *itemHit);
-extern Boolean TradeFilter(int32_t unused, EventRecord *ev, short *itemHit);
+Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+Boolean PlunderFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+extern Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 
 #pragma cplusplus on
 EXTERN_CPP_BEGIN

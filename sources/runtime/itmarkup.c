@@ -1756,7 +1756,7 @@ AT_STATIC int32_t _PT_ParseError(void **text, void **errors, int32_t unk00, int3
             pos = 0;
             while (pos < offset + length) {
                 u = UnicodeAdvance(u, &ch);
-                pos = (const char *)u - *text;
+                pos = (const char *)u - (const char *)*text;
                 if (ch == '\r')
                     isCR = 1;
                 else

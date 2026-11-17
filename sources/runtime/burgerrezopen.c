@@ -914,7 +914,7 @@ Word ResourceGetIDFromHandle(RezFile *rez, Handle h, int32_t *idFound, char *nam
                 entries = group->count;
                 entry = kFirstEntry(group);
                 do {
-                    if (entry->MemHand == h) {
+                    if (entry->MemHand == (void **)h) {
                         if (idFound != 0)
                             *idFound = group->RezNum + group->count - entries;
                         if (nameBuf != 0 && nameBufSize != 0) {

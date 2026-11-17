@@ -6546,7 +6546,7 @@ void ScrollStarfield(float dx, float dy)
 /* pstrcpy (mac _pstrcpy). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046eeb0
 // MAC: _pstrcpy i386 0x00004ce2 ppc 0x000061d8
-void pstrcpy(unsigned char *dst, unsigned char *src)
+void pstrcpy(unsigned char *dst, const unsigned char *src)
 {
     short i;
 

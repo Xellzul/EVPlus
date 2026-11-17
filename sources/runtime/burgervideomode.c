@@ -372,7 +372,7 @@ static inline Word Win95VideoGetGuid(Guid **OutPtr, Guid *Output, Word DevNum)
     result = (DirectDrawEnumerateExAPtr == 0)
         ? kNoInterface
         : ((int32_t (__stdcall *)(void *, void *, ULong))DirectDrawEnumerateExAPtr)(
-              FindDeviceCallback, &search, kEnumAllDevices);
+              (void *)FindDeviceCallback, &search, kEnumAllDevices);
     if (result == 0 && search.remaining == 0) {
         if (search.guid != 0) {
             *OutPtr = Output;

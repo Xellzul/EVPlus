@@ -235,7 +235,7 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
         *(int32_t *)tokens = 0;
 
-        size = (tokens + 4) - *frameHandle;
+        size = (tokens + 4) - (unsigned char *)*frameHandle;
 
         UnlockAHandle((Handle)frameHandle);
         ResizeAHandle((Handle)frameHandle, size);

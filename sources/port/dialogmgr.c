@@ -218,9 +218,6 @@ static __inline void DisposeControl(void *ctl)
 #define kDLOGType 0x444c4f47
 #define kDITLType 0x4449544c
 
-typedef char (*DialogEventProc)(DialogPtr dlg, EventRecord *ev,
-                                short *itemHit);
-
 /* keys come back from KeyboardGet2 as BurgerLib ASCII codes */
 #define ASCII_BACKSPACE  0x08
 #define ASCII_TAB        0x09
@@ -720,7 +717,7 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
 
 /* GetNewDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cf760
-DialogPtr GetNewDialog(short dlogID, void *updateProc, void *eventProc)
+DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventProc eventProc)
 {
     DialogPtr dlg;
     Handle dlogRes;
@@ -731,8 +728,8 @@ DialogPtr GetNewDialog(short dlogID, void *updateProc, void *eventProc)
     dlg->editItem = 0;
     dlg->defaultItem = 0;
     dlg->cancelItem = 0;
-    dlg->updateProc = updateProc;
-    dlg->eventProc = eventProc;
+    dlg->updateProc = (void *)updateProc;
+    dlg->eventProc = (void *)eventProc;
     dlg->needsUpdate = 1;
     dlg->visible = 1;
     dlogRes = GetResource(kDLOGType, dlogID);
@@ -2501,9 +2498,9 @@ void CreateGameWindow(void *hInstance, int32_t nCmdShow)
     FastMemSet(&wc, 0, sizeof(wc));
     wc.style = CS_OWNDC | CS_DBLCLKS;
 #ifdef CEFIX /* F05.01 */
-    wc.lpfnWndProc = CE_WndProc;
+    wc.lpfnWndProc = (void *)CE_WndProc;
 #else
-    wc.lpfnWndProc = WinGameWndProc;
+    wc.lpfnWndProc = (void *)WinGameWndProc;
 #endif
     wc.hInstance = hInstance;
     wc.lpszClassName = "WinGameClass";
@@ -2526,7 +2523,7 @@ void CreateGameWindow(void *hInstance, int32_t nCmdShow)
     if (gUseKeyboardHook == 0)
         SystemParametersInfoA(SPI_SCREENSAVERRUNNING, 1, &screenSaverWasRunning, 0);
     else if (gKeyboardHook == NULL)
-        gKeyboardHook = SetWindowsHookExA(WH_KEYBOARD_LL, KeyboardHookProc, hInstance, 0);
+        gKeyboardHook = SetWindowsHookExA(WH_KEYBOARD_LL, (void *)KeyboardHookProc, hInstance, 0);
 }
 
 EXTERN_C_END

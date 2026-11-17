@@ -15,7 +15,9 @@ extern "C" {
    @PrefFileNewFromMemory@8, @PrefFileNewFromFile@4 = OpenPrefsFile,
    @PrefFileSectionGetString@20 = PrefsGetString, and so on down the surface. */
 
+#ifdef __MWERKS__
 extern char *strchr(const char *s, int c);       /* MSL's, called */
+#endif
 
 /* The file is a circular list of lines; the file record itself (type 0) is the sentinel. */
 typedef struct PrefsNode {

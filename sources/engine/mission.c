@@ -1934,7 +1934,7 @@ void QuickMissionFailure(short mission)
 /* MissionFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00440c90
 // MAC: _MissionFilter i386 0x0009f7a9 ppc 0x000ab3fc
-Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     EventKeyByte key;
     Rect box;
@@ -3943,7 +3943,7 @@ void DoMissionInfoDialog(void)
 /* MissionInfoFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00446770
 // MAC: _MissionInfoFilter i386 0x0009d6e5 ppc 0x000a9304
-Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -4172,7 +4172,7 @@ void MissionInfoDialogUpdate(void)
 /* SingleMissionFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00447170
 // MAC: _SingleMissionFilter i386 0x00098d9a ppc 0x000a4984
-Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;

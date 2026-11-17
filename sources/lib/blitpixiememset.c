@@ -12,12 +12,23 @@ void BlitPixieMemSet( unsigned char *dst, uint32_t value, int32_t bytes )
 {
 	int32_t	i;
 
+#ifdef __MWERKS__ /* MW's lvalue-cast extension */
 	for ( i = 0; i < (bytes >> 2); i++ )
 		*((uint32_t *) dst)++ = value;
 	if ( bytes & 2 )
 		*((unsigned short *) dst)++ = value;
 	if ( bytes & 1 )
 		*((unsigned char *) dst)++ = value;
+#else
+	for ( i = 0; i < (bytes >> 2); i++, dst += 4 )
+		*(uint32_t *)dst = value;
+	if ( bytes & 2 ) {
+		*(unsigned short *)dst = (unsigned short)value;
+		dst += 2;
+	}
+	if ( bytes & 1 )
+		*dst = (unsigned char)value;
+#endif
 }
 
 EXTERN_C_END

@@ -248,7 +248,7 @@ void DoBarDialog(void)
 /* BarFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047cdb0
 // MAC: _BarFilter i386 0x00047a4b ppc 0x000503e8
-Boolean BarFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
@@ -470,7 +470,7 @@ void NewsDialogUpdate(void)
 /* NewsDialogFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047d560
 // MAC: _NewsDialogFilter i386 0x00048160 ppc 0x00050acc
-Boolean NewsDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean NewsDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
 
@@ -758,7 +758,7 @@ void DoRaceDialog(void)
 /* RaceFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047e150
 // MAC: _RaceFilter i386 0x0004890e ppc 0x00051284
-Boolean RaceFilter(int32_t unused, EventRecord *ev, short *itemHit)
+Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;

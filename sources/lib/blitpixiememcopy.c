@@ -12,12 +12,24 @@ void BlitPixieMemCopy( unsigned char *dst, unsigned char *src, int32_t bytes)
 {
 	int32_t	i;
 
+#ifdef __MWERKS__ /* MW's lvalue-cast extension */
 	for ( i = 0; i < (bytes >> 2); i++ )
 		*((uint32_t *) dst)++ = *((uint32_t *) src)++;
 	if ( bytes & 2 )
 		*((unsigned short *) dst)++ = *((unsigned short *) src)++;
 	if ( bytes & 1 )
 		*( dst)++ = *((unsigned char *) src)++;
+#else
+	for ( i = 0; i < (bytes >> 2); i++, dst += 4, src += 4 )
+		*(uint32_t *)dst = *(uint32_t *)src;
+	if ( bytes & 2 ) {
+		*(unsigned short *)dst = *(unsigned short *)src;
+		dst += 2;
+		src += 2;
+	}
+	if ( bytes & 1 )
+		*dst = *src;
+#endif
 }
 
 EXTERN_C_END
