@@ -2143,11 +2143,7 @@ void MissionDialogUpdate(void)
     GetDialogItem(missionDialog, 5, &itemType, (Handle *)&item, &box);
     if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(missionDialog)))) {
         if (selMissionListItem != -1) {
-#ifdef CEFIX /* F23.01 */
             ForeColor(whiteColor);
-#else
-            ForeColor(blackColor);
-#endif
             TextFont(gTimesFont);
             TextSize(18);
             strncpy((char *)text, (char *)missionName[dockedPortMissions[missionsOutside]
@@ -2161,13 +2157,8 @@ void MissionDialogUpdate(void)
             MungeBriefing(1, dockedPortMissions[missionsOutside][selMissionListItem]);
             strncpy((char *)text, briefingTextPtr, 0xfa);
             strncpy(briefingTextPtr, savedBriefing, kBriefingTextMax);
-#ifdef CEFIX /* F23.02-03 */
             CE_SetPen(box.left, box.top + CurrentGrafPort->txSize);
             DrawTextRun(text, strlen(text), NULL, 0, 0);
-#else
-            TETextBox(text, strlen((char *)text), &box, 0);
-            InvertRect(&box);
-#endif
         } else {
             ForeColor(blackColor);
             PaintRect(&box);

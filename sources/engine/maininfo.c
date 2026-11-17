@@ -745,9 +745,6 @@ void DoPrefsDialog(void)
     GetDialogItem(prefsDialog, kItemFullScreen, NULL, (Handle *)&item, &box);
     DisableControl((ControlPtr)item);
     GetDialogItem(prefsDialog, kItemMessages, NULL, (Handle *)&item, &box);
-#ifndef CEFIX /* F22.04 */
-    DisableControl((ControlPtr)item);
-#endif
 
     do {
         SetDialogGWorld(prefsDialog);

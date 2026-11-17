@@ -1273,7 +1273,6 @@ EXTERN_CPP_END
 #define kMissionModeDestroyStellar 2    /* mïsn ShipBehav: attack the system's stellars */
 #define kModTypeFakeID     21
 #define kModTypeMap        16
-#define kModeFlagOwned        1
 #define kOrdinalsBase        28
 #define kOrdinalsSTR        137
 #define kOutfModAmmo     3

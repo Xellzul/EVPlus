@@ -173,13 +173,8 @@ void SetupSpriteWorld(void)
     for (i = 0; i < kMaxWeapTypes; i++)
         masterShotSprite[i] = 0;
 
-#ifdef CEFIX /* F25.01 */
     if ((int32_t)InitParticles(100000, 0) != 0)
         SWAssertFail("Setup.c", SW_LINE(0x133));
-#else
-    if ((int32_t)InitParticles(1024, 0) != 0)
-        SWAssertFail("Setup.c", SW_LINE(0x133));
-#endif
     SWSetPortToBackground(gSpriteWorld);
     if (gSpriteWorld->pixelDepth == 8) {
         err = Construct8BitAlphaTable();
@@ -2634,24 +2629,13 @@ void SetDefaultKeys(void)
     keyPrefs.cheatSpawn = 0x68;
     keyPrefs.cheatKill = 0x69;
     keyPrefs.cheatRevive = 0x60;
-#ifdef CEFIX /* F21.11-13 */
     keyPrefs.cheatArmor = kCEScanNone;
     keyPrefs.cheatDamage = kCEScanNone;
     keyPrefs.cheatAmmo = kCEScanF6;
-#else
-    keyPrefs.cheatArmor = 0x62;
-    keyPrefs.cheatDamage = 0x67;
-    keyPrefs.cheatAmmo = 0x37;
-#endif
     keyPrefs.cheatCredits = 5;
     keyPrefs.cheatSpare = 0x65;
-#ifdef CEFIX /* F21.14-15 */
     keyPrefs.cheatShipNext = kCEScanPageUp;
     keyPrefs.cheatShipPrev = kCEScanPageDown;
-#else
-    keyPrefs.cheatShipNext = 0x4e;
-    keyPrefs.cheatShipPrev = 0x4a;
-#endif
     keyPrefs.missions = 0x17;
     keyPrefs.cloak = 0x16;
     keyPrefs.toggleFPS = 0x58;
@@ -2674,10 +2658,6 @@ void SetDefaultKeys(void)
 
 /* 0x0058f8b4 is the IAT slot, not a variable: the exe reaches
    GetSystemMetrics through it because the declaration is dllimport. */
-#define SM_CXSCREEN 0
-#define SM_CYSCREEN 1
-#define kModeFlagBase   2
-#define kModeDepth      15
 #define kModeFailAlert  0x25
 #ifdef MAC1010
 #define kMonitorFailAlert 0x2b

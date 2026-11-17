@@ -61,7 +61,7 @@ char *CE_NumberToAscii(char *dst, int32_t value, uint32_t flags)
    preference is off. */
 void CE_SetFlashColor(const RGBColor *color)
 {
-    /* CE bug: CE stores the colour without RGBForeColor's NULL-port test. */
+    // BUG (CE F22): CE stores the colour without RGBForeColor's NULL-port test; no caller hits it
     CurrentGrafPort->foreColor = settings.noHyperGamma != 0 ? *blackColor : *color;
 }
 

@@ -2918,15 +2918,11 @@ short WritePilotData(short stellar)
 }
 
 
-/* VideoGetCurrentMode fills a four-long display mode: width, height, depth, flags.
-   mainscreen.c reads the same block the same way. */
-
 // FUNCTION: EVNOVA 0x004c9e90
 // MAC: _OpenPilotFile i386 0x00076644 ppc 0x0007f498
 Boolean OpenPilotFile(char *missingResource)
 {
     OPENFILENAMEA ofn;
-    int32_t mode[4];
     char initDir[0x800];
     char path[0x800];
     unsigned char text[256];
@@ -2949,16 +2945,6 @@ Boolean OpenPilotFile(char *missingResource)
     ofn.Flags = 0x1804;
     ofn.lpstrDefExt = "PLT";
 
-    VideoGetCurrentMode(mode);
-#ifndef CEFIX /* F24.01 */
-    if ((mode[3] & kModeFlagOwned) != 0) {
-        ReleaseScreenDC();
-        SetDisplayToSize(mode[0], mode[1], mode[2], mode[3] & ~kModeFlagOwned);
-        AcquireScreenDC();
-        MainScreenUpdate(1);
-        ScreenEndScene();
-    }
-#endif
 
     gotFile = GetOpenFileNameA(&ofn);
 
@@ -2967,13 +2953,6 @@ Boolean OpenPilotFile(char *missingResource)
         KeyboardKbhit();
     }
 
-#ifndef CEFIX /* F24.02 */
-    if ((mode[3] & kModeFlagOwned) != 0) {
-        ReleaseScreenDC();
-        VideoSetMode(mode);
-        AcquireScreenDC();
-    }
-#endif
 
     if (gotFile != 0) {
 

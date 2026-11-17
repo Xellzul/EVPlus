@@ -47,19 +47,8 @@ extern Boolean QuickKeyCheckPlusEscorts(short code);
 #define kScanShift          MacKey(0x38)
 #define kScanCommand        MacKey(0x37)
 #define kScanExploreCheat   MacKey(0x51)
-#define kScanAttackCheat    MacKey(0x4b)
-#define kScanWarpCheat      MacKey(0x41)
-#define kScanSpawnCheat     MacKey(0x61)
-#define kScanFleetCheat     kScanCommand
-#define kScanKillCheat      MacKey(0x62)
-#ifdef MAC1010
-#define kScanKillCheat2     MacKey(0x47)
-#else
-#define kScanKillCheat2     MacKey(0x33)
-#endif
 #define kScanArmorCheat     MacKey(0x64)
 #define kScanDamageCheat    MacKey(0x65)
-#define kScanCheatsOff      MacKey(0x69)
 #define kScanInfoCheat      MacKey(0x6d)
 #define kScanMinus          MacKey(0x1b)
 #define kScanPadMinus       MacKey(0x4e)
@@ -77,15 +66,8 @@ extern Boolean QuickKeyCheckPlusEscorts(short code);
 #define kScanKey5           0x06
 #define kScanF5             0x3f
 #define kScanExploreCheat   0x72
-#define kScanAttackCheat    0x6c
-#define kScanWarpCheat      0x53
-#define kScanSpawnCheat     0x40
-#define kScanFleetCheat     0x30
-#define kScanKillCheat      0x41
-#define kScanKillCheat2     0x45
 #define kScanArmorCheat     0x42
 #define kScanDamageCheat    0x43
-#define kScanCheatsOff      0x6d
 #define kScanMinus          0x0c
 #define kScanPadMinus       0x4a
 #define kScanEquals         0x0d
@@ -1338,11 +1320,7 @@ void HandlePlayer(ShipObj *player)
             player->targetShip = -1;
             player->fuel = player->fuel - 100.0f;
             SWSetPortToWindow(gSpriteWorld);
-#ifdef CEFIX /* F22.01 */
             CE_SetFlashColor(whiteColor);
-#else
-            ForeColor(whiteColor);
-#endif
             PaintRect(&gSpriteWorld->workFrameP->frameRect);
             ForeColor(blackColor);
             ScreenEndScene();
@@ -1781,11 +1759,7 @@ void HandlePlayer(ShipObj *player)
     if (player->fuel < 0.0f)
         player->fuel = 0;
 
-#ifdef CEFIX /* F21.01-02 */
     if (CE_CheckDebugKeys(kCEScanF10) && cheatsActive) {
-#else
-    if (QuickKeyCheck(kScanExploreCheat) && cheatsActive) {
-#endif
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         if (AltKeyQuick()) {
             for (i = 0; i < kMaxSystems; i++)
@@ -1822,11 +1796,7 @@ void HandlePlayer(ShipObj *player)
         else
             player->fuel = ShipFuelCapacity(player);
         player->shield = ShipShieldCapacity(player);
-#ifdef CEFIX /* F21.04 */
         player->armor = ShipArmorCapacity(player);
-#else
-        player->armor = ShipShieldCapacity(player);
-#endif
         player->ionization = 0;
         player->ionColor = 0;
         player->deathTimer = -1.0f;
@@ -1843,13 +1813,8 @@ void HandlePlayer(ShipObj *player)
         ResetPlayerPrecalcedValues();
     }
 
-#ifdef CEFIX /* F21.03 */
     if (cheatsActive && QuickKeyCheck(kCEScanF7) && player->targetShip != -1
             && shipData[player->targetShip].active) {
-#else
-    if (cheatsActive && QuickKeyCheck(kScanAttackCheat) && player->targetShip != -1
-            && shipData[player->targetShip].active) {
-#endif
         if (AltKeyQuick())
             AIMakeShipLeave(&shipData[player->targetShip]);
         else
@@ -2058,11 +2023,7 @@ void HandlePlayer(ShipObj *player)
     }
 
     if (cheatsActive) {
-#ifdef CEFIX /* F21.05 */
         if (QuickKeyCheck(kCEScanBackspace)) {
-#else
-        if (QuickKeyCheck(kScanWarpCheat)) {
-#endif
             if (ST_IsSoundPlaying(warpUpSnd[0])) {
                 ST_HaltSound(warpUpSnd[0]);
                 WarpUpCallback(1, 0, 0);
@@ -2099,21 +2060,13 @@ void HandlePlayer(ShipObj *player)
         }
 
 #endif
-#ifdef CEFIX /* F21.07 */
         if (QuickKeyCheck(keyPrefs.cheatSpawn) || QuickKeyCheck(kCEScanNumEnter)) {
-#else
-        if (QuickKeyCheck(keyPrefs.cheatSpawn) || QuickKeyCheck(kScanSpawnCheat)) {
-#endif
             if (!spawnShipFlag) {
                 spawnShipFlag = 1;
                 if (AltKeyQuick()) {
                     if (CtrlKeyQuick()) {
                         HyperSpawnFleet(player->curSystem, 6, -1, 1);
-#ifdef CEFIX /* F21.06 */
                     } else if (QuickKeyCheck(kScanLShift)) {
-#else
-                    } else if (QuickKeyCheck(kScanFleetCheat)) {
-#endif
                         HyperSpawnFleet(player->curSystem, 0x15, -1, 1);
                     } else {
                         HyperSpawnFleet(player->curSystem, 1, -1, 1);
@@ -2130,12 +2083,7 @@ void HandlePlayer(ShipObj *player)
             spawnShipFlag = 0;
         }
 
-#ifdef CEFIX /* F21.08-09 */
         if (QuickKeyCheck(keyPrefs.cheatKill) && player->targetShip != -1) {
-#else
-        if ((QuickKeyCheck(keyPrefs.cheatKill) || QuickKeyCheck(kScanKillCheat)
-                || QuickKeyCheck(kScanKillCheat2)) && player->targetShip != -1) {
-#endif
             shipData[player->targetShip].active = 0;
             statusRedraw[kRedrawTarg] = 1;
             PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
@@ -2300,11 +2248,7 @@ void HandlePlayer(ShipObj *player)
             statusRedraw[kRedrawCargo] = 1;
         }
 
-#ifdef CEFIX /* F21.10 */
         if (QuickKeyCheck(kCEScanEnd)) {
-#else
-        if (QuickKeyCheck(kScanCheatsOff)) {
-#endif
             PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
             cheatsActive = 0;
         }
@@ -3500,11 +3444,7 @@ short PlayerEnterHypergate(void)
 #endif
 #else
             SWSetPortToWindow(gSpriteWorld);
-#ifdef CEFIX /* F22.02 */
             CE_SetFlashColor(whiteColor);
-#else
-            ForeColor(whiteColor);
-#endif
             PaintRect(&gSpriteWorld->workFrameP->frameRect);
             ForeColor(blackColor);
             ScreenEndScene();
@@ -3699,11 +3639,7 @@ short PlayerEnterWormhole(void)
     ship->accelMag = ShipMaxSpeed(ship) * 0.5;
     Accel(ship->heading, ship->accelMag, &ship->vel);
     SWSetPortToWindow(gSpriteWorld);
-#ifdef CEFIX /* F22.03 */
     CE_SetFlashColor(whiteColor);
-#else
-    ForeColor(whiteColor);
-#endif
     PaintRect(&gSpriteWorld->windRect);
     ForeColor(blackColor);
 #ifndef MACBUILD

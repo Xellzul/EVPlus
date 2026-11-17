@@ -2072,11 +2072,7 @@ void NumToString(int32_t value, unsigned char *str)
 {
     char text[256];
 
-#ifdef CEFIX /* F21.16 */
     CE_NumberToAscii(text, value, 0);
-#else
-    NumberToAscii(text, value, 0);
-#endif
     CStr2PStr((char *)str, text);
 }
 
