@@ -29,8 +29,7 @@
 static char kNoMemoryText[] = "Out of memory.";
 
 
-/* DT_png_read_data (libpng's read callback: the loaders' memory stream). STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes.
-   OPEN: none */
+/* DT_png_read_data (libpng's read callback: the loaders' memory stream). */
 // FUNCTION: EVNOVA 0x0051491d
 AT_STATIC void DT_png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
 {
@@ -43,8 +42,7 @@ AT_STATIC void DT_png_read_data(png_structp png_ptr, png_bytep data, png_size_t 
 
 static char kWriteError[] = "Write Error";
 
-/* PNG_CheckFileType (the first four bytes of the PNG signature). STATE: MATCH 100%, exe 13 / obj 13, byte-identical yes.
-   OPEN: none */
+/* PNG_CheckFileType (the first four bytes of the PNG signature). */
 // FUNCTION: EVNOVA 0x0051494c
 unsigned char PNG_CheckFileType(png_bytep data, ULong size)
 {
@@ -55,8 +53,7 @@ unsigned char PNG_CheckFileType(png_bytep data, ULong size)
 
 /* PNG_Decode (load a PNG off a stream: libpng's example.c read with gamma, palettes and
    greys dithered to an 8-bit image, colour to 32 bits, alpha to a mask, then pHYs aspect and
-   oFFs offsets applied by re-framing the image). STATE: MATCH 100%, exe 1105 / obj 1105,
-   byte-identical yes. OPEN: none */
+   oFFs offsets applied by re-framing the image). */
 // FUNCTION: EVNOVA 0x0051496d
 int32_t PNG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
                   ITTransparent *trans, ITBackground *bg)

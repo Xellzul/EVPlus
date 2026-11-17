@@ -32,7 +32,6 @@ static int32_t gIT_ClassParent = 0;                    /* 0x00865b18 */
 #define kRegisterFailed -8400
 
 
-/* IT_Open. STATE: MATCH 100%, exe 183 / obj 183, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eaac3
 int32_t IT_Open(void)
 {
@@ -164,7 +163,6 @@ done:
 /* The per-frame walk registered above: every window gets 0x0051afd6, and the
    ones flagged at +0x20 get 0x0051ba8d FIRST. The flag is not cleared here,
    so whatever 0x0051ba8d does is what clears it. */
-/* IT_Idle. STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ead8e
 void IT_Idle(void)
 {
@@ -249,7 +247,6 @@ static const unsigned char kHandXor[128] = {
 /* 0x00577198 */
 static const CursorShape kHandShape = { { 32, 32 }, { 13, 5 } };
 
-/* IT_Close. STATE: MATCH 100%, exe 39 / obj 39, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eadb7
 void IT_Close(void)
 {
@@ -281,8 +278,7 @@ void IT_Close(void)
     gIT_Open = 0;
 }
 
-/* IT_IsOpen (is the interface tool open). STATE: MATCH 100%, exe 2 / obj 2, byte-identical yes.
-   OPEN: none */
+/* IT_IsOpen (is the interface tool open). */
 // FUNCTION: EVNOVA 0x004eae38
 unsigned char IT_IsOpen(void)
 {
@@ -294,8 +290,7 @@ unsigned char IT_IsOpen(void)
    activation moves the focus, paint and erase draw the window, the cursor follows the
    control under the mouse, key, mouse and WM_COMMAND events go to the controls, the dialog
    and static colours come from the window or its callback; the answer is whether the
-   message was handled, *result the brush a WM_CTLCOLOR message returns). STATE: MATCH 100%,
-   exe 511 / obj 511, byte-identical yes. OPEN: none */
+   message was handled, *result the brush a WM_CTLCOLOR message returns). */
 // FUNCTION: EVNOVA 0x004eae3e
 unsigned char IT_HandleWinEvent(void *hwnd, void *dc, unsigned int msg, unsigned int wParam,
                            int32_t lParam, int32_t *result)
@@ -624,7 +619,6 @@ done:
 }
 
 
-/* IT_SetCursor. STATE: MATCH 100%, exe 70 / obj 70, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb5d4
 int32_t IT_SetCursor(short cursorId)
 {
@@ -665,7 +659,6 @@ done:
     return err;
 }
 
-/* IT_OpenBrowser. STATE: MATCH 100%, exe 69 / obj 69, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb6ca
 int32_t IT_OpenBrowser(const char *command)
 {

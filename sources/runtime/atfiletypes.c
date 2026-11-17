@@ -11,7 +11,6 @@
 
 #define kTypeMapCount 19
 
-/* _FT_FileTypesCreate. STATE: MATCH 100%, exe 39 / obj 39 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00509d87
 void **_FT_FileTypesCreate(void)
 {
@@ -67,8 +66,7 @@ void **_FT_FileTypesCreate(void)
 ULong _FT_Suffix2Value(const char *name);
 
 /* _FT_FileTypesLookup (the map entry for a name's extension, else for `type`; a preferred entry
-   first, the '????' terminator when none). STATE: MATCH 100%, exe 117 / obj 117,
-   byte-identical yes. OPEN: none */
+   first, the '????' terminator when none). */
 // FUNCTION: EVNOVA 0x00509ded
 void _FT_FileTypesLookup(const char *name, ULong type, FileTypeMap *entry)
 {
@@ -111,8 +109,7 @@ void _FT_FileTypesLookup(const char *name, ULong type, FileTypeMap *entry)
 }
 
 /* _FT_Suffix2Value (a name's extension as a left-justified lower-case 4-char code; the whole
-   name when it has no '.'). STATE: MATCH 100%, exe 67 / obj 67, byte-identical yes.
-   OPEN: none */
+   name when it has no '.'). */
 // FUNCTION: EVNOVA 0x00509f08
 ULong _FT_Suffix2Value(const char *name)
 {

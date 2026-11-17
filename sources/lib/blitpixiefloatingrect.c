@@ -5,7 +5,6 @@
 #include "spriteworld.h"
 
 
-/* BlitPixieFloatingRect (mac _BlitPixieFloatingRect). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00471d30
 // MAC: _BlitPixieFloatingRect i386 0x000be4f8 ppc 0x000c9e7c
 void BlitPixieFloatingRect(unsigned char *srcPixels, unsigned char *dstPixels,

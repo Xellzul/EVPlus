@@ -24,8 +24,7 @@ static PollProcs_t **MasterKbHitProcList;        /* 0x00867484 */
 #define kKeyCodeLimit 0x80
 #define kKeyDownBit   1
 
-/* KeyboardCallPollingProcs (BurgerLib InKeyboard). STATE: MATCH 100.0%, exe 23 / obj 23,
-   byte-identical yes. OPEN: none */
+/* KeyboardCallPollingProcs (BurgerLib InKeyboard). */
 // FUNCTION: EVNOVA 0x004f1800
 void KeyboardCallPollingProcs(void)
 {
@@ -48,8 +47,7 @@ void KeyboardCallPollingProcs(void)
     }
 }
 
-/* KeyboardAddRoutine (BurgerLib InKeyboard). STATE: MATCH 100.0%, exe 19 / obj 19,
-   byte-identical yes. OPEN: none */
+/* KeyboardAddRoutine (BurgerLib InKeyboard). */
 // FUNCTION: EVNOVA 0x004f1850
 void KeyboardAddRoutine(void (*proc)(void *), void *data)
 {
@@ -66,8 +64,7 @@ void KeyboardAddRoutine(void (*proc)(void *), void *data)
     }
 }
 
-/* KeyboardRemoveRoutine (BurgerLib InKeyboard). STATE: MATCH 100.0%, exe 36 / obj 36,
-   byte-identical yes. OPEN: none */
+/* KeyboardRemoveRoutine (BurgerLib InKeyboard). */
 // FUNCTION: EVNOVA 0x004f18a0
 void KeyboardRemoveRoutine(void (*proc)(void *), void *data)
 {
@@ -94,7 +91,7 @@ void KeyboardRemoveRoutine(void (*proc)(void *), void *data)
     }
 }
 
-/* KeyIsDown (BurgerLib KeyboardIsPressed). STATE: MATCH, byte-identical. OPEN: none */
+/* KeyIsDown (BurgerLib KeyboardIsPressed). */
 // FUNCTION: EVNOVA 0x004f1900
 unsigned int KeyIsDown(unsigned int scanCode)
 {
@@ -103,8 +100,7 @@ unsigned int KeyIsDown(unsigned int scanCode)
     return KeyArray[scanCode] & kKeyDownBit;
 }
 
-/* KeyboardGet (BurgerLib InKeyboard). STATE: MATCH 100.0%, exe 7 / obj 7, byte-identical
-   yes. OPEN: none */
+/* KeyboardGet (BurgerLib InKeyboard). */
 // FUNCTION: EVNOVA 0x004f1920
 int KeyboardGet(void)
 {
@@ -114,8 +110,7 @@ int KeyboardGet(void)
 }
 
 /* Drain whatever is queued, then forget every key that was down. */
-/* KeyboardFlush (BurgerLib KeyboardFlush). STATE: MATCH 100.0%, exe 15 / obj 15,
-   byte-identical yes. OPEN: none */
+/* KeyboardFlush (BurgerLib KeyboardFlush). */
 // FUNCTION: EVNOVA 0x004f1940
 void KeyboardFlush(void)
 {

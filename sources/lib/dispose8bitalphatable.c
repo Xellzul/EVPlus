@@ -23,7 +23,6 @@ short scaleB;
 uint32_t biasColor;
 unsigned char *alphaTable[5][256];
 
-/* Dispose8BitAlphaTable (mac _Dispose8BitAlphaTable). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00474300
 // MAC: _Dispose8BitAlphaTable i386 0x000c1cb6 ppc 0x000cde30
 void Dispose8BitAlphaTable(void)

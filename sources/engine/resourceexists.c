@@ -8,7 +8,6 @@
 #include "burger.h"
 
 /* engine-facing wrapper; lives at 0x0047b7a0, grouped here by topic */
-/* ResourceExists (mac _ResourceExists). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047b7a0
 Boolean ResourceExists(uint32_t type, short id)
 {

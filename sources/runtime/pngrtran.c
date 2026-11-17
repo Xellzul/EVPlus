@@ -82,8 +82,7 @@ png_set_background(png_structp png_ptr,
       png_ptr->mode |= PNG_BACKGROUND_IS_GRAY;
 }
 
-/* png_set_strip_16. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053faf7
 void PNGAPI
 png_set_strip_16(png_structp png_ptr)
@@ -109,8 +108,7 @@ typedef struct png_dsort_struct
 typedef png_dsort FAR *       png_dsortp;
 typedef png_dsort FAR * FAR * png_dsortpp;
 
-/* png_set_dither. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053f08b
 void PNGAPI
 png_set_dither(png_structp png_ptr, png_colorp palette,
@@ -451,8 +449,7 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
    }
 }
 
-/* png_set_gamma. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053f01b
 void PNGAPI
 png_set_gamma(png_structp png_ptr, double scrn_gamma, double file_gamma)
@@ -466,8 +463,7 @@ png_set_gamma(png_structp png_ptr, double scrn_gamma, double file_gamma)
    png_ptr->screen_gamma = (float)scrn_gamma;
 }
 
-/* png_set_expand. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053f00f
 void PNGAPI
 png_set_expand(png_structp png_ptr)
@@ -500,8 +496,7 @@ png_set_tRNS_to_alpha(png_structp png_ptr)
    png_ptr->transformations |= PNG_EXPAND;
 }
 
-/* png_set_gray_to_rgb. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053f003
 void PNGAPI
 png_set_gray_to_rgb(png_structp png_ptr)
@@ -570,8 +565,7 @@ png_set_read_user_transform_fn(png_structp png_ptr, png_user_transform_ptr
    png_ptr->read_user_transform_fn = read_user_transform_fn;
 }
 
-/* png_init_read_transformations. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053e110
 void
 png_init_read_transformations(png_structp png_ptr)
@@ -885,8 +879,7 @@ png_init_read_transformations(png_structp png_ptr)
  }
 }
 
-/* png_read_transform_info. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053df54
 void
 png_read_transform_info(png_structp png_ptr, png_infop info_ptr)
@@ -986,8 +979,7 @@ png_read_transform_info(png_structp png_ptr, png_infop info_ptr)
 
 }
 
-/* png_do_read_transformations. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053dab9
 void
 png_do_read_transformations(png_structp png_ptr)
@@ -1123,8 +1115,7 @@ png_do_read_transformations(png_structp png_ptr)
 
 }
 
-/* png_do_unpack. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053d9ad
 void
 png_do_unpack(png_row_infop row_info, png_bytep row)
@@ -1205,8 +1196,7 @@ png_do_unpack(png_row_infop row_info, png_bytep row)
    }
 }
 
-/* png_do_unshift. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053d814
 void
 png_do_unshift(png_row_infop row_info, png_bytep row, png_color_8p sig_bits)
@@ -1330,8 +1320,7 @@ png_do_chop(png_row_infop row_info, png_bytep row)
    }
 }
 
-/* png_do_read_swap_alpha. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053d711
 void
 png_do_read_swap_alpha(png_row_infop row_info, png_bytep row)
@@ -1420,8 +1409,7 @@ png_do_read_swap_alpha(png_row_infop row_info, png_bytep row)
    }
 }
 
-/* png_do_read_invert_alpha. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053d65c
 void
 png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
@@ -1498,8 +1486,7 @@ png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
    }
 }
 
-/* png_do_read_filler. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053d37e
 void
 png_do_read_filler(png_row_infop row_info, png_bytep row,
@@ -1671,8 +1658,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
    }
 }
 
-/* png_do_gray_to_rgb. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053d201
 void
 png_do_gray_to_rgb(png_row_infop row_info, png_bytep row)
@@ -1751,8 +1737,7 @@ png_do_gray_to_rgb(png_row_infop row_info, png_bytep row)
    }
 }
 
-/* png_do_rgb_to_gray. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053ca31
 int
 png_do_rgb_to_gray(png_structp png_ptr, png_row_infop row_info, png_bytep row)
@@ -2021,8 +2006,7 @@ png_build_grayscale_palette(int bit_depth, png_colorp palette)
    }
 }
 
-/* png_do_background. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053b720
 void
 png_do_background(png_row_infop row_info, png_bytep row,
@@ -2664,8 +2648,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
    }
 }
 
-/* png_do_gamma. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053b2ac
 void
 png_do_gamma(png_row_infop row_info, png_bytep row,
@@ -2841,8 +2824,7 @@ png_do_gamma(png_row_infop row_info, png_bytep row,
    }
 }
 
-/* png_do_expand_palette. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053b05b
 void
 png_do_expand_palette(png_row_infop row_info, png_bytep row,
@@ -2981,8 +2963,7 @@ png_do_expand_palette(png_row_infop row_info, png_bytep row,
    }
 }
 
-/* png_do_expand. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053ac22
 void
 png_do_expand(png_row_infop row_info, png_bytep row,
@@ -3177,8 +3158,7 @@ png_do_expand(png_row_infop row_info, png_bytep row,
    }
 }
 
-/* png_do_dither. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053aaad
 void
 png_do_dither(png_row_infop row_info, png_bytep row,
@@ -3262,8 +3242,7 @@ png_do_dither(png_row_infop row_info, png_bytep row,
 static int png_gamma_shift[] =
    {0x10, 0x21, 0x42, 0x84, 0x110, 0x248, 0x550, 0xff0};
 
-/* png_build_gamma_table. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053a2ac
 void
 png_build_gamma_table(png_structp png_ptr)
@@ -3468,8 +3447,7 @@ png_build_gamma_table(png_structp png_ptr)
  }
 }
 
-/* png_do_read_intrapixel. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053a19e
 void
 png_do_read_intrapixel(png_row_infop row_info, png_bytep row)

@@ -48,7 +48,6 @@ WaveHdr gWaveBlocks[2];                         /* 0x0086d8c0 */
 
 ULong __stdcall _ST_PumpThread(void *param);
 
-/* _ST_CreateSoundPump. STATE: MATCH 100%, exe 251 / obj 251, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00507300
 int32_t _ST_CreateSoundPump(void)
 {
@@ -184,8 +183,6 @@ done:
     return err;
 }
 
-/* _ST_DisposeSoundPump. STATE: MATCH 100%, exe 91 / obj 91, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x005076a0
 void _ST_DisposeSoundPump(void)
 {
@@ -236,8 +233,6 @@ void _ST_DisposeSoundPump(void)
 
 /* The best rate the default device plays in 16-bit stereo, 16.16. 44 kHz
    only through DirectSound. */
-/* _ST_GetCurrentSampleRate. STATE: MATCH 100%, exe 38 / obj 38, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00507820
 int32_t _ST_GetCurrentSampleRate(ULong *rate)
 {
@@ -260,8 +255,6 @@ int32_t _ST_GetCurrentSampleRate(ULong *rate)
     return err;
 }
 
-/* _ST_GetWaveVolume. STATE: MATCH 100%, exe 96 / obj 96, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x005078a0
 int32_t _ST_GetWaveVolume(ULong *left, ULong *right, ULong *max)
 {
@@ -310,8 +303,6 @@ int32_t _ST_GetWaveVolume(ULong *left, ULong *right, ULong *max)
     return err;
 }
 
-/* _ST_SetWaveVolume. STATE: MATCH 100%, exe 77 / obj 77, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x005079f0
 int32_t _ST_SetWaveVolume(ULong left, ULong right)
 {
@@ -354,21 +345,18 @@ int32_t _ST_SetWaveVolume(ULong left, ULong right)
     return err;
 }
 
-/* _ST_SupportsSystemVolume. STATE: MATCH 100%, exe 2 / obj 2 instrs. OPEN: none */
 // FUNCTION: EVNOVA 0x00507ae0
 unsigned char _ST_SupportsSystemVolume(void)
 {
     return 1;
 }
 
-/* _ST_GetSystemVolume. STATE: MATCH 100%, exe 9 / obj 9 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00507af0
 int32_t _ST_GetSystemVolume(ULong *left, ULong *right, ULong *max)
 {
     return _ST_GetWaveVolume(left, right, max);
 }
 
-/* _ST_SetSystemVolume. STATE: MATCH 100%, exe 8 / obj 8 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00507b10
 void _ST_SetSystemVolume(ULong left, ULong right)
 {
@@ -376,7 +364,6 @@ void _ST_SetSystemVolume(ULong left, ULong right)
 }
 
 /* The mixer thread: refill whatever the device has played, forever. */
-/* _ST_PumpThread. STATE: MATCH 100%, exe 164 / obj 164, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00507b30
 ULong __stdcall _ST_PumpThread(void *param)
 {

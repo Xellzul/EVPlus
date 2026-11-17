@@ -7,8 +7,7 @@
 #include "ogg.h"
 #include "iir.h"
 
-/* IIRStateDestroy (rc3 IIR_clear). STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* IIRStateDestroy (rc3 IIR_clear). From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055bd10
 void IIRStateDestroy(IIR_state *s){
   if(s){

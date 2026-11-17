@@ -26,9 +26,6 @@ EXTERN_C_BEGIN
 #define kTempMenuID             5000
 
 
-/* DoNewPilotNameDialog (mac _DoNewPilotNameDialog). STATE: MATCH 100%, exe 413 / obj 413,
-   byte-identical. The selection loop is a do/while under its own `n > 0' guard.
-   Mac MATCH both slices. OPEN: none */
 // FUNCTION: EVNOVA 0x0048a7e0
 // MAC: _DoNewPilotNameDialog i386 0x000165cc ppc 0x0001a3ec
 #ifdef MACBUILD

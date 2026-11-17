@@ -20,8 +20,7 @@ void *LoadAFileHandleFP(FILE *file);
 Handle PrefixHandles[PREFIXMAX];                /* 0x0087071c */
 static Word8 SetPfxInited;                       /* 0x00867488 */
 
-/* ReleasePrefixs (BurgerLib FmFileManager, the atexit hook SetAPrefix installs).
-   STATE: MATCH 100.0%, exe 18 / obj 18, byte-identical yes. OPEN: none */
+/* ReleasePrefixs (BurgerLib FmFileManager, the atexit hook SetAPrefix installs). */
 // FUNCTION: EVNOVA 0x004f1cb0
 void ReleasePrefixs(void)
 {
@@ -35,8 +34,7 @@ void ReleasePrefixs(void)
     }
 }
 
-/* DoesFileExist (BurgerLib FmFileManager). STATE: MATCH 100.0%, exe 12 / obj 12,
-   byte-identical yes. OPEN: none */
+/* DoesFileExist (BurgerLib FmFileManager). */
 // FUNCTION: EVNOVA 0x004f1cf0
 Word DoesFileExist(const char *name)
 {
@@ -46,8 +44,7 @@ Word DoesFileExist(const char *name)
     return DoesFileExistNative(path);
 }
 
-/* CreateDirectoryPath (BurgerLib CreateDirectoryPath). STATE: MATCH 100.0%, exe 12 / obj 12,
-   byte-identical yes. OPEN: none */
+/* CreateDirectoryPath (BurgerLib CreateDirectoryPath). */
 // FUNCTION: EVNOVA 0x004f1d30
 int32_t CreateDirectoryPath(const char *path)
 {
@@ -58,8 +55,7 @@ int32_t CreateDirectoryPath(const char *path)
 }
 
 /* GetADirectoryEntryExtension (BurgerLib FmFileManager): the next file (not directory, not
-   empty) whose extension is ext; 1 at the end. STATE: MATCH 100.0%, exe 41 / obj 41,
-   byte-identical yes. OPEN: none */
+   empty) whose extension is ext; 1 at the end. */
 // FUNCTION: EVNOVA 0x004f1d70
 Word GetADirectoryEntryExtension(DirectorySearch_t *dir, const char *ext)
 {
@@ -75,7 +71,6 @@ Word GetADirectoryEntryExtension(DirectorySearch_t *dir, const char *ext)
     return 1;
 }
 
-/* FOpenExpandedPath. STATE: MATCH 100%, exe 13 / obj 13 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f1df0
 FILE *FOpenExpandedPath(const char *path, const char *mode)
 {
@@ -125,8 +120,7 @@ Word CopyAFile(const char *dest, const char *source)
     return result;
 }
 
-/* DeleteAFile (BurgerLib FmFileManager). STATE: MATCH 100.0%, exe 12 / obj 12,
-   byte-identical yes. OPEN: none */
+/* DeleteAFile (BurgerLib FmFileManager). */
 // FUNCTION: EVNOVA 0x004f1e30
 Word DeleteAFile(const char *name)
 {
@@ -137,8 +131,7 @@ Word DeleteAFile(const char *name)
 }
 
 /* ExpandAPathToBuffer (BurgerLib FmFileManager): a name into BurgerLib's own form, the prefix
-   ("8:" when none is given) expanded, "." and ".." resolved against it, one ':' at the end.
-   STATE: MATCH 100%, exe 158 / obj 158, byte-identical yes. OPEN: none */
+   ("8:" when none is given) expanded, "." and ".." resolved against it, one ':' at the end. */
 // FUNCTION: EVNOVA 0x004f1e70
 void ExpandAPathToBuffer(char *out, const char *name)
 {
@@ -238,8 +231,7 @@ Copy:
     out[index] = 0;
 }
 
-/* SetAPrefix (BurgerLib FmFileManager): 0, or -1 for a bad number or no memory.
-   STATE: MATCH 100.0%, exe 67 / obj 67, byte-identical yes. OPEN: none */
+/* SetAPrefix (BurgerLib FmFileManager): 0, or -1 for a bad number or no memory. */
 // FUNCTION: EVNOVA 0x004f20b0
 unsigned int SetAPrefix(unsigned int num, const char *name)
 {
@@ -290,8 +282,7 @@ static char *GetAPrefix(Word num)
     return 0;
 }
 
-/* PopAPrefix (BurgerLib FmFileManager): drop the last directory from prefix num.
-   STATE: MATCH 100.0%, exe 73 / obj 73, byte-identical yes. OPEN: none */
+/* PopAPrefix (BurgerLib FmFileManager): drop the last directory from prefix num. */
 // FUNCTION: EVNOVA 0x004f21b0
 void PopAPrefix(unsigned int num)
 {
@@ -320,8 +311,7 @@ void PopAPrefix(unsigned int num)
 
 /* The exe takes the address of its own PARAMETER SLOT (`lea eax,[esp+0x14]'
    is arg1, not a local), so this writes the caller's value out. */
-/* fwritelong (BurgerLib's void signature). STATE: MATCH 100.0%, exe 10 / obj 10, byte-identical yes.
-   OPEN: none */
+/* fwritelong (BurgerLib's void signature). */
 // FUNCTION: EVNOVA 0x004f22b0
 void fwritelong(int32_t value, FILE *stream)
 {
@@ -329,16 +319,14 @@ void fwritelong(int32_t value, FILE *stream)
 }
 
 /* Writes the string AND its terminator -- the count is strlen + 1. */
-/* fwritestr (BurgerLib's void signature). STATE: MATCH 100.0%, exe 16 / obj 16, byte-identical yes.
-   OPEN: none */
+/* fwritestr (BurgerLib's void signature). */
 // FUNCTION: EVNOVA 0x004f22e0
 void fwritestr(const char *s, FILE *stream)
 {
     fwrite(s, 1, strlen(s) + 1, stream);
 }
 
-/* fgetlong (BurgerLib fgetlong). STATE: MATCH 100.0%, exe 12 / obj 12, byte-identical yes.
-   OPEN: none */
+/* fgetlong (BurgerLib fgetlong). */
 // FUNCTION: EVNOVA 0x004f2310
 int32_t fgetlong(FILE *stream)
 {
@@ -349,7 +337,6 @@ int32_t fgetlong(FILE *stream)
 }
 
 /* Reads to the NUL whatever the buffer holds; 1 on the NUL, 0 on EOF. */
-/* fgetstr. STATE: MATCH 100%, exe 39 / obj 39 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f2350
 int32_t fgetstr(char *buf, int32_t size, FILE *stream)
 {
@@ -371,7 +358,6 @@ int32_t fgetstr(char *buf, int32_t size, FILE *stream)
     return 1;
 }
 
-/* SaveAFile. STATE: MATCH 100%, exe 23 / obj 23 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f23d0
 int32_t SaveAFile(const char *path, const void *data, uint32_t length)
 {
@@ -385,7 +371,6 @@ int32_t SaveAFile(const char *path, const void *data, uint32_t length)
     return SaveAFileFP(file, data, length);
 }
 
-/* SaveAFileFP. STATE: MATCH 100%, exe 39 / obj 39 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f2430
 int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length)
 {
@@ -422,8 +407,7 @@ Word SaveATextFile(const char *name, const void *data, uint32_t length)
     return 0;
 }
 
-/* LoadAFile (BurgerLib FmFileManager). STATE: MATCH 100.0%, exe 33 / obj 33,
-   byte-identical yes. OPEN: none */
+/* LoadAFile (BurgerLib FmFileManager). */
 // FUNCTION: EVNOVA 0x004f24c0
 void *LoadAFile(const char *name, uint32_t *length)
 {
@@ -453,7 +437,7 @@ void *LoadAFileNative(const char *name, uint32_t *length)
 }
 
 /* LoadAFileFP (BurgerLib FmFileManager): the whole of an open file in a new pointer; closes
-   it. STATE: MATCH 100.0%, exe 60 / obj 60, byte-identical yes. OPEN: none */
+   it. */
 // FUNCTION: EVNOVA 0x004f2530
 void *LoadAFileFP(FILE *fp, uint32_t *length)
 {
@@ -482,7 +466,6 @@ void *LoadAFileFP(FILE *fp, uint32_t *length)
     return data;
 }
 
-/* LoadAFileHandle. STATE: MATCH 100.0%, exe 25 / obj 25, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f25f0
 void *LoadAFileHandle(const char *path)
 {
@@ -497,7 +480,6 @@ void *LoadAFileHandle(const char *path)
 }
 
 /* Read the whole file into a new handle and close it. */
-/* LoadAFileHandleFP. STATE: MATCH 100.0%, exe 62 / obj 62, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f2650
 void *LoadAFileHandleFP(FILE *file)
 {
@@ -527,8 +509,7 @@ void *LoadAFileHandleFP(FILE *file)
     return h;
 }
 
-/* FindAVolumeByName (BurgerLib FmFileManager): the drive number carrying ":name:", or -1.
-   STATE: MATCH 100.0%, exe 54 / obj 54, byte-identical yes. OPEN: none */
+/* FindAVolumeByName (BurgerLib FmFileManager): the drive number carrying ":name:", or -1. */
 // FUNCTION: EVNOVA 0x004f2720
 Word FindAVolumeByName(const char *name)
 {

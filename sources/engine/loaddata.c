@@ -53,7 +53,6 @@
  * this is the first thing that runs after the resource file opens.
  */
 
-/* InitDataFiles. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bd0c0
 // MAC: _InitDataFiles i386 0x0007138b ppc 0x00079dc4
 void InitDataFiles(void)
@@ -83,7 +82,6 @@ void InitDataFiles(void)
 
 
 
-/* OpenDataFiles (mac _OpenDataFiles). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bd160
 // MAC: _OpenDataFiles i386 0x00076a76 ppc 0x0007f85c
 void OpenDataFiles(void)
@@ -175,12 +173,6 @@ void OpenDataFiles(void)
 
 
 
-/* LoadObjectData (mac _LoadObjectData). STATE: MATCH 100.0% (6170 exact, 2139 reloc-equivalent,
-   0 mismatched; exe 8309 / obj 8309), byte-identical (39297 B, 2139 relocated fields masked).
-   OPEN: none. Declaration order and roles carry the exe's spill numbering: the junk counter
-   is its own `loaded', declared first; the weap and pers totals stay on `n'. The colour
-   extracts are masks, not casts (see notes, lanes RB, RD, RE, CL3).
-*/
 // FUNCTION: EVNOVA 0x004bd3c0
 // MAC: _LoadObjectData i386 0x000771b0 ppc 0x00080100
 void LoadObjectData(void)
@@ -2325,9 +2317,6 @@ void LoadObjectData(void)
 }
 
 
-/* LoadDescription. STATE: MATCH 100%, 188/188, byte-identical yes (masked relocs, by hand;
-   relocregcheck 0 of 40).
-   OPEN: none. textFileHand's VA is unproven (no other MATCHed body names it). see notes */
 // FUNCTION: EVNOVA 0x004c6d50
 // MAC: _LoadDescription i386 0x000717fe ppc 0x0007a284
 void LoadDescription(char *dst, short id)
@@ -2440,7 +2429,6 @@ void LoadDescription(char *dst, short id)
 #define kFourthFirst        0x16
 #define kFourthCount         0xa
 
-/* LoadStrings. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c7040
 // MAC: _LoadStrings i386 0x00071af5 ppc 0x0007a634
 void LoadStrings(void)
@@ -2509,7 +2497,6 @@ void LoadStrings(void)
         GetIndString(newbieString[i], kGameStrList, i + kFourthFirst);
 }
 
-/* LoadPluginString (mac _LoadPluginString). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c73b0
 // MAC: _LoadPluginString i386 0x00071a8e ppc 0x0007a5b0
 Boolean LoadPluginString(short id, void *dst)
@@ -2526,7 +2513,6 @@ Boolean LoadPluginString(short id, void *dst)
 }
 
 #ifndef MACBUILD /* the mac keeps its preferences in EVPrefsDialogWrapper.o */
-/* LoadPrefs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c7400
 void LoadPrefs(void)
 {
@@ -2627,7 +2613,6 @@ void LoadPrefs(void)
 
 #define kPrefsRecSize   0x8c
 
-/* SavePrefs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c7820
 void SavePrefs(void)
 {
@@ -2737,7 +2722,6 @@ void SavePrefs(void)
 }
 #endif
 
-/* MakeAlias. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c7d40
 // MAC: _MakeAlias i386 0x00071e36 ppc 0x0007a9bc
 void MakeAlias(char *name)
@@ -2755,7 +2739,6 @@ void MakeAlias(char *name)
    WritePilotData), so the older `LoadPilot' / `LoadPilotFile' names were
    both wrong. */
 
-/* SavePilotFile. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c7db0
 // MAC: _SavePilotFile i386 0x00076876 ppc 0x0007f6b4
 short SavePilotFile(short stellar)
@@ -2766,8 +2749,6 @@ short SavePilotFile(short stellar)
 }
 
 
-/* WritePilotData. STATE: MATCH 100% (1367 exact, 356 reloc), 1723/1723, byte-identical yes
-   (8380 bytes, relocated fields masked), relocregcheck 0 of 356. OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x004c7dd0
 // MAC: _WritePilotData i386 0x00071ffb ppc 0x0007ab1c
 short WritePilotData(short stellar)
@@ -2969,7 +2950,6 @@ short WritePilotData(short stellar)
 /* VideoGetCurrentMode fills a four-long display mode: width, height, depth, flags.
    mainscreen.c reads the same block the same way. */
 
-/* OpenPilotFile (mac _OpenPilotFile). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004c9e90
 // MAC: _OpenPilotFile i386 0x00076644 ppc 0x0007f498
 Boolean OpenPilotFile(char *missingResource)
@@ -3060,7 +3040,6 @@ Boolean OpenPilotFile(char *missingResource)
     }
 }
 
-/* OpenLastPilotFile (mac _OpenLastPilotFile). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ca120
 // MAC: _OpenLastPilotFile i386 0x000764ad ppc 0x0007f2fc
 void OpenLastPilotFile(void)
@@ -3107,7 +3086,6 @@ void OpenLastPilotFile(void)
 
 /* CountEVPlugins counts+logs files of one extension in a directory (filescan.c) */
 
-/* DumpPilotLog (mac _DumpPilotLog). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ca2c0
 // MAC: _DumpPilotLog i386 0x000739dc ppc 0x0007c8b0
 void DumpPilotLog(void)
@@ -3392,9 +3370,6 @@ void DumpPilotLog(void)
     fclose(log);
 }
 
-/* LoadPilotData (mac _LoadPilotData). STATE: MATCH 100.0% (1279 exact, 379 reloc-equivalent);
-   exe 1658 / obj 1658; byte-identical yes; relocregcheck 0 of 379.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x004cb260
 // MAC: _LoadPilotData i386 0x000750b5 ppc 0x0007dd04
 short LoadPilotData(char *path)
@@ -3855,7 +3830,6 @@ ok:
     return kPilotOK;
 }
 
-/* DoesPilotExist. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd030
 // MAC: _DoesPilotExist i386 0x00072def ppc 0x0007bc7c
 Boolean DoesPilotExist(const char *path)
@@ -3863,7 +3837,6 @@ Boolean DoesPilotExist(const char *path)
     return DoesFileExist(path);
 }
 
-/* DeletePilotFile. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd040
 // MAC: _DeletePilotFile i386 0x00072e6b ppc 0x0007bcec
 void DeletePilotFile(const char *name)
@@ -3886,7 +3859,6 @@ typedef struct {
 #define kCharRecordSize 0x16a
 
 /* one debug switch per field index; absent resource or out-of-range index = off */
-/* EVBugResourceFieldTest (mac _EVBugResourceFieldTest). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd0b0
 // MAC: _EVBugResourceFieldTest i386 0x0007132c ppc 0x00079d48
 Boolean EVBugResourceFieldTest(short field)
@@ -3909,7 +3881,6 @@ Boolean EVBugResourceFieldTest(short field)
 /* The memset is inlined by mwcc (rep stosb): it needs -opt level=4,intrinsics with <string.h>
    included. */
 
-/* AdjustHandleSize (mac _AdjustHandleSize). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd100
 // MAC: _AdjustHandleSize i386 0x00076bca ppc 0x0007f9fc
 void AdjustHandleSize(Handle h, int32_t newSize)
@@ -3927,7 +3898,6 @@ void AdjustHandleSize(Handle h, int32_t newSize)
 }
 
 /* leaves the buffer empty if the list is missing or has no entries */
-/* GetRandomIndString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd140
 // MAC: _GetRandomIndString i386 0x00072ef7 ppc 0x0007bd74
 void GetRandomIndString(unsigned char *str, short strListID)
@@ -3945,7 +3915,6 @@ void GetRandomIndString(unsigned char *str, short strListID)
     }
 }
 
-/* StrcatIndCString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd1a0
 // MAC: _StrcatIndCString i386 0x00072f90 ppc 0x0007be0c
 void StrcatIndCString(char *dst, short strListID, short index)
@@ -3957,7 +3926,6 @@ void StrcatIndCString(char *dst, short strListID, short index)
     strcat(dst, (char *)str);
 }
 
-/* DrawIndString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd1f0
 // MAC: _DrawIndString i386 0x00072fd8 ppc 0x0007be50
 void DrawIndString(short strListID, short index)
@@ -3973,7 +3941,6 @@ void DrawIndString(short strListID, short index)
  * Pascal resource names carry a ';'-introduced comment (Nova Bible
  * convention); truncate at the last one and trim the spaces before it.
  */
-/* TrimResourceName. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd230
 // MAC: _TrimResourceName i386 0x000717ac ppc 0x0007a208
 void TrimResourceName(unsigned char *name)
@@ -4006,7 +3973,6 @@ void TrimResourceName(unsigned char *name)
 }
 
 /* the New Pilot screen starts on whichever character carries the flag */
-/* GetDefaultCharResourceName. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd290
 // MAC: _GetDefaultCharResourceName i386 0x00077100 ppc 0x00080030
 void GetDefaultCharResourceName(unsigned char *name)
@@ -4036,7 +4002,6 @@ void GetDefaultCharResourceName(unsigned char *name)
 #define kIntroSlides    4
 #define kMaxIntroDelay  300
 
-/* GetCharResourceShipType. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd350
 // MAC: _GetCharResourceShipType i386 0x000770a1 ppc 0x0007ffb4
 short GetCharResourceShipType(const unsigned char *name)
@@ -4058,7 +4023,6 @@ short GetCharResourceShipType(const unsigned char *name)
     return index;
 }
 
-/* GetCharResourceIntroIDs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd3b0
 // MAC: _GetCharResourceIntroIDs i386 0x00076fa9 ppc 0x0007fe5c
 void GetCharResourceIntroIDs(const unsigned char *name, short *introText, short *pics,
@@ -4100,10 +4064,6 @@ void GetCharResourceIntroIDs(const unsigned char *name, short *introText, short 
 #define kFallbackCredits 0x2710
 #define kFallbackDate     0x8ca
 
-/* ActivateCharResource (mac _ActivateCharResource). STATE: MATCH 100.0% (145 exact, 56
-   reloc-equivalent, 0 mismatched), exe 201 / obj 201, blind LCS 201 (100.0%), 0 clusters;
-   relocregcheck 0 of 56 reloc rows differ; byte identity NOT CHECKED (baseline unadopted).
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x004cd4b0
 // MAC: _ActivateCharResource i386 0x00076cb6 ppc 0x0007faf0
 void ActivateCharResource(const unsigned char *name, Boolean applyStats)

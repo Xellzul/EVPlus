@@ -13,7 +13,6 @@ extern "C" {
 #endif
 
 /* Allocate a handle and clear what it points at. */
-/* AllocAHandleClear. STATE: MATCH 100%, exe 23 / obj 23 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f2970
 void **AllocAHandleClear(ULong size)
 {
@@ -25,8 +24,7 @@ void **AllocAHandleClear(ULong size)
     return h;
 }
 
-/* AllocAPointerClear (BurgerLib MMMemoryGeneric). STATE: MATCH 100.0%, exe 21 / obj 21,
-   byte-identical yes. OPEN: none */
+/* AllocAPointerClear (BurgerLib MMMemoryGeneric). */
 // FUNCTION: EVNOVA 0x004f29c0
 void *AllocAPointerClear(uint32_t size)
 {

@@ -9,8 +9,7 @@ png_create_struct(int type)
    return (png_create_struct_2(type, png_malloc_ptr_NULL, png_voidp_NULL));
 }
 
-/* png_create_struct_2. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005400df
 png_voidp
 png_create_struct_2(int type, png_malloc_ptr malloc_fn, png_voidp mem_ptr)
@@ -49,8 +48,7 @@ png_destroy_struct(png_voidp struct_ptr)
    png_destroy_struct_2(struct_ptr, png_free_ptr_NULL, png_voidp_NULL);
 }
 
-/* png_destroy_struct_2. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00540094
 void
 png_destroy_struct_2(png_voidp struct_ptr, png_free_ptr free_fn,
@@ -70,8 +68,7 @@ png_destroy_struct_2(png_voidp struct_ptr, png_free_ptr free_fn,
    }
 }
 
-/* png_malloc. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00540037
 png_voidp PNGAPI
 png_malloc(png_structp png_ptr, png_uint_32 size)
@@ -106,8 +103,7 @@ png_malloc_default(png_structp png_ptr, png_uint_32 size)
    return (ret);
 }
 
-/* png_free. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00540001
 void PNGAPI
 png_free(png_structp png_ptr, png_voidp ptr)
@@ -131,8 +127,7 @@ png_free_default(png_structp png_ptr, png_voidp ptr)
    free(ptr);
 }
 
-/* png_malloc_warn. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053ff95
 png_voidp PNGAPI
 png_malloc_warn(png_structp png_ptr, png_uint_32 size)
@@ -146,8 +141,7 @@ png_malloc_warn(png_structp png_ptr, png_uint_32 size)
    return(ptr);
 }
 
-/* png_memcpy_check. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053ff67
 png_voidp PNGAPI
 png_memcpy_check (png_structp png_ptr, png_voidp s1, png_voidp s2,
@@ -162,8 +156,7 @@ png_memcpy_check (png_structp png_ptr, png_voidp s1, png_voidp s2,
    return(png_memcpy (s1, s2, size));
 }
 
-/* png_memset_check. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053ff39
 png_voidp PNGAPI
 png_memset_check (png_structp png_ptr, png_voidp s1, int value,
@@ -179,8 +172,7 @@ png_memset_check (png_structp png_ptr, png_voidp s1, int value,
 
 }
 
-/* png_set_mem_fn. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053ff16
 void PNGAPI
 png_set_mem_fn(png_structp png_ptr, png_voidp mem_ptr, png_malloc_ptr

@@ -11,8 +11,6 @@
 
 #define kWhite555   0x7fff
 
-/* SWCreateGWorldFromCIconMask (mac _SWCreateGWorldFromCIconMask). STATE: MATCH, relocregcheck
-   12 rows 0 differ. OPEN: none */
 // FUNCTION: EVNOVA 0x00479070
 // MAC: _SWCreateGWorldFromCIconMask i386 0x000a7fbd ppc 0x000b2e0c
 #ifdef MACBUILD

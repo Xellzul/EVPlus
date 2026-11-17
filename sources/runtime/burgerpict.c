@@ -162,8 +162,7 @@ static const Word8 MacStandardPalette[256 * 3] = {
     0xff, 0xff, 0xff
 };
 
-/* ReadPixmap (archive ?ReadPixmap). STATE: MATCH 100.0%, exe 40 / obj 40, byte-identical.
-   OPEN: none */
+/* ReadPixmap (archive ?ReadPixmap). */
 // FUNCTION: EVNOVA 0x004fca30
 const Word8 *ReadPixmap(PICTPixmap_t *Output, const Word8 *Input)
 {
@@ -182,8 +181,7 @@ const Word8 *ReadPixmap(PICTPixmap_t *Output, const Word8 *Input)
     return Input + 36;
 }
 
-/* ExpandBuffer (archive ?ExpandBuffer). STATE: MATCH 100.0%, exe 109 / obj 109, byte-identical.
-   OPEN: none */
+/* ExpandBuffer (archive ?ExpandBuffer). */
 // FUNCTION: EVNOVA 0x004fcac0
 const Word8 *ExpandBuffer(Word8 *Output, const Word8 *Input, Word32 *LengthPtr, Word Depth)
 {
@@ -242,8 +240,7 @@ const Word8 *ExpandBuffer(Word8 *Output, const Word8 *Input, Word32 *LengthPtr, 
     return Output;
 }
 
-/* DecodeImage (archive ?DecodeImage). STATE: MATCH 100.0%, exe 317 / obj 317,
-   byte-identical yes. OPEN: none */
+/* DecodeImage (archive ?DecodeImage). */
 // FUNCTION: EVNOVA 0x004fcc00
 Word8 *DecodeImage(const Word8 *Input, Image_t *ImagePtr, Word32 RowBytes, Word Depth)
 {
@@ -404,8 +401,6 @@ Word8 *DecodeImage(const Word8 *Input, Image_t *ImagePtr, Word32 RowBytes, Word 
     return NULL;
 }
 
-/* ImageParsePict. STATE: MATCH 100.0%, exe 735 / obj 735, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004fd0a0
 Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
 {

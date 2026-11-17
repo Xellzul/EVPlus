@@ -34,7 +34,7 @@ typedef my_source_mgr * my_src_ptr;
 
 #define INPUT_BUF_SIZE  4096
 
-/* init_source (jdatasrc.c). STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
+/* init_source (jdatasrc.c). */
 // FUNCTION: EVNOVA 0x0051435a
 METHODDEF(void)
 init_source (j_decompress_ptr cinfo)
@@ -47,8 +47,7 @@ init_source (j_decompress_ptr cinfo)
 }
 
 /* fill_input_buffer (jdatasrc.c on the stream; a stream error is reported as
-   JERR_INPUT_EMPTY, the buffer left as it was). STATE: MATCH 100%, exe 64 / obj 64,
-   byte-identical yes. OPEN: none */
+   JERR_INPUT_EMPTY, the buffer left as it was). */
 // FUNCTION: EVNOVA 0x0051436e
 METHODDEF(boolean)
 fill_input_buffer (j_decompress_ptr cinfo)
@@ -85,8 +84,7 @@ done:
   return TRUE;
 }
 
-/* skip_input_data (jdatasrc.c). STATE: MATCH 100%, exe 25 / obj 25, byte-identical yes.
-   OPEN: none */
+/* skip_input_data (jdatasrc.c). */
 // FUNCTION: EVNOVA 0x0051440b
 METHODDEF(void)
 skip_input_data (j_decompress_ptr cinfo, int32_t num_bytes)
@@ -106,7 +104,7 @@ skip_input_data (j_decompress_ptr cinfo, int32_t num_bytes)
   }
 }
 
-/* term_source (jdatasrc.c). STATE: MATCH 100%, exe 5 / obj 5, byte-identical yes. OPEN: none */
+/* term_source (jdatasrc.c). */
 // FUNCTION: EVNOVA 0x0051443e
 METHODDEF(void)
 term_source (j_decompress_ptr cinfo)
@@ -117,8 +115,6 @@ term_source (j_decompress_ptr cinfo)
   err = 0;
 }
 
-/* error_exit. STATE: MATCH 100.0, exe 26 vs obj 26 instructions, byte-identical yes.
-   OPEN: none. `long err = 0` is the dead zero pair the exe opens with. */
 // FUNCTION: EVNOVA 0x0051444a
 METHODDEF(void)
 error_exit (j_common_ptr cinfo)
@@ -131,8 +127,6 @@ error_exit (j_common_ptr cinfo)
   longjmp(myerr->setjmp_buffer, myerr->pub.msg_code ? myerr->pub.msg_code : 1);
 }
 
-/* output_message. STATE: MATCH 100.0, exe 22 vs obj 22 instructions, byte-identical yes.
-   OPEN: none. The message is formatted and dropped; whatever printed it is compiled out. */
 // FUNCTION: EVNOVA 0x0051447d
 METHODDEF(void)
 output_message (j_common_ptr cinfo)
@@ -144,8 +138,7 @@ output_message (j_common_ptr cinfo)
     (*err->format_message) (cinfo, buffer);
 }
 
-/* emit_message. STATE: MATCH 100.0, exe 19 vs obj 19 instructions, byte-identical yes.
-   OPEN: none. Only the first warning is shown; num_warnings is never counted. */
+/* Note: Only the first warning is shown; num_warnings is never counted. */
 // FUNCTION: EVNOVA 0x005144b6
 METHODDEF(void)
 emit_message (j_common_ptr cinfo, int msg_level)
@@ -162,9 +155,6 @@ emit_message (j_common_ptr cinfo, int msg_level)
     (*err->output_message) (cinfo);
 }
 
-/* format_message. STATE: MATCH 100.0, exe 67 vs obj 67 instructions, byte-identical yes.
-   OPEN: none. 6b's lookup; the %s scan and sprintf are BurgerLib's strstr and bounded
-   sprintf; `long e = 0` is the dead zero pair. */
 // FUNCTION: EVNOVA 0x005144df
 METHODDEF(void)
 format_message (j_common_ptr cinfo, char * buffer)
@@ -196,8 +186,7 @@ format_message (j_common_ptr cinfo, char * buffer)
 	    err->msg_parm.i[6], err->msg_parm.i[7]);
 }
 
-/* reset_error_mgr. STATE: MATCH 100.0, exe 7 vs obj 7 instructions, byte-identical yes.
-   OPEN: none. msg_code is cleared before num_warnings, through a local err. */
+/* Note: msg_code is cleared before num_warnings, through a local err. */
 // FUNCTION: EVNOVA 0x00514582
 METHODDEF(void)
 reset_error_mgr (j_common_ptr cinfo)
@@ -208,8 +197,6 @@ reset_error_mgr (j_common_ptr cinfo)
   err->num_warnings = 0;
 }
 
-/* jpeg_std_error. STATE: MATCH 100.0, exe 24 vs obj 24 instructions, byte-identical yes.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x00514593
 GLOBAL(struct jpeg_error_mgr *)
 jpeg_std_error (struct jpeg_error_mgr * err)
@@ -234,8 +221,7 @@ jpeg_std_error (struct jpeg_error_mgr * err)
   return err;
 }
 
-/* JPEG_CheckFileType (a JFIF file: SOI and APP0 markers, "JFIF\0" at 6). STATE: MATCH 100%, exe 21 /
-   obj 21, byte-identical yes. OPEN: none */
+/* JPEG_CheckFileType (a JFIF file: SOI and APP0 markers, "JFIF\0" at 6). */
 // FUNCTION: EVNOVA 0x005145ed
 unsigned char JPEG_CheckFileType(const void *buffer, ULong size)
 {
@@ -247,8 +233,7 @@ unsigned char JPEG_CheckFileType(const void *buffer, ULong size)
     return 0;
 }
 
-/* JPEG_Decode (load a JPEG off a stream into a new 32-bit image, row by row as a r g b).
-   STATE: MATCH 100%, exe 249 / obj 249, byte-identical yes. OPEN: none */
+/* JPEG_Decode (load a JPEG off a stream into a new 32-bit image, row by row as a r g b). */
 // FUNCTION: EVNOVA 0x00514627
 int32_t JPEG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
                   ITTransparent *trans, ITBackground *bg)

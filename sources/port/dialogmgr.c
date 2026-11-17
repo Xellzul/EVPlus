@@ -292,7 +292,6 @@ typedef struct MINMAXINFO {
  * not lose focus. CreateGameWindow installs it on NT-family systems only.
  */
 
-/* nv_GetDialogItemRecord. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cea90
 void *nv_GetDialogItemRecord(DialogPtr dlg, int32_t item)
 {
@@ -305,7 +304,6 @@ void *nv_GetDialogItemRecord(DialogPtr dlg, int32_t item)
     return rec;
 }
 
-/* LoadMenuListItem. STATE: MATCH 149/149, byte-identical, relocregcheck 0 of 13. OPEN: none */
 // FUNCTION: EVNOVA 0x004ceac0
 void LoadMenuListItem(ControlRecord *rec, int32_t menuID, unsigned char *promptTitle,
                   int32_t resType)
@@ -379,7 +377,6 @@ void LoadMenuListItem(ControlRecord *rec, int32_t menuID, unsigned char *promptT
     ReleaseResource(h);
 }
 
-/* LoadControlResource. STATE: MATCH. OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x004cecf0
 void LoadControlResource(ControlRecord *rec, uint32_t resID)
 {
@@ -419,7 +416,6 @@ void LoadControlResource(ControlRecord *rec, uint32_t resID)
     }
 }
 
-/* nv_AppendDialogItem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cede0
 ControlRecord *nv_AppendDialogItem(int32_t kind, int32_t value, int32_t minValue,
                                    int32_t maxValue, const Rect *box,
@@ -468,8 +464,6 @@ done:
     return rec;
 }
 
-/* nv_SetDialogTemplateBounds. STATE: MATCH, byte-identical. OPEN: none
-   Second live use of itemsID forces early widening (notes). */
 // FUNCTION: EVNOVA 0x004ceec0
 short nv_SetDialogTemplateBounds(DialogPtr dlg, const unsigned short *tmpl)
 {
@@ -495,7 +489,6 @@ short nv_SetDialogTemplateBounds(DialogPtr dlg, const unsigned short *tmpl)
     return itemsID ? itemsID : itemsID;
 }
 
-/* ParseDITL. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cef50
 void ParseDITL(DialogPtr dlg, unsigned char *p)
 {
@@ -585,7 +578,6 @@ void ParseDITL(DialogPtr dlg, unsigned char *p)
     }
 }
 
-/* PopUpListSelect. STATE: MATCH, exe 397 / obj 397, byte-identical yes. OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x004cf1c0
 int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
 {
@@ -707,7 +699,6 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
     return result;
 }
 
-/* GetNewDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cf760
 DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventProc eventProc)
 {
@@ -753,8 +744,6 @@ DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventPro
     return dlg;
 }
 
-/* DisposeDialog. STATE: MATCH, 71/71, displacement at the stack pop checked by hand (+0);
-   byte check pending the next regate. OPEN: none */
 // FUNCTION: EVNOVA 0x004cf890
 void DisposeDialog(DialogPtr dlg)
 {
@@ -800,7 +789,6 @@ void DisposeDialog(DialogPtr dlg)
     ScreenEndScene();
 }
 
-/* GetDialogItem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cf960
 void GetDialogItem(DialogPtr dlg, int32_t item, short *type, Handle *handle,
                    Rect *box)
@@ -820,7 +808,6 @@ void GetDialogItem(DialogPtr dlg, int32_t item, short *type, Handle *handle,
     }
 }
 
-/* SetDialogItem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cf9f0
 void SetDialogItem(DialogPtr dlg, int32_t item, short type, void *handle,
                    const Rect *box)
@@ -839,7 +826,6 @@ void SetDialogItem(DialogPtr dlg, int32_t item, short type, void *handle,
     }
 }
 
-/* SetDialogDefaultItem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfa40
 void SetDialogDefaultItem(DialogPtr dlg, int32_t value)
 {
@@ -847,7 +833,6 @@ void SetDialogDefaultItem(DialogPtr dlg, int32_t value)
     dlg->needsUpdate = 1;
 }
 
-/* GetMenuItemCText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfa60
 void GetMenuItemCText(ControlPtr ctl, int index, char *text)
 {
@@ -864,7 +849,6 @@ void GetMenuItemCText(ControlPtr ctl, int index, char *text)
     }
 }
 
-/* GetMenuItemText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfac0
 void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text)
 {
@@ -875,7 +859,6 @@ void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text)
     memcpy(text + 1, buf, text[0]);
 }
 
-/* SetControlText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfb10
 void SetControlText(ControlPtr ctl, const char *text)
 {
@@ -901,7 +884,6 @@ void SetControlText(ControlPtr ctl, const char *text)
         ctl->owner->needsUpdate = 1;
 }
 
-/* SetDialogItemText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfb90
 void SetDialogItemText(Handle item, const unsigned char *text)
 {
@@ -912,7 +894,6 @@ void SetDialogItemText(Handle item, const unsigned char *text)
     SetControlText((ControlPtr)item, buf);
 }
 
-/* GetControlText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfbe0
 void GetControlText(ControlPtr ctl, char *text)
 {
@@ -925,7 +906,6 @@ void GetControlText(ControlPtr ctl, char *text)
         *text = 0;
 }
 
-/* GetDialogItemText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfc10
 void GetDialogItemText(Handle item, unsigned char *text)
 {
@@ -936,14 +916,12 @@ void GetDialogItemText(Handle item, unsigned char *text)
     memcpy(text + 1, buf, text[0]);
 }
 
-/* InvalDialogItem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfc60
 void InvalDialogItem(DialogPtr dlg, int32_t item)
 {
     dlg->needsUpdate = 1;
 }
 
-/* SetControlTitle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfc70
 void SetControlTitle(ControlPtr ctl, const unsigned char *text)
 {
@@ -955,7 +933,6 @@ void SetControlTitle(ControlPtr ctl, const unsigned char *text)
     }
 }
 
-/* SelectDialogItemText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfca0
 void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t end)
 {
@@ -985,7 +962,6 @@ void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t en
 
 #endif
 
-/* GetDialogPortRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfd30
 Rect *GetDialogPortRect(DialogPtr dlg)
 {
@@ -993,7 +969,6 @@ Rect *GetDialogPortRect(DialogPtr dlg)
 }
 
 #ifndef MACBUILD
-/* SetControlValue. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfd40
 void SetControlValue(ControlPtr ctl, int32_t value)
 {
@@ -1012,7 +987,6 @@ void SetControlValue(ControlPtr ctl, int32_t value)
     }
 }
 
-/* GetControlValue. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfd80
 int32_t GetControlValue(ControlPtr ctl)
 {
@@ -1024,7 +998,6 @@ int32_t GetControlValue(ControlPtr ctl)
     return value;
 }
 
-/* DisableControl. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfd90
 void DisableControl(ControlPtr ctl)
 {
@@ -1034,22 +1007,18 @@ void DisableControl(ControlPtr ctl)
     }
 }
 
-/* RedrawDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cfdb0
 void RedrawDialog(DialogPtr dlg)
 {
     dlg->needsUpdate = 1;
 }
 
-/* InvalDialogRect (the InvalWindowRect twin). STATE: MATCH, byte-identical. OPEN: none */
+/* InvalDialogRect (the InvalWindowRect twin). */
 // FUNCTION: EVNOVA 0x004cfdc0
 void InvalDialogRect(DialogPtr dlg, Rect *box)
 {
     dlg->needsUpdate = 1;
 }
-/* ModalDialog. STATE: MATCH 100.0%, exe 546 / obj 546, byte-identical yes.
-   OPEN: none; the two-role `saved'/`list', the round trips and the pun are the only
-   spellings measured to match (notes, lanes RC and CL3). */
 // FUNCTION: EVNOVA 0x004cfdd0
 void ModalDialog(void *filterProc, short *itemHitPtr)
 {
@@ -1404,7 +1373,6 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     }
 }
 
-/* SetControlTextKeepSelection. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d0610
 void SetControlTextKeepSelection(ControlPtr ctl, const char *text)
 {
@@ -1421,7 +1389,6 @@ void SetControlTextKeepSelection(ControlPtr ctl, const char *text)
     ctl->value = caret;
 }
 
-/* EditTextKey. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d0640
 void EditTextKey(ControlRecord *rec, int32_t key, int32_t mods)
 {
@@ -1534,7 +1501,6 @@ void EditTextKey(ControlRecord *rec, int32_t key, int32_t mods)
     }
 }
 
-/* DrawBevel. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d0a50
 void DrawBevel(Rect *r, const RGBColor *fill, const RGBColor *light,
                   const RGBColor *dark)
@@ -1555,7 +1521,6 @@ void DrawBevel(Rect *r, const RGBColor *fill, const RGBColor *light,
     LineTo(r->right - 1, r->top + 1);
 }
 
-/* MeasureTextBox. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d0b70
 void MeasureTextBox(const char *text, int left, int bottom, Rect *box)
 {
@@ -1570,7 +1535,6 @@ void MeasureTextBox(const char *text, int left, int bottom, Rect *box)
     box->right = left + width;
 }
 
-/* DrawDottedFrame. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d0bd0
 void DrawDottedFrame(Rect *r)
 {
@@ -1612,7 +1576,6 @@ void DrawDottedFrame(Rect *r)
     LineTo(((Point *) r)[1].h, ((Point *) r)[1].v);
 }
 
-/* DrawDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d0d00
 void DrawDialog(DialogPtr dlg)
 {
@@ -1873,7 +1836,6 @@ void DrawDialog(DialogPtr dlg)
     }
 }
 
-/* nv_UpdateDialogWindow. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d16f0
 void nv_UpdateDialogWindow(int all)
 {
@@ -1899,21 +1861,18 @@ void nv_UpdateDialogWindow(int all)
     ScreenEndScene();
 }
 
-/* SetDialogGWorld. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d17a0
 void SetDialogGWorld(DialogPtr dlg)
 {
     SetGWorldContainer((GWorldContainer *)dlg);
 }
 
-/* FrontWindow. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d17b0
 CWindowPtr FrontWindow(void *window)
 {
     return gWind;
 }
 
-/* GetDialogPort. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d17c0
 CGrafPtr GetDialogPort(DialogPtr dlg)
 {
@@ -1926,7 +1885,6 @@ CGrafPtr GetDialogPort(DialogPtr dlg)
     return port;
 }
 
-/* GetMouse. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d17e0
 void GetMouse(Point *pt)
 {
@@ -1935,7 +1893,6 @@ void GetMouse(Point *pt)
     pt->v -= gCurDialog->bounds.top;
 }
 
-/* RedrawDialogs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1810
 void RedrawDialogs(int all)
 {
@@ -1959,7 +1916,6 @@ void RedrawDialogs(int all)
     gDisableUpdatesMode = saved;
 }
 
-/* SetDialogVisible. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1890
 void SetDialogVisible(DialogPtr dlg, unsigned char value)
 {
@@ -1968,7 +1924,6 @@ void SetDialogVisible(DialogPtr dlg, unsigned char value)
     ScreenEndScene();
 }
 
-/* SizeDialogWindow. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d18b0
 void SizeDialogWindow(DialogPtr dlg, short width, short height, char update)
 {
@@ -2010,7 +1965,6 @@ void SizeDialogWindow(DialogPtr dlg, short width, short height, char update)
         dlg->needsUpdate = 1;
 }
 
-/* OffsetDialogWindow. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1a30
 void OffsetDialogWindow(DialogPtr dlg, short dh, short dv, char redraw)
 {
@@ -2018,7 +1972,6 @@ void OffsetDialogWindow(DialogPtr dlg, short dh, short dv, char redraw)
     dlg->needsUpdate = 1;
 }
 
-/* nv_NewDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1a60
 ScrollRec **nv_NewDialog(const Rect *rView, const Rect *dataBounds,
                          Point cellSize, ListDrawProcPtr drawProc, CGrafPtr port,
@@ -2055,7 +2008,6 @@ ScrollRec **nv_NewDialog(const Rect *rView, const Rect *dataBounds,
     return list;
 }
 
-/* LDispose. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1b40
 void LDispose(ScrollRec **list)
 {
@@ -2066,14 +2018,13 @@ void LDispose(ScrollRec **list)
     DeallocAHandle(list);
 }
 
-/* LSetDrawingMode. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1b70
 void LSetDrawingMode(char value, ScrollRec **list)
 {
     (*list)->drawIt = value;
 }
 
-/* LSetCell (mac _LSetCell, a Carbon import). STATE: MATCH, byte-identical. OPEN: none */
+/* LSetCell (mac _LSetCell, a Carbon import). */
 // FUNCTION: EVNOVA 0x004d1b80
 void LSetCell(void *text, int32_t length, Point cell, ScrollRec **rec)
 {
@@ -2107,7 +2058,6 @@ void LSetCell(void *text, int32_t length, Point cell, ScrollRec **rec)
         (*rec)->cellArray[k] += delta;
 }
 
-/* LSetSelect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1cd0
 void LSetSelect(int track, Point pt, ScrollRec **list)
 {
@@ -2123,7 +2073,6 @@ void LSetSelect(int track, Point pt, ScrollRec **list)
     LUpdate(list);
 }
 
-/* LGetSelect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1d10
 char LGetSelect(int32_t unused, Point *pt, ScrollRec **list)
 {
@@ -2135,7 +2084,6 @@ char LGetSelect(int32_t unused, Point *pt, ScrollRec **list)
     return same;
 }
 
-/* LAutoScroll. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1d40
 void LAutoScroll(ScrollRec **h)
 {
@@ -2157,7 +2105,6 @@ void LAutoScroll(ScrollRec **h)
     LScroll(0, (sel - scroll), h);
 }
 
-/* LClick. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1db0
 char LClick(Point where, short modifiers, ScrollRec **h)
 {
@@ -2197,7 +2144,6 @@ char LClick(Point where, short modifiers, ScrollRec **h)
     return 0;
 }
 
-/* GetListCellRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1f50
 void GetListCellRect(Rect *box, Point cell, ScrollRec **h)
 {
@@ -2206,7 +2152,6 @@ void GetListCellRect(Rect *box, Point cell, ScrollRec **h)
     OffsetRect(box, (*h)->rView.left, (*h)->rView.top);
 }
 
-/* LScroll. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d1fb0
 void LScroll(int32_t unused, short delta, ScrollRec **h)
 {
@@ -2224,7 +2169,6 @@ void LScroll(int32_t unused, short delta, ScrollRec **h)
         sc->scroll = 0;
 }
 
-/* LUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d2010
 void LUpdate(void *list)
 {
@@ -2312,7 +2256,6 @@ void LUpdate(void *list)
     }
 }
 
-/* KeyboardHookProc. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d23f0
 int32_t __stdcall KeyboardHookProc(int code, uint32_t wParam, int32_t lParam)
 {
@@ -2330,7 +2273,6 @@ int32_t __stdcall KeyboardHookProc(int code, uint32_t wParam, int32_t lParam)
     return CallNextHookEx(gKeyboardHook, code, wParam, lParam);
 }
 
-/* WinGameWndProc. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d2440
 int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
                             uint32_t wParam, int32_t lParam)
@@ -2448,7 +2390,6 @@ int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
     return DefWindowProcA(hwnd, msg, wParam, lParam);
 }
 
-/* ShutdownWinGame. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d28b0
 void ShutdownWinGame(void)
 {
@@ -2475,7 +2416,6 @@ void ShutdownWinGame(void)
     }
 }
 
-/* CreateGameWindow. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d2950
 void CreateGameWindow(void *hInstance, int32_t nCmdShow)
 {

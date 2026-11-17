@@ -86,8 +86,7 @@ void _ve_envelope_init(envelope_lookup *e,vorbis_info *vi){
 
 }
 
-/* _ve_envelope_clear. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054c4a0
 void _ve_envelope_clear(envelope_lookup *e){
   int i;

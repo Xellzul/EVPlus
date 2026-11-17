@@ -54,8 +54,6 @@ EXTERN_C_BEGIN
 #define kMapSearchItem      10
 
 
-/* DoSystemMap (mac _DoSystemMap). STATE: win MATCH 100.0%, exe 1413 / obj 1413; mac MATCH on both
-   slices, byte-identical. OPEN: none; two pads and five spellings carry free-stack counts, see notes. */
 // FUNCTION: EVNOVA 0x004a3aa0
 // MAC: _DoSystemMap i386 0x000121a3 ppc 0x00015bbc
 void DoSystemMap(void)
@@ -519,7 +517,6 @@ void DoSystemMap(void)
     FlushEvents(7, 0);
 }
 
-/* CreateMapTriggerRgn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a51e0
 // MAC: _CreateMapTriggerRgn i386 0x0000e2d7 ppc 0x00011a98
 void CreateMapTriggerRgn(void)
@@ -531,9 +528,6 @@ void CreateMapTriggerRgn(void)
                                                  /* 0x004b8df0 */
                                                  /* 0x00468210 */
 
-/* MapDialogUpdate. STATE: MATCH 100.0%, 2173/2173. `w / 2' and `h / 2' are written at
-   each use (DrawMap's spelling); the service count is a later web of the long `temp'.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x004a51f0
 // MAC: _MapDialogUpdate i386 0x0000f5d1 ppc 0x00012fe8
 void MapDialogUpdate(void)
@@ -1057,7 +1051,6 @@ void MapDialogUpdate(void)
 }
 
 
-/* ScrollMapDisplay. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a7470
 // MAC: _ScrollMapDisplay i386 0x0001128d ppc 0x00014b8c
 void ScrollMapDisplay(short dh, short dv)
@@ -1079,7 +1072,6 @@ void ScrollMapDisplay(short dh, short dv)
     partialMapDialogUpdate = 0;
 }
 
-/* RedrawNebulaeOffscreen. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a74e0
 // MAC: _RedrawNebulaeOffscreen i386 0x0000e2d2 ppc 0x00011a94
 void RedrawNebulaeOffscreen(void)
@@ -1087,8 +1079,6 @@ void RedrawNebulaeOffscreen(void)
 }
 
 
-/* MapFilter (mac _MapFilter). STATE: MATCH 100.0% 670/670, byte-identical yes (2440 bytes),
-   relocregcheck 0 of 138. OPEN: none. */
 // FUNCTION: EVNOVA 0x004a74f0
 // MAC: _MapFilter i386 0x00013c63 ppc 0x000175a8
 Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
@@ -1405,7 +1395,6 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
 }
 
 
-/* CompactHyperRoute. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a7e80
 // MAC: _CompactHyperRoute i386 0x0000e16a ppc 0x000118c0
 void CompactHyperRoute(void)
@@ -1423,7 +1412,6 @@ void CompactHyperRoute(void)
     }
 }
 
-/* SpoolNextHyperRouteDest. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a7fc0
 // MAC: _SpoolNextHyperRouteDest i386 0x00012103 ppc 0x00015adc
 void SpoolNextHyperRouteDest(void)
@@ -1450,7 +1438,6 @@ void SpoolNextHyperRouteDest(void)
  * mode in +0x6a, not a stellar index outright.
  */
 
-/* CueNextHyperRouteDest. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a8080
 // MAC: _CueNextHyperRouteDest i386 0x0000e2dc ppc 0x00011a9c
 void CueNextHyperRouteDest(void)
@@ -1478,10 +1465,6 @@ void CueNextHyperRouteDest(void)
 
 #define gateLink j
 
-/* DrawMap (mac _DrawMap). STATE: MATCH 100.0%, 1758/1758, byte-identical yes; mac MATCH on both
-   slices; 1.0.10 MATCH on both fragments. The aggregates' declaration order (arrowBox before sysBox)
-   is load-bearing: the frame heapsort it feeds breaks savedX's use tie with the left + w/2 slot
-   (notes). OPEN: none. */
 // FUNCTION: EVNOVA 0x004a8100
 // MAC: _DrawMap i386 0x0000e568 ppc 0x00011df8
 void DrawMap(Rect box)
@@ -1772,7 +1755,7 @@ void DrawMap(Rect box)
 }
 
 
-/* DrawMapInFloatingFrame (mac _DrawMapInFloatingFrame; was named ClearStarfield). STATE: MATCH, byte-identical. OPEN: none */
+/* DrawMapInFloatingFrame (mac _DrawMapInFloatingFrame; was named ClearStarfield). */
 // FUNCTION: EVNOVA 0x004a99f0
 // MAC: _DrawMapInFloatingFrame i386 0x00011304 ppc 0x00014c38
 void DrawMapInFloatingFrame(void)
@@ -1812,7 +1795,6 @@ void DrawMapInFloatingFrame(void)
  * its neighbour 0x005759e0 IS a variable despite sitting in the same pooled run.
  */
 
-/* ShowFloatingMap. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a9b30
 // MAC: _ShowFloatingMap i386 0x00011440 ppc 0x00014d78
 void ShowFloatingMap(void)
@@ -1842,7 +1824,6 @@ void ShowFloatingMap(void)
 #define kInfluenceCoarseStep 8
 #define kInfluenceGridMax 255
 
-/* MapPosToInfluenceCoords (mac _MapPosToInfluenceCoords). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a9bf0
 // MAC: _MapPosToInfluenceCoords i386 0x000114f7 ppc 0x00014e78
 void MapPosToInfluenceCoords(short x, short y, Rect *r, short *outX, short *outY)
@@ -1858,7 +1839,6 @@ void MapPosToInfluenceCoords(short x, short y, Rect *r, short *outX, short *outY
     *outY += (r->bottom - r->top) / 2 / 2;
 }
 
-/* RecalcAllMapInfluence (mac _RecalcAllMapInfluence). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a9d10
 // MAC: _RecalcAllMapInfluence i386 0x00011c37 ppc 0x00015694
 void RecalcAllMapInfluence(Rect *r)
@@ -1873,7 +1853,6 @@ void RecalcAllMapInfluence(Rect *r)
 #endif
 }
 
-/* RecalcMapInfluence (mac _RecalcMapInfluence). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a9d50
 // MAC: _RecalcMapInfluence i386 0x000119ee ppc 0x0001545c
 void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom, Rect *r)
@@ -1981,7 +1960,6 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
 #define kInfluenceFalloff 0.2
 #define kTightInfluenceFalloff 0.4
 
-/* AddSystemInfluenceToMap (mac _AddSystemInfluenceToMap). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004aa070
 // MAC: _AddSystemInfluenceToMap i386 0x00011592 ppc 0x00014f4c
 Boolean AddSystemInfluenceToMap(short sys, Rect *r)
@@ -2187,7 +2165,6 @@ Boolean AddSystemInfluenceToMap(short sys, Rect *r)
     return 0;
 }
 
-/* DrawMapInfluence. STATE: MATCH, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x004aa620
 // MAC: _DrawMapInfluence i386 0x0000e360 ppc 0x00011b5c
 void DrawMapInfluence(Rect bounds)

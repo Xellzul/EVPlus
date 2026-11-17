@@ -31,7 +31,7 @@ static Word PrivJoyNumber;
 extern "C" {
 #endif
 
-/* JoystickDestroy (BurgerLib InJoystickWin95 JoystickDestroy). STATE: MATCH, byte-identical. OPEN: none */
+/* JoystickDestroy (BurgerLib InJoystickWin95 JoystickDestroy). */
 // FUNCTION: EVNOVA 0x00502490
 void JoystickDestroy(void)
 {

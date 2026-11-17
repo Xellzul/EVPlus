@@ -4,7 +4,6 @@
 #include "shipobj.h"
 #include "spriteworld.h"
 
-/* sw_depth_ok. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478f10
 // MAC: _sw_depth_ok i386 0x000b7f97 ppc 0x000c3b44
 #ifdef MACBUILD

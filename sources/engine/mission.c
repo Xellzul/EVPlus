@@ -33,8 +33,6 @@
 /* the resource through the handle's own cast: 1.0.10 keeps one deref, win and 1.1.1 reread it */
 #define MisnFileRec ((MisnRes *)*missionFileHand)
 
-/* InitMissions (mac _InitMissions). STATE: MATCH 100.0%, exe 509 / obj 509
-   instrs, byte-identical yes. OPEN: nothing. */
 // FUNCTION: EVNOVA 0x0043bbb0
 // MAC: _InitMissions i386 0x00097b97 ppc 0x000a37ac
 void InitMissions(void)
@@ -190,7 +188,6 @@ void InitMissions(void)
 #define kRandomStellarA  -2
 #define kRandomStellarB  -3
 
-/* MissionPostLoadValidCheck (mac _MissionPostLoadValidCheck). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043c3e0
 // MAC: _MissionPostLoadValidCheck i386 0x0009b8f2 ppc 0x000a78ec
 void MissionPostLoadValidCheck(void)
@@ -223,8 +220,6 @@ void MissionPostLoadValidCheck(void)
 #define kItemMissionInfo         10
 #define kItemPlayerInfo           9
 
-/* DoMissionDialog (mac _DoMissionDialog). STATE: MATCH 100.0%, exe 514 / obj 514, relocregcheck
-   0/183. OPEN: none -- one `count' serves the free-slot scan and the mission-info scan. */
 // FUNCTION: EVNOVA 0x0043c470
 // MAC: _DoMissionDialog i386 0x000a37cf ppc 0x000af2b8
 void DoMissionDialog(void)
@@ -430,7 +425,6 @@ void DoMissionDialog(void)
     return;
 }
 
-/* SetupMissionList. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043cc20
 // MAC: _SetupMissionList i386 0x000a069e ppc 0x000ac360
 void SetupMissionList(void)
@@ -532,8 +526,6 @@ void SetupMissionList(void)
  * correspondence is by call ORDER and not proven per address.
  */
 
-/* RandomizeMissionData (mac _RandomizeMissionData). STATE: MATCH, exe 186 / obj 186,
-   byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043cf00
 // MAC: _RandomizeMissionData i386 0x000a1756 ppc 0x000ad45c
 void RandomizeMissionData(void)
@@ -636,8 +628,6 @@ void RandomizeMissionData(void)
  * read straight out of stellarData. The out-of-range arm skips the fallback,
  * which is why it is written as an else rather than as a pre-set.
  */
-/* RandomizeOneMission (mac _RandomizeOneMission). STATE: MATCH, byte-identical. 1.0.10 MATCH 150 of
-   150 on both fragments, padded. OPEN: none */
 // FUNCTION: EVNOVA 0x0043d240
 // MAC: _RandomizeOneMission i386 0x000a14d1 ppc 0x000ad1ac
 void RandomizeOneMission(short mission)
@@ -700,7 +690,6 @@ void RandomizeOneMission(short mission)
                   missionAvailData[mission].timeLimit);
 }
 
-/* SelectMissionCargoType (mac _SelectMissionCargoType). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043d490
 // MAC: _SelectMissionCargoType i386 0x000981d8 ppc 0x000a3e68
 short SelectMissionCargoType(short choice)
@@ -713,7 +702,6 @@ short SelectMissionCargoType(short choice)
 }
 
 
-/* SelectMissionCargoQty (mac _SelectMissionCargoQty). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043d4c0
 // MAC: _SelectMissionCargoQty i386 0x00098191 ppc 0x000a3e00
 short SelectMissionCargoQty(short choice)
@@ -752,7 +740,6 @@ short SelectMissionCargoQty(short choice)
 #define kSystemNotClass     31000
 #define kSystemBandLimit    32000
 
-/* SelectMissionStellar (mac _SelectMissionStellar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043d510
 // MAC: _SelectMissionStellar i386 0x0009a26a ppc 0x000a609c
 short SelectMissionStellar(short sel, short loc, short avoid, short mission)
@@ -1143,7 +1130,6 @@ short SelectMissionStellar(short sel, short loc, short avoid, short mission)
     return stellar;
 }
 
-/* SelectMissionSystem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043e6f0
 // MAC: _SelectMissionSystem i386 0x0009b993 ppc 0x000a7998
 short SelectMissionSystem(short sel, short loc)
@@ -1358,7 +1344,6 @@ short SelectMissionSystem(short sel, short loc)
 
 /* the date `days` days from today; nothing is written for a non-positive count */
 
-/* SetMissionDeadline. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043f080
 // MAC: _SetMissionDeadline i386 0x00098226 ppc 0x000a3ec4
 void SetMissionDeadline(DateTimeRec *out, short days)
@@ -1386,7 +1371,6 @@ void SetMissionDeadline(DateTimeRec *out, short days)
 /* mission Pay values below this encode a COST of (kMissionCostFloor - pay) */
 #define kMissionCostFloor   (-50000L)
 
-/* DoMissionAccept (mac _DoMissionAccept). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043f100
 // MAC: _DoMissionAccept i386 0x000a1b11 ppc 0x000ad8bc
 Boolean DoMissionAccept(short mission)
@@ -1517,8 +1501,6 @@ Boolean DoMissionAccept(short mission)
     return 1;
 }
 
-/* LoadCurrentMissionData (mac _LoadCurrentMissionData). STATE: MATCH, exe 692 / obj 692,
-   relocregcheck 195 rows 0 differ. OPEN: none */
 // FUNCTION: EVNOVA 0x0043f8c0
 // MAC: _LoadCurrentMissionData i386 0x000a0a38 ppc 0x000ac638
 void LoadCurrentMissionData(short mission, short slot)
@@ -1727,7 +1709,6 @@ void LoadCurrentMissionData(short mission, short slot)
    is ever read -- both free-space figures are checked against it, and each
    shortfall has its own STR# 2002 line. */
 
-/* DoMissionCargoPickup (mac _DoMissionCargoPickup). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00440370
 // MAC: _DoMissionCargoPickup i386 0x00098292 ppc 0x000a3f50
 Boolean DoMissionCargoPickup(short unused, short needed)
@@ -1751,7 +1732,6 @@ Boolean DoMissionCargoPickup(short unused, short needed)
     return 1;
 }
 
-/* DoMissionSuccess (mac _DoMissionSuccess). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00440410
 // MAC: _DoMissionSuccess i386 0x000a03fc ppc 0x000abff8
 void DoMissionSuccess(short mission)
@@ -1807,7 +1787,6 @@ void DoMissionSuccess(short mission)
    one government, with its allies, with the third relation -- or write a
    percentage off their money. Government ids arrive biased by the resource
    base, which is where the 10128/20128/30128 constants come from. */
-/* ApplyMissionPay (mac _ApplyMissionPay). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00440750
 // MAC: _ApplyMissionPay i386 0x00098326 ppc 0x000a3ffc
 void ApplyMissionPay(int32_t amount)
@@ -1844,7 +1823,6 @@ void ApplyMissionPay(int32_t amount)
 
 /* a failed mission costs legal standing in every system of the offended
    government, then shows its failure desc and aborts itself */
-/* DoMissionFailure (mac _DoMissionFailure). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00440930
 // MAC: _DoMissionFailure i386 0x000a0285 ppc 0x000abe54
 void DoMissionFailure(short mission)
@@ -1877,7 +1855,6 @@ void DoMissionFailure(short mission)
 /* the ships an aborted mission owned are detached and sent away; `evalBits`
    is what a deliberate abort passes to run the mission's abort expression,
    and a failure path passes 0 so that only the failure expression runs */
-/* AbortMission (mac _AbortMission). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00440aa0
 // MAC: _AbortMission i386 0x00099a92 ppc 0x000a57c4
 void AbortMission(short mission, Boolean evalBits)
@@ -1907,7 +1884,6 @@ void AbortMission(short mission, Boolean evalBits)
     lastMissionStellar = -1;
 }
 
-/* QuickMissionFailure (mac _QuickMissionFailure). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00440bf0
 // MAC: _QuickMissionFailure i386 0x00099d1b ppc 0x000a5ac8
 void QuickMissionFailure(short mission)
@@ -1931,7 +1907,6 @@ void QuickMissionFailure(short mission)
 
 /* the port's list entry points */
 
-/* MissionFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00440c90
 // MAC: _MissionFilter i386 0x0009f7a9 ppc 0x000ab3fc
 Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -2145,7 +2120,6 @@ Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* MissionDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00441620
 // MAC: _MissionDialogUpdate i386 0x0009f156 ppc 0x000aaf3c
 void MissionDialogUpdate(void)
@@ -2268,9 +2242,6 @@ void MissionDialogUpdate(void)
 
 #define kCostFloor          -50000
 
-/* IsMissionAvailable (mac _IsMissionAvailable). STATE: MATCH 100.0%, exe 649 / obj 649
-   instrs, byte-identical yes (2507 bytes, 88 relocs masked).
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x00441b40
 // MAC: _IsMissionAvailable i386 0x0009b152 ppc 0x000a7000
 Boolean IsMissionAvailable(short mission, Boolean offer)
@@ -2533,8 +2504,6 @@ Boolean IsMissionAvailable(short mission, Boolean offer)
 #define kBriefScrollStep               10
 
 
-/* OfferOneMission (mac _OfferOneMission). STATE: MATCH, 1186/1186, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00442510
 // MAC: _OfferOneMission i386 0x000a21ac ppc 0x000adfd8
 short OfferOneMission(short mission)
@@ -2939,7 +2908,6 @@ short OfferOneMission(short mission)
     return -1;
 }
 
-/* MissionHandler (mac _MissionHandler). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00443760
 // MAC: _MissionHandler i386 0x0009eda8 ppc 0x000aab58
 void MissionHandler(void)
@@ -2950,7 +2918,6 @@ void MissionHandler(void)
         MissionObjectivesCheck(i);
 }
 
-/* MissionLandCheck (mac _MissionLandCheck). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00443780
 // MAC: _MissionLandCheck i386 0x000a19cc ppc 0x000ad724
 void MissionLandCheck(void)
@@ -2991,7 +2958,6 @@ void MissionLandCheck(void)
         RandomizeMissionData();
 }
 
-/* MissionLandCargoCheck (mac _MissionLandCargoCheck). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004438d0
 // MAC: _MissionLandCargoCheck i386 0x0009edc5 ppc 0x000aab94
 void MissionLandCargoCheck(short slot, short stel)
@@ -3055,11 +3021,6 @@ void MissionLandCargoCheck(short slot, short stel)
     }
 }
 
-/* MissionObjectivesCheck (mac _MissionObjectivesCheck). STATE: MATCH 100.0%, exe 477
-   / obj 477, 385 exact + 92 reloc-equivalent, 0 mismatched; blind LCS 477 (100.0%), 0 clusters,
-   relocregcheck 0 of 92 rows differ. Closed by nesting the chain under an initialShipCount > 0
-   guard with a TRAILING else, which queues arm 2's block after the big arm as the exe does.
-   OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x00443c60
 // MAC: _MissionObjectivesCheck i386 0x0009e79e ppc 0x000aa434
 void MissionObjectivesCheck(short slot)
@@ -3213,9 +3174,6 @@ void MissionObjectivesCheck(short slot)
 #define kNoRankIndex    341
 #define kOwedBase       50000   /* pay below -50000 is a debt of the excess */
 
-/* MungeBriefing (mac _MungeBriefing). STATE: MATCH 100.0%, exe 1523 / obj 1523 instrs,
-   byte-identical (masked, 6268 bytes). OPEN: none.
-   see notes */
 // FUNCTION: EVNOVA 0x004444f0
 // MAC: _MungeBriefing i386 0x0009c11d ppc 0x000a81c0
 void MungeBriefing(Boolean briefing, short which)
@@ -3599,7 +3557,6 @@ tokens:
     stringHandle = NULL;
 }
 
-/* MungeForSymbol. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00445d70
 // MAC: _MungeForSymbol i386 0x000984a3 ppc 0x000a4230
 void MungeForSymbol(char *needle, char *replacement)
@@ -3639,8 +3596,6 @@ void MungeForSymbol(char *needle, char *replacement)
 
 #define kMissionInfoTextSize 0xfa
 
-/* SetupMissionInfoList (mac _SetupMissionInfoList). STATE: MATCH 100.0%, exe 225 / obj 225,
-   relocregcheck 0 of 52; the scrollbar test is written <= first. OPEN: none */
 // FUNCTION: EVNOVA 0x00445dc0
 // MAC: _SetupMissionInfoList i386 0x0009de7a ppc 0x000a9a9c
 void SetupMissionInfoList(void)
@@ -3795,7 +3750,6 @@ void SetupMissionInfoList(void)
 #define kMissionInfoDlogID   0x3f4
 #define kMissionInfoPictID   0x2145
 
-/* DoMissionInfoDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00446150
 // MAC: _DoMissionInfoDialog i386 0x0009e19b ppc 0x000a9dd4
 void DoMissionInfoDialog(void)
@@ -3940,7 +3894,6 @@ void DoMissionInfoDialog(void)
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
 }
 
-/* MissionInfoFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00446770
 // MAC: _MissionInfoFilter i386 0x0009d6e5 ppc 0x000a9304
 Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -4100,7 +4053,6 @@ Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* MissionInfoDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00446e00
 // MAC: _MissionInfoDialogUpdate i386 0x00098508 ppc 0x000a42a0
 void MissionInfoDialogUpdate(void)
@@ -4169,7 +4121,6 @@ void MissionInfoDialogUpdate(void)
     }
 }
 
-/* SingleMissionFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00447170
 // MAC: _SingleMissionFilter i386 0x00098d9a ppc 0x000a4984
 Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -4311,7 +4262,6 @@ Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     }
     return 0;
 }
-/* SingleMissionDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00447680
 // MAC: _SingleMissionDialogUpdate i386 0x00098950 ppc 0x000a45e0
 void SingleMissionDialogUpdate(void)
@@ -4411,7 +4361,6 @@ void SingleMissionDialogUpdate(void)
 
 /* only the player slot is read, so no stride is needed here */
 
-/* ValidAuxShipSystem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00447a30
 // MAC: _ValidAuxShipSystem i386 0x000992b5 ppc 0x000a4e60
 Boolean ValidAuxShipSystem(short sys, short mission)
@@ -4480,7 +4429,6 @@ Boolean ValidAuxShipSystem(short sys, short mission)
     return 0;
 }
 
-/* AutoAbortMission (mac _AutoAbortMission). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00447d90
 // MAC: _AutoAbortMission i386 0x00099bdc ppc 0x000a5954
 void AutoAbortMission(short mission)
@@ -4510,7 +4458,6 @@ void AutoAbortMission(short mission)
     AbortMission(mission, 0);
 }
 
-/* SystemVisible. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00447f00
 // MAC: _SystemVisible i386 0x00098207 ppc 0x000a3ea8
 Boolean SystemVisible(short sys)
@@ -4518,7 +4465,6 @@ Boolean SystemVisible(short sys)
     return systemData[sys].loaded;
 }
 
-/* EvalMissionBitTestString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00447f20
 // MAC: _EvalMissionBitTestString i386 0x0009959e ppc 0x000a5160
 Boolean EvalMissionBitTestString(char *expr)

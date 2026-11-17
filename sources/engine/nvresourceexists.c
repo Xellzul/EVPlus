@@ -7,7 +7,7 @@
 #include "gameutil.h"
 #include "burger.h"
 
-/* nv_ResourceExists (mac (port layer)). STATE: MATCH, byte-identical. OPEN: none */
+/* nv_ResourceExists (mac (port layer)). */
 // FUNCTION: EVNOVA 0x004ce640
 Boolean nv_ResourceExists(uint32_t type, short id)
 {

@@ -20,7 +20,6 @@ EXTERN_C_BEGIN
 #define kCommTextMax    0xfe
 #define kTextFaceBold   2
 
-/* DisplayComm (mac _DisplayComm). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047e2d0
 // MAC: _DisplayComm i386 0x00090201 ppc 0x0009be7c
 void DisplayComm(PStrChar *msg, short count, short font, short size,
@@ -56,7 +55,6 @@ void DisplayComm(PStrChar *msg, short count, short font, short size,
 }
 
 /* the stored count doubles as a "there is a message" flag */
-/* RedrawComm (mac _RedrawComm). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047e430
 // MAC: _RedrawComm i386 0x000903a0 ppc 0x0009bfdc
 void RedrawComm(unsigned char noBlit)

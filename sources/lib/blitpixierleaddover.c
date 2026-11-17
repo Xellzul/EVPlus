@@ -4,7 +4,6 @@
 #include "shipobj.h"
 #include "spriteworld.h"
 
-/* BlitPixieRLEAddOver (mac _BlitPixieRLEAddOver). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00472b30
 // MAC: _BlitPixieRLEAddOver i386 0x000c24bf ppc 0x000ce7f0
 void BlitPixieRLEAddOver(unsigned char *rleTokens, unsigned char *dstPixel,

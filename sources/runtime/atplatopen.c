@@ -15,7 +15,6 @@ typedef struct MessageHook {
     ULong message;
 } MessageHook;
 
-extern void exit(int code);
 
 void _ClockTimerProc(PlatformTimer *timer, void *arg);         /* 0x004d3927 */
 extern int32_t ThreadsPreflight(int32_t count, ULong stackSize);      /* atthreadtbl.c */
@@ -81,8 +80,6 @@ unsigned char gPlatformOpen;                      /* 0x00870e10, 1 B */
 int32_t gInterruptCount;                            /* 0x00870088 */
 MessageHook *gMsgHooksList;                       /* 0x00870718 hook list */
 
-/* PlatformOpen. STATE: MATCH 100%, exe 117 / obj 117 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d3163
 int32_t PlatformOpen(void)
 {
@@ -170,8 +167,6 @@ done:
     return err;
 }
 
-/* PlatformClose. STATE: MATCH 100%, exe 11 / obj 11, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d332d
 void PlatformClose(void)
 {
@@ -187,14 +182,12 @@ void PlatformClose(void)
     }
 }
 
-/* IsPlatformOpen. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3356
 unsigned char IsPlatformOpen(void)
 {
     return gPlatformOpen;
 }
 
-/* SystemIdle. STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d335c
 void SystemIdle(void)
 {
@@ -216,7 +209,6 @@ void SystemIdle(void)
 
 /* Sleeps in alertable slices of at most 50 ms, running the idle table
    between them, until the millisecond clock passes the deadline. */
-/* SystemWait. STATE: MATCH 100%, exe 60 / obj 60, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d339e
 void SystemWait(ULong ms)
 {
@@ -244,8 +236,6 @@ void SystemWait(ULong ms)
     }
 }
 
-/* SystemSetIdleProc. STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d3457
 void SystemSetIdleProc(PlatformCallback fn)
 {
@@ -267,8 +257,6 @@ void SystemSetIdleProc(PlatformCallback fn)
     }
 }
 
-/* SystemSetQuitProc. STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d34a0
 void SystemSetQuitProc(PlatformCallback fn)
 {
@@ -286,7 +274,6 @@ void SystemSetQuitProc(PlatformCallback fn)
     }
 }
 
-/* _SystemQuitCallback. STATE: MATCH 100%, exe 49 / obj 49, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d34cf
 void _SystemQuitCallback(void)
 {
@@ -329,7 +316,6 @@ void _SystemQuitCallback(void)
 
 /* Leaves one level of the calling thread's depth; with `unlock' set it
    also releases the section first. */
-/* SystemLeaveCallback. STATE: MATCH 100%, exe 26 / obj 26, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3589
 void SystemLeaveCallback(int unlock)
 {
@@ -351,7 +337,6 @@ void SystemLeaveCallback(int unlock)
 }
 
 /* True while the calling thread is inside the layer. */
-/* SystemCheckCallback. STATE: MATCH 100%, exe 22 / obj 22, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d35ea
 unsigned char SystemCheckCallback(void)
 {
@@ -370,21 +355,18 @@ unsigned char SystemCheckCallback(void)
     return result;
 }
 
-/* _PlatformGetWindow. STATE: MATCH 100%, 6/6, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d361f
 void *_PlatformGetWindow(void)
 {
     return gPlatWindow == (void *)-1 ? 0 : gPlatWindow;
 }
 
-/* _PlatformSetWindow. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3632
 void _PlatformSetWindow(void *window)
 {
     gPlatWindow = window;
 }
 
-/* _PlatformFindMessageHook. STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d363c
 WindowProc _PlatformFindMessageHook(ULong message)
 {
@@ -399,8 +381,6 @@ WindowProc _PlatformFindMessageHook(ULong message)
     return hook != 0 ? hook->proc : 0;
 }
 
-/* _PlatformWindowProc. STATE: MATCH 100%, exe 38 / obj 38, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d3667
 int32_t __stdcall _PlatformWindowProc(void *window, ULong message, ULong wparam,
                             int32_t lparam)
@@ -424,7 +404,6 @@ int32_t __stdcall _PlatformWindowProc(void *window, ULong message, ULong wparam,
 
 /* The console window: retitle it to something unique, FindWindow that,
    then put the title back. */
-/* _PlatformFindConsoleWindow. STATE: MATCH 100%, exe 52 / obj 52, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d36b9
 void *_PlatformFindConsoleWindow(void)
 {
@@ -448,8 +427,6 @@ void *_PlatformFindConsoleWindow(void)
     return window;
 }
 
-/* _PlatformCreateWindow. STATE: MATCH 100%, exe 94 / obj 94 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d376d
 int32_t _PlatformCreateWindow(void)
 {
@@ -497,7 +474,6 @@ done:
     return err;
 }
 
-/* SystemSignalHandle. STATE: MATCH 100%, exe 19 / obj 19 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d38c2
 int __stdcall SystemSignalHandle(ULong type)
 {
@@ -520,7 +496,6 @@ int __stdcall SystemSignalHandle(ULong type)
     return 0;
 }
 
-/* _SystemExceptionFilter. STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d38f1
 int32_t __stdcall _SystemExceptionFilter(void *info)
 {
@@ -538,7 +513,6 @@ int32_t __stdcall _SystemExceptionFilter(void *info)
 
 /* The clock's proc: touch the counter, ask for another 4 s. */
 
-/* _ClockTimerProc. STATE: MATCH 100%, exe 14 / obj 14 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3927
 void _ClockTimerProc(PlatformTimer *timer, void *arg)
 {
@@ -548,14 +522,12 @@ void _ClockTimerProc(PlatformTimer *timer, void *arg)
     TimerPrime(timer, kClockPeriodMs);
 }
 
-/* _PlatformSuspendThread. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d394b
 ULong _PlatformSuspendThread(void *thread)
 {
     return SuspendThread(thread);
 }
 
-/* _PlatformResumeThread. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3956
 ULong _PlatformResumeThread(void *thread)
 {

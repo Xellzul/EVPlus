@@ -59,9 +59,6 @@ Rect buttonPieceRect[kButtonPieceCount];
 unsigned char buttonLabel[kButtonLabelCount][256];
 unsigned char missionButtonLabel[kMissionButtonLabelCount][256];
 
-/* TrackTradeButtons. STATE: MATCH 100%, exe 158 / obj 158, byte-identical.
-   The slot enum (-enum min) at the GetDialogItem sites keeps their addresses out of the CSE
-   class the PtInRect sites share. OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x004a04d0
 // MAC: _TrackTradeButtons i386 0x000294cd ppc 0x0002dae4
 short TrackTradeButtons(Point where)
@@ -113,7 +110,6 @@ short TrackTradeButtons(Point where)
     return drawnButton;
 }
 
-/* DrawTradeButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a06a0
 // MAC: _DrawTradeButtons i386 0x000292e2 ppc 0x0002d960
 void DrawTradeButtons(short hilited)
@@ -148,7 +144,6 @@ void DrawTradeButtons(short hilited)
     }
 }
 
-/* TrackCapAssignButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a0810
 // MAC: _TrackCapAssignButtons i386 0x000291c7 ppc 0x0002d824
 short TrackCapAssignButtons(Point where)
@@ -197,7 +192,6 @@ short TrackCapAssignButtons(Point where)
     return drawnButton;
 }
 
-/* DrawCapAssignButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a0950
 // MAC: _DrawCapAssignButtons i386 0x000290c7 ppc 0x0002d738
 void DrawCapAssignButtons(short hilited)
@@ -220,7 +214,6 @@ void DrawCapAssignButtons(short hilited)
     }
 }
 
-/* TrackCommDialogButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a09e0
 // MAC: _TrackCommDialogButtons i386 0x00028eff ppc 0x0002d55c
 short TrackCommDialogButtons(Point where)
@@ -280,7 +273,6 @@ short TrackCommDialogButtons(Point where)
     return drawnButton;
 }
 
-/* DrawCommDialogButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a0bc0
 // MAC: _DrawCommDialogButtons i386 0x00028c43 ppc 0x0002d2a8
 void DrawCommDialogButtons(short hilited)
@@ -343,7 +335,6 @@ void DrawCommDialogButtons(short hilited)
     }
 }
 
-/* TrackPlanetCommDialogButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a0e50
 // MAC: _TrackPlanetCommDialogButtons i386 0x00028b28 ppc 0x0002d16c
 short TrackPlanetCommDialogButtons(Point where)
@@ -392,7 +383,6 @@ short TrackPlanetCommDialogButtons(Point where)
     return drawnButton;
 }
 
-/* DrawPlanetCommDialogButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a0f90
 // MAC: _DrawPlanetCommDialogButtons i386 0x0002893c ppc 0x0002cf8c
 void DrawPlanetCommDialogButtons(short hilited)
@@ -439,7 +429,6 @@ void DrawPlanetCommDialogButtons(short hilited)
     ForeColor(blackColor);
 }
 
-/* TrackMissionButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a1130
 // MAC: _TrackMissionButtons i386 0x000287f5 ppc 0x0002ce34
 short TrackMissionButtons(Point where)
@@ -485,7 +474,6 @@ short TrackMissionButtons(Point where)
     return drawnButton;
 }
 
-/* DrawMissionButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a1290
 // MAC: _DrawMissionButtons i386 0x00028657 ppc 0x0002ccc8
 void DrawMissionButtons(short hilited)
@@ -520,7 +508,6 @@ void DrawMissionButtons(short hilited)
     }
 }
 
-/* TrackMissionInfoButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a13c0
 // MAC: _TrackMissionInfoButtons i386 0x0002850e ppc 0x0002cb74
 short TrackMissionInfoButtons(Point where)
@@ -565,7 +552,6 @@ short TrackMissionInfoButtons(Point where)
     return drawnButton;
 }
 
-/* DrawMissionInfoButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a1520
 // MAC: _DrawMissionInfoButtons i386 0x00028359 ppc 0x0002c9f4
 void DrawMissionInfoButtons(short hilited)
@@ -600,9 +586,6 @@ void DrawMissionInfoButtons(short hilited)
     }
 }
 
-/* TrackSingleMissionButtons. STATE: MATCH 100%, 146/146, byte-identical. Every loop indexes
-   box[], `where' is read in place and the tracking loop tests StillDown() directly.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004a1670
 // MAC: _TrackSingleMissionButtons i386 0x00028188 ppc 0x0002c820
 short TrackSingleMissionButtons(Point where)
@@ -655,8 +638,6 @@ short TrackSingleMissionButtons(Point where)
     return drawnButton;
 }
 
-/* DrawSingleMissionButtons (mac _DrawSingleMissionButtons). STATE: MATCH 100.0%, exe 191 /
-   obj 191, relocregcheck 0 of 41; `int j' is declared last. OPEN: none */
 // FUNCTION: EVNOVA 0x004a1820
 // MAC: _DrawSingleMissionButtons i386 0x00027db8 ppc 0x0002c4d8
 void DrawSingleMissionButtons(short hilited)
@@ -719,7 +700,6 @@ void DrawSingleMissionButtons(short hilited)
     }
 }
 
-/* TrackPlayerInfoButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a1ae0
 // MAC: _TrackPlayerInfoButtons i386 0x00027c4d ppc 0x0002c370
 short TrackPlayerInfoButtons(short page, Point where)
@@ -770,7 +750,6 @@ short TrackPlayerInfoButtons(short page, Point where)
     return drawnButton;
 }
 
-/* DrawPlayerInfoButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a1c40
 // MAC: _DrawPlayerInfoButtons i386 0x00027aae ppc 0x0002c1e4
 void DrawPlayerInfoButtons(short page, short hilited)
@@ -809,7 +788,6 @@ void DrawPlayerInfoButtons(short page, short hilited)
     }
 }
 
-/* TrackEscortButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a1d90
 // MAC: _TrackEscortButtons i386 0x00027987 ppc 0x0002c0a0
 short TrackEscortButtons(Point where)
@@ -859,7 +837,6 @@ short TrackEscortButtons(Point where)
     return drawnButton;
 }
 
-/* DrawEscortButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a1ed0
 // MAC: _DrawEscortButtons i386 0x000277a4 ppc 0x0002bea0
 void DrawEscortButtons(short hilited)
@@ -912,7 +889,6 @@ void DrawEscortButtons(short hilited)
     }
 }
 
-/* TrackHaggleButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a2090
 // MAC: _TrackHaggleButtons i386 0x00027670 ppc 0x0002bd78
 short TrackHaggleButtons(Point where)
@@ -957,7 +933,6 @@ short TrackHaggleButtons(Point where)
     return drawnButton;
 }
 
-/* DrawHaggleButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a21e0
 // MAC: _DrawHaggleButtons i386 0x0002750d ppc 0x0002bc34
 void DrawHaggleButtons(short hilited)
@@ -987,8 +962,6 @@ void DrawHaggleButtons(short hilited)
     }
 }
 
-/* TrackPlunderButtons. STATE: MATCH 100%, exe 157 / obj 157, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004a22e0
 // MAC: _TrackPlunderButtons i386 0x0002732a ppc 0x0002b9e0
 short TrackPlunderButtons(Point where)
@@ -1059,7 +1032,6 @@ short TrackPlunderButtons(Point where)
     return drawnButton;
 }
 
-/* DrawPlunderButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a24e0
 // MAC: _DrawPlunderButtons i386 0x00027109 ppc 0x0002b784
 void DrawPlunderButtons(short hilited)
@@ -1116,7 +1088,6 @@ void DrawPlunderButtons(short hilited)
     }
 }
 
-/* TrackBarButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a26e0
 // MAC: _TrackBarButtons i386 0x00026fd5 ppc 0x0002b644
 short TrackBarButtons(Point where)
@@ -1163,7 +1134,6 @@ short TrackBarButtons(Point where)
     return drawnButton;
 }
 
-/* DrawBarButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a2810
 // MAC: _DrawBarButtons i386 0x00026e1d ppc 0x0002b4d0
 void DrawBarButtons(short hilited)
@@ -1236,7 +1206,6 @@ void DrawOkButton(Rect box, Boolean hilited)
         DrawButton(port, &box, buttonLabel[kOkButtonLabel], 0, 0, 0);
 }
 
-/* TrackTextButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a2960
 // MAC: _TrackTextButtons i386 0x00026bb0 ppc 0x0002b25c
 short TrackTextButtons(Point where)
@@ -1283,7 +1252,6 @@ short TrackTextButtons(Point where)
     return drawnButton;
 }
 
-/* DrawTextButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a2ac0
 // MAC: _DrawTextButtons i386 0x000269ea ppc 0x0002b090
 void DrawTextButtons(short hilited)
@@ -1325,7 +1293,6 @@ void DrawTextButtons(short hilited)
     }
 }
 
-/* DrawRaceButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a2c30
 // MAC: _DrawRaceButtons i386 0x00026617 ppc 0x0002acc4
 void DrawRaceButtons(short hilited)
@@ -1373,7 +1340,6 @@ void DrawRaceButtons(short hilited)
     }
 }
 
-/* TrackRaceButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a2de0
 // MAC: _TrackRaceButtons i386 0x0002689d ppc 0x0002af18
 short TrackRaceButtons(Point where)
@@ -1424,8 +1390,6 @@ short TrackRaceButtons(Point where)
     return drawnButton;
 }
 
-/* InitButtons. STATE: MATCH 100%, exe 264 / obj 264, byte-identical. The mask walker is
-   set before the paint loop (the exe loads it there). OPEN: none */
 // FUNCTION: EVNOVA 0x004a2f50
 // MAC: _InitButtons i386 0x00025aa1 ppc 0x0002a1e0
 void InitButtons(void)
@@ -1504,7 +1468,6 @@ void InitButtons(void)
     CreateGWorldContainer(&buttonPort, kButtonDevice, gSpriteWorld->pixelDepth, &bounds);
 }
 
-/* DisposeButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a3300
 // MAC: _DisposeButtons i386 0x00025e67 ppc 0x0002a55c
 void DisposeButtons(void)
@@ -1525,9 +1488,6 @@ void DisposeButtons(void)
 #define kGlyphPlus  0x2b
 #define kGlyphMinus 0x2d
 
-/* DrawButton. STATE: MATCH 100%, exe 597 / obj 597. Every Rect copy goes through the inline
-   CopyRect(), whose pointer operands stop mwcc reusing box.left for OffsetRect's argument.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x004a3340
 // MAC: _DrawButton i386 0x00025ea8 ppc 0x0002a5dc
 void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,

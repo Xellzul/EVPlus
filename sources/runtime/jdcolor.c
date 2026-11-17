@@ -54,8 +54,7 @@ build_ycc_rgb_table (j_decompress_ptr cinfo)
   }
 }
 
-/* ycc_rgb_convert. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563ce0
 METHODDEF(void)
 ycc_rgb_convert (j_decompress_ptr cinfo,
@@ -97,8 +96,7 @@ ycc_rgb_convert (j_decompress_ptr cinfo,
   }
 }
 
-/* null_convert. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563c7c
 METHODDEF(void)
 null_convert (j_decompress_ptr cinfo,
@@ -125,8 +123,7 @@ null_convert (j_decompress_ptr cinfo,
   }
 }
 
-/* grayscale_convert. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563c58
 METHODDEF(void)
 grayscale_convert (j_decompress_ptr cinfo,
@@ -137,8 +134,7 @@ grayscale_convert (j_decompress_ptr cinfo,
 		    num_rows, cinfo->output_width);
 }
 
-/* gray_rgb_convert. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563bfb
 METHODDEF(void)
 gray_rgb_convert (j_decompress_ptr cinfo,
@@ -160,8 +156,7 @@ gray_rgb_convert (j_decompress_ptr cinfo,
   }
 }
 
-/* ycck_cmyk_convert. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563ab7
 METHODDEF(void)
 ycck_cmyk_convert (j_decompress_ptr cinfo,
@@ -206,8 +201,7 @@ ycck_cmyk_convert (j_decompress_ptr cinfo,
   }
 }
 
-/* start_pass_dcolor. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563ab6
 METHODDEF(void)
 start_pass_dcolor (j_decompress_ptr cinfo)
@@ -215,8 +209,7 @@ start_pass_dcolor (j_decompress_ptr cinfo)
 
 }
 
-/* jinit_color_deconverter. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005637c7
 GLOBAL(void)
 jinit_color_deconverter (j_decompress_ptr cinfo)

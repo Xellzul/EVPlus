@@ -59,8 +59,7 @@ Word BurgerSongLoops;                            /* 0x008700d8 */
 Word32 BurgerSongFreq;                           /* 0x00870974 */
 
 /* DigitalMusicSoundProc (BurgerLib SnSngWin32, static there): copies decoded chunks into
-   the playing buffer. STATE: MATCH 100.0%, exe 191 / obj 191, byte-identical.
-   OPEN: none */
+   the playing buffer. */
 // FUNCTION: EVNOVA 0x00533c30
 static void DigitalMusicSoundProc(DigitalMusic_t *Input)
 {
@@ -119,8 +118,7 @@ static void DigitalMusicSoundProc(DigitalMusic_t *Input)
     }
 }
 
-/* DigitalMusicReadProc (BurgerLib SnSngWin32, static there): the decoder's byte source.
-   STATE: MATCH 100.0%, exe 74 / obj 74, byte-identical. OPEN: none */
+/* DigitalMusicReadProc (BurgerLib SnSngWin32, static there): the decoder's byte source. */
 // FUNCTION: EVNOVA 0x00533f10
 static Word32 DigitalMusicReadProc(void *Data, Word8 *Buffer, Word32 Length)
 {
@@ -145,8 +143,7 @@ static Word32 DigitalMusicReadProc(void *Data, Word8 *Buffer, Word32 Length)
 }
 
 /* DigitalMusicForegroundTask (BurgerLib SnSngWin32, static there): polled from the keyboard
-   routine list while a song plays. STATE: MATCH 100.0%, exe 210 / obj 210, byte-identical
-   yes. OPEN: none */
+   routine list while a song plays. */
 // FUNCTION: EVNOVA 0x00534010
 static void DigitalMusicForegroundTask(void *Data)
 {
@@ -269,8 +266,7 @@ static void DigitalMusicStop(void)
     BurgerLastSong = 0;
 }
 
-/* DigitalMusicPlay (BurgerLib SnSngWin32). STATE: MATCH, exe 108 / obj 108 (with
-   0x00534550 marked), byte-identical yes. OPEN: none */
+/* DigitalMusicPlay (BurgerLib SnSngWin32). */
 // FUNCTION: EVNOVA 0x00534380
 void DigitalMusicPlay(Word SongNum)
 {

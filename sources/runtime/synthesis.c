@@ -9,8 +9,7 @@
 #include "misc.h"
 #include "os.h"
 
-/* vorbis_synthesis. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00533a30
 int vorbis_synthesis(vorbis_block *vb,ogg_packet *op){
   vorbis_dsp_state     *vd=vb->vd;

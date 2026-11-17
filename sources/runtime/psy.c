@@ -17,8 +17,7 @@
 
 #define NEGINF -9999.f
 
-/* _vp_global_free. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005477b0
 void _vp_global_free(vorbis_look_psy_global *look){
   if(look){
@@ -27,8 +26,7 @@ void _vp_global_free(vorbis_look_psy_global *look){
   }
 }
 
-/* _vi_psy_free. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005477f0
 void _vi_psy_free(vorbis_info_psy *i){
   if(i){
@@ -37,8 +35,7 @@ void _vi_psy_free(vorbis_info_psy *i){
   }
 }
 
-/* set_curve. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00547830
 static void set_curve(float *ref,float *c,int n, float crate){
   int i,j=0;
@@ -80,8 +77,7 @@ static void interp_curve(float *c,float *c1,float *c2,float del){
 }
 
 extern int analysis_noisy;
-/* setup_curve. STATE: BurgerLib's libvorbis 1.0rc3, MATCH, byte-identical (1896 B).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00547a10
 static void setup_curve(float **c,
 			int band,
@@ -149,8 +145,7 @@ static void setup_curve(float **c,
   }
 }
 
-/* _vp_psy_init. STATE: BurgerLib's libvorbis 1.0rc3, MATCH, byte-identical (10398 B).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00548180
 void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
 		  vorbis_info_psy_global *gi,int n,int32_t rate){
@@ -441,8 +436,7 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
   analysis_noisy=1;
 }
 
-/* _vp_psy_clear. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054aa20
 void _vp_psy_clear(vorbis_look_psy *p){
   int i,j;
@@ -465,8 +459,7 @@ void _vp_psy_clear(vorbis_look_psy *p){
   }
 }
 
-/* seed_curve. STATE: BurgerLib's libvorbis 1.0rc3, the choice clamp as two ifs (MATCH,
-   byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054ab20
 static void seed_curve(float *seed,
 		       const float **curves,
@@ -495,8 +488,7 @@ static void seed_curve(float *seed,
   }
 }
 
-/* seed_loop. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054acc0
 static void seed_loop(vorbis_look_psy *p,
 		      const float ***curves,
@@ -531,8 +523,7 @@ static void seed_loop(vorbis_look_psy *p,
   }
 }
 
-/* seed_chase. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054adc0
 static void seed_chase(float *seeds, int linesper, int32_t n){
   int32_t  *posstack=(int32_t *)_ogg_malloc(n*sizeof(*posstack));
@@ -583,8 +574,7 @@ static void seed_chase(float *seeds, int linesper, int32_t n){
   _ogg_free(ampstack);
 }
 
-/* max_seeds. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054af30
 static void max_seeds(vorbis_look_psy *p,
 		      float *seed,
@@ -619,8 +609,7 @@ static void max_seeds(vorbis_look_psy *p,
   }
 }
 
-/* bark_noise_hybridmp. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054b0b0
 static void bark_noise_hybridmp(int n,const int32_t *b,
 				const float *f,
@@ -716,8 +705,7 @@ static void bark_noise_hybridmp(int n,const int32_t *b,
   }
 }
 
-/* _vp_remove_floor. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054b640
 void _vp_remove_floor(vorbis_look_psy *p,
 		      float *mdct,
@@ -732,8 +720,7 @@ void _vp_remove_floor(vorbis_look_psy *p,
       residue[i]=0.f;
 }
 
-/* _vp_compute_mask. STATE: BurgerLib's libvorbis 1.0rc3, MATCH, byte-identical (2014 B).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054b6a0
 void _vp_compute_mask(vorbis_look_psy *p,
 		      float *logfft,
@@ -804,8 +791,7 @@ void _vp_compute_mask(vorbis_look_psy *p,
   _ogg_free(seed);
 }
 
-/* couple_lossless. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054be80
 static void couple_lossless(float A, float B,
 			    float granule,float igranule,
@@ -854,8 +840,7 @@ static void couple_point(float A, float B, float fA, float fB,
   }
 }
 
-/* _vp_quantize_couple (couple_point inlined). STATE: BurgerLib's libvorbis 1.0rc3, MATCH,
-   byte-identical (1184 B). OPEN: none. */
+/* _vp_quantize_couple (couple_point inlined). From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054c000
 void _vp_quantize_couple(vorbis_look_psy *p,
 			 vorbis_info_mapping0 *vi,

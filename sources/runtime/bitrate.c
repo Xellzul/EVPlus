@@ -132,8 +132,7 @@ void vorbis_bitrate_init(vorbis_info *vi,bitrate_manager_state *bm){
   }
 }
 
-/* vorbis_bitrate_clear. STATE: BurgerLib's libvorbis 1.0rc3, one free of the packet buffers
-   after both arms (MATCH, byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544180
 void vorbis_bitrate_clear(bitrate_manager_state *bm){
   int i;
@@ -166,8 +165,7 @@ int vorbis_bitrate_managed(vorbis_block *vb){
   return(0);
 }
 
-/* vorbis_bitrate_maxmarkers. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544270
 int vorbis_bitrate_maxmarkers(void){
   return 8*BITTRACK_DIVISOR;

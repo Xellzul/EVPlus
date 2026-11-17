@@ -15,8 +15,7 @@ extern "C" {
 
 Word IAmExiting;                                 /* 0x00870d98 */
 
-/* Fatal (BurgerLib DbDebugManager). STATE: MATCH 100%, exe 35 / obj 35 instrs,
-   byte-identical yes. OPEN: none */
+/* Fatal (BurgerLib DbDebugManager). */
 // FUNCTION: EVNOVA 0x00503df0
 void Fatal(const char *fmt, ...)
 {
@@ -36,7 +35,7 @@ void Fatal(const char *fmt, ...)
     }
 }
 
-/* NonFatal (BurgerLib DbDebugManager). STATE: MATCH 100%, byte-identical yes. OPEN: none */
+/* NonFatal (BurgerLib DbDebugManager). */
 // FUNCTION: EVNOVA 0x00503e80
 void NonFatal(const char *fmt, ...)
 {
@@ -51,7 +50,7 @@ void NonFatal(const char *fmt, ...)
     }
 }
 
-/* SetErrBombFlag (BurgerLib DbDebugManager). STATE: MATCH 100%, byte-identical yes. OPEN: none */
+/* SetErrBombFlag (BurgerLib DbDebugManager). */
 // FUNCTION: EVNOVA 0x00503ee0
 Word SetErrBombFlag(Word flag)
 {
@@ -62,7 +61,7 @@ Word SetErrBombFlag(Word flag)
     return old;
 }
 
-/* DebugXLongWord (BurgerLib DbDebugManager). STATE: MATCH 100%, byte-identical yes. OPEN: none */
+/* DebugXLongWord (BurgerLib DbDebugManager). */
 // FUNCTION: EVNOVA 0x00503ef0
 void DebugXLongWord(Word32 value)
 {

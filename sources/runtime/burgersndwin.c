@@ -24,8 +24,7 @@ static Word8 ExitProc;
 PrivSound BurgerSamples[kMaxVoices + 1];         /* 0x0086e8c8 */
 DSound *MyDirectSoundDevice;                     /* 0x0086fff8 */
 
-/* KillSoundPlayer (BurgerLib SnSoundManager). STATE: MATCH 100%, exe 17 / obj 17 instrs,
-   byte-identical yes. OPEN: none */
+/* KillSoundPlayer (BurgerLib SnSoundManager). */
 // FUNCTION: EVNOVA 0x004fc3f0
 void KillSoundPlayer(void)
 {
@@ -47,7 +46,7 @@ void KillSoundPlayer(void)
 #define kExplicitOne    0x7f                     /* drops the extended's explicit integer bit */
 
 /* ConvertAiffExtended (BurgerLib SnSoundManager): an AIFF 80-bit big-endian extended to a
-   double. STATE: MATCH 100.0%, exe 54 / obj 54, byte-identical yes. OPEN: none */
+   double. */
 // FUNCTION: EVNOVA 0x004fc430
 double ConvertAiffExtended(const void *Input)
 {
@@ -80,8 +79,7 @@ double ConvertAiffExtended(const void *Input)
     return Result;
 }
 
-/* SoundIterator (BurgerLib SnSoundManager). STATE: MATCH 100%, exe 45 / obj 45,
-   byte-identical yes. OPEN: none */
+/* SoundIterator (BurgerLib SnSoundManager). */
 // FUNCTION: EVNOVA 0x004fc4e0
 int32_t SoundIterator(SoundProc proc, void *data, int32_t cookie, int32_t firstOnly)
 {
@@ -214,9 +212,7 @@ static __inline Word8 *FindSoundChunk(Word8 *data, ULong name, ULong size)
     return 0;
 }
 
-/* ParseSoundFileImage (BurgerLib SnSoundManager). STATE: MATCH 100.0%, exe 331 / obj 331,
-   byte-identical yes (1200 bytes). OPEN: none; the two chunk walks are two inline helpers with
-   their parameters in different orders (see notes) */
+/* ParseSoundFileImage (BurgerLib SnSoundManager). */
 // FUNCTION: EVNOVA 0x004fc570
 int32_t ParseSoundFileImage(AudioDesc *desc, Word8 *data, ULong size)
 {

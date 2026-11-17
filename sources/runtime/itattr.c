@@ -13,8 +13,7 @@ extern unsigned char UnicodeAdvancePtr(const unsigned short **p, ULong *c);
                              (c) >= '0' && (c) <= '9' ? (c) - '0' : 0)
 
 /* _IT_ParseTreeFindNextTag (the next element named `name' after `start' in document order, past its subtree
-   when `skip'; from the root when no start; tags 3..0x7e never match). STATE: MATCH 100%, exe 75
-   / obj 75, byte-identical yes. OPEN: none */
+   when `skip'; from the root when no start; tags 3..0x7e never match). */
 // FUNCTION: EVNOVA 0x0054016a
 ITElement *_IT_ParseTreeFindNextTag(ITElement *root, ITElement *start, const char *name, unsigned char skip)
 {
@@ -62,8 +61,7 @@ ITElement *_IT_ParseTreeFindNextTag(ITElement *root, ITElement *start, const cha
     return start;
 }
 
-/* _IT_ParseTreeFindParentTag (`element' or its nearest enclosing element named `tag'; NULL when none). STATE:
-   MATCH 100%, exe 67 / obj 67, byte-identical yes. OPEN: none */
+/* _IT_ParseTreeFindParentTag (`element' or its nearest enclosing element named `tag'; NULL when none). */
 // FUNCTION: EVNOVA 0x0054021f
 ITElement *_IT_ParseTreeFindParentTag(ITElement *root, ITElement *element, const char *tag)
 {
@@ -116,8 +114,7 @@ ITElement *_IT_ParseTreeFindParentTag(ITElement *root, ITElement *element, const
 #endif
 }
 
-/* _IT_ParseTreeFindLastNode (the last element of a subtree in document order). STATE: MATCH 100%, exe 35 / obj
-   35, byte-identical yes. OPEN: none */
+/* _IT_ParseTreeFindLastNode (the last element of a subtree in document order). */
 // FUNCTION: EVNOVA 0x005402c4
 ITElement *_IT_ParseTreeFindLastNode(void *doc, ITElement *element)
 {
@@ -144,8 +141,7 @@ ITElement *_IT_ParseTreeFindLastNode(void *doc, ITElement *element)
 }
 
 /* _IT_ParseTreeFindThisData (the node among `e', its successors and their subtrees whose text is `text';
-   `e' itself when no text is given). STATE: MATCH 100%, exe 31 / obj 31, byte-identical yes. OPEN:
-   none */
+   `e' itself when no text is given). */
 // FUNCTION: EVNOVA 0x0054030c
 ITElement *_IT_ParseTreeFindThisData(ITElement *e, const char *text)
 {
@@ -167,8 +163,7 @@ ITElement *_IT_ParseTreeFindThisData(ITElement *e, const char *text)
     return found;
 }
 
-/* _IT_ParseTreeFindNextData (the next text node after `node' under `root' whose text is not empty). STATE:
-   MATCH 100%, exe 28 / obj 28, byte-identical yes. OPEN: none */
+/* _IT_ParseTreeFindNextData (the next text node after `node' under `root' whose text is not empty). */
 // FUNCTION: EVNOVA 0x0054034a
 ITElement *_IT_ParseTreeFindNextData(ITElement *root, ITElement *node)
 {
@@ -190,8 +185,7 @@ ITElement *_IT_ParseTreeFindNextData(ITElement *root, ITElement *node)
 }
 
 /* _IT_ParseTreeFindAttribute (an attribute of `element', or, when `inherit', of the nearest enclosing element
-   that has it; only elements named `tag' when one is given; tags 3..0x7e never answer). STATE:
-   MATCH 100%, exe 96 / obj 96, byte-identical yes. OPEN: none */
+   that has it; only elements named `tag' when one is given; tags 3..0x7e never answer). */
 // FUNCTION: EVNOVA 0x00540387
 char *_IT_ParseTreeFindAttribute(ITElement *root, ITElement *element, const char *tag, const char *key,
                    unsigned char inherit)
@@ -264,8 +258,7 @@ next:
 #endif
 }
 
-/* _IT_SimpleFindAttribute (an element's attribute value by name, NULL when absent). STATE: MATCH 100%,
-   exe 28 / obj 28, byte-identical yes. OPEN: none */
+/* _IT_SimpleFindAttribute (an element's attribute value by name, NULL when absent). */
 // FUNCTION: EVNOVA 0x00540482
 char *_IT_SimpleFindAttribute(ITElement *element, const char *key)
 #if defined(MAC1010) && TARGET_API_MAC_CARBON
@@ -299,8 +292,7 @@ char *_IT_SimpleFindAttribute(ITElement *element, const char *key)
 }
 #endif
 
-/* _IT_ParseAttributeGetNumber (a signed decimal number, up to a comma). STATE: MATCH 100%, exe 39 / obj 39,
-   byte-identical yes. OPEN: none */
+/* _IT_ParseAttributeGetNumber (a signed decimal number, up to a comma). */
 // FUNCTION: EVNOVA 0x005404d9
 int32_t _IT_ParseAttributeGetNumber(unsigned char wide, const char *s)
 #if defined(MAC1010) && TARGET_API_MAC_CARBON
@@ -390,8 +382,7 @@ static char kNumberFormat[] = "%ld";
 #define kNoneW L"NONE"
 #endif
 
-/* _IT_ParseAttributeGetAlign (an ALIGN value: 1 RIGHT, -1 LEFT, 0 anything else). STATE: MATCH 100%, exe 35 / obj 35, byte-identical yes.
-   OPEN: none */
+/* _IT_ParseAttributeGetAlign (an ALIGN value: 1 RIGHT, -1 LEFT, 0 anything else). */
 // FUNCTION: EVNOVA 0x00540528
 int32_t _IT_ParseAttributeGetAlign(unsigned char wide, const char *s)
 {
@@ -429,8 +420,7 @@ static char kAlignCenter[] = "CENTER";
 ITColor gIT_DefaultColor = { 0xff, 0xff, 0xff, 0xff };  /* 0x00581b74 the default colour */
 
 /* _IT_ParseAttributeGetColor (a colour attribute: `#rgb' or `#rrggbb', any number of leading '#', opaque;
-   anything else is the default, opaque white). STATE: MATCH 100%, exe 169 / obj 169, byte-
-   identical yes. OPEN: none */
+   anything else is the default, opaque white). */
 // FUNCTION: EVNOVA 0x0054058a
 ITColor _IT_ParseAttributeGetColor(unsigned char wide, const char *s)
 {
@@ -506,8 +496,7 @@ static char kColorFormat[] = "#%2.2lX#%2.2lX#%2.2lX";
 static char kRectFormat[] = "%ld,%ld,%ld,%ld";
 
 /* _IT_ParseAttributeGetRect (four comma-separated signed numbers as a rectangle; each field's scan steps past
-   its terminator, a NUL too, as the exe's does). STATE: MATCH 100%, exe 67 / obj 67, byte-
-   identical yes. OPEN: none */
+   its terminator, a NUL too, as the exe's does). */
 // FUNCTION: EVNOVA 0x0054072a
 ITRect *_IT_ParseAttributeGetRect(void *rect, unsigned char wide, const char *s)
 {
@@ -561,8 +550,7 @@ ITRect *_IT_ParseAttributeGetRect(void *rect, unsigned char wide, const char *s)
 #endif
 }
 
-/* _IT_ParseAttributeGetFlag (a boolean attribute: anything but FALSE or NONE, in any case, is true). STATE:
-   MATCH 100%, exe 33 / obj 33, byte-identical yes. OPEN: none */
+/* _IT_ParseAttributeGetFlag (a boolean attribute: anything but FALSE or NONE, in any case, is true). */
 // FUNCTION: EVNOVA 0x005407b7
 unsigned char _IT_ParseAttributeGetFlag(unsigned char wide, const char *s)
 {
@@ -593,7 +581,7 @@ unsigned char _IT_ParseAttributeGetFlag(unsigned char wide, const char *s)
 
 /* _IT_ParseTreeGetFontAttributes (the text style in force at `element': FACE and SIZE inherited, style bits from
    the enclosing B / STRONG, I / EM, U, TT, PRE and A HREF elements, FGCOLOR; each output only
-   when asked for). STATE: MATCH 100%, exe 156 / obj 156, byte-identical yes. OPEN: none */
+   when asked for). */
 // FUNCTION: EVNOVA 0x00540814
 void _IT_ParseTreeGetFontAttributes(ITElement *root, ITElement *element, char **face, int32_t *size, ULong *style,
                   ITColor *color, char **href)
@@ -678,8 +666,7 @@ void _IT_ParseTreeGetFontAttributes(ITElement *root, ITElement *element, char **
 }
 
 #ifndef MAC1010
-/* IT_HashName (a name's hash). STATE: MATCH 100%, exe 17 / obj 17, byte-identical yes. OPEN:
-   none */
+/* IT_HashName (a name's hash). */
 // FUNCTION: EVNOVA 0x005409d9
 ULong IT_HashName(const unsigned char *s)
 {
@@ -693,8 +680,7 @@ ULong IT_HashName(const unsigned char *s)
 
 
 /* _IT_PageListCreate (the page table of a document: every PAGE element with its NAME and TITLE, in
-   document order and hashed by name over 31 buckets; NULL when out of memory). STATE: MATCH
-   100%, exe 104 / obj 104, byte-identical yes. OPEN: none */
+   document order and hashed by name over 31 buckets; NULL when out of memory). */
 // FUNCTION: EVNOVA 0x005409fc
 ITPageTable *_IT_PageListCreate(ITElement *root)
 {
@@ -746,8 +732,7 @@ done:
     return table;
 }
 
-/* _IT_PageListDispose (dispose a name table and its entries). STATE: MATCH 100%, exe 22 / obj 22,
-   byte-identical yes. OPEN: none */
+/* _IT_PageListDispose (dispose a name table and its entries). */
 // FUNCTION: EVNOVA 0x00540b10
 int32_t _IT_PageListDispose(void *tableRef)
 {
@@ -766,8 +751,7 @@ int32_t _IT_PageListDispose(void *tableRef)
     return err;
 }
 
-/* _IT_GetPageByName (a name table's entry for a name, NULL when absent). STATE: MATCH 100%, exe 32 / obj 32, byte-identical yes.
-   OPEN: none */
+/* _IT_GetPageByName (a name table's entry for a name, NULL when absent). */
 // FUNCTION: EVNOVA 0x00540b3c
 ITPage *_IT_GetPageByName(ITPageTable *table, const char *name)
 {
@@ -784,8 +768,7 @@ ITPage *_IT_GetPageByName(ITPageTable *table, const char *name)
     return e;
 }
 
-/* _IT_GetPageByIndex (a name table's entry by position). STATE: MATCH 100%, exe 18 / obj 18,
-   byte-identical yes. OPEN: none */
+/* _IT_GetPageByIndex (a name table's entry by position). */
 // FUNCTION: EVNOVA 0x00540b7e
 ITPage *_IT_GetPageByIndex(ITPageTable *table, ULong index)
 {

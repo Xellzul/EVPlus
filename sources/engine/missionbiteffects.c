@@ -11,9 +11,6 @@
 #include "prototypes.h"
 #include "missions.h"
 
-/* PropagateMissionBitEffects (mac _PropagateMissionBitEffects). STATE: MATCH 100.0%, exe 345 /
-   obj 345, byte-identical yes.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x00448090
 // MAC: _PropagateMissionBitEffects i386 0x00099676 ppc 0x000a52a0
 void PropagateMissionBitEffects(void)

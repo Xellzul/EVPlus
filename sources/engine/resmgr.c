@@ -25,7 +25,7 @@ int32_t gResourcesReleased;
  * callee-saved registers where the exe pushes four.
  */
 
-/* nv_FindResourceRecord (mac (port layer)). STATE: MATCH, byte-identical. OPEN: none */
+/* nv_FindResourceRecord (mac (port layer)). */
 // FUNCTION: EVNOVA 0x004cdfa0
 ResRecord *nv_FindResourceRecord(uint32_t type, short id)
 {
@@ -65,7 +65,6 @@ ResRecord *nv_FindResourceRecord(uint32_t type, short id)
 
 /* index runs across the open files, so a file that has none of the type
    passes the remainder down to the next one */
-/* nv_FindIndResourceRecord. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce030
 ResRecord *nv_FindIndResourceRecord(uint32_t type, short index)
 {
@@ -93,7 +92,6 @@ ResRecord *nv_FindIndResourceRecord(uint32_t type, short index)
     return NULL;
 }
 
-/* nv_CountResourceRecords. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce0b0
 int32_t nv_CountResourceRecords(uint32_t type)
 {
@@ -121,7 +119,6 @@ int32_t nv_CountResourceRecords(uint32_t type)
     return total;
 }
 
-/* nv_FindNamedResourceRecord. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce110
 ResRecord *nv_FindNamedResourceRecord(uint32_t type, const char *name)
 {
@@ -156,7 +153,6 @@ ResRecord *nv_FindNamedResourceRecord(uint32_t type, const char *name)
     return NULL;
 }
 
-/* nv_FindResourceRecordForHandle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce1a0
 ResRecord *nv_FindResourceRecordForHandle(Handle h)
 {
@@ -196,7 +192,7 @@ ResRecord *nv_FindResourceRecordForHandle(Handle h)
     return NULL;
 }
 
-/* GetResource (mac (Toolbox shim)). STATE: MATCH, byte-identical. OPEN: none */
+/* GetResource (mac (Toolbox shim)). */
 // FUNCTION: EVNOVA 0x004ce250
 Handle GetResource(uint32_t type, short id)
 {
@@ -213,7 +209,6 @@ Handle GetResource(uint32_t type, short id)
     return NULL;
 }
 
-/* GetIndResource. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce2a0
 Handle GetIndResource(uint32_t type, short index)
 {
@@ -233,7 +228,6 @@ Handle GetIndResource(uint32_t type, short index)
     return NULL;
 }
 
-/* GetNamedResource. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce300
 Handle GetNamedResource(uint32_t type, const unsigned char *name)
 {
@@ -252,7 +246,7 @@ Handle GetNamedResource(uint32_t type, const unsigned char *name)
     return NULL;
 }
 
-/* ReleaseResource (mac (Toolbox shim)). STATE: MATCH, byte-identical. OPEN: none */
+/* ReleaseResource (mac (Toolbox shim)). */
 // FUNCTION: EVNOVA 0x004ce370
 void ReleaseResource(Handle h)
 {
@@ -275,7 +269,6 @@ void ReleaseResource(Handle h)
     }
 }
 
-/* DetachResource. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce400
 void DetachResource(Handle h)
 {
@@ -295,14 +288,14 @@ void DetachResource(Handle h)
     }
 }
 
-/* CountResources (mac (Toolbox shim)). STATE: MATCH, byte-identical. OPEN: none */
+/* CountResources (mac (Toolbox shim)). */
 // FUNCTION: EVNOVA 0x004ce470
 int32_t CountResources(uint32_t type)
 {
     return nv_CountResourceRecords(type);
 }
 
-/* GetResInfo (mac (Toolbox shim)). STATE: MATCH, byte-identical. OPEN: none */
+/* GetResInfo (mac (Toolbox shim)). */
 // FUNCTION: EVNOVA 0x004ce480
 void GetResInfo(Handle h, short *id, uint32_t *type, unsigned char *name)
 {

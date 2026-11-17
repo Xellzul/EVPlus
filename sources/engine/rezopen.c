@@ -50,7 +50,6 @@ static __inline int32_t SwapEndianLong(uint32_t t)
 }
 
 
-/* EVOpenResourceFile (mac _EVOpenResourceFile). STATE: MATCH 100.0%, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce4d0
 short EVOpenResourceFile(const char *path)
 {

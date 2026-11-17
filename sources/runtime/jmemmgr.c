@@ -101,8 +101,7 @@ static const size_t extra_pool_slop[JPOOL_NUMPOOLS] =
 
 #define MIN_SLOP  50
 
-/* alloc_small. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e764
 METHODDEF(void *)
 alloc_small (j_common_ptr cinfo, int pool_id, size_t sizeofobject)
@@ -169,8 +168,7 @@ alloc_small (j_common_ptr cinfo, int pool_id, size_t sizeofobject)
   return (void *) data_ptr;
 }
 
-/* alloc_large. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e6aa
 METHODDEF(void FAR *)
 alloc_large (j_common_ptr cinfo, int pool_id, size_t sizeofobject)
@@ -205,8 +203,7 @@ alloc_large (j_common_ptr cinfo, int pool_id, size_t sizeofobject)
   return (void FAR *) (hdr_ptr + 1);
 }
 
-/* alloc_sarray. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e60a
 METHODDEF(JSAMPARRAY)
 alloc_sarray (j_common_ptr cinfo, int pool_id,
@@ -247,8 +244,7 @@ alloc_sarray (j_common_ptr cinfo, int pool_id,
   return result;
 }
 
-/* alloc_barray. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e55d
 METHODDEF(JBLOCKARRAY)
 alloc_barray (j_common_ptr cinfo, int pool_id,
@@ -289,8 +285,7 @@ alloc_barray (j_common_ptr cinfo, int pool_id,
   return result;
 }
 
-/* request_virt_sarray. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e4f6
 METHODDEF(jvirt_sarray_ptr)
 request_virt_sarray (j_common_ptr cinfo, int pool_id, boolean pre_zero,
@@ -319,8 +314,7 @@ request_virt_sarray (j_common_ptr cinfo, int pool_id, boolean pre_zero,
   return result;
 }
 
-/* request_virt_barray. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e48f
 METHODDEF(jvirt_barray_ptr)
 request_virt_barray (j_common_ptr cinfo, int pool_id, boolean pre_zero,
@@ -349,8 +343,7 @@ request_virt_barray (j_common_ptr cinfo, int pool_id, boolean pre_zero,
   return result;
 }
 
-/* realize_virt_arrays. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e30c
 METHODDEF(void)
 realize_virt_arrays (j_common_ptr cinfo)
@@ -445,8 +438,7 @@ realize_virt_arrays (j_common_ptr cinfo)
   }
 }
 
-/* do_sarray_io. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e277
 LOCAL(void)
 do_sarray_io (j_common_ptr cinfo, jvirt_sarray_ptr ptr, boolean writing)
@@ -480,8 +472,7 @@ do_sarray_io (j_common_ptr cinfo, jvirt_sarray_ptr ptr, boolean writing)
   }
 }
 
-/* do_barray_io. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e1db
 LOCAL(void)
 do_barray_io (j_common_ptr cinfo, jvirt_barray_ptr ptr, boolean writing)
@@ -515,8 +506,7 @@ do_barray_io (j_common_ptr cinfo, jvirt_barray_ptr ptr, boolean writing)
   }
 }
 
-/* access_virt_sarray. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e0bf
 METHODDEF(JSAMPARRAY)
 access_virt_sarray (j_common_ptr cinfo, jvirt_sarray_ptr ptr,
@@ -586,8 +576,7 @@ access_virt_sarray (j_common_ptr cinfo, jvirt_sarray_ptr ptr,
   return ptr->mem_buffer + (start_row - ptr->cur_start_row);
 }
 
-/* access_virt_barray. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054dfa0
 METHODDEF(JBLOCKARRAY)
 access_virt_barray (j_common_ptr cinfo, jvirt_barray_ptr ptr,
@@ -657,8 +646,7 @@ access_virt_barray (j_common_ptr cinfo, jvirt_barray_ptr ptr,
   return ptr->mem_buffer + (start_row - ptr->cur_start_row);
 }
 
-/* free_pool. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054debc
 METHODDEF(void)
 free_pool (j_common_ptr cinfo, int pool_id)
@@ -718,8 +706,7 @@ free_pool (j_common_ptr cinfo, int pool_id)
   }
 }
 
-/* self_destruct. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054de86
 METHODDEF(void)
 self_destruct (j_common_ptr cinfo)
@@ -736,8 +723,7 @@ self_destruct (j_common_ptr cinfo)
   jpeg_mem_term(cinfo);
 }
 
-/* jinit_memory_mgr. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ddb9
 GLOBAL(void)
 jinit_memory_mgr (j_common_ptr cinfo)

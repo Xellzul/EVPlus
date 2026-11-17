@@ -59,8 +59,7 @@ int32_t IT_DrawBorderFrame(ITImage *image, ITRect *r, int32_t indent, int32_t ga
 
 /* IT_BorderHandler (the BORDER control proc: 0 makes its data (LINE NONE / DOTTED / DASHED,
    ALIGN, INDENT, CHIPPED, FGCOLOR, BGCOLOR), 1 takes the unset colours from the DC, 3 frees
-   the data, 0x12 paints; bounds, title and colours; no value, text or input). STATE: MATCH
-   100%, exe 385 / obj 385, byte-identical yes. OPEN: none */
+   the data, 0x12 paints; bounds, title and colours; no value, text or input). */
 // FUNCTION: EVNOVA 0x0051fe38
 int32_t IT_BorderHandler(void *hwnd, void *dc, ITElement *element, void **data, ULong msg, ULong a,
                   void *b)
@@ -257,8 +256,7 @@ int32_t IT_BorderHandler(void *hwnd, void *dc, ITElement *element, void **data, 
 
 /* _IT_BorderDraw (paint a border: its colour halved towards white when inactive, the title in
    9-point text shortened with "..." to two thirds of the width and set into a gap of the top edge
-   by ALIGN, the frame drawn by 0x0052061c). STATE: MATCH 100%, exe 272 / obj 272, byte-identical
-   yes (785 bytes). OPEN: none; gapLeft holds the widest title first, and a centred title is
+   by ALIGN, the frame drawn by 0x0052061c). Note: gapLeft holds the widest title first, and a centred title is
    placed from 0, as in the exe */
 // FUNCTION: EVNOVA 0x0052030b
 int32_t _IT_BorderDraw(void *hwnd, void *dc, ITBorder *border, unsigned char fill)
@@ -399,8 +397,7 @@ done:
    colour (the bottom-right corner cut away when chipped), the outline in the line colour
    (dotted or solid) with a gap in the top edge for a title, a zero-width or zero-height
    box as a rule; then `indent' bevel passes, lit and shaded from the port's background
-   colour outside the outline and from the box's inside it). STATE: MATCH 100%, exe 884 / obj
-   884, byte-identical yes. OPEN: none; the inner bevel's last gap pixel takes the outer shade,
+   colour outside the outline and from the box's inside it). Note: the inner bevel's last gap pixel takes the outer shade,
    as in the exe */
 // FUNCTION: EVNOVA 0x0052061c
 int32_t IT_DrawBorderFrame(ITImage *image, ITRect *r, int32_t indent, int32_t gapLeft, int32_t gapRight,

@@ -140,8 +140,7 @@ typedef struct DeviceSearch {
     Guid storage;                                /* +0x08 */
 } DeviceSearch;
 
-/* FindDeviceCallback (BurgerLib FindDeviceCallback). STATE: MATCH 100%, exe 27 / obj 27,
-   byte-identical yes. OPEN: none */
+/* FindDeviceCallback (BurgerLib FindDeviceCallback). */
 // FUNCTION: EVNOVA 0x004ec420
 int __stdcall FindDeviceCallback(Guid *guid, char *description, char *driverName,
                            void *context, void *monitor)
@@ -161,8 +160,7 @@ int __stdcall FindDeviceCallback(Guid *guid, char *description, char *driverName
     return kEnumContinue;
 }
 
-/* LockVideoPage (BurgerLib GrWin95Code). STATE: MATCH 100.0%, exe 113 / obj 113,
-   byte-identical yes. OPEN: none */
+/* LockVideoPage (BurgerLib GrWin95Code). */
 // FUNCTION: EVNOVA 0x004ec480
 void LockVideoPage(void)
 {
@@ -223,8 +221,7 @@ Locked:
     }
 }
 
-/* UnlockVideoPage (BurgerLib GrWin95Code; DrawARect16 inlines it). STATE: MATCH 100.0%,
-   exe 18 / obj 18, byte-identical. OPEN: none */
+/* UnlockVideoPage (BurgerLib GrWin95Code; DrawARect16 inlines it). */
 // FUNCTION: EVNOVA 0x004ec670
 void UnlockVideoPage(void)
 {
@@ -237,8 +234,7 @@ void UnlockVideoPage(void)
     }
 }
 
-/* UpdateAndNoPageFlip (BurgerLib GrWin95Code). STATE: MATCH 100%, exe 129 / obj 129,
-   byte-identical yes. OPEN: none */
+/* UpdateAndNoPageFlip (BurgerLib GrWin95Code). */
 // FUNCTION: EVNOVA 0x004ec6c0
 void UpdateAndNoPageFlip(void)
 {
@@ -286,8 +282,7 @@ void UpdateAndNoPageFlip(void)
     }
 }
 
-/* UpdateAndPageFlip (BurgerLib GrWin95Code). STATE: MATCH 100.0%, exe 7 / obj 7,
-   byte-identical yes. OPEN: none */
+/* UpdateAndPageFlip (BurgerLib GrWin95Code). */
 // FUNCTION: EVNOVA 0x004ec960
 void UpdateAndPageFlip(void)
 {
@@ -297,8 +292,7 @@ void UpdateAndPageFlip(void)
     Win95VideoPointer = VideoPointer;
 }
 
-/* ReleaseVideo (BurgerLib GrWin95Code). STATE: MATCH 100.0%, exe 121 / obj 121,
-   byte-identical yes. OPEN: none */
+/* ReleaseVideo (BurgerLib GrWin95Code). */
 // FUNCTION: EVNOVA 0x004ec990
 void ReleaseVideo(void)
 {
@@ -386,8 +380,7 @@ static inline Word Win95VideoGetGuid(Guid **OutPtr, Guid *Output, Word DevNum)
     return 1;
 }
 
-/* SetDisplayToSize (BurgerLib SetDisplayToSize). STATE: MATCH 100%, exe 1199 / obj 1199,
-   byte-identical yes. OPEN: none */
+/* SetDisplayToSize (BurgerLib SetDisplayToSize). */
 // FUNCTION: EVNOVA 0x004ecbd0
 int32_t SetDisplayToSize(ULong width, ULong height, ULong depth, ULong flags)
 {
@@ -797,8 +790,7 @@ Word IsDirectInputPresent(void)
 #define kBytesPerPixel 2
 #define kBltFlags      0x600
 
-/* DrawARect16 (BurgerLib DrawARect16). STATE: MATCH 100.0%, exe 155 / obj 155,
-   byte-identical yes. OPEN: none */
+/* DrawARect16 (BurgerLib DrawARect16). */
 // FUNCTION: EVNOVA 0x004ee300
 void DrawARect16(int x, int y, Word Width, Word Height, Word Color)
 {
@@ -877,8 +869,7 @@ ClipBottom:
     goto Clipped;
 }
 
-/* VideoOSGammaInit (BurgerLib GrWin95Code). STATE: MATCH 100.0%, exe 72 / obj 72,
-   byte-identical yes. OPEN: none */
+/* VideoOSGammaInit (BurgerLib GrWin95Code). */
 // FUNCTION: EVNOVA 0x004ee5a0
 void VideoOSGammaInit(void)
 {
@@ -906,8 +897,7 @@ void VideoOSGammaInit(void)
     }
 }
 
-/* VideoOSGammaDestroy (BurgerLib GrWin95Code). STATE: MATCH 100.0%, exe 39 / obj 39,
-   byte-identical yes. OPEN: none */
+/* VideoOSGammaDestroy (BurgerLib GrWin95Code). */
 // FUNCTION: EVNOVA 0x004ee6f0
 void VideoOSGammaDestroy(void)
 {

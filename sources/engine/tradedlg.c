@@ -125,8 +125,6 @@ EXTERN_C_BEGIN
 
 #define kOutfModRaiseMax 0x1b   /* outfit ModType 27: raises another outfit's maximum */
 /* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
-/* DoTradeDialog (mac _DoTradeDialog). STATE: MATCH, 628/628, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x0048c730
 // MAC: _DoTradeDialog i386 0x0005dbe1 ppc 0x000657f4
 void DoTradeDialog(void)
@@ -358,7 +356,6 @@ void DoTradeDialog(void)
     ResetMissionOfferVenue();
 }
 
-/* TradeFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048d190
 // MAC: _TradeFilter i386 0x0004e092 ppc 0x00056d08
 Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -490,7 +487,6 @@ Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 #define kMapFilterCount 8
 
 
-/* TradeDialogTabKey. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048d5a0
 // MAC: _TradeDialogTabKey i386 0x0004cd81 ppc 0x00055cc0
 void TradeDialogTabKey(Boolean back)
@@ -527,13 +523,10 @@ void TradeDialogTabKey(Boolean back)
     InvalDialogRect(tradeDialog, &bounds);
 }
 
-/* TradeDialogUpdate (mac _TradeDialogUpdate). STATE: MATCH, 1241/1241, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x0048d6f0
 // MAC: _TradeDialogUpdate i386 0x0004ceea ppc 0x00055e5c
 void TradeDialogUpdate(void)
 {
-    extern char *strcpy(char *, const char *);   /* MSL, CALLED not inlined */
 
     unsigned char message[256];
     void *item;
@@ -896,7 +889,6 @@ void TradeDialogUpdate(void)
 
 #define kStellarBackdropPictID 0x2134
 
-/* PreloadPortDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048e970
 // MAC: _PreloadPortDialog i386 0x0004e5c7 ppc 0x000571c0
 void PreloadPortDialog(SpobRecord *spob, short stellar)
@@ -939,9 +931,6 @@ void PreloadPortDialog(SpobRecord *spob, short stellar)
 #define kOutfitVenue     6
 
 
-/* DoOutfitDialog (mac _DoOutfitDialog). STATE: MATCH 100.0%, 1509/1509, byte-identical yes.
-   OPEN: none. The order of the address-taken locals decides the frame's use-5 tie between
-   weapID and the sell quantity (see notes). */
 // FUNCTION: EVNOVA 0x0048ea70
 // MAC: _DoOutfitDialog i386 0x0005bacf ppc 0x00063b20
 void DoOutfitDialog(void)
@@ -1002,7 +991,6 @@ void DoOutfitDialog(void)
         }
     }
     if (count == 0) {
-        extern char *strcpy(char *, const char *);
 
         strcpy(textShowString, "");
         StrcatIndCString(textShowString, kGameStrList, 0xce);
@@ -1499,8 +1487,6 @@ void DoOutfitDialog(void)
 #define kGridDownKey        kDownArrowChar
 #define kGridPageUpKey      kPageUpChar
 #define kGridPageDownKey    kPageDownChar
-/* OutfitFilter. STATE: MATCH 100%, 562/562, relocregcheck 0 of 154.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x004903c0
 // MAC: _OutfitFilter i386 0x00058039 ppc 0x00060298
 Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -1742,7 +1728,6 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* OutfitDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00490c70
 // MAC: _OutfitDialogUpdate i386 0x000572cb ppc 0x0005f680
 void OutfitDialogUpdate(void)
@@ -2002,7 +1987,6 @@ void OutfitDialogUpdate(void)
 
 
 
-/* CanBuyOutfitItem (mac _CanBuyOutfitItem). STATE: MATCH, 391/391, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00491950
 // MAC: _CanBuyOutfitItem i386 0x0004e7c4 ppc 0x00057448
 Boolean CanBuyOutfitItem(short outfit)
@@ -2186,9 +2170,6 @@ Boolean CanBuyOutfitItem(short outfit)
 }
 
 /* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
-/* DoPortDialog (mac _DoPortDialog). STATE: MATCH 561/561, byte-identical yes (2413 bytes),
-   relocregcheck 0 of 237. `n' holds the fuel call's result and counts the shown missions;
-   the sound handle is stored straight into planetSnd. OPEN: none. */
 // FUNCTION: EVNOVA 0x00491f30
 // MAC: _DoPortDialog i386 0x0005f911 ppc 0x000675a4
 void DoPortDialog(SpobRecord *spob, short stellar)
@@ -2440,7 +2421,6 @@ void DoPortDialog(SpobRecord *spob, short stellar)
  * whatever button the tracker thought it was over.
  */
 
-/* PortFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004928a0
 // MAC: _PortFilter i386 0x0004f041 ppc 0x00057c18
 Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -2568,7 +2548,6 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* PortDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00492c40
 // MAC: _PortDialogUpdate i386 0x0004ebbd ppc 0x00057884
 void PortDialogUpdate(void)
@@ -2637,7 +2616,6 @@ void PortDialogUpdate(void)
  * picked up from there — and the fourth is an optional out-slot for the
  * modifier state that GetKeyModifiers reports.
  */
-/* MyModalDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00492f10
 // MAC: _MyModalDialog i386 0x00059954 ppc 0x00061ac4
 void MyModalDialog(DialogPtr dlg, DialogEventProc eventProc, short *itemHit,
@@ -2659,9 +2637,6 @@ void MyModalDialog(DialogPtr dlg, DialogEventProc eventProc, short *itemHit,
 
 /* per-mission state, stride 0x14; buttons.c's MissionState only names +0x00 */
 
-/* DoShipyardDialog (mac _DoShipyardDialog). STATE: MATCH 100%, exe 981 / obj 981, frame 0x32c,
-   byte-identical yes (2026-09-25). `weap' also counts the first scan, the name digits and the
-   default outfits; `itemType' and `digitBuf' are declared last (a compound: neither alone). */
 // FUNCTION: EVNOVA 0x00492f30
 // MAC: _DoShipyardDialog i386 0x0005e679 ppc 0x00066438
 void DoShipyardDialog(void)
@@ -2747,7 +2722,6 @@ void DoShipyardDialog(void)
                 n = selShipyardItem;
                 if (canBuy != 0) {
                     if (shipBuyMode == 0) {
-                        extern char *strcpy(char *, const char *);
 
                         RedrawDialog(shipyardDialog);
                         strcpy((char *)msgText, "");
@@ -3008,8 +2982,6 @@ void DoShipyardDialog(void)
     ResetMissionOfferVenue();
 }
 
-/* ShipyardFilter (mac _ShipyardFilter). STATE: MATCH 587/587 (2026-09-24).
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00493fc0
 // MAC: _ShipyardFilter i386 0x00060449 ppc 0x00068154
 Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -3277,7 +3249,6 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* ShipyardDialogUpdate (mac _ShipyardDialogUpdate). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004948b0
 // MAC: _ShipyardDialogUpdate i386 0x00058a10 ppc 0x00060d04
 void ShipyardDialogUpdate(void)
@@ -3535,7 +3506,6 @@ void ShipyardDialogUpdate(void)
 #define kDescPictID      8507    /* backdrop to match each layout */
 #define kPlainDescPictID 8506
 
-/* DoShipyardDescription (mac _DoShipyardDescription). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004956a0
 // MAC: _DoShipyardDescription i386 0x0005b6d2 ppc 0x00063764
 void DoShipyardDescription(short ship)
@@ -3627,7 +3597,6 @@ void DoShipyardDescription(short ship)
     bigShipPic = NULL;
 }
 
-/* ShipDescFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004959d0
 // MAC: _ShipDescFilter i386 0x000510e5 ppc 0x00059a0c
 Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -3712,7 +3681,6 @@ Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 }
 
 
-/* ShipDescDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00495c80
 // MAC: _ShipDescDialogUpdate i386 0x0004f915 ppc 0x00058710
 void ShipDescDialogUpdate(void)
@@ -4131,7 +4099,6 @@ void ShipDescDialogUpdate(void)
              GetDialogPortRect(shipDescDialog), GetDialogPortRect(shipDescDialog), 0, 0);
 }
 
-/* UpdateAllPortDialogs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00497430
 // MAC: _UpdateAllPortDialogs i386 0x000598a6 ppc 0x000619d8
 void UpdateAllPortDialogs(void)
@@ -4164,7 +4131,6 @@ void UpdateAllPortDialogs(void)
 
 #define kFileMenu 128
 
-/* IterateInGameEventLoop (mac _IterateInGameEventLoop). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00497500
 // MAC: _IterateInGameEventLoop i386 0x00056859 ppc 0x0005ebe0
 void IterateInGameEventLoop(short tickCount)
@@ -4417,7 +4383,6 @@ void IterateInGameEventLoop(short tickCount)
 /* the port's body takes no arguments and answers the single window; every
    caller still passes the dialog, so it is declared that way here */
 
-/* EVNoteAlert (mac _EVNoteAlert). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004976b0
 // MAC: _EVNoteAlert i386 0x00055710 ppc 0x0005d994
 void EVNoteAlert(const unsigned char *text)
@@ -4454,7 +4419,6 @@ void EVNoteAlert(const unsigned char *text)
     alertDialog = NULL;
 }
 
-/* EVYesNoDialog (mac _EVYesNoDialog). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004977d0
 // MAC: _EVYesNoDialog i386 0x0005558c ppc 0x0005d84c
 Boolean EVYesNoDialog(unsigned char *text)
@@ -4498,7 +4462,6 @@ Boolean EVYesNoDialog(unsigned char *text)
     return result;
 }
 
-/* EVTextInputDialog (mac _EVTextInputDialog). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00497900
 // MAC: _EVTextInputDialog i386 0x000552a3 ppc 0x0005d610
 Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short maxLen)
@@ -4556,11 +4519,6 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
 }
 
 
-/* RetrieveMenuIcon. STATE: MATCH 100.0%, exe 122 / obj 122, byte-identical yes (376 bytes),
-   relocregcheck 0 of 29. OPEN: none. The miss-path rect address is held in `j', a later web
-   of the scan counter (a split web is numbered after the CSEs; a Rect * local is band 1
-   and takes ESI before GetPicture's argument), with `oldest' declared before `j'. `j' is a
-   long: a 16-bit-int Mac compiler carried an address in a long, never an int. */
 // FUNCTION: EVNOVA 0x00497b70
 // MAC: _RetrieveMenuIcon i386 0x0004f425 ppc 0x000580cc
 Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
@@ -4623,7 +4581,6 @@ Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
     return missed;
 }
 
-/* SwitchedIn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00497cf0
 // MAC: _SwitchedIn i386 0x000513a4 ppc 0x00059ca0
 void SwitchedIn(EventRecord *ev)
@@ -4639,7 +4596,6 @@ void SwitchedIn(EventRecord *ev)
         StartMovie(introMusicMovie);
 }
 
-/* SwitchedOut. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00497d50
 // MAC: _SwitchedOut i386 0x0004f381 ppc 0x00057ff8
 void SwitchedOut(EventRecord *ev)
@@ -4667,7 +4623,6 @@ void SwitchedOut(EventRecord *ev)
  * frameRect member reached through the other frame.
  */
 
-/* RefreshWindowBuffer. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00497df0
 // MAC: _RefreshWindowBuffer i386 0x00051420 ppc 0x00059d54
 void RefreshWindowBuffer(void)
@@ -4704,7 +4659,6 @@ Boolean CapturedAssignmentFilter(DialogPtr unused, EventRecord *ev, short *itemH
 #define kCaptureDlogID   0x3fa
 #define kCapturePictID   0x2144
 
-/* DoCapturedShipAssignmentDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00497eb0
 // MAC: _DoCapturedShipAssignmentDialog i386 0x0005b508 ppc 0x000635a8
 Boolean DoCapturedShipAssignmentDialog(void)
@@ -4752,7 +4706,6 @@ Boolean DoCapturedShipAssignmentDialog(void)
     return result;
 }
 
-/* CapturedAssignmentFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00498040
 // MAC: _CapturedAssignmentFilter i386 0x00051782 ppc 0x0005a024
 Boolean CapturedAssignmentFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -4796,7 +4749,6 @@ Boolean CapturedAssignmentFilter(DialogPtr unused, EventRecord *ev, short *itemH
     return 0;
 }
 
-/* CapturedAssignmentDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00498110
 // MAC: _CapturedAssignmentDialogUpdate i386 0x0005157d ppc 0x00059e90
 void CapturedAssignmentDialogUpdate(void)
@@ -4852,7 +4804,6 @@ void CapturedAssignmentDialogUpdate(void)
                                                          /* 0x004d1a30 (mac _MoveWindow) */
 
 /* on mac ShowTextDialog paints gWind through GetWindowPortRect and invalidates items itself */
-/* ShowTextDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004982a0
 // MAC: _ShowTextDialog i386 0x0005a752 ppc 0x000628d4
 void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
@@ -5130,8 +5081,6 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
     }
 }
 
-/* CalcShipCanBuy (mac _CalcShipCanBuy). STATE: MATCH 100.0%, exe 212 / obj 212 instrs,
-   byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00498dc0
 // MAC: _CalcShipCanBuy i386 0x0004f5eb ppc 0x000582b4
 void CalcShipCanBuy(void)
@@ -5198,7 +5147,6 @@ void CalcShipCanBuy(void)
 #define kCellWide 0x53
 #define kCellHigh 0x36
 
-/* SetupListRects (mac _SetupListRects). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00499150
 // MAC: _SetupListRects i386 0x00051a2c ppc 0x0005a340
 void SetupListRects(Point *where)
@@ -5249,7 +5197,6 @@ void SetupListRects(Point *where)
 #define kScrollTicksToLines 0.01667     /* ~1/60: ticks to scroll units */
 
 
-/* ScrollDialogText. STATE: MATCH 100.0%, exe 144 / obj 144 instrs. Notes: Research/notes/scrolldlgtext.md */
 // FUNCTION: EVNOVA 0x00499270
 // MAC: _ScrollDialogText i386 0x00051839 ppc 0x0005a10c
 void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean force)
@@ -5301,7 +5248,6 @@ void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean
 #define kScrollPageStep   250
 
 
-/* TextDialogFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00499440
 // MAC: _TextDialogFilter i386 0x00051f77 ppc 0x0005a820
 Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -5422,7 +5368,6 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* TextDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00499870
 // MAC: _TextDialogUpdate i386 0x00051b40 ppc 0x0005a474
 void TextDialogUpdate(void)
@@ -5546,8 +5491,6 @@ void TextDialogUpdate(void)
 #define kRetireQuestionIdx     0x123
 
 
-/* DoPlayerInfoDialog (mac _DoPlayerInfoDialog). STATE: MATCH 100.0%, exe 470 / obj 470,
-   byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00499c10
 // MAC: _DoPlayerInfoDialog i386 0x0005a00a ppc 0x00062244
 void DoPlayerInfoDialog(void)
@@ -5679,7 +5622,6 @@ void DoPlayerInfoDialog(void)
     FlushEvents(7, 0);
 }
 
-/* PlayerInfoFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049a3a0
 // MAC: _PlayerInfoFilter i386 0x00053ae9 ppc 0x0005c1b8
 Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -5748,7 +5690,6 @@ Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* PlayerInfoDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049a540
 // MAC: _PlayerInfoDialogUpdate i386 0x0005244f ppc 0x0005ac78
 void PlayerInfoDialogUpdate(void)
@@ -6230,7 +6171,6 @@ blit_back:
 #define kStrTradeInValue   0x111
 #define kStrAwardsHeader   0x112
 
-/* SetupPlayerInfoText. STATE: MATCH 100.0% 1304/1304, byte-identical yes. */
 // FUNCTION: EVNOVA 0x0049c050
 // MAC: _SetupPlayerInfoText i386 0x00053cb8 ppc 0x0005c3e4
 void SetupPlayerInfoText(void)
@@ -6656,14 +6596,12 @@ void SetupPlayerInfoText(void)
     }
 }
 
-/* FrameDefaultButton (mac _FrameDefaultButton). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049d630
 // MAC: _FrameDefaultButton i386 0x00055200 ppc 0x0005d578
 void FrameDefaultButton(void *dlg, short flag)
 {
 }
 
-/* ApplyPriceAndTechnologyFlux. STATE: MATCH 100.0%, exe 114 / obj 114, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0049d640
 // MAC: _ApplyPriceAndTechnologyFlux i386 0x0004e6cd ppc 0x000572e4
 int32_t ApplyPriceAndTechnologyFlux(int32_t cost, float multiplier, short itemTech, short portTech)
@@ -6696,20 +6634,17 @@ int32_t ApplyPriceAndTechnologyFlux(int32_t cost, float multiplier, short itemTe
     return price;
 }
 
-/* HideTheMenuBar. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049d7a0
 void HideTheMenuBar(void)
 {
 }
 
-/* ShowTheMenuBar (mac _ShowTheMenuBar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049d7b0
 void ShowTheMenuBar(void)
 {
 }
 
 
-/* StartLoopingMovie. STATE: MATCH. OPEN: none */
 // FUNCTION: EVNOVA 0x0049d7c0
 // MAC: _StartLoopingMovie i386 0x00060266 ppc 0x00067fb8
 void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
@@ -6783,7 +6718,6 @@ void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
     StartMovie(loopingMovie);
 }
 
-/* LoopingMovieIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049da80
 // MAC: _LoopingMovieIdle i386 0x000558d9 ppc 0x0005db04
 void LoopingMovieIdle(void)
@@ -6795,7 +6729,6 @@ void LoopingMovieIdle(void)
     }
 }
 
-/* EndLoopingMovie. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049dab0
 // MAC: _EndLoopingMovie i386 0x00055934 ppc 0x0005db80
 void EndLoopingMovie(void)
@@ -6812,7 +6745,6 @@ void EndLoopingMovie(void)
 
 /* the movie's idle callback; taken by address at 0x0049deb1 */
 #ifndef MACBUILD
-/* IntroMovieIdleProc. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049daf0
 short IntroMovieIdleProc(void)
 {
@@ -6834,7 +6766,6 @@ typedef struct FileSpec {
 #define SC_RETURN       0x1c
 #define SC_KEYPADENTER  0x6a
 
-/* PlayQTMovie. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049db00
 // MAC: _PlayQTMovie i386 0x00055957 ppc 0x0005dbc4
 void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
@@ -7164,12 +7095,10 @@ found:
 }
 #endif
 
-/* PlayQTMovieFromDesc. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049e3c0
 // MAC: _PlayQTMovieFromDesc i386 0x00055f11 ppc 0x0005e194
 void PlayQTMovieFromDesc(short id)
 {
-    extern char *strcpy(char *, const char *);   /* MSL, CALLED not inlined */
 
     strcpy(descTextPtr, "");
     LoadDescription(descTextPtr, id);
@@ -7185,7 +7114,6 @@ OSErr DummyAEVTHandler(const AppleEvent *ev, AppleEvent *reply, int32_t refCon);
 OSErr PrefAEVTHandler(const AppleEvent *ev, AppleEvent *reply, int32_t refCon);
 OSErr QuitAEVTHandler(const AppleEvent *ev, AppleEvent *reply, int32_t refCon);
 
-/* PlanetSoundCallback (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
 // MAC: _PlanetSoundCallback i386 0x00055f5d ppc 0x0005e210
 void PlanetSoundCallback(int32_t message)
 {
@@ -7193,7 +7121,6 @@ void PlanetSoundCallback(int32_t message)
         PlaySound(planetSnd, 10, gSoundVolume, gSoundVolume);
 }
 
-/* InitAEVTHandlers (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
 // MAC: _InitAEVTHandlers i386 0x00055fa3 ppc 0x0005e25c
 void InitAEVTHandlers(void)
 {
@@ -7229,7 +7156,6 @@ void InitAEVTHandlers(void)
     }
 }
 
-/* GotRequiredAEVTParams (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
 // MAC: _GotRequiredAEVTParams i386 0x0005611d ppc 0x0005e3f4
 OSErr GotRequiredAEVTParams(const AppleEvent *ev)
 {
@@ -7249,14 +7175,12 @@ OSErr GotRequiredAEVTParams(const AppleEvent *ev)
     return result;
 }
 
-/* DummyAEVTHandler (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
 // MAC: _DummyAEVTHandler i386 0x00056174 ppc 0x0005e454
 OSErr DummyAEVTHandler(const AppleEvent *ev, AppleEvent *reply, int32_t refCon)
 {
     return noErr;
 }
 
-/* PrefAEVTHandler (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
 // MAC: _PrefAEVTHandler i386 0x0005617b ppc 0x0005e45c
 OSErr PrefAEVTHandler(const AppleEvent *ev, AppleEvent *reply, int32_t refCon)
 {
@@ -7267,7 +7191,6 @@ OSErr PrefAEVTHandler(const AppleEvent *ev, AppleEvent *reply, int32_t refCon)
     return noErr;
 }
 
-/* QuitAEVTHandler (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
 // MAC: _QuitAEVTHandler i386 0x0005619e ppc 0x0005e49c
 OSErr QuitAEVTHandler(const AppleEvent *ev, AppleEvent *reply, int32_t refCon)
 {
@@ -7300,18 +7223,12 @@ OSErr QuitAEVTHandler(const AppleEvent *ev, AppleEvent *reply, int32_t refCon)
 
 
 #ifndef MACBUILD
-/* FUN_0049e420. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049e420
 void FUN_0049e420(void)
 {
 }
 #endif
 
-/* DrawEscortMenuInFrame (mac _DrawEscortMenuInFrame). STATE: MATCH 100.0%, exe
-   305 / obj 305, reloc 57 with 0 hidden, byte-identical. The `(long)status'
-   casts hold the exe's 32-bit sign-extended compares; a plain `long status'
-   scores 98.0% because a named 32-bit local is coloured out of the temp ring.
-   OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x0049e430
 // MAC: _DrawEscortMenuInFrame i386 0x00056268 ppc 0x0005e590
 void DrawEscortMenuInFrame()
@@ -7431,7 +7348,6 @@ void DrawEscortMenuInFrame()
 
 #define kDefaultMapZoom 0x20
 
-/* ShowEscortMenu. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049e8d0
 // MAC: _ShowEscortMenu i386 0x0005664a ppc 0x0005e980
 void ShowEscortMenu(void)
@@ -7447,11 +7363,6 @@ void ShowEscortMenu(void)
 #define kQtyMaxItem 2
 #define kQtyTextItem 3
 
-/* DoQuantityDialog (mac _DoQuantityDialog). STATE: MATCH 100.0%, exe 286 / obj 286,
-   reloc 57 with 0 hidden, byte-identical. The digit filter reads `text[i + 1]' at
-   each of its three sites: a named `ch' is coloured out of the temp ring and costs
-   the whole eax<->ebx exchange. Both `(long)' casts are load-bearing -- without them
-   the compares narrow and flip to unsigned. OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x0049e8e0
 // MAC: _DoQuantityDialog i386 0x00056d5b ppc 0x0005f1e4
 int32_t DoQuantityDialog(int32_t maxCount, short mode)
@@ -7559,7 +7470,6 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
 #define kMapWorldWide 4096
 #define kMapWorldHigh 32
 
-/* SetupDialogs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049ed00
 // MAC: _SetupDialogs i386 0x0005715d ppc 0x0005f500
 void SetupDialogs(void)
@@ -7599,7 +7509,6 @@ void SetupDialogs(void)
     CreateGWorldContainer(&iconsPort, 0, 0, &r);
 }
 
-/* DisposeDialogs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049eec0
 // MAC: _DisposeDialogs i386 0x000572b0 ppc 0x0005f668
 void DisposeDialogs(void)

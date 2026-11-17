@@ -9,7 +9,6 @@
 #include "render.h"
 #endif
 
-/* SWCreateFrame (mac _SWCreateFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476400
 // MAC: _SWCreateFrame i386 0x000ad556 ppc 0x000b8a00
 #ifdef MACBUILD
@@ -200,7 +199,6 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
    line. Write the macro; do not hoist the call into a local. */
 
 
-/* SWCreateWindowFrame (mac _SWCreateWindowFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004765d0
 // MAC: _SWCreateWindowFrame i386 0x000ad32f ppc 0x000b877c
 #ifdef MACBUILD
@@ -336,7 +334,6 @@ short SWCreateWindowFrame(CWindowPtr srcWindowP, SWFrameRec **newFrameP,
    written: mwcc keeps the call and drops the store. SpriteWorldRec's mainSWGDH is at
    +0xc0, immediately in front of the pixelDepth macport.h pins at +0xc4. */
 
-/* SWCreateFrameFromCicnResource (mac _SWCreateFrameFromCicnResource). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476800
 // MAC: _SWCreateFrameFromCicnResource i386 0x000add00 ppc 0x000b91f4
 short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
@@ -421,7 +418,6 @@ short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
    its three trailing parameters are dead; they survive because 0x00474d07 still pushes
    four arguments, which is the only evidence for the signature. */
 
-/* SWCreateFrameFromGWorldAndRectStart (mac _SWCreateFrameFromGWorldAndRectStart). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004769d0
 // MAC: _SWCreateFrameFromGWorldAndRectStart i386 0x000ad091 ppc 0x000b8454
 short SWCreateFrameFromGWorldAndRectStart(CGrafPtr *tempMaskGWorld, short maxWidth,
@@ -433,7 +429,6 @@ short SWCreateFrameFromGWorldAndRectStart(CGrafPtr *tempMaskGWorld, short maxWid
     return err;
 }
 
-/* SWCreateFrameFromGWorldAndRectFinish (mac _SWCreateFrameFromGWorldAndRectFinish). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004769e0
 // MAC: _SWCreateFrameFromGWorldAndRectFinish i386 0x000ad0ce ppc 0x000b8490
 void SWCreateFrameFromGWorldAndRectFinish(CGrafPtr tempMaskGWorld)
@@ -441,7 +436,6 @@ void SWCreateFrameFromGWorldAndRectFinish(CGrafPtr tempMaskGWorld)
     SWCreateRegionFromGWorldAndRectFinish(tempMaskGWorld);
 }
 
-/* SWCreateFrameFromGWorldAndRectPartial (mac _SWCreateFrameFromGWorldAndRectPartial). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004769f0
 // MAC: _SWCreateFrameFromGWorldAndRectPartial i386 0x000ad7f1 ppc 0x000b8cc4
 short SWCreateFrameFromGWorldAndRectPartial(SWFrameRec **newFrameP,
@@ -517,7 +511,6 @@ short SWCreateFrameFromGWorldAndRectPartial(SWFrameRec **newFrameP,
    through its own exit. useCount is unsigned -- `cmp word ptr [esi+0x58], 1' followed by
    `ja', not `jg'. */
 
-/* SWDisposeFrame (mac _SWDisposeFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476bd0
 // MAC: _SWDisposeFrame i386 0x000ad0d7 ppc 0x000b8494
 Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
@@ -559,7 +552,6 @@ Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
     return frameDisposed;
 }
 
-/* SWDisposeWindowFrame (mac _SWDisposeWindowFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476c70
 // MAC: _SWDisposeWindowFrame i386 0x000ad197 ppc 0x000b8574
 void SWDisposeWindowFrame(SWFrameRec **oldFramePP)
@@ -575,7 +567,6 @@ void SWDisposeWindowFrame(SWFrameRec **oldFramePP)
     }
 }
 
-/* SWSetPortToFrame (mac _SWSetPortToFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476cb0
 // MAC: _SWSetPortToFrame i386 0x000ad1dc ppc 0x000b85dc
 void SWSetPortToFrame(SWFrameRec *dstFrameP)
@@ -591,7 +582,6 @@ void SWSetPortToFrame(SWFrameRec *dstFrameP)
 }
 
 
-/* SWInitializeFrame (mac _SWInitializeFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476d10
 // MAC: _SWInitializeFrame i386 0x000ad25d ppc 0x000b8678
 void SWInitializeFrame(SWFrameRec *tempFrameP)
@@ -632,7 +622,6 @@ void SWInitializeFrame(SWFrameRec *tempFrameP)
 }
 
 
-/* SWLockFrame (mac _SWLockFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476e10
 // MAC: _SWLockFrame i386 0x000ae467 ppc 0x000b98ec
 #ifdef MACBUILD
@@ -741,7 +730,6 @@ void SWLockFrame(SWFrameRec *srcFrameP)
 }
 #endif
 
-/* SWUnlockFrame (mac _SWUnlockFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476f10
 // MAC: _SWUnlockFrame i386 0x000ae5b1 ppc 0x000b9a6c
 void SWUnlockFrame(SWFrameRec *srcFrameP)
@@ -766,7 +754,6 @@ void SWUnlockFrame(SWFrameRec *srcFrameP)
    GetWindowPortRect(framePort) whose result goes nowhere, because mwcc keeps the call and
    drops the copy. worldRectOffset collapses to the constant 0 the exe stores at +0x5a. */
 
-/* SWLockWindowFrame (mac _SWLockWindowFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00476f80
 // MAC: _SWLockWindowFrame i386 0x000ae9d8 ppc 0x000b9ec4
 void SWLockWindowFrame(SWFrameRec *windowFrameP)
@@ -803,7 +790,6 @@ void SWLockWindowFrame(SWFrameRec *windowFrameP)
     }
 }
 
-/* SWUnlockWindowFrame (mac _SWUnlockWindowFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477070
 // MAC: _SWUnlockWindowFrame i386 0x000aeb78 ppc 0x000ba0c0
 void SWUnlockWindowFrame(SWFrameRec *windowFrameP)

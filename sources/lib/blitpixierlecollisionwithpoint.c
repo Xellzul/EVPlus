@@ -5,8 +5,6 @@
 
 EXTERN_C_BEGIN
 
-/* BlitPixieRLECollisionWithPoint (mac _BlitPixieRLECollisionWithPoint). STATE: MATCH, exe 103 / obj 103 instrs, byte-identical yes.
-   OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x00472420
 // MAC: _BlitPixieRLECollisionWithPoint i386 0x000c0ebf ppc 0x000ccd04
 Boolean BlitPixieRLECollisionWithPoint(unsigned char *rleData, Point *pt, Rect *r)

@@ -6,8 +6,7 @@
 
 LOCAL(boolean) output_pass_setup JPP((j_decompress_ptr cinfo));
 
-/* jpeg_start_decompress. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00536ce9
 GLOBAL(boolean)
 jpeg_start_decompress (j_decompress_ptr cinfo)
@@ -53,8 +52,7 @@ jpeg_start_decompress (j_decompress_ptr cinfo)
   return output_pass_setup(cinfo);
 }
 
-/* output_pass_setup. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00536c3d
 LOCAL(boolean)
 output_pass_setup (j_decompress_ptr cinfo)
@@ -93,8 +91,7 @@ output_pass_setup (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* jpeg_read_scanlines. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00536ba8
 GLOBAL(JDIMENSION)
 jpeg_read_scanlines (j_decompress_ptr cinfo, JSAMPARRAY scanlines,

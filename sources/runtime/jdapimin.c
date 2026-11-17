@@ -4,8 +4,7 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 
-/* jpeg_CreateDecompress. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535193
 GLOBAL(void)
 jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
@@ -49,8 +48,7 @@ jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
   cinfo->global_state = DSTATE_START;
 }
 
-/* jpeg_destroy_decompress. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535188
 GLOBAL(void)
 jpeg_destroy_decompress (j_decompress_ptr cinfo)
@@ -65,8 +63,7 @@ jpeg_abort_decompress (j_decompress_ptr cinfo)
   jpeg_abort((j_common_ptr) cinfo);
 }
 
-/* default_decompress_parms. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00534ff1
 LOCAL(void)
 default_decompress_parms (j_decompress_ptr cinfo)
@@ -160,8 +157,7 @@ default_decompress_parms (j_decompress_ptr cinfo)
   cinfo->enable_2pass_quant = FALSE;
 }
 
-/* jpeg_read_header. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00534f7c
 GLOBAL(int)
 jpeg_read_header (j_decompress_ptr cinfo, boolean require_image)
@@ -193,8 +189,7 @@ jpeg_read_header (j_decompress_ptr cinfo, boolean require_image)
   return retcode;
 }
 
-/* jpeg_consume_input. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00534ee2
 GLOBAL(int)
 jpeg_consume_input (j_decompress_ptr cinfo)
@@ -259,8 +254,7 @@ jpeg_has_multiple_scans (j_decompress_ptr cinfo)
   return cinfo->inputctl->has_multiple_scans;
 }
 
-/* jpeg_finish_decompress. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00534e3f
 GLOBAL(boolean)
 jpeg_finish_decompress (j_decompress_ptr cinfo)

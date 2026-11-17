@@ -14,8 +14,7 @@ ULong BurgerSndExitIn;                           /* 0x0086ffec */
 #define kFixedMax       0x7fffffff
 #define kFixedMin       0x80000000
 
-/* FixedMultiply (BurgerLib IMFixMul, hand assembly in the library: FxMicrosoftVC5.obj).
-   STATE: new. OPEN: none */
+/* FixedMultiply (BurgerLib IMFixMul, hand assembly in the library: FxMicrosoftVC5.obj). */
 // FUNCTION: EVNOVA 0x004f1c70
 NAKED int32_t FixedMultiply(int32_t a, int32_t b)
 {

@@ -9,8 +9,7 @@
 extern "C" {
 #endif
 
-/* ImageDelete (BurgerLib ImImageManager). STATE: MATCH 100.0%, exe 13 / obj 13,
-   byte-identical yes. OPEN: none */
+/* ImageDelete (BurgerLib ImImageManager). */
 // FUNCTION: EVNOVA 0x004fdb60
 void ImageDelete(struct Image_t *ImagePtr)
 {
@@ -20,8 +19,7 @@ void ImageDelete(struct Image_t *ImagePtr)
     }
 }
 
-/* ImageDestroy (BurgerLib ImImageManager). STATE: MATCH 100.0%, exe 23 / obj 23,
-   byte-identical yes. OPEN: none */
+/* ImageDestroy (BurgerLib ImImageManager). */
 // FUNCTION: EVNOVA 0x004fdb90
 void ImageDestroy(struct Image_t *ImagePtr)
 {
@@ -33,8 +31,7 @@ void ImageDestroy(struct Image_t *ImagePtr)
     }
 }
 
-/* ImageRemapIndexed (BurgerLib ImImageManager). STATE: MATCH 100.0%, exe 41 / obj 41,
-   byte-identical yes (the jump table is data, not read by the gate). OPEN: none */
+/* ImageRemapIndexed (BurgerLib ImImageManager). */
 // FUNCTION: EVNOVA 0x004fdbf0
 void ImageRemapIndexed(struct Image_t *ImagePtr, const Word8 *RemapPtr)
 {

@@ -67,7 +67,6 @@ struct static_tree_desc_s {int dummy;};
     s->head[s->hash_size-1] = NIL; \
     zmemzero((Bytef *)s->head, (unsigned)(s->hash_size-1)*sizeof(*s->head));
 
-/* deflateInit_. STATE: MATCH 100%, exe 11 / obj 11, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052ec18
 int ZEXPORT deflateInit_(strm, level, version, stream_size)
     z_streamp strm;
@@ -79,7 +78,6 @@ int ZEXPORT deflateInit_(strm, level, version, stream_size)
                          Z_DEFAULT_STRATEGY, version, stream_size);
 }
 
-/* deflateInit2_. STATE: MATCH 100%, exe 175 / obj 175, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052e9f9
 int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
                   version, stream_size)
@@ -207,8 +205,7 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
     return Z_OK;
 }
 
-/* deflateReset (lm_init inlined in the exe). STATE: MATCH 100%, exe 103 / obj 103,
-   byte-identical. OPEN: none. */
+/* deflateReset (lm_init inlined in the exe). */
 // FUNCTION: EVNOVA 0x0052e8bc
 int ZEXPORT deflateReset (strm)
     z_streamp strm;
@@ -336,8 +333,7 @@ local void flush_pending(strm)
     }
 }
 
-/* deflate (putShortMSB, flush_pending inlined in the exe). STATE: MATCH 100%, exe 463 / obj
-   463, byte-identical. OPEN: none. */
+/* deflate (putShortMSB, flush_pending inlined in the exe). */
 // FUNCTION: EVNOVA 0x0052e358
 int ZEXPORT deflate (strm, flush)
     z_streamp strm;
@@ -481,7 +477,6 @@ int ZEXPORT deflate (strm, flush)
     return s->pending != 0 ? Z_OK : Z_STREAM_END;
 }
 
-/* deflateEnd. STATE: MATCH 100%, exe 68 / obj 68, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052e2bf
 int ZEXPORT deflateEnd (strm)
     z_streamp strm;
@@ -603,7 +598,6 @@ local void lm_init (s)
     s->ins_h = 0;
 }
 
-/* longest_match. STATE: MATCH 100%, exe 139 / obj 139, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052e137
 local uInt longest_match(s, cur_match)
     deflate_state *s;
@@ -665,7 +659,6 @@ local uInt longest_match(s, cur_match)
     return s->lookahead;
 }
 
-/* longest_match_fast. STATE: MATCH 100%, exe 78 / obj 78, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052e09b
 local uInt longest_match_fast(s, cur_match)
     deflate_state *s;
@@ -699,8 +692,7 @@ local uInt longest_match_fast(s, cur_match)
 
 #define check_match(s, start, match, length)
 
-/* fill_window (read_buf inlined in the exe). STATE: MATCH 100%, exe 130 / obj 130,
-   byte-identical. OPEN: none. */
+/* fill_window (read_buf inlined in the exe). */
 // FUNCTION: EVNOVA 0x0052df3d
 local void fill_window(s)
     deflate_state *s;
@@ -772,7 +764,6 @@ local void fill_window(s)
    if (s->strm->avail_out == 0) return (eof) ? finish_started : need_more; \
 }
 
-/* deflate_stored. STATE: MATCH 100%, exe 203 / obj 203, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052dd1a
 local block_state deflate_stored(s, flush)
     deflate_state *s;
@@ -811,7 +802,6 @@ local block_state deflate_stored(s, flush)
     return flush == Z_FINISH ? finish_done : block_done;
 }
 
-/* deflate_fast. STATE: MATCH 100%, exe 291 / obj 291, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052d9a6
 local block_state deflate_fast(s, flush)
     deflate_state *s;
@@ -874,7 +864,6 @@ local block_state deflate_fast(s, flush)
     return flush == Z_FINISH ? finish_done : block_done;
 }
 
-/* deflate_slow. STATE: MATCH 100%, exe 378 / obj 378, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052d50e
 local block_state deflate_slow(s, flush)
     deflate_state *s;

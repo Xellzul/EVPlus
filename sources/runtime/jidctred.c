@@ -27,8 +27,7 @@
 
 #define DEQUANTIZE(coef,quantval)  (((ISLOW_MULT_TYPE) (coef)) * (quantval))
 
-/* jpeg_idct_4x4. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00568e23
 GLOBAL(void)
 jpeg_idct_4x4 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -158,8 +157,7 @@ jpeg_idct_4x4 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   }
 }
 
-/* jpeg_idct_2x2. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00568c40
 GLOBAL(void)
 jpeg_idct_2x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -244,8 +242,7 @@ jpeg_idct_2x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   }
 }
 
-/* jpeg_idct_1x1. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00568bf0
 GLOBAL(void)
 jpeg_idct_1x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,

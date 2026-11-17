@@ -51,7 +51,6 @@ MissionAvailRec missionAvailData[kMaxMissions];
  * every active mission gets a fresh auxShipDelay.
  */
 
-/* MissionHandlePlayerEnteredNewSystem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00448910
 // MAC: _MissionHandlePlayerEnteredNewSystem i386 0x00099f11 ppc 0x000a5d14
 void MissionHandlePlayerEnteredNewSystem(void)
@@ -85,8 +84,6 @@ void MissionHandlePlayerEnteredNewSystem(void)
     }
 }
 
-/* MissionListDefinition (mac _MissionListDefinition). STATE: MATCH, byte-identical.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00448a30
 // MAC: _MissionListDefinition i386 0x0009a018 ppc 0x000a5e68
 void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t lCell,

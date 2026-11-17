@@ -7,7 +7,6 @@
 #include "shipobj.h"
 #include "spriteworld.h"
 
-/* BlitPixieFloatingRect8 (mac _BlitPixieFloatingRect8). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00471dc0
 // MAC: _BlitPixieFloatingRect8 i386 0x000be5a8 ppc 0x000c9f6c
 void BlitPixieFloatingRect8(unsigned char *srcPixels, unsigned char *dstPixels,

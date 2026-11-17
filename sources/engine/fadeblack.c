@@ -10,7 +10,6 @@
 #define kSplashPictID       0x83
 #define kAmbrosiaLogoPictID 0x1fa4
 
-/* ShowSplashScreen. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004aaf60
 // MAC: _ShowSplashScreen i386 0x00060e68 ppc 0x00068bfc
 void ShowSplashScreen(void)
@@ -43,7 +42,6 @@ void ShowSplashScreen(void)
 }
 
 
-/* ShowAmbrosiaLogo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab070
 // MAC: _ShowAmbrosiaLogo i386 0x00060fb0 ppc 0x00068d54
 void ShowAmbrosiaLogo(void)
@@ -73,7 +71,6 @@ void ShowAmbrosiaLogo(void)
 #endif
 }
 
-/* HideAmbrosiaLogo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab180
 // MAC: _HideAmbrosiaLogo i386 0x0006108f ppc 0x00068e40
 void HideAmbrosiaLogo(void)

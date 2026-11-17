@@ -7,7 +7,6 @@
 #define OFF 1
 #define PUP(a) *++(a)
 
-/* inflate_fast. STATE: MATCH 100%, exe 406 / obj 406, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0054382f
 void inflate_fast(strm, start)
 z_streamp strm;

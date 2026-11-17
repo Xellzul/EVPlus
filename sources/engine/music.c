@@ -42,7 +42,6 @@ Movie introMusicMovie;
 /* "", ".mov", ".mp3" — tried in turn under each folder */
 char *gMusicExtensions[kExtensionCount] = { "", ".mov", ".mp3" };  /* 0x00575a70 (name invented) */
 
-/* SetupIntroMusic (mac _SetupIntroMusic). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab5d0
 // MAC: _SetupIntroMusic i386 0x00061af8 ppc 0x000698d4
 void SetupIntroMusic(void)
@@ -118,7 +117,6 @@ void SetupIntroMusic(void)
     lastMoviesTaskTime = 0;
 }
 
-/* StopIntroMusic (mac _StopIntroMusic). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab820
 // MAC: _StopIntroMusic i386 0x00061c82 ppc 0x00069a70
 void StopIntroMusic(Boolean fade)
@@ -148,7 +146,6 @@ void StopIntroMusic(Boolean fade)
     }
 }
 
-/* HandleIntroMusic (mac _HandleIntroMusic). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab8d0
 // MAC: _HandleIntroMusic i386 0x00061d68 ppc 0x00069b78
 void HandleIntroMusic(Boolean force)

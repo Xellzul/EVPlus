@@ -9,7 +9,6 @@
 #include "game.h"
 #include "shipobj.h"
 
-/* MainScreenAnimDraw. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048c3c0
 // MAC: _MainScreenAnimDraw i386 0x00016146 ppc 0x00019eb4
 void MainScreenAnimDraw(void)

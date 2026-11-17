@@ -49,8 +49,6 @@
 /* the two resource records this readout walks, windowed here because
    resources.h's WeapRecord collides with the local one above */
 
-/* DrawStatusNav (mac _DrawStatusNav). STATE: MATCH 100.0%, exe 371 / obj 371, byte-identical
-   yes. OPEN: none. */
 // FUNCTION: EVNOVA 0x0045e400
 // MAC: _DrawStatusNav i386 0x00049f43 ppc 0x00052bcc
 void DrawStatusNav(void)
@@ -193,11 +191,6 @@ void DrawStatusNav(void)
 /* the fuel bar is statusOffRect[3] */
 #define kFuelRect    3
 
-/* DrawStatusShield (mac _DrawStatusShield). STATE: MATCH 100.0% (337 exact, 80 reloc-equiv,
-   0 mismatched; exe 417 / obj 417), relocregcheck 0 of 80, byte identity unmeasured until
-   the next regate --update. Every Rect copy goes through CopyRect() and the orientation
-   test recomputes its widths inside the arm as Fuel does; `w'/`h' were never variables
-   (notes 2026-09-09). OPEN: none. */
 // FUNCTION: EVNOVA 0x0045e9c0
 // MAC: _DrawStatusShield i386 0x0004a452 ppc 0x000530b8
 void DrawStatusShield(void)
@@ -293,10 +286,6 @@ void DrawStatusShield(void)
     }
 }
 
-/* DrawStatusFuel (mac _DrawStatusFuel). STATE: MATCH 100.0% (319 exact, 52 reloc-equiv,
-   0 mismatched; exe 371 / obj 371), relocregcheck 0 of 52, byte identity unmeasured until
-   the next regate --update. The five Rect copies go through CopyRect() and the two jump
-   arms are compound assignments (notes 2026-09-09). OPEN: none. */
 // FUNCTION: EVNOVA 0x0045efe0
 // MAC: _DrawStatusFuel i386 0x0004a8ff ppc 0x0005366c
 void DrawStatusFuel(void)
@@ -361,8 +350,6 @@ void DrawStatusFuel(void)
     }
 }
 
-/* DrawStatusTarg (mac _DrawStatusTarg). STATE: MATCH 100.0%, exe 1587 / obj 1587,
-   byte-identical yes. OPEN: none. */
 // FUNCTION: EVNOVA 0x0045f530
 // MAC: _DrawStatusTarg i386 0x0004ace1 ppc 0x00053ba4
 void DrawStatusTarg(void)
@@ -795,7 +782,6 @@ void DrawStatusTarg(void)
                  &dstRect, &dstRect, 0, 0);
 }
 
-/* DrawStatusWeap (mac _DrawStatusWeap). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00460ec0
 // MAC: _DrawStatusWeap i386 0x0004c00a ppc 0x00054e90
 void DrawStatusWeap(void)
@@ -880,7 +866,6 @@ void DrawStatusWeap(void)
     }
 }
 
-/* DrawStatusCargo (mac _DrawStatusCargo). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004612c0
 // MAC: _DrawStatusCargo i386 0x0004c313 ppc 0x00055174
 void DrawStatusCargo(void)

@@ -6,7 +6,6 @@
 
 
 
-/* SWCreateRegionFromGWorldAndRectFinish (mac _SWCreateRegionFromGWorldAndRectFinish). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478f20
 // MAC: _SWCreateRegionFromGWorldAndRectFinish i386 0x000a6f90 ppc 0x000b1bb8
 void SWCreateRegionFromGWorldAndRectFinish(CGrafPtr tempMaskGWorld)

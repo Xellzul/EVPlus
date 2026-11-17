@@ -7,7 +7,6 @@
 
 
 
-/* SWCreateEmptySprite (mac _SWCreateEmptySprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00474720
 // MAC: _SWCreateEmptySprite i386 0x000a8df4 ppc 0x000b3d40
 short SWCreateEmptySprite(SpritePtr *newSpriteP, void *spriteStorageP)

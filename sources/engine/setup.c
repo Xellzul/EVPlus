@@ -47,7 +47,6 @@ extern int CGSSetWindowDepth(int cid, int window, int depth);
 #define kMaxRoidTypes    16
 
 
-/* SetupSpriteWorld (mac _SetupSpriteWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab980
 // MAC: _SetupSpriteWorld i386 0x00021b3a ppc 0x00025fac
 void SetupSpriteWorld(void)
@@ -208,7 +207,6 @@ void SetupSpriteWorld(void)
     }
 }
 
-/* SetupWind (mac _SetupWind). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ac380
 // MAC: _SetupWind i386 0x0001b462 ppc 0x0001f524
 void SetupWind(void)
@@ -337,7 +335,6 @@ void SetupWind(void)
 
 #define AllocFailed(var, expr) (var = (expr), !(var != NULL))
 
-/* InitArrays (mac _InitArrays). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ac560
 // MAC: _InitArrays i386 0x0001b796 ppc 0x0001f8b4
 void InitArrays(void)
@@ -399,7 +396,6 @@ void InitArrays(void)
         EV_ASSERT_FAIL("Setup.c", 0x1d0, 773);
 }
 
-/* InitOffscreen (mac _InitOffscreen). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ac950
 // MAC: _InitOffscreen i386 0x0001bd21 ppc 0x0001fe24
 void InitOffscreen(void)
@@ -459,7 +455,6 @@ void InitOffscreen(void)
 /* 1.1.1 logs no shutdown steps */
 #define ByeLog(s) crashlog(s)
 
-/* Bye. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004acac0
 // MAC: _Bye i386 0x00024b6b ppc 0x00029044
 void Bye(void)
@@ -782,7 +777,6 @@ void Bye(void)
 #endif
 }
 
-/* InitColors. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ad7c0
 // MAC: _InitColors i386 0x0001be73 ppc 0x0001ff78
 void InitColors(void)
@@ -806,9 +800,6 @@ void InitColors(void)
     rgbBlack.red = rgbBlack.green = rgbBlack.blue = 0;
 }
 
-/* LoadSprites (mac _LoadSprites). STATE: MATCH 100.0%, exe 1534 / obj 1534, byte-identical yes
-   (5184 bytes), relocregcheck 0 of 403. OPEN: none. The smoke walker `q' is its own pointer
-   (declared after resID, numbered after it); blocks 1-5 all count on `i' and write `i + K'. Notes. */
 // FUNCTION: EVNOVA 0x004ad960
 // MAC: _LoadSprites i386 0x00020541 ppc 0x00024ca0
 void LoadSprites(void)
@@ -1222,7 +1213,6 @@ void LoadSprites(void)
     greenMapArrow = (Image_t *)GetCIcon(15001);
 }
 
-/* LoadShipSprites (mac _LoadShipSprites). STATE: MATCH 100.0%, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004aeda0
 // MAC: _LoadShipSprites i386 0x00023e3e ppc 0x000281a4
 void LoadShipSprites(void)
@@ -1288,8 +1278,6 @@ void LoadShipSprites(void)
     }
 }
 
-/* InitSprites (mac _InitSprites). STATE: MATCH 100.0%, exe 1542 / obj 1542, byte-identical
-   yes (5907 bytes), relocregcheck 0 of 566. OPEN: none. */
 // FUNCTION: EVNOVA 0x004af020
 // MAC: _InitSprites i386 0x0001eda2 ppc 0x0002365c
 void InitSprites(void)
@@ -1735,9 +1723,6 @@ void InitSprites(void)
 
 
 
-/* LoadSounds. STATE: MATCH 100%, exe 182 / obj 182 instrs. The census computes each
-   resource ID in the call; the baseID/id induction variables were invented (mwcc's own
-   strength reduction makes them). OPEN: none. Notes: Research/notes/loadsounds.md */
 // FUNCTION: EVNOVA 0x004b0740
 // MAC: _LoadSounds i386 0x0001c036 ppc 0x000201a4
 void LoadSounds(void)
@@ -1821,8 +1806,6 @@ void LoadSounds(void)
 
 #define kStellarSpinResBase 1000
 
-/* LoadMasterStellarSprite (mac _LoadMasterStellarSprite). STATE: MATCH 100.0%, exe 160 /
-   obj 160 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004b0a30
 // MAC: _LoadMasterStellarSprite i386 0x0001eb72 ppc 0x00023474
 void LoadMasterStellarSprite(short type)
@@ -1875,8 +1858,6 @@ void LoadMasterStellarSprite(short type)
 #define kRoidGrey          0x8012   /* 8-bit asteroid colour, run through Color2Index */
 #define kRoidPixel         0x1ce7   /* the direct 15-bit pixel otherwise */
 
-/* InitObjects (mac _InitObjects). STATE: win MATCH, byte-identical; mac MATCH both slices.
-   OPEN: none; notes */
 // FUNCTION: EVNOVA 0x004b0c20
 // MAC: _InitObjects i386 0x0001c2e5 ppc 0x000204b8
 void InitObjects(void)
@@ -2298,7 +2279,6 @@ void InitObjects(void)
 #define kNoDeathTimer     (-999.0f)
 #define kFreeSlot         (-1.0f)   /* boom/debris timer: < 0 means unused */
 
-/* ResetPlayer (mac _ResetPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b3350
 // MAC: _ResetPlayer i386 0x0001d40d ppc 0x000219c8
 void ResetPlayer(Boolean newPilot)
@@ -2469,7 +2449,6 @@ void ResetPlayer(Boolean newPilot)
     ResetPlayerPrecalcedValues();
 }
 
-/* ResetPlayerRecord. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4220
 // MAC: _ResetPlayerRecord i386 0x0001db70 ppc 0x0002231c
 void ResetPlayerRecord(Boolean newPilot)
@@ -2503,7 +2482,6 @@ void ResetPlayerRecord(Boolean newPilot)
  */
 
 #ifndef MACBUILD
-/* ResetScreenRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b42f0
 void ResetScreenRect(void)
 {
@@ -2616,7 +2594,6 @@ void SetDefaultKeys(void)
 #endif
 
 #ifndef MACBUILD
-/* SetDefaultPrefs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4320
 void SetDefaultPrefs(void)
 {
@@ -2655,7 +2632,6 @@ void SetDefaultPrefs(void)
     pstrcpy(lastPlayerName, "\p");
 }
 
-/* SetDefaultKeys. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4400
 void SetDefaultKeys(void)
 {
@@ -2757,9 +2733,6 @@ extern ScreenGamma gFadeGamma;
 #endif
 #endif
 
-/* SetupMonitor. STATE: MATCH 100%, exe 46 / obj 46, byte-identical yes (under its
-   scoped opt_repositioncode pragma).
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004b45e0
 // MAC: _SetupMonitor i386 0x0001e699 ppc 0x00022fcc
 void SetupMonitor(void)
@@ -3063,7 +3036,6 @@ done:
 #endif
 }
 
-/* ResetGameData. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4690
 // MAC: _ResetGameData i386 0x0001de0c ppc 0x00022640
 void ResetGameData(void)
@@ -3118,7 +3090,6 @@ void ResetGameData(void)
     seenIntroScreen = 0;
 }
 
-/* ConvertSpriteToRLE (mac _ConvertSpriteToRLE). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4cf0
 // MAC: _ConvertSpriteToRLE i386 0x0001e489 ppc 0x00022d98
 short ConvertSpriteToRLE(SpriteRec *set)
@@ -3178,7 +3149,6 @@ clearCaches:
 SpinRec spriteInfo;
 SpinHandle spriteInfoHand;
 
-/* GetSpriteInfo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4e10
 // MAC: _GetSpriteInfo i386 0x0001bf80 ppc 0x000200a0
 Boolean GetSpriteInfo(short id, short *spriteID, short *maskID, short *xSize,
@@ -3222,9 +3192,6 @@ Rect screenMinusDockRect;
 int32_t fullScreenRestore;
 
 
-/* LoadExtendedShipSprites (mac _LoadExtendedShipSprites). STATE: MATCH 100.0% (1048 exact,
-   421 reloc-equiv), exe 1469 / obj 1469, byte-identical yes (5945 bytes, relocs masked);
-   mac MATCH both slices. OPEN: none. */
 // FUNCTION: EVNOVA 0x004b4ee0
 // MAC: _LoadExtendedShipSprites i386 0x000226af ppc 0x00026b28
 short LoadExtendedShipSprites(short shipType)
@@ -3640,7 +3607,6 @@ short LoadExtendedShipSprites(short shipType)
 
 EXTERN_C_BEGIN
 
-/* ReportSpriteLoadError. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6620
 // MAC: _ReportSpriteLoadError i386 0x0001ea6c ppc 0x0002337c
 void ReportSpriteLoadError(short label, short value, short special)
@@ -3672,7 +3638,6 @@ void ReportSpriteLoadError(short label, short value, short special)
 
 EXTERN_C_END
 
-/* FatalStartupError. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6760
 // MAC: _FatalStartupError i386 0x0001e62f ppc 0x00022f78
 void FatalStartupError(short index)
@@ -3685,7 +3650,6 @@ void FatalStartupError(short index)
     ExitToShell();
 }
 
-/* FindPriorLoadedShipSprite. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b67c0
 // MAC: _FindPriorLoadedShipSprite i386 0x0001e5e4 ppc 0x00022f34
 short FindPriorLoadedShipSprite(short value, short count, short field)
@@ -3699,7 +3663,6 @@ short FindPriorLoadedShipSprite(short value, short count, short field)
     return -1;
 }
 
-/* DisposeClonedSprite (mac _DisposeClonedSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6810
 // MAC: _DisposeClonedSprite i386 0x0001b3d0 ppc 0x0001f450
 void DisposeClonedSprite(SpritePtr *p)
@@ -3719,7 +3682,7 @@ void DisposeClonedSprite(SpritePtr *p)
 }
 
 #ifndef MACBUILD
-/* ScreenEndScene (mac @ScreenEndScene@0). STATE: MATCH, byte-identical. OPEN: none */
+/* ScreenEndScene (mac @ScreenEndScene@0). */
 // FUNCTION: EVNOVA 0x004b6850
 void ScreenEndScene(void)
 {
@@ -3734,7 +3697,6 @@ void ScreenEndScene(void)
     }
 }
 
-/* GetGlobalMouse. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b68a0
 void GetGlobalMouse(Point *pt)
 {
@@ -3746,14 +3708,12 @@ void GetGlobalMouse(Point *pt)
     pt->v = v;
 }
 
-/* FlushEvents. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b68d0
 void FlushEvents(unsigned short whichMask, unsigned short stopMask)
 {
     KeyboardFlush();
 }
 
-/* Button. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b68e0
 Boolean Button(void)
 {
@@ -3761,7 +3721,6 @@ Boolean Button(void)
     return MouseReadButtons();
 }
 
-/* StillDown. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b68f0
 Boolean StillDown(void)
 {
@@ -3769,7 +3728,6 @@ Boolean StillDown(void)
     return MouseReadButtons();
 }
 
-/* TextFont. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6900
 void TextFont(short font)
 {
@@ -3778,7 +3736,6 @@ void TextFont(short font)
     CurrentGrafPort->txFont = font;
 }
 
-/* TextSize. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6920
 void TextSize(short size)
 {
@@ -3792,7 +3749,6 @@ void TextSize(short size)
 #endif
 }
 
-/* TextFace. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6940
 void TextFace(short face)
 {
@@ -3801,7 +3757,6 @@ void TextFace(short face)
     CurrentGrafPort->txFace = face;
 }
 
-/* Color2Index. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6960
 uint32_t Color2Index(RGBColor *color)
 {
@@ -3809,7 +3764,6 @@ uint32_t Color2Index(RGBColor *color)
            ((color->blue & 0xf800) >> 11);
 }
 
-/* RGBForeColor. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6990
 void RGBForeColor(const RGBColor *color)
 {
@@ -3823,7 +3777,6 @@ void RGBForeColor(const RGBColor *color)
     dst->blue = color->blue;
 }
 
-/* BackColor. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b69d0
 void BackColor(const RGBColor *color)
 {
@@ -3840,8 +3793,6 @@ void BackColor(const RGBColor *color)
 
 #ifdef MACBUILD
 
-/* PreflightMemoryUsage (mac _PreflightMemoryUsage, mac-only). STATE: mac MATCH i386 and ppc.
-   OPEN: none */
 // MAC: _PreflightMemoryUsage i386 0x00022214 ppc 0x00026624
 void PreflightMemoryUsage(int32_t *base, int32_t *engineGlow, int32_t *runningLights, int32_t *weaponGlow)
 {
@@ -3914,8 +3865,6 @@ void PreflightMemoryUsage(int32_t *base, int32_t *engineGlow, int32_t *runningLi
     }
 }
 
-/* PreflightMemoryUsageTotal (mac _PreflightMemoryUsageTotal, mac-only). STATE: mac MATCH i386
-   and ppc. OPEN: none */
 // MAC: _PreflightMemoryUsageTotal i386 0x00022438 ppc 0x000268b0
 int32_t PreflightMemoryUsageTotal(void)
 {
@@ -3934,8 +3883,6 @@ int32_t PreflightMemoryUsageTotal(void)
     return total;
 }
 
-/* DoMemoryUsageDialog (mac _DoMemoryUsageDialog, mac-only). STATE: mac MATCH i386 and ppc.
-   OPEN: none */
 // MAC: _DoMemoryUsageDialog i386 0x00022492 ppc 0x0002693c
 void DoMemoryUsageDialog(void)
 {

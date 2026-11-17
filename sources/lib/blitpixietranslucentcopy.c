@@ -8,8 +8,6 @@
 #define SW_GREEN(c, k)  (((c) & 0x3e003e0) * (k) >> 5 & 0x3e003e0)
 #define SW_BLUE(c, k)   (((c) & 0x1f001f) * (k) >> 5 & 0x1f001f)
 
-/* BlitPixieTranslucentCopy (mac _BlitPixieTranslucentCopy). STATE: MATCH, byte-identical.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004736c0
 // MAC: _BlitPixieTranslucentCopy i386 0x000c1110 ppc 0x000ccfe0
 void BlitPixieTranslucentCopy(unsigned char *dstPixels, unsigned char *srcPixels,

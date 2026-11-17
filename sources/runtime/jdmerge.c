@@ -64,8 +64,7 @@ build_ycc_rgb_table (j_decompress_ptr cinfo)
   }
 }
 
-/* start_pass_merged_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005637af
 METHODDEF(void)
 start_pass_merged_upsample (j_decompress_ptr cinfo)
@@ -77,8 +76,7 @@ start_pass_merged_upsample (j_decompress_ptr cinfo)
   upsample->rows_to_go = cinfo->output_height;
 }
 
-/* merged_2v_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005636fd
 METHODDEF(void)
 merged_2v_upsample (j_decompress_ptr cinfo,
@@ -127,8 +125,7 @@ merged_2v_upsample (j_decompress_ptr cinfo,
     (*in_row_group_ctr)++;
 }
 
-/* merged_1v_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005636c7
 METHODDEF(void)
 merged_1v_upsample (j_decompress_ptr cinfo,
@@ -147,8 +144,7 @@ merged_1v_upsample (j_decompress_ptr cinfo,
   (*in_row_group_ctr)++;
 }
 
-/* h2v1_merged_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563540
 METHODDEF(void)
 h2v1_merged_upsample (j_decompress_ptr cinfo,
@@ -207,8 +203,7 @@ h2v1_merged_upsample (j_decompress_ptr cinfo,
   }
 }
 
-/* h2v2_merged_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563306
 METHODDEF(void)
 h2v2_merged_upsample (j_decompress_ptr cinfo,
@@ -283,8 +278,7 @@ h2v2_merged_upsample (j_decompress_ptr cinfo,
   }
 }
 
-/* jinit_merged_upsampler. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005631e1
 GLOBAL(void)
 jinit_merged_upsampler (j_decompress_ptr cinfo)

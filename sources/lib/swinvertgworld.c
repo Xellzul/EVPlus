@@ -7,7 +7,6 @@
 #include "render.h"
 #endif
 
-/* SWInvertGWorld (mac _SWInvertGWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004791b0
 // MAC: _SWInvertGWorld i386 0x000a703a ppc 0x000b1c60
 void SWInvertGWorld(CGrafPtr gWorldP)
@@ -15,7 +14,6 @@ void SWInvertGWorld(CGrafPtr gWorldP)
     SWInvertRect(gWorldP, GetWindowPortRect(gWorldP));
 }
 
-/* SWInvertRect (mac _SWInvertRect). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004791d0
 // MAC: _SWInvertRect i386 0x000a6fa2 ppc 0x000b1bc4
 void SWInvertRect(CGrafPtr gWorldP, Rect *rectP)
@@ -33,7 +31,6 @@ void SWInvertRect(CGrafPtr gWorldP, Rect *rectP)
 }
 
 #ifdef MACBUILD
-/* SWCopyGWorlds (mac _SWCopyGWorlds, mac-only). STATE: see the mac gate. */
 // MAC: _SWCopyGWorlds i386 0x000a705e ppc 0x000b1c94
 void SWCopyGWorlds(GWorldPtr srcGWorldP, GWorldPtr dstGWorldP)
 {
@@ -67,7 +64,6 @@ void SWCopyGWorlds(GWorldPtr srcGWorldP, GWorldPtr dstGWorldP)
     SetPixelsState(dstPixMapH, dstPixelsState);
 }
 
-/* SWFlipPixelsHorizontally (mac _SWFlipPixelsHorizontally, mac-only). STATE: see the mac gate. */
 // MAC: _SWFlipPixelsHorizontally i386 0x000a7152 ppc 0x000b1d90
 void SWFlipPixelsHorizontally(GWorldPtr dstGWorldP, Rect *rectP)
 {
@@ -202,7 +198,6 @@ void SWFlipPixelsHorizontally(GWorldPtr dstGWorldP, Rect *rectP)
     SetPixelsState(pixMapHdl, state);
 }
 
-/* SWFlipPixelsVertically (mac _SWFlipPixelsVertically, mac-only). STATE: see the mac gate. */
 // MAC: _SWFlipPixelsVertically i386 0x000a74e7 ppc 0x000b2188
 void SWFlipPixelsVertically(GWorldPtr dstGWorldP, Rect *rectP)
 {
@@ -341,7 +336,6 @@ void SWFlipPixelsVertically(GWorldPtr dstGWorldP, Rect *rectP)
     SetPixelsState(pixMapHdl, state);
 }
 
-/* SWSetTransparentColor (mac _SWSetTransparentColor, mac-only). STATE: see the mac gate. */
 // MAC: _SWSetTransparentColor i386 0x000a7810 ppc 0x000b2590
 void SWSetTransparentColor(RGBColor *RGB)
 {

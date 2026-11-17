@@ -14,7 +14,6 @@
 
 
 /* the one-shot text drawer: erase, position, draw wrapped, done */
-/* TETextBox. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcd30
 void TETextBox(const void *text, int32_t length, Rect *box, short just)
 {
@@ -25,7 +24,6 @@ void TETextBox(const void *text, int32_t length, Rect *box, short just)
     DrawTextRun(text, length, box, 1, 0);
 }
 
-/* TENew. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcd90
 TEHandle TENew(const Rect *destRect, const Rect *viewRect)
 {
@@ -50,7 +48,6 @@ TEHandle TENew(const Rect *destRect, const Rect *viewRect)
     return te;
 }
 
-/* TECalText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bce10
 void TECalText(TEHandle hTE)
 {
@@ -58,7 +55,6 @@ void TECalText(TEHandle hTE)
                                         (*hTE)->viewRect.right - (*hTE)->viewRect.left);
 }
 
-/* TESetText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bce40
 void TESetText(const void *text, int32_t length, TEHandle hTE)
 {
@@ -74,7 +70,6 @@ void TESetText(const void *text, int32_t length, TEHandle hTE)
  * Scrolls the text within its view, clamped so the last line cannot rise
  * above the bottom of the view nor the first fall below its top.
  */
-/* TEPinScroll. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bce90
 void TEPinScroll(int dh, int dv, TEHandle hTE)
 {
@@ -107,7 +102,6 @@ void TEPinScroll(int dh, int dv, TEHandle hTE)
     }
 }
 
-/* TEUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcf30
 void TEUpdate(Rect *rUpdate, TEHandle hTE)
 {
@@ -118,7 +112,6 @@ void TEUpdate(Rect *rUpdate, TEHandle hTE)
     ScreenEndScene();
 }
 
-/* TEDispose. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcf80
 void TEDispose(TEHandle hTE)
 {

@@ -58,7 +58,6 @@ int32_t raceBetAmount;
 
 EXTERN_C_BEGIN
 
-/* DoBarDialog (mac _DoBarDialog). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047c8e0
 // MAC: _DoBarDialog i386 0x00048ef5 ppc 0x00051898
 void DoBarDialog(void)
@@ -245,7 +244,6 @@ void DoBarDialog(void)
  * this was a key that acts like a click.
  */
 
-/* BarFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047cdb0
 // MAC: _BarFilter i386 0x00047a4b ppc 0x000503e8
 Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -334,7 +332,6 @@ Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* BarDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047cfe0
 // MAC: _BarDialogUpdate i386 0x000477e8 ppc 0x0005020c
 void BarDialogUpdate(void)
@@ -371,7 +368,6 @@ void BarDialogUpdate(void)
              GetDialogPortRect(barDialog), GetDialogPortRect(barDialog), srcCopy, NULL);
 }
 
-/* DoNewsDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047d180
 // MAC: _DoNewsDialog i386 0x00047f0a ppc 0x000508b8
 void DoNewsDialog(void)
@@ -420,7 +416,6 @@ void DoNewsDialog(void)
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
 }
 
-/* NewsDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047d370
 // MAC: _NewsDialogUpdate i386 0x00047c57 ppc 0x00050688
 void NewsDialogUpdate(void)
@@ -467,7 +462,6 @@ void NewsDialogUpdate(void)
              GetDialogPortRect(newsDialog), GetDialogPortRect(newsDialog), srcCopy, NULL);
 }
 
-/* NewsDialogFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047d560
 // MAC: _NewsDialogFilter i386 0x00048160 ppc 0x00050acc
 Boolean NewsDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -498,8 +492,6 @@ Boolean NewsDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 
 #define kRaceButtonCount 6
 
-/* RandomizeNewsDialog. STATE: MATCH 100.0%, exe 404 / obj 404, frame 0x80c 6/6 slots and refs,
-   byte-identical yes, relocregcheck 0 of 91. OPEN: none */
 // FUNCTION: EVNOVA 0x0047d600
 // MAC: _RandomizeNewsDialog i386 0x00048238 ppc 0x00050bd0
 void RandomizeNewsDialog(void)
@@ -623,7 +615,6 @@ void RandomizeNewsDialog(void)
         if ((unsigned char)newsString[0] != 0) {
             PtoCstr((unsigned char *)newsString);
         } else {
-            extern char *strcpy(char *, const char *);
 
             strcpy(newsString, "");
             StrcatIndCString(newsString, kGameStrList, kStrNoNews);
@@ -631,7 +622,6 @@ void RandomizeNewsDialog(void)
     }
 }
 
-/* DoRaceDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047dc50
 // MAC: _DoRaceDialog i386 0x000489ca ppc 0x00051360
 void DoRaceDialog(void)
@@ -755,7 +745,6 @@ void DoRaceDialog(void)
     raceDialog = NULL;
 }
 
-/* RaceFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047e150
 // MAC: _RaceFilter i386 0x0004890e ppc 0x00051284
 Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -787,7 +776,6 @@ Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* RaceDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047e1e0
 // MAC: _RaceDialogUpdate i386 0x0004879d ppc 0x0005115c
 void RaceDialogUpdate(void)

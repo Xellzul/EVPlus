@@ -3,8 +3,7 @@
 #define PNG_INTERNAL
 #include "png.h"
 
-/* png_read_data. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005388b3
 void
 png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
@@ -16,8 +15,7 @@ png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
       png_error(png_ptr, "Call to NULL read function");
 }
 
-/* png_set_read_fn. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538871
 void PNGAPI
 png_set_read_fn(png_structp png_ptr, png_voidp io_ptr,

@@ -14,7 +14,6 @@ EXTERN_C_BEGIN
 typedef unsigned char AlphaTable[5][256][256];
 
 
-/* Construct8BitAlphaTable (mac _Construct8BitAlphaTable). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004740d0
 // MAC: _Construct8BitAlphaTable i386 0x000c1c05 ppc 0x000cdd60
 short Construct8BitAlphaTable(void)

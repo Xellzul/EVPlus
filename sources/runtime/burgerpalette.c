@@ -79,8 +79,7 @@ const Word32 ByteSquareTable[511] = {            /* 0x00570b74 */
 
 #define kChannelBias 255
 
-/* PaletteFindColorIndex (BurgerLib PlPaletteManager). STATE: MATCH 100%, exe 43 / obj 43,
-   byte-identical yes. OPEN: none */
+/* PaletteFindColorIndex (BurgerLib PlPaletteManager). */
 // FUNCTION: EVNOVA 0x00501ff0
 Word PaletteFindColorIndex(const Word8 *PalettePtr, Word Red, Word Green, Word Blue, Word Count)
 {

@@ -13,7 +13,6 @@
 
 /* the bar's rect comes out of the colr resource */
 
-/* InitIntroProgressBar. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab1b0
 // MAC: _InitIntroProgressBar i386 0x00061263 ppc 0x0006904c
 void InitIntroProgressBar(void)
@@ -66,14 +65,12 @@ void InitIntroProgressBar(void)
     DrawIntroProgressBar();
 }
 
-/* DisposeIntroProgressBar (mac _DisposeIntroProgressBar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab3a0
 // MAC: _DisposeIntroProgressBar i386 0x000613ef ppc 0x00069200
 void DisposeIntroProgressBar(void)
 {
 }
 
-/* DeltaIntroProgressBar. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab3b0
 // MAC: _DeltaIntroProgressBar i386 0x000613f4 ppc 0x00069204
 void DeltaIntroProgressBar(double amount)
@@ -82,7 +79,6 @@ void DeltaIntroProgressBar(double amount)
     DrawIntroProgressBar();
 }
 
-/* DrawIntroProgressBar. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab3d0
 // MAC: _DrawIntroProgressBar i386 0x000610ba ppc 0x00068e7c
 void DrawIntroProgressBar(void)

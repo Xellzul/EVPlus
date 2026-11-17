@@ -12,7 +12,6 @@ unsigned short SWTransparentRGBValue;
 short gSWStickyError;
 
 
-/* ComputePixelValues (mac _ComputePixelValues). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00479210
 void ComputePixelValues(short pixelSize)
 {

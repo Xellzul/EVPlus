@@ -22,8 +22,6 @@
     p = &((IntfRec *)*rec)->area; \
     statusOffRect[n] = *p
 
-/* LoadIntfResource (mac _LoadIntfResource). STATE: MATCH 100.0% (269 exact, 94
-   reloc-equivalent), 363/363, byte-identical yes, relocregcheck 0 of 94. OPEN: none. */
 // FUNCTION: EVNOVA 0x004cda50
 // MAC: _LoadIntfResource i386 0x000735f2 ppc 0x0007c470
 void LoadIntfResource(void)

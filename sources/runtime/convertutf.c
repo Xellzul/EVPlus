@@ -42,8 +42,7 @@ UTF_TABLE UTF8 firstByteMark[7] = {                         /* 0x00582168 first 
     0x00, 0x00, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc
 };
 
-/* ConvertUTF32toUTF16 (ConvertUTF32toUTF16; a null target counts the units). STATE: MATCH 100%,
-   exe 95 / obj 95, byte-identical. OPEN: none */
+/* ConvertUTF32toUTF16 (ConvertUTF32toUTF16; a null target counts the units). */
 // FUNCTION: EVNOVA 0x00541330
 int32_t ConvertUTF32toUTF16(const UTF32 **sourceStart, const UTF32 *sourceEnd,
                   UTF16 **targetStart, UTF16 *targetEnd, UTFBudget *budget, UTFFlags flags)
@@ -110,8 +109,7 @@ int32_t ConvertUTF32toUTF16(const UTF32 **sourceStart, const UTF32 *sourceEnd,
     return result;
 }
 
-/* ConvertUTF16toUTF8 (ConvertUTF16toUTF8; a null target counts the bytes). STATE: MATCH 100%,
-   exe 142 / obj 142, byte-identical. OPEN: none */
+/* ConvertUTF16toUTF8 (ConvertUTF16toUTF8; a null target counts the bytes). */
 // FUNCTION: EVNOVA 0x0054144b
 int32_t ConvertUTF16toUTF8(const UTF16 **sourceStart, const UTF16 *sourceEnd,
                   UTF8 **targetStart, UTF8 *targetEnd, UTFBudget *budget, UTFFlags flags)
@@ -197,7 +195,7 @@ int32_t ConvertUTF16toUTF8(const UTF16 **sourceStart, const UTF16 *sourceEnd,
     return result;
 }
 
-/* isLegalUTF8 (isLegalUTF8). STATE: MATCH 100%, exe 66 / obj 66, byte-identical yes. OPEN: none */
+/* isLegalUTF8 (isLegalUTF8). */
 // FUNCTION: EVNOVA 0x005415f1
 int32_t isLegalUTF8(const UTF8 *source, int32_t length)
 {
@@ -243,8 +241,7 @@ int32_t isLegalUTF8(const UTF8 *source, int32_t length)
     return 1;
 }
 
-/* ConvertUTF8toUTF16 (ConvertUTF8toUTF16; a null target counts the bytes). STATE: MATCH 100%,
-   exe 146 / obj 146, byte-identical. OPEN: none */
+/* ConvertUTF8toUTF16 (ConvertUTF8toUTF16; a null target counts the bytes). */
 // FUNCTION: EVNOVA 0x00541684
 int32_t ConvertUTF8toUTF16(const UTF8 **sourceStart, const UTF8 *sourceEnd,
                   UTF16 **targetStart, UTF16 *targetEnd, UTFBudget *budget, UTFFlags flags)

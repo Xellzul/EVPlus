@@ -25,7 +25,6 @@
 
 /* three more of the port's compiled-away entry points */
 
-/* CenterWindow (mac _CenterWindow). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00461bc0
 // MAC: _CenterWindow i386 0x0000220e ppc 0x00002b08
 void CenterWindow(void *front, void *window)

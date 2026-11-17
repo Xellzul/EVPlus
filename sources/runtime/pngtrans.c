@@ -3,8 +3,7 @@
 #define PNG_INTERNAL
 #include "png.h"
 
-/* png_set_bgr. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053ff0d
 void PNGAPI
 png_set_bgr(png_structp png_ptr)
@@ -22,8 +21,7 @@ png_set_swap(png_structp png_ptr)
       png_ptr->transformations |= PNG_SWAP_BYTES;
 }
 
-/* png_set_packing. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053fef4
 void PNGAPI
 png_set_packing(png_structp png_ptr)
@@ -54,8 +52,7 @@ png_set_shift(png_structp png_ptr, png_color_8p true_bits)
    png_ptr->shift = *true_bits;
 }
 
-/* png_set_interlace_handling. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053fed9
 int PNGAPI
 png_set_interlace_handling(png_structp png_ptr)
@@ -70,8 +67,7 @@ png_set_interlace_handling(png_structp png_ptr)
    return (1);
 }
 
-/* png_set_filler. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053fe81
 void PNGAPI
 png_set_filler(png_structp png_ptr, png_uint_32 filler, int filler_loc)
@@ -128,8 +124,7 @@ png_set_invert_mono(png_structp png_ptr)
    png_ptr->transformations |= PNG_INVERT_MONO;
 }
 
-/* png_do_invert. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053fe06
 void
 png_do_invert(png_row_infop row_info, png_bytep row)
@@ -177,8 +172,7 @@ png_do_invert(png_row_infop row_info, png_bytep row)
    }
 }
 
-/* png_do_swap. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053fdd6
 void
 png_do_swap(png_row_infop row_info, png_bytep row)
@@ -305,8 +299,7 @@ static png_byte fourbppswaptable[256] = {
    0x8F, 0x9F, 0xAF, 0xBF, 0xCF, 0xDF, 0xEF, 0xFF
 };
 
-/* png_do_packswap. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053fd85
 void
 png_do_packswap(png_row_infop row_info, png_bytep row)
@@ -333,8 +326,7 @@ png_do_packswap(png_row_infop row_info, png_bytep row)
    }
 }
 
-/* png_do_strip_filler. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053fbc0
 void
 png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
@@ -472,8 +464,7 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
    }
 }
 
-/* png_do_bgr. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053fb03
 void
 png_do_bgr(png_row_infop row_info, png_bytep row)

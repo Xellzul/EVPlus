@@ -26,8 +26,7 @@ typedef struct {
 
 typedef my_upsampler * my_upsample_ptr;
 
-/* start_pass_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005643fc
 METHODDEF(void)
 start_pass_upsample (j_decompress_ptr cinfo)
@@ -39,8 +38,7 @@ start_pass_upsample (j_decompress_ptr cinfo)
   upsample->rows_to_go = cinfo->output_height;
 }
 
-/* sep_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00564325
 METHODDEF(void)
 sep_upsample (j_decompress_ptr cinfo,
@@ -87,8 +85,7 @@ sep_upsample (j_decompress_ptr cinfo,
     (*in_row_group_ctr)++;
 }
 
-/* fullsize_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056431a
 METHODDEF(void)
 fullsize_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -97,8 +94,7 @@ fullsize_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   *output_data_ptr = input_data;
 }
 
-/* noop_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00564311
 METHODDEF(void)
 noop_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -107,8 +103,7 @@ noop_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   *output_data_ptr = NULL;
 }
 
-/* int_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056425c
 METHODDEF(void)
 int_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -148,8 +143,7 @@ int_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   }
 }
 
-/* h2v1_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056421c
 METHODDEF(void)
 h2v1_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -173,8 +167,7 @@ h2v1_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   }
 }
 
-/* h2v2_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005641af
 METHODDEF(void)
 h2v2_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -203,8 +196,7 @@ h2v2_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   }
 }
 
-/* h2v1_fancy_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00564119
 METHODDEF(void)
 h2v1_fancy_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -237,8 +229,7 @@ h2v1_fancy_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   }
 }
 
-/* h2v2_fancy_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563fc4
 METHODDEF(void)
 h2v2_fancy_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
@@ -282,8 +273,7 @@ h2v2_fancy_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   }
 }
 
-/* jinit_upsampler. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563dd9
 GLOBAL(void)
 jinit_upsampler (j_decompress_ptr cinfo)

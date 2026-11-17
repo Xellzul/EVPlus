@@ -232,7 +232,7 @@ static const short Table8Big[128][8] = {
 };
 
 /* Step1 (BurgerLib PkMACE, static): one MACE 6:1 step; the row index is pre-shifted into the
-   flat table. STATE: MATCH 100%, exe 64 / obj 64, byte-identical yes. OPEN: none */
+   flat table. */
 // FUNCTION: EVNOVA 0x005303c0
 static int32_t Step1(Word Val, Word Use8, MACEState_t *State)
 {
@@ -270,8 +270,7 @@ static int32_t Step1(Word Val, Word Use8, MACEState_t *State)
     return Current;
 }
 
-/* MACEExp1to6 (BurgerLib PkMACE). STATE: MATCH 100%, exe 210 / obj 210, byte-identical yes.
-   OPEN: none */
+/* MACEExp1to6 (BurgerLib PkMACE). */
 // FUNCTION: EVNOVA 0x005304a0
 void MACEExp1to6(const Word8 *InBufPtr, Word8 *OutBufPtr, Word32 Count,
     MACEState_t *InStatePtr, MACEState_t *OutStatePtr, Word NumChannels, Word WhichChannel)
@@ -336,8 +335,7 @@ void MACEExp1to6(const Word8 *InBufPtr, Word8 *OutBufPtr, Word32 Count,
     }
 }
 
-/* MACEExp1to3 (BurgerLib PkMACE). STATE: MATCH 100%, exe 262 / obj 262, byte-identical yes.
-   OPEN: none */
+/* MACEExp1to3 (BurgerLib PkMACE). */
 // FUNCTION: EVNOVA 0x005307b0
 void MACEExp1to3(const Word8 *InBufPtr, Word8 *OutBufPtr, Word32 Count,
     MACEState_t *InStatePtr, MACEState_t *OutStatePtr, Word NumChannels, Word WhichChannel)

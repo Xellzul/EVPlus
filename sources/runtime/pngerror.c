@@ -10,8 +10,7 @@ static void
 png_default_warning PNGARG((png_structp png_ptr,
   png_const_charp warning_message));
 
-/* png_error. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00536f3f
 void PNGAPI
 png_error(png_structp png_ptr, png_const_charp error_message)
@@ -52,8 +51,7 @@ png_error(png_structp png_ptr, png_const_charp error_message)
    png_default_error(png_ptr, error_message);
 }
 
-/* png_warning. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00536efe
 void PNGAPI
 png_warning(png_structp png_ptr, png_const_charp warning_message)
@@ -80,8 +78,7 @@ static PNG_CONST char png_digit[16] = {
    'A', 'B', 'C', 'D', 'E', 'F'
 };
 
-/* png_format_buffer. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00536e56
 static void
 png_format_buffer(png_structp png_ptr, png_charp buffer, png_const_charp
@@ -116,8 +113,7 @@ png_format_buffer(png_structp png_ptr, png_charp buffer, png_const_charp
    }
 }
 
-/* png_chunk_error. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00536e2a
 void PNGAPI
 png_chunk_error(png_structp png_ptr, png_const_charp error_message)
@@ -127,8 +123,7 @@ png_chunk_error(png_structp png_ptr, png_const_charp error_message)
    png_error(png_ptr, msg);
 }
 
-/* png_chunk_warning. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00536dc6
 void PNGAPI
 png_chunk_warning(png_structp png_ptr, png_const_charp warning_message)
@@ -159,8 +154,7 @@ png_default_warning(png_structp png_ptr, png_const_charp warning_message)
       return;
 }
 
-/* png_set_error_fn. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00536dac
 void PNGAPI
 png_set_error_fn(png_structp png_ptr, png_voidp error_ptr,

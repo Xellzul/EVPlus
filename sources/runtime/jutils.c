@@ -17,8 +17,7 @@ const int jpeg_natural_order[DCTSIZE2+16] = {
  63, 63, 63, 63, 63, 63, 63, 63
 };
 
-/* jdiv_round_up. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054eece
 GLOBAL(int32_t)
 jdiv_round_up (int32_t a, int32_t b)
@@ -27,8 +26,7 @@ jdiv_round_up (int32_t a, int32_t b)
   return (a + b - 1L) / b;
 }
 
-/* jround_up. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054eeb3
 GLOBAL(int32_t)
 jround_up (int32_t a, int32_t b)
@@ -41,8 +39,7 @@ jround_up (int32_t a, int32_t b)
 #define FMEMCOPY(dest,src,size)	MEMCOPY(dest,src,size)
 #define FMEMZERO(target,size)	MEMZERO(target,size)
 
-/* jcopy_sample_rows. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ee6a
 GLOBAL(void)
 jcopy_sample_rows (JSAMPARRAY input_array, int source_row,
@@ -64,8 +61,7 @@ jcopy_sample_rows (JSAMPARRAY input_array, int source_row,
   }
 }
 
-/* jcopy_block_row. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ee51
 GLOBAL(void)
 jcopy_block_row (JBLOCKROW input_row, JBLOCKROW output_row,
@@ -75,8 +71,7 @@ jcopy_block_row (JBLOCKROW input_row, JBLOCKROW output_row,
   FMEMCOPY(output_row, input_row, num_blocks * (DCTSIZE2 * SIZEOF(JCOEF)));
 }
 
-/* jzero_far. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ee3e
 GLOBAL(void)
 jzero_far (void FAR * target, size_t bytestozero)

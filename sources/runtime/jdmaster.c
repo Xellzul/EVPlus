@@ -17,8 +17,7 @@ typedef struct {
 
 typedef my_decomp_master * my_master_ptr;
 
-/* use_merged_upsample. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054f50c
 LOCAL(boolean)
 use_merged_upsample (j_decompress_ptr cinfo)
@@ -48,8 +47,7 @@ use_merged_upsample (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* jpeg_calc_output_dimensions. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054f31c
 GLOBAL(void)
 jpeg_calc_output_dimensions (j_decompress_ptr cinfo)
@@ -140,8 +138,7 @@ jpeg_calc_output_dimensions (j_decompress_ptr cinfo)
     cinfo->rec_outbuf_height = 1;
 }
 
-/* prepare_range_limit_table. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054f289
 LOCAL(void)
 prepare_range_limit_table (j_decompress_ptr cinfo)
@@ -171,8 +168,7 @@ prepare_range_limit_table (j_decompress_ptr cinfo)
 	  cinfo->sample_range_limit, CENTERJSAMPLE * SIZEOF(JSAMPLE));
 }
 
-/* master_selection. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054f083
 LOCAL(void)
 master_selection (j_decompress_ptr cinfo)
@@ -281,8 +277,7 @@ master_selection (j_decompress_ptr cinfo)
   }
 }
 
-/* prepare_for_output_pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ef35
 METHODDEF(void)
 prepare_for_output_pass (j_decompress_ptr cinfo)
@@ -332,8 +327,7 @@ prepare_for_output_pass (j_decompress_ptr cinfo)
   }
 }
 
-/* finish_output_pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ef12
 METHODDEF(void)
 finish_output_pass (j_decompress_ptr cinfo)
@@ -365,8 +359,7 @@ jpeg_new_colormap (j_decompress_ptr cinfo)
     ERREXIT(cinfo, JERR_MODE_CHANGE);
 }
 
-/* jinit_master_decompress. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054eedd
 GLOBAL(void)
 jinit_master_decompress (j_decompress_ptr cinfo)

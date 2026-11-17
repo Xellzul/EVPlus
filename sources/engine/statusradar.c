@@ -55,11 +55,6 @@
 #define kRadarScale         0.03125     /* 1/32: system units to radar pixels */
 #define kRadarStaticFrames  10
 #define kRadarArrowDist     7000000.0   /* draw the departure arrow past this */
-/* DrawStatusRadar (mac _DrawStatusRadar). STATE: MATCH 100.0% (916 exact, 132
-   reloc-equiv, 0 mismatched; exe 1048 / obj 1048), frame 0x44 EXACT, refs 23 of 23,
-   relocregcheck 0 of 132, call/imm/fcmp censuses exact, poolcheck 7 of 7 literals equal,
-   no string literals; byte-identical pending the next regate --update (bytediff reads the
-   baseline). OPEN: nothing. */
 // FUNCTION: EVNOVA 0x0045d600
 // MAC: _DrawStatusRadar i386 0x000496e0 ppc 0x000520ec
 void DrawStatusRadar(Boolean highlight)

@@ -29,7 +29,6 @@
 
 
 
-/* ShowIntroScreen. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048adc0
 // MAC: _ShowIntroScreen i386 0x00016cf1 ppc 0x0001a9bc
 void ShowIntroScreen(void)
@@ -164,7 +163,6 @@ void ShowIntroScreen(void)
 }
 
 /* the main screen's idle tick */
-/* MainScreenAppearStart. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b230
 // MAC: _MainScreenAppearStart i386 0x00018af1 ppc 0x0001c6f4
 void MainScreenAppearStart(void)
@@ -178,7 +176,6 @@ void MainScreenAppearStart(void)
 #endif
 }
 
-/* MainScreenAppear. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b250
 // MAC: _MainScreenAppear i386 0x00016c7e ppc 0x0001a910
 void MainScreenAppear(void)

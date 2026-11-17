@@ -24,7 +24,6 @@
  * Both log calls are stubs in the shipped build, so holding shift only
  * suppresses the briefing.
  */
-/* DoAboutBox (mac _DoAboutBox). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00486120
 // MAC: _DoAboutBox i386 0x00015fb7 ppc 0x00019cc8
 void DoAboutBox(void)
@@ -74,7 +73,6 @@ void DoAboutBox(void)
  * frame rect out of buttonArray[0] even when it draws buttonArray[1], because
  * the two frames share a rect.
  */
-/* TrackMainScreenButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004861b0
 // MAC: _TrackMainScreenButtons i386 0x000195b9 ppc 0x0001d30c
 short TrackMainScreenButtons(Point where)
@@ -191,7 +189,6 @@ short TrackMainScreenButtons(Point where)
     return hit;
 }
 
-/* InitMainScreen (mac _InitMainScreen). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00486790
 // MAC: _InitMainScreen i386 0x00016071 ppc 0x00019d9c
 void InitMainScreen(void)

@@ -107,8 +107,7 @@ static void FooFreeNonNull(void *block)
     }
 }
 
-/* DeInitMemory (BurgerLib MMMemoryManager, the atexit handler InitMemory registers).
-   STATE: MATCH 100%, exe 30 / obj 30, byte-identical yes. OPEN: none */
+/* DeInitMemory (BurgerLib MMMemoryManager, the atexit handler InitMemory registers). */
 // FUNCTION: EVNOVA 0x004d7c80
 void DeInitMemory(void)
 {
@@ -129,8 +128,7 @@ void DeInitMemory(void)
 }
 
 /* MakeNewHandles (BurgerLib MMMemoryManager): another block of 500 handle records onto the
-   free record list, the first one returned. STATE: MATCH 100.0%, exe 40 / obj 40,
-   byte-identical yes. OPEN: none */
+   free record list, the first one returned. */
 // FUNCTION: EVNOVA 0x004d7d00
 static MyHandle *MakeNewHandles(void)
 {
@@ -162,9 +160,7 @@ static MyHandle *MakeNewHandles(void)
 }
 
 /* ReleaseMemRange (BurgerLib MMMemoryManager): a range back onto the address-ordered free
-   list, merged with the free range on either side it touches. STATE: MATCH 100.0%,
-   exe 105 / obj 105, byte-identical yes (375 bytes). OPEN: none; End is built and advanced
-   in place (`End = p; End += n') */
+   list, merged with the free range on either side it touches. */
 // FUNCTION: EVNOVA 0x004d7da0
 static void ReleaseMemRange(void *MemPtr, Word32 Length, MyHandle *Parent)
 {
@@ -241,8 +237,7 @@ static void ReleaseMemRange(void *MemPtr, Word32 Length, MyHandle *Parent)
 
 /* InitMemory (BurgerLib MMMemoryManager): the super chunk (MaxMemSize, or the largest block
    the OS will give, binary searched), the first handle records at its bottom, the rest one
-   free range. STATE: MATCH 100.0%, exe 213 / obj 213, byte-identical yes (935 bytes).
-   OPEN: none; the search loop's free is FooFreeNonNull, the alignment step reuses misalign */
+   free range. Note: the search loop's free is FooFreeNonNull, the alignment step reuses misalign */
 // FUNCTION: EVNOVA 0x004d7f20
 void InitMemory(void)
 {
@@ -382,9 +377,7 @@ static inline void GrabMemRange(void *MemPtr, Word32 Length, MyHandle *Parent, M
 
 /* AllocAHandle2 (BurgerLib MMMemoryManager): fixed memory from the top of the heap, movable
    from the bottom; compact and purge until it fits, else give the record back and complain.
-   Before InitMemory, straight from the OS. STATE: MATCH 100.0%, exe 269 / obj 269,
-   byte-identical yes (1018 bytes). OPEN: none; the body sits under `if (MemSize != 0)' with a
-   trailing `return 0' (the exe's last epilogue) */
+   Before InitMemory, straight from the OS. */
 // FUNCTION: EVNOVA 0x004d82d0
 void **AllocAHandle2(Word32 MemSize, Word Flag)
 {
@@ -488,8 +481,7 @@ void **AllocAHandle2(Word32 MemSize, Word Flag)
 }
 
 /* AllocAPointer (BurgerLib MMMemoryManager): a fixed handle, its own address in the block's
-   first word, the caller's memory 16 bytes in. STATE: MATCH 100.0%, exe 18 / obj 18,
-   byte-identical yes. OPEN: none */
+   first word, the caller's memory 16 bytes in. */
 // FUNCTION: EVNOVA 0x004d86d0
 void *AllocAPointer(Word32 size)
 {
@@ -508,8 +500,7 @@ void *AllocAPointer(Word32 size)
 }
 
 /* DeallocAHandle (BurgerLib MMMemoryManager): off the purge and used lists, its range back to
-   the free list, the record onto the free record list. STATE: MATCH 100.0%, exe 52 / obj 52,
-   byte-identical yes. OPEN: none */
+   the free list, the record onto the free record list. */
 // FUNCTION: EVNOVA 0x004d8710
 void DeallocAHandle(void *MemHandle)
 {
@@ -544,8 +535,7 @@ void DeallocAHandle(void *MemHandle)
     }
 }
 
-/* DeallocAPointer (BurgerLib MMMemoryManager). STATE: MATCH 100.0%, exe 9 / obj 9,
-   byte-identical yes. OPEN: none */
+/* DeallocAPointer (BurgerLib MMMemoryManager). */
 // FUNCTION: EVNOVA 0x004d87d0
 void DeallocAPointer(void *MemPtr)
 {
@@ -554,8 +544,7 @@ void DeallocAPointer(void *MemPtr)
 }
 
 /* ResizeAPointer (BurgerLib MMMemoryManager): AllocAPointer for no pointer, DeallocAPointer for
-   no size (both inlined), else the handle behind the pointer resized. STATE: MATCH 100%,
-   exe 52 / obj 52, byte-identical yes. OPEN: none */
+   no size (both inlined), else the handle behind the pointer resized. */
 // FUNCTION: EVNOVA 0x004d87f0
 void *ResizeAPointer(void *mem, uint32_t size)
 {
@@ -580,8 +569,7 @@ void *ResizeAPointer(void *mem, uint32_t size)
 }
 
 /* ResizeAHandle (BurgerLib MMMemoryManager): shrink in place, else allocate, copy, free, and
-   move the new memory into the OLD record so the caller's handle stays valid.
-   STATE: MATCH 100%, exe 166 / obj 166, byte-identical yes. OPEN: none */
+   move the new memory into the OLD record so the caller's handle stays valid. */
 // FUNCTION: EVNOVA 0x004d8890
 Handle ResizeAHandle(Handle h, uint32_t size)
 {
@@ -689,8 +677,7 @@ Handle FindAHandle(void *Input)
     return 0;
 }
 
-/* GetAHandleSize (BurgerLib MMMemoryManager). STATE: MATCH 100.0%, exe 7 / obj 7,
-   byte-identical yes. OPEN: none */
+/* GetAHandleSize (BurgerLib MMMemoryManager). */
 // FUNCTION: EVNOVA 0x004d8ae0
 uint32_t GetAHandleSize(Handle h)
 {
@@ -699,8 +686,7 @@ uint32_t GetAHandleSize(Handle h)
     return 0;
 }
 
-/* GetAPointerSize (BurgerLib MMMemoryManager). STATE: MATCH 100.0%, exe 8 / obj 8,
-   byte-identical yes. OPEN: none */
+/* GetAPointerSize (BurgerLib MMMemoryManager). */
 // FUNCTION: EVNOVA 0x004d8b00
 uint32_t GetAPointerSize(void *mem)
 {
@@ -710,7 +696,7 @@ uint32_t GetAPointerSize(void *mem)
 }
 
 /* GetTotalFreeMem (BurgerLib MMMemoryManager): the free list plus every unlocked purgeable
-   handle. STATE: MATCH 100.0%, exe 23 / obj 23, byte-identical yes. OPEN: none */
+   handle. */
 // FUNCTION: EVNOVA 0x004d8b20
 Word32 GetTotalFreeMem(void)
 {
@@ -740,8 +726,7 @@ Word32 GetTotalFreeMem(void)
     return Free;
 }
 
-/* LockAHandle (BurgerLib MMMemoryManager). STATE: MATCH 100.0%, exe 8 / obj 8,
-   byte-identical yes. OPEN: none */
+/* LockAHandle (BurgerLib MMMemoryManager). */
 // FUNCTION: EVNOVA 0x004d8b80
 char *LockAHandle(Handle h)
 {
@@ -752,8 +737,7 @@ char *LockAHandle(Handle h)
     return 0;
 }
 
-/* UnlockAHandle (BurgerLib MMMemoryManager). STATE: MATCH 100.0%, exe 5 / obj 5,
-   byte-identical yes. OPEN: none */
+/* UnlockAHandle (BurgerLib MMMemoryManager). */
 // FUNCTION: EVNOVA 0x004d8ba0
 void UnlockAHandle(Handle h)
 {
@@ -762,7 +746,7 @@ void UnlockAHandle(Handle h)
 }
 
 /* SetHandlePurgeFlag (BurgerLib MMMemoryManager): move a handle to the head of the purge list,
-   or off it. STATE: MATCH 100.0%, exe 30 / obj 30, byte-identical yes. OPEN: none */
+   or off it. */
 // FUNCTION: EVNOVA 0x004d8bb0
 void SetHandlePurgeFlag(void **handle, Word flag)
 {
@@ -787,8 +771,7 @@ void SetHandlePurgeFlag(void **handle, Word flag)
 }
 
 /* PurgeAHandle (BurgerLib MMMemoryManager): the memory released, the record moved to the
-   purged list with a null master pointer. STATE: MATCH 100.0%, exe 44 / obj 44,
-   byte-identical yes. OPEN: none */
+   purged list with a null master pointer. */
 // FUNCTION: EVNOVA 0x004d8c20
 void PurgeAHandle(void *MemHandle)
 {
@@ -824,7 +807,7 @@ void PurgeAHandle(void *MemHandle)
 }
 
 /* PurgeHandles (BurgerLib MMMemoryManager): purge the oldest purgeable handles until MemSize
-   bytes are back. STATE: MATCH 100.0%, exe 38 / obj 38, byte-identical yes. OPEN: none */
+   bytes are back. */
 // FUNCTION: EVNOVA 0x004d8ce0
 Word PurgeHandles(Word32 MemSize)
 {
@@ -851,8 +834,7 @@ Word PurgeHandles(Word32 MemSize)
 }
 
 /* CompactHandles (BurgerLib MMMemoryManager): slide every unlocked movable handle down onto
-   the one before it. STATE: MATCH 100.0%, exe 107 / obj 107, byte-identical yes (382 bytes).
-   OPEN: none; the inlined free-list search advances Chunk in place */
+   the one before it. */
 // FUNCTION: EVNOVA 0x004d8d60
 void CompactHandles(void)
 {
@@ -892,8 +874,7 @@ void CompactHandles(void)
     }
 }
 
-/* PrintHandles (BurgerLib MMMemoryManager): one line per record from First up to Last.
-   STATE: MATCH 100.0%, exe 98 / obj 98, byte-identical yes. OPEN: none */
+/* PrintHandles (BurgerLib MMMemoryManager): one line per record from First up to Last. */
 // FUNCTION: EVNOVA 0x004d8ee0
 static void PrintHandles(MyHandle *First, MyHandle *Last, Word NoCheck)
 {
@@ -932,8 +913,7 @@ static void PrintHandles(MyHandle *First, MyHandle *Last, Word NoCheck)
     }
 }
 
-/* DumpHandles (BurgerLib MMMemoryManager). STATE: MATCH 100.0%, exe 37 / obj 37,
-   byte-identical yes. OPEN: none */
+/* DumpHandles (BurgerLib MMMemoryManager). */
 // FUNCTION: EVNOVA 0x004d9090
 void DumpHandles(void)
 {

@@ -56,8 +56,7 @@ png_set_sig_bytes(png_structp png_ptr, int num_bytes)
    png_ptr->sig_bytes = (png_byte)(num_bytes < 0 ? 0 : num_bytes);
 }
 
-/* png_sig_cmp. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00537535
 int PNGAPI
 png_sig_cmp(png_bytep sig, png_size_t start, png_size_t num_to_check)
@@ -84,8 +83,7 @@ png_check_sig(png_bytep sig, int num)
   return ((int)!png_sig_cmp(sig, (png_size_t)0, (png_size_t)num));
 }
 
-/* png_zalloc. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005374e5
 voidpf
 png_zalloc(voidpf png_ptr, uInt items, uInt size)
@@ -109,8 +107,7 @@ png_zalloc(voidpf png_ptr, uInt items, uInt size)
    return ((voidpf)ptr);
 }
 
-/* png_zfree. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005374d5
 void
 png_zfree(voidpf png_ptr, voidpf ptr)
@@ -118,8 +115,7 @@ png_zfree(voidpf png_ptr, voidpf ptr)
    png_free((png_structp)png_ptr, (png_voidp)ptr);
 }
 
-/* png_reset_crc. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005374ba
 void
 png_reset_crc(png_structp png_ptr)
@@ -127,8 +123,7 @@ png_reset_crc(png_structp png_ptr)
    png_ptr->crc = crc32(0, Z_NULL, 0);
 }
 
-/* png_calculate_crc. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00537465
 void
 png_calculate_crc(png_structp png_ptr, png_bytep ptr, png_size_t length)
@@ -151,8 +146,7 @@ png_calculate_crc(png_structp png_ptr, png_bytep ptr, png_size_t length)
       png_ptr->crc = crc32(png_ptr->crc, ptr, (uInt)length);
 }
 
-/* png_create_info_struct. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00537428
 png_infop PNGAPI
 png_create_info_struct(png_structp png_ptr)
@@ -233,8 +227,7 @@ png_data_freer(png_structp png_ptr, png_infop info_ptr,
          "Unknown freer parameter in png_data_freer.");
 }
 
-/* png_free_data. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0053709a
 void PNGAPI
 png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
@@ -397,8 +390,7 @@ if ((mask & PNG_FREE_ROWS) & info_ptr->free_me)
      info_ptr->free_me &= ~(mask & ~PNG_FREE_MUL);
 }
 
-/* png_info_destroy. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00537043
 void
 png_info_destroy(png_structp png_ptr, png_infop info_ptr)
@@ -466,8 +458,7 @@ png_get_header_version(png_structp png_ptr)
    return ((png_charp) "");
 }
 
-/* png_handle_as_unknown. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00536fee
 int PNGAPI
 png_handle_as_unknown(png_structp png_ptr, png_bytep chunk_name)
@@ -499,8 +490,7 @@ png_access_version_number(void)
    return((png_uint_32) PNG_LIBPNG_VER);
 }
 
-/* png_init_mmx_flags. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00536fcf
 void
 png_init_mmx_flags (png_structp png_ptr)

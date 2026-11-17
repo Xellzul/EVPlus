@@ -13,7 +13,6 @@
 EXTERN_C_BEGIN
 
 
-/* WinMain. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d2a80
 int __stdcall WinMain(void *hInstance, void *hPrevInstance, char *lpCmdLine,
                       int nCmdShow)

@@ -12,7 +12,6 @@
 #define backgroundGreen(sw) (*(unsigned short *)((char *)(sw) + 0xe1))
 #define backgroundBlue(sw)  (*(unsigned short *)((char *)(sw) + 0xe3))
 
-/* SWEnterSpriteWorld (mac _SWEnterSpriteWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477630
 // MAC: _SWEnterSpriteWorld i386 0x000b6b30 ppc 0x000c2630
 int SWEnterSpriteWorld(void)
@@ -21,7 +20,6 @@ int SWEnterSpriteWorld(void)
     return 0;
 }
 
-/* SWCreateSpriteWorld (mac _SWCreateSpriteWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477640
 // MAC: _SWCreateSpriteWorld i386 0x000b6b92 ppc 0x000c26d8
 short SWCreateSpriteWorld(void *mainGDH, SpriteWorldRec **spriteWorldP,

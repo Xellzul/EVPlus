@@ -26,9 +26,6 @@ enum { kShipyardDoneButton, kShipyardBuyButton, kShipyardInfoButton, kShipyardUp
 enum { kOutfitDoneButton, kOutfitBuyButton, kOutfitSellButton, kOutfitUpButton,
        kOutfitDownButton };
 
-/* TrackMapButtons. STATE: MATCH 100%, exe 247 / obj 247, byte-identical.
-   The GetDialogItem sites index `box' with the slot enum (-enum min), which keeps their
-   addresses out of the CSE class the PtInRect sites share. OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x0049eef0
 // MAC: _TrackMapButtons i386 0x0002aafa ppc 0x0002f048
 short TrackMapButtons(Point where)
@@ -93,7 +90,6 @@ short TrackMapButtons(Point where)
     return drawnButton;
 }
 
-/* DrawMapButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049f1f0
 // MAC: _DrawMapButtons i386 0x0002a86e ppc 0x0002ee28
 void DrawMapButtons(short hilited)
@@ -140,10 +136,6 @@ void DrawMapButtons(short hilited)
     }
 }
 
-/* TrackShipyardButtons. STATE: MATCH 100%, exe 245 / obj 245, byte-identical.
-   `Rect box[5]' with the slot enum at the GetDialogItem sites (-enum min); unlike its
-   siblings the buy button's Rect is taken once into `buyBox' ahead of the first pass.
-   OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x0049f3f0
 // MAC: _TrackShipyardButtons i386 0x0002a54e ppc 0x0002eb08
 short TrackShipyardButtons(Point where)
@@ -219,7 +211,6 @@ short TrackShipyardButtons(Point where)
     return drawnButton;
 }
 
-/* DrawShipyardButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049f6f0
 // MAC: _DrawShipyardButtons i386 0x0002a2e2 ppc 0x0002e8b8
 void DrawShipyardButtons(short hilited)
@@ -267,9 +258,6 @@ void DrawShipyardButtons(short hilited)
     }
 }
 
-/* TrackOutfitButtons. STATE: MATCH 100%, exe 225 / obj 225, byte-identical.
-   Same shape as TrackMapButtons: one `Rect box[5]', the slot enum at the GetDialogItem
-   sites (-enum min). OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x0049f8f0
 // MAC: _TrackOutfitButtons i386 0x0002a029 ppc 0x0002e628
 short TrackOutfitButtons(Point where)
@@ -338,7 +326,6 @@ short TrackOutfitButtons(Point where)
     return drawnButton;
 }
 
-/* DrawOutfitButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049fbb0
 // MAC: _DrawOutfitButtons i386 0x00029d6a ppc 0x0002e398
 void DrawOutfitButtons(short hilited)

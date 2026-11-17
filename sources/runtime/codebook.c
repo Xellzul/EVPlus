@@ -11,8 +11,7 @@
 #include "misc.h"
 #include "os.h"
 
-/* vorbis_staticbook_unpack. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054cc80
 int vorbis_staticbook_unpack(oggpack_buffer *opb,static_codebook *s){
   int32_t i,j;
@@ -104,16 +103,14 @@ int vorbis_staticbook_unpack(oggpack_buffer *opb,static_codebook *s){
   return(-1);
 }
 
-/* vorbis_book_encode. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054d000
 int vorbis_book_encode(codebook *book, int a, oggpack_buffer *b){
   oggpack_write(b,book->codelist[a],book->c->lengthlist[a]);
   return(book->c->lengthlist[a]);
 }
 
-/* vorbis_book_decode. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054d050
 int32_t vorbis_book_decode(codebook *book, oggpack_buffer *b){
   int32_t ptr=0;
@@ -142,8 +139,7 @@ int32_t vorbis_book_decode(codebook *book, oggpack_buffer *b){
   return(-ptr);
 }
 
-/* vorbis_book_decodevs_add. STATE: BurgerLib's libvorbis 1.0rc3, entry[] and t[] from one
-   block sized by a byte count (MATCH, byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054d110
 int32_t vorbis_book_decodevs_add(codebook *book,float *a,oggpack_buffer *b,int n){
   int step=n/book->dim;
@@ -171,8 +167,7 @@ int32_t vorbis_book_decodevs_add(codebook *book,float *a,oggpack_buffer *b,int n
   return(0);
 }
 
-/* vorbis_book_decodev_add. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054d3a0
 int32_t vorbis_book_decodev_add(codebook *book,float *a,oggpack_buffer *b,int n){
   int i,j,entry;
@@ -217,8 +212,7 @@ int32_t vorbis_book_decodev_add(codebook *book,float *a,oggpack_buffer *b,int n)
   return(0);
 }
 
-/* vorbis_book_decodev_set. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054d520
 int32_t vorbis_book_decodev_set(codebook *book,float *a,oggpack_buffer *b,int n){
   int i,j,entry;
@@ -234,8 +228,7 @@ int32_t vorbis_book_decodev_set(codebook *book,float *a,oggpack_buffer *b,int n)
   return(0);
 }
 
-/* vorbis_book_decodevv_add. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054d5b0
 int32_t vorbis_book_decodevv_add(codebook *book,float **a,int32_t offset,int ch,
 			      oggpack_buffer *b,int n){

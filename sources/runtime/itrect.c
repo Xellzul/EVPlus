@@ -3,8 +3,7 @@
 #include "burgertypes.h"
 #include "burgerplat.h"
 
-/* DT_GetColorARGB (an ITColor from a 0xAARRGGBB value). STATE: MATCH 100%, exe 22 / obj 22, byte-
-   identical yes. OPEN: none */
+/* DT_GetColorARGB (an ITColor from a 0xAARRGGBB value). */
 // FUNCTION: EVNOVA 0x00519cf0
 ITColor DT_GetColorARGB(ULong argb)
 {
@@ -19,7 +18,7 @@ ITColor DT_GetColorARGB(ULong argb)
     return color;
 }
 
-/* DT_SetRect (SetRect). STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes. OPEN: none */
+/* DT_SetRect (SetRect). */
 // FUNCTION: EVNOVA 0x00519d30
 ITRect *DT_SetRect(ITRect *r, int32_t left, int32_t top, int32_t right, int32_t bottom)
 {
@@ -33,7 +32,7 @@ ITRect *DT_SetRect(ITRect *r, int32_t left, int32_t top, int32_t right, int32_t 
     return r;
 }
 
-/* DT_IsPointInRect (PtInRect). STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes. OPEN: none */
+/* DT_IsPointInRect (PtInRect). */
 // FUNCTION: EVNOVA 0x00519d58
 unsigned char DT_IsPointInRect(const ITPoint *pt, const ITRect *r)
 {
@@ -47,8 +46,7 @@ unsigned char DT_IsPointInRect(const ITPoint *pt, const ITRect *r)
     return inside;
 }
 
-/* DT_IsRectReallyEmpty (nothing to draw: turned inside out, or a single point). STATE:
-   MATCH 100%, exe 22 / obj 22, byte-identical yes. OPEN: none */
+/* DT_IsRectReallyEmpty (nothing to draw: turned inside out, or a single point). */
 // FUNCTION: EVNOVA 0x00519d83
 unsigned char DT_IsRectReallyEmpty(const ITRect *r)
 {
@@ -63,7 +61,7 @@ unsigned char DT_IsRectReallyEmpty(const ITRect *r)
     return none;
 }
 
-/* DT_IsRectEmpty (EmptyRect). STATE: MATCH 100%, exe 14 / obj 14, byte-identical yes. OPEN: none */
+/* DT_IsRectEmpty (EmptyRect). */
 // FUNCTION: EVNOVA 0x00519daf
 unsigned char DT_IsRectEmpty(const ITRect *r)
 {
@@ -77,7 +75,7 @@ unsigned char DT_IsRectEmpty(const ITRect *r)
     return empty;
 }
 
-/* DT_IsRectEqual (EqualRect). STATE: MATCH 100%, exe 23 / obj 23, byte-identical yes. OPEN: none */
+/* DT_IsRectEqual (EqualRect). */
 // FUNCTION: EVNOVA 0x00519dcd
 unsigned char DT_IsRectEqual(const ITRect *a, const ITRect *b)
 {
@@ -92,7 +90,7 @@ unsigned char DT_IsRectEqual(const ITRect *a, const ITRect *b)
     return equal;
 }
 
-/* DT_RectOffset (OffsetRect). STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes. OPEN: none */
+/* DT_RectOffset (OffsetRect). */
 // FUNCTION: EVNOVA 0x00519e00
 ITRect *DT_RectOffset(ITRect *r, int32_t dh, int32_t dv)
 {
@@ -106,7 +104,7 @@ ITRect *DT_RectOffset(ITRect *r, int32_t dh, int32_t dv)
     return r;
 }
 
-/* DT_RectInset (InsetRect). STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes. OPEN: none */
+/* DT_RectInset (InsetRect). */
 // FUNCTION: EVNOVA 0x00519e22
 ITRect *DT_RectInset(ITRect *r, int32_t dh, int32_t dv)
 {
@@ -120,8 +118,7 @@ ITRect *DT_RectInset(ITRect *r, int32_t dh, int32_t dv)
     return r;
 }
 
-/* DT_RectCenter (`r' sized like `size', centred in `bounds' with bounds' origin at 0). STATE:
-   MATCH 100%, exe 43 / obj 43, byte-identical yes. OPEN: none */
+/* DT_RectCenter (`r' sized like `size', centred in `bounds' with bounds' origin at 0). */
 // FUNCTION: EVNOVA 0x00519e44
 ITRect *DT_RectCenter(ITRect *r, const ITRect *size, const ITRect *bounds)
 {
@@ -137,8 +134,7 @@ ITRect *DT_RectCenter(ITRect *r, const ITRect *size, const ITRect *bounds)
     return r;
 }
 
-/* DT_RectIntersect (SectRect, without the empty test). STATE: MATCH 100%, exe 35 / obj 35, byte-identical yes.
-   OPEN: none */
+/* DT_RectIntersect (SectRect, without the empty test). */
 // FUNCTION: EVNOVA 0x00519eb6
 ITRect *DT_RectIntersect(ITRect *r, const ITRect *a, const ITRect *b)
 {
@@ -156,8 +152,7 @@ ITRect *DT_RectIntersect(ITRect *r, const ITRect *a, const ITRect *b)
 #define LIGHTER(c)  ((c) <= 0xa0 ? (c) + 0x40 : (c) <= 0xa0 ? (c) + (0xff - (c)) / 2 : 0xff)
 #define DARKER(c)   ((c) >= 0x60 ? (c) - 0x30 : (c) >= 0x30 ? (c) / 2 : 0)
 
-/* DT_ColorLighten (a colour lightened for a bevel's lit edge; alpha kept). STATE: MATCH 100%, exe 58
-   / obj 58, byte-identical yes. OPEN: none */
+/* DT_ColorLighten (a colour lightened for a bevel's lit edge; alpha kept). */
 // FUNCTION: EVNOVA 0x00519f06
 void DT_ColorLighten(ITColor *color)
 {
@@ -169,8 +164,7 @@ void DT_ColorLighten(ITColor *color)
     color->blue = LIGHTER(color->blue);
 }
 
-/* DT_ColorDarken (a colour darkened for a bevel's shaded edge; alpha kept). STATE: MATCH 100%, exe
-   49 / obj 49, byte-identical yes. OPEN: none */
+/* DT_ColorDarken (a colour darkened for a bevel's shaded edge; alpha kept). */
 // FUNCTION: EVNOVA 0x00519fb1
 void DT_ColorDarken(ITColor *color)
 {

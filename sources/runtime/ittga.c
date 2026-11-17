@@ -84,8 +84,7 @@ typedef struct TGAExtension {
 #define kMaskDepth          8
 #define kPaletteMax         256
 
-/* DT_ReverseBytes (reverse n bytes in place). STATE: MATCH 100%, exe 24 / obj 24, byte-identical
-   yes. OPEN: none */
+/* DT_ReverseBytes (reverse n bytes in place). */
 // FUNCTION: EVNOVA 0x00518757
 void DT_ReverseBytes(char *p, ULong n)
 {
@@ -102,8 +101,7 @@ void DT_ReverseBytes(char *p, ULong n)
     }
 }
 
-/* _TGA_ReverseColors (reverse n dwords in place). STATE: MATCH 100%, exe 25 / obj 25, byte-identical
-   yes. OPEN: none */
+/* _TGA_ReverseColors (reverse n dwords in place). */
 // FUNCTION: EVNOVA 0x00518786
 void _TGA_ReverseColors(ULong *p, ULong n)
 {
@@ -120,8 +118,7 @@ void _TGA_ReverseColors(ULong *p, ULong n)
     }
 }
 
-/* TGA_CheckFileType (is this a Targa file this reader takes). STATE: MATCH 100%, exe 177 / obj 177,
-   byte-identical yes. OPEN: none */
+/* TGA_CheckFileType (is this a Targa file this reader takes). */
 // FUNCTION: EVNOVA 0x005187bd
 #define FixLE16(v)
 #define LE16(v) (v)
@@ -219,8 +216,7 @@ unsigned char TGA_CheckFileType(const void *buffer, ULong size)
 
 /* TGA_Decode (load a Targa off a stream: header, the 2.0 footer and extension area, the
    colour map, then rows raw or run-length coded at 8, 16, 24 or 32 bits, into a new image and,
-   when the file has alpha, an 8-bit mask). STATE: MATCH 100%, exe 1231 / obj 1231,
-   byte-identical yes. OPEN: none */
+   when the file has alpha, an 8-bit mask). */
 // FUNCTION: EVNOVA 0x005189a5
 int32_t TGA_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
                   ITTransparent *trans, ITBackground *bg)

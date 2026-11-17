@@ -34,9 +34,7 @@ typedef struct ITPopup {
 /* IT_PopupHandler (the POPUP control proc: 0 makes its data, 1 creates the combo box with the
    ITEM elements' titles (none when empty, "-" skipped, the DEFAULT one selected), 2 destroys
    it, 3 frees the data; hit tests, painting through the combo box, bounds, title, value by
-   index or text, show and enable; its enabled state follows the window's). STATE: MATCH 100%,
-   exe 668 / obj 668, byte-identical yes. OPEN: none (`top` is assigned inside the
-   CreateWindowEx arguments, evaluated right to left: notes/itpopup.md) */
+   index or text, show and enable; its enabled state follows the window's). */
 // FUNCTION: EVNOVA 0x0052174c
 int32_t IT_PopupHandler(void *hwnd, void *dc, ITElement *element, void **data, ULong msg, ULong a,
                   void *b)

@@ -9,7 +9,6 @@
 #include "cefix.h"
 
 
-/* SWCreateGWorldFromPict (mac _SWCreateGWorldFromPict). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478fa0
 // MAC: _SWCreateGWorldFromPict i386 0x000a7dc7 ppc 0x000b2bf4
 short SWCreateGWorldFromPict(SpriteWorldPtr destSpriteWorld,

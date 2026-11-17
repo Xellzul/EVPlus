@@ -7,8 +7,6 @@
 #include "render.h"
 #endif
 
-/* DrawTranslucentLine (mac _DrawTranslucentLine). STATE: MATCH, byte-identical.
-   OPEN: none; notes in Research/notes/drawtranslucentline.md */
 // FUNCTION: EVNOVA 0x00479590
 // MAC: _DrawTranslucentLine i386 0x000c3259 ppc 0x000cf604
 void DrawTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
@@ -73,8 +71,6 @@ void DrawTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
     }
 }
 
-/* BlitTranslucentLine (mac _BlitTranslucentLine). STATE: MATCH, byte-identical.
-   OPEN: none; notes in Research/notes/blittranslucentline.md */
 // FUNCTION: EVNOVA 0x004797b0
 // MAC: _BlitTranslucentLine i386 0x000c2c90 ppc 0x000cf0a0
 #ifdef MACBUILD
@@ -295,8 +291,6 @@ void BlitTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
 }
 #endif
 
-/* CopyLine (mac _CopyLine). STATE: MATCH, byte-identical.
-   OPEN: none; notes in Research/notes/copyline.md */
 // FUNCTION: EVNOVA 0x00479c50
 // MAC: _CopyLine i386 0x000c3936 ppc 0x000cfc64
 void CopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstPoint)
@@ -317,8 +311,6 @@ void CopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstP
         BlitCopyLine(srcFrameP, dstFrameP, srcPoint, dstPoint);
 }
 
-/* BlitCopyLine (mac _BlitCopyLine). STATE: MATCH, byte-identical.
-   OPEN: none; notes in Research/notes/blitcopyline.md */
 // FUNCTION: EVNOVA 0x00479cf0
 // MAC: _BlitCopyLine i386 0x000c3483 ppc 0x000cf7f4
 void BlitCopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstPoint)
@@ -388,8 +380,6 @@ void BlitCopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point 
 }
 
 
-/* DrawBeam (mac _DrawBeam). STATE: MATCH, byte-identical (exe 304 / obj 304); it matches
-   only compiled after BlitCopyLine, its exe predecessor (88.5 alone). OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x00479fe0
 // MAC: _DrawBeam i386 0x000c3b3c ppc 0x000cfe70
 void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color,
@@ -500,9 +490,6 @@ void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color
     }
 }
 
-/* DrawLightningBeam (mac _DrawLightningBeam). STATE: MATCH 100.0%, exe 577 / obj 577 instrs,
-   frame 0x80 exact, byte-identical yes; compiled after DrawBeam, its exe predecessor.
-   OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x0047a410
 // MAC: _DrawLightningBeam i386 0x000c3f9d ppc 0x000d01fc
 #ifdef MACBUILD
@@ -887,8 +874,6 @@ void DrawLightningBeam(FramePtr frameA, FramePtr frameB, Point srcPoint, Point d
 }
 #endif
 
-/* EraseBeam (mac _EraseBeam). STATE: MATCH, byte-identical (exe 243 / obj 243); it matches
-   only compiled after DrawLightningBeam, its exe predecessor (1.6 alone). OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x0047ac50
 // MAC: _EraseBeam i386 0x000c48b5 ppc 0x000d08c0
 void EraseBeam(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstPoint,
@@ -994,7 +979,6 @@ void EraseBeam(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dst
     }
 }
 
-/* EraseLightningBeam (mac _EraseLightningBeam). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047afd0
 // MAC: _EraseLightningBeam i386 0x000c4be1 ppc 0x000d0ca4
 void EraseLightningBeam(FramePtr srcFrameP, FramePtr dstFrameP,

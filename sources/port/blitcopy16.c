@@ -3,7 +3,6 @@
 #include "macport.h"
 #include "gametypes.h"
 
-/* CopyBitsCopy16. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b74c0
 void CopyBitsCopy16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 {

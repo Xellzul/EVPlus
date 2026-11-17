@@ -165,9 +165,6 @@ EXTERN_C_BEGIN
 
 #define mapLink j
 
-/* HandlePlayer (mac _HandlePlayer). STATE: win MATCH 100%, exe 9548 / obj 9548, frame 0x29c,
-   byte-identical yes (relocregcheck 0). mac MATCH on both slices.
-   OPEN: none; the V111 `ammo` in the third ammo loop is a spelling with no witness (notes). */
 // FUNCTION: EVNOVA 0x0044aa70
 // MAC: _HandlePlayer i386 0x00068390 ppc 0x00070b28
 void HandlePlayer(ShipObj *player)
@@ -2568,7 +2565,6 @@ void HandlePlayer(ShipObj *player)
             if (destructCount >= 1.0)
                 destructCount = destructCount - gSpeedMult;
             if ((short)destructCount % 30 == 0 && destructCount <= 120.0f) {
-                extern char *strcpy(char *, const char *);
                 strcpy((char *)msg, "");
                 StrcatIndCString((char *)msg, kGameStrList, 0x181);
                 strcat((char *)msg, " ");
@@ -2589,7 +2585,6 @@ void HandlePlayer(ShipObj *player)
                 DisplayComm((PStrChar *)msg, 0x46, 0, kCommTextSize, &rgbWhite, 0, 0);
             }
         } else {
-            extern char *strcpy(char *, const char *);
             PlaySound(beepSnd[1], 0xf, gSoundVolume, gSoundVolume);
             strcpy((char *)msg, "");
             StrcatIndCString((char *)msg, kGameStrList, 0x181);
@@ -2880,8 +2875,6 @@ void HandlePlayer(ShipObj *player)
 
                                                          /* 0x0041cf40 */
 
-/* HandlePlayerCommunication (mac _HandlePlayerCommunication). STATE: MATCH 100.0%, exe 504 / obj 504 instrs, byte-identical (masked).
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x00454910
 // MAC: _HandlePlayerCommunication i386 0x00061f48 ppc 0x00069e14
 void HandlePlayerCommunication(void)
@@ -3071,8 +3064,6 @@ void HandlePlayerCommunication(void)
 /* abs is inlined only when <stdlib.h> declares it; a local extern emits a call. */
 
 
-/* FirePlayerWeapon (mac _FirePlayerWeapon). STATE: MATCH 100.0%, exe 829 / obj 829,
-   byte-identical (3257 bytes), relocregcheck 0 of 137. mac: MATCH both slices. OPEN: none */
 // FUNCTION: EVNOVA 0x00455150
 // MAC: _FirePlayerWeapon i386 0x00062702 ppc 0x0006a510
 void FirePlayerWeapon(short w)
@@ -3312,8 +3303,6 @@ void FirePlayerWeapon(short w)
     }
 }
 
-/* PlayerLandOnStellar (mac _PlayerLandOnStellar). STATE: MATCH 100.0%, exe 397 / obj 397,
-   relocregcheck 0 of 124; the landing-position test is written `!= -1' first. OPEN: none */
 // FUNCTION: EVNOVA 0x00455e10
 // MAC: _PlayerLandOnStellar i386 0x000631c4 ppc 0x0006b244
 void PlayerLandOnStellar(void)
@@ -3436,10 +3425,6 @@ void PlayerLandOnStellar(void)
 }
 
 
-/* PlayerEnterHypergate (mac _PlayerEnterHypergate). STATE: MATCH 100.0%, exe 492 / obj 492,
-   byte-identical, relocregcheck 0 of 161. The hyperlink count is held in `link', so the scan
-   loop's `link' is a split web; `n' carries the scan's system and the nav-link count, as in
-   PlayerEnterWormhole. OPEN: none. */
 // FUNCTION: EVNOVA 0x00456480
 // MAC: _PlayerEnterHypergate i386 0x000637bf ppc 0x0006b87c
 short PlayerEnterHypergate(void)
@@ -3621,8 +3606,6 @@ short PlayerEnterHypergate(void)
     return -1;
 }
 
-/* PlayerEnterWormhole (mac _PlayerEnterWormhole). STATE: MATCH 100.0%, exe 564 / obj 564,
-   relocregcheck 0 of 156. The customSound test is written in-range arm first. OPEN: none. */
 // FUNCTION: EVNOVA 0x00456ca0
 // MAC: _PlayerEnterWormhole i386 0x00064005 ppc 0x0006c064
 short PlayerEnterWormhole(void)
@@ -3651,7 +3634,6 @@ short PlayerEnterWormhole(void)
                 }
             }
             if (n == 0) {
-                extern char *strcpy(char *, const char *);
 
                 strcpy((char *)msg, "");
                 StrcatIndCString((char *)msg, kGameStrList, 0x54);
@@ -3697,7 +3679,6 @@ short PlayerEnterWormhole(void)
                 }
             }
         } else {
-            extern char *strcpy(char *, const char *);
 
             strcpy((char *)msg, "");
             StrcatIndCString((char *)msg, kGameStrList, 0x54);
@@ -3801,9 +3782,6 @@ short PlayerEnterWormhole(void)
     return destStellar;
 }
 
-/* HandlePlayerDockRequest (mac _HandlePlayerDockRequest). STATE: win MATCH 100.0%, 2120/2120,
-   relocregcheck 0 of 378; byte-identical yes (9159 bytes). mac MATCH both slices.
-   OPEN: nothing. */
 // FUNCTION: EVNOVA 0x00457580
 // MAC: _HandlePlayerDockRequest i386 0x00066691 ppc 0x0006e890
 void HandlePlayerDockRequest(void)
@@ -4238,7 +4216,6 @@ void HandlePlayerDockRequest(void)
 
 cantDock:
     {
-        extern char *strcpy(char *, const char *);
 
         strcpy((char *)msg, "");
     }
@@ -4290,9 +4267,6 @@ done:
 #define kStrFeeSmall        104
 #define kStrFeeTail         105
 
-/* HandlePlayerDockApproach. STATE: MATCH 675/675, byte-identical yes (2679 bytes),
-   relocregcheck 0 of 146. OPEN: none -- `inhabited = !(...)' then `canDock = 0' before the
-   govt read is what places the entry compare's registers; see notes. */
 // FUNCTION: EVNOVA 0x00459950
 // MAC: _HandlePlayerDockApproach i386 0x000647a6 ppc 0x0006c824
 void HandlePlayerDockApproach(void)
@@ -4487,13 +4461,10 @@ out: ;
 
 /* per-mission state, stride 0x14 */
 
-/* HandlePlayerBoardAttempt (mac _HandlePlayerBoardAttempt). STATE: win MATCH 100%, exe 1355 / obj
-   1355, byte-identical yes (relocs masked); mac MATCH on both slices. OPEN: none. */
 // FUNCTION: EVNOVA 0x0045a3d0
 // MAC: _HandlePlayerBoardAttempt i386 0x00065000 ppc 0x0006d078
 void HandlePlayerBoardAttempt(void)
 {
-    extern char *strcpy(char *dst, const char *src);   /* 0x004d6010 MSL, CALLED not inlined */
 
     unsigned char msg[256];
     unsigned char pbuf[256];
@@ -4837,7 +4808,6 @@ out:;
 
 #define kMaxSmoke     0x40
 
-/* WrapPlayerPosition. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0045baa0
 // MAC: _WrapPlayerPosition i386 0x00067efa ppc 0x00070490
 void WrapPlayerPosition(void)
@@ -4893,7 +4863,6 @@ void WrapPlayerPosition(void)
 
 #define kWrapRange 15000
 
-/* WrapObject. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0045c6d0
 // MAC: _WrapObject i386 0x00066065 ppc 0x0006e268
 void WrapObject(FloatPoint *pos)
@@ -4919,7 +4888,6 @@ void WrapObject(FloatPoint *pos)
  * loops are the mac's - its twin walks 0xdee1c for 5 bytes and then for 4.
  */
 
-/* SetAllKeyCmdFlags. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0045c7a0
 // MAC: _SetAllKeyCmdFlags i386 0x00061e6d ppc 0x00069cc8
 void SetAllKeyCmdFlags(void)
@@ -4967,9 +4935,6 @@ void SetAllKeyCmdFlags(void)
 
 #define kEscortAckFrames    250    /* an escort's acknowledgement stays up 250 frames */
 
-/* IssueNewEscortCommand (mac _IssueNewEscortCommand). STATE: MATCH 100.0%,
-   exe 409 / obj 409 instrs, byte-identical yes.
-   OPEN: nothing. [esp+4] is mwcc's CSE spill of `(long)cmd`, not a local; see notes */
 // FUNCTION: EVNOVA 0x0045c880
 // MAC: _IssueNewEscortCommand i386 0x000660d5 ppc 0x0006e2f8
 Boolean IssueNewEscortCommand(short aiTypeFilter, short cmd, Boolean quiet)

@@ -24,7 +24,6 @@
 
 
 
-/* MainScreenRolloverIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048c210
 // MAC: _MainScreenRolloverIdle i386 0x00016462 ppc 0x0001a1f0
 void MainScreenRolloverIdle(void)

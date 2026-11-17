@@ -20,8 +20,6 @@
 #include "endianswap.h"
 
 #ifndef MACBUILD
-/* CopyBitsCopy24. STATE: MATCH, exe 376 / obj 376 instrs, byte-identical yes (1216 bytes).
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004b76d0
 void CopyBitsCopy24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 {
@@ -78,8 +76,6 @@ void CopyBitsCopy24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
     }
 }
 
-/* CopyBitsScale8. STATE: MATCH, exe 88 / obj 88 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004b7b90
 void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
                     int32_t xStep, int32_t yStep, int32_t xStart, int32_t yStart)
@@ -182,8 +178,6 @@ void CopyBitsScale16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
     }
 }
 
-/* CopyBitsScale16Average. STATE: MATCH, exe 350 / obj 350, byte-identical yes. The 16bpp area-averaging
-   scaler, cell [1][1] of the mode-1 table. OPEN: none */
 // FUNCTION: EVNOVA 0x004b7cb0
 void CopyBitsScale16Average(PixMapPtr srcBits, PixMapPtr dstBits, Rect *srcRect,
                   Rect *dstRect, int32_t xStep, int32_t yStep, int32_t xFrac,
@@ -358,7 +352,6 @@ done:
     ;
 }
 
-/* CopyBitsScale24. STATE: MATCH 88/88 (2026-09-25). OPEN: none */
 // FUNCTION: EVNOVA 0x004b81e0
 void CopyBitsScale24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
                    int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
@@ -409,7 +402,6 @@ void CopyBitsScale24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
 
 #define kRedBlue555 0x7c1f
 
-/* CopyBitsAddOver16. STATE: MATCH, exe 78 / obj 78, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8300
 void CopyBitsAddOver16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 {
@@ -451,7 +443,6 @@ void CopyBitsAddOver16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRec
     }
 }
 
-/* CopyBitsAdMax16. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8400
 void CopyBitsAdMax16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 {
@@ -511,7 +502,6 @@ void CopyBitsAdMax16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
     }
 }
 
-/* CopyBitsNone. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8520
 void CopyBitsNone(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 {
@@ -571,8 +561,6 @@ BlitProc copyBitsAdMaxProcs[5][5] = {        /* 0x00575c54 same-size adMax */
 #define transfer_addOver 34
 #define transfer_adMax   37
 
-/* CopyBits (mac _CopyBits). STATE: MATCH 100.0%, exe 400 / obj 400 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004b8530
 void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits, const Rect *srcRect,
               const Rect *dstRect, int32_t mode, void *maskRgn)
@@ -687,7 +675,6 @@ void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits, const Rect *srcRect,
     proc(srcPix, dstPix, &src, &dst, xStep, yStep, xFrac, yFrac);
 }
 
-/* GetPortBitMapForCopyBits (mac _GetPortBitMapForCopyBits). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8a70
 BitMapPtr GetPortBitMapForCopyBits(CGrafPtr port)
 {
@@ -700,33 +687,29 @@ BitMapPtr GetPortBitMapForCopyBits(CGrafPtr port)
     return bits;
 }
 
-/* SetPort (mac _SetPort). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8a90
 void SetPort(CGrafPtr port)
 {
     CurrentGrafPort = port;
 }
 
-/* GetPort (mac _GetPort). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8aa0
 void GetPort(CGrafPtr *port)
 {
     *port = CurrentGrafPort;
 }
 
-/* ShowMacWindow (mac _ShowWindow; Win32 owns that name). STATE: MATCH, byte-identical. OPEN: none */
+/* ShowMacWindow (mac _ShowWindow; Win32 owns that name). */
 // FUNCTION: EVNOVA 0x004b8ab0
 void ShowMacWindow(void *arg)
 {
 }
 
-/* HideWindow (mac _HideWindow). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8ac0
 void HideWindow(CWindowPtr window)
 {
 }
 
-/* DisposeWindow (mac _DisposeWindow). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8ad0
 void DisposeWindow(CWindowPtr window)
 {
@@ -741,7 +724,6 @@ char gParamText2[256];
 char gParamText3[256];
 unsigned char gGammaRamp[32];
 
-/* OpenGamePort. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8ae0
 CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
 {
@@ -776,7 +758,6 @@ CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
  * tells SpriteWorld where the back buffer went if a world already exists.
  */
 
-/* ReleaseScreenDC. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8c20
 void ReleaseScreenDC(void)
 {
@@ -787,7 +768,6 @@ void ReleaseScreenDC(void)
         ReleaseDC(Win95MainWindow, dc);
 }
 
-/* AcquireScreenDC. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8c40
 void AcquireScreenDC(void)
 {
@@ -810,7 +790,6 @@ void AcquireScreenDC(void)
    coalesces the pair). */
 
 
-/* GetIndString (mac _GetIndString). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8ca0
 void GetIndString(unsigned char *str, int strListID, int index)
 {
@@ -842,7 +821,6 @@ void GetIndString(unsigned char *str, int strListID, int index)
     ReleaseResource(h);
 }
 
-/* OffsetRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8d50
 void OffsetRect(Rect *r, int dh, int dv)
 {
@@ -854,7 +832,6 @@ void OffsetRect(Rect *r, int dh, int dv)
     r->bottom += dv;
 }
 
-/* SetRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8d80
 void SetRect(Rect *r, int left, int top, int right, int bottom)
 {
@@ -866,7 +843,6 @@ void SetRect(Rect *r, int left, int top, int right, int bottom)
     r->bottom = bottom;
 }
 
-/* InsetRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8dc0
 void InsetRect(Rect *r, int dh, int dv)
 {
@@ -878,7 +854,6 @@ void InsetRect(Rect *r, int dh, int dv)
     r->bottom -= dv;
 }
 
-/* SectRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8df0
 int SectRect(const Rect *a, const Rect *b, Rect *dst)
 {
@@ -925,7 +900,6 @@ int SectRect(const Rect *a, const Rect *b, Rect *dst)
     return meet;
 }
 
-/* PtInRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b8e90
 int PtInRect(int h, int v, Rect *r)
 {
@@ -937,8 +911,6 @@ int PtInRect(int h, int v, Rect *r)
     return inside;
 }
 
-/* LoadPictResource. STATE: MATCH 100.0%, exe 137 / obj 137, byte-identical.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004b8ed0
 PicHandle LoadPictResource(int picID, char gamma)
 {
@@ -1013,7 +985,6 @@ PicHandle LoadPictResource(int picID, char gamma)
 }
 
 
-/* GetPicture. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9050
 PicHandle GetPicture(int picID)
 {
@@ -1029,7 +1000,6 @@ PicHandle GetPicture(int picID)
  * passes 1. Ghidra's decompilation prints both immediates as 0; the exe bytes
  * say otherwise, which is why this pair is worth the note.
  */
-/* GetPictureNoGamma. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9060
 PicHandle GetPictureNoGamma(int picID)
 {
@@ -1041,7 +1011,6 @@ PicHandle GetPictureNoGamma(int picID)
  * mac has no twin, since on that side the caller would have had a real PixMap
  * already.
  */
-/* DrawPicHandle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9070
 void DrawPicHandle(PicHandle pic, Rect *dstRect)
 {
@@ -1070,14 +1039,12 @@ void DrawPicHandle(PicHandle pic, Rect *dstRect)
  * which is a different function; the other TUs still declare this one under
  * the shared name and want reconciling.
  */
-/* QDReleaseResource. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9130
 void QDReleaseResource(PicHandle pic)
 {
     ImageDelete(pic);
 }
 
-/* QDGetPictureBounds. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9140
 void QDGetPictureBounds(PicHandle pic, Rect *r)
 {
@@ -1087,14 +1054,12 @@ void QDGetPictureBounds(PicHandle pic, Rect *r)
 #endif
 
 /* two more of the port's compiled-away QuickDraw calls */
-/* GetPortVisRgn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9160
 void *GetPortVisRgn(void *port)
 {
     return NULL;
 }
 
-/* GetCWindowVisRgn (mac _GetCWindowVisRgn). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9170
 void *GetCWindowVisRgn(void *window)
 {
@@ -1106,7 +1071,6 @@ void *GetCWindowVisRgn(void *window)
    dstRect) with a 16.16 scale accumulator appended; reached only from the
    mode-indexed table at 0x00575d20, so there is no mac twin. */
 
-/* CopyMaskScale16. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9180
 void CopyMaskScale16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
                    Rect *srcRect, Rect *maskRect, Rect *dstRect,
@@ -1164,8 +1128,6 @@ void CopyMaskScale16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
 }
 
 
-/* CopyMask16. STATE: MATCH, exe 95 / obj 95 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004b92d0
 void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
                 Rect *srcRect, Rect *maskRect, Rect *dstRect)
@@ -1220,7 +1182,6 @@ void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
     }
 }
 
-/* CopyMaskNone. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9400
 void CopyMaskNone(PixMapPtr src, PixMapPtr mask, PixMapPtr dst,
                   Rect *srcRect, Rect *maskRect, Rect *dstRect)
@@ -1256,7 +1217,6 @@ BlitMaskProc scaleMaskProcs[5][5] = {   /* 0x00575d1c */
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone }
 };
 
-/* CopyMask. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9410
 void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
               Rect *srcRect, Rect *maskRect, Rect *dstRect)
@@ -1349,7 +1309,6 @@ void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
    the Toolbox's null guard; the relative Line is spelled in terms of the absolute
    LineTo exactly as the Toolbox defines it. */
 
-/* Line. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9790
 void Line(short dh, short dv)
 {
@@ -1359,10 +1318,6 @@ void Line(short dh, short dv)
 }
 
 
-/* LineTo. STATE: MATCH, exe 811 / obj 811, byte-identical yes (2822 bytes); `long clipTop'
-   and the one walk counter `count' are the frame's two facts, notes/qdpen.md. The swaps save
-   x0/y0 in `i'.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x004b97e0
 void LineTo(short h, short v)
 {
@@ -1720,7 +1675,6 @@ void LineTo(short h, short v)
     CurrentGrafPort->pnLoc.v = v;
 }
 
-/* MoveTo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ba2f0
 void MoveTo(short h, short v)
 {
@@ -1734,7 +1688,6 @@ void MoveTo(short h, short v)
 #endif
 }
 
-/* PenSize. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ba320
 void PenSize(short width, short height)
 {
@@ -1744,8 +1697,6 @@ void PenSize(short width, short height)
     CurrentGrafPort->pnSize.v = height;
 }
 
-/* FrameOval (mac _FrameOval). STATE: MATCH, exe 1117 / obj 1117, byte-identical yes.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x004ba350
 void FrameOval(Rect *r)
 {
@@ -2143,8 +2094,6 @@ void FrameOval(Rect *r)
     }
 }
 
-/* PaintOval (mac _PaintOval). STATE: MATCH, exe 447 / obj 447, byte-identical yes.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x004bb260
 void PaintOval(Rect *r)
 {
@@ -2312,7 +2261,6 @@ void PaintOval(Rect *r)
     }
 }
 
-/* RectInRgn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bb860
 char RectInRgn(Rect *r, void *rgn)
 {
@@ -2323,7 +2271,6 @@ char RectInRgn(Rect *r, void *rgn)
    is the width rounded up to a multiple of eight. 16 maps to 15 because the port's DIBs
    are 555. */
 
-/* NewGWorld (mac _NewGWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bb870
 short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
 {
@@ -2386,7 +2333,6 @@ short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
     return 0;
 }
 
-/* DisposeGWorld (mac _DisposeGWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bba00
 void DisposeGWorld(CGrafPtr port)
 {
@@ -2399,28 +2345,24 @@ void DisposeGWorld(CGrafPtr port)
     DeallocAPointer(port);
 }
 
-/* GetPixBaseAddr. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bba40
 char *GetPixBaseAddr(PixMapPtr pm)
 {
     return (char *)pm->baseAddr;
 }
 
-/* GetPixRowBytes. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bba50
 short GetPixRowBytes(PixMapPtr pm)
 {
     return pm->rowBytes;
 }
 
-/* GetPixDepth. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bba60
 short GetPixDepth(PixMapPtr pm)
 {
     return pm->pixelSize;
 }
 
-/* GetGWorldPixMap. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bba70
 PixMapPtr GetGWorldPixMap(CGrafPtr world)
 {
@@ -2429,21 +2371,18 @@ PixMapPtr GetGWorldPixMap(CGrafPtr world)
 
 #endif
 
-/* GetWindowPortRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bba80
 Rect *GetWindowPortRect(CWindowPtr window)
 {
     return &window->pix.bounds;
 }
 
-/* GetCWindowPortRect (mac _GetCWindowPortRect). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bba90
 Rect *GetCWindowPortRect(CWindowPtr window)
 {
     return GetWindowPortRect(window);
 }
 
-/* GetCWindowGrafPort. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbaa0
 CGrafPtr GetCWindowGrafPort(CWindowPtr window)
 {
@@ -2451,14 +2390,12 @@ CGrafPtr GetCWindowGrafPort(CWindowPtr window)
 }
 
 #ifndef MACBUILD
-/* SetPortWindowPort. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbab0
 void SetPortWindowPort(CWindowPtr window)
 {
     SetPort(GetCWindowGrafPort(window));
 }
 
-/* GetGWorldDevice (mac _GetGWorldDevice). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbad0
 void *GetGWorldDevice(CGrafPtr port)
 {
@@ -2466,14 +2403,12 @@ void *GetGWorldDevice(CGrafPtr port)
 }
 #endif
 
-/* GetCWindowPixMap (mac _GetCWindowPixMap). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbae0
 PixMapPtr GetCWindowPixMap(CWindowPtr window)
 {
     return &window->pix;
 }
 
-/* GetWindowPixMap (mac _GetWindowPixMap). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbaf0
 PixMapPtr GetWindowPixMap(CWindowPtr window)
 {
@@ -2481,7 +2416,7 @@ PixMapPtr GetWindowPixMap(CWindowPtr window)
 }
 
 #ifndef MACBUILD
-/* GetTime (mac (Toolbox GetTime shim)). STATE: MATCH, byte-identical. OPEN: none */
+/* GetTime (mac (Toolbox GetTime shim)). */
 // FUNCTION: EVNOVA 0x004bbb10
 void GetTime(DateTimeRec *dtr)
 {
@@ -2499,7 +2434,6 @@ void GetTime(DateTimeRec *dtr)
     dtr->dayOfWeek = t->tm_wday + 1;
 }
 
-/* GetCIcon. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbb80
 Image_t *GetCIcon(short id)
 {
@@ -2523,7 +2457,6 @@ Image_t *GetCIcon(short id)
     return NULL;
 }
 
-/* nv_BlitImageOr. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbbf0
 void nv_BlitImageOr(Rect *dstRect, Image_t *icon)
 {
@@ -2547,21 +2480,18 @@ void nv_BlitImageOr(Rect *dstRect, Image_t *icon)
              &src.bounds, dstRect, 1, NULL);
 }
 
-/* DisposeCIcon. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbcb0
 void DisposeCIcon(Image_t *icon)
 {
     ImageDelete(icon);
 }
 
-/* QDGetCIconBounds. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbcc0
 void QDGetCIconBounds(Image_t *icon, Rect *r)
 {
     SetRect(r, 0, 0, icon->Width, icon->Height);
 }
 
-/* NumToString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbce0
 void NumToString(int32_t value, unsigned char *str)
 {
@@ -2575,28 +2505,24 @@ void NumToString(int32_t value, unsigned char *str)
     CStr2PStr((char *)str, text);
 }
 
-/* GetGDevice (mac _GetGDevice). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbd20
 void *GetGDevice(void)
 {
     return NULL;
 }
 
-/* ExitToShell. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbd30
 void ExitToShell(void)
 {
     exit(0);
 }
 
-/* DisposePixPat (mac _DisposePixPat). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbd40
 void DisposePixPat(Image_t *pat)
 {
     ImageDelete(pat);
 }
 
-/* GetPixPat. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbd50
 Image_t *GetPixPat(short id)
 {
@@ -2624,7 +2550,6 @@ Image_t *GetPixPat(short id)
     return NULL;
 }
 
-/* FillCRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbdc0
 void FillCRect(Rect *dstRect, Image_t *pat)
 {
@@ -2691,7 +2616,6 @@ void FillCRect(Rect *dstRect, Image_t *pat)
 
 #define kResourceErrorCode 0x83
 
-/* ParamText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbf90
 void ParamText(const unsigned char *p0, const unsigned char *p1,
                const unsigned char *p2, const unsigned char *p3)
@@ -2718,7 +2642,6 @@ void ParamText(const unsigned char *p0, const unsigned char *p1,
     }
 }
 
-/* Alert. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc070
 short Alert(short code, void *filterProc)
 {
@@ -2733,7 +2656,6 @@ short Alert(short code, void *filterProc)
     return 1;
 }
 
-/* Delay. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc0e0
 void Delay(uint32_t ticks, uint32_t *finalTicks)
 {
@@ -2741,7 +2663,6 @@ void Delay(uint32_t ticks, uint32_t *finalTicks)
     WaitTicks(ticks);
 }
 
-/* ReplaceInHandle. STATE: MATCH. OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x004bc100
 int32_t ReplaceInHandle(char **h, int32_t offset, const char *find, int32_t findLen,
                       const char *repl, int32_t replLen)
@@ -2796,7 +2717,6 @@ int32_t ReplaceInHandle(char **h, int32_t offset, const char *find, int32_t find
     return -1;
 }
 
-/* ST_LoadSndResource. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc2a0
 void *ST_LoadSndResource(short id)
 {
@@ -2818,7 +2738,6 @@ void *ST_LoadSndResource(short id)
     return sound;
 }
 
-/* SysBeep. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc300
 void SysBeep(short duration)
 {
@@ -2827,7 +2746,6 @@ void SysBeep(short duration)
 #define kGammaSteps  32
 #define kGammaRampMax 31
 
-/* BuildGammaRamp. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc310
 void BuildGammaRamp(float gamma)
 {

@@ -13,7 +13,6 @@ static unsigned char gStringLowerReady;               /* 0x00866339 lower table 
 static unsigned char gStringUpperReady;               /* 0x00866338 table built */
 
 /* The engine already binds 0x004eb76d as `StringGetLength'; defined under that name. */
-/* StringGetLength. STATE: MATCH 100%, exe 12 / obj 12, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb76d
 uint32_t StringGetLength(const unsigned char *s)
 {
@@ -28,8 +27,7 @@ uint32_t StringGetLength(const unsigned char *s)
     return n;
 }
 
-/* StringDuplicate (strdup). STATE: MATCH 100%, exe 31 / obj 31, byte-identical yes.
-   OPEN: none */
+/* StringDuplicate (strdup). */
 // FUNCTION: EVNOVA 0x004eb784
 char *StringDuplicate(const char *s)
 {
@@ -53,7 +51,6 @@ char *StringDuplicate(const char *s)
     return copy;
 }
 
-/* StringCopy. STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb7c2
 char *StringCopy(char *dst, const char *src)
 {
@@ -68,7 +65,6 @@ char *StringCopy(char *dst, const char *src)
     return dst;
 }
 
-/* StringCopySafe. STATE: MATCH 100%, exe 29 / obj 29, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb7e6
 char *StringCopySafe(char *dst, const char *src, ULong size)
 {
@@ -87,7 +83,6 @@ char *StringCopySafe(char *dst, const char *src, ULong size)
 
 /* Appends src to the string in dst, dst holding n bytes in all. The engine
  * binds 0x004eb81d as `StringAppendSafe'. */
-/* StringAppendSafe. STATE: MATCH 100%, exe 39 / obj 39, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb81d
 unsigned char *StringAppendSafe(unsigned char *dst, const unsigned char *src, uint32_t n)
 {
@@ -109,7 +104,6 @@ unsigned char *StringAppendSafe(unsigned char *dst, const unsigned char *src, ui
     return dst;
 }
 
-/* StringCompare. STATE: MATCH 100%, exe 26 / obj 26, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb866
 int32_t StringCompare(const char *a, const char *b)
 {
@@ -129,8 +123,7 @@ int32_t StringCompare(const char *a, const char *b)
     return ca < cb ? (signed char)-1 : (signed char)1;
 }
 
-/* StringCompareSafe (a strncmp answering -1, 0 or 1). STATE: MATCH 100%, exe 33 / obj 33,
-   byte-identical yes. OPEN: none */
+/* StringCompareSafe (a strncmp answering -1, 0 or 1). */
 // FUNCTION: EVNOVA 0x004eb89c
 int32_t StringCompareSafe(const char *a, const char *b, ULong n)
 {
@@ -154,8 +147,7 @@ int32_t StringCompareSafe(const char *a, const char *b, ULong n)
 
 char *gStringBlank = "";                         /* 0x005771bc the exhausted-token mark */
 
-/* StringTokenize (a strtok on one delimiter, its state in *next). STATE: MATCH 100%, exe 36 /
-   obj 36, byte-identical yes. OPEN: none */
+/* StringTokenize (a strtok on one delimiter, its state in *next). */
 // FUNCTION: EVNOVA 0x004eb8e2
 char *StringTokenize(char *s, int delim, char **next)
 {
@@ -182,8 +174,7 @@ char *StringTokenize(char *s, int delim, char **next)
     return s;
 }
 
-/* StringFindString (a strstr; an empty `sub' never matches). STATE: MATCH 100%, exe 33 /
-   obj 33, byte-identical yes. OPEN: none */
+/* StringFindString (a strstr; an empty `sub' never matches). */
 // FUNCTION: EVNOVA 0x004eb92e
 char *StringFindString(const char *s, const char *sub)
 {
@@ -208,7 +199,6 @@ char *StringFindString(const char *s, const char *sub)
     return 0;
 }
 
-/* StringFindDelimiter. STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb96d
 char *StringFindDelimiter(const char *s, const char *set)
 {
@@ -228,7 +218,6 @@ char *StringFindDelimiter(const char *s, const char *set)
 
 #define kTopDecimal 1000000000UL
 
-/* StringFromNumber. STATE: MATCH 100%, exe 46 / obj 46, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eb994
 char *StringFromNumber(char *out, ULong value)
 {
@@ -254,8 +243,7 @@ char *StringFromNumber(char *out, ULong value)
 }
 
 
-/* StringToNumber (the leading decimal digits of a string). STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes.
-   OPEN: none */
+/* StringToNumber (the leading decimal digits of a string). */
 // FUNCTION: EVNOVA 0x004eb9f2
 ULong StringToNumber(const char *s)
 {
@@ -272,7 +260,6 @@ ULong StringToNumber(const char *s)
 }
 
 
-/* String2UpperCopySafe. STATE: MATCH 100%, exe 52 / obj 52, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eba1b
 char *String2UpperCopySafe(char *dst, const char *src, ULong n)
 {
@@ -305,8 +292,7 @@ char *String2UpperCopySafe(char *dst, const char *src, ULong n)
     return dst;
 }
 
-/* String2LowerCopySafe (the lower-casing strncpy, String2UpperCopySafe's twin). STATE: MATCH 100%, exe 52
-   / obj 52, byte-identical yes. OPEN: none */
+/* String2LowerCopySafe (the lower-casing strncpy, String2UpperCopySafe's twin). */
 // FUNCTION: EVNOVA 0x004eba96
 char *String2LowerCopySafe(char *dst, const char *src, ULong n)
 {
@@ -339,24 +325,21 @@ char *String2LowerCopySafe(char *dst, const char *src, ULong n)
     return dst;
 }
 
-/* String2Upper (upper-case a C string in place). STATE: MATCH 100%, byte-identical yes.
-   OPEN: none */
+/* String2Upper (upper-case a C string in place). */
 // FUNCTION: EVNOVA 0x004ebb11
 char *String2Upper(char *s)
 {
     return String2UpperCopySafe(s, s, kNoLength);
 }
 
-/* String2Lower (lower-case a C string in place). STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes.
-   OPEN: none */
+/* String2Lower (lower-case a C string in place). */
 // FUNCTION: EVNOVA 0x004ebb22
 char *String2Lower(char *s)
 {
     return String2LowerCopySafe(s, s, kNoLength);
 }
 
-/* StringFormat (the unbounded sprintf). STATE: MATCH 100%, byte-identical yes.
-   OPEN: none */
+/* StringFormat (the unbounded sprintf). */
 // FUNCTION: EVNOVA 0x004ebb33
 char *StringFormat(char *out, const char *fmt, ...)
 {
@@ -366,7 +349,6 @@ char *StringFormat(char *out, const char *fmt, ...)
     return StringFormatVarg(out, kNoLength, fmt, args);
 }
 
-/* StringFormatSafe. STATE: MATCH 100%, exe 17 / obj 17 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ebb62
 char *StringFormatSafe(char *out, int32_t size, const char *fmt, ...)
 {
@@ -427,7 +409,6 @@ static char kDateDayFirstFmt[] = "%ld%s %s %.4ld";
 static char kDateMonthFirstFmt[] = "%s %ld%s, %.4ld";
 static char kSpace[] = " ";
 
-/* StringFormatVarg. STATE: MATCH 100%, exe 533 / obj 533, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ebb93
 char *StringFormatVarg(char *out, ULong size, const char *format, va_list args)
 {
@@ -658,7 +639,6 @@ char *StringFormatVarg(char *out, ULong size, const char *format, va_list args)
     return out;
 }
 
-/* _StringFormatNumber. STATE: MATCH 100%, exe 112 / obj 112, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ec234
 void _StringFormatNumber(char *buf, ULongLong value, ULong base, const char *digits,
                   ULong flags, ULong width, ULong precision)
@@ -698,7 +678,6 @@ void _StringFormatNumber(char *buf, ULongLong value, ULong base, const char *dig
         buf[--width] = (flags & kFlagZero) != 0 ? '0' : ' ';
 }
 
-/* _StringFormatString. STATE: MATCH 100%, exe 87 / obj 87, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ec35b
 char *_StringFormatString(FmtChar *out, FMT_CONST FmtChar *src, ULong *size, ULong flags,
                    ULong width, ULong precision)

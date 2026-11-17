@@ -19,7 +19,6 @@ typedef uint32_t TokenDataType;
 #endif
 
 #if !defined(MAC_RT_PICK) || MAC_RT_PICK == 1
-/* BlitPixieRLETranslucentClipped (mac _BlitPixieRLETranslucentClipped). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00472d70
 // MAC: _BlitPixieRLETranslucentClipped i386 0x000c18c0 ppc 0x000cd93c
 #ifdef MACBUILD
@@ -330,7 +329,6 @@ void BlitPixieRLETranslucentClipped(unsigned char *rleTokens, unsigned char *dst
 #endif
 
 #if !defined(MAC_RT_PICK) || MAC_RT_PICK == 2
-/* BlitPixieRLEAddOverClipped (mac _BlitPixieRLEAddOverClipped). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004730d0
 // MAC: _BlitPixieRLEAddOverClipped i386 0x000c25e7 ppc 0x000ce954
 #ifdef MACBUILD
@@ -558,8 +556,6 @@ void BlitPixieRLEAddOverClipped(unsigned char *rleTokens, unsigned char *dstPixe
 #endif
 
 #if !defined(MAC_RT_PICK) || MAC_RT_PICK == 3
-/* BlitPixieRLETranslucentClipped8 (mac _BlitPixieRLETranslucentClipped8). STATE: MATCH 100.0%, exe 176 / obj 176 instrs, byte-identical yes
-   (647 bytes). OPEN: nothing. see notes */
 // FUNCTION: EVNOVA 0x00473270
 // MAC: _BlitPixieRLETranslucentClipped8 i386 0x000c1ee4 ppc 0x000ce0f4
 #ifdef MACBUILD
@@ -833,7 +829,6 @@ void BlitPixieRLETranslucentClipped8(unsigned char *rleTokens, unsigned char *ds
 #endif
 
 #if !defined(MAC_RT_PICK) || MAC_RT_PICK == 4
-/* BlitPixieRLEAddOverClipped8 (mac _BlitPixieRLEAddOverClipped8). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00473500
 // MAC: _BlitPixieRLEAddOverClipped8 i386 0x000c22af ppc 0x000ce594
 #ifdef MACBUILD

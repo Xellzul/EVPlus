@@ -67,7 +67,6 @@ uint32_t LastTick;                   /* 0x008700f0 */
 #define kStrQuitConfirm     0xa
 #define kStartupIterations 0x32
 
-/* DoMainScreen (mac _DoMainScreen). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00486880
 // MAC: _DoMainScreen i386 0x0001af02 ppc 0x0001ee70
 #ifdef MACBUILD
@@ -379,13 +378,11 @@ void DoMainScreen(void)
 }
 #endif
 
-/* FUN_00486ec0. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00486ec0
 void FUN_00486ec0(void)
 {
 }
 
-/* MainScreenChoice (mac _MainScreenChoice). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00486ed0
 // MAC: _MainScreenChoice i386 0x0001a72a ppc 0x0001e614
 void MainScreenChoice(short which)
@@ -509,7 +506,6 @@ void MainScreenChoice(short which)
 }
 
 
-/* MainScreenKey (mac _MainScreenKey). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004872a0
 // MAC: _MainScreenKey i386 0x0001aba0 ppc 0x0001eabc
 #ifdef MACBUILD

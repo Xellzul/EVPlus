@@ -26,7 +26,6 @@ RGBColor *radarStatusColor[2];
 short interferenceThisFrame;
 
 
-/* RedrawStatus (mac _RedrawStatus). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0045d0a0
 // MAC: _RedrawStatus i386 0x0004cac0 ppc 0x00055a18
 void RedrawStatus(Boolean copyToScreen)
@@ -91,10 +90,6 @@ void RedrawStatus(Boolean copyToScreen)
     }
 }
 
-/* DrawStatus (mac _DrawStatus). STATE: MATCH 100.0%, exe 150 / obj 150, relocregcheck
-   0 of 59. The radar call's landed arm is written second (`!onPlanet && !playerIsLanded');
-   that arm order, not a spelling at the site, decided the lastRadarUpdateTime+15 register.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x0045d320
 // MAC: _DrawStatus i386 0x0004c85d ppc 0x00055688
 void DrawStatus(void)

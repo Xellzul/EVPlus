@@ -33,8 +33,7 @@ typedef struct vorbis_look_residue{
 
 } vorbis_look_residue0;
 
-/* res0_copy_info. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00557630
 vorbis_info_residue *res0_copy_info(vorbis_info_residue *vr){
   vorbis_info_residue0 *info=(vorbis_info_residue0 *)vr;
@@ -43,8 +42,7 @@ vorbis_info_residue *res0_copy_info(vorbis_info_residue *vr){
   return(ret);
 }
 
-/* res0_free_info. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00557690
 void res0_free_info(vorbis_info_residue *i){
   vorbis_info_residue0 *info=(vorbis_info_residue0 *)i;
@@ -54,8 +52,6 @@ void res0_free_info(vorbis_info_residue *i){
   }
 }
 
-/* res0_free_look. STATE: MATCH, byte-identical (130 B).
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x005576d0
 void res0_free_look(vorbis_look_residue *i){
   int j;
@@ -94,8 +90,7 @@ static int icount(unsigned int v){
   return(ret);
 }
 
-/* res0_pack. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00557760
 void res0_pack(vorbis_info_residue *vr,oggpack_buffer *opb){
   vorbis_info_residue0 *info=(vorbis_info_residue0 *)vr;
@@ -121,8 +116,7 @@ void res0_pack(vorbis_info_residue *vr,oggpack_buffer *opb){
     oggpack_write(opb,info->booklist[j],8);
 }
 
-/* res0_unpack. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00557910
 vorbis_info_residue *res0_unpack(vorbis_info *vi,oggpack_buffer *opb){
   int j,acc=0;
@@ -156,8 +150,7 @@ vorbis_info_residue *res0_unpack(vorbis_info *vi,oggpack_buffer *opb){
   return(NULL);
 }
 
-/* res0_look. STATE: BurgerLib's libvorbis 1.0rc3, MATCH, byte-identical (1350 B).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00557af0
 vorbis_look_residue *res0_look(vorbis_dsp_state *vd,vorbis_info_mode *vm,
 			  vorbis_info_residue *vr){
@@ -222,8 +215,7 @@ vorbis_look_residue *res0_look(vorbis_dsp_state *vd,vorbis_info_mode *vm,
   return(look);
 }
 
-/* _testhack. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00558040
 static int _testhack(float *vec,int n,vorbis_look_residue0 *look,
 		     int auxparts,int auxpartnum){
@@ -252,8 +244,7 @@ static int _testhack(float *vec,int n,vorbis_look_residue0 *look,
   return(i);
 }
 
-/* _interleaved_encodepart. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005581e0
 static int _interleaved_encodepart(oggpack_buffer *opb,float *vec, int n,
 				   codebook *book,int32_t *acc){
@@ -270,8 +261,7 @@ static int _interleaved_encodepart(oggpack_buffer *opb,float *vec, int n,
   return(bits);
 }
 
-/* _encodepart. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00558270
 static int _encodepart(oggpack_buffer *opb,float *vec, int n,
 		       codebook *book,int32_t *acc){
@@ -288,8 +278,7 @@ static int _encodepart(oggpack_buffer *opb,float *vec, int n,
   return(bits);
 }
 
-/* _01class. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00558310
 static int32_t **_01class(vorbis_block *vb,vorbis_look_residue *vl,
 		       float **in,int ch,
@@ -323,8 +312,7 @@ static int32_t **_01class(vorbis_block *vb,vorbis_look_residue *vl,
   return(partword);
 }
 
-/* _2class. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005584b0
 static int32_t **_2class(vorbis_block *vb,vorbis_look_residue *vl,
 		       float **in,int ch,
@@ -364,8 +352,7 @@ static int32_t **_2class(vorbis_block *vb,vorbis_look_residue *vl,
   return(partword);
 }
 
-/* _01forward. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00558600
 static int _01forward(vorbis_block *vb,vorbis_look_residue *vl,
 		      float **in,int ch,
@@ -445,8 +432,7 @@ static int _01forward(vorbis_block *vb,vorbis_look_residue *vl,
   return(0);
 }
 
-/* _01inverse. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00558b10
 static int _01inverse(vorbis_block *vb,vorbis_look_residue *vl,
 		      float **in,int ch,
@@ -499,8 +485,7 @@ static int _01inverse(vorbis_block *vb,vorbis_look_residue *vl,
   return(0);
 }
 
-/* res0_class. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00558d60
 int32_t **res0_class(vorbis_block *vb,vorbis_look_residue *vl,
 		  float **in,int *nonzero,int ch){
@@ -514,8 +499,7 @@ int32_t **res0_class(vorbis_block *vb,vorbis_look_residue *vl,
     return(0);
 }
 
-/* res0_forward. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00558df0
 int res0_forward(vorbis_block *vb,vorbis_look_residue *vl,
 		 float **in,float **out,int *nonzero,int ch,
@@ -547,8 +531,7 @@ int res0_forward(vorbis_block *vb,vorbis_look_residue *vl,
   }
 }
 
-/* res0_inverse. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005591d0
 int res0_inverse(vorbis_block *vb,vorbis_look_residue *vl,
 		 float **in,int *nonzero,int ch){
@@ -562,8 +545,7 @@ int res0_inverse(vorbis_block *vb,vorbis_look_residue *vl,
     return(0);
 }
 
-/* res1_forward. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00559260
 int res1_forward(vorbis_block *vb,vorbis_look_residue *vl,
 		 float **in,float **out,int *nonzero,int ch,
@@ -594,8 +576,7 @@ int res1_forward(vorbis_block *vb,vorbis_look_residue *vl,
   }
 }
 
-/* res1_class. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00559640
 int32_t **res1_class(vorbis_block *vb,vorbis_look_residue *vl,
 		  float **in,int *nonzero,int ch){
@@ -609,8 +590,7 @@ int32_t **res1_class(vorbis_block *vb,vorbis_look_residue *vl,
     return(0);
 }
 
-/* res1_inverse. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005596d0
 int res1_inverse(vorbis_block *vb,vorbis_look_residue *vl,
 		 float **in,int *nonzero,int ch){
@@ -624,8 +604,7 @@ int res1_inverse(vorbis_block *vb,vorbis_look_residue *vl,
     return(0);
 }
 
-/* res2_class. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00559760
 int32_t **res2_class(vorbis_block *vb,vorbis_look_residue *vl,
 		  float **in,int *nonzero,int ch){
@@ -639,8 +618,7 @@ int32_t **res2_class(vorbis_block *vb,vorbis_look_residue *vl,
     return(0);
 }
 
-/* res2_forward. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005597f0
 int res2_forward(vorbis_block *vb,vorbis_look_residue *vl,
 		 float **in,float **out,int *nonzero,int ch,
@@ -673,8 +651,7 @@ int res2_forward(vorbis_block *vb,vorbis_look_residue *vl,
   }
 }
 
-/* res2_inverse. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00559b70
 int res2_inverse(vorbis_block *vb,vorbis_look_residue *vl,
 		 float **in,int *nonzero,int ch){

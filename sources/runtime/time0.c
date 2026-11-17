@@ -15,56 +15,48 @@ struct vorbis_look_time{
 static vorbis_info_time foo;
 static vorbis_look_time foo2;
 
-/* time0_pack. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00552e50
 static void time0_pack (vorbis_info_time *i,oggpack_buffer *opb){
 }
 
-/* time0_unpack. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00552e60
 static vorbis_info_time *time0_unpack (vorbis_info *vi,oggpack_buffer *opb){
   return &foo;
 }
 
-/* time0_copy_info. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00552e70
 static vorbis_info_time *time0_copy_info (vorbis_info_time *vi){
   return &foo;
 }
 
-/* time0_look. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00552e80
 static vorbis_look_time *time0_look (vorbis_dsp_state *vd,vorbis_info_mode *mi,
                               vorbis_info_time *i){
   return &foo2;
 }
 
-/* time0_free_info. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00552e90
 static void time0_free_info(vorbis_info_time *i){
 }
 
-/* time0_free_look. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00552ea0
 static void time0_free_look(vorbis_look_time *i){
 }
 
-/* time0_forward. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00552eb0
 static int time0_forward(vorbis_block *vb,vorbis_look_time *i,
 		    float *in,float *out){
   return(0);
 }
 
-/* time0_inverse. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00552ec0
 static int time0_inverse(vorbis_block *vb,vorbis_look_time *i,
 		    float *in,float *out){

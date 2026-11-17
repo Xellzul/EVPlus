@@ -120,8 +120,7 @@ typedef my_marker_reader * my_marker_ptr;
 		  bytes_in_buffer--; \
 		  V += GETJOCTET(*next_input_byte++); )
 
-/* get_soi. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00536aed
 LOCAL(boolean)
 get_soi (j_decompress_ptr cinfo)
@@ -158,8 +157,7 @@ get_soi (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* get_sof. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005367ab
 LOCAL(boolean)
 get_sof (j_decompress_ptr cinfo, boolean is_prog, boolean is_arith)
@@ -221,8 +219,7 @@ get_sof (j_decompress_ptr cinfo, boolean is_prog, boolean is_arith)
   return TRUE;
 }
 
-/* get_sos. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0053649e
 LOCAL(boolean)
 get_sos (j_decompress_ptr cinfo)
@@ -292,8 +289,7 @@ get_sos (j_decompress_ptr cinfo)
 
 #define get_dac(cinfo)  skip_variable(cinfo)
 
-/* get_dht. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0053618c
 LOCAL(boolean)
 get_dht (j_decompress_ptr cinfo)
@@ -364,8 +360,7 @@ get_dht (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* get_dqt. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535ebb
 LOCAL(boolean)
 get_dqt (j_decompress_ptr cinfo)
@@ -424,8 +419,7 @@ get_dqt (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* get_dri. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535dae
 LOCAL(boolean)
 get_dri (j_decompress_ptr cinfo)
@@ -454,8 +448,7 @@ get_dri (j_decompress_ptr cinfo)
 #define APP14_DATA_LEN	12
 #define APPN_DATA_LEN	14
 
-/* examine_app0. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535b87
 LOCAL(void)
 examine_app0 (j_decompress_ptr cinfo, JOCTET FAR * data,
@@ -521,8 +514,7 @@ examine_app0 (j_decompress_ptr cinfo, JOCTET FAR * data,
   }
 }
 
-/* examine_app14. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535ab9
 LOCAL(void)
 examine_app14 (j_decompress_ptr cinfo, JOCTET FAR * data,
@@ -551,8 +543,7 @@ examine_app14 (j_decompress_ptr cinfo, JOCTET FAR * data,
   }
 }
 
-/* get_interesting_appn. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535958
 METHODDEF(boolean)
 get_interesting_appn (j_decompress_ptr cinfo)
@@ -697,8 +688,7 @@ save_marker (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* skip_variable. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005358a3
 METHODDEF(boolean)
 skip_variable (j_decompress_ptr cinfo)
@@ -719,8 +709,7 @@ skip_variable (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* next_marker. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535788
 LOCAL(boolean)
 next_marker (j_decompress_ptr cinfo)
@@ -758,8 +747,7 @@ next_marker (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* first_marker. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005356d5
 LOCAL(boolean)
 first_marker (j_decompress_ptr cinfo)
@@ -779,8 +767,7 @@ first_marker (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* read_markers. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005354c5
 METHODDEF(int)
 read_markers (j_decompress_ptr cinfo)
@@ -921,8 +908,7 @@ read_markers (j_decompress_ptr cinfo)
   }
 }
 
-/* read_restart_marker. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535442
 METHODDEF(boolean)
 read_restart_marker (j_decompress_ptr cinfo)
@@ -950,8 +936,7 @@ read_restart_marker (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* jpeg_resync_to_restart. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0053533d
 GLOBAL(boolean)
 jpeg_resync_to_restart (j_decompress_ptr cinfo, int desired)
@@ -995,8 +980,7 @@ jpeg_resync_to_restart (j_decompress_ptr cinfo, int desired)
   }
 }
 
-/* reset_marker_reader. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00535304
 METHODDEF(void)
 reset_marker_reader (j_decompress_ptr cinfo)
@@ -1012,8 +996,7 @@ reset_marker_reader (j_decompress_ptr cinfo)
   marker->cur_marker = NULL;
 }
 
-/* jinit_marker_reader. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0053526d
 GLOBAL(void)
 jinit_marker_reader (j_decompress_ptr cinfo)

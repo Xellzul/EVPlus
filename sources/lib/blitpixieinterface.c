@@ -5,7 +5,6 @@
 #include "spriteworld.h"
 
 
-/* BlitPixieRectDrawProc (mac _BlitPixieRectDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004703e0
 // MAC: _BlitPixieRectDrawProc i386 0x000ba16f ppc 0x000c6154
 void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
@@ -68,7 +67,6 @@ void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
    sprite world's backgroundValue, a palette INDEX to blend toward, and the direct-colour
    blitter `32 - level', an alpha weight out of 32. Each arm ignores the other's. */
 
-/* BlitPixieFloatingRectDrawProc (mac _BlitPixieFloatingRectDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00470680
 // MAC: _BlitPixieFloatingRectDrawProc i386 0x000ba405 ppc 0x000c63a4
 void BlitPixieFloatingRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
@@ -127,7 +125,6 @@ void BlitPixieFloatingRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
     }
 }
 
-/* BlitPixieMaskDrawProc (mac _BlitPixieMaskDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00470960
 // MAC: _BlitPixieMaskDrawProc i386 0x000ba6c5 ppc 0x000c6644
 void BlitPixieMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
@@ -193,7 +190,6 @@ void BlitPixieMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
         numRowsToCopy);
 }
 
-/* BlitPixiePartialMaskDrawProc (mac _BlitPixiePartialMaskDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00470c20
 // MAC: _BlitPixiePartialMaskDrawProc i386 0x000ba98b ppc 0x000c68c4
 void BlitPixiePartialMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
@@ -264,7 +260,6 @@ void BlitPixiePartialMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
    conversion uses the DESTINATION frame's pixelShift on the SOURCE rect -- that is the
    donor's own text, not a transcription slip. */
 
-/* BlitPixieRLEDrawProc (mac _BlitPixieRLEDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00470ee0
 // MAC: _BlitPixieRLEDrawProc i386 0x000bb12d ppc 0x000c6fc4
 void BlitPixieRLEDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
@@ -336,7 +331,6 @@ void BlitPixieRLEDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
    +0xaa only tested against 0. An 8-bit sprite with translucency >= 32 and a
    non-neutral tint draws NOTHING; that is what the exe does. */
 
-/* BlitPixieRLETranslucentDrawProc (mac _BlitPixieRLETranslucentDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004711e0
 // MAC: _BlitPixieRLETranslucentDrawProc i386 0x000bb3fc ppc 0x000c7234
 void BlitPixieRLETranslucentDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
@@ -482,7 +476,6 @@ void BlitPixieRLETranslucentDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrame
     }
 }
 
-/* BlitPixieRLECollisionProc (mac _BlitPixieRLECollisionProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00471800
 // MAC: _BlitPixieRLECollisionProc i386 0x000bba11 ppc 0x000c7744
 Boolean BlitPixieRLECollisionProc(SpritePtr srcSpriteP, SpritePtr dstSpriteP,
@@ -516,7 +509,6 @@ Boolean BlitPixieRLECollisionProc(SpritePtr srcSpriteP, SpritePtr dstSpriteP,
     return collision;
 }
 
-/* BlitPixieRLEPointCollisionProc (mac _BlitPixieRLEPointCollisionProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00471920
 // MAC: _BlitPixieRLEPointCollisionProc i386 0x000bbb59 ppc 0x000c7888
 Boolean BlitPixieRLEPointCollisionProc(SpritePtr sprite, Point *pt, Rect *rect)
@@ -540,7 +532,6 @@ Boolean BlitPixieRLEPointCollisionProc(SpritePtr sprite, Point *pt, Rect *rect)
 }
 
 
-/* SWGetValueFromColor (mac _SWGetValueFromColor). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004719d0
 // MAC: _SWGetValueFromColor i386 0x000bd4a0 ppc 0x000c8e14
 uint32_t SWGetValueFromColor(FramePtr dstFrameP, RGBColor *color)

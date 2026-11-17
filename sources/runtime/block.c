@@ -29,8 +29,7 @@ static int ilog2(unsigned int v){
 #define WORD_ALIGN 8
 #endif
 
-/* vorbis_block_init. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: -proc pentium4 MATCH (pending the pin). */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00531c90
 int vorbis_block_init(vorbis_dsp_state *v, vorbis_block *vb){
   FastMemSet(vb,0,sizeof(*vb));
@@ -49,8 +48,7 @@ int vorbis_block_init(vorbis_dsp_state *v, vorbis_block *vb){
   return(0);
 }
 
-/* _vorbis_block_alloc. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00531d20
 void *_vorbis_block_alloc(vorbis_block *vb,int32_t bytes){
   bytes=(bytes+(WORD_ALIGN-1)) & ~(WORD_ALIGN-1);
@@ -74,8 +72,7 @@ void *_vorbis_block_alloc(vorbis_block *vb,int32_t bytes){
   }
 }
 
-/* _vorbis_block_ripcord. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00531da0
 void _vorbis_block_ripcord(vorbis_block *vb){
   struct alloc_chain *reap=vb->reap;
@@ -97,8 +94,7 @@ void _vorbis_block_ripcord(vorbis_block *vb){
   vb->reap=NULL;
 }
 
-/* vorbis_block_clear. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00531e40
 int vorbis_block_clear(vorbis_block *vb){
   if(vb->vd)
@@ -118,8 +114,6 @@ int vorbis_block_clear(vorbis_block *vb){
   return(0);
 }
 
-/* _vds_shared_init. STATE: MATCH, byte-identical (1104 B).
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x00531f70
 static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
   int i;
@@ -201,8 +195,6 @@ static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
   return(0);
 }
 
-/* vorbis_dsp_clear. STATE: MATCH, byte-identical (819 B).
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x005323c0
 void vorbis_dsp_clear(vorbis_dsp_state *v){
   int i,j,k;
@@ -276,8 +268,7 @@ void vorbis_dsp_clear(vorbis_dsp_state *v){
   }
 }
 
-/* vorbis_synthesis_init. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532700
 int vorbis_synthesis_init(vorbis_dsp_state *v,vorbis_info *vi){
   _vds_shared_init(v,vi,0);
@@ -289,8 +280,7 @@ int vorbis_synthesis_init(vorbis_dsp_state *v,vorbis_info *vi){
   return(0);
 }
 
-/* vorbis_synthesis_blockin. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532750
 int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
   vorbis_info *vi=v->vi;
@@ -404,8 +394,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
   return(0);
 }
 
-/* vorbis_synthesis_pcmout. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532c60
 int vorbis_synthesis_pcmout(vorbis_dsp_state *v,float ***pcm){
   vorbis_info *vi=v->vi;
@@ -421,8 +410,7 @@ int vorbis_synthesis_pcmout(vorbis_dsp_state *v,float ***pcm){
   return(0);
 }
 
-/* vorbis_synthesis_read. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532ce0
 int vorbis_synthesis_read(vorbis_dsp_state *v,int bytes){
   if(bytes && v->pcm_returned+bytes>v->centerW)return(OV_EINVAL);

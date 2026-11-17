@@ -15,7 +15,6 @@
 
 
 
-/* DisposeMainScreenSounds. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048bbb0
 // MAC: _DisposeMainScreenSounds i386 0x00016cae ppc 0x0001a960
 void DisposeMainScreenSounds(void)
@@ -33,7 +32,6 @@ void DisposeMainScreenSounds(void)
     }
 }
 
-/* PlayMainScreenClickSound. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048bc20
 // MAC: _PlayMainScreenClickSound i386 0x000177af ppc 0x0001b38c
 void PlayMainScreenClickSound(void)
@@ -49,8 +47,6 @@ void PlayMainScreenClickSound(void)
 
 
 
-/* LoadMainScreenAnim (mac _LoadMainScreenAnim). STATE: MATCH 100.0%, exe 165 / obj 165
-   instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0048bc90
 // MAC: _LoadMainScreenAnim i386 0x0001781d ppc 0x0001b404
 void LoadMainScreenAnim(void)
@@ -107,7 +103,6 @@ void LoadMainScreenAnim(void)
     lastRolloverAnimTime = 0;
 }
 
-/* DisposeMainScreenAnim. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048bf40
 // MAC: _DisposeMainScreenAnim i386 0x00017a81 ppc 0x0001b6ec
 void DisposeMainScreenAnim(void)
@@ -128,7 +123,6 @@ void DisposeMainScreenAnim(void)
 
 
 
-/* MainScreenAnimIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048bfb0
 // MAC: _MainScreenAnimIdle i386 0x0001883c ppc 0x0001c414
 void MainScreenAnimIdle(void)

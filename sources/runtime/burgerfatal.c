@@ -129,8 +129,7 @@ static KeyName kKeyNames[] = {
     { 0, -1 }
 };
 
-/* KeyboardScanCodeToString (BurgerLib KeyboardScanCodeToString). STATE: MATCH 100%, exe 45 / obj 45
-   instrs, byte-identical yes. OPEN: none */
+/* KeyboardScanCodeToString (BurgerLib KeyboardScanCodeToString). */
 // FUNCTION: EVNOVA 0x004f1990
 void KeyboardScanCodeToString(char *out, ULong size, ULong code)
 {

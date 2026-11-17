@@ -8,7 +8,6 @@
 
 #define kMissionSystMax    32
 
-/* RecalcMissionSystsForMap. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004aa980
 // MAC: _RecalcMissionSystsForMap i386 0x0000e1b5 ppc 0x00011924
 void RecalcMissionSystsForMap(void)

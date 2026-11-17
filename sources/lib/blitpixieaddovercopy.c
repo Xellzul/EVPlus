@@ -5,7 +5,6 @@
 
 EXTERN_C_BEGIN
 
-/* BlitPixieAddOverCopy (mac _BlitPixieAddOverCopy). STATE: MATCH 100.0%, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x00473b60
 // MAC: _BlitPixieAddOverCopy i386 0x000c177d ppc 0x000cd7d4
 void BlitPixieAddOverCopy(unsigned char *dstPixels, unsigned char *srcPixels,

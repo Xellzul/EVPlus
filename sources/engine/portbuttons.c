@@ -23,8 +23,6 @@
 enum { kPortLeaveButton, kPortRefuelButton, kPortTradeButton, kPortOutfitButton,
        kPortShipyardButton, kPortMissionsButton, kPortBarButton };
 
-/* TrackPlanetButtons (mac _TrackPlanetButtons). STATE: MATCH 100.0%, exe 309 / obj 309
-   instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0049fe10
 // MAC: _TrackPlanetButtons i386 0x0002996f ppc 0x0002df5c
 short TrackPlanetButtons(Point where)
@@ -123,7 +121,6 @@ short TrackPlanetButtons(Point where)
     return hit;
 }
 
-/* DrawPlanetButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a0220
 // MAC: _DrawPlanetButtons i386 0x0002968d ppc 0x0002dc84
 void DrawPlanetButtons(short selected)

@@ -11,8 +11,7 @@ extern "C" {
 #define kExtractStrNoTranslate  2                /* keep CR, and CR LF, as they are */
 
 /* ExtractAString2 (BurgerLib ClStdlib): copy text up to a NUL (or a line end) into dst,
-   terminated and truncated to dstSize; *size is the buffer left in, the bytes used out.
-   STATE: MATCH 100.0%, exe 61 / obj 61, byte-identical yes. OPEN: none */
+   terminated and truncated to dstSize; *size is the buffer left in, the bytes used out. */
 // FUNCTION: EVNOVA 0x00530170
 void ExtractAString2(const char *src, ULong *size, Word flags, char *dst, ULong dstSize)
 {

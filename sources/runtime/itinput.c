@@ -75,7 +75,7 @@ int32_t __stdcall IT_ButtonsUpEnumProc(void *hwnd, int32_t lParam);
 
 /* IT_ButtonsUpEnumProc (an EnumWindows callback: a button-up message waiting for the window, or for
    any child of a top-level one, means the buttons are no longer down; enumeration goes on
-   while they still are). STATE: MATCH 100%, exe 55 / obj 55, byte-identical yes. OPEN: none */
+   while they still are). */
 // FUNCTION: EVNOVA 0x00524337
 int32_t __stdcall IT_ButtonsUpEnumProc(void *hwnd, int32_t lParam)
 {
@@ -93,8 +93,7 @@ int32_t __stdcall IT_ButtonsUpEnumProc(void *hwnd, int32_t lParam)
 }
 
 /* _InputReadModifiers (the modifier keys, lock keys and mouse buttons as flags; with a button down,
-   the button-up messages already queued for `hwnd' (every window for -1) are honoured). STATE:
-   MATCH 100%, exe 89 / obj 89, byte-identical yes. OPEN: none */
+   the button-up messages already queued for `hwnd' (every window for -1) are honoured). */
 // FUNCTION: EVNOVA 0x005243d4
 ULong _InputReadModifiers(void *hwnd)
 {
@@ -138,8 +137,7 @@ ULong _InputReadModifiers(void *hwnd)
 }
 
 /* InputReadMouseState (the mouse now: screen position, position in the window under it (in `hwnd'
-   when that is the child there), that window, the modifier flags; whether a button is down).
-   STATE: MATCH 100%, exe 79 / obj 79, byte-identical yes. OPEN: none */
+   when that is the child there), that window, the modifier flags; whether a button is down). */
 // FUNCTION: EVNOVA 0x0052451e
 unsigned char InputReadMouseState(void *hwnd, ITInputEvent *event)
 {
@@ -171,8 +169,7 @@ unsigned char InputReadMouseState(void *hwnd, ITInputEvent *event)
 
 /* MacEventToMouseEvent (a Windows mouse message as an event: where in the window and on the screen, the
    button and key flags; whether it is a button press, a double click also flagged). The flags are
-   read off the same word as the position, as the exe does. STATE: MATCH 100%, exe 100 / obj 100,
-   byte-identical yes. OPEN: none */
+   read off the same word as the position, as the exe does. */
 // FUNCTION: EVNOVA 0x005245e7
 unsigned char MacEventToMouseEvent(void *hwnd, unsigned int msg, unsigned int unused, int32_t lParam,
                            ITInputEvent *event)
@@ -235,8 +232,7 @@ unsigned char MacEventToMouseEvent(void *hwnd, unsigned int msg, unsigned int un
 
 /* MacEventToKeyEvent (a key-down message as a key event: the button and key flags, and when the
    matching WM_CHAR can be taken off the queue, the character, the virtual key, the tool's key
-   code (keypad Enter 0x95) and the auto-repeat bit; whether a character came). STATE: MATCH
-   100%, exe 115 / obj 115, byte-identical yes. OPEN: none */
+   code (keypad Enter 0x95) and the auto-repeat bit; whether a character came). */
 // FUNCTION: EVNOVA 0x00524721
 unsigned char MacEventToKeyEvent(void *hwnd, unsigned int msg, unsigned int vk, ULong lParam,
                            ITKeyEvent *key)

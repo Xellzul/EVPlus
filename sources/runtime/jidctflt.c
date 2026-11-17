@@ -7,8 +7,7 @@
 
 #define DEQUANTIZE(coef,quantval)  (((FAST_FLOAT) (coef)) * (quantval))
 
-/* jpeg_idct_float. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00569c9c
 GLOBAL(void)
 jpeg_idct_float (j_decompress_ptr cinfo, jpeg_component_info * compptr,

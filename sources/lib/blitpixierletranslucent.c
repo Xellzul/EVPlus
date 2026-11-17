@@ -6,8 +6,6 @@
 
 /* This body is the only writer of the three tint shorts. */
 
-/* BlitPixieRLETranslucent (mac _BlitPixieRLETranslucent). STATE: MATCH, exe 134 / obj 134.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00472900
 // MAC: _BlitPixieRLETranslucent i386 0x000c1568 ppc 0x000cd4fc
 void BlitPixieRLETranslucent(unsigned char *rleTokens, unsigned char *dstPixel,

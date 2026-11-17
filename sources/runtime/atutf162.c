@@ -16,7 +16,6 @@ ULong _unicode_tocase(ULong c, const FoldRange *table, ULong n);
 #define kDeseretDelta       0x28
 #define kAsciiCaseDelta     0x20
 
-/* unicode_bytecount. STATE: MATCH 100%, exe 8 / obj 8 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052c0be
 ULong unicode_bytecount(const unsigned short *s)
 {
@@ -30,8 +29,6 @@ ULong unicode_bytecount(const unsigned short *s)
     return n;
 }
 
-/* unicode_charcount. STATE: MATCH 100%, exe 21 / obj 21, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x0052c0d3
 ULong unicode_charcount(const unsigned short *s)
 {
@@ -48,8 +45,7 @@ ULong unicode_charcount(const unsigned short *s)
     return n;
 }
 
-/* unicode_bytecount_limit (the byte offset of a character index). STATE: MATCH 100%, exe 30 / obj 30, byte-identical yes.
-   OPEN: none */
+/* unicode_bytecount_limit (the byte offset of a character index). */
 // FUNCTION: EVNOVA 0x0052c111
 ULong unicode_bytecount_limit(const unsigned short *s, ULong index)
 {
@@ -65,8 +61,7 @@ ULong unicode_bytecount_limit(const unsigned short *s, ULong index)
     return (p - s) * sizeof(unsigned short);
 }
 
-/* unicode_charcount_limit (characters in a byte count, stopping at a NUL). STATE: MATCH 100%, exe 28 / obj 28, byte-identical yes.
-   OPEN: none */
+/* unicode_charcount_limit (characters in a byte count, stopping at a NUL). */
 // FUNCTION: EVNOVA 0x0052c167
 ULong unicode_charcount_limit(const unsigned short *s, ULong bytes)
 {
@@ -86,7 +81,7 @@ ULong unicode_charcount_limit(const unsigned short *s, ULong bytes)
     return n;
 }
 
-/* unicode_strcpy (strcpy). STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes. OPEN: none */
+/* unicode_strcpy (strcpy). */
 // FUNCTION: EVNOVA 0x0052c1b5
 unsigned short *unicode_strcpy(unsigned short *dst, const unsigned short *src)
 {
@@ -98,7 +93,6 @@ unsigned short *unicode_strcpy(unsigned short *dst, const unsigned short *src)
     return dst;
 }
 
-/* unicode_strncmp. STATE: MATCH 100%, exe 134 / obj 134, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052c1de
 int32_t unicode_strncmp(const unsigned short *a, ULong lenA,
                   const unsigned short *b, ULong lenB)
@@ -173,8 +167,7 @@ int32_t unicode_strncmp(const unsigned short *a, ULong lenA,
 }
 
 /* _unicode_findmatch (the unit index of the first character in `set', or with inSet 0 the first
-   not in it; -1 - length when there is none). STATE: MATCH 100%, exe 147 / obj 147,
-   byte-identical yes. OPEN: none */
+   not in it; -1 - length when there is none). */
 // FUNCTION: EVNOVA 0x0052c381
 int32_t _unicode_findmatch(const unsigned short *s, const unsigned short *set, int32_t inSet)
 {
@@ -248,8 +241,7 @@ nextChar:
     return -1 - i;
 }
 
-/* unicode_strpbrk (strpbrk). STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes.
-   OPEN: none */
+/* unicode_strpbrk (strpbrk). */
 // FUNCTION: EVNOVA 0x0052c54a
 unsigned short *unicode_strpbrk(const unsigned short *s, const unsigned short *set)
 {
@@ -261,7 +253,6 @@ unsigned short *unicode_strpbrk(const unsigned short *s, const unsigned short *s
     return 0;
 }
 
-/* _unicode_tocase. STATE: MATCH 100%, exe 102 / obj 102, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052c56c
 ULong _unicode_tocase(ULong c, const FoldRange *table, ULong n)
 {
@@ -321,7 +312,6 @@ ULong _unicode_tocase(ULong c, const FoldRange *table, ULong n)
     return c;
 }
 
-/* unicode_toupper. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0052c6bd
 ULong unicode_toupper(ULong c)
 {
@@ -339,7 +329,7 @@ ULong unicode_toupper(ULong c)
    character is skipped and, when writing, replaced by kBadCharMark. */
 
 /* count_UTF8_to_UTF16 (UTF-16 bytes a UTF-8 string needs: a conversion into a null-based
-   destination). STATE: MATCH 100%, exe 39 / obj 39, byte-identical yes. OPEN: none */
+   destination). */
 // FUNCTION: EVNOVA 0x0052c6e5
 ULong count_UTF8_to_UTF16(const unsigned char *s, ULong limit)
 {
@@ -366,8 +356,7 @@ ULong count_UTF8_to_UTF16(const unsigned char *s, ULong limit)
     return (ULong)d;
 }
 
-/* count_UTF16_to_UTF8 (UTF-8 bytes a UTF-16 string needs, as count_UTF8_to_UTF16). STATE: MATCH 100%,
-   exe 36 / obj 36, byte-identical yes. OPEN: none */
+/* count_UTF16_to_UTF8 (UTF-8 bytes a UTF-16 string needs, as count_UTF8_to_UTF16). */
 // FUNCTION: EVNOVA 0x0052c753
 ULong count_UTF16_to_UTF8(const unsigned short *s, ULong limit)
 {
@@ -394,8 +383,7 @@ ULong count_UTF16_to_UTF8(const unsigned short *s, ULong limit)
     return (ULong)d;
 }
 
-/* convert_UTF8_to_UTF16 (UTF-8 to UTF-16). STATE: MATCH 100%, exe 53 / obj 53, byte-identical yes.
-   OPEN: none */
+/* convert_UTF8_to_UTF16 (UTF-8 to UTF-16). */
 // FUNCTION: EVNOVA 0x0052c7b7
 unsigned short *convert_UTF8_to_UTF16(unsigned short *dst, const unsigned char *src, ULong dstBytes,
                              int32_t budget, int32_t terminate)
@@ -425,8 +413,7 @@ unsigned short *convert_UTF8_to_UTF16(unsigned short *dst, const unsigned char *
     return dst;
 }
 
-/* convert_UTF16_to_UTF8 (UTF-16 to UTF-8). STATE: MATCH 100%, exe 50 / obj 50, byte-identical yes.
-   OPEN: none */
+/* convert_UTF16_to_UTF8 (UTF-16 to UTF-8). */
 // FUNCTION: EVNOVA 0x0052c842
 unsigned char *convert_UTF16_to_UTF8(unsigned char *dst, const unsigned short *src, ULong dstBytes,
                             int32_t budget, int32_t terminate)
@@ -481,8 +468,7 @@ ULong count_UTF32_to_UTF16(const ULong *s, ULong limit)
     return (ULong)d;
 }
 
-/* convert_UTF32_to_UTF16 (UTF-32 to UTF-16). STATE: MATCH 100%, exe 53 / obj 53, byte-identical yes.
-   OPEN: none */
+/* convert_UTF32_to_UTF16 (UTF-32 to UTF-16). */
 // FUNCTION: EVNOVA 0x0052c8c1
 unsigned short *convert_UTF32_to_UTF16(unsigned short *dst, const ULong *src, ULong dstBytes,
                              int32_t budget, int32_t terminate)

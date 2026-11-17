@@ -31,7 +31,6 @@
 #define kStrResolutionTail   20
 #endif
 
-/* MainScreenUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004873b0
 // MAC: _MainScreenUpdate i386 0x00017c0d ppc 0x0001b8e8
 void MainScreenUpdate(short which)
@@ -250,7 +249,6 @@ void MainScreenUpdate(short which)
 #define kHotStripHeight 0x14
 #define kBarHeight      0x1e
 
-/* MainScreenIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00488080
 // MAC: _MainScreenIdle i386 0x00018ae8 ppc 0x0001c6f0
 void MainScreenIdle(void)
@@ -304,7 +302,6 @@ void MainScreenIdle(void)
 #define kMenuHalfHeight     384
 
 
-/* SetupInterfaceBackground (mac _SetupInterfaceBackground). STATE:MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00488380
 // MAC: _SetupInterfaceBackground i386 0x0001631d ppc 0x0001a0b4
 void SetupInterfaceBackground(void)
@@ -343,7 +340,6 @@ void SetupInterfaceBackground(void)
 #define kBytesPerMB   1000000
 #define kMemorySlack  (10 * kBytesPerMB)
 
-/* PrefsDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004884f0
 #if V111
 #else
@@ -410,7 +406,6 @@ void PrefsDialogUpdate(void)
 #define kItemGammaUp       0x1a
 #define kItemMusicVolText     5
 
-/* DoPrefsDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00488650
 // MAC: _DoPrefsDialog i386 0x00016459 ppc 0x0001a1ec
 #ifdef MAC1010
@@ -1014,9 +1009,6 @@ void DoPrefsDialog(void)
 
 /* entergame -- EnterGameFromMainScreen and DoNewPilot. Notes: Research/notes/entergame.md */
 
-/* EnterGameFromMainScreen (mac _EnterGameFromMainScreen). STATE: MATCH 100.0%, exe 763 / obj 763,
-   byte-identical yes (2912 bytes, relocs masked), relocregcheck 0 of 194. 1.0.10 MATCH 907 of
-   907 Classic, 894 of 894 Carbon, padded. OPEN: nothing. */
 // FUNCTION: EVNOVA 0x00489210
 // MAC: _EnterGameFromMainScreen i386 0x00019ca7 ppc 0x0001d988
 void EnterGameFromMainScreen(void)
@@ -1192,10 +1184,6 @@ void EnterGameFromMainScreen(void)
 
 #define kNewNameStrList  128
 
-/* DoNewPilot (mac _DoNewPilot). STATE: MATCH 100.0%, 416 exact / 208 reloc-equivalent /
-   0 mismatched, exe 624 / obj 624, relocregcheck 0 of 208; byte-identical yes (2669 bytes,
-   relocs masked).
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00489d70
 // MAC: _DoNewPilot i386 0x00018b0a ppc 0x0001c720
 void DoNewPilot(void)

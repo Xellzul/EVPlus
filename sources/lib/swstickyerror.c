@@ -5,7 +5,6 @@
 #include "spriteworld.h"
 
 
-/* SWClearStickyError (mac _SWClearStickyError). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004794a0
 // MAC: _SWClearStickyError i386 0x000a7a36 ppc 0x000b2834
 void SWClearStickyError(void)
@@ -13,7 +12,6 @@ void SWClearStickyError(void)
     gSWStickyError = 0;
 }
 
-/* SWSetStickyIfError (mac _SWSetStickyIfError). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004794b0
 // MAC: _SWSetStickyIfError i386 0x000a6f77 ppc 0x000b1ba4
 void SWSetStickyIfError(short errNum)

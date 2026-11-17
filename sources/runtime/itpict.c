@@ -153,7 +153,7 @@ typedef struct PictOpcode {
 #endif
 
 /* _DeferredImageCreate (create the picture's image in a format and palette, lock it, and when asked
-   paint it white). STATE: MATCH 100%, exe 61 / obj 61, byte-identical yes. OPEN: none */
+   paint it white). */
 // FUNCTION: EVNOVA 0x00515931
 int32_t _DeferredImageCreate(PictState *s, ULong format, const ITPalette *palette, unsigned char white)
 {
@@ -195,8 +195,7 @@ int32_t _DeferredImageCreate(PictState *s, ULong format, const ITPalette *palett
     return err;
 }
 
-/* _DeferredImageDispose (drop the picture's images and clear the answers). STATE: MATCH 100%, exe 43 / obj 43, byte-identical yes.
-   OPEN: none */
+/* _DeferredImageDispose (drop the picture's images and clear the answers). */
 // FUNCTION: EVNOVA 0x005159d6
 void _DeferredImageDispose(PictState *s)
 {
@@ -221,7 +220,7 @@ void _DeferredImageDispose(PictState *s)
 }
 
 /* _PICT_ReadOpCode (the next opcode: one byte in a version 1 picture, else a big-endian word at an
-   even offset). STATE: MATCH 100%, exe 55 / obj 55, byte-identical yes. OPEN: none */
+   even offset). */
 // FUNCTION: EVNOVA 0x00515a39
 int32_t _PICT_ReadOpCode(ITStream *stream, unsigned short version, unsigned short *opcode)
 {
@@ -257,8 +256,7 @@ done:
     return err;
 }
 
-/* _PICT_ReadRect (a big-endian rectangle, four words). STATE: MATCH 100%, exe 49 / obj 49,
-   byte-identical yes. OPEN: none */
+/* _PICT_ReadRect (a big-endian rectangle, four words). */
 // FUNCTION: EVNOVA 0x00515ac9
 int32_t _PICT_ReadRect(ITStream *stream, short *rect)
 {
@@ -433,8 +431,7 @@ done:
 }
 #endif
 
-/* _PICT_ReadPixMap (a PixMap record after its baseAddr, big-endian). STATE: MATCH 100%, exe 279 / obj
-   279, byte-identical yes. OPEN: none */
+/* _PICT_ReadPixMap (a PixMap record after its baseAddr, big-endian). */
 // FUNCTION: EVNOVA 0x00515b5f
 int32_t _PICT_ReadPixMap(ITStream *stream, PictPixMap *map)
 {
@@ -469,8 +466,7 @@ done:
     return err;
 }
 
-/* _PICT_ReadColorTable (a big-endian ColorTable; kStreamOverrun past 256 entries). STATE: MATCH 100%,
-   exe 122 / obj 122, byte-identical yes. OPEN: none */
+/* _PICT_ReadColorTable (a big-endian ColorTable; kStreamOverrun past 256 entries). */
 // FUNCTION: EVNOVA 0x00515eb8
 int32_t _PICT_ReadColorTable(ITStream *stream, PictColorTable *table)
 {
@@ -518,7 +514,7 @@ done:
 }
 
 /* _PICT_ReadRegion (a QuickDraw region: its big-endian header, then the whole record into a new
-   handle). STATE: MATCH 100%, exe 111 / obj 111, byte-identical yes. OPEN: none */
+   handle). */
 // FUNCTION: EVNOVA 0x00516046
 int32_t _PICT_ReadRegion(ITStream *stream, void ***regionOut)
 {
@@ -564,7 +560,7 @@ done:
 }
 
 /* _PICT_SkipPixPat (the pixel-pattern opcodes: a one-colour PixPat is skipped, a full one is not
-   supported). STATE: MATCH 100%, exe 43 / obj 43, byte-identical yes. OPEN: none */
+   supported). */
 // FUNCTION: EVNOVA 0x00516187
 PictLocal int32_t _PICT_SkipPixPat(ITStream *stream, PictState *s, const PictOpcode *op, ULong opcode)
 {
@@ -598,8 +594,7 @@ PictLocal int32_t _PICT_HandleBits(ITStream *stream, PictState *s, const PictOpc
 #include "../runtime/pictoptable.inc"
 
 /* _PICT_HandleBits (the bits opcodes BitsRect / BitsRgn, PackBitsRect / PackBitsRgn, DirectBitsRect /
-   DirectBitsRgn: rows into the picture's image when they cover its frame, else skipped). STATE:
-   MATCH 100.0%, exe 754 / obj 754, byte-identical yes. OPEN: none */
+   DirectBitsRgn: rows into the picture's image when they cover its frame, else skipped). */
 // FUNCTION: EVNOVA 0x00516201
 PictLocal int32_t _PICT_HandleBits(ITStream *stream, PictState *s, const PictOpcode *op, ULong opcode)
 #ifdef MAC1010
@@ -906,7 +901,7 @@ done:
 #endif
 
 /* _PICT_CheckFileType (a PICT: a non-empty frame, then zero padding up to a version opcode 0x1101 or
-   0x0011 0x02ff). STATE: MATCH 100%, exe 89 / obj 89, byte-identical yes. OPEN: none */
+   0x0011 0x02ff). */
 // FUNCTION: EVNOVA 0x00516c7d
 unsigned char _PICT_CheckFileType(const void *dataRef, ULong size)
 {
@@ -937,8 +932,7 @@ unsigned char _PICT_CheckFileType(const void *dataRef, ULong size)
     return 0;
 }
 
-/* PICT_CheckFileType (a PICT at the start or after a 512-byte file header). STATE: MATCH 100%, exe 28 / obj 28, byte-identical yes.
-   OPEN: none */
+/* PICT_CheckFileType (a PICT at the start or after a 512-byte file header). */
 // FUNCTION: EVNOVA 0x00516d6b
 unsigned char PICT_CheckFileType(const unsigned char *data, ULong size)
 {
@@ -951,8 +945,7 @@ unsigned char PICT_CheckFileType(const unsigned char *data, ULong size)
 }
 
 /* PICT_Decode (the PICT loader: header, version, then every opcode's data skipped or handed to
-   its handler up to OpEndPic). STATE: MATCH 100.0%, exe 561 / obj 561, byte-identical yes.
-   OPEN: none */
+   its handler up to OpEndPic). */
 // FUNCTION: EVNOVA 0x00516dac
 int32_t PICT_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut, ITTransparent *trans,
                   ITBackground *bg)

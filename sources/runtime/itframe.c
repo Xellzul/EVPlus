@@ -30,8 +30,7 @@ typedef struct ITFrame {
    and loads the SOURCE (or SRC) page into it, 2 destroys it, 3 frees the data; painting,
    idle turns, clicks, keys, the mouse, edit commands, activation, focus, bounds, show,
    enable and colours are passed to the child window, the served window and control set to
-   none around the calls that paint or move it). STATE: MATCH 100%, exe 471 / obj 471,
-   byte-identical yes. OPEN: none */
+   none around the calls that paint or move it). */
 // FUNCTION: EVNOVA 0x005210da
 int32_t IT_FrameHandler(void *hwnd, void *dc, ITElement *element, void **data, ULong msg, ULong a,
                   void *b)

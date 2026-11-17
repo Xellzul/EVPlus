@@ -62,7 +62,6 @@ const char * ZEXPORT zError(err)
     return ERR_MSG(err);
 }
 
-/* zcalloc. STATE: MATCH 100%, exe 6 / obj 6, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x005433a6
 voidpf zcalloc (opaque, items, size)
     voidpf opaque;
@@ -73,7 +72,6 @@ voidpf zcalloc (opaque, items, size)
     return zlib_malloc(items * size);
 }
 
-/* zcfree. STATE: MATCH 100%, exe 7 / obj 7, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x00543393
 void  zcfree (opaque, ptr)
     voidpf opaque;

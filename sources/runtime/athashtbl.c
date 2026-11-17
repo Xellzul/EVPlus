@@ -48,7 +48,6 @@ struct HashTable {
 
 typedef unsigned char HashChar;
 
-/* _Hash. STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9c86
 static ULong _Hash(const void *key, ULong len)
 {
@@ -67,7 +66,6 @@ static ULong _Hash(const void *key, ULong len)
     return h;
 }
 
-/* _HashUpper. STATE: MATCH 100%, exe 24 / obj 24, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9cad
 static ULong _HashUpper(const void *key, ULong len)
 {
@@ -88,14 +86,12 @@ static ULong _HashUpper(const void *key, ULong len)
     return h;
 }
 
-/* _Match. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9ce1
 static unsigned char _Match(const void *a, ULong lenA, const void *b, ULong lenB)
 {
     return StringCompare(a, b) == 0;
 }
 
-/* _MatchUpper. STATE: MATCH 100%, exe 21 / obj 21, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9cf9
 static unsigned char _MatchUpper(const void *a, ULong lenA, const void *b, ULong lenB)
 {
@@ -118,7 +114,6 @@ static unsigned char _MatchUpper(const void *a, ULong lenA, const void *b, ULong
     return 1;
 }
 
-/* _HashUnicode. STATE: MATCH 100%, exe 36 / obj 36, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9d23
 static ULong _HashUnicode(const void *key, ULong len)
 {
@@ -149,7 +144,6 @@ static ULong _HashUnicode(const void *key, ULong len)
    UTF-16 compare over 0x00505b6f, and the binary-key pair that takes explicit lengths.
    The folded UTF-16 hash folds through atutf162.c's Unicode table, not the byte fold. */
 
-/* _HashUpperUnicode. STATE: MATCH 100%, exe 41 / obj 41, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9d76
 static ULong _HashUpperUnicode(const void *key, ULong len)
 {
@@ -176,14 +170,12 @@ static ULong _HashUpperUnicode(const void *key, ULong len)
     return h;
 }
 
-/* _MatchUnicode. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9dd4
 static unsigned char _MatchUnicode(const void *a, ULong lenA, const void *b, ULong lenB)
 {
     return UnicodeCompare(a, b) == 0;
 }
 
-/* _MatchUpperUnicode. STATE: MATCH 100%, exe 55 / obj 55, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9dec
 static unsigned char _MatchUpperUnicode(const void *a, ULong lenA, const void *b, ULong lenB)
 {
@@ -219,7 +211,6 @@ static unsigned char _MatchUpperUnicode(const void *a, ULong lenA, const void *b
     return 1;
 }
 
-/* _HashBinary. STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9e77
 static ULong _HashBinary(const void *key, ULong len)
 {
@@ -242,7 +233,6 @@ static ULong _HashBinary(const void *key, ULong len)
 
 #define MatchResult unsigned char
 
-/* _MatchBinary. STATE: MATCH 100%, exe 25 / obj 25, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9ea1
 static MatchResult _MatchBinary(const void *a, ULong lenA, const void *b, ULong lenB)
 {
@@ -312,8 +302,7 @@ AT_STATIC char gHashHexDigits[] = "0123456789ABCDEF";        /* 0x00578550 */
 #define kMaxAscii       0x7f
 #define kEscapeMark     '%'
 
-/* _HashDataEncode (percent-escape a text handle in place). STATE: MATCH 100%, exe 84 / obj 84,
-   byte-identical yes. OPEN: none */
+/* _HashDataEncode (percent-escape a text handle in place). */
 // FUNCTION: EVNOVA 0x004f9ed5
 int32_t _HashDataEncode(void *ref)
 {
@@ -355,8 +344,7 @@ int32_t _HashDataEncode(void *ref)
     return err;
 }
 
-/* _HashDataDecode (undo the percent escapes of a text handle in place; %00 becomes a space).
-   STATE: MATCH 100%, exe 96 / obj 96, byte-identical yes. OPEN: none */
+/* _HashDataDecode (undo the percent escapes of a text handle in place; %00 becomes a space). */
 // FUNCTION: EVNOVA 0x004f9fb9
 int32_t _HashDataDecode(void *ref)
 {
@@ -406,8 +394,7 @@ int32_t _HashDataDecode(void *ref)
     return err;
 }
 
-/* _HashDataUnicode (the percent escaping of a UTF-16 handle, through UTF-8). STATE: MATCH 100%,
-   exe 73 / obj 73, byte-identical. OPEN: none (the UTF-8 handle is never freed, as in the
+/* _HashDataUnicode (the percent escaping of a UTF-16 handle, through UTF-8). Note: (the UTF-8 handle is never freed, as in the
    exe) */
 // FUNCTION: EVNOVA 0x004fa0ad
 int32_t _HashDataUnicode(void **h, unsigned char escape)
@@ -453,7 +440,6 @@ done:
 
 unsigned char HashIsValidRef(void *ref);
 
-/* HashCreate. STATE: MATCH 100%, exe 83 / obj 83, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fa149
 HashTable *HashCreate(ULong flags)
 {
@@ -509,8 +495,7 @@ HashTable *HashCreate(ULong flags)
     return t;
 }
 
-/* HashInitialize (a table from a C string of KEY=VALUE pairs). STATE: MATCH 100%, exe 56 /
-   obj 56, byte-identical yes. OPEN: none */
+/* HashInitialize (a table from a C string of KEY=VALUE pairs). */
 // FUNCTION: EVNOVA 0x004fa250
 HashTable *HashInitialize(ULong flags, const char *text)
 {
@@ -543,8 +528,7 @@ done:
     return t;
 }
 
-/* HashInitializeUnicode (a table from a UTF-16 string of KEY=VALUE pairs). STATE: MATCH 100%, exe 58
-   / obj 58, byte-identical yes. OPEN: none */
+/* HashInitializeUnicode (a table from a UTF-16 string of KEY=VALUE pairs). */
 // FUNCTION: EVNOVA 0x004fa2cd
 HashTable *HashInitializeUnicode(ULong flags, const unsigned short *text)
 {
@@ -602,8 +586,7 @@ done:
 #define CHAR_SIZE(c)        ((c) <= kBmpMax ? 1 : 2)
 
 /* HashLoad (parse a text handle of KEY=VALUE pairs into a new table; values may be
-   quoted and are percent-unescaped; an unexpected character reads as a space). STATE: MATCH
-   100%, exe 760 / obj 760, byte-identical yes. OPEN: none */
+   quoted and are percent-unescaped; an unexpected character reads as a space). */
 // FUNCTION: EVNOVA 0x004fa351
 HashTable *HashLoad(ULong flags, void **text)
 {
@@ -881,8 +864,7 @@ done:
 #define kClassBare      (kClassBlank | kClassPunct)
 
 /* _HashSaveText (a table as KEY=VALUE text: bare, "quoted", 'quoted' or percent-escaped;
-   a key with characters outside its class is left out). STATE: MATCH 100%, exe 285 / obj 285,
-   byte-identical yes. OPEN: none */
+   a key with characters outside its class is left out). */
 // FUNCTION: EVNOVA 0x004faccc
 void **_HashSaveText(void *ref)
 {
@@ -1079,8 +1061,7 @@ AT_STATIC unsigned short gHashAposSpaceW[] = { '\'', ' ', 0 };         /* 0x0057
       if (((c) & kSurrogateMask) == kSurrogateHigh) \
           (c) = ((c) << 10) + (s)[(n)++] + kSurrogateBias; }
 
-/* _HashSaveUnicode (_HashSaveText for a UTF-16 table). STATE: MATCH 100%, exe 385 / obj 385,
-   byte-identical yes. OPEN: none */
+/* _HashSaveUnicode (_HashSaveText for a UTF-16 table). */
 // FUNCTION: EVNOVA 0x004fb01d
 void **_HashSaveUnicode(void *ref)
 {
@@ -1298,8 +1279,7 @@ done:
     return text;
 }
 
-/* HashSave (a table as text, in its own kind). STATE: MATCH 100%, exe 15 / obj 15,
-   byte-identical yes. OPEN: none */
+/* HashSave (a table as text, in its own kind). */
 // FUNCTION: EVNOVA 0x004fb509
 void **HashSave(void *ref)
 {
@@ -1311,8 +1291,7 @@ void **HashSave(void *ref)
     return _HashSaveText(ref);
 }
 
-/* HashClone (a copy of a table). STATE: MATCH 100%, exe 75 / obj 75, byte-identical
-   yes. OPEN: none */
+/* HashClone (a copy of a table). */
 // FUNCTION: EVNOVA 0x004fb52d
 HashTable *HashClone(void *ref)
 {
@@ -1353,7 +1332,6 @@ done:
     return t;
 }
 
-/* HashDispose. STATE: MATCH 100%, exe 44 / obj 44, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fb5e6
 void HashDispose(void *ref)
 {
@@ -1386,8 +1364,7 @@ void HashDispose(void *ref)
     }
 }
 
-/* HashIsEmpty (a table is empty). STATE: MATCH 100%, exe 16 / obj 16, byte-identical
-   yes. OPEN: none */
+/* HashIsEmpty (a table is empty). */
 // FUNCTION: EVNOVA 0x004fb644
 unsigned char HashIsEmpty(void *ref)
 {
@@ -1403,7 +1380,6 @@ unsigned char HashIsEmpty(void *ref)
     return 1;
 }
 
-/* HashIsValidRef. STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fb669
 unsigned char HashIsValidRef(void *ref)
 {
@@ -1420,8 +1396,7 @@ unsigned char HashIsValidRef(void *ref)
     return p != 0 ? true : false;
 }
 
-/* HashGetFlags (a table's flags). STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes.
-   OPEN: none */
+/* HashGetFlags (a table's flags). */
 // FUNCTION: EVNOVA 0x004fb694
 ULong HashGetFlags(void *ref)
 {
@@ -1434,7 +1409,6 @@ ULong HashGetFlags(void *ref)
     return t->flags;
 }
 
-/* _HashInsertAppend. STATE: MATCH 100%, exe 264 / obj 264, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fb6a9
 int32_t _HashInsertAppend(void *ref, const void *key, ULong keyLen,
                   const void *value, ULong valueLen, unsigned char tag,
@@ -1579,8 +1553,7 @@ done:
 }
 
 /* HashAppend (set key = value at the back of the insertion order; HashInsert's twin,
-   which inserts at the front). STATE: MATCH 100%, exe 40 / obj 40, byte-identical yes.
-   OPEN: none */
+   which inserts at the front). */
 // FUNCTION: EVNOVA 0x004fb9e4
 int32_t HashAppend(HashTable *t, const char *key, const char *value)
 {
@@ -1604,8 +1577,7 @@ int32_t HashAppend(HashTable *t, const char *key, const char *value)
 }
 
 /* HashAppendData (set a C-string key to a counted value at the back of the insertion
-   order; HashInsertData's twin). STATE: MATCH 100%, exe 23 / obj 23, byte-identical yes.
-   OPEN: none */
+   order; HashInsertData's twin). */
 // FUNCTION: EVNOVA 0x004fba37
 int32_t HashAppendData(HashTable *t, const char *key, const void *value,
                   ULong valueLen)
@@ -1620,7 +1592,6 @@ int32_t HashAppendData(HashTable *t, const char *key, const void *value,
                         valueLen, tag, 0, 0);
 }
 
-/* HashInsert. STATE: MATCH 100%, exe 40 / obj 40, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fba6e
 int32_t HashInsert(HashTable *t, const char *key, const char *value)
 {
@@ -1643,8 +1614,6 @@ int32_t HashInsert(HashTable *t, const char *key, const char *value)
                         valueLen, tag, 1, 0);
 }
 
-/* HashInsertData. STATE: MATCH 100%, exe 23 / obj 23, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004fbac1
 int32_t HashInsertData(HashTable *t, const char *key, const void *value,
                   ULong valueLen)
@@ -1683,8 +1652,7 @@ int32_t HashAppendUnicode(HashTable *t, const unsigned short *key, const unsigne
 }
 #endif
 
-/* HashAppendUnicodeData (set a UTF-16 key to a counted value at the back of the insertion order).
-   STATE: MATCH 100%, exe 23 / obj 23, byte-identical yes. OPEN: none */
+/* HashAppendUnicodeData (set a UTF-16 key to a counted value at the back of the insertion order). */
 // FUNCTION: EVNOVA 0x004fbaf8
 int32_t HashAppendUnicodeData(HashTable *t, const unsigned short *key, const void *value,
                   ULong valueLen)
@@ -1698,8 +1666,7 @@ int32_t HashAppendUnicodeData(HashTable *t, const unsigned short *key, const voi
     return _HashInsertAppend(t, key, UnicodeGetByteCount(key), value, valueLen, tag, 0, kKindUTF16);
 }
 
-/* _HashRemove (remove the entry for a key: 1 when one was removed). STATE: MATCH 100%, exe
-   105 / obj 105, byte-identical yes. OPEN: none */
+/* _HashRemove (remove the entry for a key: 1 when one was removed). */
 // FUNCTION: EVNOVA 0x004fbb32
 unsigned char _HashRemove(void *ref, const void *key, ULong keyLen, ULong kind)
 {
@@ -1751,8 +1718,7 @@ unsigned char _HashRemove(void *ref, const void *key, ULong keyLen, ULong kind)
     return removed != 0 ? true : false;
 }
 
-/* HashRemove (remove the entry for a C-string key). STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes.
-   OPEN: none */
+/* HashRemove (remove the entry for a C-string key). */
 // FUNCTION: EVNOVA 0x004fbc47
 unsigned char HashRemove(HashTable *t, const char *key)
 {
@@ -1766,7 +1732,6 @@ unsigned char HashRemoveUnicode(HashTable *t, const unsigned short *key)
 }
 #endif
 
-/* _HashLookup. STATE: MATCH 100%, exe 79 / obj 79, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fbc5c
 HashEntry *_HashLookup(void *ref, const void *key, ULong keyLen, void *after, ULong kind)
 {
@@ -1808,8 +1773,7 @@ HashEntry *_HashLookup(void *ref, const void *key, ULong keyLen, void *after, UL
     return e;
 }
 
-/* HashLookup (the value stored under a C-string key). STATE: MATCH, byte-identical.
-   OPEN: none */
+/* HashLookup (the value stored under a C-string key). */
 // FUNCTION: EVNOVA 0x004fbd31
 char *HashLookup(void *table, const char *key, void *after)
 {
@@ -1819,8 +1783,7 @@ char *HashLookup(void *table, const char *key, void *after)
     return e != 0 ? e->data : 0;
 }
 
-/* HashLookupUnicode (the value stored under a UTF-16 key). STATE: MATCH 100%, exe 13 / obj 13, byte-identical yes.
-   OPEN: none */
+/* HashLookupUnicode (the value stored under a UTF-16 key). */
 // FUNCTION: EVNOVA 0x004fbd55
 char *HashLookupUnicode(void *table, const unsigned short *key, void *after)
 {
@@ -1830,8 +1793,7 @@ char *HashLookupUnicode(void *table, const unsigned short *key, void *after)
     return e != 0 ? e->data : 0;
 }
 
-/* _HashIndex (the index-th entry in insertion order, resuming from the last lookup).
-   STATE: MATCH 100%, exe 98 / obj 98, byte-identical yes. OPEN: none */
+/* _HashIndex (the index-th entry in insertion order, resuming from the last lookup). */
 // FUNCTION: EVNOVA 0x004fbd7c
 char *_HashIndex(void *ref, ULong index, char **key, ULong *keyLen, char **value,
                    ULong *valueLen, ULong kind)
@@ -1890,16 +1852,14 @@ char *_HashIndex(void *ref, ULong index, char **key, ULong *keyLen, char **value
     return e != 0 ? e->data : 0;
 }
 
-/* HashIndex (the index-th key and value). STATE: MATCH 100%, exe 10 / obj 10, byte-identical yes.
-   OPEN: none */
+/* HashIndex (the index-th key and value). */
 // FUNCTION: EVNOVA 0x004fbe7d
 char *HashIndex(HashTable *t, ULong index, char **key, char **value)
 {
     return _HashIndex(t, index, key, 0, value, 0, 0);
 }
 
-/* HashIndexUnicode (the same, asking for UTF-16). STATE: MATCH 100%, exe 10 / obj 10, byte-identical yes.
-   OPEN: none */
+/* HashIndexUnicode (the same, asking for UTF-16). */
 // FUNCTION: EVNOVA 0x004fbe9c
 char *HashIndexUnicode(HashTable *t, ULong index, char **key, char **value)
 {

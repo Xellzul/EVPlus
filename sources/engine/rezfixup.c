@@ -227,7 +227,6 @@ unsigned short addr_0057612c[2] = {   /* covers 0x4 == minSize */
     5
 };
 
-/* FixupResourceByType. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce700
 void FixupResourceByType(Handle h, uint32_t type)
 {

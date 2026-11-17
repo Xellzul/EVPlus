@@ -5,7 +5,6 @@
 EXTERN_C_BEGIN
 
 
-/* SWClipLineWithRect (mac _SWClipLineWithRect). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047b3c0
 // MAC: _SWClipLineWithRect i386 0x000c65ea ppc 0x000d28d0
 #define SIGN(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))

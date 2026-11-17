@@ -15,8 +15,6 @@ float tableTan[360];
 float trigResult;
 short tableArcTan[0x400];
 
-/* BuildTrigTable (mac _BuildTrigTable). STATE: MATCH 100.0%, exe 79 / obj 79 instrs,
-   byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00461830
 // MAC: _BuildTrigTable i386 0x00025828 ppc 0x00029e50
 void BuildTrigTable(void)
@@ -39,7 +37,6 @@ void BuildTrigTable(void)
 }
 
 
-/* TableSin. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00461930
 // MAC: _TableSin i386 0x0002590a ppc 0x00029fa0
 void TableSin(short angle)
@@ -51,7 +48,6 @@ void TableSin(short angle)
     trigResult = tableSin[angle];
 }
 
-/* TableCos. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00461970
 // MAC: _TableCos i386 0x0002593c ppc 0x00029fe8
 void TableCos(short angle)
@@ -63,8 +59,7 @@ void TableCos(short angle)
     trigResult = tableCos[angle];
 }
 
-/* TableTan (mac _TableTan, dead on win: uncalled, the linker strips it). STATE: see the mac
-   baseline. OPEN: none */
+/* TableTan (mac _TableTan, dead on win: uncalled, the linker strips it). */
 // MAC: _TableTan i386 0x0002596e ppc 0x0002a030
 void TableTan(short angle)
 {
@@ -78,11 +73,6 @@ void TableTan(short angle)
 #define kArctanScale   100.0f
 #define kArctanLast    0x3ff
 
-/* TableArcTan. STATE: MATCH 100.0%, exe 164 / obj 164 instrs,
-   byte-identical yes.
-   OPEN: none. It RETURNS short: the exe's `mov eax,ecx' where an int return
-   needs `movsx eax,cx' is the tell, and the whole tail's colouring was
-   downstream of it. see notes */
 // FUNCTION: EVNOVA 0x004619b0
 // MAC: _TableArcTan i386 0x000259a0 ppc 0x0002a078
 short TableArcTan(float dx, float dy)

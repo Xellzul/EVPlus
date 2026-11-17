@@ -43,8 +43,7 @@ typedef struct ReadFileStream_t {
     volatile Word8 ExitAck;                      /* +0x63 set by the thread as it exits */
 } ReadFileStream_t;
 
-/* ReadFileStreamCallback (BurgerLib rswin32, static there). STATE: MATCH 100.0%, exe 99 /
-   obj 99, byte-identical yes. OPEN: none */
+/* ReadFileStreamCallback (BurgerLib rswin32, static there). */
 // FUNCTION: EVNOVA 0x0054d690
 static uint32_t __stdcall ReadFileStreamCallback(void *Data)
 {
@@ -99,8 +98,7 @@ static uint32_t __stdcall ReadFileStreamCallback(void *Data)
     return 0;
 }
 
-/* ReadFileStreamNew (BurgerLib rswin32). STATE: MATCH 100%, exe 132 / obj 132, byte-identical yes.
-   OPEN: none */
+/* ReadFileStreamNew (BurgerLib rswin32). */
 // FUNCTION: EVNOVA 0x0054d7e0
 ReadFileStream_t *ReadFileStreamNew(const char *FileName, Word32 ChunkCount, Word32 ChunkSize)
 {
@@ -159,8 +157,7 @@ ReadFileStream_t *ReadFileStreamNew(const char *FileName, Word32 ChunkCount, Wor
     return 0;
 }
 
-/* ReadFileStreamDelete (BurgerLib rswin32). STATE: MATCH 100%, exe 40 / obj 40, byte-identical
-   yes. OPEN: none; `volatile ExitAck' keeps the exe's reloading wait, see notes */
+/* ReadFileStreamDelete (BurgerLib rswin32). */
 // FUNCTION: EVNOVA 0x0054da00
 void ReadFileStreamDelete(ReadFileStream_t *Input)
 {
@@ -185,7 +182,7 @@ void ReadFileStreamDelete(ReadFileStream_t *Input)
     }
 }
 
-/* ReadFileStreamActive (BurgerLib rswin32). STATE: MATCH, byte-identical. OPEN: none */
+/* ReadFileStreamActive (BurgerLib rswin32). */
 // FUNCTION: EVNOVA 0x0054da90
 Word ReadFileStreamActive(ReadFileStream_t *Input)
 {
@@ -194,8 +191,7 @@ Word ReadFileStreamActive(ReadFileStream_t *Input)
     return 0;
 }
 
-/* ReadFileStreamStop (BurgerLib rswin32). STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes.
-   OPEN: none */
+/* ReadFileStreamStop (BurgerLib rswin32). */
 // FUNCTION: EVNOVA 0x0054dac0
 void ReadFileStreamStop(ReadFileStream_t *Input)
 {
@@ -206,8 +202,7 @@ void ReadFileStreamStop(ReadFileStream_t *Input)
     }
 }
 
-/* ReadFileStreamStart (BurgerLib rswin32): the exe carries ReadFileStreamStop's body inline.
-   STATE: MATCH 100%, exe 38 / obj 38, byte-identical yes. OPEN: none */
+/* ReadFileStreamStart (BurgerLib rswin32): the exe carries ReadFileStreamStop's body inline. */
 // FUNCTION: EVNOVA 0x0054db00
 void ReadFileStreamStart(ReadFileStream_t *Input, Word32 Offset)
 {
@@ -229,8 +224,7 @@ void ReadFileStreamStart(ReadFileStream_t *Input, Word32 Offset)
     }
 }
 
-/* ReadFileStreamGetData (BurgerLib rswin32): ReadFileStreamAcceptData's body inline.
-   STATE: MATCH 100.0%, exe 63 / obj 63, byte-identical yes. OPEN: none */
+/* ReadFileStreamGetData (BurgerLib rswin32): ReadFileStreamAcceptData's body inline. */
 // FUNCTION: EVNOVA 0x0054db90
 Word8 *ReadFileStreamGetData(ReadFileStream_t *Input, Word32 *LengthPtr, Word32 Length)
 {

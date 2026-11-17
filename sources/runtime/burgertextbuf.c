@@ -11,7 +11,6 @@ extern "C" {
 
 #define kTextGrowth 0x2000
 
-/* StreamHandleInitPut. STATE: MATCH 100%, exe 7 / obj 7 instrs. OPEN: none */
 // FUNCTION: EVNOVA 0x005271d0
 void StreamHandleInitPut(TextBuilder *b)
 {
@@ -22,7 +21,6 @@ void StreamHandleInitPut(TextBuilder *b)
     b->failed = 0;
 }
 
-/* StreamHandleDestroy. STATE: MATCH 100%, exe 13 / obj 13 instrs. OPEN: none */
 // FUNCTION: EVNOVA 0x00527200
 void StreamHandleDestroy(TextBuilder *b)
 {
@@ -32,7 +30,6 @@ void StreamHandleDestroy(TextBuilder *b)
     }
 }
 
-/* StreamHandleEndSave. STATE: MATCH 100%, exe 7 / obj 7 instrs. OPEN: none */
 // FUNCTION: EVNOVA 0x00527230
 void StreamHandleEndSave(TextBuilder *b)
 {
@@ -40,7 +37,6 @@ void StreamHandleEndSave(TextBuilder *b)
         b->extent = b->length;
 }
 
-/* StreamHandlePutByte. STATE: MATCH 100%, exe 42 / obj 42 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00527250
 void StreamHandlePutByte(TextBuilder *b, int32_t ch)
 {
@@ -69,7 +65,6 @@ void StreamHandlePutByte(TextBuilder *b, int32_t ch)
     }
 }
 
-/* StreamHandlePutStringNoZero. STATE: MATCH 100%, exe 60 / obj 60 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005272e0
 void StreamHandlePutStringNoZero(TextBuilder *b, const char *s)
 {
@@ -101,7 +96,6 @@ void StreamHandlePutStringNoZero(TextBuilder *b, const char *s)
 }
 
 /* Fill with a 16-bit value; an odd last byte takes its low half. */
-/* FastMemSet16. STATE: MATCH 100%, exe 15 / obj 15 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005273c0
 void FastMemSet16(void *dst, ULong value, ULong bytes)
 {

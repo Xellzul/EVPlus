@@ -13,7 +13,7 @@ extern "C" {
 
 unsigned char OSCursorVisibleFlag = 1;           /* 0x00577a34 */
 
-/* OSCursorIsVisible (BurgerLib OCOSCursorManager's: returns the flag, 1 after OSCursorShow). STATE: MATCH, byte-identical. OPEN: none */
+/* OSCursorIsVisible (BurgerLib OCOSCursorManager's: returns the flag, 1 after OSCursorShow). */
 // FUNCTION: EVNOVA 0x004f1ca0
 unsigned int OSCursorIsVisible(void)
 {

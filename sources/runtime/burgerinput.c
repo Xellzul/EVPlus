@@ -26,7 +26,6 @@ static int32_t Inited;                              /* 0x00865af8 lock state */
 #define kDebugLockLive  1
 #define kDebugLockGone  2
 
-/* ShowAlert. STATE: DIFF 30.4%, exe 23 / obj 18 instrs. OPEN: foreign-compiler ceiling; see notes */
 // FUNCTION: EVNOVA 0x004d9c90
 void ShowAlert(const char *title, const char *message)
 {
@@ -40,8 +39,6 @@ void ShowAlert(const char *title, const char *message)
         OSCursorHide();
 }
 
-/* Cleanup. STATE: DIFF 0.0%, exe 5 / obj 4 instrs, byte-identical no.
-   OPEN: foreign-compiler ceiling (cwsig FOREIGN); see notes */
 // FUNCTION: EVNOVA 0x004d9cf0
 void Cleanup(void)
 {
@@ -66,8 +63,6 @@ void Halt(void)
         DebugBreak();
 }
 
-/* DebugXString. STATE: DIFF 8.5%, exe 59 / obj 51 instrs, byte-identical no.
-   OPEN: -proc pentium4 MATCH (pending the pin); see notes */
 // FUNCTION: EVNOVA 0x004d9d10
 void DebugXString(const char *string)
 {

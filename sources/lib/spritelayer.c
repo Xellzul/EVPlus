@@ -6,7 +6,6 @@
 
 #define kSpriteAlreadyInLayer   115
 
-/* SWAddSprite (mac _SWAddSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477140
 // MAC: _SWAddSprite i386 0x000ac5de ppc 0x000b7708
 short SWAddSprite(SpriteLayerRec *spriteLayerP, SpriteRec *newSpriteP)
@@ -44,7 +43,6 @@ short SWAddSprite(SpriteLayerRec *spriteLayerP, SpriteRec *newSpriteP)
 
 #define kNilSpriteLayerErr  114
 
-/* SWRemoveSprite (mac _SWRemoveSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004771c0
 // MAC: _SWRemoveSprite i386 0x000ac672 ppc 0x000b77cc
 short SWRemoveSprite(SpriteRec *oldSpriteP)
@@ -82,7 +80,6 @@ short SWRemoveSprite(SpriteRec *oldSpriteP)
 /* The fork's extra SpriteLayerRec member: this function stores its proc argument to
    +0x10 and does nothing else, and SWCreateSpriteLayer is what clears it. */
 
-/* SWSetLayerCallBack (mac _SWSetLayerCallBack). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477240
 // MAC: _SWSetLayerCallBack i386 0x000acab1 ppc 0x000b7db8
 void SWSetLayerCallBack(SpriteLayerRec *spriteLayerP, WorldProcPtr callBack)
@@ -90,7 +87,6 @@ void SWSetLayerCallBack(SpriteLayerRec *spriteLayerP, WorldProcPtr callBack)
     spriteLayerP->layerCallBack = callBack;
 }
 
-/* SWLockSpriteLayer (mac _SWLockSpriteLayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477250
 // MAC: _SWLockSpriteLayer i386 0x000acabf ppc 0x000b7dc0
 void SWLockSpriteLayer(SpriteLayerRec *spriteLayerP)
@@ -108,7 +104,6 @@ void SWLockSpriteLayer(SpriteLayerRec *spriteLayerP)
     }
 }
 
-/* SWUnlockSpriteLayer (mac _SWUnlockSpriteLayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477290
 // MAC: _SWUnlockSpriteLayer i386 0x000acb0b ppc 0x000b7e34
 void SWUnlockSpriteLayer(SpriteLayerRec *spriteLayerP)
@@ -144,7 +139,6 @@ void SWUnlockSpriteLayer(SpriteLayerRec *spriteLayerP)
 #define SW_COLLISION_RECT_RIGHT(spriteP) \
     (spriteP->destFrameRect.right - spriteP->curFrameP->collisionInset.right)
 
-/* SWCollideSpriteLayer (mac _SWCollideSpriteLayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004772d0
 // MAC: _SWCollideSpriteLayer i386 0x000acb4b ppc 0x000b7ea4
 void SWCollideSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *srcSpriteLayerP,

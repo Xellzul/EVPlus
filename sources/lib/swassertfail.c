@@ -20,7 +20,6 @@ typedef void (*CleanUpCallBackPtr)(void);
 CleanUpCallBackPtr gSWCleanUpCallBackP;              /* 0x008700d0 */
 #endif
 
-/* SWAssertFail (mac _SWAssertFail). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004794d0
 // MAC: _SWAssertFail i386 0x000a7a50 ppc 0x000b2850
 void SWAssertFail(char *filename, int lineNum)

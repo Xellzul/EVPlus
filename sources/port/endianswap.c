@@ -33,7 +33,6 @@ static __inline int32_t SwapEndianLong(const uint32_t *p)
 #define kSwapRun       4    /* a counted run; kind and count follow */
 #define kSwapEnd       5
 
-/* SwapEndianByDescriptor. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ce660
 void SwapEndianByDescriptor(unsigned char *data, unsigned short *desc)
 {

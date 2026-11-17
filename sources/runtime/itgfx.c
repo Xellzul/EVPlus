@@ -6,9 +6,6 @@
 #include "ambrosia.h"
 #include "win32.h"
 
-extern void *memset(void *dst, int c, unsigned int n);
-extern char *strcpy(char *dst, const char *src);
-extern int strcmp(const char *a, const char *b);
 
 extern void *DT_RegionCreate(void);                 /* ittoolkit.c */
 extern int32_t DT_RegionScale(void *region, const ITRect *from, const ITRect *to);  /* ittoolkit.c */
@@ -147,7 +144,7 @@ static inline int32_t ATStrCmp(const char *a, const char *b)
 }
 
 /* DT_ContextCreate (a new image with a port on a window's DC, the DC state saved when asked; NULL
-   on failure). STATE: MATCH 100%, exe 52 / obj 52, byte-identical yes. OPEN: none */
+   on failure). */
 // FUNCTION: EVNOVA 0x0050e7a4
 ITImage *DT_ContextCreate(void *window, unsigned char save)
 {
@@ -175,8 +172,7 @@ ITImage *DT_ContextCreate(void *window, unsigned char save)
     return port != 0 ? port->link.self : 0;
 }
 
-/* DT_ContextCreateRaw (an image whose port draws into an existing DC; NULL when it cannot be made).
-   STATE: MATCH 100%, exe 52 / obj 52, byte-identical yes. OPEN: none */
+/* DT_ContextCreateRaw (an image whose port draws into an existing DC; NULL when it cannot be made). */
 // FUNCTION: EVNOVA 0x0050e828
 ITImage *DT_ContextCreateRaw(void *dc, unsigned char save)
 {
@@ -204,8 +200,7 @@ ITImage *DT_ContextCreateRaw(void *dc, unsigned char save)
     return port != 0 ? port->link.self : 0;
 }
 
-/* DT_ContextDispose (dispose a window image, as its port's disposer). STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes.
-   OPEN: none */
+/* DT_ContextDispose (dispose a window image, as its port's disposer). */
 // FUNCTION: EVNOVA 0x0050e8ac
 int32_t DT_ContextDispose(ITImage *image)
 {
@@ -213,8 +208,7 @@ int32_t DT_ContextDispose(ITImage *image)
 }
 
 /* _DT_ContextCreate (open a port on a DC, or on a window's DC when none is given; optionally with
-   the DC state saved; its clip region read into the port). STATE: MATCH 100%, exe 51 / obj 51, byte-identical yes.
-   OPEN: none */
+   the DC state saved; its clip region read into the port). */
 // FUNCTION: EVNOVA 0x0050e8bf
 int32_t _DT_ContextCreate(ITPort *port, void *window, void *dc, unsigned char save)
 {
@@ -253,8 +247,7 @@ done:
 }
 
 /* _DT_ContextDispose (release a port's DC: its selected stock objects back, the saved DC state
-   restored, a window DC released, its clip region deleted). STATE: MATCH 100%, exe 58 / obj 58, byte-identical yes.
-   OPEN: none */
+   restored, a window DC released, its clip region deleted). */
 // FUNCTION: EVNOVA 0x0050e965
 void _DT_ContextDispose(ITPort *port)
 {
@@ -282,8 +275,7 @@ void _DT_ContextDispose(ITPort *port)
 }
 
 /* _DT_ContextLock (before GDI draws into a port: its pixel map locked, and changed or locked
-   pixels stored into the bitmap). STATE: MATCH 100%, exe 43 / obj 43, byte-identical yes.
-   OPEN: none */
+   pixels stored into the bitmap). */
 // FUNCTION: EVNOVA 0x0050ea1f
 int32_t _DT_ContextLock(ITPort *port)
 {
@@ -311,8 +303,7 @@ int32_t _DT_ContextLock(ITPort *port)
 }
 
 /* _DT_ContextUnlock (after GDI drew into a port: the pixel map unlocked, and read back from the
-   bitmap when it stays locked, else marked as living in the bitmap). STATE: MATCH 100%, exe 33
-   / obj 33, byte-identical yes. OPEN: none */
+   bitmap when it stays locked, else marked as living in the bitmap). */
 // FUNCTION: EVNOVA 0x0050ea84
 void _DT_ContextUnlock(ITPort *port)
 {
@@ -337,8 +328,7 @@ void _DT_ContextUnlock(ITPort *port)
 /* DT_ResetAttributes (reset a port: MM_TEXT, opaque; with `pen' or `brush' white background,
    R2_COPYPEN, the black pen and brush and the solid pattern; with `font' black text, baseline
    alignment moving the current position, the ANSI variable font and its metrics; with `clip' the
-   saved clip region back; with `origin' the viewport origin at 0). STATE: MATCH 100%, exe 166 /
-   obj 166, byte-identical yes. OPEN: none */
+   saved clip region back; with `origin' the viewport origin at 0). */
 // FUNCTION: EVNOVA 0x0050ead7
 int32_t DT_ResetAttributes(ITImage *image, unsigned char pen, unsigned char brush, unsigned char font,
                   unsigned char clip, unsigned char origin)
@@ -436,8 +426,7 @@ done:
 }
 
 /* DT_SetFillAttributes (a port's text colour, background colour and fill pattern, each only when given;
-   the brush follows the pattern, or the text colour for the solid pattern). STATE: MATCH 100%,
-   exe 112 / obj 112, byte-identical yes. OPEN: none */
+   the brush follows the pattern, or the text colour for the solid pattern). */
 // FUNCTION: EVNOVA 0x0050ecfa
 int32_t DT_SetFillAttributes(ITImage *image, const ITColor *fore, const ITColor *back,
                   const unsigned char *pattern)
@@ -519,8 +508,7 @@ done:
     return err;
 }
 
-/* DT_GetFillColor (a port's text colour). STATE: MATCH 100%, exe 25 / obj 25, byte-identical yes.
-   OPEN: none */
+/* DT_GetFillColor (a port's text colour). */
 // FUNCTION: EVNOVA 0x0050ee3a
 int32_t DT_GetFillColor(ITImage *image, ITColor *fore)
 {
@@ -540,8 +528,7 @@ int32_t DT_GetFillColor(ITImage *image, ITColor *fore)
     return err;
 }
 
-/* DT_GetFillBackColor (a port's background colour). STATE: MATCH 100%, exe 25 / obj 25, byte-identical yes.
-   OPEN: none */
+/* DT_GetFillBackColor (a port's background colour). */
 // FUNCTION: EVNOVA 0x0050ee82
 int32_t DT_GetFillBackColor(ITImage *image, ITColor *back)
 {
@@ -561,8 +548,7 @@ int32_t DT_GetFillBackColor(ITImage *image, ITColor *back)
     return err;
 }
 
-/* DT_SetFillBackColor (set a port's background colour). STATE: MATCH 100%, exe 15 / obj 15,
-   byte-identical yes. OPEN: none */
+/* DT_SetFillBackColor (set a port's background colour). */
 // FUNCTION: EVNOVA 0x0050eeca
 int32_t DT_SetFillBackColor(ITImage *image, const ITColor *back)
 {
@@ -576,8 +562,7 @@ int32_t DT_SetFillBackColor(ITImage *image, const ITColor *back)
 
 /* DT_SetLineAttributes (a port's pen: text and background colours when given, the width unless -1, the
    pen pattern when given; a plain pen in the text colour for no pattern or the solid one, else a
-   geometric pen and a pattern brush from the 8 x 8 pattern). STATE: MATCH 100%, exe 138 / obj
-   138, byte-identical yes. OPEN: none */
+   geometric pen and a pattern brush from the 8 x 8 pattern). */
 // FUNCTION: EVNOVA 0x0050eeed
 int32_t DT_SetLineAttributes(ITImage *image, const ITColor *fore, const ITColor *back,
                   const unsigned char *pattern, int32_t width)
@@ -666,8 +651,7 @@ done:
     return err;
 }
 
-/* DT_FontEnumProc (EnumFontFamiliesA's callback: a family by that name exists; stop).
-   STATE: MATCH 100%, exe 4 / obj 4, byte-identical yes. OPEN: none */
+/* DT_FontEnumProc (EnumFontFamiliesA's callback: a family by that name exists; stop). */
 // FUNCTION: EVNOVA 0x0050f093
 int __stdcall DT_FontEnumProc(const void *font, const void *metric, ULong type, int32_t found)
 {
@@ -677,8 +661,7 @@ int __stdcall DT_FontEnumProc(const void *font, const void *metric, ULong type, 
 
 /* _DT_GetFontByNameList (the first installed family of a FACE list, `_' read as a space; the
    generic names SYSTEM, MONOSPACE, FIXED, SANS-SERIF, SANS and SERIF stand for Mac and
-   Windows lists of their own; NULL when none is installed). STATE: MATCH 100%, exe 292 /
-   obj 292, byte-identical yes. OPEN: none */
+   Windows lists of their own; NULL when none is installed). */
 // FUNCTION: EVNOVA 0x0050f09f
 char *_DT_GetFontByNameList(void *dc, const char *faces, char *out)
 {
@@ -738,8 +721,7 @@ char *_DT_GetFontByNameList(void *dc, const char *faces, char *out)
 
 /* DT_SetTextAttributes (a port's font: text colour when given, alignment on the baseline, a stock font by
    number or one made from the FACE list, size and style bits (bold, italic, underline), the
-   metrics kept in the port). STATE: MATCH 100%, exe 178 / obj 178, byte-identical yes. OPEN:
-   none */
+   metrics kept in the port). */
 // FUNCTION: EVNOVA 0x0050f3bd
 int32_t DT_SetTextAttributes(ITImage *image, const ITColor *color, const char *face, ULong fontId,
                   int32_t size, ULong style, int32_t align)
@@ -828,8 +810,7 @@ nomem:
     return err;
 }
 
-/* DT_SetTextColor (set a port's text colour). STATE: MATCH 100%, exe 22 / obj 22, byte-identical yes.
-   OPEN: none */
+/* DT_SetTextColor (set a port's text colour). */
 // FUNCTION: EVNOVA 0x0050f601
 int32_t DT_SetTextColor(ITImage *image, const ITColor *fore)
 {
@@ -846,7 +827,7 @@ int32_t DT_SetTextColor(ITImage *image, const ITColor *fore)
 }
 
 /* DT_SetTextSize (a port's font size: the font remade at that size when it changed, dropping its
-   FACE). STATE: MATCH 100%, exe 35 / obj 35, byte-identical yes. OPEN: none */
+   FACE). */
 // FUNCTION: EVNOVA 0x0050f63c
 int32_t DT_SetTextSize(ITImage *image, int32_t size)
 {
@@ -870,8 +851,7 @@ int32_t DT_SetTextSize(ITImage *image, int32_t size)
     return err;
 }
 
-/* DT_GetTextInfo (a port's font metrics: ascent, descent, leading, height, widest character).
-   STATE: MATCH 100%, exe 13 / obj 13, byte-identical yes. OPEN: none */
+/* DT_GetTextInfo (a port's font metrics: ascent, descent, leading, height, widest character). */
 // FUNCTION: EVNOVA 0x0050f681
 int32_t DT_GetTextInfo(ITImage *image, int32_t *metrics)
 {
@@ -885,7 +865,7 @@ int32_t DT_GetTextInfo(ITImage *image, int32_t *metrics)
 }
 
 /* DT_GetClipRegion (an image port's clip region in logical units: everything when the DC has none;
-   NULL on failure). STATE: MATCH 100%, exe 97 / obj 97, byte-identical yes. OPEN: none */
+   NULL on failure). */
 // FUNCTION: EVNOVA 0x0050f6a4
 void *DT_GetClipRegion(ITImage *image)
 {
@@ -940,8 +920,7 @@ done:
 }
 
 /* DT_AddClipRegion (intersect a port's clip with a region given in logical units, carried to
-   device units when the two differ). STATE: MATCH 100%, exe 92 / obj 92, byte-identical yes.
-   OPEN: none */
+   device units when the two differ). */
 // FUNCTION: EVNOVA 0x0050f7ae
 int32_t DT_AddClipRegion(ITImage *image, void *region)
 {
@@ -985,8 +964,7 @@ done:
     return err;
 }
 
-/* DT_AddClipRect (intersect a port's clip with a rectangle). STATE: MATCH 100%, exe 39 / obj 39,
-   byte-identical yes. OPEN: none */
+/* DT_AddClipRect (intersect a port's clip with a rectangle). */
 // FUNCTION: EVNOVA 0x0050f892
 int32_t DT_AddClipRect(ITImage *image, const ITRect *r)
 {
@@ -1012,8 +990,7 @@ int32_t DT_AddClipRect(ITImage *image, const ITRect *r)
     return err;
 }
 
-/* DT_SetClipRegion (set a port's clip to a region given in logical units). STATE: MATCH 100%, exe
-   90 / obj 90, byte-identical yes. OPEN: none */
+/* DT_SetClipRegion (set a port's clip to a region given in logical units). */
 // FUNCTION: EVNOVA 0x0050f8e4
 int32_t DT_SetClipRegion(ITImage *image, void *region)
 {
@@ -1057,8 +1034,7 @@ done:
     return err;
 }
 
-/* DT_SetClipRect (set a port's clip to a rectangle given in logical units). STATE: MATCH 100%, exe
-   63 / obj 63, byte-identical yes. OPEN: none */
+/* DT_SetClipRect (set a port's clip to a rectangle given in logical units). */
 // FUNCTION: EVNOVA 0x0050f9c4
 int32_t DT_SetClipRect(ITImage *image, const ITRect *r)
 {
@@ -1091,7 +1067,7 @@ int32_t DT_SetClipRect(ITImage *image, const ITRect *r)
 }
 
 /* DT_AddInvalidRect (invalidate a rectangle of a port's visible window; -7002 for a port on no
-   window). STATE: MATCH 100%, exe 38 / obj 38, byte-identical yes. OPEN: none */
+   window). */
 // FUNCTION: EVNOVA 0x0050fa5d
 int32_t DT_AddInvalidRect(ITImage *image, const ITRect *r)
 {
@@ -1113,8 +1089,7 @@ int32_t DT_AddInvalidRect(ITImage *image, const ITRect *r)
     return err;
 }
 
-/* DT_AddValidRect (validate a rectangle of a port's visible window). STATE: MATCH 100%, exe 37 / obj 37, byte-identical yes.
-   OPEN: none */
+/* DT_AddValidRect (validate a rectangle of a port's visible window). */
 // FUNCTION: EVNOVA 0x0050fac3
 int32_t DT_AddValidRect(ITImage *image, const ITRect *r)
 {
@@ -1136,8 +1111,7 @@ int32_t DT_AddValidRect(ITImage *image, const ITRect *r)
     return err;
 }
 
-/* DT_SetOrigin (move a port's origin, answering the old one when asked). STATE: MATCH 100%, exe 33 / obj 33, byte-identical yes.
-   OPEN: none */
+/* DT_SetOrigin (move a port's origin, answering the old one when asked). */
 // FUNCTION: EVNOVA 0x0050fb26
 int32_t DT_SetOrigin(ITImage *image, int32_t h, int32_t v, ITPoint *old)
 {
@@ -1158,8 +1132,7 @@ int32_t DT_SetOrigin(ITImage *image, int32_t h, int32_t v, ITPoint *old)
 
 /* DT_DrawImage (draw an image, with an optional mask or transparency, into a port: through the
    blitter when the port's image has its own pixels, else as a DIB into the port's DC; the
-   rectangles default to the source's bounds). STATE: MATCH 100%, exe 121 / obj 121, byte-
-   identical yes. OPEN: none */
+   rectangles default to the source's bounds). */
 // FUNCTION: EVNOVA 0x0050fb7b
 int32_t DT_DrawImage(ITImage *image, const ITRect *dstRect, ITImage *src, ITImage *mask,
                   const ITTransparent *trans, const ITRect *srcRect)
@@ -1216,8 +1189,7 @@ done:
 
 /* DT_DrawImageTile (draw an image, with an optional mask, tiled over a port: clipped to `clip'
    when given, else the whole device; origin moved while drawing when given; the tile is
-   `srcRect' or the source's bounds). STATE: MATCH 100%, exe 266 / obj 266, byte-identical yes.
-   OPEN: none */
+   `srcRect' or the source's bounds). */
 // FUNCTION: EVNOVA 0x0050fd00
 int32_t DT_DrawImageTile(ITImage *image, const ITRect *clip, const ITPoint *origin, ITImage *src,
                   ITImage *mask, int32_t unused, const ITRect *srcRect)
@@ -1337,8 +1309,7 @@ done:
     return err;
 }
 
-/* DT_SetPixel (set one pixel of a port). STATE: MATCH 100%, exe 40 / obj 40, byte-identical
-   yes. OPEN: none */
+/* DT_SetPixel (set one pixel of a port). */
 // FUNCTION: EVNOVA 0x00510042
 int32_t DT_SetPixel(ITImage *image, int32_t x, int32_t y, const ITColor *color)
 {
@@ -1366,8 +1337,7 @@ done:
     return err;
 }
 
-/* DT_SetPenLocation (move a port's pen). STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes. OPEN:
-   none */
+/* DT_SetPenLocation (move a port's pen). */
 // FUNCTION: EVNOVA 0x005100a4
 int32_t DT_SetPenLocation(ITImage *image, int32_t x, int32_t y)
 {
@@ -1384,8 +1354,7 @@ int32_t DT_SetPenLocation(ITImage *image, int32_t x, int32_t y)
 }
 
 /* DT_DrawLineTo (draw a line with a port's pen to a point; a patterned pen is stroked as a
-   widened path; a failure restoring the background mode retries the restore, as in the exe).
-   STATE: MATCH 100%, exe 76 / obj 76, byte-identical yes. OPEN: none */
+   widened path; a failure restoring the background mode retries the restore, as in the exe). */
 // FUNCTION: EVNOVA 0x005100d9
 int32_t DT_DrawLineTo(ITImage *image, int32_t x, int32_t y)
 {
@@ -1433,7 +1402,7 @@ failed:
 }
 
 /* DT_FrameRect (frame a rectangle with the port's pen, the pen centred on the inside of the
-   edges). STATE: MATCH 100%, exe 118 / obj 118, byte-identical yes. OPEN: none */
+   edges). */
 // FUNCTION: EVNOVA 0x005101a6
 int32_t DT_FrameRect(ITImage *image, const ITRect *r)
 {
@@ -1485,8 +1454,7 @@ failed:
     return err;
 }
 
-/* DT_PaintRect (fill a rectangle of a port with its current brush). STATE: MATCH 100%, exe 47 /
-   obj 47, byte-identical yes. OPEN: none */
+/* DT_PaintRect (fill a rectangle of a port with its current brush). */
 // FUNCTION: EVNOVA 0x00510302
 int32_t DT_PaintRect(ITImage *image, const ITRect *r)
 {
@@ -1515,8 +1483,7 @@ int32_t DT_PaintRect(ITImage *image, const ITRect *r)
     return err;
 }
 
-/* DT_EraseRect (erase a rectangle of a port with its background colour). STATE: MATCH 100%,
-   exe 83 / obj 83, byte-identical yes. OPEN: none */
+/* DT_EraseRect (erase a rectangle of a port with its background colour). */
 // FUNCTION: EVNOVA 0x00510374
 int32_t DT_EraseRect(ITImage *image, const ITRect *r)
 {
@@ -1574,8 +1541,7 @@ done:
     return err;
 }
 
-/* DT_InvertRect (invert a rectangle of a port). STATE: MATCH 100%, exe 43 / obj 43, byte-identical
-   yes. OPEN: none */
+/* DT_InvertRect (invert a rectangle of a port). */
 // FUNCTION: EVNOVA 0x0051044d
 int32_t DT_InvertRect(ITImage *image, const ITRect *r)
 {
@@ -1603,8 +1569,7 @@ int32_t DT_InvertRect(ITImage *image, const ITRect *r)
     return err;
 }
 
-/* DT_GetTextWidth (the width of a run of text in a port's font; 0 on failure). STATE: MATCH 100%,
-   exe 25 / obj 25, byte-identical yes. OPEN: none */
+/* DT_GetTextWidth (the width of a run of text in a port's font; 0 on failure). */
 // FUNCTION: EVNOVA 0x005104b3
 int32_t DT_GetTextWidth(ITImage *image, const char *text, int32_t length)
 {
@@ -1625,8 +1590,7 @@ int32_t DT_GetTextWidth(ITImage *image, const char *text, int32_t length)
     return width;
 }
 
-/* DT_DrawText (draw a run of text at a port's pen). STATE: MATCH 100%, exe 55 / obj 55,
-   byte-identical yes. OPEN: none */
+/* DT_DrawText (draw a run of text at a port's pen). */
 // FUNCTION: EVNOVA 0x005104f9
 int32_t DT_DrawText(ITImage *image, const char *text, int32_t length)
 {
@@ -1662,8 +1626,7 @@ done:
     return err;
 }
 
-/* DT_DrawTextAt (draw a run of text at a point of a port, background left alone). STATE: MATCH
-   100%, exe 69 / obj 69, byte-identical yes. OPEN: none */
+/* DT_DrawTextAt (draw a run of text at a point of a port, background left alone). */
 // FUNCTION: EVNOVA 0x00510579
 int32_t DT_DrawTextAt(ITImage *image, int32_t x, int32_t y, const char *text, int32_t length)
 {
@@ -1706,8 +1669,7 @@ failed:
 }
 
 /* _DT_PrinterDispose (close a printer device: end or abort its document, unlock its DEVMODE, delete
-   its DC; the open-device count drops either way). STATE: MATCH 100%, exe 42 / obj 42,
-   byte-identical yes. OPEN: none */
+   its DC; the open-device count drops either way). */
 // FUNCTION: EVNOVA 0x00510634
 void _DT_PrinterDispose(ITDevice *device)
 {
@@ -1738,9 +1700,7 @@ void _DT_PrinterDispose(ITDevice *device)
 /* DT_CreateMacPixMap (a DIB record for `bounds' in a format key: its colour table from the DC, the
    given RGBQUADs or the system palette; bit-field masks where the DC's own format differs; a
    DIB section when CreateDIBSection is there, else a compatible bitmap when asked, else bits
-   only; NULL on failure). STATE: MATCH 100%, exe 254 / obj 254, byte-identical yes. OPEN: none;
-   rowBytes is one statement and both arms push a plain product (the first arm's store is the
-   merged group's write-back, the second arm's temp is not merged: notes/itgfx.md) */
+   only; NULL on failure). */
 // FUNCTION: EVNOVA 0x005106b0
 ITDib *DT_CreateMacPixMap(void *dc, const ITRect *bounds, ULong format, const RGBQuad *colors,
                     int withBitmap)
@@ -1871,8 +1831,7 @@ done:
     return dib;
 }
 
-/* DT_DisposeMacPixMap (dispose a DIB record: its bitmap and DC, its bits unless borrowed). STATE:
-   MATCH 100%, exe 37 / obj 37, byte-identical yes. OPEN: none */
+/* DT_DisposeMacPixMap (dispose a DIB record: its bitmap and DC, its bits unless borrowed). */
 // FUNCTION: EVNOVA 0x00510a09
 void DT_DisposeMacPixMap(ITDib *dib)
 {
@@ -1902,10 +1861,7 @@ typedef struct ITImageBlock {
    StretchDIBits when the sizes differ or the map mode is not MM_TEXT); through a mask by
    reading the destination back into a DIB, blending with the blitter 0x004e8b5f and drawing
    that; through a transparent key colour with the AND / OR mask pair; an alpha of 0 draws
-   nothing, 0xff is opaque and anything between is not drawn at all). STATE: MATCH 100%, exe
-   618 / obj 618, byte-identical yes (2395 bytes). OPEN: none; the sizes are ULong (each arm's
-   int arguments are one CSE'd conversion, stored at its first push) and every failure is
-   written out at its site; notes/itgfx.md */
+   nothing, 0xff is opaque and anything between is not drawn at all). */
 // FUNCTION: EVNOVA 0x00510a6b
 int32_t DT_DrawDib(void *dc, const ITRect *dst, ITDib *src, ITDib *mask,
                   const ITTransparent *trans, const ITRect *srcRect)
@@ -2189,8 +2145,7 @@ done:
 
 /* _DT_StuffMacPixMap (an image in the caller's 0x28a4-byte block whose pixel map describes an existing
    DIB: format, depth, bounds, row bytes, palette and inverse table for indexed depths, key 0x8889
-   when the palette is the greyscale one). STATE: MATCH 100%, exe 136 / obj 136.
-   OPEN: none */
+   when the palette is the greyscale one). */
 // FUNCTION: EVNOVA 0x005113c6
 ITImage *_DT_StuffMacPixMap(ITDib *dib, ITImage *image)
 {
@@ -2246,8 +2201,7 @@ ITImage *_DT_StuffMacPixMap(ITDib *dib, ITImage *image)
 
 /* DT_SyncDib (flush GDI and move a DIB's pixels between its bitmap and its bits: into the
    bits, or with `store' out of them; kDibFailed when GDI refuses; `load', always !store at
-   the call sites, is never read). STATE: MATCH 100%, exe 69 / obj 69, byte-identical yes.
-   OPEN: none */
+   the call sites, is never read). */
 // FUNCTION: EVNOVA 0x00511546
 int32_t DT_SyncDib(ITDib *dib, unsigned char store, unsigned char load)
 {
@@ -2286,8 +2240,7 @@ fail:
     return err;
 }
 
-/* _DT_PaletteToMacCTab (a palette as Windows RGBQUADs; the entry count through `count'). STATE:
-   MATCH 100%, exe 27 / obj 27, byte-identical yes. OPEN: none */
+/* _DT_PaletteToMacCTab (a palette as Windows RGBQUADs; the entry count through `count'). */
 // FUNCTION: EVNOVA 0x00511600
 void _DT_PaletteToMacCTab(RGBQuad *quads, ULong *count, const ITPalette *palette)
 {
@@ -2305,8 +2258,7 @@ void _DT_PaletteToMacCTab(RGBQuad *quads, ULong *count, const ITPalette *palette
     }
 }
 
-/* _DT_MacCTabToPalette (Windows RGBQUADs as an opaque palette). STATE: MATCH 100%, exe 25 / obj 25, byte-identical yes.
-   OPEN: none */
+/* _DT_MacCTabToPalette (Windows RGBQUADs as an opaque palette). */
 // FUNCTION: EVNOVA 0x00511643
 void _DT_MacCTabToPalette(ITPalette *palette, const RGBQuad *quads, ULong count)
 {
@@ -2324,7 +2276,7 @@ void _DT_MacCTabToPalette(ITPalette *palette, const RGBQuad *quads, ULong count)
 }
 
 /* _DT_MacCTabToInverse (the 4-4-4 inverse table over Windows RGBQUADs; itblit.c's _DT_PaletteToInverse over
-   a palette). STATE: MATCH 100%, exe 78 / obj 78, byte-identical yes. OPEN: none */
+   a palette). */
 // FUNCTION: EVNOVA 0x00511681
 void _DT_MacCTabToInverse(unsigned char *table, const RGBQuad *quads, ULong count)
 {
@@ -2377,8 +2329,7 @@ void _DT_MacCTabToInverse(unsigned char *table, const RGBQuad *quads, ULong coun
     }
 
 /* DT_DibHeaderFormatKey (a DIB header's format key: the bit count, or for 16 / 32-bit bit-field DIBs
-   the mask widths as nibbles, alpha taking the rest). STATE: MATCH 100%, exe 123 / obj 123,
-   byte-identical yes. OPEN: none */
+   the mask widths as nibbles, alpha taking the rest). */
 // FUNCTION: EVNOVA 0x00511774
 ULong DT_DibHeaderFormatKey(const BitmapInfoHeader *info)
 {
@@ -2432,8 +2383,7 @@ ULong DT_DibHeaderFormatKey(const BitmapInfoHeader *info)
     return key;
 }
 
-/* DT_DibFormatKey (a DIB record's format key). STATE: MATCH 100%, exe 8 / obj 8, byte-identical yes.
-   OPEN: none */
+/* DT_DibFormatKey (a DIB record's format key). */
 // FUNCTION: EVNOVA 0x00511899
 ULong DT_DibFormatKey(const ITDib *dib)
 {
@@ -2444,7 +2394,7 @@ ULong DT_DibFormatKey(const ITDib *dib)
 }
 
 /* DT_DCFormatKey (the format key of a DC's own bitmaps, read off a 1 x 1 compatible bitmap; 0
-   when GDI refuses). STATE: MATCH 100%, exe 67 / obj 67, byte-identical yes. OPEN: none */
+   when GDI refuses). */
 // FUNCTION: EVNOVA 0x005118ac
 ULong DT_DCFormatKey(void *dc)
 {
@@ -2480,8 +2430,7 @@ done:
     return key;
 }
 
-/* DT_SurfaceCreateFromWindow (a new image on a window's whole client area). STATE: MATCH 100%, exe 6 / obj 6, byte-identical yes.
-   OPEN: none */
+/* DT_SurfaceCreateFromWindow (a new image on a window's whole client area). */
 // FUNCTION: EVNOVA 0x0051195d
 ITImage *DT_SurfaceCreateFromWindow(void *window)
 {
@@ -2490,8 +2439,7 @@ ITImage *DT_SurfaceCreateFromWindow(void *window)
 
 /* DT_SurfaceCreateLikeWindow (a new image on a window: its client area, or `area' clamped, in the window
    DC's own format, a compatible DIB behind it, the DC's colour table taken for indexed depths,
-   and a port opened on the DIB's DC; NULL on failure). STATE: MATCH 100%, exe 240 / obj 240,
-   byte-identical yes. OPEN: none. */
+   and a port opened on the DIB's DC; NULL on failure). */
 // FUNCTION: EVNOVA 0x0051196b
 ITImage *DT_SurfaceCreateLikeWindow(void *window, const ITRect *area)
 {
@@ -2583,8 +2531,7 @@ done:
     return pixels != 0 ? pixels->link.owner2 : 0;
 }
 
-/* DT_SurfaceDispose (dispose an image with no disposer named). STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes.
-   OPEN: none */
+/* DT_SurfaceDispose (dispose an image with no disposer named). */
 // FUNCTION: EVNOVA 0x00511c66
 int32_t DT_SurfaceDispose(ITImage *image)
 {
@@ -2593,8 +2540,7 @@ int32_t DT_SurfaceDispose(ITImage *image)
 
 /* DT_ImageCreate (a new offscreen image of a format key with an optional palette: its pixel map
    described, a DIB behind it, the palette and its inverse table kept for indexed depths, a
-   format key taken (0x8889 for the greyscale palette); NULL on failure). STATE: MATCH 100%,
-   exe 179 / obj 179, byte-identical yes. OPEN: none */
+   format key taken (0x8889 for the greyscale palette); NULL on failure). */
 // FUNCTION: EVNOVA 0x00511c79
 ITImage *DT_ImageCreate(const ITRect *bounds, ULong format, const ITPalette *palette)
 {
@@ -2648,16 +2594,14 @@ done:
     return pixels != 0 ? pixels->link.self : 0;
 }
 
-/* DT_ImageDispose (dispose an offscreen image, as its pixel map's disposer). STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes.
-   OPEN: none */
+/* DT_ImageDispose (dispose an offscreen image, as its pixel map's disposer). */
 // FUNCTION: EVNOVA 0x00511ea4
 int32_t DT_ImageDispose(ITImage *image)
 {
     return _DT_SurfaceDispose(image, 0, 0, 1);
 }
 
-/* _DT_ImageDispose (drop a pixel map's DIB). STATE: MATCH 100%, exe 22 / obj 22, byte-identical yes.
-   OPEN: none */
+/* _DT_ImageDispose (drop a pixel map's DIB). */
 // FUNCTION: EVNOVA 0x00511eb7
 void _DT_ImageDispose(ITPixels *pixels)
 {
@@ -2674,7 +2618,7 @@ void _DT_ImageDispose(ITPixels *pixels)
 }
 
 /* DT_SurfaceBlitRects (copy rectangles of a window image's pixels to the same places on its
-   window). STATE: MATCH 100%, exe 8 / obj 8, byte-identical yes. OPEN: none */
+   window). */
 // FUNCTION: EVNOVA 0x00511ee9
 int32_t DT_SurfaceBlitRects(ITImage *image, ULong count, const ITRect *rects)
 {
@@ -2682,8 +2626,7 @@ int32_t DT_SurfaceBlitRects(ITImage *image, ULong count, const ITRect *rects)
 }
 
 /* DT_SurfaceCopyRects (copy `count' rectangles of a window image's pixels to its window, each `src'
-   to the top left of the matching `dst'; -7300 when GDI refuses). STATE: MATCH 100%, exe 110 /
-   obj 110, byte-identical yes. OPEN: none */
+   to the top left of the matching `dst'; -7300 when GDI refuses). */
 // FUNCTION: EVNOVA 0x00511f00
 int32_t DT_SurfaceCopyRects(ITImage *image, ULong count, const ITRect *src, const ITRect *dst)
 {
@@ -2746,7 +2689,7 @@ done:
 /* DT_SurfaceCheck (rebuild an image whose DIB no longer fits it: a window-backed one when the
    window's client area or the screen depth moved, an offscreen one when the DIB and the pixel map
    disagree; the fresh image's state is swapped in and the fresh shell disposed; `rebuilt' says
-   whether it happened). STATE: MATCH 100%, exe 225 / obj 225, byte-identical yes. OPEN: none */
+   whether it happened). */
 // FUNCTION: EVNOVA 0x00512061
 int32_t DT_SurfaceCheck(ITImage *image, unsigned char *rebuilt)
 {
@@ -2839,7 +2782,7 @@ done:
 /* _DT_ImageLock (lock an image's pixels, and `other''s if it is an image: GDI flushed when DIB
    sections are in use, the first lock rebuilding a stale DIB (0x00512061) and refreshing an
    inverse table whose lock bit was set; the lock count up and the bits pointer published at
-   +0x4c). STATE: MATCH 100%, exe 98 / obj 98, byte-identical yes. OPEN: none */
+   +0x4c). */
 // FUNCTION: EVNOVA 0x0051231a
 int32_t _DT_ImageLock(ITImage *image, ITImage *other, unsigned char *rebuilt)
 {
@@ -2882,7 +2825,7 @@ done:
 }
 
 /* _DT_ImageUnlock (unlock two images' pixel maps, the second only if it is one; the last unlock
-   clears the lock bit). STATE: MATCH 100%, exe 49 / obj 49, byte-identical yes. OPEN: none */
+   clears the lock bit). */
 // FUNCTION: EVNOVA 0x00512411
 void _DT_ImageUnlock(ITImage *image, ITImage *other)
 {

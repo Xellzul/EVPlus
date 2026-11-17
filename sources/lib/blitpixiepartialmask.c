@@ -5,7 +5,6 @@
 
 EXTERN_C_BEGIN
 
-/* BlitPixiePartialMask (mac _BlitPixiePartialMask). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00471b70
 // MAC: _BlitPixiePartialMask i386 0x000c0fe5 ppc 0x000cce88
 void BlitPixiePartialMask(unsigned char *srcPixels, unsigned char *dstPixels,

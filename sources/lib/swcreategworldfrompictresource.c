@@ -9,7 +9,6 @@
 
 
 
-/* SWCreateGWorldFromPictResource (mac _SWCreateGWorldFromPictResource). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478f30
 // MAC: _SWCreateGWorldFromPictResource i386 0x000a7f51 ppc 0x000b2d8c
 short SWCreateGWorldFromPictResource(SpriteWorldPtr destSpriteWorld,

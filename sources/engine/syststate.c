@@ -12,7 +12,6 @@
 EXTERN_C_BEGIN
 
 
-/* InitStatus. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0045cfc0
 // MAC: _InitStatus i386 0x00049470 ppc 0x00051e08
 void InitStatus(void)
@@ -29,7 +28,6 @@ void InitStatus(void)
     radarCount = 0;
 }
 
-/* HandleStatus. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0045d030
 // MAC: _HandleStatus i386 0x000494d7 ppc 0x00051eb0
 void HandleStatus(void)

@@ -23,7 +23,6 @@
 #include "crashlog.h"
 #include "prototypes.h"
 
-/* ResetMissionOfferVenue (mac _ResetMissionOfferVenue). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00448660
 // MAC: _ResetMissionOfferVenue i386 0x00099f02 ppc 0x000a5d00
 void ResetMissionOfferVenue(void)
@@ -31,7 +30,6 @@ void ResetMissionOfferVenue(void)
     lastPortMissionLoc = -1;
 }
 
-/* OfferMissionFromPort (mac _OfferMissionFromPort). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00448670
 // MAC: _OfferMissionFromPort i386 0x000a369e ppc 0x000af148
 Boolean OfferMissionFromPort(short stellar)

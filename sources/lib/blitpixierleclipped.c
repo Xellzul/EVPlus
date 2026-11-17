@@ -7,7 +7,6 @@
 EXTERN_C_BEGIN
 
 
-/* BlitPixieRLEClipped (mac _BlitPixieRLEClipped). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00471e90
 // MAC: _BlitPixieRLEClipped i386 0x000bde9c ppc 0x000c9938
 void BlitPixieRLEClipped(unsigned char *rleTokens, unsigned char *dstPixel,
@@ -122,8 +121,6 @@ void BlitPixieRLEClipped(unsigned char *rleTokens, unsigned char *dstPixel,
 /* The 'RLE#' resource header; the layout of record is
    sources/lib/swcreaterledata.c. */
 
-/* FixupRLEPixelData. STATE: MATCH 138/138, compiled after BlitPixieRLEClipped, its predecessor
-   in the original object. OPEN: none */
 // FUNCTION: EVNOVA 0x00472000
 #ifndef MACBUILD
 void FixupRLEPixelData(unsigned char *tokens, RLEPixelData *header)

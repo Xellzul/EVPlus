@@ -216,7 +216,6 @@ local void tr_static_init(void)
 {
 }
 
-/* _tr_init. STATE: MATCH 100%, exe 19 / obj 19, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0054319a
 void _tr_init(s)
     deflate_state *s;
@@ -239,7 +238,6 @@ void _tr_init(s)
     init_block(s);
 }
 
-/* init_block. STATE: MATCH 100%, exe 34 / obj 34, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x00543123
 local void init_block(s)
     deflate_state *s;
@@ -268,7 +266,6 @@ local void init_block(s)
    (tree[n].Freq < tree[m].Freq || \
    (tree[n].Freq == tree[m].Freq && depth[n] <= depth[m]))
 
-/* pqdownheap. STATE: MATCH 100%, exe 53 / obj 53, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0054306c
 local void pqdownheap(s, tree, k)
     deflate_state *s;
@@ -293,7 +290,6 @@ local void pqdownheap(s, tree, k)
     s->heap[k] = v;
 }
 
-/* gen_bitlen. STATE: MATCH 100%, exe 120 / obj 120, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x00542ec1
 local void gen_bitlen(s, desc)
     deflate_state *s;
@@ -380,8 +376,7 @@ local void gen_codes (tree, max_code, bl_count)
     }
 }
 
-/* build_tree (gen_codes inlined in the exe). STATE: MATCH 100%, exe 160 / obj 160,
-   byte-identical. OPEN: none. */
+/* build_tree (gen_codes inlined in the exe). */
 // FUNCTION: EVNOVA 0x00542c83
 local void build_tree(s, desc)
     deflate_state *s;
@@ -441,7 +436,6 @@ local void build_tree(s, desc)
     gen_codes ((ct_data *)tree, max_code, s->bl_count);
 }
 
-/* scan_tree. STATE: MATCH 100%, exe 67 / obj 67, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x00542b96
 local void scan_tree (s, tree, max_code)
     deflate_state *s;
@@ -484,7 +478,6 @@ local void scan_tree (s, tree, max_code)
     }
 }
 
-/* send_tree. STATE: MATCH 100%, exe 338 / obj 338, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x00542635
 local void send_tree (s, tree, max_code)
     deflate_state *s;
@@ -550,7 +543,6 @@ local int build_bl_tree(s)
     return max_blindex;
 }
 
-/* send_all_trees. STATE: MATCH 100%, exe 162 / obj 162, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x005423cf
 local void send_all_trees(s, lcodes, dcodes, blcodes)
     deflate_state *s;
@@ -570,8 +562,7 @@ local void send_all_trees(s, lcodes, dcodes, blcodes)
     send_tree(s, (ct_data *)s->dyn_dtree, dcodes-1);
 }
 
-/* _tr_stored_block (copy_block, bi_windup inlined in the exe). STATE: MATCH 100%, exe 107 /
-   obj 107, byte-identical. OPEN: none. */
+/* _tr_stored_block (copy_block, bi_windup inlined in the exe). */
 // FUNCTION: EVNOVA 0x00542273
 void _tr_stored_block(s, buf, stored_len, eof)
     deflate_state *s;
@@ -583,8 +574,7 @@ void _tr_stored_block(s, buf, stored_len, eof)
     copy_block(s, buf, (unsigned)stored_len, 1);
 }
 
-/* _tr_align (bi_flush inlined twice in the exe). STATE: MATCH 100%, exe 200 / obj 200,
-   byte-identical. OPEN: none. */
+/* _tr_align (bi_flush inlined twice in the exe). */
 // FUNCTION: EVNOVA 0x00541f60
 void _tr_align(s)
     deflate_state *s;
@@ -601,8 +591,7 @@ void _tr_align(s)
     s->last_eob_len = 7;
 }
 
-/* _tr_flush_block (set_data_type, build_bl_tree, bi_windup inlined in the exe). STATE: MATCH
-   100%, exe 231 / obj 231, byte-identical. OPEN: none. */
+/* _tr_flush_block (set_data_type, build_bl_tree, bi_windup inlined in the exe). */
 // FUNCTION: EVNOVA 0x00541c69
 void _tr_flush_block(s, buf, stored_len, eof)
     deflate_state *s;
@@ -674,7 +663,6 @@ int _tr_tally (s, dist, lc)
     return (s->last_lit == s->lit_bufsize-1);
 }
 
-/* compress_block. STATE: MATCH 100%, exe 264 / obj 264, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0054183f
 local void compress_block(s, ltree, dtree)
     deflate_state *s;

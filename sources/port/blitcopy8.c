@@ -7,7 +7,6 @@
    +0x00, the pixel base at +0x0c, a 3-byte-entry colour table at +0x10 (this
    is its only reader), and the row stride at +0x20 */
 
-/* CopyBitsCopy8. STATE: MATCH, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x004b7230
 void CopyBitsCopy8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 {
@@ -65,7 +64,6 @@ void CopyBitsCopy8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
     }
 }
 
-/* CopyBitsOr8. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b73b0
 void CopyBitsOr8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 {

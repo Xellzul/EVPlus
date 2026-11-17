@@ -17,7 +17,6 @@ Boolean done[kProfileSlots];          /* dump bookkeeping */
 
 EXTERN_C_BEGIN
 
-/* print_dependents (mac _print_dependents). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046fa30
 // MAC: _print_dependents i386 0x000a4e86 ppc 0x000b0b80
 void print_dependents(FILE *f, short slot, short depth)
@@ -46,7 +45,6 @@ void print_dependents(FILE *f, short slot, short depth)
     }
 }
 
-/* MyProfileInit (mac _MyProfileInit). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046fbf0
 // MAC: _MyProfileInit i386 0x000a514f ppc 0x000b0eb8
 void MyProfileInit(void)
@@ -58,7 +56,6 @@ void MyProfileInit(void)
     MyProfileReset();
 }
 
-/* MyProfileReset. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046fc10
 // MAC: _MyProfileReset i386 0x000a4d23 ppc 0x000b0988
 void MyProfileReset(void)
@@ -74,7 +71,6 @@ void MyProfileReset(void)
     lastEntered = -1;
 }
 
-/* MyProfileSetName (mac _MyProfileSetName). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046fde0
 // MAC: _MyProfileSetName i386 0x000a4d8a ppc 0x000b09f0
 void MyProfileSetName(short slot, const char *slotName)
@@ -84,7 +80,6 @@ void MyProfileSetName(short slot, const char *slotName)
     strncpy(name[slot], slotName, 31);
 }
 
-/* MyProfileEnter (mac _MyProfileEnter). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046fe20
 // MAC: _MyProfileEnter i386 0x000a4dbd ppc 0x000b0a14
 void MyProfileEnter(short slot)
@@ -97,7 +92,6 @@ void MyProfileEnter(short slot)
     lastEntered = slot;
 }
 
-/* MyProfileExit (mac _MyProfileExit). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046fe80
 // MAC: _MyProfileExit i386 0x000a4e11 ppc 0x000b0a94
 void MyProfileExit(short slot)
@@ -117,7 +111,6 @@ void MyProfileExit(short slot)
     }
 }
 
-/* MyProfileDump (mac _MyProfileDump). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ff00
 // MAC: _MyProfileDump i386 0x000a5088 ppc 0x000b0dc0
 void MyProfileDump(const char *path)

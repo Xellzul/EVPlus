@@ -3,8 +3,7 @@
 #define PNG_INTERNAL
 #include "png.h"
 
-/* png_get_uint_31. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00552e01
 png_uint_32
 png_get_uint_31(png_structp png_ptr, png_bytep buf)
@@ -46,8 +45,7 @@ png_get_uint_16(png_bytep buf)
    return (i);
 }
 
-/* png_crc_read. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00552dd8
 void
 png_crc_read(png_structp png_ptr, png_bytep buf, png_size_t length)
@@ -56,8 +54,7 @@ png_crc_read(png_structp png_ptr, png_bytep buf, png_size_t length)
    png_calculate_crc(png_ptr, buf, length);
 }
 
-/* png_crc_finish. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00552ca8
 int
 png_crc_finish(png_structp png_ptr, png_uint_32 skip)
@@ -123,8 +120,7 @@ png_crc_error(png_structp png_ptr)
       return (0);
 }
 
-/* png_decompress_chunk. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005529ce
 png_charp
 png_decompress_chunk(png_structp png_ptr, int comp_type,
@@ -261,8 +257,7 @@ png_decompress_chunk(png_structp png_ptr, int comp_type,
    return chunkdata;
 }
 
-/* png_handle_IHDR. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005527d8
 void
 png_handle_IHDR(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -328,8 +323,7 @@ png_handle_IHDR(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
       color_type, interlace_type, compression_type, filter_type);
 }
 
-/* png_handle_PLTE. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00552647
 void
 png_handle_PLTE(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -412,8 +406,7 @@ png_handle_PLTE(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
 
 }
 
-/* png_handle_IEND. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005525f6
 void
 png_handle_IEND(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -437,8 +430,7 @@ png_handle_IEND(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
       return;
 }
 
-/* png_handle_gAMA. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0055249c
 void
 png_handle_gAMA(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -504,8 +496,7 @@ png_handle_gAMA(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_set_gAMA_fixed(png_ptr, info_ptr, igamma);
 }
 
-/* png_handle_sBIT. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0055233d
 void
 png_handle_sBIT(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -571,8 +562,7 @@ png_handle_sBIT(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_set_sBIT(png_ptr, info_ptr, &(png_ptr->sig_bit));
 }
 
-/* png_handle_cHRM. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00551d31
 void
 png_handle_cHRM(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -715,8 +705,7 @@ png_handle_cHRM(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
       return;
 }
 
-/* png_handle_sRGB. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00551b6c
 void
 png_handle_sRGB(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -792,8 +781,7 @@ png_handle_sRGB(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_set_sRGB_gAMA_and_cHRM(png_ptr, info_ptr, intent);
 }
 
-/* png_handle_iCCP. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00551993
 void
 png_handle_iCCP(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -894,8 +882,7 @@ png_handle_iCCP(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_free(png_ptr, chunkdata);
 }
 
-/* png_handle_sPLT. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0055176d
 void
 png_handle_sPLT(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -997,8 +984,7 @@ png_handle_sPLT(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_free(png_ptr, new_palette.entries);
 }
 
-/* png_handle_tRNS. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00551553
 void
 png_handle_tRNS(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1092,8 +1078,7 @@ png_handle_tRNS(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
       &(png_ptr->trans_values));
 }
 
-/* png_handle_bKGD. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0055133f
 void
 png_handle_bKGD(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1178,8 +1163,7 @@ png_handle_bKGD(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_set_bKGD(png_ptr, info_ptr, &(png_ptr->background));
 }
 
-/* png_handle_hIST. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00551236
 void
 png_handle_hIST(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1233,8 +1217,7 @@ png_handle_hIST(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_set_hIST(png_ptr, info_ptr, readbuf);
 }
 
-/* png_handle_pHYs. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00551131
 void
 png_handle_pHYs(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1277,8 +1260,7 @@ png_handle_pHYs(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_set_pHYs(png_ptr, info_ptr, res_x, res_y, unit_type);
 }
 
-/* png_handle_oFFs. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0055102c
 void
 png_handle_oFFs(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1321,8 +1303,7 @@ png_handle_oFFs(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_set_oFFs(png_ptr, info_ptr, offset_x, offset_y, unit_type);
 }
 
-/* png_handle_pCAL. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00550da9
 void
 png_handle_pCAL(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1444,8 +1425,7 @@ png_handle_pCAL(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_free(png_ptr, params);
 }
 
-/* png_handle_sCAL. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00550c16
 void
 png_handle_sCAL(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1525,8 +1505,7 @@ png_handle_sCAL(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_free(png_ptr, buffer);
 }
 
-/* png_handle_tIME. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00550b2c
 void
 png_handle_tIME(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1569,8 +1548,7 @@ png_handle_tIME(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_set_tIME(png_ptr, info_ptr, &mod_time);
 }
 
-/* png_handle_tEXt. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00550a17
 void
 png_handle_tEXt(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1634,8 +1612,7 @@ png_handle_tEXt(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
      png_warning(png_ptr, "Insufficient memory to process text chunk.");
 }
 
-/* png_handle_zTXt. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005508a9
 void
 png_handle_zTXt(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1714,8 +1691,7 @@ png_handle_zTXt(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
      png_error(png_ptr, "Insufficient memory to store zTXt chunk.");
 }
 
-/* png_handle_unknown. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0055075b
 void
 png_handle_unknown(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
@@ -1777,8 +1753,7 @@ png_handle_unknown(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
 
 #define isnonalpha(c) ((c) < 65 || (c) > 122 || ((c) > 90 && (c) < 97))
 
-/* png_check_chunk_name. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005506eb
 void
 png_check_chunk_name(png_structp png_ptr, png_bytep chunk_name)
@@ -1791,8 +1766,7 @@ png_check_chunk_name(png_structp png_ptr, png_bytep chunk_name)
    }
 }
 
-/* png_combine_row. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005503d0
 void
 png_combine_row(png_structp png_ptr, png_bytep row, int mask)
@@ -1988,8 +1962,7 @@ png_combine_row(png_structp png_ptr, png_bytep row, int mask)
    }
 }
 
-/* png_do_read_interlace. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0054ff60
 void
 png_do_read_interlace(png_structp png_ptr)
@@ -2198,8 +2171,7 @@ png_do_read_interlace(png_structp png_ptr)
    }
 }
 
-/* png_read_filter_row. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0054fd8b
 void
 png_read_filter_row(png_structp png_ptr, png_row_infop row_info, png_bytep row,
@@ -2309,8 +2281,7 @@ png_read_filter_row(png_structp png_ptr, png_row_infop row_info, png_bytep row,
    }
 }
 
-/* png_read_finish_row. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0054fab2
 void
 png_read_finish_row(png_structp png_ptr)
@@ -2421,8 +2392,7 @@ png_read_finish_row(png_structp png_ptr)
    png_ptr->mode |= PNG_AFTER_IDAT;
 }
 
-/* png_read_start_row. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x0054f7ef
 void
 png_read_start_row(png_structp png_ptr)

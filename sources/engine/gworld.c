@@ -8,7 +8,6 @@ static CGrafPtr savedPort;
 static void *savedDevice;
 
 
-/* CreateGWorldContainer (mac _CreateGWorldContainer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f740
 // MAC: _CreateGWorldContainer i386 0x000a4517 ppc 0x000b001c
 void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
@@ -55,7 +54,6 @@ void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
     }
 }
 
-/* CreateGWorldContainerFromPictResource (mac _CreateGWorldContainerFromPictResource). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f850
 // MAC: _CreateGWorldContainerFromPictResource i386 0x000a46b7 ppc 0x000b0208
 void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
@@ -78,7 +76,6 @@ void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
     }
 }
 
-/* SetGWorldContainer (mac _SetGWorldContainer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f8e0
 // MAC: _SetGWorldContainer i386 0x000a4613 ppc 0x000b0120
 void SetGWorldContainer(GWorldContainer *gwc)
@@ -89,7 +86,6 @@ void SetGWorldContainer(GWorldContainer *gwc)
         SetPort(gwc->world);
 }
 
-/* UnsetGWorldContainer (mac _UnsetGWorldContainer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f910
 // MAC: _UnsetGWorldContainer i386 0x000a464a ppc 0x000b0180
 void UnsetGWorldContainer(GWorldContainer *gwc)
@@ -97,7 +93,6 @@ void UnsetGWorldContainer(GWorldContainer *gwc)
     SetPort(savedPort);
 }
 
-/* DisposeGWorldContainer (mac _DisposeGWorldContainer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f920
 // MAC: _DisposeGWorldContainer i386 0x000a4669 ppc 0x000b0194
 void DisposeGWorldContainer(GWorldContainer *gwc)
@@ -107,7 +102,6 @@ void DisposeGWorldContainer(GWorldContainer *gwc)
     }
 }
 
-/* GetGWCPixMap (mac _GetGWCPixMap). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f940
 // MAC: _GetGWCPixMap i386 0x000a469e ppc 0x000b01f0
 PixMapPtr GetGWCPixMap(GWorldContainer *gwc)

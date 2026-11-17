@@ -4,7 +4,6 @@
 #include "shipobj.h"
 #include "spriteworld.h"
 
-/* BlitPixieAddOverCopy8 (mac _BlitPixieAddOverCopy8). STATE: MATCH, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x00473fa0
 // MAC: _BlitPixieAddOverCopy8 i386 0x000c1879 ppc 0x000cd8f4
 void BlitPixieAddOverCopy8(unsigned char *dstPixels, unsigned char *srcPixels,

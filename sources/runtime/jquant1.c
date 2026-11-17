@@ -60,8 +60,7 @@ typedef struct {
 
 typedef my_cquantizer * my_cquantize_ptr;
 
-/* select_ncolors. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561eff
 LOCAL(int)
 select_ncolors (j_decompress_ptr cinfo, int Ncolors[])
@@ -126,8 +125,7 @@ largest_input_value (j_decompress_ptr cinfo, int ci, int j, int maxj)
   return (int) (((INT32) (2*j + 1) * MAXJSAMPLE + maxj) / (2*maxj));
 }
 
-/* create_colormap. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561dae
 LOCAL(void)
 create_colormap (j_decompress_ptr cinfo)
@@ -173,8 +171,7 @@ create_colormap (j_decompress_ptr cinfo)
   cquantize->sv_actual = total_colors;
 }
 
-/* create_colorindex. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561c77
 LOCAL(void)
 create_colorindex (j_decompress_ptr cinfo)
@@ -247,8 +244,7 @@ make_odither_array (j_decompress_ptr cinfo, int ncolors)
   return odither;
 }
 
-/* create_odither_tables. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561b93
 LOCAL(void)
 create_odither_tables (j_decompress_ptr cinfo)
@@ -272,8 +268,7 @@ create_odither_tables (j_decompress_ptr cinfo)
   }
 }
 
-/* color_quantize. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561b11
 METHODDEF(void)
 color_quantize (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
@@ -302,8 +297,7 @@ color_quantize (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
   }
 }
 
-/* color_quantize3. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561a7f
 METHODDEF(void)
 color_quantize3 (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
@@ -332,8 +326,7 @@ color_quantize3 (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
   }
 }
 
-/* quantize_ord_dither. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561988
 METHODDEF(void)
 quantize_ord_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
@@ -378,8 +371,7 @@ quantize_ord_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
   }
 }
 
-/* quantize3_ord_dither. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561880
 METHODDEF(void)
 quantize3_ord_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
@@ -425,8 +417,7 @@ quantize3_ord_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
   }
 }
 
-/* quantize_fs_dither. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005616ce
 METHODDEF(void)
 quantize_fs_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
@@ -528,8 +519,7 @@ alloc_fs_workspace (j_decompress_ptr cinfo)
   }
 }
 
-/* start_pass_1_quant. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005615c1
 METHODDEF(void)
 start_pass_1_quant (j_decompress_ptr cinfo, boolean is_pre_scan)
@@ -578,8 +568,7 @@ start_pass_1_quant (j_decompress_ptr cinfo, boolean is_pre_scan)
   }
 }
 
-/* finish_pass_1_quant. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005615c0
 METHODDEF(void)
 finish_pass_1_quant (j_decompress_ptr cinfo)
@@ -587,8 +576,7 @@ finish_pass_1_quant (j_decompress_ptr cinfo)
 
 }
 
-/* new_color_map_1_quant. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005615aa
 METHODDEF(void)
 new_color_map_1_quant (j_decompress_ptr cinfo)
@@ -596,8 +584,7 @@ new_color_map_1_quant (j_decompress_ptr cinfo)
   ERREXIT(cinfo, JERR_MODE_CHANGE);
 }
 
-/* jinit_1pass_quantizer. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005614e2
 GLOBAL(void)
 jinit_1pass_quantizer (j_decompress_ptr cinfo)

@@ -10,8 +10,6 @@
 /* 0x00472510 -- the donor's seven-argument BlitPixieRLEParsePixels. */
 
 
-/* SWCreateRLEData (mac _SWCreateRLEData). STATE: MATCH 100.0%, exe 242 / obj 242 instrs.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004760c0
 // MAC: _SWCreateRLEData i386 0x000aec89 ppc 0x000ba1fc
 short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)

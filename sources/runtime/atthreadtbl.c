@@ -67,7 +67,6 @@ int32_t _ThreadRecordClose(void *thread);
 unsigned char _ThreadIsAlive(void *thread);
 void _ThreadListMove(void *thread, ThreadRec **head, ThreadRec **pushTo);
 
-/* ThreadsPreflight. STATE: MATCH 100%, exe 105 / obj 105, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504026
 int32_t ThreadsPreflight(int32_t count, ULong stackSize)
 {
@@ -137,7 +136,6 @@ done:
     return err;
 }
 
-/* ThreadsPostflight. STATE: MATCH 100%, exe 83 / obj 83, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504188
 void ThreadsPostflight(void)
 {
@@ -173,7 +171,6 @@ void ThreadsPostflight(void)
     }
 }
 
-/* ThreadDispose. STATE: MATCH 100%, exe 102 / obj 102, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504287
 int32_t ThreadDispose(ULong id)
 {
@@ -222,7 +219,6 @@ done:
     return err;
 }
 
-/* _ThreadRecordClose. STATE: MATCH 100%, exe 57 / obj 57, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005043a1
 int32_t _ThreadRecordClose(void *thread)
 {
@@ -252,7 +248,6 @@ int32_t _ThreadRecordClose(void *thread)
     return err;
 }
 
-/* _ThreadIsAlive. STATE: MATCH 100%, exe 29 / obj 29, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504432
 unsigned char _ThreadIsAlive(void *thread)
 {
@@ -280,7 +275,6 @@ unsigned char _ThreadIsAlive(void *thread)
     return alive;
 }
 
-/* _ThreadListMove. STATE: MATCH 100%, exe 37 / obj 37, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504481
 void _ThreadListMove(void *thread, ThreadRec **head, ThreadRec **pushTo)
 {
@@ -319,7 +313,6 @@ typedef struct Mutex {
 #define kMutexMagic       0xdead1ce5UL
 #define kCriticalSection  0x18                   /* sizeof(CRITICAL_SECTION) */
 
-/* CriticalCreate. STATE: MATCH 100%, exe 45 / obj 45, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005044ce
 int32_t CriticalCreate(void *lock)
 {
@@ -351,7 +344,6 @@ failed:
     return err;
 }
 
-/* CriticalDispose. STATE: MATCH 100%, exe 29 / obj 29, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0050454f
 int32_t CriticalDispose(void *lock)
 {
@@ -372,7 +364,6 @@ int32_t CriticalDispose(void *lock)
     return 0;
 }
 
-/* CriticalEnter. STATE: MATCH 100%, exe 17 / obj 17, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504592
 void CriticalEnter(void *lock)
 {
@@ -387,7 +378,6 @@ void CriticalEnter(void *lock)
         err = GetLastError();
 }
 
-/* CriticalLeave. STATE: MATCH 100%, exe 22 / obj 22, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005045cc
 void CriticalLeave(void *lock)
 {
@@ -406,7 +396,6 @@ void CriticalLeave(void *lock)
     LeaveCriticalSection(m->section);
 }
 
-/* _ThreadCheckCritical. STATE: MATCH 100%, exe 14 / obj 14, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504616
 unsigned char _ThreadCheckCritical(void)
 {
@@ -420,7 +409,6 @@ unsigned char _ThreadCheckCritical(void)
     return result;
 }
 
-/* _ThreadRecordCreate. STATE: MATCH 100%, exe 89 / obj 89, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0050463d
 int32_t _ThreadRecordCreate(ULong stackSize)
 {
@@ -465,7 +453,6 @@ fail:
     return err;
 }
 
-/* _ThreadRecordFree. STATE: MATCH 100%, exe 17 / obj 17, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504723
 void _ThreadRecordFree(ThreadRec *rec)
 {
@@ -476,7 +463,6 @@ void _ThreadRecordFree(ThreadRec *rec)
     MemoryDeallocate(rec);
 }
 
-/* _ThreadRecordLookup. STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0050474c
 ThreadRec *_ThreadRecordLookup(int32_t id)
 {
@@ -496,7 +482,6 @@ ThreadRec *_ThreadRecordLookup(int32_t id)
     return rec;
 }
 
-/* _ThreadRecordGetId. STATE: MATCH 100%, exe 13 / obj 13, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00504781
 ULong _ThreadRecordGetId(ThreadRec *rec)
 {
@@ -512,7 +497,6 @@ ULong _ThreadRecordGetId(ThreadRec *rec)
     return id;
 }
 
-/* _ThreadRecordCurrent. STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005047a6
 void *_ThreadRecordCurrent(void)
 {
@@ -525,14 +509,12 @@ void *_ThreadRecordCurrent(void)
     return result;
 }
 
-/* _ThreadTableLock. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x005047bb
 void _ThreadTableLock(void)
 {
     AtomicEnterCritical(gThreadLock);
 }
 
-/* _ThreadTableUnlock. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x005047c7
 void _ThreadTableUnlock(void)
 {

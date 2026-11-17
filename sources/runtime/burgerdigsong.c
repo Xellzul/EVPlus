@@ -84,8 +84,7 @@ typedef struct OggState_t {
     Word8 LoadBuffer[kOggChunk];                 /* +0x2c4 */
 } OggState_t;
 
-/* DigitalMusicByte (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 34 / obj 34,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicByte (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x005024a0
 Word32 DigitalMusicByte(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -112,8 +111,7 @@ Word32 DigitalMusicByte(DigitalMusicReadState_t *State, Word Command, Word8 *Buf
     return Result;
 }
 
-/* DigitalMusicChar (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 56 / obj 56,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicChar (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00502510
 Word32 DigitalMusicChar(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -156,8 +154,7 @@ Word32 DigitalMusicChar(DigitalMusicReadState_t *State, Word Command, Word8 *Buf
     return Result;
 }
 
-/* DigitalMusicULaw (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 83 / obj 83,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicULaw (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x005025c0
 Word32 DigitalMusicULaw(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -216,8 +213,7 @@ Word32 DigitalMusicULaw(DigitalMusicReadState_t *State, Word Command, Word8 *Buf
     return Result;
 }
 
-/* DigitalMusicALaw (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 83 / obj 83,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicALaw (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00502710
 Word32 DigitalMusicALaw(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -276,8 +272,7 @@ Word32 DigitalMusicALaw(DigitalMusicReadState_t *State, Word Command, Word8 *Buf
     return Result;
 }
 
-/* DigitalMusicLShort (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 38 / obj 38,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicLShort (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00502860
 Word32 DigitalMusicLShort(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -312,8 +307,7 @@ Word32 DigitalMusicLShort(DigitalMusicReadState_t *State, Word Command, Word8 *B
     return Result;
 }
 
-/* DigitalMusicBShort (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 51 / obj 51,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicBShort (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x005028d0
 Word32 DigitalMusicBShort(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -357,8 +351,7 @@ Word32 DigitalMusicBShort(DigitalMusicReadState_t *State, Word Command, Word8 *B
     return Result;
 }
 
-/* DigitalMusicMace3 (BurgerLib SnDigitalSong). STATE: MATCH 100.0%, exe 219 / obj 219,
-   byte-identical yes (817 bytes). OPEN: none */
+/* DigitalMusicMace3 (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00502970
 Word32 DigitalMusicMace3(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -462,8 +455,7 @@ Word32 DigitalMusicMace3(DigitalMusicReadState_t *State, Word Command, Word8 *Bu
     return Result;
 }
 
-/* DigitalMusicMace6 (BurgerLib SnDigitalSong). STATE: MATCH 100.0%, exe 216 / obj 216,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicMace6 (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00502cb0
 Word32 DigitalMusicMace6(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -565,8 +557,7 @@ Word32 DigitalMusicMace6(DigitalMusicReadState_t *State, Word Command, Word8 *Bu
     return Result;
 }
 
-/* DigitalMusicADPCM (BurgerLib SnDigitalSong). STATE: MATCH 100.0%, exe 270 / obj 270,
-   byte-identical yes (936 bytes). OPEN: none */
+/* DigitalMusicADPCM (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00502fe0
 Word32 DigitalMusicADPCM(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -716,7 +707,7 @@ Word32 DigitalMusicADPCM(DigitalMusicReadState_t *State, Word Command, Word8 *Bu
 }
 
 /* DigitalMusicOgg (BurgerLib SnDigitalSong): libvorbis' decoder_example as a resumable
-   state machine. STATE: MATCH 100%, exe 522 / obj 522, byte-identical yes. OPEN: none */
+   state machine. */
 // FUNCTION: EVNOVA 0x00503390
 Word32 DigitalMusicOgg(DigitalMusicReadState_t *State, Word Command, Word8 *Buffer,
     Word32 Length)
@@ -930,8 +921,7 @@ static DigitalMusicDecodeProcPtr Codecs[kDecoderCount] = {
 
 static char SongName[] = "9:Music:Song00.Wav";
 
-/* MakeSongFileName (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes.
-   OPEN: none */
+/* MakeSongFileName (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00503be0
 char *MakeSongFileName(Word SongNum)
 {
@@ -942,8 +932,7 @@ char *MakeSongFileName(Word SongNum)
 
 char *(*DigitalMusicNameCallback)(Word SongNum) = MakeSongFileName;
 
-/* DigitalMusicShutdown (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 8 / obj 8 instrs,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicShutdown (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00503c10
 void DigitalMusicShutdown(void)
 {
@@ -953,8 +942,7 @@ void DigitalMusicShutdown(void)
     KillDigitalDriver();
 }
 
-/* DigitalMusicGetSilenceVal (BurgerLib SnDigitalSong). STATE: MATCH, exe 6 / obj 6,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicGetSilenceVal (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00503c40
 Word DigitalMusicGetSilenceVal(Word32 Format)
 {
@@ -963,8 +951,7 @@ Word DigitalMusicGetSilenceVal(Word32 Format)
     return 0;
 }
 
-/* DigitalMusicDecode (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 21 / obj 21,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicDecode (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00503c60
 Word32 DigitalMusicDecode(DigitalMusicReadState_t *State, void *Buffer, Word32 Length)
 {
@@ -976,8 +963,7 @@ Word32 DigitalMusicDecode(DigitalMusicReadState_t *State, void *Buffer, Word32 L
     return -1;
 }
 
-/* DigitalMusicReadStateInit (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 39 / obj 39,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicReadStateInit (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00503ca0
 Word8 DigitalMusicReadStateInit(DigitalMusicReadState_t *State, AudioDesc *Desc,
     const Word8 *Image, Word32 BufferSize, DigitalMusicReadProcPtr ReadProc, void *ReadData)
@@ -998,8 +984,7 @@ Word8 DigitalMusicReadStateInit(DigitalMusicReadState_t *State, AudioDesc *Desc,
     return State->CodecProc(State, kMusicInit, (Word8 *)Desc, BufferSize);
 }
 
-/* DigitalMusicReadStateDestroy (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 24 / obj 24,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicReadStateDestroy (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00503d30
 void DigitalMusicReadStateDestroy(DigitalMusicReadState_t *State)
 {
@@ -1014,8 +999,7 @@ void DigitalMusicReadStateDestroy(DigitalMusicReadState_t *State)
     State->CompressStatePtr = 0;
 }
 
-/* DigitalMusicReset (BurgerLib SnDigitalSong). STATE: MATCH 100%, exe 16 / obj 16,
-   byte-identical yes. OPEN: none */
+/* DigitalMusicReset (BurgerLib SnDigitalSong). */
 // FUNCTION: EVNOVA 0x00503d90
 void DigitalMusicReset(DigitalMusicReadState_t *State)
 {

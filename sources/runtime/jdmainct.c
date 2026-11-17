@@ -66,8 +66,7 @@ alloc_funny_pointers (j_decompress_ptr cinfo)
   }
 }
 
-/* make_funny_pointers. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00567450
 LOCAL(void)
 make_funny_pointers (j_decompress_ptr cinfo)
@@ -102,8 +101,7 @@ make_funny_pointers (j_decompress_ptr cinfo)
   }
 }
 
-/* set_wraparound_pointers. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056737d
 LOCAL(void)
 set_wraparound_pointers (j_decompress_ptr cinfo)
@@ -130,8 +128,7 @@ set_wraparound_pointers (j_decompress_ptr cinfo)
   }
 }
 
-/* set_bottom_pointers. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005672d6
 LOCAL(void)
 set_bottom_pointers (j_decompress_ptr cinfo)
@@ -162,8 +159,7 @@ set_bottom_pointers (j_decompress_ptr cinfo)
   }
 }
 
-/* start_pass_main. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00567263
 METHODDEF(void)
 start_pass_main (j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
@@ -195,8 +191,7 @@ start_pass_main (j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
   }
 }
 
-/* process_data_simple_main. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005671fd
 METHODDEF(void)
 process_data_simple_main (j_decompress_ptr cinfo,
@@ -224,8 +219,7 @@ process_data_simple_main (j_decompress_ptr cinfo,
   }
 }
 
-/* process_data_context_main. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005670dc
 METHODDEF(void)
 process_data_context_main (j_decompress_ptr cinfo,
@@ -283,8 +277,7 @@ process_data_context_main (j_decompress_ptr cinfo,
   }
 }
 
-/* process_data_crank_post. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005670b6
 METHODDEF(void)
 process_data_crank_post (j_decompress_ptr cinfo,
@@ -296,8 +289,7 @@ process_data_crank_post (j_decompress_ptr cinfo,
 				     output_buf, out_row_ctr, out_rows_avail);
 }
 
-/* jinit_d_main_controller. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566f3b
 GLOBAL(void)
 jinit_d_main_controller (j_decompress_ptr cinfo, boolean need_full_buffer)

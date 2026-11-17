@@ -7,8 +7,6 @@
 #include "misc.h"
 #include "window.h"
 
-/* _vorbis_window. STATE: BurgerLib's rewrite of libvorbis 1.0rc3's: one walking pointer,
-   running float phase, one NULL return (MATCH, byte-identical). OPEN: none. */
 // FUNCTION: EVNOVA 0x00547500
 float *_vorbis_window(int type, int window,int left,int right){
   float *ret;

@@ -8,7 +8,6 @@
 
 #include "burgerplat.h"
 
-/* QueueCreate. STATE: MATCH 100%, exe 32 / obj 32, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052b99b
 int32_t QueueCreate(void *ref)
 {
@@ -29,7 +28,6 @@ int32_t QueueCreate(void *ref)
     return err;
 }
 
-/* QueueDispose. STATE: MATCH 100%, exe 32 / obj 32, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052b9e4
 void QueueDispose(MutexList *list)
 {
@@ -53,7 +51,6 @@ void QueueDispose(MutexList *list)
     MemoryClear(list, sizeof(MutexList));
 }
 
-/* QueueInsert. STATE: MATCH 100%, exe 26 / obj 26, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052ba30
 void QueueInsert(void *ref, void *element)
 {
@@ -76,7 +73,6 @@ void QueueInsert(void *ref, void *element)
     ReleaseMutex(list->mutex);
 }
 
-/* QueueRemove. STATE: MATCH 100%, exe 33 / obj 33, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052ba71
 MutexNode *QueueRemove(MutexList *list)
 {
@@ -102,7 +98,6 @@ MutexNode *QueueRemove(MutexList *list)
     return node;
 }
 
-/* QueueExtract. STATE: MATCH 100%, exe 64 / obj 64, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052babf
 MutexNode *QueueExtract(void *ref, void *element)
 {
@@ -148,8 +143,7 @@ MutexNode *QueueExtract(void *ref, void *element)
     return 0;
 }
 
-/* QueueTransfer (move every node of one list onto another). STATE: MATCH 100%, exe 33 /
-   obj 33, byte-identical yes. OPEN: none */
+/* QueueTransfer (move every node of one list onto another). */
 // FUNCTION: EVNOVA 0x0052bb4e
 void QueueTransfer(void *dstRef, void *srcRef)
 {
@@ -170,8 +164,7 @@ void QueueTransfer(void *dstRef, void *srcRef)
     }
 }
 
-/* QueueGetCount (a list's node count). STATE: MATCH 100%, exe 9 / obj 9, byte-identical
-   yes. OPEN: none */
+/* QueueGetCount (a list's node count). */
 // FUNCTION: EVNOVA 0x0052bb97
 ULong QueueGetCount(void *ref)
 {
@@ -186,8 +179,7 @@ ULong QueueGetCount(void *ref)
     return result;
 }
 
-/* QueueIsEmpty (a list is empty). STATE: MATCH 100%, exe 9 / obj 9, byte-identical
-   yes. OPEN: none */
+/* QueueIsEmpty (a list is empty). */
 // FUNCTION: EVNOVA 0x0052bbab
 unsigned char QueueIsEmpty(void *ref)
 {
@@ -203,8 +195,7 @@ unsigned char QueueIsEmpty(void *ref)
     return result;
 }
 
-/* QueueEmpty (free every node of a list). STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes.
-   OPEN: none */
+/* QueueEmpty (free every node of a list). */
 // FUNCTION: EVNOVA 0x0052bbbf
 void QueueEmpty(MutexList *list)
 {

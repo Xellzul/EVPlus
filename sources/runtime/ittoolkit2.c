@@ -68,8 +68,7 @@ typedef struct ITButton {
 
 /* IT_ButtonLoadFaces (an image button's faces: for every IMAGE element inside the control, else
    the control itself when it has a SRC, three records -- SRC, DIM, LIT with their _RECTs,
-   each falling back to the control's own attribute, a missing DIM / LIT to the SRC face).
-   STATE: MATCH 100%, exe 483 / obj 483, byte-identical yes. OPEN: the first two arguments are
+   each falling back to the control's own attribute, a missing DIM / LIT to the SRC face). Note: the first two arguments are
    never read */
 // FUNCTION: EVNOVA 0x0051c936
 int32_t IT_ButtonLoadFaces(void *hwnd, void *dc, ITElement *element, void ***faces)
@@ -192,8 +191,7 @@ static const ITColor kPlaceholder[3] = {
 
 /* _IT_ButtonDraw (draw an image button's face `variant' for `value' into `r' of `image', or of an
    image made over `dc' when none is given; a missing face image draws the placeholder, inverted
-   when the variant is not the normal one). STATE: MATCH 100%, exe 176 / obj 176, byte-identical
-   yes. OPEN: none */
+   when the variant is not the normal one). */
 // FUNCTION: EVNOVA 0x0051ceb0
 int32_t _IT_ButtonDraw(void *dc, ITImage *image, const ITRect *r, void **faces, int32_t value,
                   int32_t variant)
@@ -289,9 +287,7 @@ done:
    radio, VALUE, HREF / SCRIPT make it clickable, KEYS `+' makes it the default, HOVER), 1
    builds the image faces or else creates a Windows button, 2 destroys it, 3 frees the data;
    an image button tracks the mouse itself, lit while pressed inside, and reports pressed /
-   left / entered / released to the window's callback; value, title, show and enable).
-   STATE: MATCH 100.0%, exe 826 / obj 826, byte-identical yes. OPEN: none; the five reply locals
-   are dead (no code), kept for their IR entries (notes/itbutton.md) */
+   left / entered / released to the window's callback; value, title, show and enable). */
 // FUNCTION: EVNOVA 0x0051d0d3
 int32_t IT_ButtonHandler(void *hwnd, void *dc, ITElement *element, void **data, ULong msg, ULong a,
                   void *b)

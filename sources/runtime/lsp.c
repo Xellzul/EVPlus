@@ -12,8 +12,7 @@
 #undef   FLOAT_LOOKUP
 #undef    INT_LOOKUP
 
-/* vorbis_lsp_to_curve. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00567560
 void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,float *lsp,int m,
 			    float amp,float ampoffset){
@@ -59,8 +58,7 @@ static void cheby(float *g, int ord) {
   }
 }
 
-/* comp (qsort comparator). STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* comp (qsort comparator). From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00567870
 static int comp(const void *a,const void *b){
   if(*(float *)a<*(float *)b)
@@ -70,8 +68,7 @@ static int comp(const void *a,const void *b){
 }
 
 #define EPSILON 10e-7
-/* Laguerre_With_Deflation. STATE: BurgerLib's libvorbis 1.0rc3, the convergence test on a
-   float (MATCH, byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005678a0
 static int Laguerre_With_Deflation(float *a,int ord,float *r){
   int i,m;
@@ -121,8 +118,7 @@ static int Laguerre_With_Deflation(float *a,int ord,float *r){
   return(0);
 }
 
-/* Newton_Raphson. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00567d90
 static int Newton_Raphson(float *a,int ord,float *r){
   int i, k, count=0;
@@ -157,8 +153,7 @@ static int Newton_Raphson(float *a,int ord,float *r){
   return(0);
 }
 
-/* vorbis_lpc_to_lsp (cheby inlined). STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* vorbis_lpc_to_lsp (cheby inlined). From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00568110
 int vorbis_lpc_to_lsp(float *lpc,float *lsp,int m){
   int order2=(m+1)>>1;

@@ -124,8 +124,7 @@ ITControl *gIT_CurrentItem;                         /* 0x00870028 the control it
 #define kIdleTimer          0x4d4a5321  /* 'MJS!' */
 #define kIdleTimerMs        100
 
-/* DT_RegionCreate (a new empty region). STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes.
-   OPEN: none */
+/* DT_RegionCreate (a new empty region). */
 // FUNCTION: EVNOVA 0x0051a038
 #ifndef MAC1010
 void *DT_RegionCreate(void)
@@ -144,8 +143,7 @@ void *DT_RegionCreate(void)
 }
 #endif
 
-/* DT_RegionClone (a copy of a region). STATE: MATCH 100%, exe 24 / obj 24, byte-identical yes.
-   OPEN: none */
+/* DT_RegionClone (a copy of a region). */
 // FUNCTION: EVNOVA 0x0051a064
 #ifndef MAC1010
 void *DT_RegionClone(void *region)
@@ -166,8 +164,7 @@ void *DT_RegionClone(void *region)
 }
 #endif
 
-/* DT_RegionDispose (dispose a region). STATE: MATCH 100%, exe 5 / obj 5, byte-identical yes. OPEN:
-   none */
+/* DT_RegionDispose (dispose a region). */
 // FUNCTION: EVNOVA 0x0051a0a1
 #ifndef MAC1010
 void DT_RegionDispose(void *region)
@@ -179,8 +176,7 @@ void DT_RegionDispose(void *region)
 }
 #endif
 
-/* DT_GetRegionRect (a region's bounding box). STATE: MATCH 100%, exe 10 / obj 10, byte-identical yes.
-   OPEN: none */
+/* DT_GetRegionRect (a region's bounding box). */
 // FUNCTION: EVNOVA 0x0051a0b0
 #ifndef MAC1010
 ITRect *DT_GetRegionRect(ITRect *box, void *region)
@@ -193,8 +189,7 @@ ITRect *DT_GetRegionRect(ITRect *box, void *region)
 }
 #endif
 
-/* DT_SetRegionRect (set a region to a rectangle, clamped to GDI's reach). STATE: MATCH 100%, exe 24 /
-   obj 24, byte-identical yes. OPEN: none */
+/* DT_SetRegionRect (set a region to a rectangle, clamped to GDI's reach). */
 // FUNCTION: EVNOVA 0x0051a0c8
 #ifndef MAC1010
 int32_t DT_SetRegionRect(void *region, const ITRect *r)
@@ -215,8 +210,7 @@ int32_t DT_SetRegionRect(void *region, const ITRect *r)
 /* DT_RegionScale (a region carried from rectangle `from' to rectangle `to': an offset when the
    sizes agree, else every rectangle of its data scaled, unsigned, by from's extent over to's, and
    rebuilt; -7004 on failure). The rebuild passes the rectangle count where ExtCreateRegion wants
-   the data's byte size, as the exe does. STATE: MATCH 100%, exe 136 / obj 136, byte-identical
-   yes. OPEN: none */
+   the data's byte size, as the exe does. */
 // FUNCTION: EVNOVA 0x0051a110
 #ifndef MAC1010
 int32_t DT_RegionScale(void *region, const ITRect *from, const ITRect *to)
@@ -296,8 +290,7 @@ done:
 }
 #endif
 
-/* DT_IsRegionEmpty (whether a region is empty). STATE: MATCH 100%, exe 17 / obj 17, byte-identical
-   yes. OPEN: none */
+/* DT_IsRegionEmpty (whether a region is empty). */
 // FUNCTION: EVNOVA 0x0051a2c0
 unsigned char DT_IsRegionEmpty(void *region)
 {
@@ -310,8 +303,7 @@ unsigned char DT_IsRegionEmpty(void *region)
     return result;
 }
 
-/* Sys2DT_Point (a point by value). STATE: MATCH 100%, exe 12 / obj 12, byte-identical yes. OPEN:
-   none */
+/* Sys2DT_Point (a point by value). */
 // FUNCTION: EVNOVA 0x0051a2e6
 #ifndef MAC1010
 ITPoint Sys2DT_Point(const ITPoint *pt)
@@ -326,8 +318,7 @@ ITPoint Sys2DT_Point(const ITPoint *pt)
 }
 #endif
 
-/* DT_2SysColor (a colour as a Windows COLORREF). STATE: MATCH 100%, exe 14 / obj 14, byte-
-   identical yes. OPEN: none */
+/* DT_2SysColor (a colour as a Windows COLORREF). */
 // FUNCTION: EVNOVA 0x0051a307
 #ifndef MAC1010
 ULong DT_2SysColor(const ITColor *color)
@@ -339,7 +330,7 @@ ULong DT_2SysColor(const ITColor *color)
 }
 #endif
 
-/* CopySys2DT_Point (copy a point). STATE: MATCH 100%, exe 12 / obj 12, byte-identical yes. OPEN: none */
+/* CopySys2DT_Point (copy a point). */
 // FUNCTION: EVNOVA 0x0051a32b
 #ifndef MAC1010
 ITPoint *CopySys2DT_Point(ITPoint *dst, const ITPoint *src)
@@ -353,7 +344,7 @@ ITPoint *CopySys2DT_Point(ITPoint *dst, const ITPoint *src)
 }
 #endif
 
-/* CopyDT_2SysPoint (copy a point). STATE: MATCH 100%, exe 12 / obj 12, byte-identical yes. OPEN: none */
+/* CopyDT_2SysPoint (copy a point). */
 // FUNCTION: EVNOVA 0x0051a346
 #ifndef MAC1010
 ITPoint *CopyDT_2SysPoint(ITPoint *dst, const ITPoint *src)
@@ -367,8 +358,7 @@ ITPoint *CopyDT_2SysPoint(ITPoint *dst, const ITPoint *src)
 }
 #endif
 
-/* CopySys2DT_Rect (copy a rectangle). STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes. OPEN:
-   none */
+/* CopySys2DT_Rect (copy a rectangle). */
 // FUNCTION: EVNOVA 0x0051a361
 #ifndef MAC1010
 ITRect *CopySys2DT_Rect(ITRect *dst, const ITRect *src)
@@ -386,7 +376,7 @@ ITRect *CopySys2DT_Rect(ITRect *dst, const ITRect *src)
 
 /* CopyDT_2SysRect (copy a rectangle, clamped to GDI's 16-bit reach: an extent over 32000 is cut to
    32000 from whichever edge lies within 8000 of the origin, else centred; each axis has its own
-   lo / hi). STATE: MATCH 100%, exe 79 / obj 79, byte-identical yes. OPEN: none */
+   lo / hi). */
 // FUNCTION: EVNOVA 0x0051a38a
 #ifndef MAC1010
 ITRect *CopyDT_2SysRect(ITRect *dst, const ITRect *src)
@@ -430,8 +420,7 @@ ITRect *CopyDT_2SysRect(ITRect *dst, const ITRect *src)
 }
 #endif
 
-/* CopySys2DT_Color (a Windows COLORREF as an opaque colour). STATE: MATCH 100%, exe 22 / obj 22,
-   byte-identical yes. OPEN: none */
+/* CopySys2DT_Color (a Windows COLORREF as an opaque colour). */
 // FUNCTION: EVNOVA 0x0051a48e
 #ifndef MAC1010
 ITColor *CopySys2DT_Color(ITColor *color, const ULong *ref)
@@ -447,8 +436,7 @@ ITColor *CopySys2DT_Color(ITColor *color, const ULong *ref)
 }
 #endif
 
-/* CopyDT_2SysColor (a colour stored as a COLORREF). STATE: MATCH 100%, exe 19 / obj 19, byte-
-   identical yes. OPEN: none */
+/* CopyDT_2SysColor (a colour stored as a COLORREF). */
 // FUNCTION: EVNOVA 0x0051a4c0
 #ifndef MAC1010
 ULong *CopyDT_2SysColor(ULong *ref, const ITColor *color)
@@ -470,8 +458,7 @@ int32_t _IT_ViewSetAnchor(WindowNode *window, const char *anchor);
    again: a child of the window a control proc is serving, its DC, its bounds (the client area
    unless given), black on white, dirty, the page callback, the focusable list, the focus record
    kept by the root, the port image (a child shares the root's), an offscreen buffer for a
-   buffered root; the callback told (event 0); on failure an untitled record is destroyed). STATE:
-   MATCH 100%, exe 145 / obj 145, byte-identical yes. OPEN: none */
+   buffered root; the callback told (event 0); on failure an untitled record is destroyed). */
 // FUNCTION: EVNOVA 0x0051a4ee
 int32_t IT_ViewCreate(void *hwnd, const ITRect *bounds, ITWindowProc proc, int32_t refcon,
                   int32_t unused, WindowNode **out)
@@ -568,8 +555,7 @@ done:
 
 /* IT_ViewCreateModal (run a modal interface-tool dialog on a page file: an empty dialog template placed
    off screen, 400 x 300 dialog units, whose procedure 0x0051c664 builds the window; the button
-   that closed it is copied to `result'; -8400 when Windows refuses the dialog). STATE: MATCH
-   100%, exe 147 / obj 147, byte-identical yes. OPEN: none */
+   that closed it is copied to `result'; -8400 when Windows refuses the dialog). */
 // FUNCTION: EVNOVA 0x0051a695
 int32_t IT_ViewCreateModal(void *folder, const char *file, const char *path, ITWindowProc proc,
                   int32_t refcon, char *result)
@@ -635,8 +621,7 @@ done:
    to nothing meanwhile, the old page dropped, colours and title reset; the file read and parsed
    (0x0051c3c1), its first INTERFACE element taken, its frame, title, colours and BACKGROUND image
    read, its pages tabled and `anchor' (else the first) shown; with no folder and no file only the
-   reset and the refresh). STATE: MATCH 100%, exe 396 / obj 396, byte-identical yes. OPEN: none;
-   the sixth argument is only passed on to 0x0051c3c1 */
+   reset and the refresh). Note: the sixth argument is only passed on to 0x0051c3c1 */
 // FUNCTION: EVNOVA 0x0051a847
 int32_t _IT_ViewChange(void *windowRef, struct FolderSpec **folder, const char *file,
                   const char *path, const char *anchor, void *unused)
@@ -850,8 +835,7 @@ done:
     return err;
 }
 
-/* IT_ViewChange (the same, the entry the dialog and link code call). STATE: MATCH 100%, exe 9 /
-   obj 9, byte-identical yes. OPEN: none */
+/* IT_ViewChange (the same, the entry the dialog and link code call). */
 // FUNCTION: EVNOVA 0x0051ad55
 int32_t IT_ViewChange(WindowNode *window, struct FolderSpec **folder, const char *file,
                   const char *path, const char *anchor)
@@ -860,7 +844,7 @@ int32_t IT_ViewChange(WindowNode *window, struct FolderSpec **folder, const char
 }
 
 /* IT_ViewGoToPage (go to the page named `name' when the current one may be left; the window
-   refreshed either way). STATE: MATCH 100%, exe 44 / obj 44, byte-identical yes. OPEN: none */
+   refreshed either way). */
 // FUNCTION: EVNOVA 0x0051ad74
 int32_t IT_ViewGoToPage(void *windowRef, const char *name)
 {
@@ -896,8 +880,7 @@ done:
 /* IT_ViewDispose (destroy a window: hidden, its callback told the page is left (6) and the window
    closes (1), its content dropped, the Windows window destroyed (EndDialog for a modal one), its
    variables, buffer, port image (a root's own), focusables, control types and preloaded images
-   freed, and the record unlinked and freed). STATE: MATCH 100%, exe 148 / obj 148, byte-identical
-   yes. OPEN: none */
+   freed, and the record unlinked and freed). */
 // FUNCTION: EVNOVA 0x0051add8
 int32_t IT_ViewDispose(WindowNode *window)
 {
@@ -972,8 +955,7 @@ int32_t IT_ViewDispose(WindowNode *window)
     return 0;
 }
 
-/* IT_ViewExists (whether a window is on the window list). STATE: MATCH 100%, exe 18 / obj 18,
-   byte-identical yes. OPEN: none */
+/* IT_ViewExists (whether a window is on the window list). */
 // FUNCTION: EVNOVA 0x0051af54
 unsigned char IT_ViewExists(void *windowRef)
 {
@@ -990,7 +972,7 @@ unsigned char IT_ViewExists(void *windowRef)
 }
 
 /* IT_WindowFindView (the window record of a Windows window: a titled one first, then a child, then
-   any). STATE: MATCH 100%, exe 37 / obj 37, byte-identical yes. OPEN: none */
+   any). */
 // FUNCTION: EVNOVA 0x0051af7d
 WindowNode *IT_WindowFindView(void *hwnd)
 {
@@ -1110,8 +1092,7 @@ done:
 #endif
 
 /* _IT_ViewHandleIdle (a window's idle turn: its callback told (event 4), message 0x13 to its controls,
-   and for a root window with images to preload, the next one loaded at most every half second).
-   STATE: MATCH 100%, exe 55 / obj 55, byte-identical yes. OPEN: none */
+   and for a root window with images to preload, the next one loaded at most every half second). */
 // FUNCTION: EVNOVA 0x0051afd6
 int32_t _IT_ViewHandleIdle(WindowNode *window)
 {
@@ -1146,8 +1127,7 @@ done:
 }
 
 /* _IT_ViewHandleKey (a key to a window's controls; a link it resolves to is followed from a top
-   window, and a window still alive and dirty is refreshed). STATE: MATCH 100%, exe 68 / obj 68,
-   byte-identical yes. OPEN: none */
+   window, and a window still alive and dirty is refreshed). */
 // FUNCTION: EVNOVA 0x0051b060
 int32_t _IT_ViewHandleKey(WindowNode *window, const ITKeyEvent *key, ITClick *click)
 {
@@ -1205,7 +1185,7 @@ done:
 }
 
 /* _IT_ViewHandleEdit (an edit command, event 1..8, to the focused control of a window tree, then as
-   _IT_ViewHandleKey). STATE: MATCH 100%, exe 81 / obj 81, byte-identical yes. OPEN: none */
+   _IT_ViewHandleKey). */
 // FUNCTION: EVNOVA 0x0051b0f7
 int32_t _IT_ViewHandleEdit(WindowNode *window, short event, ITClick *click)
 {
@@ -1265,8 +1245,7 @@ done:
     return err;
 }
 
-/* _IT_ViewHandleClick (a click to a window's controls, then as _IT_ViewHandleKey). STATE: MATCH 100%, exe 68
-   / obj 68, byte-identical yes. OPEN: none */
+/* _IT_ViewHandleClick (a click to a window's controls, then as _IT_ViewHandleKey). */
 // FUNCTION: EVNOVA 0x0051b1b1
 int32_t _IT_ViewHandleClick(WindowNode *window, ITInputEvent *event, ITClick *click)
 {
@@ -1319,8 +1298,7 @@ done:
     return err;
 }
 
-/* _IT_ViewHandleHit (activate the control holding a focusable item, then as _IT_ViewHandleKey). STATE:
-   MATCH 100%, exe 73 / obj 73, byte-identical yes. OPEN: none */
+/* _IT_ViewHandleHit (activate the control holding a focusable item, then as _IT_ViewHandleKey). */
 // FUNCTION: EVNOVA 0x0051b248
 int32_t _IT_ViewHandleHit(WindowNode *window, int32_t item, ITClick *click)
 {
@@ -1373,8 +1351,7 @@ done:
     return err;
 }
 
-/* _IT_ViewHandleTest (whether any control of a window claims an item). STATE: MATCH 100%, exe 21 / obj
-   21, byte-identical yes. OPEN: none */
+/* _IT_ViewHandleTest (whether any control of a window claims an item). */
 // FUNCTION: EVNOVA 0x0051b2ec
 int32_t _IT_ViewHandleTest(WindowNode *window, ULong item, unsigned char *hit)
 {
@@ -1394,7 +1371,7 @@ int32_t _IT_ViewHandleTest(WindowNode *window, ULong item, unsigned char *hit)
 /* _IT_ViewHandleDraw (paint a window, or `area' of it: into the root's buffer when it has one (not when
    a control proc is running: then into the window itself), the backdrop tiled or the background
    colour, then the controls meeting the area; the buffer copied to the screen unless `noBlit';
-   the area validated). STATE: MATCH 100%, exe 183 / obj 183, byte-identical yes. OPEN: none */
+   the area validated). */
 // FUNCTION: EVNOVA 0x0051b31e
 int32_t _IT_ViewHandleDraw(WindowNode *window, const ITRect *area, unsigned char noBlit)
 {
@@ -1496,8 +1473,7 @@ done:
     return err;
 }
 
-/* _IT_ViewHandleActivate (tell every control of a window that it activates or deactivates). STATE: MATCH
-   100%, exe 17 / obj 17, byte-identical yes. OPEN: none */
+/* _IT_ViewHandleActivate (tell every control of a window that it activates or deactivates). */
 // FUNCTION: EVNOVA 0x0051b520
 int32_t _IT_ViewHandleActivate(WindowNode *window, unsigned char active)
 {
@@ -1514,8 +1490,7 @@ int32_t _IT_ViewHandleActivate(WindowNode *window, unsigned char active)
 }
 
 /* _IT_ViewHandleCursor (hand a mouse event to the topmost active control under it; the event's modifiers
-   are cleared when it falls inside the window). STATE: MATCH 100%, exe 37 / obj 37, byte-
-   identical yes. OPEN: none */
+   are cleared when it falls inside the window). */
 // FUNCTION: EVNOVA 0x0051b549
 int32_t _IT_ViewHandleCursor(WindowNode *window, ITInputEvent *event, unsigned short *modifiers)
 {
@@ -1534,8 +1509,7 @@ int32_t _IT_ViewHandleCursor(WindowNode *window, ITInputEvent *event, unsigned s
 }
 
 /* _IT_ViewGetFocus (a window's focus: its control, index and item when the focus is in this window,
-   else none, -1 and none; each only when asked for). STATE: MATCH 100%, exe 50 / obj 50, byte-
-   identical yes. OPEN: none */
+   else none, -1 and none; each only when asked for). */
 // FUNCTION: EVNOVA 0x0051b596
 int32_t _IT_ViewGetFocus(WindowNode *window, ITControl **control, int32_t *index, int32_t *item)
 {
@@ -1563,8 +1537,7 @@ int32_t _IT_ViewGetFocus(WindowNode *window, ITControl **control, int32_t *index
 
 /* _IT_ViewSetFocus (move the focus of a window tree to `item', found in `control' or, with no
    control, among the window's controls; the old holder is told first and may refuse, in which
-   case `keep' leaves the focus where it was). STATE: MATCH 100%, exe 163 / obj 163, byte-identical
-   yes. OPEN: none */
+   case `keep' leaves the focus where it was). */
 // FUNCTION: EVNOVA 0x0051b60a
 int32_t _IT_ViewSetFocus(WindowNode *window, ITControl *control, ULong item, unsigned char keep)
 {
@@ -1651,8 +1624,7 @@ done:
 
 /* _IT_ViewMoveFocus (move the focus to the next or previous focusable item of the window tree,
    wrapping, skipping the items of `skipWindow' and `skipControl' and, when `only' is given, every
-   other item; the focus is cleared when nothing qualifies). STATE: MATCH 100%, exe 152 / obj 152,
-   byte-identical yes. OPEN: none */
+   other item; the focus is cleared when nothing qualifies). */
 // FUNCTION: EVNOVA 0x0051b7fc
 int32_t _IT_ViewMoveFocus(WindowNode *window, unsigned char forward, WindowNode *skipWindow,
                   ITControl *skipControl, ULong only)
@@ -1731,7 +1703,7 @@ out:
 }
 
 /* _IT_ViewQueryFocus (rebuild a window's list of focusable items from its controls, and append it to
-   `out' when given). STATE: MATCH 100%, exe 42 / obj 42, byte-identical yes. OPEN: none */
+   `out' when given). */
 // FUNCTION: EVNOVA 0x0051b9a9
 int32_t _IT_ViewQueryFocus(WindowNode *window, void **out)
 {
@@ -1760,7 +1732,7 @@ done:
 }
 
 /* _IT_ViewValidateFocus (a window tree's consistency probe: the window, or its root, has its focus record;
-   always true). STATE: MATCH 100%, exe 22 / obj 22, byte-identical yes. OPEN: none */
+   always true). */
 // FUNCTION: EVNOVA 0x0051ba0e
 unsigned char _IT_ViewValidateFocus(WindowNode *window, int32_t self)
 {
@@ -1781,8 +1753,7 @@ unsigned char _IT_ViewValidateFocus(WindowNode *window, int32_t self)
     return found;
 }
 
-/* _IT_ViewInvalidate (mark a window dirty and its whole area to be redrawn). STATE: MATCH 100%, exe 28
-   / obj 28, byte-identical yes. OPEN: none */
+/* _IT_ViewInvalidate (mark a window dirty and its whole area to be redrawn). */
 // FUNCTION: EVNOVA 0x0051ba41
 int32_t _IT_ViewInvalidate(WindowNode *window)
 {
@@ -1801,8 +1772,7 @@ int32_t _IT_ViewInvalidate(WindowNode *window)
 
 
 /* _IT_ViewValidate (bring a window up to date: its area invalidated, its caption (title, then " / "
-   and the page's title) and colours applied to the Windows window, the dirty flag cleared).
-   STATE: MATCH 100%, exe 109 / obj 109, byte-identical yes. OPEN: none */
+   and the page's title) and colours applied to the Windows window, the dirty flag cleared). */
 // FUNCTION: EVNOVA 0x0051ba8d
 int32_t _IT_ViewValidate(WindowNode *window)
 {
@@ -1854,8 +1824,7 @@ done:
 }
 
 /* _IT_ViewCheckPage (ask whether a window may leave its page: its callback (event 6) and the focus
-   holder (a blur) may refuse with -8404, which clears `may'). STATE: MATCH 100%, exe 42 / obj 42,
-   byte-identical yes. OPEN: none */
+   holder (a blur) may refuse with -8404, which clears `may'). */
 // FUNCTION: EVNOVA 0x0051bbec
 int32_t _IT_ViewCheckPage(WindowNode *window, unsigned char *may)
 {
@@ -1893,7 +1862,7 @@ extern void IT_IndexDispose(ITElement *index);
 #endif
 
 /* _IT_ViewUnload (drop a window's content: its pages, its controls, its backdrop and its source
-   document). STATE: MATCH 100%, exe 38 / obj 38, byte-identical yes. OPEN: none */
+   document). */
 // FUNCTION: EVNOVA 0x0051bc51
 void _IT_ViewUnload(WindowNode *window)
 {
@@ -1926,8 +1895,7 @@ void _IT_ViewUnload(WindowNode *window)
 /* _IT_ViewGoToPage (show a page in a window, drawing clipped to nothing meanwhile: the old page's
    controls dropped, the callback told before (2) and after (3) the new page's controls are built
    from its element's children, the focus taken when nothing holds it, its images queued for
-   preloading; the window refreshed when dirty). STATE: MATCH 100%, exe 162 / obj 162, byte-
-   identical yes. OPEN: none */
+   preloading; the window refreshed when dirty). */
 // FUNCTION: EVNOVA 0x0051bcbe
 int32_t _IT_ViewGoToPage(WindowNode *window, ITPage *page)
 {
@@ -2019,7 +1987,7 @@ done:
 #define ViewItemIndex int32_t
 
 /* _IT_ViewSetRect (move a window: when its origin changes every control is moved by the same amount,
-   last first). STATE: MATCH 100%, exe 55 / obj 55, byte-identical yes. OPEN: none */
+   last first). */
 // FUNCTION: EVNOVA 0x0051be77
 int32_t _IT_ViewSetRect(WindowNode *window, const ITRect *bounds)
 {
@@ -2041,8 +2009,7 @@ int32_t _IT_ViewSetRect(WindowNode *window, const ITRect *bounds)
     return 0;
 }
 
-/* _IT_ViewSetEnabled (show and enable a window: each control's enabled state re-applied, last first).
-   STATE: MATCH 100%, exe 33 / obj 33, byte-identical yes. OPEN: none */
+/* _IT_ViewSetEnabled (show and enable a window: each control's enabled state re-applied, last first). */
 // FUNCTION: EVNOVA 0x0051bef0
 int32_t _IT_ViewSetEnabled(WindowNode *window, unsigned char visible, unsigned char enabled)
 {
@@ -2062,7 +2029,7 @@ int32_t _IT_ViewSetEnabled(WindowNode *window, unsigned char visible, unsigned c
 }
 
 /* _IT_ViewGetItemColor (offer an item to a window's controls: the first that claims it gets messages 0x4c
-   and 0x4e). STATE: MATCH 100%, exe 23 / obj 23, byte-identical yes. OPEN: none */
+   and 0x4e). */
 // FUNCTION: EVNOVA 0x0051bf40
 int32_t _IT_ViewGetItemColor(WindowNode *window, ULong item, void *a, void *b, unsigned char *hit)
 {
@@ -2081,7 +2048,7 @@ int32_t _IT_ViewGetItemColor(WindowNode *window, ULong item, void *a, void *b, u
 
 /* _IT_ViewCallback (tell a window's callback about an event on a control, or on the window's page:
    where, the control's index, the control's NAME; the current window and control are hidden from
-   it meanwhile). STATE: MATCH 100%, exe 81 / obj 81, byte-identical yes. OPEN: none */
+   it meanwhile). */
 // FUNCTION: EVNOVA 0x0051bf7a
 int32_t _IT_ViewCallback(WindowNode *window, ITPage *page, ITControl *control, int32_t event)
 {
@@ -2129,8 +2096,7 @@ int32_t _IT_ViewCallback(WindowNode *window, ITPage *page, ITControl *control, i
 }
 
 /* _IT_ViewPreload (queue the images a page asks to preload: every PRELOAD element with a SRC and an
-   IMG or IMAGE attribute not queued yet goes on the root's list, pending). STATE: MATCH 100%, exe
-   106 / obj 106, byte-identical yes. OPEN: none */
+   IMG or IMAGE attribute not queued yet goes on the root's list, pending). */
 // FUNCTION: EVNOVA 0x0051c06e
 int32_t _IT_ViewPreload(WindowNode *window, ITElement *root)
 {
@@ -2189,8 +2155,7 @@ int32_t _IT_ViewPreload(WindowNode *window, ITElement *root)
 }
 
 /* _IT_ViewPreloadIdle (preload the first pending image of a window from its page folder; a missing file
-   (-7201..-7203) only drops the request, any other error is answered). STATE: MATCH 100%, exe 90
-   / obj 90, byte-identical yes. OPEN: none */
+   (-7201..-7203) only drops the request, any other error is answered). */
 // FUNCTION: EVNOVA 0x0051c181
 int32_t _IT_ViewPreloadIdle(WindowNode *window)
 {
@@ -2237,8 +2202,7 @@ done:
 }
 
 /* _IT_ViewDissectLink (split a link `file#anchor' into fresh strings; `#anchor' alone names the window's
-   current file; -8400 for a URL, which the tool does not follow). STATE: MATCH 100%, exe 119 /
-   obj 119, byte-identical yes. OPEN: none */
+   current file; -8400 for a URL, which the tool does not follow). */
 // FUNCTION: EVNOVA 0x0051c289
 int32_t _IT_ViewDissectLink(WindowNode *window, const char *link, char **file, char **anchor)
 {
@@ -2309,8 +2273,7 @@ extern int32_t IT_IndexLookup(ITElement *index, const char *language, const char
    has none), a file is read from its own folder (the current folder swapped in around the lookup
    and restored); the text converted when its encoding is known (-8406 when it is Unicode without
    a converter) and parsed with SCRIPT raw and LI, BR, P empty; a source that already has a
-   document only takes the folder). STATE: MATCH 100%, exe 173 / obj 173, byte-identical yes.
-   OPEN: none (the first and fifth arguments are never read) */
+   document only takes the folder). Note: (the first and fifth arguments are never read) */
 // FUNCTION: EVNOVA 0x0051c3c1
 int32_t _IT_ParseTupleCreate(WindowNode *window, ITSource *source, int32_t where, const char *file,
                   void *unused)
@@ -2431,8 +2394,7 @@ done:
     return err;
 }
 
-/* _IT_ParseTupleDispose (dispose a page source: its document tree, its folder, its data). STATE: MATCH
-   100%, exe 32 / obj 32, byte-identical yes. OPEN: none */
+/* _IT_ParseTupleDispose (dispose a page source: its document tree, its folder, its data). */
 // FUNCTION: EVNOVA 0x0051c5c9
 void _IT_ParseTupleDispose(ITSource *source)
 {
@@ -2456,7 +2418,7 @@ void _IT_ParseTupleDispose(ITSource *source)
 
 
 /* IT_WindowProc (the window procedure of the interface tool's window classes: the body 0x004eae3e,
-   else Windows' default). STATE: MATCH 100%, exe 37 / obj 37, byte-identical yes. OPEN: none */
+   else Windows' default). */
 // FUNCTION: EVNOVA 0x0051c610
 #ifndef MAC1010
 int32_t __stdcall IT_WindowProc(void *hwnd, unsigned int msg, unsigned int wParam, int32_t lParam)
@@ -2476,7 +2438,7 @@ int32_t __stdcall IT_WindowProc(void *hwnd, unsigned int msg, unsigned int wPara
    record (0x0051a4ee), loads the page file, sizes the dialog to the INTERFACE frame a sixth of
    the screen above centre, buffers and paints it and starts a 100 ms idle timer (the interface
    tool's idle turn, 0x004d335c); everything else goes to 0x004eae3e; the answer is whether that
-   handled it). STATE: MATCH 100%, exe 237 / obj 237, byte-identical yes. OPEN: none; a failed
+   handled it). Note: a failed
    WM_INITDIALOG leaves the dialog up with no page, as in the exe */
 // FUNCTION: EVNOVA 0x0051c664
 #ifndef MAC1010

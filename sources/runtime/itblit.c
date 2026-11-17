@@ -9,7 +9,6 @@
 #endif
 #include "ambrosia.h"
 
-extern void *memset(void *dst, int c, unsigned int n);
 
 int32_t gGDIDIBSectionFunc;                               /* 0x00870dd0, 8 B bound */
 AT_EXTERN unsigned char gDT_Open;            /* 0x00870e0a, 1 B, the palettes-built guard */
@@ -52,7 +51,6 @@ unsigned char gDT_PatternDkGray[16] = {              /* 0x00576d68 the dark grey
 };
 unsigned char gDT_PatternBlack[16] = { 0 };          /* 0x00576d78 the solid pattern */
 
-/* DT_Open. STATE: MATCH 100%, exe 137 / obj 137, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004db31b
 int32_t DT_Open(void)
 {
@@ -134,8 +132,6 @@ done:
     return err;
 }
 
-/* DT_Close. STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004db4df
 void DT_Close(void)
 {
@@ -148,8 +144,7 @@ void DT_Close(void)
     gDT_Open = 0;
 }
 
-/* DT_IsOpen (have the standard palettes been built: DT_Open's guard). STATE:
-   MATCH, byte-identical. OPEN: none */
+/* DT_IsOpen (have the standard palettes been built: DT_Open's guard). */
 // FUNCTION: EVNOVA 0x004db4f3
 unsigned char DT_IsOpen(void)
 {
@@ -175,8 +170,7 @@ extern unsigned char PPAT_CheckFileType(const unsigned char *data, ULong size); 
 extern unsigned char TGA_CheckFileType(const void *data, ULong size);            /* ittga.c */
 
 /* _DT_SurfaceCreate (a new image: port and device, port and pixels, pixels alone or port alone, by
-   which out-pointers are given; NULL when the block cannot be had). STATE: MATCH 100%, exe 200 /
-   obj 200, byte-identical yes. OPEN: none */
+   which out-pointers are given; NULL when the block cannot be had). */
 // FUNCTION: EVNOVA 0x004db4f9
 ITImage *_DT_SurfaceCreate(ITPort **portOut, ITDevice **deviceOut, ITPixels **pixelsOut)
 {
@@ -280,8 +274,7 @@ done:
 }
 
 /* _DT_SurfaceDispose (dispose an image and its parts; answers the device's status; the three flags,
-   which part's disposer is calling, are never read). STATE: MATCH 100%, exe 70 / obj 70, byte-identical yes.
-   OPEN: none */
+   which part's disposer is calling, are never read). */
 // FUNCTION: EVNOVA 0x004db721
 int32_t _DT_SurfaceDispose(ITImage *image, unsigned char fromPort, unsigned char fromDevice,
                   unsigned char fromPixels)
@@ -319,8 +312,7 @@ int32_t _DT_SurfaceDispose(ITImage *image, unsigned char fromPort, unsigned char
     return status;
 }
 
-/* _DT_SurfaceGetContext (an image's port). STATE: MATCH 100%, exe 6 / obj 6, byte-identical yes.
-   OPEN: none */
+/* _DT_SurfaceGetContext (an image's port). */
 // FUNCTION: EVNOVA 0x004db7cb
 ITPort *_DT_SurfaceGetContext(void *imageRef)
 {
@@ -331,8 +323,7 @@ ITPort *_DT_SurfaceGetContext(void *imageRef)
     return image->port;
 }
 
-/* _DT_SurfaceGetImage (an image's pixel map). STATE: MATCH 100%, exe 6 / obj 6, byte-identical yes.
-   OPEN: none */
+/* _DT_SurfaceGetImage (an image's pixel map). */
 // FUNCTION: EVNOVA 0x004db7d9
 ITPixels *_DT_SurfaceGetImage(void *imageRef)
 {
@@ -344,7 +335,7 @@ ITPixels *_DT_SurfaceGetImage(void *imageRef)
 }
 
 /* _DT_SurfaceGetAlpha (an image's pixel map, NULL for no image; the key test's error is dead in
-   the exe too). STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes. OPEN: none */
+   the exe too). */
 // FUNCTION: EVNOVA 0x004db7e7
 ITPixels *_DT_SurfaceGetAlpha(void *imageRef)
 {
@@ -357,29 +348,25 @@ ITPixels *_DT_SurfaceGetAlpha(void *imageRef)
     return image != 0 ? image->pixels : 0;
 }
 
-/* _DT_ContextGetContext. STATE: MATCH 100%, exe 4 / obj 4, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004db810
 ITPort *_DT_ContextGetContext(ITImage *image)
 {
     return _DT_SurfaceGetContext(image);
 }
 
-/* _DT_ImageGetImage. STATE: MATCH 100%, exe 4 / obj 4, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004db81b
 ITPixels *_DT_ImageGetImage(ITImage *image)
 {
     return _DT_SurfaceGetImage(image);
 }
 
-/* _DT_ImageGetAlpha. STATE: MATCH 100%, exe 4 / obj 4, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004db826
 ITPixels *_DT_ImageGetAlpha(ITImage *image)
 {
     return _DT_SurfaceGetAlpha(image);
 }
 
-/* DT_ImageFileFormat (the file format of a handle's data by its header, as a type code; 0 when none).
-   STATE: MATCH 100%, exe 133 / obj 133, byte-identical yes. OPEN: none */
+/* DT_ImageFileFormat (the file format of a handle's data by its header, as a type code; 0 when none). */
 // FUNCTION: EVNOVA 0x004db831
 ULong DT_ImageFileFormat(void **handle)
 {
@@ -440,8 +427,7 @@ ULong DT_ImageFileFormat(void **handle)
 }
 
 /* DT_ImageFileLoad (load an image out of a handle: sniff its format and run that loader over a memory
-   stream on it). STATE: MATCH 100%, exe 133 / obj 133, byte-identical (see the build). OPEN:
-   none */
+   stream on it). */
 // FUNCTION: EVNOVA 0x004db9b0
 int32_t DT_ImageFileLoad(void **handle, ITImage **imageOut, ITImage **maskOut, ITTransparent *trans,
                   ITBackground *bg)
@@ -547,8 +533,7 @@ done:
     return err;
 }
 
-/* DT_ImageGetRect (an image's bounds). STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes.
-   OPEN: none */
+/* DT_ImageGetRect (an image's bounds). */
 // FUNCTION: EVNOVA 0x004dbb13
 ITRect *DT_ImageGetRect(ITImage *image, ITRect *bounds)
 {
@@ -563,8 +548,7 @@ ITRect *DT_ImageGetRect(ITImage *image, ITRect *bounds)
 
 /* DT_ImageGetInfo (describe a locked image's pixels for a drawing routine: sizes, bounds, the bits
    of it and of `other', its DIB, a port DC ready for GDI, palette and inverse table for one-byte
-   pixels, the format; answers whether it was locked). STATE: MATCH 100%, exe 103 / obj 103, byte-
-   identical yes. OPEN: none */
+   pixels, the format; answers whether it was locked). */
 // FUNCTION: EVNOVA 0x004dbb37
 unsigned char DT_ImageGetInfo(void *imageRef, ITImage *other, ITPixelInfo *info)
 {
@@ -616,8 +600,7 @@ unsigned char DT_ImageGetInfo(void *imageRef, ITImage *other, ITPixelInfo *info)
 }
 
 /* DT_ImageLock (lock an image, and `other', for drawing into its bits: pixels GDI last wrote
-   are read back from the bitmap first, the pixels marked changed, `info' filled when given).
-   STATE: MATCH 100%, exe 54 / obj 54, byte-identical yes. OPEN: none */
+   are read back from the bitmap first, the pixels marked changed, `info' filled when given). */
 // FUNCTION: EVNOVA 0x004dbc5e
 int32_t DT_ImageLock(ITImage *image, ITImage *other, ITPixelInfo *info, unsigned char *rebuilt)
 {
@@ -653,8 +636,7 @@ done:
     return err;
 }
 
-/* DT_ImageUnlock (mark an image's pixels changed and unlock it and `other'). STATE: MATCH 100%,
-   exe 24 / obj 24, byte-identical yes. OPEN: none */
+/* DT_ImageUnlock (mark an image's pixels changed and unlock it and `other'). */
 // FUNCTION: EVNOVA 0x004dbce3
 void DT_ImageUnlock(ITImage *image, ITImage *other)
 {
@@ -669,7 +651,7 @@ void DT_ImageUnlock(ITImage *image, ITImage *other)
 }
 
 /* DT_PeekAtSysContext (a port's DC for GDI drawing: changed or locked pixels are stored into the
-   bitmap first). STATE: MATCH 100%, exe 35 / obj 35, byte-identical yes. OPEN: none */
+   bitmap first). */
 // FUNCTION: EVNOVA 0x004dbd13
 void *DT_PeekAtSysContext(ITImage *image)
 {
@@ -1123,8 +1105,7 @@ skip:
 
 /* ---- the span routines, in link order ---- */
 
-/* The 76 spans (Span<frame><operation><alpha or same-format depth>). STATE: MATCH byte-identical,
-   76 of 76. OPEN: none; one block for the family (notes/itblit.md) */
+/* The 76 spans (Span<frame><operation><alpha or same-format depth>). */
 // FUNCTION: EVNOVA 0x004dbd6a
 AT_STATIC void _DT_ImageBlitNoneIgnore(ROWS_PARAMS)
 ROWS_BODY(PIXEL_COPY_OPAQUE, ANY_DST, ANY_SRC, ALPHA_BITS, NO_SETUP)
@@ -1408,9 +1389,7 @@ static ITSpanRows gRowsKey[7] = { SAME_FORMAT_COLUMNS(_DT_ImageBlitNoneColorKey,
 
 /* DT_ImageCopy (draw src, through its mask or a transparency, from srcRect into dstRect of
    dst; stretched when the two sizes differ; `copy' carries the source's coverage into the
-   destination's alpha). STATE: MATCH 100%, exe 854 / obj 854, byte-identical yes. OPEN: none;
-   srcColumn is a write-only holder whose declaration slot numbers the group of srcPixels->
-   bytesPerPixel's CSE below dstHeight, and dstWidth is declared first for the same tie (notes/itblit.md) */
+   destination's alpha). */
 // FUNCTION: EVNOVA 0x004e8b5f
 int32_t DT_ImageCopy(ITImage *dst, const ITRect *dstRect, unsigned char copy, ITImage *src,
                   ITImage *srcMask, const ITTransparent *trans, const ITRect *srcRect)
@@ -1689,9 +1668,7 @@ done:
 }
 
 /* DT_ImageTile (fill dstRect of dst with src repeated from `origin', through its mask or a
-   transparency; `copy' as for the blitter above). STATE: MATCH 100%, exe 504 / obj 504,
-   frame exact, byte-identical yes. OPEN: none; the dead `e = key;` in the Key case is what makes
-   the exe's push go through eax (a copy of key that is not pushed; notes/itblit.md) */
+   transparency; `copy' as for the blitter above). */
 // FUNCTION: EVNOVA 0x004e97fa
 int32_t DT_ImageTile(ITImage *dst, const ITRect *dstRect, const ITPoint *origin, unsigned char copy,
                   ITImage *src, ITImage *srcMask, const ITTransparent *trans)
@@ -1898,8 +1875,7 @@ done:
 
 ULong gDT_NextIndexedKey = 0x888a;                     /* 0x00576fc8 next indexed-format key */
 
-/* _DT_PaletteToInverse (the inverse table: every 4-4-4 colour to its nearest palette index). STATE: MATCH
-   100%, exe 79 / obj 79, byte-identical yes. OPEN: none */
+/* _DT_PaletteToInverse (the inverse table: every 4-4-4 colour to its nearest palette index). */
 // FUNCTION: EVNOVA 0x004e9f32
 void _DT_PaletteToInverse(unsigned char *table, const ITPalette *palette)
 {
@@ -1941,8 +1917,7 @@ void _DT_PaletteToInverse(unsigned char *table, const ITPalette *palette)
 }
 
 /* _DT_ImageCalcFormat (a format key's bytes per pixel, channel widths a r g b, shifts, masks and
-   16-bit widening factors; -1 for an unknown key). STATE: MATCH 100%, exe 231 / obj 231,
-   byte-identical yes. OPEN: none */
+   16-bit widening factors; -1 for an unknown key). */
 // FUNCTION: EVNOVA 0x004ea028
 int32_t _DT_ImageCalcFormat(ULong format, unsigned char *flag, unsigned char *bits,
                   unsigned char *shift, unsigned char *mask, unsigned short *scale)
@@ -2141,8 +2116,7 @@ int32_t _DT_ImageCalcFormat(ULong format, unsigned char *flag, unsigned char *bi
 }
 
 /* _DT_ImageCalcStamp (the format key of a pixel description: a fresh one per indexed image, else the
-   channel widths as nibbles, bit 31 when the shifts run low to high). STATE: MATCH 100%, exe
-   28 / obj 28, byte-identical yes. OPEN: none */
+   channel widths as nibbles, bit 31 when the shifts run low to high). */
 // FUNCTION: EVNOVA 0x004ea377
 ULong _DT_ImageCalcStamp(const ITPixels *info)
 {
@@ -2165,8 +2139,7 @@ ULong _DT_ImageCalcStamp(const ITPixels *info)
     return key;
 }
 
-/* _DT_ImageReplace (swap two images' pixel-map state, everything between the link and the tables).
-   STATE: MATCH 100%, exe 38 / obj 38, byte-identical yes. OPEN: none */
+/* _DT_ImageReplace (swap two images' pixel-map state, everything between the link and the tables). */
 // FUNCTION: EVNOVA 0x004ea3c9
 void _DT_ImageReplace(ITImage *a, ITImage *b)
 {
@@ -2184,8 +2157,7 @@ void _DT_ImageReplace(ITImage *a, ITImage *b)
 }
 
 /* _DT_SurfaceReplace (swap two images' port state and pixel-map state, then trade the ports' +0xc
-   word, mirrored into each pixel map's +0x5c). STATE: MATCH 100%, exe 80 / obj 80,
-   byte-identical yes. OPEN: none */
+   word, mirrored into each pixel map's +0x5c). */
 // FUNCTION: EVNOVA 0x004ea43e
 void _DT_SurfaceReplace(ITImage *a, ITImage *b)
 {
@@ -2214,7 +2186,7 @@ void _DT_SurfaceReplace(ITImage *a, ITImage *b)
 
 /* DT_ImageResize (re-frame an image and its mask to new bounds: a moved frame of the same size
    is taken as it is, else each is redrawn into a fresh image of its format and the pixel maps
-   swapped). STATE: MATCH 100%, exe 133 / obj 133, byte-identical yes. OPEN: none */
+   swapped). */
 // FUNCTION: EVNOVA 0x004ea528
 #define TempMemSave(v)
 #define TempMemLike(p)
@@ -2279,8 +2251,7 @@ done:
 }
 
 /* DT_ImagePreflightTile (widen an image and its mask to at least kMinTileSide on each side by tiling each
-   into a fresh image of its format, the pixel maps swapped). STATE: MATCH 100%, exe 144 / obj
-   144, byte-identical yes. OPEN: none */
+   into a fresh image of its format, the pixel maps swapped). */
 // FUNCTION: EVNOVA 0x004ea683
 int32_t DT_ImagePreflightTile(ITImage *image, ITImage *mask)
 {
@@ -2351,8 +2322,7 @@ done:
     return err;
 }
 
-/* DT_BufferRead (read count bytes off a memory stream; kStreamOverrun past its end). STATE:
-   MATCH, byte-identical. OPEN: none */
+/* DT_BufferRead (read count bytes off a memory stream; kStreamOverrun past its end). */
 // FUNCTION: EVNOVA 0x004ea80c
 int32_t DT_BufferRead(ITStream *stream, void *dst, ULong count)
 {
@@ -2372,8 +2342,7 @@ int32_t DT_BufferRead(ITStream *stream, void *dst, ULong count)
 }
 
 /* DT_ImageSetRawPixels (store one row of 8-bit pixels into an image, and into `mask' the palette alpha of
-   each; the image is locked around it when it was not). STATE: MATCH 100%, exe 70 / obj 70,
-   byte-identical yes. OPEN: none */
+   each; the image is locked around it when it was not). */
 // FUNCTION: EVNOVA 0x004ea850
 void DT_ImageSetRawPixels(ITImage *image, ITImage *mask, ULong row, const unsigned char *src)
 {
@@ -2412,8 +2381,7 @@ void DT_ImageSetRawPixels(ITImage *image, ITImage *mask, ULong row, const unsign
 }
 
 /* DT_ImageSetRawColors (store one row of a r g b pixels into an image in its own format, each channel
-   narrowed to its width and shifted into place, low byte first; alpha into `mask'). STATE: MATCH
-   100%, exe 111 / obj 111, byte-identical yes. OPEN: none */
+   narrowed to its width and shifted into place, low byte first; alpha into `mask'). */
 // FUNCTION: EVNOVA 0x004ea90b
 void DT_ImageSetRawColors(ITImage *image, ITImage *mask, ULong row, const ITColor *src)
 {
@@ -2458,8 +2426,7 @@ void DT_ImageSetRawColors(ITImage *image, ITImage *mask, ULong row, const ITColo
         DT_ImageUnlock(image, mask);
 }
 
-/* DT_AlphaInfoDefaults (a loader's transparency answer at "none"). STATE: MATCH 100%, exe 14 / obj 14, byte-identical yes.
-   OPEN: none */
+/* DT_AlphaInfoDefaults (a loader's transparency answer at "none"). */
 // FUNCTION: EVNOVA 0x004eaa61
 void DT_AlphaInfoDefaults(ITTransparent *t)
 {
@@ -2471,8 +2438,7 @@ void DT_AlphaInfoDefaults(ITTransparent *t)
     t->key.alpha = 0xff;
 }
 
-/* DT_FileInfoDefaults (a loader's background answer at its defaults). STATE: MATCH 100%, exe 23 / obj 23, byte-identical yes.
-   OPEN: none */
+/* DT_FileInfoDefaults (a loader's background answer at its defaults). */
 // FUNCTION: EVNOVA 0x004eaa81
 void DT_FileInfoDefaults(ITBackground *bg)
 {

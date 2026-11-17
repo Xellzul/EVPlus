@@ -47,8 +47,6 @@ unsigned char influenceOwner[256][256][4];
 #define kSearchDlogID 0xbbd
 #define kSearchTextItem 5
 
-/* DoSystemSearch. STATE: MATCH, 280/280, byte-identical (1042 bytes), relocregcheck 0 differ.
-   OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x004aab30
 // MAC: _DoSystemSearch i386 0x00011c86 ppc 0x000156dc
 void DoSystemSearch(void)

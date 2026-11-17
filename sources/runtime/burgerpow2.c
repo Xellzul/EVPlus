@@ -4,7 +4,7 @@
 #include "burgertypes.h"
 #include "burger.h"
 
-/* PowerOf2 (BurgerLib): the smallest power of two >= Input, 0x80000000 past 2^30. STATE: MATCH, byte-identical. OPEN: none */
+/* PowerOf2 (BurgerLib): the smallest power of two >= Input, 0x80000000 past 2^30. */
 // FUNCTION: EVNOVA 0x004eed80
 NAKED Word32 PowerOf2(Word32 Input)
 {
@@ -27,7 +27,7 @@ NAKED Word32 PowerOf2(Word32 Input)
     }
 }
 
-/* FastStrLen (BurgerLib; Burger.h maps strlen onto it): word-at-a-time length. STATE: MATCH, exe 45 / obj 45, byte-identical yes (149 bytes). OPEN: none */
+/* FastStrLen (BurgerLib; Burger.h maps strlen onto it): word-at-a-time length. */
 // FUNCTION: EVNOVA 0x004eedb0
 NAKED Word FastStrLen(const char *Input)
 {

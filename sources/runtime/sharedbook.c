@@ -10,8 +10,7 @@
 #include "codebook.h"
 #include "scales.h"
 
-/* _ilog. STATE: BurgerLib's libvorbis 1.0rc3 (a guarded do-while), MATCH.
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544280
 int _ilog(unsigned int v){
   int ret=0;
@@ -51,8 +50,7 @@ float _float32_unpack(int32_t val){
   return(ldexp(mant,exp-(VQ_FMAN-1)-VQ_FEXP_BIAS));
 }
 
-/* _make_words. STATE: BurgerLib's libvorbis 1.0rc3, the body under if(r) so a failed
-   allocation leaves through return(r) (MATCH, byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005442a0
 int32_t *_make_words(int32_t *l,int32_t n){
   int32_t i,j;
@@ -108,8 +106,7 @@ int32_t *_make_words(int32_t *l,int32_t n){
   return(r);
 }
 
-/* _make_decode_tree. STATE: BurgerLib's libvorbis 1.0rc3, MATCH, byte-identical (835 B).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544500
 decode_aux *_make_decode_tree(codebook *c){
   const static_codebook *s=c->c;
@@ -180,8 +177,7 @@ decode_aux *_make_decode_tree(codebook *c){
   return(NULL);
 }
 
-/* _book_maptype1_quantvals. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544850
 int32_t _book_maptype1_quantvals(const static_codebook *b){
   int32_t vals=floor(pow((float)b->entries,1.f/b->dim));
@@ -206,8 +202,7 @@ int32_t _book_maptype1_quantvals(const static_codebook *b){
   }
 }
 
-/* _book_unquantize. STATE: BurgerLib's libvorbis 1.0rc3, the allocation checked, a failure
-   joining the final return(NULL) (MATCH, byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005449c0
 float *_book_unquantize(const static_codebook *b){
   int32_t j,k;
@@ -252,8 +247,7 @@ float *_book_unquantize(const static_codebook *b){
   return(NULL);
 }
 
-/* vorbis_staticbook_clear. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544c00
 void vorbis_staticbook_clear(static_codebook *b){
   if(b->allocedp){
@@ -278,8 +272,7 @@ void vorbis_staticbook_clear(static_codebook *b){
   }
 }
 
-/* vorbis_staticbook_destroy. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544d10
 void vorbis_staticbook_destroy(static_codebook *b){
   if(b->allocedp){
@@ -288,8 +281,7 @@ void vorbis_staticbook_destroy(static_codebook *b){
   }
 }
 
-/* vorbis_book_clear. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544d40
 void vorbis_book_clear(codebook *b){
   if(b->decode_tree){
@@ -306,8 +298,7 @@ void vorbis_book_clear(codebook *b){
   FastMemSet(b,0,sizeof(*b));
 }
 
-/* vorbis_book_init_encode. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544df0
 int vorbis_book_init_encode(codebook *c,const static_codebook *s){
   int32_t j,k;
@@ -336,8 +327,7 @@ int vorbis_book_init_encode(codebook *c,const static_codebook *s){
   return(0);
 }
 
-/* vorbis_book_init_decode. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00544f10
 int vorbis_book_init_decode(codebook *c,const static_codebook *s){
   FastMemSet(c,0,sizeof(*c));
@@ -363,8 +353,7 @@ static float _dist(int el,float *ref, float *b,int step){
   return(acc);
 }
 
-/* _best. STATE: BurgerLib's libvorbis 1.0rc3 (.5f), MATCH, byte-identical (2349 B).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00545030
 int _best(codebook *book, float *a, int step){
   encode_aux_nearestmatch *nt=book->c->nearest_tree;
@@ -466,8 +455,7 @@ int _best(codebook *book, float *a, int step){
   }
 }
 
-/* vorbis_book_besterror. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00545960
 int vorbis_book_besterror(codebook *book,float *a,int step,int addmul){
   int dim=book->dim,i,o;

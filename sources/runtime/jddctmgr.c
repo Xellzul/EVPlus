@@ -21,8 +21,7 @@ typedef union {
 
 #define PROVIDE_ISLOW_TABLES
 
-/* start_pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056475f
 METHODDEF(void)
 start_pass (j_decompress_ptr cinfo)
@@ -145,8 +144,7 @@ start_pass (j_decompress_ptr cinfo)
   }
 }
 
-/* jinit_inverse_dct. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005646e3
 GLOBAL(void)
 jinit_inverse_dct (j_decompress_ptr cinfo)

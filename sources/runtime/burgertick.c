@@ -25,8 +25,7 @@ Word TickWakeUpFlag;                             /* 0x00870d84 */
 #define kTickStackSize  0x400
 #define kTimerPriority  2                        /* THREAD_PRIORITY_HIGHEST */
 
-/* MyIrq (BurgerLib TkWin95Code, the timer thread). STATE: MATCH 100.0%, exe 34 / obj 34,
-   byte-identical yes. OPEN: none */
+/* MyIrq (BurgerLib TkWin95Code, the timer thread). */
 // FUNCTION: EVNOVA 0x004d5d40
 static Word32 __stdcall MyIrq(void *data)
 {
@@ -50,8 +49,7 @@ static Word32 __stdcall MyIrq(void *data)
     }
 }
 
-/* MyShutdown (BurgerLib TkWin95Code, the atexit hook). STATE: MATCH 100.0%, exe 6 / obj 6,
-   byte-identical yes. OPEN: none */
+/* MyShutdown (BurgerLib TkWin95Code, the atexit hook). */
 // FUNCTION: EVNOVA 0x004d5df0
 static void MyShutdown(void)
 {
@@ -59,8 +57,7 @@ static void MyShutdown(void)
     ThreadHandle = 0;
 }
 
-/* ReadTick (BurgerLib TkWin95Code). STATE: MATCH 100.0%, exe 24 / obj 24, byte-identical
-   yes. OPEN: none */
+/* ReadTick (BurgerLib TkWin95Code). */
 // FUNCTION: EVNOVA 0x004d5e10
 Word32 ReadTick(void)
 {
@@ -73,8 +70,7 @@ Word32 ReadTick(void)
     return TimeCount;
 }
 
-/* WaitTicks (BurgerLib TkWin95Code). STATE: MATCH 100.0%, exe 69 / obj 69, byte-identical
-   yes. OPEN: none */
+/* WaitTicks (BurgerLib TkWin95Code). */
 // FUNCTION: EVNOVA 0x004d5e90
 void WaitTicks(Word tickCount)
 {
@@ -114,7 +110,6 @@ Word32 ReadTickMicroseconds(void)
     return 0;
 }
 
-/* ReadTickMilliseconds. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6000
 ULong ReadTickMilliseconds(void)
 {

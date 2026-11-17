@@ -54,8 +54,7 @@ static __inline ULong SwapLong(ULong v)
 }
 
 /* ResourceFindName (BurgerLib RzResourceManager): binary search of the sorted name index.
-   1 and *out the match; 0 and *out where the name would go. A leading "number:" is skipped.
-   STATE: MATCH 100%, exe 81 / obj 81, byte-identical yes. OPEN: none */
+   1 and *out the match; 0 and *out where the name would go. A leading "number:" is skipped. */
 // FUNCTION: EVNOVA 0x00500810
 Word ResourceFindName(RezFile *Input, const char *name, RezName **Result)
 {
@@ -104,8 +103,7 @@ Word ResourceFindName(RezFile *Input, const char *name, RezName **Result)
 
 /* Expand the file's resource table into one handle, 20 bytes an entry,
    the name block copied behind it. Old tables use 12-byte records. */
-/* RezGroupNew (BurgerLib RezGroupNew). STATE: MATCH 100.0%, exe 211 / obj 211,
-   byte-identical yes. OPEN: none */
+/* RezGroupNew (BurgerLib RezGroupNew). */
 // FUNCTION: EVNOVA 0x00500910
 RezGroup **RezGroupNew(ULong *in, RezHeader *header, int32_t flags, ULong base)
 {
@@ -235,7 +233,6 @@ RezGroup **RezGroupNew(ULong *in, RezHeader *header, int32_t flags, ULong base)
     return 0;
 }
 
-/* RezSortNames. STATE: DIFF 0.0%, exe 10 / obj 8 instrs. OPEN: foreign-compiler ceiling */
 // FUNCTION: EVNOVA 0x00500bd0
 int RezSortNames(const void *a, const void *b)
 {
@@ -244,8 +241,7 @@ int RezSortNames(const void *a, const void *b)
 
 /* Rebuild the name index: one { name, id } per named entry, sorted
    case-blind, names kept as offsets into the table. */
-/* ResourceHashNames (BurgerLib ResourceHashNames). STATE: MATCH 100.0%, exe 120 / obj 120,
-   byte-identical yes. OPEN: none */
+/* ResourceHashNames (BurgerLib ResourceHashNames). */
 // FUNCTION: EVNOVA 0x00500bf0
 void ResourceHashNames(RezFile *rez)
 {
@@ -318,8 +314,7 @@ void ResourceHashNames(RezFile *rez)
     }
 }
 
-/* ResourceInit (BurgerLib ResourceInit). STATE: MATCH 100%, exe 137 / obj 137 instrs,
-   byte-identical yes. OPEN: none */
+/* ResourceInit (BurgerLib ResourceInit). */
 // FUNCTION: EVNOVA 0x00500d80
 int32_t ResourceInit(RezFile *rez, const char *path, ULong start)
 {
@@ -423,8 +418,7 @@ static RezEntry *ResourceScan(RezFile *rez, ULong rezNum)
 }
 #define kNoRezNum 0xffffffffU
 
-/* ResourceDestroy (BurgerLib ResourceDestroy). STATE: MATCH 100%, exe 55 / obj 55 instrs,
-   byte-identical yes. OPEN: none */
+/* ResourceDestroy (BurgerLib ResourceDestroy). */
 // FUNCTION: EVNOVA 0x00500f80
 void ResourceDestroy(RezFile *rez)
 {
@@ -461,8 +455,7 @@ void ResourceDestroy(RezFile *rez)
     }
 }
 
-/* ResourcePurgeCache (BurgerLib RzResourceManager): free every loaded resource nobody holds.
-   STATE: MATCH 100.0%, exe 56 / obj 56, byte-identical yes. OPEN: none */
+/* ResourcePurgeCache (BurgerLib RzResourceManager): free every loaded resource nobody holds. */
 // FUNCTION: EVNOVA 0x00501040
 void ResourcePurgeCache(RezFile *rez)
 {
@@ -496,8 +489,7 @@ void ResourcePurgeCache(RezFile *rez)
 
 /* ResourceAddName (BurgerLib RzResourceManager): give a name a resource number of its own (the
    first free number of the group that starts at 1), so ResourceLoadHandle will look for a file
-   of that name; the number, or -1 without memory. STATE: MATCH 100.0%, exe 425 / obj 425,
-   byte-identical yes (1557 bytes). OPEN: none */
+   of that name; the number, or -1 without memory. */
 // FUNCTION: EVNOVA 0x005010f0
 Word ResourceAddName(RezFile *rez, const char *name)
 {
@@ -683,7 +675,6 @@ Word ResourceAddName(RezFile *rez, const char *name)
     return rezNum;
 }
 
-/* ResourceLoadByName. STATE: DIFF 0.0%, exe 11 / obj 9 instrs. OPEN: foreign-compiler ceiling; see notes */
 // FUNCTION: EVNOVA 0x00501710
 char *ResourceLoadByName(struct RezFile *rez, const char *name)
 {
@@ -692,8 +683,7 @@ char *ResourceLoadByName(struct RezFile *rez, const char *name)
 
 /* ResourceLoadHandle (BurgerLib RzResourceManager): resource rezNum in a handle, from memory,
    from a file of its own name, or read (and unpacked) from the .rez; 0 when it cannot be had.
-   Sets ResourceJustLoaded when the data came off the disk. STATE: MATCH 100.0%, exe 410 /
-   obj 410, byte-identical yes (1426 bytes); calls exact (23 sites). OPEN: none */
+   Sets ResourceJustLoaded when the data came off the disk. */
 // FUNCTION: EVNOVA 0x00501740
 Handle ResourceLoadHandle(RezFile *Input, int32_t RezNum)
 {
@@ -810,7 +800,6 @@ Fail:
     return 0;
 }
 
-/* ResourceLoadHandleByName. STATE: DIFF 15.6%, exe 32 / obj 30 instrs. OPEN: see notes */
 // FUNCTION: EVNOVA 0x00501ce0
 Handle ResourceLoadHandleByName(struct RezFile *rez, const char *name)
 {
@@ -826,8 +815,7 @@ Handle ResourceLoadHandleByName(struct RezFile *rez, const char *name)
 }
 
 /* ResourceRelease (BurgerLib RzResourceManager): one load fewer; at none the handle is
-   unlocked and made purgeable, or freed outright for a don't-cache file. STATE: MATCH
-   100.0%, exe 73 / obj 73, byte-identical yes. OPEN: none */
+   unlocked and made purgeable, or freed outright for a don't-cache file. */
 // FUNCTION: EVNOVA 0x00501d50
 void ResourceRelease(RezFile *rez, int32_t index)
 {
@@ -857,7 +845,7 @@ void ResourceRelease(RezFile *rez, int32_t index)
 }
 
 /* ResourceDetach (BurgerLib RzResourceManager): the caller keeps the handle; the file
-   forgets it. STATE: MATCH 100.0%, exe 43 / obj 43, byte-identical yes. OPEN: none */
+   forgets it. */
 // FUNCTION: EVNOVA 0x00501e30
 void ResourceDetach(RezFile *rez, int32_t index)
 {
@@ -870,8 +858,7 @@ void ResourceDetach(RezFile *rez, int32_t index)
     }
 }
 
-/* ResourceGetRezNum (BurgerLib RzResourceManager): the number of a named resource, or -1.
-   STATE: MATCH 100.0%, exe 18 / obj 18, byte-identical yes. OPEN: none */
+/* ResourceGetRezNum (BurgerLib RzResourceManager): the number of a named resource, or -1. */
 // FUNCTION: EVNOVA 0x00501eb0
 Word ResourceGetRezNum(RezFile *Input, const char *name)
 {
@@ -883,8 +870,7 @@ Word ResourceGetRezNum(RezFile *Input, const char *name)
 }
 
 /* ResourceGetIDFromHandle (BurgerLib RzResourceManager): which resource a loaded handle is,
-   and its name; 0 when found, 1 when not. STATE: MATCH 100.0%, exe 79 / obj 79,
-   byte-identical yes. OPEN: none */
+   and its name; 0 when found, 1 when not. */
 // FUNCTION: EVNOVA 0x00501ef0
 Word ResourceGetIDFromHandle(RezFile *rez, Handle h, int32_t *idFound, char *nameBuf,
                              Word nameBufSize)

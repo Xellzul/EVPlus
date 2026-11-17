@@ -132,8 +132,7 @@ static inline Word32 SpecialKey(Word32 code, const WinMsg *msg)
     return 0;
 }
 
-/* KeyboardGetch (BurgerLib InKeyboardWin95). STATE: MATCH 100%, exe 23 / obj 23,
-   byte-identical yes. OPEN: none. */
+/* KeyboardGetch (BurgerLib InKeyboardWin95). */
 // FUNCTION: EVNOVA 0x004d7240
 unsigned int KeyboardGetch(void)
 {
@@ -155,8 +154,7 @@ unsigned int KeyboardGetch(void)
     return key;
 }
 
-/* KeyboardKbhit (BurgerLib InKeyboardWin95). STATE: MATCH 100%, exe 19 / obj 19,
-   byte-identical yes. OPEN: none. */
+/* KeyboardKbhit (BurgerLib InKeyboardWin95). */
 // FUNCTION: EVNOVA 0x004d72a0
 unsigned int KeyboardKbhit(void)
 {
@@ -176,8 +174,7 @@ unsigned int KeyboardKbhit(void)
     return 0;
 }
 
-/* KeyboardGet2 (BurgerLib InKeyboardWin95). STATE: MATCH 100%, exe 14 / obj 14,
-   byte-identical yes. OPEN: none. */
+/* KeyboardGet2 (BurgerLib InKeyboardWin95). */
 // FUNCTION: EVNOVA 0x004d72f0
 int32_t KeyboardGet2(void)
 {
@@ -193,8 +190,7 @@ int32_t KeyboardGet2(void)
     return 0;
 }
 
-/* Win95ProcessMessage (BurgerLib InKeyboardWin95). STATE: MATCH 100%, exe 361 / obj 361,
-   byte-identical yes. OPEN: none */
+/* Win95ProcessMessage (BurgerLib InKeyboardWin95). */
 // FUNCTION: EVNOVA 0x004d7330
 Word Win95ProcessMessage(WinMsg *msg)
 {
@@ -274,8 +270,7 @@ Word Win95ProcessMessage(WinMsg *msg)
     return 0;
 }
 
-/* ProcessSystemEvents (BurgerLib InKeyboardWin95). STATE: MATCH 100.0%, exe 47 / obj 47,
-   byte-identical yes. OPEN: none */
+/* ProcessSystemEvents (BurgerLib InKeyboardWin95). */
 // FUNCTION: EVNOVA 0x004d79a0
 void ProcessSystemEvents(void)
 {
@@ -295,8 +290,7 @@ void ProcessSystemEvents(void)
 
 /* Reset the input subsystem: forget every key, drop the wheel state and
    re-register the mouse-wheel message. */
-/* KeyboardInit (BurgerLib KeyboardInit). STATE: MATCH 100.0%, exe 13 / obj 13,
-   byte-identical yes. OPEN: none */
+/* KeyboardInit (BurgerLib KeyboardInit). */
 // FUNCTION: EVNOVA 0x004d7a80
 void KeyboardInit(void)
 {
@@ -307,7 +301,7 @@ void KeyboardInit(void)
     RWMMouseWheel = RegisterWindowMessageA("MSWHEEL_ROLLMSG");
 }
 
-/* KeyboardDestroy (BurgerLib KeyboardDestroy). STATE: MATCH, byte-identical. OPEN: none */
+/* KeyboardDestroy (BurgerLib KeyboardDestroy). */
 // FUNCTION: EVNOVA 0x004d7ae0
 void KeyboardDestroy(void)
 {

@@ -11,7 +11,6 @@
 extern "C" {
 #endif
 
-/* LinkedListInit. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ff830
 void LinkedListInit(ListRec *list)
 {
@@ -20,14 +19,12 @@ void LinkedListInit(ListRec *list)
     list->count = 0;
 }
 
-/* LinkedListNew. STATE: MATCH 100%, exe 5 / obj 5 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ff850
 void *LinkedListNew(void)
 {
     return AllocAPointerClear(sizeof(ListRec));
 }
 
-/* LinkedListGetEntryData. STATE: MATCH 100%, exe 13 / obj 13 instrs. OPEN: none */
 // FUNCTION: EVNOVA 0x004ff870
 void *LinkedListGetEntryData(ListRec *list, ULong index)
 {
@@ -50,7 +47,6 @@ void *LinkedListGetEntryData(ListRec *list, ULong index)
 
 #define kListNodeSize   0x10
 
-/* LinkedListAddNewEntryEnd. STATE: MATCH 100%, exe 24 / obj 24 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ff8a0
 void LinkedListAddNewEntryEnd(ListRec *list, void *data)
 {
@@ -73,7 +69,6 @@ void LinkedListAddNewEntryEnd(ListRec *list, void *data)
     }
 }
 
-/* LinkedListAddNewEntryBegin. STATE: MATCH 100%, exe 24 / obj 24 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ff900
 void LinkedListAddNewEntryBegin(ListRec *list, void *data)
 {

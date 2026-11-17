@@ -71,7 +71,6 @@ short commDialogMode;
 
 /* the fields this dialog reads of the 0x120-byte rank record */
 
-/* DoCommDialog (mac _DoCommDialog). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047e470
 // MAC: _DoCommDialog i386 0x000956d5 ppc 0x000a1380
 void DoCommDialog(short shipIndex)
@@ -458,7 +457,6 @@ void DoCommDialog(short shipIndex)
  * A no raises the asking price by a thousand for next time, and -1 means the
  * player could not have paid it anyway.
  */
-/* DoShipCommPayment. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047f9c0
 // MAC: _DoShipCommPayment i386 0x000920f3 ppc 0x0009dd38
 short DoShipCommPayment(void)
@@ -481,7 +479,6 @@ short DoShipCommPayment(void)
     return -1;
 }
 
-/* CommFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047fa40
 // MAC: _CommFilter i386 0x000908ed ppc 0x0009c440
 Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -537,7 +534,6 @@ Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* CommDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047fb70
 // MAC: _CommDialogUpdate i386 0x000903f5 ppc 0x0009c014
 void CommDialogUpdate(void)
@@ -641,8 +637,6 @@ void CommDialogUpdate(void)
 #define kGovtNameList    0x44c
 #define kTributeList     0xbba
 
-/* DoPlanetCommDialog (mac _DoPlanetCommDialog). STATE: MATCH, exe 1020 / obj 1020,
-   byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00480030
 // MAC: _DoPlanetCommDialog i386 0x00096949 ppc 0x000a25ac
 void DoPlanetCommDialog(short stellar)
@@ -935,7 +929,6 @@ void DoPlanetCommDialog(short stellar)
     RedrawComm(0);
 }
 
-/* PlanetCommFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00481140
 // MAC: _PlanetCommFilter i386 0x000911a9 ppc 0x0009cc58
 Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -997,7 +990,6 @@ Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* PlanetCommDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004812c0
 // MAC: _PlanetCommDialogUpdate i386 0x00090a98 ppc 0x0009c618
 void PlanetCommDialogUpdate(void)
@@ -1151,8 +1143,6 @@ void PlanetCommDialogUpdate(void)
 #define kAdviceVariants     3
 
 
-/* LoadAdvice (mac _LoadAdvice). STATE: MATCH 100.0%, exe 598 / obj 598, relocregcheck 0 of
-   162; the stellar pick reuses `count' once the count is spent. OPEN: none */
 // FUNCTION: EVNOVA 0x004819d0
 // MAC: _LoadAdvice i386 0x0009133c ppc 0x0009ce20
 void LoadAdvice(void)
@@ -1375,7 +1365,6 @@ void LoadAdvice(void)
 #define kItemDone             1
 #define kItemHaggle           2
 
-/* DoHaggleDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00482280
 // MAC: _DoHaggleDialog i386 0x00091e67 ppc 0x0009d9e4
 short DoHaggleDialog(Boolean raise, short chance)
@@ -1458,7 +1447,6 @@ short DoHaggleDialog(Boolean raise, short chance)
     return result;
 }
 
-/* HaggleFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004825d0
 // MAC: _HaggleFilter i386 0x00091d9d ppc 0x0009d8e8
 Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -1520,7 +1508,6 @@ Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* HaggleDialogUpdate (mac _HaggleDialogUpdate). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004826a0
 // MAC: _HaggleDialogUpdate i386 0x00091b65 ppc 0x0009d6ac
 void HaggleDialogUpdate(void)
@@ -1583,7 +1570,6 @@ void HaggleDialogUpdate(void)
 #define kHaggleGreetHigh    (kResponseStrings + 1)
 #define kHaggleHighBias     -0xbd
 
-/* LoadResponse. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004828c0
 // MAC: _LoadResponse i386 0x00090a0b ppc 0x0009c590
 void LoadResponse(short which)
@@ -1596,7 +1582,6 @@ void LoadResponse(short which)
                      which * kHaggleStride + responseRandom + kHaggleHighBias);
 }
 
-/* LoadStellarResponse. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00482910
 // MAC: _LoadStellarResponse i386 0x00090a65 ppc 0x0009c5ec
 void LoadStellarResponse(short which)
@@ -1624,8 +1609,6 @@ void LoadStellarResponse(short which)
 #define kPlunderDlogID 0x3f3
 #define kPlunderPictID 0x2143
 
-/* DoPlunderDialog (mac _DoPlunderDialog). STATE: MATCH 100.0%, 1552/1552, byte-identical yes;
-   mac MATCH both slices. OPEN: nothing. */
 // FUNCTION: EVNOVA 0x00482940
 // MAC: _DoPlunderDialog i386 0x0009302b ppc 0x0009ef7c
 void DoPlunderDialog(void)
@@ -2044,8 +2027,6 @@ void EvalPlayerStudliness(void)
 }
 #endif
 
-/* SetPlunderValues (mac _SetPlunderValues). STATE: MATCH 100.0%, exe 611 / obj 611,
-   byte-identical yes. OPEN: none. */
 // FUNCTION: EVNOVA 0x00484230
 // MAC: _SetPlunderValues i386 0x00092219 ppc 0x0009debc
 void SetPlunderValues(void)
@@ -2194,7 +2175,6 @@ void SetPlunderValues(void)
         captureOdds = 0;
 }
 
-/* PlunderFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00484c20
 // MAC: _PlunderFilter i386 0x00092f20 ppc 0x0009ee40
 Boolean PlunderFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -2246,7 +2226,6 @@ Boolean PlunderFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* PlunderDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00484d30
 // MAC: _PlunderDialogUpdate i386 0x000928b4 ppc 0x0009e884
 void PlunderDialogUpdate(void)
@@ -2375,7 +2354,6 @@ void PlunderDialogUpdate(void)
 #define kEscortDialogID 0x3fe
 #define kEscortPictID   0x2141
 
-/* DoEscortDialog (mac _DoEscortDialog). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004853a0
 // MAC: _DoEscortDialog i386 0x000951ee ppc 0x000a0eb4
 void DoEscortDialog(ShipObj *ship)
@@ -2489,7 +2467,6 @@ void DoEscortDialog(ShipObj *ship)
     SWSetPortToWindow(gSpriteWorld);
 }
 
-/* EscortFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00485840
 // MAC: _EscortFilter i386 0x000950e9 ppc 0x000a0d7c
 Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -2555,7 +2532,6 @@ Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* EscortDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00485970
 // MAC: _EscortDialogUpdate i386 0x00094a1b ppc 0x000a06c0
 void EscortDialogUpdate(void)

@@ -14,8 +14,7 @@ typedef my_input_controller * my_inputctl_ptr;
 
 METHODDEF(int) consume_markers JPP((j_decompress_ptr cinfo));
 
-/* initial_setup. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ec68
 LOCAL(void)
 initial_setup (j_decompress_ptr cinfo)
@@ -83,8 +82,7 @@ initial_setup (j_decompress_ptr cinfo)
     cinfo->inputctl->has_multiple_scans = FALSE;
 }
 
-/* per_scan_setup. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054eae6
 LOCAL(void)
 per_scan_setup (j_decompress_ptr cinfo)
@@ -154,8 +152,7 @@ per_scan_setup (j_decompress_ptr cinfo)
   }
 }
 
-/* latch_quant_tables. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ea54
 LOCAL(void)
 latch_quant_tables (j_decompress_ptr cinfo)
@@ -183,8 +180,7 @@ latch_quant_tables (j_decompress_ptr cinfo)
   }
 }
 
-/* start_input_pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ea18
 METHODDEF(void)
 start_input_pass (j_decompress_ptr cinfo)
@@ -196,8 +192,7 @@ start_input_pass (j_decompress_ptr cinfo)
   cinfo->inputctl->consume_input = cinfo->coef->consume_data;
 }
 
-/* finish_input_pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054ea07
 METHODDEF(void)
 finish_input_pass (j_decompress_ptr cinfo)
@@ -205,8 +200,7 @@ finish_input_pass (j_decompress_ptr cinfo)
   cinfo->inputctl->consume_input = consume_markers;
 }
 
-/* consume_markers. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e92c
 METHODDEF(int)
 consume_markers (j_decompress_ptr cinfo)
@@ -249,8 +243,7 @@ consume_markers (j_decompress_ptr cinfo)
   return val;
 }
 
-/* reset_input_controller. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e8f0
 METHODDEF(void)
 reset_input_controller (j_decompress_ptr cinfo)
@@ -268,8 +261,7 @@ reset_input_controller (j_decompress_ptr cinfo)
   cinfo->coef_bits = NULL;
 }
 
-/* jinit_input_controller. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054e8ab
 GLOBAL(void)
 jinit_input_controller (j_decompress_ptr cinfo)

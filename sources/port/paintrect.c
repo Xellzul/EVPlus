@@ -6,7 +6,6 @@
 #include "burger.h"
 #include "render.h"
 
-/* PaintRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6b90
 void PaintRect(Rect *r)
 {
@@ -15,7 +14,6 @@ void PaintRect(Rect *r)
     FillRectWithColor(r, &CurrentGrafPort->foreColor);
 }
 
-/* InvertRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6bc0
 void InvertRect(Rect *r)
 {
@@ -119,7 +117,6 @@ void InvertRect(Rect *r)
 }
 
 /* the Toolbox erase is a fill in the port's background colour */
-/* EraseRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6ec0
 void EraseRect(Rect *r)
 {
@@ -128,7 +125,6 @@ void EraseRect(Rect *r)
     FillRectWithColor(r, &CurrentGrafPort->backColor);
 }
 
-/* FrameRect. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b6ef0
 void FrameRect(const Rect *r)
 {

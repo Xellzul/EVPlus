@@ -3,8 +3,7 @@
 #define PNG_INTERNAL
 #include "png.h"
 
-/* png_get_valid. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538bfd
 png_uint_32 PNGAPI
 png_get_valid(png_structp png_ptr, png_infop info_ptr, png_uint_32 flag)
@@ -175,8 +174,7 @@ png_get_pixel_aspect_ratio(png_structp png_ptr, png_infop info_ptr)
    return ((float)0.0);
 }
 
-/* png_get_x_offset_microns. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538bd4
 png_int_32 PNGAPI
 png_get_x_offset_microns(png_structp png_ptr, png_infop info_ptr)
@@ -192,8 +190,7 @@ png_get_x_offset_microns(png_structp png_ptr, png_infop info_ptr)
    return (0);
 }
 
-/* png_get_y_offset_microns. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538bab
 png_int_32 PNGAPI
 png_get_y_offset_microns(png_structp png_ptr, png_infop info_ptr)
@@ -209,8 +206,7 @@ png_get_y_offset_microns(png_structp png_ptr, png_infop info_ptr)
    return (0);
 }
 
-/* png_get_x_offset_pixels. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538b82
 png_int_32 PNGAPI
 png_get_x_offset_pixels(png_structp png_ptr, png_infop info_ptr)
@@ -226,8 +222,7 @@ png_get_x_offset_pixels(png_structp png_ptr, png_infop info_ptr)
    return (0);
 }
 
-/* png_get_y_offset_pixels. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538b59
 png_int_32 PNGAPI
 png_get_y_offset_pixels(png_structp png_ptr, png_infop info_ptr)
@@ -263,8 +258,7 @@ png_get_signature(png_structp png_ptr, png_infop info_ptr)
       return (NULL);
 }
 
-/* png_get_bKGD. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538b2c
 png_uint_32 PNGAPI
 png_get_bKGD(png_structp png_ptr, png_infop info_ptr,
@@ -341,8 +335,7 @@ png_get_cHRM_fixed(png_structp png_ptr, png_infop info_ptr,
    return (0);
 }
 
-/* png_get_gAMA. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538b01
 png_uint_32 PNGAPI
 png_get_gAMA(png_structp png_ptr, png_infop info_ptr, double *file_gamma)
@@ -372,8 +365,7 @@ png_get_gAMA_fixed(png_structp png_ptr, png_infop info_ptr,
    return (0);
 }
 
-/* png_get_sRGB. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538ad1
 png_uint_32 PNGAPI
 png_get_sRGB(png_structp png_ptr, png_infop info_ptr, int *file_srgb_intent)
@@ -418,8 +410,7 @@ png_get_sPLT(png_structp png_ptr, png_infop info_ptr,
    return ((png_uint_32)info_ptr->splt_palettes_num);
 }
 
-/* png_get_hIST. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538aa4
 png_uint_32 PNGAPI
 png_get_hIST(png_structp png_ptr, png_infop info_ptr, png_uint_16p *hist)
@@ -434,8 +425,7 @@ png_get_hIST(png_structp png_ptr, png_infop info_ptr, png_uint_16p *hist)
    return (0);
 }
 
-/* png_get_IHDR. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538982
 png_uint_32 PNGAPI
 png_get_IHDR(png_structp png_ptr, png_infop info_ptr,
@@ -568,8 +558,7 @@ png_get_pHYs(png_structp png_ptr, png_infop info_ptr,
    return (retval);
 }
 
-/* png_get_PLTE. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x00538948
 png_uint_32 PNGAPI
 png_get_PLTE(png_structp png_ptr, png_infop info_ptr, png_colorp *palette,
@@ -636,8 +625,7 @@ png_get_tIME(png_structp png_ptr, png_infop info_ptr, png_timep *mod_time)
    return (0);
 }
 
-/* png_get_tRNS. STATE: genuine libpng 1.2.7; MATCH, byte-identical.
-   OPEN: none. */
+/* From libpng 1. */
 // FUNCTION: EVNOVA 0x005388de
 png_uint_32 PNGAPI
 png_get_tRNS(png_structp png_ptr, png_infop info_ptr,

@@ -48,9 +48,7 @@ extern ULong C2UGetByteCount(const char *s);
    recorded, each one's NAME looked up in the window's then the global text variables and a value
    inserted through 0x0051ed23; every element whose name is a registered control type becomes a
    control (its subtree skipped); the focusable list rebuilt; NULL, the list disposed, on
-   failure). STATE: MATCH 100%, exe 198 / obj 198, byte-identical yes (510 bytes). OPEN: none;
-   `name' / `value' block-scoped in the insert walk, one walker for both element walks, and the
-   entry's dead zeros (err an initialiser; list zeroed twice, el once); notes/ittoolkit.md */
+   failure). */
 // FUNCTION: EVNOVA 0x0051db65
 ITControlList *_IT_ItemListCreate(WindowNode *window, ITElement *first)
 {
@@ -195,7 +193,7 @@ done:
 
 /* _IT_ItemListDispose (dispose a window's control list: the focus moved out of the window, the tracked
    item dropped when one of these controls holds it, every control and every inserted element
-   removed). STATE: MATCH 100%, exe 69 / obj 69, byte-identical yes. OPEN: none */
+   removed). */
 // FUNCTION: EVNOVA 0x0051dd63
 void _IT_ItemListDispose(WindowNode *window, ITControlList *list)
 {
@@ -228,8 +226,7 @@ void _IT_ItemListDispose(WindowNode *window, ITControlList *list)
     window->controls = 0;
 }
 
-/* _IT_GetItemIndex (a control's index in a list, -1 when absent). STATE: MATCH 100%, exe 19 / obj 19,
-   byte-identical yes. OPEN: none */
+/* _IT_GetItemIndex (a control's index in a list, -1 when absent). */
 // FUNCTION: EVNOVA 0x0051de05
 int32_t _IT_GetItemIndex(ITControlList *list, ITControl *control)
 {
@@ -251,8 +248,7 @@ int32_t _IT_GetItemIndex(ITControlList *list, ITControl *control)
     return index;
 }
 
-/* _IT_GetPreviousItem (the control before `control' in a list). STATE: MATCH 100%, exe 19 / obj 19,
-   byte-identical yes. OPEN: none */
+/* _IT_GetPreviousItem (the control before `control' in a list). */
 // FUNCTION: EVNOVA 0x0051de30
 ITControl *_IT_GetPreviousItem(ITControlList *list, ITControl *control)
 {
@@ -270,7 +266,7 @@ ITControl *_IT_GetPreviousItem(ITControlList *list, ITControl *control)
 }
 
 /* _IT_GetObjectItem (the window and control holding a focusable item, looking inside FRAME controls'
-   child windows). STATE: MATCH 100%, exe 68 / obj 68, byte-identical yes. OPEN: none */
+   child windows). */
 // FUNCTION: EVNOVA 0x0051de58
 int32_t _IT_GetObjectItem(WindowNode *window, ITControlList *list, ULong item, WindowNode **ownerOut,
                   ITControl **controlOut)
@@ -313,7 +309,7 @@ int32_t _IT_GetObjectItem(WindowNode *window, ITControlList *list, ULong item, W
 }
 
 /* _IT_ItemListQueryFocus (collect the focusable items of a window's controls into a handle, each control's
-   own list rebuilt first). STATE: MATCH 100%, exe 58 / obj 58, byte-identical yes. OPEN: none */
+   own list rebuilt first). */
 // FUNCTION: EVNOVA 0x0051df05
 int32_t _IT_ItemListQueryFocus(WindowNode *window, ITControlList *list, void **items)
 {
@@ -349,8 +345,7 @@ done:
     return err;
 }
 
-/* _IT_ItemListHandleIdle (message 0x13 to every control of a list, up to the first error). STATE: MATCH
-   100%, exe 26 / obj 26, byte-identical yes. OPEN: none */
+/* _IT_ItemListHandleIdle (message 0x13 to every control of a list, up to the first error). */
 // FUNCTION: EVNOVA 0x0051df83
 int32_t _IT_ItemListHandleIdle(WindowNode *window, ITControlList *list)
 {
@@ -374,8 +369,7 @@ done:
 /* _IT_ItemListHandleKey (a key to a window's controls: Tab moves the focus (Shift backwards); without Alt,
    Enter / keypad Enter mean `+' and Escape `-', and the focus holder sees the key first (0x16);
    with Alt, a letter, digit or `.' (as `-'); unless auto-repeated, the first control whose KEYS
-   holds that character is activated (0x17); FRAME controls pass it on (0x16)). STATE: MATCH
-   100%, exe 206 / obj 206, byte-identical yes. OPEN: none */
+   holds that character is activated (0x17); FRAME controls pass it on (0x16)). */
 // FUNCTION: EVNOVA 0x0051dfba
 int32_t _IT_ItemListHandleKey(WindowNode *window, ITControlList *list, const ITKeyEvent *key,
                   ITClick *click)
@@ -481,8 +475,7 @@ done:
 }
 
 /* _IT_ItemListHandleEdit (an edit command to the focused control (message event + 0x20); a link it reports
-   is recorded with the focus's window and control). STATE: MATCH 100%, exe 54 / obj 54, byte-
-   identical yes. OPEN: none */
+   is recorded with the focus's window and control). */
 // FUNCTION: EVNOVA 0x0051e21d
 int32_t _IT_ItemListHandleEdit(WindowNode *window, ITControlList *list, short event, ITClick *click)
 {
@@ -511,8 +504,7 @@ int32_t _IT_ItemListHandleEdit(WindowNode *window, ITControlList *list, short ev
 }
 
 /* _IT_ItemListHandleClick (a click to the last active control under it that claims it (0x11), which then
-   reports what the click does (0x15): a link, recorded with its window and control). STATE: MATCH
-   100%, exe 77 / obj 77, byte-identical yes. OPEN: none */
+   reports what the click does (0x15): a link, recorded with its window and control). */
 // FUNCTION: EVNOVA 0x0051e2a3
 int32_t _IT_ItemListHandleClick(WindowNode *window, ITControlList *list, ULong event,
                   ITClick *click)
@@ -551,7 +543,7 @@ done:
 }
 
 /* _IT_ItemListHandleTest (the controls of a list asked in turn whether they claim an item, up to the first
-   that does). STATE: MATCH 100%, exe 33 / obj 33, byte-identical yes. OPEN: none */
+   that does). */
 // FUNCTION: EVNOVA 0x0051e359
 int32_t _IT_ItemListHandleTest(WindowNode *window, ITControlList *list, ULong item, unsigned char *hit)
 {
@@ -575,8 +567,7 @@ done:
     return err;
 }
 
-/* _IT_ItemListHandleDraw (paint the controls of a list that meet `area', or all of them). STATE: MATCH
-   100%, exe 45 / obj 45, byte-identical yes. OPEN: none */
+/* _IT_ItemListHandleDraw (paint the controls of a list that meet `area', or all of them). */
 // FUNCTION: EVNOVA 0x0051e3a0
 int32_t _IT_ItemListHandleDraw(WindowNode *window, ITControlList *list, const ITRect *area)
 {
@@ -603,7 +594,7 @@ done:
 }
 
 /* _IT_ItemListHandleActivate (tell the controls of a list that the window activates (0x30) or deactivates
-   (0x31)). STATE: MATCH 100%, exe 31 / obj 31, byte-identical yes. OPEN: none */
+   (0x31)). */
 // FUNCTION: EVNOVA 0x0051e403
 int32_t _IT_ItemListHandleActivate(WindowNode *window, ITControlList *list, unsigned char active)
 {
@@ -624,8 +615,7 @@ done:
     return err;
 }
 
-/* _IT_ItemListHandleCursor (a mouse event to the last active control of a list whose bounds hold it). STATE:
-   MATCH 100%, exe 49 / obj 49, byte-identical yes. OPEN: none */
+/* _IT_ItemListHandleCursor (a mouse event to the last active control of a list whose bounds hold it). */
 // FUNCTION: EVNOVA 0x0051e44c
 int32_t _IT_ItemListHandleCursor(WindowNode *window, ITControlList *list, ITInputEvent *event,
                   unsigned short *modifiers)
@@ -657,8 +647,7 @@ extern int32_t IndirectAddUnicodeTag(void **handle);
 /* _IT_ItemCreate (a control for an element: KEYS upper-cased in place, RECT parsed and moved by the
    window's origin, its handles, its type's procedure, linked at the end of the list or at the
    front, then messages 0 (create), 0x41 (bounds), 0x43 (TITLE, or ""), 0x30 (activate), 1 and
-   0x32 (list items); removed again on failure). STATE: MATCH 100%, exe 203 / obj 203, byte-
-   identical yes. OPEN: none */
+   0x32 (list items); removed again on failure). */
 // FUNCTION: EVNOVA 0x0051e4b1
 int32_t _IT_ItemCreate(WindowNode *window, ITControlList *list, ITElement *element,
                   unsigned char front, unsigned char owns)
@@ -804,8 +793,7 @@ done:
 }
 
 /* _IT_ItemDispose (remove a control: the focus moved off it, messages 2 and 3, its handles freed,
-   its element unlinked from the document when it owns it, the root's focusable list rebuilt).
-   STATE: MATCH 100%, exe 103 / obj 103, byte-identical yes. OPEN: none */
+   its element unlinked from the document when it owns it, the root's focusable list rebuilt). */
 // FUNCTION: EVNOVA 0x0051e6cc
 void _IT_ItemDispose(WindowNode *window, ITControlList *list, ITControl *control)
 {
@@ -853,8 +841,7 @@ void _IT_ItemDispose(WindowNode *window, ITControlList *list, ITControl *control
 /* _IT_ItemExecute (follow what a control leads to, after the callback allows it (event 9): a SCRIPT
    (QUIT closes the dialog, its NAME copied to the root's result; BEEP beeps), else the link or
    the control's HREF: a URL or mailto: handed to the shell, `#anchor' a page of this file,
-   `file#anchor' a page of another file loaded from the page folder). STATE: MATCH 100%, exe
-   199 / obj 199, byte-identical yes. OPEN: none */
+   `file#anchor' a page of another file loaded from the page folder). */
 // FUNCTION: EVNOVA 0x0051e7b8
 int32_t _IT_ItemExecute(WindowNode *window, ITControl *control, const char *link)
 {
@@ -962,8 +949,7 @@ done:
 
 /* _IT_ItemCallback (send a message to a control's procedure, on a DC with the window's colours (the
    root's buffer for painting); an inactive control ignores 0x10..0x32; after anything but 3,
-   0x10, 0x11 and 0x48 the control is asked whether it is active). STATE: MATCH 100%, exe 125 /
-   obj 125, byte-identical yes. OPEN: none */
+   0x10, 0x11 and 0x48 the control is asked whether it is active). */
 // FUNCTION: EVNOVA 0x0051e9f8
 int32_t _IT_ItemCallback(WindowNode *window, ITControl *control, ULong msg, ULong a, void *b)
 {
@@ -1024,7 +1010,7 @@ done:
 }
 
 /* _IT_GetItemColor (offer an item to the controls of a list; the first that claims it gets 0x4c with
-   `a' and then 0x4e with `b'). STATE: MATCH 100%, exe 59 / obj 59, byte-identical yes. OPEN: none */
+   `a' and then 0x4e with `b'). */
 // FUNCTION: EVNOVA 0x0051eb7c
 int32_t _IT_GetItemColor(WindowNode *window, ITControlList *list, ULong item, void *a, void *b,
                   unsigned char *hit)
@@ -1062,7 +1048,7 @@ done:
 }
 
 /* _IT_ParamCreate (record an element inserted into a window's document, at the end of the list's
-   inserts). STATE: MATCH 100%, exe 40 / obj 40, byte-identical yes. OPEN: none */
+   inserts). */
 // FUNCTION: EVNOVA 0x0051ec01
 int32_t _IT_ParamCreate(WindowNode *window, ITControlList *list, ITElement *element)
 {
@@ -1092,8 +1078,7 @@ int32_t _IT_ParamCreate(WindowNode *window, ITControlList *list, ITElement *elem
 }
 
 /* _IT_ParamDispose (remove an inserted element: the window's inserts lying inside it removed first,
-   then it is unlinked from the document and disposed, and the record freed). STATE: MATCH 100%,
-   exe 81 / obj 81, byte-identical yes. OPEN: none */
+   then it is unlinked from the document and disposed, and the record freed). */
 // FUNCTION: EVNOVA 0x0051ec5c
 void _IT_ParamDispose(WindowNode *window, ITControlList *list, ITInsert *insert)
 {
@@ -1149,9 +1134,7 @@ static inline unsigned char IsElement(ITElement *e)
 /* _IT_ParamModify (set the text of the page's insert at `index': the inserts recorded inside its
    element dropped, its children disposed, `value' parsed as markup and its PARAMETER / PARAM
    elements recorded, the tree linked in as the element's first children; drawing clipped to
-   nothing meanwhile, the window refreshed). STATE: MATCH 100%, exe 222 / obj 222, byte-identical
-   yes (647 bytes). OPEN: none; `link' / `child' are dead locals the exe's entry proves (names
-   invented), the fourth argument is never read; notes/ittoolkit3.md */
+   nothing meanwhile, the window refreshed). */
 // FUNCTION: EVNOVA 0x0051ed23
 int32_t _IT_ParamModify(WindowNode *window, ULong index, const char *value, ParamWideArg unused)
 {
@@ -1298,8 +1281,7 @@ done:
 }
 
 
-/* IT_ViewGetItemCount (how many controls a window has). STATE: MATCH 100%, exe 14 / obj 14, byte-
-   identical yes. OPEN: none */
+/* IT_ViewGetItemCount (how many controls a window has). */
 // FUNCTION: EVNOVA 0x0051efaa
 int32_t IT_ViewGetItemCount(void *windowRef)
 {
@@ -1316,8 +1298,7 @@ int32_t IT_ViewGetItemCount(void *windowRef)
     return n;
 }
 
-/* IT_ViewGetNamedItem (the index of the control whose NAME attribute is `name', -1 when none). STATE:
-   MATCH 100%, exe 66 / obj 66, byte-identical yes. OPEN: none */
+/* IT_ViewGetNamedItem (the index of the control whose NAME attribute is `name', -1 when none). */
 // FUNCTION: EVNOVA 0x0051efcb
 int32_t IT_ViewGetNamedItem(WindowNode *window, const char *name)
 {

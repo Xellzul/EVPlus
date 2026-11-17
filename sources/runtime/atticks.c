@@ -39,7 +39,6 @@ static inline int32_t MillisSince(int32_t now)
     return now - gTimerLastMs;
 }
 
-/* TimerGetSeconds. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3961
 int32_t TimerGetSeconds(void)
 {
@@ -47,7 +46,6 @@ int32_t TimerGetSeconds(void)
 }
 
 /* Seconds since 1970 by the UTC clock; every fourth year a leap year. */
-/* TimerGetUTCSeconds. STATE: MATCH 100%, exe 51 / obj 51, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3967
 ULong TimerGetUTCSeconds(void)
 {
@@ -72,7 +70,6 @@ ULong TimerGetUTCSeconds(void)
 }
 
 /* The same by the local clock. */
-/* TimerGetLocalSeconds. STATE: MATCH 100%, exe 51 / obj 51, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d39f6
 ULong TimerGetLocalSeconds(void)
 {
@@ -97,7 +94,6 @@ ULong TimerGetLocalSeconds(void)
 }
 
 /* Whole seconds since the platform layer opened. */
-/* TimerGetElapsedSeconds. STATE: MATCH 100%, exe 27 / obj 27, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3a85
 uint32_t TimerGetElapsedSeconds(void)
 {
@@ -111,8 +107,6 @@ uint32_t TimerGetElapsedSeconds(void)
 }
 
 /* Milliseconds since boot. */
-/* TimerGetTicks. STATE: MATCH 100%, exe 6 / obj 6, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d3ae6
 ULong TimerGetTicks(void)
 {
@@ -126,7 +120,6 @@ ULong TimerGetTicks(void)
 }
 
 /* The tick rate that goes with it. */
-/* TimerGetTickRate. STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3af5
 ULong TimerGetTickRate(void)
 {
@@ -139,7 +132,6 @@ ULong TimerGetTickRate(void)
     return result;
 }
 
-/* TimerGetMicroseconds. STATE: MATCH 100%, exe 183 / obj 183, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3b08
 ULongLong TimerGetMicroseconds(void)
 {
@@ -202,7 +194,6 @@ ULongLong TimerGetMicroseconds(void)
 
 /* The millisecond twin: same init, same drift correction, no microsecond
    scaling, and the freq == 0 fallback answers GetTickCount unscaled. */
-/* TimerGetMilliseconds. STATE: MATCH 100%, exe 140 / obj 140, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3dd2
 ULongLong TimerGetMilliseconds(void)
 {
@@ -255,7 +246,6 @@ ULongLong TimerGetMilliseconds(void)
     return millis;
 }
 
-/* TimerCreate. STATE: MATCH 100%, exe 125 / obj 125, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d3ff5
 int32_t TimerCreate(void *ref, void *arg, TimerProc proc)
 {
@@ -321,7 +311,6 @@ done:
     return err;
 }
 
-/* TimerPrime. STATE: MATCH 100%, exe 58 / obj 58, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d415a
 int32_t TimerPrime(void *ref, int32_t period)
 {
@@ -366,7 +355,6 @@ int32_t TimerPrime(void *ref, int32_t period)
     return result;
 }
 
-/* TimerDispose. STATE: MATCH 100%, exe 124 / obj 124, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d41f1
 int32_t TimerDispose(void *ref)
 {
@@ -426,7 +414,6 @@ int32_t TimerDispose(void *ref)
     return result;
 }
 
-/* _TimerThread. STATE: MATCH 100%, exe 70 / obj 70, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d435b
 ULong __stdcall _TimerThread(PlatformTimer *timer)
 {

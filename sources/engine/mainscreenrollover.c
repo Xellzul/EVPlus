@@ -67,7 +67,6 @@ uint32_t lastRolloverAnimTime;
 uint32_t lastSlideAnimTime;
 Boolean mainScreenBackgroundDirty;
 
-/* MainScreenRolloverDraw. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048c580
 // MAC: _MainScreenRolloverDraw i386 0x00017ad4 ppc 0x0001b76c
 void MainScreenRolloverDraw(void)

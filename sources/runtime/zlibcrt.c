@@ -4,7 +4,7 @@
 #include "win32.h"
 #include "privcrt.h"
 
-/* zlib_malloc. STATE: MATCH 100%, exe 11 / obj 11, byte-identical. OPEN: the original's name
+/* Note: the original's name
    is unknown; zlib's zcalloc is the only caller. */
 // FUNCTION: EVNOVA 0x0054325b
 void *zlib_malloc(size_t size)
@@ -12,7 +12,7 @@ void *zlib_malloc(size_t size)
     return size != 0 ? HeapAlloc(GetProcessHeap(), 0, size) : NULL;
 }
 
-/* zlib_free. STATE: MATCH 100%, exe 9 / obj 9, byte-identical. OPEN: the original's name is
+/* Note: the original's name is
    unknown; zlib's zcfree is the only caller. */
 // FUNCTION: EVNOVA 0x00543242
 void zlib_free(void *ptr)
@@ -21,7 +21,7 @@ void zlib_free(void *ptr)
         HeapFree(GetProcessHeap(), 0, ptr);
 }
 
-/* zlib_memcpy (zlib's zmemcpy). STATE: MATCH 100%, exe 17 / obj 17, byte-identical. OPEN: none. */
+/* zlib_memcpy (zlib's zmemcpy). */
 // FUNCTION: EVNOVA 0x00543220
 void *zlib_memcpy(void *dest, const void *source, size_t len)
 {
@@ -66,8 +66,7 @@ int zlib_memcmp(const void *s1, const void *s2, size_t len)
     return 0;
 }
 
-/* zlib_memset (zlib's zmemzero passes 0). STATE: MATCH 100%, exe 13 / obj 13, byte-identical.
-   OPEN: none. */
+/* zlib_memset (zlib's zmemzero passes 0). */
 // FUNCTION: EVNOVA 0x00543203
 void *zlib_memset(void *dest, int c, size_t len)
 {

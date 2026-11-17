@@ -39,8 +39,6 @@
                                                                  /* 0x00475f70 */
                                                                  /* 0x00438db0 */
 
-/* HandleShipDisplay (mac _HandleShipDisplay). STATE: win MATCH 100%, exe 3665 / obj 3665; mac MATCH on
-   both slices. OPEN: none. notes/gameloop.md */
 // FUNCTION: EVNOVA 0x00428340
 // MAC: _HandleShipDisplay i386 0x0002b514 ppc 0x0002fb54
 void HandleShipDisplay(ShipObj *ship)
@@ -915,7 +913,6 @@ void HandleShipDisplay(ShipObj *ship)
 #define kMaxMurk                0x1f
 
 
-/* HandleBoxes. STATE: MATCH, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0042c1b0
 // MAC: _HandleBoxes i386 0x0002df85 ppc 0x00032d4c
 void HandleBoxes(void)
@@ -980,8 +977,6 @@ void HandleBoxes(void)
 #define kFadeBase               32.0f
 #define kAgeRate                0.25
 
-/* HandleSmoke (mac _HandleSmoke). STATE: MATCH 100.0%, exe 380 / obj 380, relocregcheck 0 of
-   56; the fade level and the half width share one `temp'. OPEN: none */
 // FUNCTION: EVNOVA 0x0042c660
 // MAC: _HandleSmoke i386 0x0002e29f ppc 0x000330d4
 void HandleSmoke(void)
@@ -1064,7 +1059,6 @@ void HandleSmoke(void)
     }
 }
 
-/* HandleDoubleTimeSprite. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0042cbb0
 // MAC: _HandleDoubleTimeSprite i386 0x0002e5a7 ppc 0x0003347c
 void HandleDoubleTimeSprite(void)
@@ -1076,7 +1070,6 @@ void HandleDoubleTimeSprite(void)
     doubleTimeSprite->tintMode = 0;
 }
 
-/* HandleAlertSprite. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0042cc30
 // MAC: _HandleAlertSprite i386 0x0002e61d ppc 0x000334f8
 void HandleAlertSprite(void)
@@ -1101,8 +1094,6 @@ void HandleAlertSprite(void)
 
 #define kApproachSpan       1.1      /* pooled double */
 
-/* HandleStellarSprites (mac _HandleStellarSprites). STATE: MATCH 100.0%, exe 654 / obj 654,
-   byte-identical yes (2942 bytes), relocregcheck 0 of 128. OPEN: none */
 // FUNCTION: EVNOVA 0x0042cd10
 // MAC: _HandleStellarSprites i386 0x0002e6f1 ppc 0x00033600
 void HandleStellarSprites(void)
@@ -1314,8 +1305,6 @@ void HandleStellarSprites(void)
 
 /* one live shot, stride 0x48 in shotData; only the fields this TU writes */
 
-/* HandleStellarWeapons (mac _HandleStellarWeapons). STATE: MATCH 100.0%, exe 540 / obj 540,
-   relocregcheck 0 of 112. OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x0042d890
 // MAC: _HandleStellarWeapons i386 0x0002ef3a ppc 0x00033eac
 void HandleStellarWeapons(void)
@@ -1467,7 +1456,6 @@ void HandleStellarWeapons(void)
 #define kInterferenceScale  0.9      /* a pooled double */
 
 
-/* HandleExplods. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0042e160
 // MAC: _HandleExplods i386 0x0002f5d2 ppc 0x000346c8
 void HandleExplods(void)
@@ -1523,9 +1511,6 @@ void HandleExplods(void)
     }
 }
 
-/* HandleStars (mac _HandleStars). STATE: MATCH 351/351, byte-identical. Matches only with
-   HandleExplods compiled above it (92.3% alone): the predecessor's allocator state decides
-   the frame. OPEN: none */
 // FUNCTION: EVNOVA 0x0042e590
 // MAC: _HandleStars i386 0x0002f87d ppc 0x00034a14
 void HandleStars(void)
@@ -1617,8 +1602,6 @@ void HandleStars(void)
 /* only the two fields this function reads */
 
 
-/* HandleNavTargetSprites (mac _HandleNavTargetSprites). STATE: MATCH 225/225, byte-identical
-   yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0042eac0
 // MAC: _HandleNavTargetSprites i386 0x0002fcaf ppc 0x00034f18
 void HandleNavTargetSprites(void)
@@ -1678,7 +1661,6 @@ void HandleNavTargetSprites(void)
 #define kFrameAlly          8
 #define kFrameDisabled      0xc
 
-/* HandleWeapTargetSprites. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0042ede0
 // MAC: _HandleWeapTargetSprites i386 0x0002ff1a ppc 0x00035200
 void HandleWeapTargetSprites(void)
@@ -1738,7 +1720,6 @@ void HandleWeapTargetSprites(void)
 
 #define kJumpTimeoutTicks 500
 
-/* HandleComm. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0042f1b0
 // MAC: _HandleComm i386 0x000301b9 ppc 0x00035524
 void HandleComm(void)
@@ -1773,9 +1754,6 @@ static __inline float FloatSqrt(float x)
 
 #define kMaxCoronaFrames        0x10
 
-/* HandleBeams (mac _HandleBeams). STATE: MATCH 100.0% (1667 exact, 335 reloc-equiv);
-   exe 2002 / obj 2002; byte-identical yes; relocregcheck 0 of 335. 1.0.10 MATCH 1869 of 1869
-   on both fragments, padded. OPEN: none. */
 // FUNCTION: EVNOVA 0x0042f270
 // MAC: _HandleBeams i386 0x00030295 ppc 0x0003561c
 void HandleBeams(unsigned char advance)
@@ -2271,7 +2249,6 @@ void HandleBeams(unsigned char advance)
 #define kVoiceBaseID 1000
 
 
-/* HandleVoiceSound. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004311f0
 // MAC: _HandleVoiceSound i386 0x00031e20 ppc 0x0003728c
 void HandleVoiceSound(void)
@@ -2325,7 +2302,6 @@ void HandleVoiceSound(void)
 
 /* stop and release the active sound, then forget the selection */
 
-/* KillVoiceSound. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004313c0
 // MAC: _KillVoiceSound i386 0x00031f95 ppc 0x0003743c
 void KillVoiceSound(void)
@@ -2343,7 +2319,6 @@ void KillVoiceSound(void)
 }
 
 /* start the music once, restarting it if it is still running */
-/* WarpUpCallback (mac _WarpUpCallback). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00431420
 // MAC: _WarpUpCallback i386 0x00031ff3 ppc 0x000374c4
 void WarpUpCallback(int which, int a, int b)
@@ -2361,7 +2336,6 @@ void WarpUpCallback(int which, int a, int b)
 #define kFlickerMin 0x55
 #define kFlickerMax 0x73
 
-/* HandleGlobalPriceFlux. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00431480
 // MAC: _HandleGlobalPriceFlux i386 0x00032054 ppc 0x00037554
 void HandleGlobalPriceFlux(void)
@@ -2382,7 +2356,6 @@ void HandleGlobalPriceFlux(void)
     }
 }
 
-/* HandleLocalPriceFlux (mac _HandleLocalPriceFlux). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00431500
 // MAC: _HandleLocalPriceFlux i386 0x000320a6 ppc 0x000375f4
 void HandleLocalPriceFlux(void)
@@ -2400,7 +2373,6 @@ void HandleLocalPriceFlux(void)
 #define kShotStateWobble    999   /* swaying left/right off frameCounter */
 
 
-/* HandleShotGuidance (mac _HandleShotGuidance). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00431530
 // MAC: _HandleShotGuidance i386 0x000320dc ppc 0x00037640
 void HandleShotGuidance(ShotObj *shot)
@@ -2609,8 +2581,6 @@ void HandleShotGuidance(ShotObj *shot)
     }
 }
 
-/* HandleStellarSystemVisibility (mac _HandleStellarSystemVisibility). STATE: MATCH 100.0%
-   598/598, byte-identical yes (2608 bytes), relocregcheck 0 of 137. OPEN: none. */
 // FUNCTION: EVNOVA 0x00432470
 // MAC: _HandleStellarSystemVisibility i386 0x00032aa5 ppc 0x000382cc
 void HandleStellarSystemVisibility(void)
@@ -2803,8 +2773,6 @@ void HandleStellarSystemVisibility(void)
 
 /* framepace -- hold the frame to a floor length and track how fast the machine is running (win 0x00432ea0). Notes: Research/notes/framepace.md */
 
-/* HandleTimeAdjustment (mac _HandleTimeAdjustment). STATE: MATCH 100.0%, exe 105 / obj 105
-   instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00432ea0
 // MAC: _HandleTimeAdjustment i386 0x00033332 ppc 0x00038be0
 void HandleTimeAdjustment(void)
@@ -2879,8 +2847,6 @@ void HandleTimeAdjustment(void)
             d = d - push / mobility; \
     }
 
-/* HandleShip (mac _HandleShip). STATE: MATCH 100.0%, exe 2290 / obj 2290; relocregcheck 0 of
-   342; byte-identical: yes. OPEN: none. */
 // FUNCTION: EVNOVA 0x00433050
 // MAC: _HandleShip i386 0x00033581 ppc 0x00038f0c
 void HandleShip(ShipObj *ship)
@@ -3509,7 +3475,6 @@ void HandleShip(ShipObj *ship)
 
 /* one live shot, stride 0x48 in shotData */
 
-/* HandleShot (mac _HandleShot). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00435830
 // MAC: _HandleShot i386 0x00035586 ppc 0x0003ae1c
 void HandleShot(ShotObj *shot)
@@ -3766,10 +3731,6 @@ void HandleShot(ShotObj *shot)
 
 
 
-/* HandleAsteroids (mac _HandleAsteroids). STATE: MATCH 100.0%, exe 442 / obj 442 instrs,
-   byte-identical yes. 1.0.10 MATCH 414 of 414 on both fragments. OPEN: none; the eight
-   screenCenter reads are plain .h/.v and the X/Y load asymmetry is the compiler's (notes
-   2026-09-16). */
 // FUNCTION: EVNOVA 0x00436910
 // MAC: _HandleAsteroids i386 0x000361ac ppc 0x0003bd5c
 void HandleAsteroids(void)
@@ -3870,7 +3831,6 @@ void HandleAsteroids(void)
 /* A SpriteWorld CollideProcPtr: sectRect is the intersection the layer walker
    hands every collide proc, and this one has no use for it. */
 
-/* AsteroidCollisionHandler. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00436f70
 // MAC: _AsteroidCollisionHandler i386 0x000369c8 ppc 0x0003c79c
 void AsteroidCollisionHandler(SpriteRec *roidSpr, SpriteRec *otherSpr, Rect *sectRect)
@@ -3894,7 +3854,6 @@ void AsteroidCollisionHandler(SpriteRec *roidSpr, SpriteRec *otherSpr, Rect *sec
 
 /* loaddata.c's rock record, stride 0x1c; only the mass this TU divides by */
 
-/* HandleAsteroidHit. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00436ff0
 // MAC: _HandleAsteroidHit i386 0x00036637 ppc 0x0003c360
 void HandleAsteroidHit(ShotObj *shot, AsteroidObj *roid)
@@ -3978,7 +3937,6 @@ void HandleAsteroidHit(ShotObj *shot, AsteroidObj *roid)
 #define kBigSpriteWidth 0x20
 #define kCloseZoom      2.0
 
-/* ShipCollisionHandler. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004374f0
 // MAC: _ShipCollisionHandler i386 0x00036f87 ppc 0x0003cde8
 void ShipCollisionHandler(SpriteRec *shipSpr, SpriteRec *otherSpr, Rect *sectRect)
@@ -4045,9 +4003,6 @@ void ShipCollisionHandler(SpriteRec *shipSpr, SpriteRec *otherSpr, Rect *sectRec
 
 /* the shot's sprite; only the two fields this TU touches */
 
-/* HandleShipHit. STATE: MATCH, byte-identical. OPEN: none.
-   Was DIFF 98.3% and recorded CLOSED-as-PREFERENCE; that verdict was wrong (338).
-   Passing shot->pos whole, against game.h's FloatPoint row, closed all 8 rows. */
 // FUNCTION: EVNOVA 0x00437780
 // MAC: _HandleShipHit i386 0x00036a45 ppc 0x0003c84c
 void HandleShipHit(ShotObj *shot, ShipObj *ship, Boolean spawnSubs)
@@ -4156,8 +4111,6 @@ void HandleShipHit(ShotObj *shot, ShipObj *ship, Boolean spawnSubs)
 #define kStellarPenaltyCount    10
 #define kProxSpriteFraction     0.333
 
-/* CheckShotProximities (mac _CheckShotProximities). STATE: MATCH 558/558, byte-identical,
-   at the plain level=4,intrinsics. OPEN: none */
 // FUNCTION: EVNOVA 0x00437e20
 // MAC: _CheckShotProximities i386 0x000371bc ppc 0x0003d0f0
 void CheckShotProximities(void)
@@ -4277,8 +4230,6 @@ void CheckShotProximities(void)
  * none has an established mac twin yet.
  */
 
-/* PointDefenseCollisionHandler (mac _PointDefenseCollisionHandler). STATE: MATCH 53/53. SpawnExplod takes the FloatPoint by value; the energy
-   subtraction is one expression. OPEN: none */
 // FUNCTION: EVNOVA 0x00438630
 // MAC: _PointDefenseCollisionHandler i386 0x00037776 ppc 0x0003d738
 void PointDefenseCollisionHandler(SpriteRec *shotSpr, SpriteRec *otherSpr, Rect *sectRect)
@@ -4301,7 +4252,6 @@ void PointDefenseCollisionHandler(SpriteRec *shotSpr, SpriteRec *otherSpr, Rect 
     }
 }
 
-/* BeamEraseCallback (mac _BeamEraseCallback). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004386f0
 // MAC: _BeamEraseCallback i386 0x0003785e ppc 0x0003d83c
 void BeamEraseCallback(SpriteWorldPtr world)
@@ -4333,11 +4283,6 @@ void BeamEraseCallback(SpriteWorldPtr world)
     }
 }
 
-/* BeamDrawCallback (mac _BeamDrawCallback). STATE: MATCH 100.0% (197 exact, 57 reloc-equivalent, 0 mismatched;
-   exe 254 / obj 254), relocregcheck 0 of 57, byte identity unmeasured until the next
-   regate --update.
-   OPEN: none. `density' is named only in loop 2's draw arm; both erase arms read the
-   field twice (notes 2026-09-09). */
 // FUNCTION: EVNOVA 0x00438810
 // MAC: _BeamDrawCallback i386 0x00037952 ppc 0x0003d928
 void BeamDrawCallback(SpriteWorldPtr world)
@@ -4590,7 +4535,6 @@ void BeamDrawCallback(SpriteWorldPtr world)
  * immediately before x1/y1) with the beam and corona COLOURS added.
  */
 
-/* BeamDrawOffscreenCallback (mac _BeamDrawOffscreenCallback). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00438c40
 // MAC: _BeamDrawOffscreenCallback i386 0x00037e90 ppc 0x0003dd70
 void BeamDrawOffscreenCallback(SpriteWorldPtr world)
@@ -4631,8 +4575,6 @@ void BeamDrawOffscreenCallback(SpriteWorldPtr world)
 
 #define kSoundVolumeScale 1.2e-05
 
-/* HandleSpriteMurkiness. STATE: MATCH 100.0%, exe 110 / obj 110, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00438db0
 // MAC: _HandleSpriteMurkiness i386 0x0002b42f ppc 0x0002fa00
 void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite)
@@ -4685,7 +4627,6 @@ void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite)
  * the scan, and that store is dead on every path - `box` is address-taken,
  * which is what keeps mwcc from deleting it.
  */
-/* HandleMouse. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00438f40
 // MAC: _HandleMouse i386 0x00037fba ppc 0x0003de90
 void HandleMouse(void)
@@ -4824,7 +4765,6 @@ void HandleMouse(void)
 #define kCronIterationLimit    10000
 #define kCronRandomRange       101
 
-/* CronEventHandler (mac _CronEventHandler). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00439500
 // MAC: _CronEventHandler i386 0x0003874f ppc 0x0003e6d4
 void CronEventHandler(void)
@@ -4893,7 +4833,6 @@ void CronEventHandler(void)
     }
 }
 
-/* ActivateCron (mac _ActivateCron). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00439750
 // MAC: _ActivateCron i386 0x000385db ppc 0x0003e564
 void ActivateCron(short index)
@@ -4931,7 +4870,6 @@ void ActivateCron(short index)
     }
 }
 
-/* TerminateCron (mac _TerminateCron). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004398b0
 // MAC: _TerminateCron i386 0x00038467 ppc 0x0003e3f4
 void TerminateCron(short index)
@@ -4977,7 +4915,6 @@ void TerminateCron(short index)
  * hold.
  */
 
-/* FloaterEraseCallback (mac _FloaterEraseCallback). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00439a10
 // MAC: _FloaterEraseCallback i386 0x00038920 ppc 0x0003e924
 void FloaterEraseCallback(void *a)
@@ -5023,7 +4960,6 @@ void FloaterEraseCallback(void *a)
     }
 }
 
-/* FloaterDrawCallback (mac _FloaterDrawCallback). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00439bb0
 // MAC: _FloaterDrawCallback i386 0x00038b2d ppc 0x0003eb98
 void FloaterDrawCallback(SpriteWorldPtr world)
@@ -5061,7 +4997,6 @@ void FloaterDrawCallback(SpriteWorldPtr world)
     }
 }
 
-/* PostDrawCallback (mac _PostDrawCallback). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00439d00
 // MAC: _PostDrawCallback i386 0x00038c80 ppc 0x0003ed10
 void PostDrawCallback(SpriteWorldPtr world)
@@ -5070,7 +5005,6 @@ void PostDrawCallback(SpriteWorldPtr world)
     DrawParticlesOffscreen(world);
 }
 
-/* PostEraseCallback (mac _PostEraseCallback). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00439d20
 // MAC: _PostEraseCallback i386 0x00038c9f ppc 0x0003ed40
 void PostEraseCallback(SpriteWorldPtr world)
@@ -5080,7 +5014,6 @@ void PostEraseCallback(SpriteWorldPtr world)
     EraseParticlesOffscreen(world);
 }
 
-/* PostAnimateHandler (mac _PostAnimateHandler). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00439d40
 // MAC: _PostAnimateHandler i386 0x00038cc6 ppc 0x0003ed78
 void PostAnimateHandler(void)
@@ -5268,8 +5201,6 @@ void PostAnimateHandler(void)
 #define kAnnounceFraction   0.25     /* of reinforceTime, a pooled double */
 #define kReinforceReserve       4
 
-/* HandleReinforcements (mac _HandleReinforcements). STATE: MATCH 100.0%, exe 173 / obj 173
-   instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0043a020
 // MAC: _HandleReinforcements i386 0x00039048 ppc 0x0003f228
 void HandleReinforcements(void)
@@ -5320,12 +5251,6 @@ void HandleReinforcements(void)
 
 /* one live shot, stride 0x48 in shotData; only the fields this TU touches */
 
-/* HandleShipPointDefense (mac _HandleShipPointDefense). STATE: MATCH 100.0%
-   (618 exact, 93 reloc-equivalent, 0 mismatched), exe 711 / obj 711, blind
-   711; frame 0x38, 14 slots, 14/14; relocregcheck 93 rows 0 differ;
-   byte-identical yes -- every instruction sits at the exe's own offset and
-   .text 0xa91 is the exe extent 0x0043a310..0x0043ada1 (read off
-   build/pointdefense.s; bytediff's baseline is behind). OPEN: none. */
 // FUNCTION: EVNOVA 0x0043a310
 // MAC: _HandleShipPointDefense i386 0x000392c4 ppc 0x0003f48c
 void HandleShipPointDefense(ShipObj *ship)
@@ -5539,7 +5464,6 @@ void HandleShipPointDefense(ShipObj *ship)
     }
 }
 
-/* HandleGravity. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043adb0
 // MAC: _HandleGravity i386 0x00039bc3 ppc 0x0003fe94
 void HandleGravity(void)
@@ -5570,7 +5494,6 @@ void HandleGravity(void)
     }
 }
 
-/* HandleDeadlyStellars. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043aed0
 // MAC: _HandleDeadlyStellars i386 0x00039ccd ppc 0x00040058
 void HandleDeadlyStellars(void)
@@ -5619,7 +5542,6 @@ void HandleDeadlyStellars(void)
 
 #define kPodFadeLife    32.0f
 
-/* AdjustInertialessShipVelocity. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0043b020
 // MAC: _AdjustInertialessShipVelocity i386 0x0003349c ppc 0x00038e10
 void AdjustInertialessShipVelocity(ShipObj *ship)
@@ -5649,8 +5571,6 @@ void AdjustInertialessShipVelocity(ShipObj *ship)
     ship->vel.y = velY;
 }
 
-/* HandleEscapePods. STATE: MATCH, 229/229; byte check pending the next regate (bytediff
-   reads the baseline). OPEN: none */
 // FUNCTION: EVNOVA 0x0043b170
 // MAC: _HandleEscapePods i386 0x00039e48 ppc 0x00040204
 void HandleEscapePods(void)

@@ -20,8 +20,7 @@ static void _v_readstring(oggpack_buffer *o,char *buf,int bytes){
   }
 }
 
-/* vorbis_comment_init. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532d10
 void vorbis_comment_init(vorbis_comment *vc){
   FastMemSet(vc,0,sizeof(*vc));
@@ -36,8 +35,7 @@ void vorbis_comment_add_tag(vorbis_comment *vc,char *tag,char *contents){
   vorbis_comment_add(vc,comment);
 }
 
-/* vorbis_comment_clear. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532d40
 void vorbis_comment_clear(vorbis_comment *vc){
   if(vc){
@@ -51,16 +49,14 @@ void vorbis_comment_clear(vorbis_comment *vc){
   FastMemSet(vc,0,sizeof(*vc));
 }
 
-/* vorbis_info_init. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532de0
 void vorbis_info_init(vorbis_info *vi){
   FastMemSet(vi,0,sizeof(*vi));
   vi->codec_setup=_ogg_calloc(1,sizeof(codec_setup_info));
 }
 
-/* vorbis_info_clear. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532e20
 void vorbis_info_clear(vorbis_info *vi){
   codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
@@ -98,8 +94,7 @@ void vorbis_info_clear(vorbis_info *vi){
   FastMemSet(vi,0,sizeof(*vi));
 }
 
-/* _vorbis_unpack_info. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00532ff0
 static int _vorbis_unpack_info(vorbis_info *vi,oggpack_buffer *opb){
   codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
@@ -131,8 +126,7 @@ static int _vorbis_unpack_info(vorbis_info *vi,oggpack_buffer *opb){
   return(OV_EBADHEADER);
 }
 
-/* _vorbis_unpack_comment. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00533150
 static int _vorbis_unpack_comment(vorbis_comment *vc,oggpack_buffer *opb){
   int i;
@@ -160,8 +154,7 @@ static int _vorbis_unpack_comment(vorbis_comment *vc,oggpack_buffer *opb){
   return(OV_EBADHEADER);
 }
 
-/* _vorbis_unpack_books. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00533370
 static int _vorbis_unpack_books(vorbis_info *vi,oggpack_buffer *opb){
   codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
@@ -233,8 +226,7 @@ static int _vorbis_unpack_books(vorbis_info *vi,oggpack_buffer *opb){
   return(OV_EBADHEADER);
 }
 
-/* vorbis_synthesis_headerin. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005337c0
 int vorbis_synthesis_headerin(vorbis_info *vi,vorbis_comment *vc,ogg_packet *op){
   oggpack_buffer opb;

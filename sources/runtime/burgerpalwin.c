@@ -17,8 +17,7 @@ void (*PaletteChangedProc)(void);                /* 0x00870948, never set in thi
 #define kLastEntry      255                      /* entries 0 and 255 stay black and white */
 #define kRGBSize        3
 
-/* PaletteSetPtr (BurgerLib PlWin95Code). STATE: MATCH 100.0%, exe 232 / obj 232,
-   byte-identical yes. OPEN: none */
+/* PaletteSetPtr (BurgerLib PlWin95Code). */
 // FUNCTION: EVNOVA 0x00502080
 void PaletteSetPtr(Word start, Word count, const Word8 *palette)
 {

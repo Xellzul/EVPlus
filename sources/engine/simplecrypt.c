@@ -8,7 +8,6 @@ EXTERN_C_BEGIN
 
 #define kCryptStep 0xdeadbeefUL
 
-/* DoEncryption. STATE: MATCH, byte-identical, 68 / 68; OPEN: none */
 // FUNCTION: EVNOVA 0x0046f960
 // MAC: _DoEncryption i386 0x000a51cb ppc 0x000b0f40
 int32_t DoEncryption(void *buf, uint32_t len, uint32_t key)

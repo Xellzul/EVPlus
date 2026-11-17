@@ -8,7 +8,6 @@
 const char inflate_copyright[] =
    " inflate 1.2.1 Copyright 1995-2003 Mark Adler ";
 
-/* inflate_table. STATE: MATCH 100%, exe 337 / obj 337, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x005433b7
 int inflate_table(type, lens, codes, table, bits, work)
 codetype type;

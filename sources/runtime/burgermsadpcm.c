@@ -64,8 +64,7 @@ static inline int32_t ADPCMDecode(ADPCMState_t *State, Word DeltaCode)
     return Index;
 }
 
-/* ADPCMDecodeBlock (BurgerLib PkADPCM). STATE: MATCH 100.0%, exe 327 / obj 327,
-   byte-identical yes (1208 bytes). OPEN: none */
+/* ADPCMDecodeBlock (BurgerLib PkADPCM). */
 // FUNCTION: EVNOVA 0x00530b90
 Word ADPCMDecodeBlock(ADPCMUnpackState_t *StatePtr)
 {

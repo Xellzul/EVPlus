@@ -31,8 +31,7 @@ typedef struct {
 
 typedef huff_entropy_decoder * huff_entropy_ptr;
 
-/* start_pass_huff_decoder. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566083
 METHODDEF(void)
 start_pass_huff_decoder (j_decompress_ptr cinfo)
@@ -81,8 +80,7 @@ start_pass_huff_decoder (j_decompress_ptr cinfo)
   entropy->restarts_to_go = cinfo->restart_interval;
 }
 
-/* jpeg_make_d_derived_tbl. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00565e22
 GLOBAL(void)
 jpeg_make_d_derived_tbl (j_decompress_ptr cinfo, boolean isDC, int tblno,
@@ -175,8 +173,7 @@ jpeg_make_d_derived_tbl (j_decompress_ptr cinfo, boolean isDC, int tblno,
 
 #define MIN_GET_BITS  (BIT_BUF_SIZE-7)
 
-/* jpeg_fill_bit_buffer. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00565cf5
 GLOBAL(boolean)
 jpeg_fill_bit_buffer (bitread_working_state * state,
@@ -252,8 +249,7 @@ jpeg_fill_bit_buffer (bitread_working_state * state,
   return TRUE;
 }
 
-/* jpeg_huff_decode. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00565c28
 GLOBAL(int)
 jpeg_huff_decode (bitread_working_state * state,
@@ -319,8 +315,7 @@ process_restart (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* decode_mcu. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056572d
 METHODDEF(boolean)
 decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
@@ -416,8 +411,7 @@ decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   return TRUE;
 }
 
-/* jinit_huff_decoder. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005656e9
 GLOBAL(void)
 jinit_huff_decoder (j_decompress_ptr cinfo)

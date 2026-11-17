@@ -9,7 +9,6 @@
 
 EXTERN_C_BEGIN
 
-/* OpenEVPlugins (mac _OpenEVPlugins). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f500
 short OpenEVPlugins(const char *path, const char *ext, FILE *log)
 {
@@ -48,7 +47,6 @@ short OpenEVPlugins(const char *path, const char *ext, FILE *log)
     return 0;
 }
 
-/* CountEVPlugins. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f690
 short CountEVPlugins(const char *path, const char *ext, FILE *log)
 {

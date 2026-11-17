@@ -161,8 +161,7 @@ static char sAllowable[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz `1234567890~!@#$%^&*()-=_+[]\\{}|;':\",./<>?";
 
 /* IT_EditIdEnumProc (EnumChildWindows's callback: a child already has the id in `*probe', which
-   then becomes 0; go on while it is not). STATE: MATCH 100%, exe 16 / obj 16, byte-identical
-   yes. OPEN: none */
+   then becomes 0; go on while it is not). */
 // FUNCTION: EVNOVA 0x00521fd0
 int __stdcall IT_EditIdEnumProc(void *child, int32_t probe)
 {
@@ -174,8 +173,7 @@ int __stdcall IT_EditIdEnumProc(void *child, int32_t probe)
     return *id != 0 ? true : false;
 }
 
-/* IT_FindFreeChildId (a child window id for the edit). STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes.
-   OPEN: none */
+/* IT_FindFreeChildId (a child window id for the edit). */
 // FUNCTION: EVNOVA 0x00521ff9
 int32_t IT_FindFreeChildId(void *parent)
 {
@@ -191,7 +189,7 @@ int32_t IT_FindFreeChildId(void *parent)
 }
 
 /* IT_EditTextLength (the edit's text length: EM_GETTEXTLENGTHEX on a RichEdit 2.0, else
-   WM_GETTEXTLENGTH). STATE: MATCH 100%, exe 22 / obj 22, byte-identical yes. OPEN: none */
+   WM_GETTEXTLENGTH). */
 // FUNCTION: EVNOVA 0x00522033
 int32_t IT_EditTextLength(void *edit, unsigned char richEdit20)
 {
@@ -203,7 +201,7 @@ int32_t IT_EditTextLength(void *edit, unsigned char richEdit20)
 }
 
 /* IT_EditCharPos (where a character of the edit sits: packed into the answer on a RichEdit
-   2.0, else through a POINTL). STATE: MATCH 100%, exe 27 / obj 27, byte-identical yes. OPEN: none */
+   2.0, else through a POINTL). */
 // FUNCTION: EVNOVA 0x00522079
 ITPoint IT_EditCharPos(void *edit, ULong index, unsigned char packed)
 {
@@ -222,8 +220,7 @@ ITPoint IT_EditCharPos(void *edit, ULong index, unsigned char packed)
 
 /* IT_TextHandler (the TEXTBOX control proc: 0 makes its data (EDITABLE, FGCOLOR, BGCOLOR,
    ALLOW, ALIGN), 1 builds the edit, 2 destroys it, 3 frees the data; hit tests, painting,
-   link tracking and the hand cursor, keys, focus, bounds, text, show / enable, colours).
-   STATE: MATCH 100%, exe 713 / obj 713, byte-identical yes. OPEN: none */
+   link tracking and the hand cursor, keys, focus, bounds, text, show / enable, colours). */
 // FUNCTION: EVNOVA 0x005220d0
 int32_t IT_TextHandler(void *hwnd, void *dc, ITElement *element, void **data, ULong msg, ULong a,
                   void *b)
@@ -573,8 +570,7 @@ done:
 static void *sMaskBlt = (void *)-1;              /* 0x0057bc1c, looked up and never used */
 
 /* IT_TextBoxMakeBuffers (the offscreen text and mask bitmaps at the edit's client size and the screen's
-   depth, rebuilt when either changed). STATE: MATCH 100%, exe 106 / obj 106, byte-identical yes.
-   OPEN: none */
+   depth, rebuilt when either changed). */
 // FUNCTION: EVNOVA 0x00522a7f
 int32_t IT_TextBoxMakeBuffers(ITTextBox *tb)
 {
@@ -627,7 +623,7 @@ done:
 
 /* IT_TextBoxPaint (paint the read-only rich edit transparently: its text formatted into the
    offscreen bitmap on white, a mask made from it, the background kept under the mask and the
-   text drawn over it). STATE: MATCH 100%, exe 182 / obj 182, byte-identical yes. OPEN: none */
+   text drawn over it). */
 // FUNCTION: EVNOVA 0x00522bfc
 int32_t IT_TextBoxPaint(ITTextBox *tb, void *dc)
 {
@@ -693,8 +689,7 @@ done:
     return err;
 }
 
-/* IT_TextBoxFreeBuffers (release the offscreen mask and text bitmaps and their DCs). STATE:
-   MATCH 100%, exe 50 / obj 50, byte-identical yes. OPEN: none */
+/* IT_TextBoxFreeBuffers (release the offscreen mask and text bitmaps and their DCs). */
 // FUNCTION: EVNOVA 0x00522eae
 void IT_TextBoxFreeBuffers(ITTextBox *tb)
 {
@@ -722,7 +717,7 @@ void IT_TextBoxFreeBuffers(ITTextBox *tb)
 /* IT_TextBoxCreateEdit (build the edit: SINGLE, or a box too low for two lines of its text; a plain
    EDIT when EDITABLE, else a read-only RichEdit 2.0 (RichEdit 1.0 failing that) filled run
    by run from the element's text and P / BR / LI / DT / DD, each run formatted, A HREF runs
-   recorded as links). STATE: MATCH 100%, exe 682 / obj 682, byte-identical yes. OPEN: none */
+   recorded as links). */
 // FUNCTION: EVNOVA 0x00522f5f
 int32_t IT_TextBoxCreateEdit(void *hwnd, void *dc, ITTextBox *tb)
 {
@@ -1006,8 +1001,7 @@ done:
 
 /* _IT_TextFormat (a run's format: face (a FACE list through 0x0050f09f, else "system"), size in
    points (12 when none) and twips, bold / italic / underline, fixed pitch for TT and PRE, its
-   FGCOLOR or the box's, a link's colour and underline). STATE: MATCH 100%, exe 154 / obj 154,
-   byte-identical yes. OPEN: none */
+   FGCOLOR or the box's, a link's colour and underline). */
 // FUNCTION: EVNOVA 0x0052386d
 int32_t _IT_TextFormat(void *hwnd, void *dc, ITTextBox *tb, ITTextFormat *format, const char *face,
                   int32_t size, ULong style, const ITColor *color, ULong order)
@@ -1076,8 +1070,7 @@ int32_t _IT_TextFormat(void *hwnd, void *dc, ITTextBox *tb, ITTextFormat *format
 }
 
 /* IT_AppendText (append `text' to the handle: collapsed, runs of white space one space and none at
-   the start after one; else tabs four spaces and line ends CR LF; NUL-terminated). STATE: MATCH
-   100%, exe 106 / obj 106, byte-identical yes. OPEN: none */
+   the start after one; else tabs four spaces and line ends CR LF; NUL-terminated). */
 // FUNCTION: EVNOVA 0x00523a35
 int32_t IT_AppendText(void **out, unsigned char upper, const char *text, unsigned char convert,
                   unsigned char collapse, unsigned char afterSpace)
@@ -1161,8 +1154,7 @@ done:
 /* _IT_TextCheck (the link under a point of the read-only rich edit: its outline as up to
    three rectangles over the lines it spans; without `track' only whether there is one, with
    it the outline inverted while the button is down and inside (events 12..15); the HREF into
-   the click when it is released over the link). STATE: MATCH 100%, exe 523 / obj 523,
-   byte-identical yes. OPEN: none */
+   the click when it is released over the link). */
 // FUNCTION: EVNOVA 0x00523b77
 int32_t _IT_TextCheck(void *hwnd, void *dc, ITTextBox *tb, ITPoint *pt, unsigned char track,
                   ITClick *click)
@@ -1315,8 +1307,7 @@ done:
     return err;
 }
 
-/* _IT_HiliteLink (invert a link's outline). STATE: MATCH 100%, exe 33 / obj 33, byte-identical yes.
-   OPEN: the window and the text box are never read */
+/* _IT_HiliteLink (invert a link's outline). Note: the window and the text box are never read */
 // FUNCTION: EVNOVA 0x005242e2
 void _IT_HiliteLink(void *hwnd, void *dc, ITTextBox *tb, const ITRect *r1, const ITRect *r2,
                   const ITRect *r3)

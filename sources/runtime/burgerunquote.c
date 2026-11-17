@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /* StripLeadingAndTrailingWhiteSpace (BurgerLib StStringManager): spaces and tabs off both
-   ends, in place. STATE: MATCH 100%, exe 34 / obj 34, byte-identical yes. OPEN: none */
+   ends, in place. */
 // FUNCTION: EVNOVA 0x004fbec0
 void StripLeadingAndTrailingWhiteSpace(char *text)
 {
@@ -47,7 +47,7 @@ void StripLeadingAndTrailingWhiteSpace(char *text)
 }
 
 /* GetFileExtension (BurgerLib StStringManager): past the last '.', or the terminator when
-   there is none. STATE: MATCH 100.0%, exe 17 / obj 17, byte-identical yes. OPEN: none */
+   there is none. */
 // FUNCTION: EVNOVA 0x004fbf20
 char *GetFileExtension(const char *name)
 {
@@ -70,8 +70,6 @@ char *GetFileExtension(const char *name)
     return (char *)name;
 }
 
-/* ParseQuotedString. STATE: MATCH 100%, exe 51 / obj 51 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004fbf50
 char *ParseQuotedString(char *out, int32_t outSize, const char *src)
 {
@@ -126,8 +124,7 @@ static const ULong kPow10[kMaxDigits] = {
     100000UL, 1000000UL, 10000000UL, 100000000UL, 1000000000UL
 };
 
-/* NumberToAscii (BurgerLib StStringManager). STATE: MATCH 100.0%, exe 46 / obj 46,
-   byte-identical yes. OPEN: none */
+/* NumberToAscii (BurgerLib StStringManager). */
 // FUNCTION: EVNOVA 0x004fbfe0
 char *NumberToAscii(char *dst, ULong value, ULong flags)
 {
@@ -166,8 +163,7 @@ char *NumberToAscii(char *dst, ULong value, ULong flags)
 }
 
 /* NumberToAsciiHex (BurgerLib StStringManager; the 2007 archive's Burger::Str::ToAsciiHex):
-   the same flags as NumberToAscii, eight digits at most. STATE: MATCH 100.0%, exe 48 / obj 48,
-   byte-identical yes. OPEN: none */
+   the same flags as NumberToAscii, eight digits at most. */
 // FUNCTION: EVNOVA 0x004fc080
 char *NumberToAsciiHex(char *dst, ULong value, ULong flags)
 {
@@ -555,8 +551,7 @@ double ToDouble(const char *pInput, const char **pDest)
 
 #define kPascalMaxLen   0xff
 
-/* StrCopy (BurgerLib StStringManager): a C string copied into a new pointer.
-   STATE: MATCH 100.0%, exe 27 / obj 27, byte-identical yes. OPEN: none */
+/* StrCopy (BurgerLib StStringManager): a C string copied into a new pointer. */
 // FUNCTION: EVNOVA 0x004fc120
 char *StrCopy(const char *text)
 {
@@ -571,7 +566,6 @@ char *StrCopy(const char *text)
 }
 
 /* C string to Pascal string, capped at 255 payload bytes. */
-/* CStr2PStr. STATE: MATCH 100%, exe 27 / obj 27 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fc170
 void CStr2PStr(char *dst, const char *src)
 {
@@ -594,8 +588,7 @@ void CStr2PStr(char *dst, const char *src)
 }
 
 /* Pascal string to C string: the length byte leads, the terminator is ours. */
-/* PStr2CStr (BurgerLib StStringManager). STATE: MATCH 100.0%, exe 17 / obj 17, byte-identical yes.
-   OPEN: none */
+/* PStr2CStr (BurgerLib StStringManager). */
 // FUNCTION: EVNOVA 0x004fc1c0
 void PStr2CStr(char *dst, const unsigned char *src)
 {
@@ -612,8 +605,7 @@ void PStr2CStr(char *dst, const unsigned char *src)
     *dst = 0;
 }
 
-/* StrCopyHandle (BurgerLib StStringManager): a C string copied into a new handle.
-   STATE: MATCH 100.0%, exe 38 / obj 38, byte-identical yes. OPEN: none */
+/* StrCopyHandle (BurgerLib StStringManager): a C string copied into a new handle. */
 // FUNCTION: EVNOVA 0x004fc1f0
 Handle StrCopyHandle(const char *text)
 {

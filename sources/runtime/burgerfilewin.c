@@ -33,8 +33,7 @@ extern "C" {
 #define kAboveLowerZ        '{'
 #define kUpperMask          0xdf
 
-/* DoesFileExistNative (BurgerLib FmWin95Code): 1 for a file, 0 for a directory or nothing.
-   STATE: MATCH 100.0%, exe 10 / obj 10, byte-identical yes. OPEN: none */
+/* DoesFileExistNative (BurgerLib FmWin95Code): 1 for a file, 0 for a directory or nothing. */
 // FUNCTION: EVNOVA 0x004d9150
 Word DoesFileExistNative(const char *name)
 {
@@ -43,8 +42,7 @@ Word DoesFileExistNative(const char *name)
     return 1;
 }
 
-/* OpenADirectory (BurgerLib FmWin95Code). STATE: MATCH 100.0%, exe 60 / obj 60,
-   byte-identical yes. OPEN: none */
+/* OpenADirectory (BurgerLib FmWin95Code). */
 // FUNCTION: EVNOVA 0x004d9180
 Word OpenADirectory(DirectorySearch_t *dir, const char *name)
 {
@@ -83,7 +81,7 @@ static void ConvertDosDate(TimeDate_t *out, FILETIME *in)
 }
 
 /* GetADirectoryEntry (BurgerLib FmWin95Code): the next entry, skipping "." and "..";
-   1 at the end. STATE: MATCH 100%, exe 134 / obj 134, byte-identical yes. OPEN: none */
+   1 at the end. */
 // FUNCTION: EVNOVA 0x004d9280
 Word GetADirectoryEntry(DirectorySearch_t *dir)
 {
@@ -121,8 +119,7 @@ Word GetADirectoryEntry(DirectorySearch_t *dir)
     return 0;
 }
 
-/* CloseADirectory (BurgerLib FmWin95Code). STATE: MATCH 100.0%, exe 14 / obj 14,
-   byte-identical yes. OPEN: none */
+/* CloseADirectory (BurgerLib FmWin95Code). */
 // FUNCTION: EVNOVA 0x004d94b0
 void CloseADirectory(struct DirectorySearch_t *dir)
 {
@@ -134,8 +131,7 @@ void CloseADirectory(struct DirectorySearch_t *dir)
 }
 
 /* DeleteAFileNative (BurgerLib FmWin95Code): a file, or failing that an empty directory;
-   answers 0 on success. STATE: MATCH 100.0%, exe 20 / obj 20, byte-identical yes. OPEN:
-   none */
+   answers 0 on success. */
 // FUNCTION: EVNOVA 0x004d94f0
 Word DeleteAFileNative(const char *name)
 {
@@ -158,8 +154,7 @@ static int32_t DirCreate(const char *path)
 }
 
 /* Create every directory along a native path; 0 once the last exists. */
-/* CreateDirectoryPathNative (BurgerLib CreateDirectoryPathNative). STATE: MATCH 100%, exe 96 / obj 96
-   instrs, byte-identical yes. OPEN: none */
+/* CreateDirectoryPathNative (BurgerLib CreateDirectoryPathNative). */
 // FUNCTION: EVNOVA 0x004d9530
 int32_t CreateDirectoryPathNative(char *path)
 {
@@ -192,8 +187,7 @@ int32_t CreateDirectoryPathNative(char *path)
 }
 
 /* ExpandAPathToBufferNative (BurgerLib FmWin95Code): ":volume:dir:file" becomes "X:\dir\file"
-   (or "\\volume\dir\file" for a volume no drive carries), ".Dn:" drive n. STATE: MATCH
-   100.0%, exe 116 / obj 116, byte-identical yes. OPEN: none */
+   (or "\\volume\dir\file" for a volume no drive carries), ".Dn:" drive n. */
 // FUNCTION: EVNOVA 0x004d9680
 void ExpandAPathToBufferNative(char *out, const char *name)
 {
@@ -271,8 +265,7 @@ void ExpandAPathToBufferNative(char *out, const char *name)
     *out = 0;
 }
 
-/* GetAVolumeName (BurgerLib FmWin95Code): ":label:" of drive driveNum in a new pointer, or 0.
-   STATE: MATCH 100.0%, exe 68 / obj 68, byte-identical yes. OPEN: none */
+/* GetAVolumeName (BurgerLib FmWin95Code): ":label:" of drive driveNum in a new pointer, or 0. */
 // FUNCTION: EVNOVA 0x004d9820
 char *GetAVolumeName(Word driveNum)
 {
@@ -305,7 +298,6 @@ char *GetAVolumeName(Word driveNum)
 }
 
 /* The length of an open file, its position left where it was. */
-/* fgetfilesize. STATE: MATCH 100%, exe 29 / obj 29 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d9920
 ULong fgetfilesize(FILE *fp)
 {
@@ -322,12 +314,10 @@ ULong fgetfilesize(FILE *fp)
 /* BurgerLib publishes PREFIXBOOT 32, PREFIXPREFS 33 and PREFIXSYSTEM 34, which are
    this file's 0x20, 0x21 and 0x22. */
 
-extern char *getenv(const char *name);           /* 0x00508e00, MSL */
 
 #define kDirBuffer      0x104
 #define kVolumeNameLen  3
 
-/* SetDefaultPrefixs. STATE: MATCH 100%, exe 97 / obj 97 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d9990
 void SetDefaultPrefixs(void)
 {
@@ -370,8 +360,7 @@ void SetDefaultPrefixs(void)
     }
 }
 
-/* ConvertNativePathToPath (BurgerLib ConvertNativePathToPath). STATE: MATCH 100%, exe 95 / obj 95
-   instrs, byte-identical yes. OPEN: none */
+/* ConvertNativePathToPath (BurgerLib ConvertNativePathToPath). */
 // FUNCTION: EVNOVA 0x004d9b10
 char *ConvertNativePathToPath(const char *path)
 {

@@ -33,7 +33,6 @@ static int32_t scrollOffsetVert;
 #endif
 
 #ifndef MAC_PARTICLES_ONLY
-/* RestoreControlStrip. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047b7d0
 // MAC: _RestoreControlStrip i386 0x000c95d6 ppc 0x000d55dc
 void RestoreControlStrip(void)
@@ -44,7 +43,6 @@ void RestoreControlStrip(void)
 
 #ifndef MAC_GAMEUTILS_ONLY
 
-/* InitParticles (mac _InitParticles). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047b7e0
 // MAC: _InitParticles i386 0x000c4f83 ppc 0x000d11c0
 short InitParticles(int numElements, int gravity)
@@ -71,7 +69,6 @@ short InitParticles(int numElements, int gravity)
     return err;
 }
 
-/* DisposeParticles (mac _DisposeParticles). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047b870
 // MAC: _DisposeParticles i386 0x000c4e80 ppc 0x000d1030
 void DisposeParticles(void)
@@ -86,7 +83,6 @@ void DisposeParticles(void)
     gParticlesInitialized = 0;
 }
 
-/* ClearParticles. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047b8c0
 // MAC: _ClearParticles i386 0x000c4ec8 ppc 0x000d10a4
 void ClearParticles(Boolean active)
@@ -106,7 +102,6 @@ void ClearParticles(Boolean active)
     gNumberOfParticlesActive = 0;
 }
 
-/* SetParticleScrollOffset (mac _SetParticleScrollOffset). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047b940
 // MAC: _SetParticleScrollOffset i386 0x000c5008 ppc 0x000d129c
 void SetParticleScrollOffset(int h, int v)
@@ -115,7 +110,6 @@ void SetParticleScrollOffset(int h, int v)
     scrollOffsetVert = v;
 }
 
-/* NewParticle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047b960
 // MAC: _NewParticle i386 0x000c501d ppc 0x000d12b0
 void NewParticle(int32_t color, int32_t horizLoc, int32_t vertLoc, int32_t horizSpeed,
@@ -151,7 +145,6 @@ void NewParticle(int32_t color, int32_t horizLoc, int32_t vertLoc, int32_t horiz
     }
 }
 
-/* EraseParticlesOffscreen (mac _EraseParticlesOffscreen). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047bb30
 // MAC: _EraseParticlesOffscreen i386 0x000c511b ppc 0x000d13c8
 void EraseParticlesOffscreen(SpriteWorldPtr spriteWorldP)
@@ -207,8 +200,6 @@ void EraseParticlesOffscreen(SpriteWorldPtr spriteWorldP)
         *SW_PIXELPTR32(frame, x, y) = c;
 
 
-/* DrawParticlesOffscreen (mac _DrawParticlesOffscreen). STATE: MATCH, byte-identical.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x0047bdd0
 // MAC: _DrawParticlesOffscreen i386 0x000c590a ppc 0x000d1b24
 void DrawParticlesOffscreen(SpriteWorldPtr spriteWorldP)
@@ -271,7 +262,6 @@ void DrawParticlesOffscreen(SpriteWorldPtr spriteWorldP)
 }
 
 
-/* UpdateParticlesInWindow (mac _UpdateParticlesInWindow). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047c3a0
 // MAC: _UpdateParticlesInWindow i386 0x000c61fb ppc 0x000d24b4
 #if V111
@@ -310,7 +300,6 @@ void UpdateParticlesInWindow(SpriteWorldPtr spriteWorldP)
 }
 
 #ifdef MACBUILD
-/* UpdateParticlesInScrollingWindow (mac _UpdateParticlesInScrollingWindow, mac-only). STATE: see the mac gate. */
 // MAC: _UpdateParticlesInScrollingWindow i386 0x000c63ba ppc 0x000d26b4
 void UpdateParticlesInScrollingWindow(SpriteWorldPtr spriteWorldP)
 {
@@ -383,7 +372,6 @@ void UpdateParticlesInWindow(SpriteWorldRec *spriteWorldP)
 }
 #endif
 
-/* MoveParticles (mac _MoveParticles). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047c800
 // MAC: _MoveParticles i386 0x000c60c5 ppc 0x000d2304
 void MoveParticles(void)

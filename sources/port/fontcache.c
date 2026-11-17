@@ -47,7 +47,6 @@ static FontEntry *MakeFontEntry(FontFamily *family, int size, int style);
 
 static FontFamily *AddFontFamily(const char *name);
 
-/* InitFonts. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc3e0
 void InitFonts(void)
 {
@@ -73,7 +72,6 @@ FontMap gFontMap[kFontMapCount] = {                      /* 0x00575d80 (name inv
     { "New York",  "Georgia",         0, FW_BOLD, FW_NORMAL, 0, 0 }
 };
 
-/* MakeFontEntry. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc450
 static FontEntry *MakeFontEntry(FontFamily *family, int size, int style)
 {
@@ -139,7 +137,6 @@ static FontEntry *MakeFontEntry(FontFamily *family, int size, int style)
     return entry;
 }
 
-/* AddFontFamily. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc5c0
 static FontFamily *AddFontFamily(const char *name)
 {
@@ -152,7 +149,6 @@ static FontFamily *AddFontFamily(const char *name)
     return family;
 }
 
-/* FindFontEntry. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc600
 FontEntry *FindFontEntry(FontFamily *family, short size, short style)
 {
@@ -169,7 +165,6 @@ FontEntry *FindFontEntry(FontFamily *family, short size, short style)
     return NULL;
 }
 
-/* GetFontFamily. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc640
 FontFamily *GetFontFamily(short familyID)
 {
@@ -184,7 +179,6 @@ FontFamily *GetFontFamily(short familyID)
     return family;
 }
 
-/* GetFont. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc670
 void *GetFont(short familyID, short size, short style)
 {
@@ -202,7 +196,6 @@ void *GetFont(short familyID, short size, short style)
     return entry->hfont;
 }
 
-/* GetFNum. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc6e0
 void GetFNum(const unsigned char *name, short *familyID)
 {

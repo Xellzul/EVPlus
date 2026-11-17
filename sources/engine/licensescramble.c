@@ -11,7 +11,6 @@
 
 /* the only caller is InitEVNova, which discards the result: Rand(0) reseeds randomSeed */
 
-/* ScrambleRand. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab970
 short ScrambleRand(void)
 {

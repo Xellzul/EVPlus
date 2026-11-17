@@ -16,7 +16,6 @@
 #define kClear     (-1)
 #define kSolid      0
 
-/* SWFixImageGWorld (mac _SWFixImageGWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00479260
 // MAC: _SWFixImageGWorld i386 0x000a820c ppc 0x000b3028
 short SWFixImageGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP)
@@ -140,7 +139,6 @@ short SWFixImageGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP)
 }
 
 #ifdef MACBUILD
-/* SWCreateMaskAndFixImage (mac _SWCreateMaskAndFixImage, mac-only). STATE: see the mac gate. */
 // MAC: _SWCreateMaskAndFixImage i386 0x000a8480 ppc 0x000b3348
 OSErr SWCreateMaskAndFixImage(GWorldPtr pictureGWorld, GWorldPtr maskGWorld, Rect *rectP)
 {
@@ -282,28 +280,24 @@ OSErr SWCreateMaskAndFixImage(GWorldPtr pictureGWorld, GWorldPtr maskGWorld, Rec
     return noErr;
 }
 
-/* SWBlackenGWorld (mac _SWBlackenGWorld, mac-only). STATE: see the mac gate. */
 // MAC: _SWBlackenGWorld i386 0x000a782a ppc 0x000b25ac
 OSErr SWBlackenGWorld(GWorldPtr oldGWorld)
 {
     return noErr;
 }
 
-/* SWCreateRegionMaskFromGWorld (mac _SWCreateRegionMaskFromGWorld, mac-only). STATE: see the mac gate. */
 // MAC: _SWCreateRegionMaskFromGWorld i386 0x000a7838 ppc 0x000b25bc
 OSErr SWCreateRegionMaskFromGWorld(CGrafPtr pictureGWorld, Rect *pictureRect, RgnHandle maskRegion)
 {
     return noErr;
 }
 
-/* SWWhitenGWorld (mac _SWWhitenGWorld, mac-only). STATE: see the mac gate. */
 // MAC: _SWWhitenGWorld i386 0x000a7831 ppc 0x000b25b4
 OSErr SWWhitenGWorld(GWorldPtr oldGWorld)
 {
     return noErr;
 }
 
-/* SWFastWhitenGWorld (mac _SWFastWhitenGWorld, mac-only). STATE: see the mac gate. */
 // MAC: _SWFastWhitenGWorld i386 0x000a783f ppc 0x000b25c4
 OSErr SWFastWhitenGWorld(GWorldPtr pictureGWorld)
 {

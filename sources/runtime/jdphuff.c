@@ -36,8 +36,7 @@ METHODDEF(boolean) decode_mcu_DC_refine JPP((j_decompress_ptr cinfo,
 METHODDEF(boolean) decode_mcu_AC_refine JPP((j_decompress_ptr cinfo,
 					     JBLOCKROW *MCU_data));
 
-/* start_pass_phuff_decoder. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056549d
 METHODDEF(void)
 start_pass_phuff_decoder (j_decompress_ptr cinfo)
@@ -165,8 +164,7 @@ process_restart (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* decode_mcu_DC_first. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056521e
 METHODDEF(boolean)
 decode_mcu_DC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
@@ -220,8 +218,7 @@ decode_mcu_DC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   return TRUE;
 }
 
-/* decode_mcu_AC_first. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00564f52
 METHODDEF(boolean)
 decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
@@ -290,8 +287,7 @@ decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   return TRUE;
 }
 
-/* decode_mcu_DC_refine. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00564e23
 METHODDEF(boolean)
 decode_mcu_DC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
@@ -326,8 +322,7 @@ decode_mcu_DC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   return TRUE;
 }
 
-/* decode_mcu_AC_refine. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005649c3
 METHODDEF(boolean)
 decode_mcu_AC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
@@ -453,8 +448,7 @@ undoit:
   return FALSE;
 }
 
-/* jinit_phuff_decoder. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00564956
 GLOBAL(void)
 jinit_phuff_decoder (j_decompress_ptr cinfo)

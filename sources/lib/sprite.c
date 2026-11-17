@@ -4,7 +4,6 @@
 #include "burger.h"
 #include "spriteworld.h"
 
-/* SWCreateSpriteFromCicnResource (mac _SWCreateSpriteFromCicnResource). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00474970
 // MAC: _SWCreateSpriteFromCicnResource i386 0x000aa808 ppc 0x000b55b0
 short SWCreateSpriteFromCicnResource(SpriteWorldPtr destSpriteWorldP, SpritePtr *newSpriteP,
@@ -60,8 +59,6 @@ short SWCreateSpriteFromCicnResource(SpriteWorldPtr destSpriteWorldP, SpritePtr 
 #define kNoMask             0
 #define kOutOfRangeErr      107
 
-/* SWCreateSpriteFromSinglePictXY (mac _SWCreateSpriteFromSinglePictXY). STATE: MATCH, exe 277 / obj 277 instrs, byte-identical yes.
-   OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x00474ab0
 // MAC: _SWCreateSpriteFromSinglePictXY i386 0x000a9bee ppc 0x000b4adc
 short SWCreateSpriteFromSinglePictXY(
@@ -206,7 +203,6 @@ short SWCreateSpriteFromSinglePictXY(
 #define kSolidMask      4
 
 
-/* SWCreateSpriteFromRLEResource (mac _SWCreateSpriteFromRLEResource). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00474e90
 // MAC: _SWCreateSpriteFromRLEResource i386 0x000a9990 ppc 0x000b48b8
 short SWCreateSpriteFromRLEResource(SpritePtr *srcSpriteP, void *spriteStorageP,
@@ -285,7 +281,6 @@ short SWCreateSpriteFromRLEResource(SpritePtr *srcSpriteP, void *spriteStorageP,
 
 #define kNilParameterErr        104
 
-/* SWCloneSprite (mac _SWCloneSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475050
 // MAC: _SWCloneSprite i386 0x000a9419 ppc 0x000b430c
 short SWCloneSprite(SpritePtr cloneSpriteP, SpritePtr *newSpriteP, void *spriteStorageP)
@@ -346,7 +341,6 @@ short SWCloneSprite(SpritePtr cloneSpriteP, SpritePtr *newSpriteP, void *spriteS
 /* +0xd2 marks a sprite that owns none of the things SWCloseSprite frees; +0xd1 is
    RLE-handle OWNERSHIP, since SWCloneSprite copies the handle and clears it. */
 
-/* SWDisposeSprite (mac _SWDisposeSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475470
 // MAC: _SWDisposeSprite i386 0x000a974e ppc 0x000b468c
 void SWDisposeSprite(SpritePtr *deadSpritePP)
@@ -363,7 +357,6 @@ void SWDisposeSprite(SpritePtr *deadSpritePP)
     }
 }
 
-/* SWCloseSprite (mac _SWCloseSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004754a0
 // MAC: _SWCloseSprite i386 0x000a9666 ppc 0x000b459c
 void SWCloseSprite(SpritePtr deadSpriteP)
@@ -411,7 +404,6 @@ typedef uint32_t TokenDataType;
 #define kTokenShift             24
 #define kCountMask              0x00ffffff
 
-/* SWLockSprite (mac _SWLockSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475550
 // MAC: _SWLockSprite i386 0x000aa965 ppc 0x000b5710
 void SWLockSprite(SpritePtr srcSpriteP)
@@ -465,7 +457,6 @@ void SWLockSprite(SpritePtr srcSpriteP)
     }
 }
 
-/* SWUnlockSprite (mac _SWUnlockSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004756c0
 // MAC: _SWUnlockSprite i386 0x000aad04 ppc 0x000b5aa8
 void SWUnlockSprite(SpritePtr srcSpriteP)
@@ -501,7 +492,6 @@ void SWUnlockSprite(SpritePtr srcSpriteP)
 
 #define kMaxFramesErr   101
 
-/* SWAddFrame (mac _SWAddFrame). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475740
 // MAC: _SWAddFrame i386 0x000a9043 ppc 0x000b3eec
 short SWAddFrame(SpritePtr srcSpriteP, FramePtr newFrameP)
@@ -529,7 +519,6 @@ short SWAddFrame(SpritePtr srcSpriteP, FramePtr newFrameP)
    OffsetRgn block is gone -- but the handle is still PASSED to CopyBits as the mask,
    which is why the field is read at all. */
 
-/* SWStdSpriteDrawProc (mac _SWStdSpriteDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004757a0
 // MAC: _SWStdSpriteDrawProc i386 0x000ab015 ppc 0x000b5e34
 void SWStdSpriteDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect, Rect *dstRect)
@@ -547,7 +536,6 @@ void SWStdSpriteDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect, 
    what pins spriteMoveProc/realSpriteMoveProc to +0x8c/+0x90 and needsToBeDrawn to +0x15
    for the rest of the file. */
 
-/* SWTempSpriteMoveProc (mac _SWTempSpriteMoveProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475800
 // MAC: _SWTempSpriteMoveProc i386 0x000ab1c9 ppc 0x000b600c
 void SWTempSpriteMoveProc(SpritePtr srcSpriteP)
@@ -561,7 +549,6 @@ void SWTempSpriteMoveProc(SpritePtr srcSpriteP)
 }
 
 
-/* SWSetCurrentFrameIndex (mac _SWSetCurrentFrameIndex). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475830
 // MAC: _SWSetCurrentFrameIndex i386 0x000a90b6 ppc 0x000b3f88
 void SWSetCurrentFrameIndex(SpritePtr srcSpriteP, short frameIndex)
@@ -613,7 +600,6 @@ void SWSetCurrentFrameIndex(SpritePtr srcSpriteP, short frameIndex)
    SWTempSpriteMoveProc, which moves +0x90 into +0x8c and so fixes
    realSpriteMoveProc/spriteMoveProc, leaving the donor's next member at +0x94. */
 
-/* SWSetSpriteCollideProc (mac _SWSetSpriteCollideProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475940
 // MAC: _SWSetSpriteCollideProc i386 0x000ab28d ppc 0x000b60fc
 void SWSetSpriteCollideProc(SpritePtr srcSpriteP, CollideProcPtr collideProc)
@@ -631,7 +617,6 @@ void SWSetSpriteCollideProc(SpritePtr srcSpriteP, CollideProcPtr collideProc)
 
 #define kSpriteNotCompiledErr   113
 
-/* SWSetSpriteDrawProc (mac _SWSetSpriteDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475970
 // MAC: _SWSetSpriteDrawProc i386 0x000ab327 ppc 0x000b61ac
 short SWSetSpriteDrawProc(SpritePtr srcSpriteP, DrawProcPtr drawProc)
@@ -683,7 +668,6 @@ short SWSetSpriteDrawProc(SpritePtr srcSpriteP, DrawProcPtr drawProc)
 }
 
 
-/* SWSetSpriteFrameRange (mac _SWSetSpriteFrameRange). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475a60
 // MAC: _SWSetSpriteFrameRange i386 0x000a91f3 ppc 0x000b4108
 void SWSetSpriteFrameRange(SpritePtr srcSpriteP, short firstFrameIndex, short lastFrameIndex)
@@ -707,7 +691,6 @@ void SWSetSpriteFrameRange(SpritePtr srcSpriteP, short firstFrameIndex, short la
 }
 
 
-/* SWSetSpriteLocation (mac _SWSetSpriteLocation). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475af0
 // MAC: _SWSetSpriteLocation i386 0x000ab640 ppc 0x000b656c
 void SWSetSpriteLocation(SpritePtr srcSpriteP, short horizLoc, short vertLoc)
@@ -731,7 +714,6 @@ void SWSetSpriteLocation(SpritePtr srcSpriteP, short horizLoc, short vertLoc)
 }
 
 
-/* SWSetSpriteVisible (mac _SWSetSpriteVisible). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475b80
 // MAC: _SWSetSpriteVisible i386 0x000a9590 ppc 0x000b44b8
 void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible)
@@ -756,7 +738,6 @@ void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible)
 /* `/2' on a signed int is the `cmp 0x80000000 / sbb -1 / sar 1' triple, which is what
    pins the radii SIGNED and not the donor's unsigned-looking widths. */
 
-/* SWRadiusCollision (mac _SWRadiusCollision). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475be0
 // MAC: _SWRadiusCollision i386 0x000abc88 ppc 0x000b6ce4
 Boolean SWRadiusCollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
@@ -790,7 +771,6 @@ Boolean SWRadiusCollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
 
 
 
-/* SWRLECollision (mac _SWRLECollision). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475c80
 // MAC: _SWRLECollision i386 0x000abfbd ppc 0x000b6ff8
 Boolean SWRLECollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
@@ -838,7 +818,6 @@ Boolean SWRLECollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
     return collision;
 }
 
-/* SWRLECollisionWithPoint (mac _SWRLECollisionWithPoint). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475e20
 // MAC: _SWRLECollisionWithPoint i386 0x000ac1ab ppc 0x000b7198
 Boolean SWRLECollisionWithPoint(SpritePtr srcSpriteP, Point *testPoint)
@@ -869,7 +848,6 @@ Boolean SWRLECollisionWithPoint(SpritePtr srcSpriteP, Point *testPoint)
    sprite +0x1a/+0x1c/+0x1e/+0x20 against frame +0x2e/+0x30/+0x32/+0x34, which is how the
    inset's four members are pinned. */
 
-/* SWIsSpriteInRect (mac _SWIsSpriteInRect). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475ec0
 // MAC: _SWIsSpriteInRect i386 0x000ac282 ppc 0x000b7288
 Boolean SWIsSpriteInRect(SpritePtr srcSpriteP, Rect *testRect)

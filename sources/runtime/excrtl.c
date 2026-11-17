@@ -10,8 +10,7 @@ typedef struct ExceptionRecord {
     uint32_t flags;                         /* +0x04 */
 } ExceptionRecord;
 
-/* __SEHUnwindHandler (MSL excrtl, `?__SEHUnwindHandler@@YA..' there). STATE: MATCH, exe 10 /
-   obj 10. OPEN: none */
+/* __SEHUnwindHandler (MSL excrtl, `?__SEHUnwindHandler@@YA..' there). */
 // FUNCTION: EVNOVA 0x00534550
 int32_t SEHUnwindHandler(ExceptionRecord *record, void *frame, void *context, void **dispatcher)
 {

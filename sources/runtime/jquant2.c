@@ -56,8 +56,7 @@ typedef struct {
 
 typedef my_cquantizer * my_cquantize_ptr;
 
-/* prescan_quantize. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00563172
 METHODDEF(void)
 prescan_quantize (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
@@ -135,8 +134,7 @@ find_biggest_volume (boxptr boxlist, int numboxes)
   return which;
 }
 
-/* update_box. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00562eb4
 LOCAL(void)
 update_box (j_decompress_ptr cinfo, boxptr boxp)
@@ -238,8 +236,7 @@ update_box (j_decompress_ptr cinfo, boxptr boxp)
   boxp->colorcount = ccount;
 }
 
-/* median_cut. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00562d13
 LOCAL(int)
 median_cut (j_decompress_ptr cinfo, boxptr boxlist, int numboxes,
@@ -297,8 +294,7 @@ median_cut (j_decompress_ptr cinfo, boxptr boxlist, int numboxes,
   return numboxes;
 }
 
-/* compute_color. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00562bdb
 LOCAL(void)
 compute_color (j_decompress_ptr cinfo, boxptr boxp, int icolor)
@@ -338,8 +334,7 @@ compute_color (j_decompress_ptr cinfo, boxptr boxp, int icolor)
   cinfo->colormap[2][icolor] = (JSAMPLE) ((c2total + (total>>1)) / total);
 }
 
-/* select_colors. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00562b43
 LOCAL(void)
 select_colors (j_decompress_ptr cinfo, int desired_colors)
@@ -382,8 +377,7 @@ select_colors (j_decompress_ptr cinfo, int desired_colors)
 #define BOX_C1_SHIFT  (C1_SHIFT + BOX_C1_LOG)
 #define BOX_C2_SHIFT  (C2_SHIFT + BOX_C2_LOG)
 
-/* find_nearby_colors. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00562906
 LOCAL(int)
 find_nearby_colors (j_decompress_ptr cinfo, int minc0, int minc1, int minc2,
@@ -488,8 +482,7 @@ find_nearby_colors (j_decompress_ptr cinfo, int minc0, int minc1, int minc2,
   return ncolors;
 }
 
-/* find_best_colors. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056278e
 LOCAL(void)
 find_best_colors (j_decompress_ptr cinfo, int minc0, int minc1, int minc2,
@@ -558,8 +551,7 @@ find_best_colors (j_decompress_ptr cinfo, int minc0, int minc1, int minc2,
   }
 }
 
-/* fill_inverse_cmap. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005626a4
 LOCAL(void)
 fill_inverse_cmap (j_decompress_ptr cinfo, int c0, int c1, int c2)
@@ -604,8 +596,7 @@ fill_inverse_cmap (j_decompress_ptr cinfo, int c0, int c1, int c2)
   }
 }
 
-/* pass2_no_dither. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005625e7
 METHODDEF(void)
 pass2_no_dither (j_decompress_ptr cinfo,
@@ -639,8 +630,7 @@ pass2_no_dither (j_decompress_ptr cinfo,
   }
 }
 
-/* pass2_fs_dither. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005622bf
 METHODDEF(void)
 pass2_fs_dither (j_decompress_ptr cinfo,
@@ -761,8 +751,7 @@ pass2_fs_dither (j_decompress_ptr cinfo,
   }
 }
 
-/* init_error_limit. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00562223
 LOCAL(void)
 init_error_limit (j_decompress_ptr cinfo)
@@ -794,8 +783,7 @@ init_error_limit (j_decompress_ptr cinfo)
 #undef STEPSIZE
 }
 
-/* finish_pass1. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00562201
 METHODDEF(void)
 finish_pass1 (j_decompress_ptr cinfo)
@@ -808,8 +796,7 @@ finish_pass1 (j_decompress_ptr cinfo)
   cquantize->needs_zeroed = TRUE;
 }
 
-/* finish_pass2. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00562200
 METHODDEF(void)
 finish_pass2 (j_decompress_ptr cinfo)
@@ -817,8 +804,7 @@ finish_pass2 (j_decompress_ptr cinfo)
 
 }
 
-/* start_pass_2_quant. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005620ef
 METHODDEF(void)
 start_pass_2_quant (j_decompress_ptr cinfo, boolean is_pre_scan)
@@ -875,8 +861,7 @@ start_pass_2_quant (j_decompress_ptr cinfo, boolean is_pre_scan)
   }
 }
 
-/* new_color_map_2_quant. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005620de
 METHODDEF(void)
 new_color_map_2_quant (j_decompress_ptr cinfo)
@@ -886,8 +871,7 @@ new_color_map_2_quant (j_decompress_ptr cinfo)
   cquantize->needs_zeroed = TRUE;
 }
 
-/* jinit_2pass_quantizer. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00561fc4
 GLOBAL(void)
 jinit_2pass_quantizer (j_decompress_ptr cinfo)

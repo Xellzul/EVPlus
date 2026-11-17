@@ -15,8 +15,6 @@
 #define DT_NOPREFIX   0x0800
 #define iconv libiconv                                    /* as GNU iconv.h does */
 
-/* DrawTextRun. STATE: MATCH, byte-identical. OPEN: the walk's compare constant and counter
-   name are guesses (both dead in the exe); see notes */
 // FUNCTION: EVNOVA 0x004bc760
 void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, int height)
 {
@@ -126,21 +124,18 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
     SetBkMode(hdc, oldBkMode);
 }
 
-/* DrawText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bca70
 void DrawText(const void *textBuf, int firstByte, int byteCount)
 {
     DrawTextRun((char *)textBuf + firstByte, byteCount, NULL, 0, 0);
 }
 
-/* DrawString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bca90
 void DrawString(const unsigned char *str)
 {
     DrawTextRun(str + 1, str[0], NULL, 0, 0);
 }
 
-/* DrawCString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcab0
 void DrawCString(const char *text)
 {
@@ -148,7 +143,6 @@ void DrawCString(const char *text)
 }
 
 /* the same measurer over a Pascal string */
-/* StringWidth. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcad0
 short StringWidth(const unsigned char *str)
 {
@@ -158,7 +152,6 @@ short StringWidth(const unsigned char *str)
     return MeasureCString(text);
 }
 
-/* MeasureCString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcb00
 short MeasureCString(const char *text)
 {
@@ -177,7 +170,6 @@ short MeasureCString(const char *text)
     return r.right;
 }
 
-/* TextWidth. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcbc0
 short TextWidth(const char *text, int byteCount)
 {
@@ -196,7 +188,6 @@ short TextWidth(const char *text, int byteCount)
     return r.right;
 }
 
-/* MeasureWrappedText. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcc70
 int MeasureWrappedText(const char *text, int byteCount, int width)
 {

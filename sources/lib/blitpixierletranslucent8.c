@@ -8,8 +8,6 @@
    placeholder name rather than a guessed one. */
 
 
-/* BlitPixieRLETranslucent8 (mac _BlitPixieRLETranslucent8). STATE: MATCH 100.0%, exe 96 /
-   obj 96 instrs, byte-identical yes (314 bytes). OPEN: nothing. see notes */
 // FUNCTION: EVNOVA 0x00472bb0
 // MAC: _BlitPixieRLETranslucent8 i386 0x000c1cff ppc 0x000cde9c
 void BlitPixieRLETranslucent8(unsigned char *rleTokens, unsigned char *dstPixel,

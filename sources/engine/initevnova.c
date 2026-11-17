@@ -386,9 +386,6 @@ EXTERN_C_BEGIN
 
 
 
-/* InitEVNova (mac _InitEVNova). STATE: win MATCH 100.0%, exe 1393 / obj 1393, byte-identical yes
-   (relocs masked); mac MATCH both slices; 1.0.10 MATCH both fragments.
-   OPEN: nothing. */
 // FUNCTION: EVNOVA 0x00416100
 // MAC: _InitEVNova i386 0x0004666c ppc 0x0004eb44
 void InitEVNova(void)
@@ -901,9 +898,6 @@ void InitEVNova(void)
 #define kProfOdds        20
 
 
-/* PlayGame (mac _PlayGame). STATE: win MATCH, exe 1105 / obj 1105, byte-identical yes (relocs
-   masked); mac MATCH on both slices.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00417600
 // MAC: _PlayGame i386 0x000457ba ppc 0x0004da00
 void PlayGame(void)
@@ -1160,7 +1154,6 @@ void PlayGame(void)
 
 #define kMaxNavDefaults 0x10
 
-/* DoPlayGameWork (mac _DoPlayGameWork). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004186b0
 // MAC: _DoPlayGameWork i386 0x00043de5 ppc 0x0004bbe4
 void DoPlayGameWork(unsigned char advance)
@@ -1322,7 +1315,6 @@ void DoPlayGameWork(unsigned char advance)
     HandleBeams(advance);
 }
 
-/* PrepareAllSprites (mac _PrepareAllSprites). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00419210
 // MAC: _PrepareAllSprites i386 0x0003a75a ppc 0x00040d04
 void PrepareAllSprites(void)
@@ -1376,9 +1368,6 @@ void PrepareAllSprites(void)
 #define kAnnoyanceThreshold     50.0f
 
 
-/* DamageShip (mac _DamageShip). STATE: MATCH 100.0% (1332 exact, 189 reloc-equivalent), exe 1521 /
-   obj 1521, byte-identical yes, relocregcheck 0 of 189; needs PrepareAllSprites above it (TU).
-   mac MATCH both slices. OPEN: none. */
 // FUNCTION: EVNOVA 0x004192d0
 // MAC: _DamageShip i386 0x0003a807 ppc 0x00040df8
 void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
@@ -1802,7 +1791,6 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
         DoShipUncloak(ship);
 }
 
-/* DeleteAllComputerShips. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041ad50
 // MAC: _DeleteAllComputerShips i386 0x0003bf5f ppc 0x00042594
 void DeleteAllComputerShips(Boolean force, Boolean keepPlayer)
@@ -1856,11 +1844,6 @@ void DeleteAllComputerShips(Boolean force, Boolean keepPlayer)
 #define kRandomSpawnReserve     8
 
 
-/* SetupShipsInSystem (mac _SetupShipsInSystem). STATE: MATCH 100.0%, exe 675 / obj 675 instrs,
-   551 exact + 124 reloc-equivalent, 0 mismatched; frame EXACT 0x24, 12/12 slots and refs;
-   byte-identical UNMEASURED (bytediff reads the adopted baseline, which lacks this row).
-   OPEN: none. `arriving' and RespawnEscort's `full' must BOTH be unsigned char; either
-   one alone costs a row. mac: MATCH both slices. see notes */
 // FUNCTION: EVNOVA 0x0041af90
 // MAC: _SetupShipsInSystem i386 0x00042b61 ppc 0x0004a668
 void SetupShipsInSystem(short sys, unsigned char arriving)
@@ -2057,8 +2040,6 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
 #define kStartCredits    10000
 #define kAITypeLinked    3       /* this aiType seeds from the linked system */
 
-/* RandomShipSpawn (mac _RandomShipSpawn). STATE: MATCH 100.0% 617/617, byte-identical yes
-   (3208 bytes), relocregcheck 0 of 189. OPEN: none. */
 // FUNCTION: EVNOVA 0x0041ba80
 // MAC: _RandomShipSpawn i386 0x0003c0f3 ppc 0x00042798
 short RandomShipSpawn(short sys, short reserve)
@@ -2199,7 +2180,6 @@ fail:
  * (sys, 1, -1) arguments); 0x00425280 = SpawnFleet, call-position proven.
  */
 
-/* HyperShipSpawn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041c710
 // MAC: _HyperShipSpawn i386 0x0004291a ppc 0x0004a36c
 short HyperShipSpawn(short sys)
@@ -2258,7 +2238,6 @@ short HyperShipSpawn(short sys)
     return -1;
 }
 
-/* SpecificDudeSpawn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041c9f0
 // MAC: _SpecificDudeSpawn i386 0x0003d0eb ppc 0x00043c0c
 short SpecificDudeSpawn(short dude, short sys, short reserve,
@@ -2297,7 +2276,6 @@ none:
     return -1;
 }
 
-/* MissionDudeSpawn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041cf40
 // MAC: _MissionDudeSpawn i386 0x0003cd3b ppc 0x00043784
 short MissionDudeSpawn(short dude, short wantType, short sys, short mission)
@@ -2393,8 +2371,6 @@ none:
 #define kEntryDepth         (-999.0f)
 
 
-/* EnterMoreShips (mac _EnterMoreShips). STATE: MATCH 100.0%, exe 702 / obj 702, byte-identical unchecked
-   (bytediff covers baseline MATCHes only; next regate); mac MATCH on both slices. OPEN: none */
 // FUNCTION: EVNOVA 0x0041d6e0
 // MAC: _EnterMoreShips i386 0x00043459 ppc 0x0004b11c
 void EnterMoreShips(short sys)
@@ -2605,7 +2581,6 @@ void EnterMoreShips(short sys)
     }
 }
 
-/* RespawnEscort. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041e240
 // MAC: _RespawnEscort i386 0x0003d4b8 ppc 0x00044098
 void RespawnEscort(ShipObj *ship, unsigned char full)
@@ -2661,7 +2636,6 @@ void RespawnEscort(ShipObj *ship, unsigned char full)
  * inaccuracy, the launch speed its speed100, and unk4C its lifetime.
  */
 
-/* LaunchFighter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041e640
 // MAC: _LaunchFighter i386 0x0003d62d ppc 0x00044238
 unsigned char LaunchFighter(ShipObj *parent, short fighterType)
@@ -2821,7 +2795,6 @@ none:
 #define kBoxSpreadA         0xf
 #define kBoxSpreadB         0x1e
 
-/* JettisonCargo (mac _JettisonCargo). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041f330
 // MAC: _JettisonCargo i386 0x0003dffd ppc 0x00044e9c
 void JettisonCargo(unsigned char withMissions)
@@ -2913,7 +2886,6 @@ void JettisonCargo(unsigned char withMissions)
     ResetPlayerPrecalcedValues();
 }
 
-/* SpawnBox. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041f800
 // MAC: _SpawnBox i386 0x0003dd74 ppc 0x00044b44
 void SpawnBox(short from)
@@ -2964,7 +2936,6 @@ void SpawnBox(short from)
    parked out of line and jumps back to the NEXT test rather than to the join. */
 
 
-/* SpawnScoopableBox. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0041fb50
 // MAC: _SpawnScoopableBox i386 0x0003e3c5 ppc 0x00045328
 void SpawnScoopableBox(FloatPoint *pos, short cargoType, short pict)
@@ -3003,11 +2974,6 @@ void SpawnScoopableBox(FloatPoint *pos, short cargoType, short pict)
     }
 }
 
-/* SpawnShot (mac _SpawnShot). STATE: MATCH 100%, exe 970 / obj 970, relocregcheck 0 of 179;
-   byte identity not yet measured (bytediff reads the adopted baseline). mac MATCH on both
-   slices; the V111 `target' self-extension is score-only (notes, lane G37).
-   OPEN: the real statement there. The jitter blocks read `inaccuracy' at each use; a
-   block-scope `inc' copy was an invented entity (notes, 2026-09-24). */
 // FUNCTION: EVNOVA 0x0041fd30
 // MAC: _SpawnShot i386 0x0003e550 ppc 0x00045560
 short SpawnShot(short ship, short target, short weapType, Boolean flag)
@@ -3300,7 +3266,6 @@ short SpawnShot(short ship, short target, short weapType, Boolean flag)
     return slot;
 }
 
-/* SpawnShotSubmunitions. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00420d30
 // MAC: _SpawnShotSubmunitions i386 0x0003f1d5 ppc 0x00046360
 void SpawnShotSubmunitions(ShotObj *shot, short ship)
@@ -3399,7 +3364,6 @@ void SpawnShotSubmunitions(ShotObj *shot, short ship)
 #define kSmallAngleRange        16
 #define kSmallAngleBase         8
 
-/* CreateExplosion. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004211d0
 // MAC: _CreateExplosion i386 0x0003f698 ppc 0x000468cc
 void CreateExplosion(FloatPoint pt, short type, short size, Boolean sound)
@@ -3444,7 +3408,6 @@ void CreateExplosion(FloatPoint pt, short type, short size, Boolean sound)
 
 #define kMaxActiveBooms 32
 
-/* SpawnExplod (mac _SpawnExplod). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00421500
 // MAC: _SpawnExplod i386 0x0003f5dc ppc 0x000467e8
 void SpawnExplod(FloatPoint pos, short unused, short type, short delay)
@@ -3466,7 +3429,6 @@ void SpawnExplod(FloatPoint pos, short unused, short type, short delay)
 }
 
 
-/* SpawnSmoke (mac _SpawnSmoke). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004215d0
 // MAC: _SpawnSmoke i386 0x0003f927 ppc 0x00046ba4
 void SpawnSmoke(FloatPoint pos, short type, short sprite)
@@ -3491,9 +3453,6 @@ void SpawnSmoke(FloatPoint pos, short type, short sprite)
     }
 }
 
-/* CreateAsteroids. STATE: MATCH 100%, exe 105 / obj 105 instrs.
-   OPEN: none. The half extents are `w * 0.5' at each use; the halfW/halfH doubles were
-   invented (notes, 2026-09-24). */
 // FUNCTION: EVNOVA 0x004216b0
 // MAC: _CreateAsteroids i386 0x0003fa05 ppc 0x00046ca8
 void CreateAsteroids(void)
@@ -3518,7 +3477,6 @@ void CreateAsteroids(void)
     }
 }
 
-/* SpawnAsteroid. STATE: MATCH. OPEN: none */
 // FUNCTION: EVNOVA 0x00421830
 // MAC: _SpawnAsteroid i386 0x0003a233 ppc 0x000406a0
 void SpawnAsteroid(unsigned char type)
@@ -3599,7 +3557,6 @@ void SpawnAsteroid(unsigned char type)
     }
 }
 
-/* SpawnSubAsteroid. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00421e60
 // MAC: _SpawnSubAsteroid i386 0x0003fbc7 ppc 0x00046ef4
 void SpawnSubAsteroid(FloatPoint *pos, short type)
@@ -3624,7 +3581,6 @@ void SpawnSubAsteroid(FloatPoint *pos, short type)
     }
 }
 
-/* SpawnStellarDefenseShip. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00421fd0
 // MAC: _SpawnStellarDefenseShip i386 0x0003d2c9 ppc 0x00043e50
 short SpawnStellarDefenseShip(short stellar)
@@ -3661,7 +3617,6 @@ short SpawnStellarDefenseShip(short stellar)
     return ship;
 }
 
-/* SufficentTargetedDamage. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004221d0
 // MAC: _SufficentTargetedDamage i386 0x0003fd22 ppc 0x000470f8
 Boolean SufficentTargetedDamage(ShipObj *ship)
@@ -3671,7 +3626,6 @@ Boolean SufficentTargetedDamage(ShipObj *ship)
     return 0;
 }
 
-/* CalculateTargetedDamage. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00422210
 // MAC: _CalculateTargetedDamage i386 0x0003a153 ppc 0x00040554
 void CalculateTargetedDamage(void)
@@ -3696,7 +3650,6 @@ void CalculateTargetedDamage(void)
 #define kNudgeBase        0x32
 #define kNudgeSpread      0x32
 
-/* MakeEscortsHyperWithParent (mac _MakeEscortsHyperWithParent). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00422340
 // MAC: _MakeEscortsHyperWithParent i386 0x0003fd54 ppc 0x0004714c
 void MakeEscortsHyperWithParent(ShipObj *ship)
@@ -3715,8 +3668,7 @@ void MakeEscortsHyperWithParent(ShipObj *ship)
 }
 
 #if V111
-/* MakeEscortsCancelJump (mac _MakeEscortsCancelJump, mac-only: new in 1.1.1). STATE: mac MATCH
-   i386 and ppc. OPEN: none */
+/* MakeEscortsCancelJump (mac _MakeEscortsCancelJump, mac-only: new in 1.1.1). */
 // MAC: _MakeEscortsCancelJump i386 0x0003fdeb ppc 0x00047218
 void MakeEscortsCancelJump(ShipObj *ship)
 {
@@ -3733,7 +3685,6 @@ void MakeEscortsCancelJump(ShipObj *ship)
 }
 #endif
 
-/* SpawnEscort. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00422400
 // MAC: _SpawnEscort i386 0x0003fe5b ppc 0x000472bc
 short SpawnEscort(short shipType, short fromSpob)
@@ -3795,7 +3746,6 @@ short SpawnEscort(short shipType, short fromSpob)
 #define kStrSoldFor        300
 #define kStrUpgradedFor    301
 
-/* DoEscortLand (mac _DoEscortLand). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004229d0
 // MAC: _DoEscortLand i386 0x0004031f ppc 0x00047904
 void DoEscortLand(void)
@@ -3920,8 +3870,6 @@ void DoEscortLand(void)
     DoEscortPayment(1);
 }
 
-/* DoEscortPayment (mac _DoEscortPayment). STATE: MATCH 100.0%, exe 143 / obj 143,
-   byte-identical yes. OPEN: none; `idx' was an entity the exe never had (see notes). */
 // FUNCTION: EVNOVA 0x004232d0
 // MAC: _DoEscortPayment i386 0x00040111 ppc 0x00047658
 void DoEscortPayment(short days)
@@ -3988,7 +3936,6 @@ void DoEscortPayment(short days)
     }
 }
 
-/* DoStellarTimePassage. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00423540
 // MAC: _DoStellarTimePassage i386 0x00040867 ppc 0x00047ee8
 void DoStellarTimePassage(void)
@@ -4005,8 +3952,6 @@ void DoStellarTimePassage(void)
     }
 }
 
-/* SpawnPerson. STATE: MATCH, 555/555, relocregcheck 0 of 91; byte check pending the next
-   regate (bytediff reads the baseline). OPEN: none */
 // FUNCTION: EVNOVA 0x004235c0
 // MAC: _SpawnPerson i386 0x000408d5 ppc 0x00047f84
 short SpawnPerson(short sys, unsigned char noDisabled, short person)
@@ -4164,9 +4109,6 @@ short SpawnPerson(short sys, unsigned char noDisabled, short person)
 /* win reads the index in three widths, each a CSE class; the mac's slotL and ((int)slotL) are the short itself */
 #define slotR ((int32_t)slot)
 
-/* DoShipCapture (mac _DoShipCapture). STATE: MATCH 100%, exe 817 / obj 817; byte-identical
-   yes (relocations masked). The three index spellings are CSE classes; the loop counters and
-   the scratch `val' decide the colour order (notes). OPEN: none */
 // FUNCTION: EVNOVA 0x00423fa0
 // MAC: _DoShipCapture i386 0x00041120 ppc 0x0004889c
 void DoShipCapture(ShipObj *me, Boolean asEscort)
@@ -4360,7 +4302,6 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
 #undef slotR
 
 
-/* DisasterHandler. STATE: MATCH, byte-identical; mac MATCH both slices. OPEN: none */
 // FUNCTION: EVNOVA 0x00424f90
 // MAC: _DisasterHandler i386 0x00041ab9 ppc 0x00049324
 void DisasterHandler(void)
@@ -4417,7 +4358,6 @@ void DisasterHandler(void)
 
 #define kOutfModType19  0x13
 
-/* DoAutoRefuel. STATE: MATCH 100.0%, exe 122 / obj 122, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004250f0
 // MAC: _DoAutoRefuel i386 0x00041bc5 ppc 0x0004949c
 void DoAutoRefuel(void)
@@ -4457,7 +4397,6 @@ void DoAutoRefuel(void)
 #define kFletCount 256
 
 
-/* SpawnFleet. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00425280
 // MAC: _SpawnFleet i386 0x00042704 ppc 0x0004a164
 void SpawnFleet(short sys, unsigned char arriving)
@@ -4509,7 +4448,6 @@ void SpawnFleet(short sys, unsigned char arriving)
     }
 }
 
-/* GenericRandomShipSpawn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004254b0
 // MAC: _GenericRandomShipSpawn i386 0x0003c89f ppc 0x0004314c
 short GenericRandomShipSpawn(short sys, short reserve)
@@ -4612,10 +4550,6 @@ short GenericRandomShipSpawn(short sys, short reserve)
                                                          /* 0x004159e0 */
                                                          /* 0x00413990 */
 
-/* HyperSpawnFleet (mac _HyperSpawnFleet). STATE: win MATCH 100.0%, 982/982, byte-identical
-   yes; mac MATCH on both slices. The fleet index is held twice, size_t `f' and uint32_t `idx'
-   (two classes on x86, one on PPC); the first test reads fleetData through `fd' (notes). OPEN:
-   none. */
 // FUNCTION: EVNOVA 0x004259b0
 // MAC: _HyperSpawnFleet i386 0x00041c8d ppc 0x0004960c
 void HyperSpawnFleet(short sys, short fleet, short escortOf,
@@ -4783,7 +4717,6 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
     }
 }
 
-/* SpeakVoiceMessage. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00426ce0
 // MAC: _SpeakVoiceMessage i386 0x00044558 ppc 0x0004c3cc
 void SpeakVoiceMessage(short a, short b, short c)
@@ -4800,7 +4733,6 @@ void SpeakVoiceMessage(short a, short b, short c)
 #define kHailQuoteStrList 0x1bbd /* 7101; the built-in STR# */
 #define kHailCommFrames   420
 
-/* ShowPersonHailQuote (mac _ShowPersonHailQuote). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00426d10
 // MAC: _ShowPersonHailQuote i386 0x0004457e ppc 0x0004c3f4
 void ShowPersonHailQuote(short persID)
@@ -4817,7 +4749,6 @@ void ShowPersonHailQuote(short persID)
                 &rgbWhite, 0, 0);
 }
 
-/* SpawnBountyHunter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00426dd0
 // MAC: _SpawnBountyHunter i386 0x00044661 ppc 0x0004c4c4
 void SpawnBountyHunter(void)
@@ -4859,7 +4790,6 @@ void SpawnBountyHunter(void)
     }
 }
 
-/* ShotCanHitShip. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00426ef0
 // MAC: _ShotCanHitShip i386 0x0004477e ppc 0x0004c60c
 Boolean ShotCanHitShip(ShotObj *shot, ShipObj *ship)
@@ -4981,7 +4911,6 @@ Boolean ShotCanHitShip(ShotObj *shot, ShipObj *ship)
 
 #define kFixedOne   256.0f      /* NewParticle's 24.8 scale */
 
-/* SpawnParticles (mac _SpawnParticles). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004274d0
 // MAC: _SpawnParticles i386 0x00044b70 ppc 0x0004cad4
 void SpawnParticles(short x, short y, float speed, short spreadPct,
@@ -5020,7 +4949,6 @@ void SpawnParticles(short x, short y, float speed, short spreadPct,
 
 #define kMapGovtClassBase 1000
 
-/* GrantOutfitItem (mac _GrantOutfitItem). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00427770
 // MAC: _GrantOutfitItem i386 0x00044d4f ppc 0x0004cd00
 void GrantOutfitItem(short outfit)
@@ -5117,7 +5045,6 @@ void GrantOutfitItem(short outfit)
  * Fills the first beamData slot whose state is < -1.
  */
 
-/* SpawnBeam. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00427a90
 // MAC: _SpawnBeam i386 0x00044ff3 ppc 0x0004d048
 void SpawnBeam(short ship, short target, short weapType, short unused, short mount, short flag)
@@ -5167,7 +5094,6 @@ void SpawnBeam(short ship, short target, short weapType, short unused, short mou
 
 #define kNoRank                 (-1)
 
-/* ActivateRank (mac _ActivateRank). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00427df0
 // MAC: _ActivateRank i386 0x000452f0 ppc 0x0004d358
 void ActivateRank(char *rankp)
@@ -5211,7 +5137,6 @@ void ActivateRank(char *rankp)
     recentActivatedRank = rank->index;
 }
 
-/* DeactivateRank (mac _DeactivateRank). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00427f40
 // MAC: _DeactivateRank i386 0x0004541e ppc 0x0004d53c
 void DeactivateRank(char *rankp)
@@ -5259,7 +5184,6 @@ void DeactivateRank(char *rankp)
  * free once its life counter has run below zero.
  */
 
-/* SpawnEscapePod. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00428090
 // MAC: _SpawnEscapePod i386 0x00045547 ppc 0x0004d704
 void SpawnEscapePod(ShipObj *ship)

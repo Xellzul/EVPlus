@@ -15,7 +15,6 @@
 
 
 
-/* FindPrevShipInSystem (mac _FindPrevShipInSystem). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00461f60
 // MAC: _FindPrevShipInSystem i386 0x0000a1dd ppc 0x0000c834
 short FindPrevShipInSystem(short cur, short system)
@@ -98,7 +97,6 @@ short FindPrevShipInSystem(short cur, short system)
 }
 
 #ifdef MACBUILD
-/* FindNextStellarInSystem (mac _FindNextStellarInSystem, mac-only). STATE: see the mac gate. */
 // KEPT: unfinished feature -- next planet/station in a system, wrapping; no caller in any version
 // MAC: _FindNextStellarInSystem i386 0x000025a2 ppc 0x00002f80
 short FindNextStellarInSystem(short cur, short system)

@@ -12,7 +12,6 @@
 #define kClear  0xFFFFFFFFUL
 #endif
 
-/* SWCreatePixelMaskFromGWorld (mac _SWCreatePixelMaskFromGWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00479250
 // MAC: _SWCreatePixelMaskFromGWorld i386 0x000a875d ppc 0x000b36b8
 #ifdef MACBUILD

@@ -7,8 +7,7 @@
 #include "smallft.h"
 #include "misc.h"
 
-/* drfti1. STATE: BurgerLib's libvorbis 1.0rc3, the nfm1==0 exit to the one epilogue (MATCH,
-   byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055bd70
 static void drfti1(int n, float *wa, int *ifac){
   static const int ntryh[4] = { 4,2,3,5 };
@@ -88,8 +87,7 @@ static void fdrffti(int n, float *wsave, int *ifac){
   drfti1(n, wsave+n, ifac);
 }
 
-/* dradf2. STATE: BurgerLib's libvorbis 1.0rc3: the ido<2 exit to the one epilogue, the odd
-   test as ido&1 (MATCH, byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055c080
 static void dradf2(int ido,int l1,float *cc,float *ch,float *wa1){
   int i,k;
@@ -148,8 +146,7 @@ static void dradf2(int ido,int l1,float *cc,float *ch,float *wa1){
  L_end:;
 }
 
-/* dradf4. STATE: BurgerLib's libvorbis 1.0rc3: the ido<2 exit to the one epilogue (MATCH,
-   byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055c630
 static void dradf4(int ido,int l1,float *cc,float *ch,float *wa1,
 	    float *wa2,float *wa3){
@@ -254,8 +251,7 @@ static void dradf4(int ido,int l1,float *cc,float *ch,float *wa1,
  L_end:;
 }
 
-/* dradfg. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055caa0
 static void dradfg(int ido,int ip,int l1,int idl1,float *cc,float *c1,
                           float *c2,float *ch,float *ch2,float *wa){
@@ -559,8 +555,7 @@ L119:
   }
 }
 
-/* drftf1. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055e5b0
 static void drftf1(int n,float *c,float *ch,float *wa,int *ifac){
   int i,k1,l1,l2;
@@ -623,8 +618,7 @@ static void drftf1(int n,float *c,float *ch,float *wa,int *ifac){
   for(i=0;i<n;i++)c[i]=ch[i];
 }
 
-/* dradb2. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055e900
 static void dradb2(int ido,int l1,float *cc,float *ch,float *wa1){
   int i,k,t0,t1,t2,t3,t4,t5,t6;
@@ -678,8 +672,7 @@ L105:
   }
 }
 
-/* dradb3. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055ee50
 static void dradb3(int ido,int l1,float *cc,float *ch,float *wa1,
                           float *wa2){
@@ -744,8 +737,7 @@ static void dradb3(int ido,int l1,float *cc,float *ch,float *wa1,
   }
 }
 
-/* dradb4. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055f160
 static void dradb4(int ido,int l1,float *cc,float *ch,float *wa1,
 			  float *wa2,float *wa3){
@@ -838,8 +830,7 @@ static void dradb4(int ido,int l1,float *cc,float *ch,float *wa1,
   }
 }
 
-/* dradbg. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055f5b0
 static void dradbg(int ido,int ip,int l1,int idl1,float *cc,float *c1,
             float *c2,float *ch,float *ch2,float *wa){
@@ -1155,8 +1146,7 @@ L132:
   }
 }
 
-/* drftb1. STATE: BurgerLib's libvorbis 1.0rc3: the in/out pair chosen once per pass, one
-   exit (MATCH, byte-identical). OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00561070
 static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
   int i,k1,l1,l2;
@@ -1218,24 +1208,19 @@ static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
     for(i=0;i<n;i++)c[i]=ch[i];
 }
 
-/* drft_forward. STATE: libvorbis 1.0rc3, one exit (runtime band, a floor).
-   OPEN: -proc pentium4 MATCH (pending the pin). */
 // FUNCTION: EVNOVA 0x00561360
 void drft_forward(drft_lookup *l,float *data){
   if(l->n!=1)
     drftf1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
 }
 
-/* drft_backward. STATE: libvorbis 1.0rc3, one exit (runtime band, a floor).
-   OPEN: -proc pentium4 MATCH (pending the pin). */
 // FUNCTION: EVNOVA 0x005613a0
 void drft_backward(drft_lookup *l,float *data){
   if (l->n!=1)
     drftb1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
 }
 
-/* drft_init. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: -proc pentium4 MATCH (pending the pin). */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005613e0
 void drft_init(drft_lookup *l,int n){
   l->n=n;
@@ -1244,8 +1229,7 @@ void drft_init(drft_lookup *l,int n){
   fdrffti(n, l->trigcache, l->splitcache);
 }
 
-/* drft_clear. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00561450
 void drft_clear(drft_lookup *l){
   if(l){

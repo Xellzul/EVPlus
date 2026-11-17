@@ -15,7 +15,6 @@
 
 /* CalcInterceptAngle returns an int; its callers narrow it to short for Accel. */
 
-/* Accel (mac _Accel). STATE: MATCH, byte-identical; mac MATCH i386 and ppc. OPEN: none */
 // FUNCTION: EVNOVA 0x0043b4a0
 // MAC: _Accel i386 0x0002ade6 ppc 0x0002f31c
 void Accel(short angle, float mag, FloatPoint *out)
@@ -26,7 +25,6 @@ void Accel(short angle, float mag, FloatPoint *out)
     out->y -= trigResult * mag;
 }
 
-/* AdjustedAccel (mac _AdjustedAccel). STATE: MATCH, byte-identical; mac MATCH i386 and ppc. OPEN: none */
 // FUNCTION: EVNOVA 0x0043b4e0
 // MAC: _AdjustedAccel i386 0x0002ae4b ppc 0x0002f390
 void AdjustedAccel(short angle, float accel, FloatPoint *vel, float maxSpeed)
@@ -63,8 +61,6 @@ void AdjustedAccel(short angle, float accel, FloatPoint *vel, float maxSpeed)
 #define FloatAbs(x) fabs(x)
 
 /* the heading from b to a, in degrees */
-/* CalcInterceptAngle (mac _CalcInterceptAngle). STATE: MATCH, byte-identical; mac MATCH i386 and ppc.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x0043b670
 // MAC: _CalcInterceptAngle i386 0x0002af60 ppc 0x0002f4e8
 short CalcInterceptAngle(FloatPoint *a, FloatPoint *b)
@@ -73,7 +69,6 @@ short CalcInterceptAngle(FloatPoint *a, FloatPoint *b)
 }
 
 /* clamp both components into [-mag, mag] */
-/* SpeedLimit (mac _SpeedLimit). STATE: MATCH, byte-identical; mac MATCH i386 and ppc. OPEN: none */
 // FUNCTION: EVNOVA 0x0043b6a0
 // MAC: _SpeedLimit i386 0x0002af91 ppc 0x0002f528
 void SpeedLimit(FloatPoint *p, float mag)
@@ -88,8 +83,6 @@ void SpeedLimit(FloatPoint *p, float mag)
         p->y = -mag;
 }
 
-/* XYFloatSquaredDist (mac _XYFloatSquaredDist). STATE: MATCH, byte-identical; mac MATCH i386 and ppc.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x0043b710
 // MAC: _XYFloatSquaredDist i386 0x0002afdb ppc 0x0002f570
 float XYFloatSquaredDist(FloatPoint *a, FloatPoint *b)
@@ -103,7 +96,6 @@ float XYFloatSquaredDist(FloatPoint *a, FloatPoint *b)
 }
 
 
-/* CalcLeadAngle (mac _CalcLeadAngle). STATE: MATCH, byte-identical; mac MATCH i386 and ppc. OPEN: none */
 // FUNCTION: EVNOVA 0x0043b740
 // MAC: _CalcLeadAngle i386 0x0002b025 ppc 0x0002f5b4
 short CalcLeadAngle(ShipObj *self, ShipObj *target, short weaponType,
@@ -157,8 +149,6 @@ short CalcLeadAngle(ShipObj *self, ShipObj *target, short weaponType,
     return angle;
 }
 
-/* CalcObjectLeadAngle (mac _CalcObjectLeadAngle). STATE: MATCH, byte-identical; mac MATCH i386 and
-   ppc. OPEN: none */
 // FUNCTION: EVNOVA 0x0043b8c0
 // MAC: _CalcObjectLeadAngle i386 0x0002b18e ppc 0x0002f724
 short CalcObjectLeadAngle(ShipObj *self, FloatPoint *targetPos, FloatPoint *targetVel,
@@ -213,8 +203,6 @@ short CalcObjectLeadAngle(ShipObj *self, FloatPoint *targetPos, FloatPoint *targ
     return angle;
 }
 
-/* CalcSpobLeadAngle (mac _CalcSpobLeadAngle). STATE: MATCH, byte-identical; mac MATCH i386 and ppc.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x0043ba30
 // MAC: _CalcSpobLeadAngle i386 0x0002b2f0 ppc 0x0002f878
 short CalcSpobLeadAngle(SpobRecord *spob, ShipObj *target)

@@ -35,8 +35,7 @@ typedef struct vorbis_look_mapping{
 
 } vorbis_look_mapping0;
 
-/* mapping0_copy_info. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00559d90
 static vorbis_info_mapping *mapping0_copy_info(vorbis_info_mapping *vm){
   vorbis_info_mapping0 *info=(vorbis_info_mapping0 *)vm;
@@ -45,8 +44,7 @@ static vorbis_info_mapping *mapping0_copy_info(vorbis_info_mapping *vm){
   return(ret);
 }
 
-/* mapping0_free_info. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00559de0
 static void mapping0_free_info(vorbis_info_mapping *i){
   vorbis_info_mapping0 *info=(vorbis_info_mapping0 *)i;
@@ -56,8 +54,6 @@ static void mapping0_free_info(vorbis_info_mapping *i){
   }
 }
 
-/* mapping0_free_look. STATE: MATCH, byte-identical (319 B); BurgerLib uses the
-   parameter itself, no cast copy. OPEN: none. */
 // FUNCTION: EVNOVA 0x00559e20
 static void mapping0_free_look(vorbis_look_mapping *l){
   int i;
@@ -88,8 +84,7 @@ static void mapping0_free_look(vorbis_look_mapping *l){
   }
 }
 
-/* mapping0_look. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00559f60
 static vorbis_look_mapping *mapping0_look(vorbis_dsp_state *vd,vorbis_info_mode *vm,
 			  vorbis_info_mapping *m){
@@ -164,8 +159,7 @@ static int ilog2(unsigned int v){
   return(ret);
 }
 
-/* mapping0_pack. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055a2d0
 static void mapping0_pack(vorbis_info *vi,vorbis_info_mapping *vm,
 			  oggpack_buffer *opb){
@@ -202,8 +196,7 @@ static void mapping0_pack(vorbis_info *vi,vorbis_info_mapping *vm,
   }
 }
 
-/* mapping0_unpack. STATE: BurgerLib's libvorbis 1.0rc3, MATCH.
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055a550
 static vorbis_info_mapping *mapping0_unpack(vorbis_info *vi,oggpack_buffer *opb){
   int i;
@@ -264,8 +257,7 @@ static vorbis_info_mapping *mapping0_unpack(vorbis_info *vi,oggpack_buffer *opb)
 #include "scales.h"
 
 static int32_t seq=0;
-/* mapping0_forward. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055a860
 static int mapping0_forward(vorbis_block *vb,vorbis_look_mapping *l){
   vorbis_dsp_state      *vd=vb->vd;
@@ -473,8 +465,7 @@ static int mapping0_forward(vorbis_block *vb,vorbis_look_mapping *l){
   return(0);
 }
 
-/* mapping0_inverse. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055b700
 static int mapping0_inverse(vorbis_block *vb,vorbis_look_mapping *l){
   vorbis_dsp_state     *vd=vb->vd;

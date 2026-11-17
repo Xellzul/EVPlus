@@ -14,8 +14,7 @@ extern "C" {
 Word MousePresent;                               /* 0x008701b8 */
 static unsigned char Once;                       /* 0x00865ab0, clip hook registered */
 
-/* MouseInit (BurgerLib InMouseWin95). STATE: MATCH 100.0%, exe 3 / obj 3, byte-identical
-   yes. OPEN: none */
+/* MouseInit (BurgerLib InMouseWin95). */
 // FUNCTION: EVNOVA 0x004d7af0
 unsigned int MouseInit(void)
 {
@@ -23,14 +22,13 @@ unsigned int MouseInit(void)
     return 1;
 }
 
-/* MouseDestroy (BurgerLib MouseDestroy). STATE: MATCH, byte-identical. OPEN: none */
+/* MouseDestroy (BurgerLib MouseDestroy). */
 // FUNCTION: EVNOVA 0x004d7b00
 void MouseDestroy(void)
 {
 }
 
-/* MouseReadButtons (BurgerLib InMouseWin95). STATE: MATCH 100.0%, exe 2 / obj 2,
-   byte-identical yes. OPEN: none */
+/* MouseReadButtons (BurgerLib InMouseWin95). */
 // FUNCTION: EVNOVA 0x004d7b10
 int MouseReadButtons(void)
 {
@@ -38,7 +36,7 @@ int MouseReadButtons(void)
 }
 
 /* Both axes are clamped to [0, extent-1]; a negative reads as 0. */
-/* MouseReadPosition (BurgerLib MouseReadAbs). STATE: MATCH, byte-identical. OPEN: none */
+/* MouseReadPosition (BurgerLib MouseReadAbs). */
 // FUNCTION: EVNOVA 0x004d7b20
 void MouseReadPosition(int32_t *h, int32_t *v)
 {
@@ -62,16 +60,14 @@ void MouseReadPosition(int32_t *h, int32_t *v)
     }
 }
 
-/* KillClipping (BurgerLib KillClipping). STATE: MATCH 100.0%, exe 4 / obj 4, byte-identical
-   yes. OPEN: none */
+/* KillClipping (BurgerLib KillClipping). */
 // FUNCTION: EVNOVA 0x004d7b80
 void KillClipping(void)
 {
     ClipCursor(0);
 }
 
-/* MouseSetRange (BurgerLib MouseSetRange). STATE: MATCH, exe 43 / obj 43, byte-identical yes.
-   OPEN: none */
+/* MouseSetRange (BurgerLib MouseSetRange). */
 // FUNCTION: EVNOVA 0x004d7ba0
 void MouseSetRange(int32_t width, int32_t height)
 {

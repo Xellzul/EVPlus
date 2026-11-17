@@ -6,8 +6,6 @@
 
 CGrafPtr CurrentGrafPort;             /* 0x00870064 */
 
-/* FillRectWithColor. STATE: MATCH, 129/129, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004b6a10
 void FillRectWithColor(Rect *r, RGBColor *color)
 {

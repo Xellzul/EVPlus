@@ -26,8 +26,7 @@ int32_t _FT_PathValidate(FolderSpec **spec);
 
 /* _FT_PathModify (resolve `where` against `base`: nothing, another spec, the parent (-1), a
    special folder (-7..-2), the n-th volume (1..100) or a '/' path; into a new spec at
-   `result`, or over `base` when result is NULL). STATE: MATCH 100%, exe 266 / obj 266,
-   byte-identical. OPEN: none (a volume-index error still hands back the spec, as the exe) */
+   `result`, or over `base` when result is NULL). Note: (a volume-index error still hands back the spec, as the exe) */
 // FUNCTION: EVNOVA 0x00508fbd
 int32_t _FT_PathModify(FolderSpec **base, void *where, FolderSpec ***result, unsigned char create)
 {
@@ -149,8 +148,7 @@ done:
 }
 
 /* _FT_PathInsert (register a spec; one naming a file of files on disk keeps it open as its
-   `dir`, shared with a copy's by reference count). STATE: MATCH 100%, exe 79 / obj 79,
-   byte-identical yes. OPEN: none */
+   `dir`, shared with a copy's by reference count). */
 // FUNCTION: EVNOVA 0x00509241
 void _FT_PathInsert(FolderSpec **spec)
 {
@@ -183,8 +181,7 @@ void _FT_PathInsert(FolderSpec **spec)
     gFT_PathList = spec;
 }
 
-/* _FT_PathLookup (is a registered spec handle). STATE: MATCH 100%, exe 15 / obj 15,
-   byte-identical yes. OPEN: none */
+/* _FT_PathLookup (is a registered spec handle). */
 // FUNCTION: EVNOVA 0x00509301
 unsigned char _FT_PathLookup(FolderSpec **spec)
 {
@@ -203,8 +200,7 @@ unsigned char _FT_PathLookup(FolderSpec **spec)
     return found;
 }
 
-/* _FT_PathDispose (FT spec dispose). STATE: MATCH 100%, exe 44 / obj 44, byte-identical yes.
-   OPEN: none */
+/* _FT_PathDispose (FT spec dispose). */
 // FUNCTION: EVNOVA 0x00509323
 int32_t _FT_PathDispose(void *ref)
 {
@@ -236,7 +232,7 @@ int32_t _FT_PathGoToVolumeName(FolderSpec **spec, const unsigned char *volume);
 int32_t _FT_PathGoToChild(FolderSpec **spec, const unsigned char *name, unsigned char last);
 
 /* _FT_PathString (walk a spec along a '/'-separated %XX-encoded path; a leading '/' names a
-   volume). STATE: MATCH 100%, exe 134 / obj 134, byte-identical. OPEN: none */
+   volume). */
 // FUNCTION: EVNOVA 0x00509382
 int32_t _FT_PathString(FolderSpec **spec, const char *path, unsigned char create)
 {
@@ -300,8 +296,7 @@ done:
     return err;
 }
 
-/* _FT_PathAppend (append a Pascal name to a spec). STATE: MATCH 100%, exe 51 / obj 51,
-   byte-identical yes. OPEN: none */
+/* _FT_PathAppend (append a Pascal name to a spec). */
 // FUNCTION: EVNOVA 0x005094d9
 int32_t _FT_PathAppend(FolderSpec **spec, const unsigned char *name)
 {
@@ -321,8 +316,7 @@ int32_t _FT_PathAppend(FolderSpec **spec, const unsigned char *name)
     return err;
 }
 
-/* _FT_PathShorten (drop a spec's last name, returning it escaped). STATE: MATCH 100%, exe 48 /
-   obj 48, byte-identical yes. OPEN: none */
+/* _FT_PathShorten (drop a spec's last name, returning it escaped). */
 // FUNCTION: EVNOVA 0x0050953f
 int32_t _FT_PathShorten(FolderSpec **spec, char *name)
 {
@@ -347,8 +341,7 @@ int32_t _FT_PathShorten(FolderSpec **spec, char *name)
     return err;
 }
 
-/* _FT_PathWalk (the offset of the name after `offset`, the first for 0; 0 past the last).
-   STATE: MATCH 100%, exe 34 / obj 34, byte-identical yes. OPEN: none */
+/* _FT_PathWalk (the offset of the name after `offset`, the first for 0; 0 past the last). */
 // FUNCTION: EVNOVA 0x00509598
 ULong _FT_PathWalk(FolderSpec **spec, ULong offset)
 {
@@ -370,7 +363,7 @@ ULong _FT_PathWalk(FolderSpec **spec, ULong offset)
 }
 
 /* _FT_PathNameInput (a C name to a Pascal name, decoding %XX; a bare '/', ':' or '\' is
-   kFTErrBadName). STATE: MATCH 100%, exe 115 / obj 115, byte-identical yes. OPEN: none */
+   kFTErrBadName). */
 // FUNCTION: EVNOVA 0x005095e5
 int32_t _FT_PathNameInput(unsigned char *out, const char *in, ULong length)
 {
@@ -442,7 +435,7 @@ done:
 }
 
 /* _FT_PathNameOutput (a Pascal name to a C string, %XX for NUL, tab, LF, CR, '%', '/', ':' and
-   '\'). STATE: MATCH 100%, exe 67 / obj 67, byte-identical yes. OPEN: none */
+   '\'). */
 // FUNCTION: EVNOVA 0x00509749
 int32_t _FT_PathNameOutput(char *out, const unsigned char *name)
 {
@@ -486,8 +479,7 @@ int32_t _FT_PathNameOutput(char *out, const unsigned char *name)
 }
 
 /* _FT_FileOpenWrapper (the native FTFile for a spec: the spec's own file, an open one -- reopened
-   for writing when asked and it is read-only -- or a newly opened one). STATE: MATCH 100%,
-   exe 169 / obj 169, byte-identical yes. OPEN: none */
+   for writing when asked and it is read-only -- or a newly opened one). */
 // FUNCTION: EVNOVA 0x005097f3
 int32_t _FT_FileOpenWrapper(FolderSpec **spec, unsigned char write, FTFile **result)
 {
@@ -584,8 +576,7 @@ done:
     return err;
 }
 
-/* _FT_FileIsChunky (is the spec's file a file of files; its entry count). STATE: MATCH 100%, exe
-   162 / obj 162, byte-identical yes. OPEN: none */
+/* _FT_FileIsChunky (is the spec's file a file of files; its entry count). */
 // FUNCTION: EVNOVA 0x00509a06
 unsigned char _FT_FileIsChunky(FolderSpec **spec, ULong *count)
 {
@@ -626,8 +617,7 @@ unsigned char _FT_FileIsChunky(FolderSpec **spec, ULong *count)
     return isArchive;
 }
 
-/* _FT_IndirectIsChunky (does a handle hold a file of files). STATE: MATCH 100%, exe 125 / obj 125,
-   byte-identical yes. OPEN: none */
+/* _FT_IndirectIsChunky (does a handle hold a file of files). */
 // FUNCTION: EVNOVA 0x00509bfb
 unsigned char _FT_IndirectIsChunky(void **handle)
 {
@@ -652,8 +642,7 @@ unsigned char _FT_IndirectIsChunky(void **handle)
     return isArchive;
 }
 
-/* _FT_FileUpdateRefCount (FT file reference count). STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes.
-   OPEN: none */
+/* _FT_FileUpdateRefCount (FT file reference count). */
 // FUNCTION: EVNOVA 0x00509d74
 int32_t _FT_FileUpdateRefCount(FTFile *file, int32_t delta)
 {

@@ -9,7 +9,6 @@ local int updatewindow OF((z_streamp strm, unsigned out));
 local unsigned syncsearch OF((unsigned FAR *have, unsigned char FAR *buf,
                               unsigned len));
 
-/* inflateReset. STATE: MATCH 100%, exe 40 / obj 40, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x005300f9
 int ZEXPORT inflateReset(strm)
 z_streamp strm;
@@ -31,8 +30,7 @@ z_streamp strm;
     return Z_OK;
 }
 
-/* inflateInit2_ (inflateReset inlined in the exe). STATE: MATCH 100%, exe 106 / obj 106,
-   byte-identical. OPEN: none. */
+/* inflateInit2_ (inflateReset inlined in the exe). */
 // FUNCTION: EVNOVA 0x0052ffd0
 int ZEXPORT inflateInit2_(strm, windowBits, version, stream_size)
 z_streamp strm;
@@ -74,7 +72,6 @@ int stream_size;
     return inflateReset(strm);
 }
 
-/* inflateInit_. STATE: MATCH 100%, exe 7 / obj 7, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052ffb9
 int ZEXPORT inflateInit_(strm, version, stream_size)
 z_streamp strm;
@@ -179,7 +176,6 @@ struct inflate_state FAR *state;
     state->distbits = 5;
 }
 
-/* updatewindow. STATE: MATCH 100%, exe 93 / obj 93, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052fedc
 local int updatewindow(strm, out)
 z_streamp strm;
@@ -306,8 +302,7 @@ unsigned out;
     ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
      (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
 
-/* inflate (fixedtables inlined in the exe). STATE: MATCH 100%, exe 1365 / obj 1365,
-   byte-identical. OPEN: none. */
+/* inflate (fixedtables inlined in the exe). */
 // FUNCTION: EVNOVA 0x0052ec7c
 int ZEXPORT inflate(strm, flush)
 z_streamp strm;
@@ -818,7 +813,6 @@ int flush;
     return ret;
 }
 
-/* inflateEnd. STATE: MATCH 100%, exe 32 / obj 32, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052ec39
 int ZEXPORT inflateEnd(strm)
 z_streamp strm;

@@ -48,8 +48,7 @@ start_iMCU_row (j_decompress_ptr cinfo)
   coef->MCU_vert_offset = 0;
 }
 
-/* start_input_pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566ee7
 METHODDEF(void)
 start_input_pass (j_decompress_ptr cinfo)
@@ -58,8 +57,7 @@ start_input_pass (j_decompress_ptr cinfo)
   start_iMCU_row(cinfo);
 }
 
-/* start_output_pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566eac
 METHODDEF(void)
 start_output_pass (j_decompress_ptr cinfo)
@@ -75,8 +73,7 @@ start_output_pass (j_decompress_ptr cinfo)
   cinfo->output_iMCU_row = 0;
 }
 
-/* decompress_onepass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566c71
 METHODDEF(int)
 decompress_onepass (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
@@ -149,8 +146,7 @@ decompress_onepass (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
   return JPEG_SCAN_COMPLETED;
 }
 
-/* dummy_consume_data. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566c6e
 METHODDEF(int)
 dummy_consume_data (j_decompress_ptr cinfo)
@@ -158,8 +154,7 @@ dummy_consume_data (j_decompress_ptr cinfo)
   return JPEG_SUSPENDED;
 }
 
-/* consume_data. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566ad5
 METHODDEF(int)
 consume_data (j_decompress_ptr cinfo)
@@ -218,8 +213,7 @@ consume_data (j_decompress_ptr cinfo)
   return JPEG_SCAN_COMPLETED;
 }
 
-/* decompress_data. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566977
 METHODDEF(int)
 decompress_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
@@ -287,8 +281,7 @@ decompress_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 #define Q11_POS  9
 #define Q02_POS  2
 
-/* smoothing_ok. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00566898
 LOCAL(boolean)
 smoothing_ok (j_decompress_ptr cinfo)
@@ -340,8 +333,7 @@ smoothing_ok (j_decompress_ptr cinfo)
   return smoothing_useful;
 }
 
-/* decompress_smooth_data. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056628f
 METHODDEF(int)
 decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
@@ -539,8 +531,7 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
   return JPEG_SCAN_COMPLETED;
 }
 
-/* jinit_d_coef_controller. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005661a0
 GLOBAL(void)
 jinit_d_coef_controller (j_decompress_ptr cinfo, boolean need_full_buffer)

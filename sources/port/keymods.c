@@ -2,7 +2,6 @@
 /* keymods.c -- the modifier-key scan the port has to synthesise (win 0x004cea20). Notes: Research/notes/keymods.md */
 #include "macport.h"
 
-/* GetKeyModifiers. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cea20
 int32_t GetKeyModifiers(void)
 {

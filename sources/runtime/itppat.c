@@ -61,8 +61,7 @@ typedef struct PpatRecord {
 typedef long long PpatField;
 
 /* PPAT_CheckFileType (a colour 'ppat': type 1, its PixMap at 0x1c, data after it, 72 dpi, a pixel
-   size of 1, 2, 4, 8, 16 or 32; all fields big-endian). STATE: MATCH 100%, exe 187 / obj 187,
-   byte-identical yes. OPEN: none */
+   size of 1, 2, 4, 8, 16 or 32; all fields big-endian). */
 // FUNCTION: EVNOVA 0x0051770e
 unsigned char PPAT_CheckFileType(const unsigned char *data, ULong size)
 {
@@ -113,8 +112,7 @@ unsigned char PPAT_CheckFileType(const unsigned char *data, ULong size)
     (f) = SwapLong(f)
 
 /* PPAT_Decode (load a 'ppat' off a stream: header, PixMap and optional ColorTable, then the
-   unpacked rows at 1, 2, 4 or 8 bits through the palette, 16 or 32 bits direct). STATE: MATCH
-   100%, exe 919 / obj 919, byte-identical yes. OPEN: none */
+   unpacked rows at 1, 2, 4 or 8 bits through the palette, 16 or 32 bits direct). */
 // FUNCTION: EVNOVA 0x00517979
 int32_t PPAT_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
                   ITTransparent *trans, ITBackground *bg)

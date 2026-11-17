@@ -14,8 +14,7 @@ unsigned char Win95UseBackBuffer = 1;           /* 0x00578244, .data; zero is th
 #define kGreenLowMask   0x003f003f               /* blue and green's low bit, two pixels */
 #define kShiftedMask    0xffc0ffc0               /* red and green moved up one, two pixels */
 
-/* VideoGetCurrentMode (BurgerLib VideoGetCurrentMode). STATE: MATCH 100.0%, exe 13 / obj 13,
-   byte-identical yes. OPEN: none */
+/* VideoGetCurrentMode (BurgerLib VideoGetCurrentMode). */
 // FUNCTION: EVNOVA 0x004f9910
 void VideoGetCurrentMode(int32_t *out)
 {
@@ -27,8 +26,7 @@ void VideoGetCurrentMode(int32_t *out)
 
 /* Four fields, three of which must be non-null before the call is worth
    making; a rejected record answers 1. */
-/* VideoSetMode (BurgerLib VideoSetMode). STATE: MATCH 100.0%, exe 29 / obj 29,
-   byte-identical yes. OPEN: none */
+/* VideoSetMode (BurgerLib VideoSetMode). */
 // FUNCTION: EVNOVA 0x004f9940
 int32_t VideoSetMode(int32_t *rec)
 {
@@ -37,8 +35,7 @@ int32_t VideoSetMode(int32_t *rec)
     return SetDisplayToSize(rec[0], rec[1], rec[2], rec[3]);
 }
 
-/* DrawShapeLowLevel (BurgerLib GrGraphicsManager). STATE: MATCH 100.0%, exe 125 / obj 125,
-   byte-identical yes. OPEN: none */
+/* DrawShapeLowLevel (BurgerLib GrGraphicsManager). */
 // FUNCTION: EVNOVA 0x004f99a0
 void DrawShapeLowLevel(Word x, Word y, Word width, Word height, Word skip, void *shape)
 {
@@ -112,8 +109,7 @@ void DrawShapeLowLevel(Word x, Word y, Word width, Word height, Word skip, void 
     }
 }
 
-/* Video555To565 (BurgerLib GrGraphicsManager). STATE: MATCH 100.0%, exe 39 / obj 39,
-   byte-identical yes. OPEN: none */
+/* Video555To565 (BurgerLib GrGraphicsManager). */
 // FUNCTION: EVNOVA 0x004f9b40
 void Video555To565(void)
 {

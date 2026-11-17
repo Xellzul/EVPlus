@@ -28,8 +28,6 @@ static const double DAT_00579690[4] = {          /* 0x00579690, unreferenced */
     0.0, -1.0, 1.0, 2147483648.0
 };
 
-/* adpcm_coder. STATE: MATCH 100%, exe 110 / obj 110, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00507e20
 void adpcm_coder(short indata[], char outdata[], int len,
                  struct adpcm_state *state)
@@ -126,7 +124,6 @@ void adpcm_coder(short indata[], char outdata[], int len,
 /* Decode a voice at a 20.12 step, add it into *out (stereo 16-bit, frames
    long) with linear interpolation, and advance. out 0 decodes only.
    0xff once the voice has run out. */
-/* ADPCM_Mixer. STATE: MATCH 100%, exe 233 / obj 233, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00507f90
 unsigned char ADPCM_Mixer(ULong *data, short **out, ULong frames,
                            ULong step, AdpcmVoice *voice,

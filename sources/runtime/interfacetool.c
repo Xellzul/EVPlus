@@ -33,8 +33,7 @@ extern int32_t HashAppendUnicode(struct HashTable *t, const unsigned short *key,
 #endif
 
 /* _IT_ViewParamText (set a text variable, replacing any old value, in a window's table or, for no
-   window, the global one, created on first use). STATE: MATCH 100%, exe 48 / obj 48, byte-
-   identical yes. OPEN: none */
+   window, the global one, created on first use). */
 // FUNCTION: EVNOVA 0x0051f083
 int32_t _IT_ViewParamText(WindowNode *window, const char *key, const char *value, ParamWideArg unused)
 {
@@ -108,8 +107,7 @@ done:
 #endif
 }
 
-/* IT_ViewParamText (set a text variable). STATE: MATCH 100%, exe 7 / obj 7, byte-identical yes.
-   OPEN: none */
+/* IT_ViewParamText (set a text variable). */
 // FUNCTION: EVNOVA 0x0051f0f2
 int32_t IT_ViewParamText(WindowNode *window, const char *key, const char *value)
 {
@@ -124,7 +122,7 @@ int32_t IT_ViewParamTextWide(WindowNode *window, const char *key, const unsigned
 #endif
 
 /* IT_ViewGetItemRect (the bounds of the control at `index'; -7001 for a negative index, -7005 past the
-   end). STATE: MATCH 100%, exe 45 / obj 45, byte-identical yes. OPEN: none */
+   end). */
 // FUNCTION: EVNOVA 0x0051f109
 int32_t IT_ViewGetItemRect(void *windowRef, int32_t index, ITRect *r)
 {
@@ -152,7 +150,7 @@ done:
 }
 
 /* IT_ViewGetItemEnabled (whether the control at `index' is enabled, message 0x4a; -7001 for a negative
-   index, -7005 past the end). STATE: MATCH 100%, exe 42 / obj 42, byte-identical yes. OPEN: none */
+   index, -7005 past the end). */
 // FUNCTION: EVNOVA 0x0051f16c
 int32_t IT_ViewGetItemEnabled(void *windowRef, int32_t index, unsigned char *enabled)
 {
@@ -184,7 +182,7 @@ done:
 
 /* IT_ViewSetItemRect (move the control at `index' to `r': drawing clipped to nothing meanwhile, the old
    and new areas invalidated, message 0x41, the window refreshed; -7001 for a negative index,
-   -7005 past the end). STATE: MATCH 100%, exe 149 / obj 149, byte-identical yes. OPEN: none */
+   -7005 past the end). */
 // FUNCTION: EVNOVA 0x0051f1cc
 int32_t IT_ViewSetItemRect(void *windowRef, int32_t index, const ITRect *r)
 {
@@ -263,8 +261,7 @@ done:
 /* IT_ViewSetItemVisible (show or hide the control at `index': drawing clipped to nothing meanwhile, its
    area invalidated, the focus moved off it first when it hides, its items rebuilt, the root's
    focusable list rebuilt, the focus taken when it shows and nothing has it; -7001 for a negative
-   index, -7005 past the end). STATE: MATCH 100%, exe 188 / obj 188, byte-identical yes. OPEN:
-   none */
+   index, -7005 past the end). */
 // FUNCTION: EVNOVA 0x0051f35e
 int32_t IT_ViewSetItemVisible(void *windowRef, int32_t index, unsigned char show)
 {
@@ -370,8 +367,7 @@ done:
     return err;
 }
 
-/* IT_ViewSetItemEnabled (enable or disable the control at `index'; IT_ViewSetItemVisible's twin with message 0x4b).
-   STATE: MATCH 100%, exe 188 / obj 188, byte-identical yes. OPEN: none */
+/* IT_ViewSetItemEnabled (enable or disable the control at `index'; IT_ViewSetItemVisible's twin with message 0x4b). */
 // FUNCTION: EVNOVA 0x0051f565
 int32_t IT_ViewSetItemEnabled(void *windowRef, int32_t index, unsigned char enable)
 {
@@ -477,8 +473,6 @@ done:
     return err;
 }
 
-/* IT_ItemHandlerInstall. STATE: MATCH 100%, exe 35 / obj 35 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x0051f76c
 int32_t IT_ItemHandlerInstall(WindowNode *owner, const char *name, ITControlProc proc)
 {
@@ -505,7 +499,7 @@ int32_t IT_ItemHandlerInstall(WindowNode *owner, const char *name, ITControlProc
 }
 
 /* IT_ItemHandlerLookup (a control type's procedure by name: the window's own types first, then the global
-   ones; NULL when unknown). STATE: MATCH 100%, exe 54 / obj 54, byte-identical yes. OPEN: none */
+   ones; NULL when unknown). */
 // FUNCTION: EVNOVA 0x0051f7ca
 ITControlProc IT_ItemHandlerLookup(WindowNode *owner, const char *name)
 {
@@ -533,8 +527,7 @@ ITControlProc IT_ItemHandlerLookup(WindowNode *owner, const char *name)
 }
 
 /* IT_ItemCallbackIsViewEnabled (whether the window a control proc serves and every window above it have
-   WindowNode +0x25 and +0x26 set). STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes. OPEN:
-   none */
+   WindowNode +0x25 and +0x26 set). */
 // FUNCTION: EVNOVA 0x0051f855
 unsigned char IT_ItemCallbackIsViewEnabled(void)
 {
@@ -552,8 +545,7 @@ unsigned char IT_ItemCallbackIsViewEnabled(void)
     return ok;
 }
 
-/* IT_ItemCallbackSoundEvent (tell the served window's callback an event about the served control). STATE:
-   MATCH 100%, exe 16 / obj 16, byte-identical yes. OPEN: none */
+/* IT_ItemCallbackSoundEvent (tell the served window's callback an event about the served control). */
 // FUNCTION: EVNOVA 0x0051f884
 int32_t IT_ItemCallbackSoundEvent(int32_t event)
 {
@@ -570,7 +562,7 @@ int32_t IT_ItemCallbackSoundEvent(int32_t event)
 }
 
 /* IT_ItemCallbackGrabFocus (give the focus to `item' of the served window's root, drawing clipped to the
-   root's bounds meanwhile). STATE: MATCH 100%, exe 52 / obj 52, byte-identical yes. OPEN: none */
+   root's bounds meanwhile). */
 // FUNCTION: EVNOVA 0x0051f8af
 int32_t IT_ItemCallbackGrabFocus(int32_t item)
 {
@@ -601,8 +593,7 @@ int32_t IT_ItemCallbackGrabFocus(int32_t item)
     return err;
 }
 
-/* IT_ItemCallbackDrawRect (repaint an area of the served window's root). STATE: MATCH 100%, exe 21 / obj 21,
-   byte-identical yes. OPEN: none */
+/* IT_ItemCallbackDrawRect (repaint an area of the served window's root). */
 // FUNCTION: EVNOVA 0x0051f924
 int32_t IT_ItemCallbackDrawRect(void *unused, const ITRect *area)
 {
@@ -621,8 +612,7 @@ int32_t IT_ItemCallbackDrawRect(void *unused, const ITRect *area)
 }
 
 /* IT_ItemCallbackGetParam (an attribute of the control a proc serves, or with `inherit' of its nearest
-   enclosing element that has it, within the window's INTERFACE). STATE: MATCH 100%, exe 24 / obj
-   24, byte-identical yes. OPEN: none */
+   enclosing element that has it, within the window's INTERFACE). */
 // FUNCTION: EVNOVA 0x0051f955
 char *IT_ItemCallbackGetParam(const char *key, unsigned char inherit)
 {
@@ -639,8 +629,7 @@ char *IT_ItemCallbackGetParam(const char *key, unsigned char inherit)
 
 /* IT_ItemCallbackGetImage (an image by file name through the root window's preload cache: a cached one is
    answered at once, a pending or new one loaded from the page folder first (a new entry joins the
-   cache); a missing file answers -7203 with no image). STATE: MATCH 100%, exe 159 / obj 159,
-   byte-identical yes. OPEN: none */
+   cache); a missing file answers -7203 with no image). */
 // FUNCTION: EVNOVA 0x0051f993
 int32_t IT_ItemCallbackGetImage(const char *name, ITImage **image, ITImage **mask, ITTransparent *trans)
 {
@@ -716,8 +705,7 @@ done:
     return err;
 }
 
-/* IT_ItemCallbackGetNumber (a number attribute's value). STATE: MATCH 100%, exe 8 / obj 8, byte-identical yes.
-   OPEN: none */
+/* IT_ItemCallbackGetNumber (a number attribute's value). */
 // FUNCTION: EVNOVA 0x0051fb3a
 int32_t IT_ItemCallbackGetNumber(const char *s)
 {
@@ -731,8 +719,7 @@ int32_t IT_ItemCallbackGetNumber(const char *s)
 #endif
 }
 
-/* IT_ItemCallbackGetColor (a colour attribute's value). STATE: MATCH 100%, exe 8 / obj 8, byte-identical yes.
-   OPEN: none */
+/* IT_ItemCallbackGetColor (a colour attribute's value). */
 // FUNCTION: EVNOVA 0x0051fb4c
 ITColor IT_ItemCallbackGetColor(const char *s)
 {
@@ -746,8 +733,7 @@ ITColor IT_ItemCallbackGetColor(const char *s)
 #endif
 }
 
-/* IT_ItemCallbackGetFlag (a boolean attribute's value). STATE: MATCH 100%, exe 8 / obj 8, byte-identical yes.
-   OPEN: none */
+/* IT_ItemCallbackGetFlag (a boolean attribute's value). */
 // FUNCTION: EVNOVA 0x0051fb5e
 unsigned char IT_ItemCallbackGetFlag(const char *s)
 {
@@ -762,8 +748,7 @@ unsigned char IT_ItemCallbackGetFlag(const char *s)
 }
 
 /* IT_ItemCallbackGetAlign (the served control's ALIGN, inherited up to its nearest CENTER element or the
-   INTERFACE; whether there was one). STATE: MATCH 100%, exe 54 / obj 54, byte-identical yes.
-   OPEN: none */
+   INTERFACE; whether there was one). */
 // FUNCTION: EVNOVA 0x0051fb70
 unsigned char IT_ItemCallbackGetAlign(int32_t *align)
 {
@@ -802,8 +787,7 @@ unsigned char IT_ItemCallbackGetAlign(int32_t *align)
 #endif
 }
 
-/* IT_ItemCallbackGetFont (the text style in force at the served control, 0x00540814). STATE: MATCH 100%,
-   exe 25 / obj 25, byte-identical yes. OPEN: none */
+/* IT_ItemCallbackGetFont (the text style in force at the served control, 0x00540814). */
 // FUNCTION: EVNOVA 0x0051fbed
 void IT_ItemCallbackGetFont(char **face, int32_t *size, ULong *style, ITColor *color, char **href)
 {
@@ -818,8 +802,7 @@ void IT_ItemCallbackGetFont(char **face, int32_t *size, ULong *style, ITColor *c
 }
 
 /* IT_ItemCallbackGetNextRun (the served control's next non-empty text after the text `after', with the
-   style in force there and its parent's order; NULL past the last). STATE: MATCH 100%, exe 110 /
-   obj 110, byte-identical yes. OPEN: none */
+   style in force there and its parent's order; NULL past the last). */
 // FUNCTION: EVNOVA 0x0051fc33
 char *IT_ItemCallbackGetNextRun(const char *after, char **face, int32_t *size, ULong *style, ITColor *color,
                    char **href, ULong *order)
@@ -857,8 +840,7 @@ char *IT_ItemCallbackGetNextRun(const char *after, char **face, int32_t *size, U
 }
 
 /* IT_ItemCallbackGetNextNode (the served control's next node in document order after `after', with the
-   style in force there and its parent's order; NULL past the last). STATE: MATCH 100%, exe 103 /
-   obj 103, byte-identical yes. OPEN: none */
+   style in force there and its parent's order; NULL past the last). */
 // FUNCTION: EVNOVA 0x0051fd3d
 ITElement *IT_ItemCallbackGetNextNode(ITElement *after, char **face, int32_t *size, ULong *style,
                         ITColor *color, char **href, ULong *order)

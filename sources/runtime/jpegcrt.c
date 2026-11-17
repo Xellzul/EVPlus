@@ -4,16 +4,14 @@
 #include "win32.h"
 #include "privcrt.h"
 
-/* jpegcrt_malloc (jpeg_get_small, jpeg_get_large). STATE: MATCH, byte-identical (29 B).
-   OPEN: the original's name is unknown. */
+/* jpegcrt_malloc (jpeg_get_small, jpeg_get_large). Note: the original's name is unknown. */
 // FUNCTION: EVNOVA 0x0054dd9c
 void *jpegcrt_malloc(size_t size)
 {
     return size != 0 ? HeapAlloc(GetProcessHeap(), 0, size) : NULL;
 }
 
-/* jpegcrt_free (jpeg_free_small, jpeg_free_large). STATE: MATCH, byte-identical (25 B).
-   OPEN: the original's name is unknown. */
+/* jpegcrt_free (jpeg_free_small, jpeg_free_large). Note: the original's name is unknown. */
 // FUNCTION: EVNOVA 0x0054dd83
 void jpegcrt_free(void *ptr)
 {
@@ -21,8 +19,7 @@ void jpegcrt_free(void *ptr)
         HeapFree(GetProcessHeap(), 0, ptr);
 }
 
-/* jpegcrt_memcpy (MEMCOPY). STATE: MATCH, byte-identical (34 B); the body is
-   pngcrt_memcpy's. OPEN: the original's name is unknown. */
+/* jpegcrt_memcpy (MEMCOPY). Note: the original's name is unknown. */
 // FUNCTION: EVNOVA 0x0054dd61
 void *jpegcrt_memcpy(void *dest, const void *source, size_t len)
 {
@@ -67,8 +64,7 @@ int jpegcrt_memcmp(const void *s1, const void *s2, size_t len)
     return 0;
 }
 
-/* jpegcrt_memset (MEMZERO). STATE: MATCH, byte-identical (29 B); the body is
-   pngcrt_memset's. OPEN: the original's name is unknown. */
+/* jpegcrt_memset (MEMZERO). Note: the original's name is unknown. */
 // FUNCTION: EVNOVA 0x0054dd44
 void *jpegcrt_memset(void *dest, int c, size_t len)
 {

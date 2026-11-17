@@ -464,7 +464,6 @@ const uint32_t FAR * ZEXPORT get_crc_table(void)
 #define DO1 crc = crc_table[0][((int)crc ^ (*buf++)) & 0xff] ^ (crc >> 8)
 #define DO8 DO1; DO1; DO1; DO1; DO1; DO1; DO1; DO1
 
-/* crc32. STATE: MATCH 100%, exe 27 / obj 27, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052d4c8
 uint32_t ZEXPORT crc32(crc, buf, len)
     uint32_t crc;
@@ -498,7 +497,6 @@ uint32_t ZEXPORT crc32(crc, buf, len)
             crc_table[1][(c >> 16) & 0xff] ^ crc_table[0][c >> 24]
 #define DOLIT32 DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4
 
-/* crc32_little. STATE: MATCH 100%, exe 187 / obj 187, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052d1f8
 local uint32_t crc32_little(crc, buf, len)
     uint32_t crc;
@@ -538,7 +536,6 @@ local uint32_t crc32_little(crc, buf, len)
             crc_table[6][(c >> 16) & 0xff] ^ crc_table[7][c >> 24]
 #define DOBIG32 DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4
 
-/* crc32_big. STATE: MATCH 100%, exe 222 / obj 222, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x0052cec0
 local uint32_t crc32_big(crc, buf, len)
     uint32_t crc;

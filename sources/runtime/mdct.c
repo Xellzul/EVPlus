@@ -9,8 +9,7 @@
 #include "mdct.h"
 #include "os.h"
 
-/* mdct_init. STATE: BurgerLib's libvorbis 1.0rc3 (.5f), MATCH, byte-identical (955 B).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00545b80
 void mdct_init(mdct_lookup *lookup,int n){
   int   *bitrev=(int *)_ogg_malloc(sizeof(*bitrev)*(n/4));
@@ -48,8 +47,7 @@ void mdct_init(mdct_lookup *lookup,int n){
   lookup->scale=FLOAT_CONV(4.f/n);
 }
 
-/* mdct_butterfly_8. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005468e0
 STIN void mdct_butterfly_8(DATA_TYPE *x){
   REG_TYPE r0   = x[6] + x[2];
@@ -112,8 +110,7 @@ STIN void mdct_butterfly_16(DATA_TYPE *x){
 	   mdct_butterfly_8(x+8);
 }
 
-/* mdct_butterfly_32 (mdct_butterfly_16 inlined). STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* mdct_butterfly_32 (mdct_butterfly_16 inlined). From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005464d0
 STIN void mdct_butterfly_32(DATA_TYPE *x){
   REG_TYPE r0     = x[30] - x[14];
@@ -177,8 +174,7 @@ STIN void mdct_butterfly_32(DATA_TYPE *x){
 	   mdct_butterfly_16(x+16);
 }
 
-/* mdct_butterfly_first. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00546ae0
 STIN void mdct_butterfly_first(DATA_TYPE *T,
 					DATA_TYPE *x,
@@ -225,8 +221,7 @@ STIN void mdct_butterfly_first(DATA_TYPE *T,
   }while(x2>=x);
 }
 
-/* mdct_butterfly_generic. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00546980
 STIN void mdct_butterfly_generic(DATA_TYPE *T,
 					  DATA_TYPE *x,
@@ -301,8 +296,7 @@ STIN void mdct_butterflies(mdct_lookup *init,
     mdct_butterfly_32(x+j);
 }
 
-/* mdct_clear. STATE: BurgerLib's libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00545f40
 void mdct_clear(mdct_lookup *l){
   if(l){
@@ -362,8 +356,7 @@ STIN void mdct_bitreverse(mdct_lookup *init,
   }while(w0<w1);
 }
 
-/* mdct_backward. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00545f90
 void mdct_backward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out){
   int n=init->n;
@@ -457,9 +450,7 @@ void mdct_backward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out){
   }
 }
 
-/* mdct_forward. STATE: BurgerLib's libvorbis 1.0rc3, MATCH, byte-identical (2253 B). rc3's alloca
-   became _ogg_malloc and _ogg_free.
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00546c30
 void mdct_forward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out){
   int n=init->n;

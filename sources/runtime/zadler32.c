@@ -14,7 +14,6 @@
 
 #define MOD(a) a %= BASE
 
-/* adler32. STATE: MATCH 100%, exe 107 / obj 107, byte-identical. OPEN: none. */
 // FUNCTION: EVNOVA 0x00543278
 uLong ZEXPORT adler32(adler, buf, len)
     uLong adler;

@@ -21,8 +21,6 @@ static __inline unsigned short SwapUShort(const unsigned short *p)
     return t;
 }
 
-/* ImageParseCicn. STATE: MATCH, exe 396 / obj 396, byte-identical yes (1427 bytes).
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d2bd0
 int ImageParseCicn(Image_t *Output, const Word8 *InputPtr)
 {

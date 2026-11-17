@@ -32,8 +32,7 @@ typedef struct vorbis_look_floor{
   int32_t frames;
 } vorbis_look_floor0;
 
-/* _f0_fit. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00556260
 static int32_t _f0_fit(codebook *book,
 		    float *orig,
@@ -57,8 +56,7 @@ static int32_t _f0_fit(codebook *book,
   return(best);
 }
 
-/* floor0_copy_info. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00556450
 static vorbis_info_floor *floor0_copy_info (vorbis_info_floor *i){
   vorbis_info_floor0 *info=(vorbis_info_floor0 *)i;
@@ -67,8 +65,7 @@ static vorbis_info_floor *floor0_copy_info (vorbis_info_floor *i){
   return(ret);
 }
 
-/* floor0_free_info. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005564a0
 static void floor0_free_info(vorbis_info_floor *i){
   vorbis_info_floor0 *info=(vorbis_info_floor0 *)i;
@@ -78,8 +75,7 @@ static void floor0_free_info(vorbis_info_floor *i){
   }
 }
 
-/* floor0_free_look. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x005564e0
 static void floor0_free_look(vorbis_look_floor *i){
   vorbis_look_floor0 *look=(vorbis_look_floor0 *)i;
@@ -92,8 +88,7 @@ static void floor0_free_look(vorbis_look_floor *i){
   }
 }
 
-/* floor0_pack. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00556560
 static void floor0_pack (vorbis_info_floor *i,oggpack_buffer *opb){
   vorbis_info_floor0 *info=(vorbis_info_floor0 *)i;
@@ -108,8 +103,7 @@ static void floor0_pack (vorbis_info_floor *i,oggpack_buffer *opb){
     oggpack_write(opb,info->books[j],8);
 }
 
-/* floor0_unpack. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00556650
 static vorbis_info_floor *floor0_unpack (vorbis_info *vi,oggpack_buffer *opb){
   codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
@@ -139,8 +133,6 @@ static vorbis_info_floor *floor0_unpack (vorbis_info *vi,oggpack_buffer *opb){
   return(NULL);
 }
 
-/* floor0_look. STATE: MATCH 100.0, 209/209 (rc3's rate/2.f under the band's noieeefp).
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x005567b0
 static vorbis_look_floor *floor0_look (vorbis_dsp_state *vd,vorbis_info_mode *mi,
                               vorbis_info_floor *i){
@@ -176,8 +168,7 @@ static vorbis_look_floor *floor0_look (vorbis_dsp_state *vd,vorbis_info_mode *mi
   return look;
 }
 
-/* _curve_to_lpc. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00556a20
 float _curve_to_lpc(float *curve,float *lpc,
 		     vorbis_look_floor0 *l){
@@ -217,8 +208,7 @@ float _curve_to_lpc(float *curve,float *lpc,
   return vorbis_lpc_from_curve(work,lpc,&(l->lpclook));
 }
 
-/* floor0_forward. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00556ec0
 static int floor0_forward(vorbis_block *vb,vorbis_look_floor *in,
 			  float *mdct, const float *logmdct,
@@ -312,8 +302,7 @@ static int floor0_forward(vorbis_block *vb,vorbis_look_floor *in,
   return(val);
 }
 
-/* floor0_inverse1. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00557400
 static void *floor0_inverse1(vorbis_block *vb,vorbis_look_floor *i){
   vorbis_look_floor0 *look=(vorbis_look_floor0 *)i;
@@ -347,8 +336,7 @@ static void *floor0_inverse1(vorbis_block *vb,vorbis_look_floor *i){
   return(NULL);
 }
 
-/* floor0_inverse2. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x00557590
 static int floor0_inverse2(vorbis_block *vb,vorbis_look_floor *i,
 			   void *memo,float *out){

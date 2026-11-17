@@ -5,7 +5,6 @@
 
 EXTERN_C_BEGIN
 
-/* BlitPixieMemCopy (mac _BlitPixieMemCopy). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00474350
 // MAC: _BlitPixieMemCopy i386 0x000c03d0 ppc 0x000cc0cc
 void BlitPixieMemCopy( unsigned char *dst, unsigned char *src, int32_t bytes)

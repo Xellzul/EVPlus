@@ -7,7 +7,6 @@
 ULong gPlatLockOwnerThread;                              /* 0x008705d0 owning thread */
 static int32_t gAtomicCount;                        /* 0x0086b6b8 lock depth */
 
-/* AtomicEnterCritical. STATE: MATCH 100%, exe 12 / obj 12, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00505f03
 void AtomicEnterCritical(void *token)
 {
@@ -23,7 +22,6 @@ void AtomicEnterCritical(void *token)
     gAtomicCount = gAtomicCount + 1;
 }
 
-/* AtomicLeaveCritical. STATE: MATCH 100%, exe 12 / obj 12, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00505f36
 void AtomicLeaveCritical(void *token)
 {
@@ -57,8 +55,7 @@ typedef int32_t (__stdcall *ExchangeAddProc)(int32_t *dest, int32_t delta);
 extern void *gPlatExchangeAddProc;                       /* atplatopen.c */
 
 /* AtomicIncrement (atomic add answering the old value: InterlockedExchangeAdd when resolved
-   and the word aligned, else under the recursive lock). STATE: MATCH 100%, exe 39 / obj 39,
-   byte-identical yes. OPEN: none */
+   and the word aligned, else under the recursive lock). */
 // FUNCTION: EVNOVA 0x00505f66
 int32_t AtomicIncrement(int32_t *value, int32_t delta)
 {
@@ -83,7 +80,6 @@ int32_t AtomicIncrement(int32_t *value, int32_t delta)
     return old;
 }
 
-/* AtomicMaskApply. STATE: MATCH 100%, exe 63 / obj 63, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00505fc2
 unsigned char AtomicMaskApply(ULong *word, ULong bit)
 {
@@ -124,7 +120,6 @@ unsigned char AtomicMaskApply(ULong *word, ULong bit)
     return old;
 }
 
-/* AtomicMaskClear. STATE: MATCH 100%, exe 66 / obj 66, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00506046
 unsigned char AtomicMaskClear(ULong *word, ULong bit)
 {
@@ -165,7 +160,6 @@ unsigned char AtomicMaskClear(ULong *word, ULong bit)
     return old;
 }
 
-/* AtomicMaskTest. STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005060d0
 unsigned char AtomicMaskTest(ULong *word, ULong bit)
 {
@@ -178,7 +172,6 @@ unsigned char AtomicMaskTest(ULong *word, ULong bit)
     return result;
 }
 
-/* _AtomicCheckCritical. STATE: MATCH 100%, exe 13 / obj 13, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005060f4
 unsigned char _AtomicCheckCritical(void)
 {
@@ -194,7 +187,6 @@ unsigned char _AtomicCheckCritical(void)
     return owner;
 }
 
-/* _AtomicResetCritical. STATE: MATCH 100%, exe 3 / obj 3, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00506113
 void _AtomicResetCritical(void)
 {

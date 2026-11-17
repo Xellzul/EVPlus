@@ -78,8 +78,7 @@ extern PrefsNode *PrefFileAddSection(PrefsNode *file, const char *name);
 extern void PrefFileSectionAddEntry(PrefsNode *group, const char *key, const char *value);
 
 /* PrefFileNewFromMemory (BurgerLib PgPrefFile): parse an INI image line by line into
-   sections, "key = value" entries and verbatim lines. STATE: MATCH 100%, exe 149 / obj 149,
-   byte-identical yes. OPEN: none */
+   sections, "key = value" entries and verbatim lines. */
 // FUNCTION: EVNOVA 0x004ffa00
 void *PrefFileNewFromMemory(const char *data, uint32_t length)
 {
@@ -123,7 +122,6 @@ void *PrefFileNewFromMemory(const char *data, uint32_t length)
     return 0;
 }
 
-/* OpenPrefsFile. STATE: MATCH 100%, exe 33 / obj 33 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ffc50
 void *OpenPrefsFile(const char *path)
 {
@@ -139,8 +137,6 @@ void *OpenPrefsFile(const char *path)
     return file;
 }
 
-/* ClosePrefsFile. STATE: MATCH 100%, exe 36 / obj 36 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004ffcc0
 void ClosePrefsFile(PrefsNode *file)
 {
@@ -163,8 +159,6 @@ void ClosePrefsFile(PrefsNode *file)
     }
 }
 
-/* WritePrefsFile. STATE: MATCH 100%, exe 104 / obj 104 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004ffd30
 int32_t WritePrefsFile(PrefsNode *file, const char *path)
 {
@@ -210,7 +204,6 @@ int32_t WritePrefsFile(PrefsNode *file, const char *path)
     return result;
 }
 
-/* PrefsFindGroup. STATE: MATCH 100%, exe 30 / obj 30 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ffeb0
 PrefsNode *PrefsFindGroup(PrefsNode *file, const char *name)
 {
@@ -226,8 +219,7 @@ PrefsNode *PrefsFindGroup(PrefsNode *file, const char *name)
     return 0;
 }
 
-/* PrefFileAddSection (BurgerLib PgPrefFile): a "[name]" line at the end of the file.
-   STATE: MATCH 100.0%, exe 40 / obj 40, byte-identical yes. OPEN: none */
+/* PrefFileAddSection (BurgerLib PgPrefFile): a "[name]" line at the end of the file. */
 // FUNCTION: EVNOVA 0x004fff10
 PrefsNode *PrefFileAddSection(PrefsNode *file, const char *name)
 {
@@ -308,8 +300,6 @@ double PrefFileSectionGetDouble(PrefsNode *group, const char *key, double dflt, 
 /* The value is unquoted into the caller's buffer first; only if that came
    back unchanged AND the value is non-empty does the value replace the
    default, and the copy below runs on whichever survived. */
-/* PrefsGetString. STATE: MATCH 100%, exe 80 / obj 80 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004fff90
 void PrefsGetString(PrefsNode *group, const char *key, const char *dflt,
                     char *out, int32_t outSize)
@@ -340,8 +330,7 @@ void PrefsGetString(PrefsNode *group, const char *key, const char *dflt,
 }
 
 /* PrefFileSectionAddEntry (BurgerLib PgPrefFile): "key = value" as the last line of the
-   section group starts. STATE: MATCH 100.0%, exe 50 / obj 50, byte-identical yes.
-   OPEN: none */
+   section group starts. */
 // FUNCTION: EVNOVA 0x00500080
 void PrefFileSectionAddEntry(PrefsNode *group, const char *key, const char *value)
 {

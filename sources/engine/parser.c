@@ -21,7 +21,6 @@
 #include "render.h"
 #include "stellar.h"
 
-/* Trim. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00448ba0
 // MAC: _Trim i386 0x000147ac ppc 0x00018064
 void Trim(short *pos)
@@ -33,7 +32,6 @@ void Trim(short *pos)
     }
 }
 
-/* GetToken. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00448be0
 // MAC: _GetToken i386 0x000147e9 ppc 0x000180c4
 char GetToken(short *pos)
@@ -163,8 +161,6 @@ char GetToken(short *pos)
     return '?';
 }
 
-/* EvalTestExp. STATE: MATCH 100.0%, exe 227 / obj 227, byte-identical yes (838 bytes).
-   OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x00449020
 // MAC: _EvalTestExp i386 0x00015cd4 ppc 0x00019968
 short EvalTestExp(short *pos)
@@ -300,8 +296,6 @@ short EvalTestExp(short *pos)
 /* Their records: packed, stride 0x8e6 (`id` at the odd offset 0x4d), as LoadPilotData's. */
 #define kRankStride 0x120
 
-/* EvalSetExp (mac _EvalSetExp). STATE: MATCH 100.0%, 875/875, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00449370
 // MAC: _EvalSetExp i386 0x000150fc ppc 0x00018ab0
 void EvalSetExp(void)
@@ -672,8 +666,6 @@ void EvalSetExp(void)
 /* only the registration byte at the tail of the shïp record is read here */
 
 
-/* ParseTextDescription (mac _ParseTextDescription). STATE: MATCH 284/284, byte-identical,
-   once compiled after EvalSetExp, its predecessor in the original object. OPEN: none */
 // FUNCTION: EVNOVA 0x0044a4d0
 // MAC: _ParseTextDescription i386 0x00014bdd ppc 0x00018598
 void ParseTextDescription(void)
@@ -831,7 +823,6 @@ void ParseTextDescription(void)
     }
 }
 
-/* SaveBuffer. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0044a980
 // MAC: _SaveBuffer i386 0x000150ae ppc 0x00018a54
 void *SaveBuffer(void)
@@ -845,7 +836,6 @@ void *SaveBuffer(void)
     return saved;
 }
 
-/* RestoreBuffer. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0044a9d0
 // MAC: _RestoreBuffer i386 0x00015066 ppc 0x00018a00
 void RestoreBuffer(void *saved)

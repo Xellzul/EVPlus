@@ -12,7 +12,6 @@
 
 EXTERN_C_BEGIN
 
-/* SWCreateSpriteWorldFromWindow (mac _SWCreateSpriteWorldFromWindow). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477910
 // MAC: _SWCreateSpriteWorldFromWindow i386 0x000b6e56 ppc 0x000c2954
 short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr srcWindowP,
@@ -75,14 +74,12 @@ short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr src
 }
 
 
-/* SWExitSpriteWorld (mac _SWExitSpriteWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477af0
 // MAC: _SWExitSpriteWorld i386 0x000b70b2 ppc 0x000c2b8c
 void SWExitSpriteWorld(void)
 {
 }
 
-/* SWAddSpriteLayer. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477b00
 // MAC: _SWAddSpriteLayer i386 0x000b71b0 ppc 0x000c2cf4
 void SWAddSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *newSpriteLayerP)
@@ -100,7 +97,6 @@ void SWAddSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *newSpriteLay
     spriteWorldP->tailSpriteLayerP = newSpriteLayerP;
 }
 
-/* SWRemoveSpriteLayer. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477b50
 // MAC: _SWRemoveSpriteLayer i386 0x000b7140 ppc 0x000c2c48
 void SWRemoveSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *oldSpriteLayerP)
@@ -118,7 +114,6 @@ void SWRemoveSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *oldSprite
 }
 
 
-/* SWLockSpriteWorld. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477ba0
 // MAC: _SWLockSpriteWorld i386 0x000b734d ppc 0x000c2ef4
 void SWLockSpriteWorld(SpriteWorldPtr spriteWorldP)
@@ -144,7 +139,6 @@ void SWLockSpriteWorld(SpriteWorldPtr spriteWorldP)
 }
 
 
-/* SWSetPortToBackground. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477c10
 // MAC: _SWSetPortToBackground i386 0x000b744a ppc 0x000c3014
 void SWSetPortToBackground(SpriteWorldPtr spriteWorld)
@@ -154,7 +148,6 @@ void SWSetPortToBackground(SpriteWorldPtr spriteWorld)
     SWSetPortToFrame(spriteWorld->backFrameP);
 }
 
-/* SWSetPortToWorkArea. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477c40
 // MAC: _SWSetPortToWorkArea i386 0x000b7494 ppc 0x000c3058
 void SWSetPortToWorkArea(SpriteWorldPtr spriteWorld)
@@ -165,7 +158,6 @@ void SWSetPortToWorkArea(SpriteWorldPtr spriteWorld)
     SWSetPortToFrame(spriteWorld->workFrameP);
 }
 
-/* SWSetPortToWindow (mac _SWSetPortToWindow). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477c70
 // MAC: _SWSetPortToWindow i386 0x000b74e4 ppc 0x000c3098
 void SWSetPortToWindow(SpriteWorldPtr spriteWorld)
@@ -177,7 +169,6 @@ void SWSetPortToWindow(SpriteWorldPtr spriteWorld)
 }
 
 
-/* SWSetSpriteWorldScreenDrawProc. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477c90
 // MAC: _SWSetSpriteWorldScreenDrawProc i386 0x000b7599 ppc 0x000c3170
 short SWSetSpriteWorldScreenDrawProc(SpriteWorldPtr spriteWorld, DrawProcPtr proc)
@@ -193,7 +184,6 @@ short SWSetSpriteWorldScreenDrawProc(SpriteWorldPtr spriteWorld, DrawProcPtr pro
     return 0;
 }
 
-/* SWSetPostEraseCallBack. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477ce0
 // MAC: _SWSetPostEraseCallBack i386 0x000b76a8 ppc 0x000c32a0
 void SWSetPostEraseCallBack(SpriteWorldPtr spriteWorld, WorldProcPtr proc)
@@ -201,7 +191,6 @@ void SWSetPostEraseCallBack(SpriteWorldPtr spriteWorld, WorldProcPtr proc)
     spriteWorld->postEraseCallBack = proc;
 }
 
-/* SWSetPostDrawCallBack. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477cf0
 // MAC: _SWSetPostDrawCallBack i386 0x000b76b6 ppc 0x000c32a8
 void SWSetPostDrawCallBack(SpriteWorldPtr spriteWorld, WorldProcPtr proc)
@@ -209,7 +198,6 @@ void SWSetPostDrawCallBack(SpriteWorldPtr spriteWorld, WorldProcPtr proc)
     spriteWorld->postDrawCallBack = proc;
 }
 
-/* SWSetSpriteWorldMaxFPS. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477d00
 // MAC: _SWSetSpriteWorldMaxFPS i386 0x000b76c4 ppc 0x000c32b0
 void SWSetSpriteWorldMaxFPS(SpriteWorldPtr spriteWorldP, short framesPerSec)
@@ -226,7 +214,6 @@ void SWSetSpriteWorldMaxFPS(SpriteWorldPtr spriteWorldP, short framesPerSec)
     }
 }
 
-/* SWSetBackgroundColor (mac _SWSetBackgroundColor). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477d60
 // MAC: _SWSetBackgroundColor i386 0x000b7737 ppc 0x000c3324
 void SWSetBackgroundColor(SpriteWorldPtr spriteWorldP, RGBColor *color)
@@ -241,7 +228,6 @@ void SWSetBackgroundColor(SpriteWorldPtr spriteWorldP, RGBColor *color)
 }
 
 
-/* SWStdWorldDrawProc (mac _SWStdWorldDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477de0
 // MAC: _SWStdWorldDrawProc i386 0x000b788a ppc 0x000c34bc
 void SWStdWorldDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
@@ -283,7 +269,6 @@ void SWStdWorldDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
 }
 
 
-/* SWWindowMoved (mac _SWWindowMoved). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477f10
 // MAC: _SWWindowMoved i386 0x000b8d06 ppc 0x000c4c9c
 void SWWindowMoved(SpriteWorldPtr spriteWorldP)
@@ -291,7 +276,6 @@ void SWWindowMoved(SpriteWorldPtr spriteWorldP)
     SWWindowFrameMoved(spriteWorldP->windowFrameP, &spriteWorldP->windRect);
 }
 
-/* SWWindowFrameMoved (mac _SWWindowFrameMoved). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477f30
 // MAC: _SWWindowFrameMoved i386 0x000b7f92 ppc 0x000c3b40
 void SWWindowFrameMoved(SWFrameRec *windowFrameP, Rect *frameRect)
@@ -315,7 +299,6 @@ void SWWindowFrameMoved(SWFrameRec *windowFrameP, Rect *frameRect)
 }
 
 
-/* SWUpdateSpriteWorld (mac _SWUpdateSpriteWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00477fa0
 // MAC: _SWUpdateSpriteWorld i386 0x000b9062 ppc 0x000c4ff0
 void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP, Boolean updateWindow)
@@ -430,7 +413,6 @@ void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP, Boolean updateWindow)
 }
 
 
-/* SWProcessSpriteWorld (mac _SWProcessSpriteWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004781f0
 // MAC: _SWProcessSpriteWorld i386 0x000b8957 ppc 0x000c485c
 void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP)
@@ -566,7 +548,6 @@ void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP)
 SpriteWorldRec *gSWCurrentSpriteWorld;                   /* 0x008706f0 */
 #endif
 
-/* SWAnimateSpriteWorld (mac _SWAnimateSpriteWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478480
 // MAC: _SWAnimateSpriteWorld i386 0x000b95e6 ppc 0x000c5550
 void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
@@ -870,7 +851,6 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
    edi,0x22' then four movzx/mov word pairs. SW_MIN/SW_MAX stay macros: they
    double-evaluate, and the exe re-reads deltaFrameRect.left and .bottom for the pair. */
 
-/* SWCheckIdleSpriteOverlap (mac _SWCheckIdleSpriteOverlap). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478bb0
 // MAC: _SWCheckIdleSpriteOverlap i386 0x000b82a0 ppc 0x000c3efc
 void SWCheckIdleSpriteOverlap(SpriteWorldRec *spriteWorldP, SpritePtr idleSpriteP,
@@ -918,7 +898,6 @@ void SWCheckIdleSpriteOverlap(SpriteWorldRec *spriteWorldP, SpritePtr idleSprite
 }
 
 
-/* SWFindSpritesToBeRemoved (mac _SWFindSpritesToBeRemoved). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478cf0
 // MAC: _SWFindSpritesToBeRemoved i386 0x000b8042 ppc 0x000c3be8
 void SWFindSpritesToBeRemoved(SpriteWorldPtr spriteWorldP)
@@ -946,7 +925,6 @@ void SWFindSpritesToBeRemoved(SpriteWorldPtr spriteWorldP)
     }
 }
 
-/* SWFlagRectAsChanged (mac _SWFlagRectAsChanged). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478d70
 // MAC: _SWFlagRectAsChanged i386 0x000b8758 ppc 0x000c4594
 short SWFlagRectAsChanged(SpriteWorldPtr spriteWorldP, Rect *theChangedRect)
@@ -985,7 +963,6 @@ short SWFlagRectAsChanged(SpriteWorldPtr spriteWorldP, Rect *theChangedRect)
 }
 
 
-/* SWIsWindowInForeground (mac _SWIsWindowInForeground). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478e20
 // MAC: _SWIsWindowInForeground i386 0x000b88cd ppc 0x000c47c8
 #ifdef MACBUILD
@@ -1023,7 +1000,6 @@ Boolean SWIsWindowInForeground(SpriteWorldPtr spriteWorldP)
 }
 #endif
 
-/* AreWeFrontProcess (mac _AreWeFrontProcess). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478e40
 // MAC: _AreWeFrontProcess i386 0x000b8866 ppc 0x000c475c
 Boolean AreWeFrontProcess(void)
@@ -1031,7 +1007,6 @@ Boolean AreWeFrontProcess(void)
     return 1;
 }
 
-/* SWHideAllSprites (mac _SWHideAllSprites). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00478e50
 // MAC: _SWHideAllSprites i386 0x000b8c09 ppc 0x000c4ba4
 void SWHideAllSprites(SpriteWorldPtr spriteWorldP)

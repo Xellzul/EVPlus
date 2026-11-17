@@ -36,8 +36,7 @@ METHODDEF(void) post_process_2pass
 	     JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
 	     JDIMENSION out_rows_avail));
 
-/* start_pass_dpost. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056462f
 METHODDEF(void)
 start_pass_dpost (j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
@@ -79,8 +78,7 @@ start_pass_dpost (j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
   post->starting_row = post->next_row = 0;
 }
 
-/* post_process_1pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005645b7
 METHODDEF(void)
 post_process_1pass (j_decompress_ptr cinfo,
@@ -105,8 +103,7 @@ post_process_1pass (j_decompress_ptr cinfo,
   *out_row_ctr += num_rows;
 }
 
-/* post_process_prepass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0056452a
 METHODDEF(void)
 post_process_prepass (j_decompress_ptr cinfo,
@@ -142,8 +139,7 @@ post_process_prepass (j_decompress_ptr cinfo,
   }
 }
 
-/* post_process_2pass. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005644a1
 METHODDEF(void)
 post_process_2pass (j_decompress_ptr cinfo,
@@ -182,8 +178,7 @@ post_process_2pass (j_decompress_ptr cinfo,
   }
 }
 
-/* jinit_d_post_controller. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x00564418
 GLOBAL(void)
 jinit_d_post_controller (j_decompress_ptr cinfo, boolean need_full_buffer)

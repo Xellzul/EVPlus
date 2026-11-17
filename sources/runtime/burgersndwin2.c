@@ -17,8 +17,7 @@ static void *DirectSoundProcPtr;                 /* 0x0086cb1c */
 #define DSBSTATUS_PLAYING   0x00000001
 #define DSBSTATUS_LOOPING   0x00000004
 
-/* IsIt (BurgerLib SnWinCode, static there). STATE: MATCH, exe 27 / obj 27, byte-identical yes.
-   OPEN: none */
+/* IsIt (BurgerLib SnWinCode, static there). */
 // FUNCTION: EVNOVA 0x0052c950
 static int32_t IsIt(PrivSound *sound, void *data)
 {
@@ -31,8 +30,7 @@ static int32_t IsIt(PrivSound *sound, void *data)
     return 0;
 }
 
-/* StopIt (BurgerLib SnWinCode, static there). STATE: MATCH, exe 46 / obj 46, byte-identical yes.
-   OPEN: none */
+/* StopIt (BurgerLib SnWinCode, static there). */
 // FUNCTION: EVNOVA 0x0052c9b0
 static int32_t StopIt(PrivSound *sound, void *data)
 {
@@ -50,14 +48,14 @@ static int32_t StopIt(PrivSound *sound, void *data)
     return 0;
 }
 
-/* StopASound (BurgerLib SnWinCode). STATE: MATCH, exe 9 / obj 9. OPEN: none */
+/* StopASound (BurgerLib SnWinCode). */
 // FUNCTION: EVNOVA 0x0052ca40
 void StopASound(ULong cookie)
 {
     SoundIterator(StopIt, 0, cookie, 0);
 }
 
-/* DigitalSoundCheckOff (BurgerLib SnWinCode). STATE: MATCH, exe 40 / obj 40. OPEN: none */
+/* DigitalSoundCheckOff (BurgerLib SnWinCode). */
 // FUNCTION: EVNOVA 0x0052ca70
 void DigitalSoundCheckOff(void *data)
 {
@@ -78,7 +76,7 @@ void DigitalSoundCheckOff(void *data)
     }
 }
 
-/* KillDigitalDriver (BurgerLib SnWinCode). STATE: MATCH, exe 30 / obj 30. OPEN: none */
+/* KillDigitalDriver (BurgerLib SnWinCode). */
 // FUNCTION: EVNOVA 0x0052cb10
 void KillDigitalDriver(void)
 {

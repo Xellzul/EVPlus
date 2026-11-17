@@ -15,7 +15,6 @@ EXTERN_C_BEGIN
 #define RLE_FILL        0x4000000
 
 
-/* BlitPixieRLEParsePixels (mac _BlitPixieRLEParsePixels). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00472510
 // MAC: _BlitPixieRLEParsePixels i386 0x000c2875 ppc 0x000cec48
 short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixels,

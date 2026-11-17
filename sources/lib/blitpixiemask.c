@@ -8,7 +8,6 @@
 
 EXTERN_C_BEGIN
 
-/* BlitPixieMask (mac _BlitPixieMask). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00471a70
 // MAC: _BlitPixieMask i386 0x000c0f75 ppc 0x000cce04
 void BlitPixieMask(unsigned char *srcPixels, unsigned char *dstPixels,

@@ -5,7 +5,6 @@
 #include "spriteworld.h"
 
 
-/* SWCreateSprite (mac _SWCreateSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004744a0
 // MAC: _SWCreateSprite i386 0x000a8b60 ppc 0x000b3b4c
 short SWCreateSprite(SpritePtr *newSpriteP, void *spriteStorageP, short maxFrames)

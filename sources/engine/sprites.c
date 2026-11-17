@@ -21,7 +21,6 @@ EXTERN_C_BEGIN
 #define kDefaultSpriteSize 0x20
 
 /* the larger of the frame rect's two dimensions */
-/* GetFrameBiggestSize. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00462340
 // MAC: _GetFrameBiggestSize i386 0x000026a3 ppc 0x000030b8
 short GetFrameBiggestSize(SWFrameRec *frame)
@@ -41,7 +40,6 @@ short GetFrameBiggestSize(SWFrameRec *frame)
 }
 
 /* the current cel's width, but only while the frame index is in range */
-/* GetSpriteXSize. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00462390
 // MAC: _GetSpriteXSize i386 0x000026d4 ppc 0x000030f8
 short GetSpriteXSize(SpriteRec *spr)
@@ -53,7 +51,6 @@ short GetSpriteXSize(SpriteRec *spr)
     return kDefaultSpriteSize;
 }
 
-/* GetSpriteYSize. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004623d0
 // MAC: _GetSpriteYSize i386 0x00002703 ppc 0x00003140
 short GetSpriteYSize(SpriteRec *spr)
@@ -65,7 +62,6 @@ short GetSpriteYSize(SpriteRec *spr)
     return kDefaultSpriteSize;
 }
 
-/* GetStellarSpriteXSize (mac _GetStellarSpriteXSize). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00462410
 // MAC: _GetStellarSpriteXSize i386 0x0000ac91 ppc 0x0000d4c0
 short GetStellarSpriteXSize(short id)
@@ -92,7 +88,6 @@ short GetStellarSpriteXSize(short id)
     return 150;
 }
 
-/* GetMasterShipSpriteXSize (mac _GetMasterShipSpriteXSize). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004624c0
 // MAC: _GetMasterShipSpriteXSize i386 0x0000ad38 ppc 0x0000d5b8
 short GetMasterShipSpriteXSize(short id)

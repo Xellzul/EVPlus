@@ -17,8 +17,7 @@ int ogg_page_bos(ogg_page *og){
   return((int)(og->header[5]&0x02));
 }
 
-/* ogg_page_eos. STATE: genuine libogg 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531050
 int ogg_page_eos(ogg_page *og){
   return((int)(og->header[5]&0x04));
@@ -38,8 +37,7 @@ ogg_int64_t ogg_page_granulepos(ogg_page *og){
   return(((ogg_int64_t)hi<<32)+lo);
 }
 
-/* ogg_page_serialno. STATE: genuine libogg 1.0rc3 (runtime band, a floor).
-   OPEN: -proc pentium4 MATCH (pending the pin). */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531060
 int ogg_page_serialno(ogg_page *og){
   unsigned char *page=og->header;
@@ -125,8 +123,7 @@ static const ogg_uint32_t crc_lookup[256]={
   0xafb010b1,0xab710d06,0xa6322bdf,0xa2f33668,
   0xbcb4666d,0xb8757bda,0xb5365d03,0xb1f740b4};
 
-/* ogg_stream_init. STATE: BurgerLib's libogg 1.0rc3: constant sizes, an unwinding goto chain
-   (MATCH, byte-identical). OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531090
 int ogg_stream_init(ogg_stream_state *os,int serialno){
   if(os){
@@ -151,8 +148,7 @@ int ogg_stream_init(ogg_stream_state *os,int serialno){
   return(-1);
 }
 
-/* ogg_stream_clear. STATE: BurgerLib's libogg 1.0rc3 (runtime band, a floor).
-   OPEN: -proc pentium4 MATCH (pending the pin). */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531180
 void ogg_stream_clear(ogg_stream_state *os){
   if(os){
@@ -182,8 +178,7 @@ static void _os_lacing_expand(ogg_stream_state *os,int32_t needed){
   }
 }
 
-/* ogg_page_checksum_set. STATE: BurgerLib's libogg 1.0rc3: header in a local, pointer-walking
-   countdown loops, byte casts (MATCH, byte-identical). OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x005311e0
 void ogg_page_checksum_set(ogg_page *og){
   if(og){
@@ -221,8 +216,7 @@ void ogg_page_checksum_set(ogg_page *og){
   }
 }
 
-/* ogg_sync_init. STATE: BurgerLib's libogg 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531290
 int ogg_sync_init(ogg_sync_state *oy){
   if(oy){
@@ -231,8 +225,7 @@ int ogg_sync_init(ogg_sync_state *oy){
   return(0);
 }
 
-/* ogg_sync_clear. STATE: BurgerLib's libogg 1.0rc3 (runtime band, a floor).
-   OPEN: -proc pentium4 MATCH (pending the pin). */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x005312c0
 int ogg_sync_clear(ogg_sync_state *oy){
   if(oy){
@@ -242,8 +235,7 @@ int ogg_sync_clear(ogg_sync_state *oy){
   return(0);
 }
 
-/* ogg_sync_buffer. STATE: BurgerLib's libogg 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531300
 char *ogg_sync_buffer(ogg_sync_state *oy, int32_t size){
 
@@ -263,8 +255,7 @@ char *ogg_sync_buffer(ogg_sync_state *oy, int32_t size){
   return((char *)oy->data+oy->fill);
 }
 
-/* ogg_sync_wrote. STATE: genuine libogg 1.0rc3 (runtime band, a floor).
-   OPEN: none (MATCH at the committed line too). */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531390
 int ogg_sync_wrote(ogg_sync_state *oy, int32_t bytes){
   bytes+=oy->fill;
@@ -273,8 +264,7 @@ int ogg_sync_wrote(ogg_sync_state *oy, int32_t bytes){
   return(0);
 }
 
-/* ogg_sync_pageseek. STATE: BurgerLib's libogg 1.0rc3, MATCH, byte-identical (554 B).
-   OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x005313b0
 int32_t ogg_sync_pageseek(ogg_sync_state *oy,ogg_page *og){
   unsigned char *page=oy->data+oy->returned;
@@ -348,8 +338,7 @@ int32_t ogg_sync_pageseek(ogg_sync_state *oy,ogg_page *og){
   return(-(next-page));
 }
 
-/* ogg_sync_pageout. STATE: genuine libogg 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x005315e0
 int ogg_sync_pageout(ogg_sync_state *oy, ogg_page *og){
 
@@ -370,9 +359,7 @@ int ogg_sync_pageout(ogg_sync_state *oy, ogg_page *og){
   }
 }
 
-/* ogg_stream_pagein. STATE: BurgerLib's libogg 1.0rc3, MATCH, byte-identical (1207 B): the two
-   inlined expand helpers keep storage in a local, body's needed is a size_t.
-   OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531640
 int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
   unsigned char *header=og->header;
@@ -487,8 +474,7 @@ int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
   return(0);
 }
 
-/* _packetout. STATE: BurgerLib's libogg 1.0rc3, the packet block under `if(op || adv)' (one
-   return(1)) (MATCH, byte-identical). OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531b00
 static int _packetout(ogg_stream_state *os,ogg_packet *op,int adv){
 
@@ -533,8 +519,7 @@ static int _packetout(ogg_stream_state *os,ogg_packet *op,int adv){
   return(1);
 }
 
-/* ogg_stream_packetout. STATE: genuine libogg 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libogg 1. */
 // FUNCTION: EVNOVA 0x00531c60
 int ogg_stream_packetout(ogg_stream_state *os,ogg_packet *op){
   return _packetout(os,op,1);

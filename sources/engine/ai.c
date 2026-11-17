@@ -34,7 +34,6 @@ short aiComplexity;
 
 EXTERN_C_BEGIN
 
-/* AIDispatch (mac _AIDispatch). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00401000
 // MAC: _AIDispatch i386 0x0008fb52 ppc 0x0009b654
 void AIDispatch(ShipObj *ship, Boolean noBrains)
@@ -213,9 +212,6 @@ void AIDispatch(ShipObj *ship, Boolean noBrains)
 #define kScanRange          100.0F
 #define kScanChance         75
 
-/* ScanPlayer (mac _ScanPlayer). STATE: MATCH 100.0%, exe 1095 / obj 1095, byte-identical yes
-   (4103 bytes, relocations masked).
-   OPEN: nothing in the body; the .data literal ORDER is the shared O1 object's. see notes */
 // FUNCTION: EVNOVA 0x00401800
 // MAC: _ScanPlayer i386 0x0007e46e ppc 0x000880c4
 void ScanPlayer(ShipObj *ship)
@@ -462,7 +458,6 @@ void ScanPlayer(ShipObj *ship)
     }
 }
 
-/* AISetup. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00402810
 // MAC: _AISetup i386 0x0007f3e2 ppc 0x00088eb8
 void AISetup(ShipObj *ship)
@@ -477,7 +472,7 @@ void AISetup(ShipObj *ship)
 }
 
 #ifndef MAC1010 /* not in 1.0.10 */
-/* RecentlyVisitedStellarInSystem (mac _RecentlyVisitedStellarInSystem, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* RecentlyVisitedStellarInSystem (mac _RecentlyVisitedStellarInSystem, dead on win: uncalled, the linker strips it). */
 // MAC: _RecentlyVisitedStellarInSystem i386 0x0007f429 ppc 0x00088ee8
 Boolean RecentlyVisitedStellarInSystem(ShipObj *ship, short sys)
 {
@@ -499,7 +494,6 @@ Boolean RecentlyVisitedStellarInSystem(ShipObj *ship, short sys)
 }
 #endif
 
-/* WimpyTraderAI. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00402860
 // MAC: _WimpyTraderAI i386 0x0008b029 ppc 0x00096590
 void WimpyTraderAI(ShipObj *ship)
@@ -541,7 +535,6 @@ void WimpyTraderAI(ShipObj *ship)
         AICallForHelp(ship);
 }
 
-/* MinerAI. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00402980
 // MAC: _MinerAI i386 0x0008b202 ppc 0x000967d8
 void MinerAI(ShipObj *ship)
@@ -629,7 +622,6 @@ void MinerAI(ShipObj *ship)
 
 #define kEscortRange     0x4e2
 
-/* BraveTraderAI. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00402bd0
 // MAC: _BraveTraderAI i386 0x0008b493 ppc 0x00096ab4
 void BraveTraderAI(ShipObj *ship)
@@ -688,7 +680,6 @@ void BraveTraderAI(ShipObj *ship)
 
 #define kNeverRetreat       (-32767)
 
-/* WarshipAI. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00402e50
 // MAC: _WarshipAI i386 0x0008b729 ppc 0x00096e14
 void WarshipAI(ShipObj *ship)
@@ -907,7 +898,6 @@ void WarshipAI(ShipObj *ship)
 #define kBoardCashInDelay   100.0f
 #define kBackOffDelay       120.0f
 
-/* PirateWarshipAI (mac _PirateWarshipAI). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004038b0
 // MAC: _PirateWarshipAI i386 0x0008c2d2 ppc 0x00097d20
 void PirateWarshipAI(ShipObj *ship)
@@ -1044,7 +1034,6 @@ void PirateWarshipAI(ShipObj *ship)
 
 #define kHailFirstIndex     381
 
-/* InterceptorAI. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00403de0
 // MAC: _InterceptorAI i386 0x0008c895 ppc 0x00098428
 void InterceptorAI(ShipObj *ship)
@@ -1274,7 +1263,6 @@ void InterceptorAI(ShipObj *ship)
 #define kVoiceMsgAttack     1
 #define kNoTarget           0x226     /* FindNearestThreatToParent: any threat */
 
-/* EscortAI. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004048a0
 // MAC: _EscortAI i386 0x000838d2 ppc 0x0008ddf4
 void EscortAI(ShipObj *ship)
@@ -1468,10 +1456,6 @@ void EscortAI(ShipObj *ship)
 
 #define kMaxTargetRangeSq  36000000.0f  /* 6000^2, hand-verified at 0x00575060 */
 
-/* DefenseShipAI (mac _DefenseShipAI). STATE: MATCH 100.0% (163 exact, 10 reloc-equiv, 0 mismatched; exe 173 /
-   obj 173), frame 0x18 EXACT, 6 of 6 slots, relocregcheck 0 of 10, call/imm/fcmp censuses
-   exact, poolcheck 1 of 1; byte-identical pending the next regate --update (bytediff reads
-   the baseline). OPEN: nothing. */
 // FUNCTION: EVNOVA 0x00405120
 // MAC: _DefenseShipAI i386 0x0007f7ed ppc 0x00089384
 void DefenseShipAI(ShipObj *ship)
@@ -1541,9 +1525,6 @@ void DefenseShipAI(ShipObj *ship)
     }
 }
 
-/* DeathStarAI. STATE: MATCH 100.0%, exe 130 / obj 130, frame 0x4; byte identity unchecked
-   until the next regate (bytediff covers baseline MATCHes only).
-   OPEN: none. One counter `i' serves both scans; a second `j' was the extra entity. */
 // FUNCTION: EVNOVA 0x004053c0
 // MAC: _DeathStarAI i386 0x0008c125 ppc 0x00097b30
 void DeathStarAI(ShipObj *ship)
@@ -1608,8 +1589,6 @@ void DeathStarAI(ShipObj *ship)
     }
 }
 
-/* HighLevelAIHandler (mac _HighLevelAIHandler). STATE: MATCH 100%, exe 2492 / obj
-   2492, frame 0x224 exact. OPEN: none in the body; see notes. */
 // FUNCTION: EVNOVA 0x00405590
 // MAC: _HighLevelAIHandler i386 0x0008d453 ppc 0x00098fdc
 void HighLevelAIHandler(ShipObj *ship)
@@ -2323,9 +2302,6 @@ void HighLevelAIHandler(ShipObj *ship)
         ship->aiSubstate = kSubLoJack;
 }
 
-/* LowLevelAIHandler (mac _LowLevelAIHandler). STATE: MATCH 100% (3963 exact, 477
-   reloc-equivalent), exe 4440 / obj 4440, byte-identical yes (17982 bytes), relocregcheck 0 of
-   477. OPEN: none. Notes: Research/notes/lowlevelai.md */
 // FUNCTION: EVNOVA 0x00408150
 // MAC: _LowLevelAIHandler i386 0x000851da ppc 0x000901c4
 void LowLevelAIHandler(ShipObj *ship)
@@ -3204,7 +3180,6 @@ void SelectRandomJumpDest(ShipObj *ship)
 
 #define kPlayFieldLimit     0x3e8
 
-/* SelectRandomStellarDest. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040c790
 // MAC: _SelectRandomStellarDest i386 0x000805de ppc 0x0008a3a8
 short SelectRandomStellarDest(ShipObj *ship, unsigned char allowSpecial, Boolean plainOnly)
@@ -3319,7 +3294,6 @@ short SelectRandomStellarDest(ShipObj *ship, unsigned char allowSpecial, Boolean
     return -1;
 }
 
-/* SelectNearestAnyStellar (mac _SelectNearestAnyStellar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040cc10
 // MAC: _SelectNearestAnyStellar i386 0x0007fb00 ppc 0x00089750
 short SelectNearestAnyStellar(ShipObj *ship, short exclude)
@@ -3359,7 +3333,6 @@ short SelectNearestAnyStellar(ShipObj *ship, short exclude)
     return chosen;
 }
 
-/* AIShouldLeaveSystem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040cd80
 Boolean AIShouldLeaveSystem(ShipObj *ship, short sys)
 {
@@ -3381,7 +3354,6 @@ Boolean AIShouldLeaveSystem(ShipObj *ship, short sys)
     return 0;
 }
 
-/* AIFireTurret. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040ce00
 // MAC: _AIFireTurret i386 0x00080ad3 ppc 0x0008a8f8
 void AIFireTurret(ShipObj *ship)
@@ -3464,8 +3436,6 @@ void AIFireTurret(ShipObj *ship)
 
 #define kRangeMargin     0.95
 
-/* AIFireMissile (mac _AIFireMissile). STATE: MATCH 100.0%, exe 179 / obj 179, byte-identical
-   yes. OPEN: none. */
 // FUNCTION: EVNOVA 0x0040d220
 // MAC: _AIFireMissile i386 0x0008115d ppc 0x0008afe4
 void AIFireMissile(ShipObj *me)
@@ -3512,8 +3482,6 @@ void AIFireMissile(ShipObj *me)
 #define kDamageTypes            2
 #define kRangeScale             2.5
 
-/* AIFireGun. STATE: MATCH 100.0%, exe 229 / obj 229, byte-identical yes.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x0040d470
 // MAC: _AIFireGun i386 0x0007feb6 ppc 0x00089b98
 void AIFireGun(ShipObj *ship, Boolean allowUnguided)
@@ -3597,8 +3565,6 @@ void AIFireGun(ShipObj *ship, Boolean allowUnguided)
  * weapon index the ship can actually fire wins.
  */
 
-/* AIFireGunUntargeted (mac _AIFireGunUntargeted). STATE: MATCH 100.0%, exe 83 / obj 83, relocregcheck 0 of 7. `guidance' is read
-   from weaponStats[i] at each test; `i' is declared first. OPEN: none */
 // FUNCTION: EVNOVA 0x0040d7e0
 // MAC: _AIFireGunUntargeted i386 0x00080425 ppc 0x0008a164
 void AIFireGunUntargeted(ShipObj *ship)
@@ -3648,7 +3614,6 @@ void AIFireGunUntargeted(ShipObj *ship)
         ship->fireQueued = 1;
 }
 
-/* AIFirePlanetGun (mac _AIFirePlanetGun). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040d910
 // MAC: _AIFirePlanetGun i386 0x00080536 ppc 0x0008a2c0
 void AIFirePlanetGun(ShipObj *ship)
@@ -3671,7 +3636,6 @@ void AIFirePlanetGun(ShipObj *ship)
     }
 }
 
-/* AILaunchFighter (mac _AILaunchFighter). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040d9a0
 // MAC: _AILaunchFighter i386 0x00081372 ppc 0x0008b224
 void AILaunchFighter(ShipObj *ship)
@@ -3714,7 +3678,6 @@ void AILaunchFighter(ShipObj *ship)
     }
 }
 
-/* DrawHighGoalAbbreviation (mac _DrawHighGoalAbbreviation). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040db70
 // MAC: _DrawHighGoalAbbreviation i386 0x00081512 ppc 0x0008b420
 void DrawHighGoalAbbreviation(short goal)
@@ -3777,7 +3740,6 @@ void DrawHighGoalAbbreviation(short goal)
  * compares in place of a `short`'s 16-bit ones.
  */
 
-/* DrawLowGoalAbbreviation (mac _DrawLowGoalAbbreviation). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040ddc0
 // MAC: _DrawLowGoalAbbreviation i386 0x0008169e ppc 0x0008b5ec
 void DrawLowGoalAbbreviation(short goal)
@@ -3835,7 +3797,6 @@ void DrawLowGoalAbbreviation(short goal)
         DrawString("\pEnterHG");
 }
 
-/* SelectWarshipTarget. STATE: MATCH 100.0%, exe 1352 / obj 1352 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0040e020
 // MAC: _SelectWarshipTarget i386 0x00089d5e ppc 0x000951f0
 void SelectWarshipTarget(ShipObj *ship)
@@ -4205,7 +4166,6 @@ void SelectWarshipTarget(ShipObj *ship)
     }
 }
 
-/* IsThreatToPlayer (mac _IsThreatToPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040f6d0
 // MAC: _IsThreatToPlayer i386 0x0007f501 ppc 0x00088ff8
 Boolean IsThreatToPlayer(ShipObj *ship)
@@ -4223,7 +4183,6 @@ Boolean IsThreatToPlayer(ShipObj *ship)
     return 0;
 }
 
-/* ExtendedIsThreatToPlayer (mac _ExtendedIsThreatToPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040f780
 // MAC: _ExtendedIsThreatToPlayer i386 0x00081b70 ppc 0x0008bba0
 Boolean ExtendedIsThreatToPlayer(ShipObj *ship)
@@ -4282,7 +4241,6 @@ Boolean ExtendedIsThreatToPlayer(ShipObj *ship)
     ((s) != kAIStateInspect && (s) != kAIStateRefuel && (s) != kAIStateRepair && (s) != kAIStateFlyPr \
      && (s) != kAIStateHypPr && (s) != kAIStateGoHome && (s) != kAIStateProtect && (s) != kAIStateDestStel)
 
-/* ExtendedIsThreatToShip (mac _ExtendedIsThreatToShip). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040faa0
 // MAC: _ExtendedIsThreatToShip i386 0x00081a27 ppc 0x0008ba0c
 Boolean ExtendedIsThreatToShip(ShipObj *self, ShipObj *other)
@@ -4314,7 +4272,7 @@ Boolean ExtendedIsThreatToShip(ShipObj *self, ShipObj *other)
     return 0;
 }
 
-/* IsThreatToShip (mac _IsThreatToShip, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* IsThreatToShip (mac _IsThreatToShip, dead on win: uncalled, the linker strips it). */
 // MAC: _IsThreatToShip i386 0x00081faf ppc 0x0008c0c8
 Boolean IsThreatToShip(ShipObj *self, ShipObj *other)
 {
@@ -4334,7 +4292,6 @@ Boolean IsThreatToShip(ShipObj *self, ShipObj *other)
     return 0;
 }
 
-/* IsShipThreatened (mac _IsShipThreatened). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040fc00
 // MAC: _IsShipThreatened i386 0x00082068 ppc 0x0008c1ac
 Boolean IsShipThreatened(ShipObj *ship)
@@ -4359,7 +4316,6 @@ Boolean IsShipThreatened(ShipObj *ship)
     return 0;
 }
 
-/* IsRefuellingPlayer (mac _IsRefuellingPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040fca0
 // MAC: _IsRefuellingPlayer i386 0x000820fd ppc 0x0008c298
 Boolean IsRefuellingPlayer(ShipObj *ship)
@@ -4371,7 +4327,6 @@ Boolean IsRefuellingPlayer(ShipObj *ship)
     return 0;
 }
 
-/* IsRepairingPlayer (mac _IsRepairingPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0040fce0
 // MAC: _IsRepairingPlayer i386 0x0008213a ppc 0x0008c304
 Boolean IsRepairingPlayer(ShipObj *ship)
@@ -4383,9 +4338,6 @@ Boolean IsRepairingPlayer(ShipObj *ship)
     return 0;
 }
 
-/* AIDoesShipLikePlayer. STATE: MATCH 100.0%, exe 289 / obj 289, relocregcheck 0 of 35.
-   The system-government test is written `govt >= 0' first, the unowned-system arm second.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x0040fd20
 // MAC: _AIDoesShipLikePlayer i386 0x00082177 ppc 0x0008c370
 Boolean AIDoesShipLikePlayer(ShipObj *ship)
@@ -4473,7 +4425,6 @@ dislike:
     return 0;
 }
 
-/* IsPlayerThreatened (mac _IsPlayerThreatened). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410060
 // MAC: _IsPlayerThreatened i386 0x00082442 ppc 0x0008c6b0
 Boolean IsPlayerThreatened(void)
@@ -4487,7 +4438,6 @@ Boolean IsPlayerThreatened(void)
     return 0;
 }
 
-/* IsPlayerThreatenedByMyEnemy (mac _IsPlayerThreatenedByMyEnemy). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004100a0
 // MAC: _IsPlayerThreatenedByMyEnemy i386 0x00082483 ppc 0x0008c71c
 Boolean IsPlayerThreatenedByMyEnemy(ShipObj *ship)
@@ -4503,7 +4453,6 @@ Boolean IsPlayerThreatenedByMyEnemy(ShipObj *ship)
     return 0;
 }
 
-/* IsShipThreatenedByMyEnemy (mac _IsShipThreatenedByMyEnemy). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410110
 // MAC: _IsShipThreatenedByMyEnemy i386 0x000824f6 ppc 0x0008c7c0
 Boolean IsShipThreatenedByMyEnemy(ShipObj *ship, ShipObj *me)
@@ -4524,7 +4473,6 @@ Boolean IsShipThreatenedByMyEnemy(ShipObj *ship, ShipObj *me)
     return 0;
 }
 
-/* IsShipMyEnemy (mac _IsShipMyEnemy). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004101d0
 // MAC: _IsShipMyEnemy i386 0x0008196c ppc 0x0008b93c
 Boolean IsShipMyEnemy(ShipObj *ship, ShipObj *other)
@@ -4550,7 +4498,6 @@ Boolean IsShipMyEnemy(ShipObj *ship, ShipObj *other)
     return 0;
 }
 
-/* IsShipFightingMe. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004102b0
 // MAC: _IsShipFightingMe i386 0x000827fa ppc 0x0008cb68
 Boolean IsShipFightingMe(ShipObj *ship, ShipObj *other)
@@ -4560,7 +4507,6 @@ Boolean IsShipFightingMe(ShipObj *ship, ShipObj *other)
     return 0;
 }
 
-/* DoGoodSamaritan. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004102e0
 // MAC: _DoGoodSamaritan i386 0x00082823 ppc 0x0008cb94
 void DoGoodSamaritan(ShipObj *victim, ShipObj *attacker)
@@ -4642,7 +4588,6 @@ void DoGoodSamaritan(ShipObj *victim, ShipObj *attacker)
     }
 }
 
-/* AIMakeShipLeave (mac _AIMakeShipLeave). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410670
 // MAC: _AIMakeShipLeave i386 0x0007e2b0 ppc 0x00087eb8
 void AIMakeShipLeave(ShipObj *ship)
@@ -4654,7 +4599,6 @@ void AIMakeShipLeave(ShipObj *ship)
     ship->jumpTick = ReadTick();
 }
 
-/* AIMakeShipJumpWithParent (mac _AIMakeShipJumpWithParent). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004106b0
 // MAC: _AIMakeShipJumpWithParent i386 0x00082bb6 ppc 0x0008ced0
 void AIMakeShipJumpWithParent(ShipObj *ship)
@@ -4668,7 +4612,6 @@ void AIMakeShipJumpWithParent(ShipObj *ship)
     }
 }
 
-/* AIMakeShipAttackPlayer (mac _AIMakeShipAttackPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410700
 // MAC: _AIMakeShipAttackPlayer i386 0x00089c3e ppc 0x000950b0
 void AIMakeShipAttackPlayer(ShipObj *ship)
@@ -4690,7 +4633,6 @@ void AIMakeShipAttackPlayer(ShipObj *ship)
     ship->targetShip = 0;
 }
 
-/* AIFightThreatToPlayer (mac _AIFightThreatToPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004107e0
 // MAC: _AIFightThreatToPlayer i386 0x0008183c ppc 0x0008b7cc
 void AIFightThreatToPlayer(ShipObj *ship)
@@ -4723,7 +4665,6 @@ void AIFightThreatToPlayer(ShipObj *ship)
     }
 }
 
-/* AIFightThreatToParent (mac _AIFightThreatToParent). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410900
 // MAC: _AIFightThreatToParent i386 0x00081de6 ppc 0x0008becc
 void AIFightThreatToParent(ShipObj *ship)
@@ -4784,7 +4725,7 @@ void AIFightThreatToParent(ShipObj *ship)
     }
 }
 
-/* AIMakeShipAttackShip (mac _AIMakeShipAttackShip, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* AIMakeShipAttackShip (mac _AIMakeShipAttackShip, dead on win: uncalled, the linker strips it). */
 // MAC: _AIMakeShipAttackShip i386 0x00082c44 ppc 0x0008cf84
 void AIMakeShipAttackShip(ShipObj *ship, ShipObj *target)
 {
@@ -4792,7 +4733,7 @@ void AIMakeShipAttackShip(ShipObj *ship, ShipObj *target)
     ship->targetShip = target->index;
 }
 
-/* AIMakeShipWait (mac _AIMakeShipWait, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* AIMakeShipWait (mac _AIMakeShipWait, dead on win: uncalled, the linker strips it). */
 // MAC: _AIMakeShipWait i386 0x00082c63 ppc 0x0008cf9c
 void AIMakeShipWait(ShipObj *ship)
 {
@@ -4801,7 +4742,6 @@ void AIMakeShipWait(ShipObj *ship)
     ship->targetStellar = -1;
 }
 
-/* AIFightEnemyThreatToPlayer (mac _AIFightEnemyThreatToPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410b00
 // MAC: _AIFightEnemyThreatToPlayer i386 0x00082c80 ppc 0x0008cfb8
 void AIFightEnemyThreatToPlayer(ShipObj *ship)
@@ -4837,7 +4777,6 @@ void AIFightEnemyThreatToPlayer(ShipObj *ship)
     }
 }
 
-/* AIMakeShipRefuelPlayer (mac _AIMakeShipRefuelPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410c30
 // MAC: _AIMakeShipRefuelPlayer i386 0x00082dbb ppc 0x0008d150
 void AIMakeShipRefuelPlayer(ShipObj *ship)
@@ -4850,7 +4789,6 @@ void AIMakeShipRefuelPlayer(ShipObj *ship)
     ship->aiTimer = -1.0f;
 }
 
-/* AIMakeShipRepairPlayer (mac _AIMakeShipRepairPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410c70
 // MAC: _AIMakeShipRepairPlayer i386 0x00082df2 ppc 0x0008d184
 void AIMakeShipRepairPlayer(ShipObj *ship)
@@ -4863,7 +4801,6 @@ void AIMakeShipRepairPlayer(ShipObj *ship)
     ship->aiTimer = -1.0f;
 }
 
-/* AIMakeFighterReturn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410cb0
 // MAC: _AIMakeFighterReturn i386 0x00082e29 ppc 0x0008d1b8
 void AIMakeFighterReturn(ShipObj *ship)
@@ -4874,7 +4811,6 @@ void AIMakeFighterReturn(ShipObj *ship)
     ship->aiSubstate = kSubLoJack;
 }
 
-/* AIIsFighterReturning. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410ce0
 // MAC: _AIIsFighterReturning i386 0x00082e54 ppc 0x0008d1e0
 Boolean AIIsFighterReturning(ShipObj *ship)
@@ -4884,7 +4820,6 @@ Boolean AIIsFighterReturning(ShipObj *ship)
     return 0;
 }
 
-/* AIMakeEscortFlyInForm. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410d10
 // MAC: _AIMakeEscortFlyInForm i386 0x00089b8e ppc 0x00094fe8
 void AIMakeEscortFlyInForm(ShipObj *ship)
@@ -4907,7 +4842,6 @@ void AIMakeEscortFlyInForm(ShipObj *ship)
     }
 }
 
-/* AIMakeShipStopJumping (mac _AIMakeShipStopJumping). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410dd0
 // MAC: _AIMakeShipStopJumping i386 0x00082e77 ppc 0x0008d208
 void AIMakeShipStopJumping(ShipObj *ship)
@@ -4922,7 +4856,6 @@ void AIMakeShipStopJumping(ShipObj *ship)
     ship->speedLimit = 0;
 }
 
-/* AIMakeShipJumpIn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410e20
 // MAC: _AIMakeShipJumpIn i386 0x00082ebb ppc 0x0008d248
 void AIMakeShipJumpIn(ShipObj *ship)
@@ -4935,7 +4868,6 @@ void AIMakeShipJumpIn(ShipObj *ship)
     ship->weapGlow = 0;
 }
 
-/* AIIsShipJumping (mac _AIIsShipJumping). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410e80
 // MAC: _AIIsShipJumping i386 0x00082bf9 ppc 0x0008cf40
 Boolean AIIsShipJumping(ShipObj *ship)
@@ -4947,7 +4879,6 @@ Boolean AIIsShipJumping(ShipObj *ship)
     return 0;
 }
 
-/* AIIsShipJumpingIn (mac _AIIsShipJumpingIn). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410ec0
 // MAC: _AIIsShipJumpingIn i386 0x00082f12 ppc 0x0008d2d4
 Boolean AIIsShipJumpingIn(ShipObj *ship)
@@ -4957,21 +4888,20 @@ Boolean AIIsShipJumpingIn(ShipObj *ship)
     return 0;
 }
 
-/* IsShipDocking (mac _IsShipDocking, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* IsShipDocking (mac _IsShipDocking, dead on win: uncalled, the linker strips it). */
 // MAC: _IsShipDocking i386 0x00082f28 ppc 0x0008d2ec
 Boolean IsShipDocking(ShipObj *ship)
 {
     return ship->aiState == kAIStateGoHome;
 }
 
-/* IsShipInForm (mac _IsShipInForm, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* IsShipInForm (mac _IsShipInForm, dead on win: uncalled, the linker strips it). */
 // MAC: _IsShipInForm i386 0x00082f3e ppc 0x0008d304
 Boolean IsShipInForm(ShipObj *ship)
 {
     return ship->aiState == kAIStateFlyPr;
 }
 
-/* IsShipInCloseForm (mac _IsShipInCloseForm). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410ee0
 // MAC: _IsShipInCloseForm i386 0x00082f54 ppc 0x0008d31c
 Boolean IsShipInCloseForm(ShipObj *ship)
@@ -4981,7 +4911,6 @@ Boolean IsShipInCloseForm(ShipObj *ship)
     return 0;
 }
 
-/* IsShipAttacking. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00410f00
 // MAC: _IsShipAttacking i386 0x00082f6a ppc 0x0008d334
 Boolean IsShipAttacking(ShipObj *ship)
@@ -4991,22 +4920,20 @@ Boolean IsShipAttacking(ShipObj *ship)
     return 0;
 }
 
-/* IsShipRetreating (mac _IsShipRetreating, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* IsShipRetreating (mac _IsShipRetreating, dead on win: uncalled, the linker strips it). */
 // MAC: _IsShipRetreating i386 0x00082f80 ppc 0x0008d34c
 Boolean IsShipRetreating(ShipObj *ship)
 {
     return ship->aiState == kAIStateDefRet;
 }
 
-/* IsShipWaiting (mac _IsShipWaiting, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* IsShipWaiting (mac _IsShipWaiting, dead on win: uncalled, the linker strips it). */
 // MAC: _IsShipWaiting i386 0x00082f96 ppc 0x0008d364
 Boolean IsShipWaiting(ShipObj *ship)
 {
     return ship->aiState == kAIStateWait;
 }
 
-/* AIEvalHopelessChase (mac _AIEvalHopelessChase). STATE: MATCH 100.0%, exe 265 / obj 265,
-   byte-identical yes. OPEN: none. */
 // FUNCTION: EVNOVA 0x00410f20
 // MAC: _AIEvalHopelessChase i386 0x00080ea9 ppc 0x0008ad04
 Boolean AIEvalHopelessChase(ShipObj *ship)
@@ -5072,7 +4999,6 @@ Boolean AIEvalHopelessChase(ShipObj *ship)
     }
 }
 
-/* AIIsShipBusy (mac _AIIsShipBusy). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00411270
 // MAC: _AIIsShipBusy i386 0x00082fac ppc 0x0008d37c
 Boolean AIIsShipBusy(ShipObj *ship)
@@ -5083,7 +5009,6 @@ Boolean AIIsShipBusy(ShipObj *ship)
     return 0;
 }
 
-/* AIIsShipLeaving. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004112a0
 // MAC: _AIIsShipLeaving i386 0x00082fe5 ppc 0x0008d3b8
 Boolean AIIsShipLeaving(ShipObj *ship)
@@ -5099,7 +5024,6 @@ Boolean AIIsShipLeaving(ShipObj *ship)
  * copied unconditionally first - the exe really does copy it twice.
  */
 
-/* AICallForHelp. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004112c0
 // MAC: _AICallForHelp i386 0x00082ffb ppc 0x0008d3d0
 void AICallForHelp(ShipObj *ship)
@@ -5138,7 +5062,7 @@ void AICallForHelp(ShipObj *ship)
     }
 }
 
-/* IsShipScanningPlayer (mac _IsShipScanningPlayer, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* IsShipScanningPlayer (mac _IsShipScanningPlayer, dead on win: uncalled, the linker strips it). */
 // MAC: _IsShipScanningPlayer i386 0x00083258 ppc 0x0008d638
 Boolean IsShipScanningPlayer(ShipObj *ship)
 {
@@ -5149,7 +5073,6 @@ Boolean IsShipScanningPlayer(ShipObj *ship)
     return 0;
 }
 
-/* AIEscortFireUnprovoked (mac _AIEscortFireUnprovoked). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00411540
 // MAC: _AIEscortFireUnprovoked i386 0x00080e4f ppc 0x0008ac68
 void AIEscortFireUnprovoked(ShipObj *ship)
@@ -5167,7 +5090,6 @@ void AIEscortFireUnprovoked(ShipObj *ship)
     }
 }
 
-/* AIIsShipAttemptingDisable. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004115a0
 // MAC: _AIIsShipAttemptingDisable i386 0x000832e6 ppc 0x0008d6ec
 Boolean AIIsShipAttemptingDisable(ShipObj *ship)
@@ -5177,7 +5099,7 @@ Boolean AIIsShipAttemptingDisable(ShipObj *ship)
     return 0;
 }
 
-/* AIPlunderIfPossible (mac _AIPlunderIfPossible, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* AIPlunderIfPossible (mac _AIPlunderIfPossible, dead on win: uncalled, the linker strips it). */
 // MAC: _AIPlunderIfPossible i386 0x000832fc ppc 0x0008d704
 void AIPlunderIfPossible(ShipObj *ship)
 {
@@ -5193,7 +5115,6 @@ void AIPlunderIfPossible(ShipObj *ship)
         ship->aiState = kAIStatePlunder;
 }
 
-/* AIMakeShipStopRefuelling. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004115c0
 // MAC: _AIMakeShipStopRefuelling i386 0x0008339b ppc 0x0008d7b8
 void AIMakeShipStopRefuelling(ShipObj *ship)
@@ -5209,7 +5130,6 @@ void AIMakeShipStopRefuelling(ShipObj *ship)
 
 #define kRangeSlack          32
 
-/* AIInGunRange. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00411600
 // MAC: _AIInGunRange i386 0x0007f9d5 ppc 0x000895dc
 Boolean AIInGunRange(ShipObj *me, ShipObj *target, short weapType)
@@ -5253,9 +5173,6 @@ Boolean AIInGunRange(ShipObj *me, ShipObj *target, short weapType)
 #define kMinShieldWeight        0.25
 #define kMaxShieldWeight        1.0
 
-/* AIShipFriendStrength. STATE: MATCH 100.0%, exe 192 / obj 192; byte identity unchecked
-   until the next regate (bytediff covers baseline MATCHes only).
-   OPEN: none. The outer strength is read through `strength', declared first. */
 // FUNCTION: EVNOVA 0x00411800
 // MAC: _AIShipFriendStrength i386 0x000825a8 ppc 0x0008c89c
 short AIShipFriendStrength(ShipObj *ship)
@@ -5310,7 +5227,6 @@ short AIShipFriendStrength(ShipObj *ship)
     return total;
 }
 
-/* AIDoSwarming (mac _AIDoSwarming). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00411ae0
 // MAC: _AIDoSwarming i386 0x00080250 ppc 0x00089f54
 Boolean AIDoSwarming(ShipObj *ship)
@@ -5325,7 +5241,6 @@ Boolean AIDoSwarming(ShipObj *ship)
 }
 
 
-/* AIVerifySwarmLeader (mac _AIVerifySwarmLeader). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00411b40
 // MAC: _AIVerifySwarmLeader i386 0x0007e2fe ppc 0x00087f2c
 Boolean AIVerifySwarmLeader(ShipObj *ship)
@@ -5345,7 +5260,6 @@ Boolean AIVerifySwarmLeader(ShipObj *ship)
     return 0;
 }
 
-/* AIFindSwarmLeader (mac _AIFindSwarmLeader). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00411c20
 // MAC: _AIFindSwarmLeader i386 0x0007e39e ppc 0x00087ffc
 short AIFindSwarmLeader(ShipObj *ship)
@@ -5384,7 +5298,6 @@ short AIFindSwarmLeader(ShipObj *ship)
 #define kCloakUntilClose        0x1000
 #define kCloakWhenIdle          0x2000
 
-/* AIHandleCloaking. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00411d00
 // MAC: _AIHandleCloaking i386 0x000833e1 ppc 0x0008d7f4
 void AIHandleCloaking(ShipObj *ship)
@@ -5460,7 +5373,6 @@ void AIHandleCloaking(ShipObj *ship)
         DoShipUncloak(ship);
 }
 
-/* FindNearestThreatToParent. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00412030
 // MAC: _FindNearestThreatToParent i386 0x00083861 ppc 0x0008dd60
 short FindNearestThreatToParent(ShipObj *me, short spob)
@@ -5482,9 +5394,6 @@ short FindNearestThreatToParent(ShipObj *me, short spob)
     return best;
 }
 
-/* IsShipANearbyThreatToParent. STATE: MATCH 100.0%, exe 199 / obj 199, byte-identical yes,
-   relocregcheck 0 of 11. The range test is written `range <= 0' arm first.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x00412090
 // MAC: _IsShipANearbyThreatToParent i386 0x000836a4 ppc 0x0008db5c
 int32_t IsShipANearbyThreatToParent(ShipObj *ship, ShipObj *me, short range)
@@ -5559,7 +5468,6 @@ reject:
 #define kStrShipSeized      0xa9    /* formerEscort == 0 (text TBC) */
 #define kStrShipSeizedAlt   0xa8
 
-/* AIFindShipToPlunder. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00412330
 // MAC: _AIFindShipToPlunder i386 0x0007fd10 ppc 0x000899e0
 void AIFindShipToPlunder(ShipObj *ship)
@@ -5596,7 +5504,6 @@ void AIFindShipToPlunder(ShipObj *ship)
     }
 }
 
-/* AIShipIsPlunderingShip. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004124f0
 // MAC: _AIShipIsPlunderingShip i386 0x00083f5e ppc 0x0008e5cc
 Boolean AIShipIsPlunderingShip(ShipObj *ship, ShipObj *other)
@@ -5608,7 +5515,6 @@ Boolean AIShipIsPlunderingShip(ShipObj *ship, ShipObj *other)
     return 0;
 }
 
-/* AIShipIsDocking. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00412530
 // MAC: _AIShipIsDocking i386 0x00083f95 ppc 0x0008e60c
 Boolean AIShipIsDocking(ShipObj *ship)
@@ -5618,9 +5524,6 @@ Boolean AIShipIsDocking(ShipObj *ship)
     return 0;
 }
 
-/* AIPlunderShipContents (mac _AIPlunderShipContents). STATE: MATCH 100.0%, 667 exact /
-   102 reloc-equivalent / 0 mismatched, exe 769 / obj 769, relocregcheck 0 of 102 differ,
-   byte-identical yes (bytediff, baseline c8b0e3e6). OPEN: none */
 // FUNCTION: EVNOVA 0x00412550
 // MAC: _AIPlunderShipContents i386 0x00083fab ppc 0x0008e624
 void AIPlunderShipContents(ShipObj *me, ShipObj *target)
@@ -5843,7 +5746,6 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
 
 #define kKillsPerStrength 0x1900
 
-/* AICalculateOddsAgainst. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004133f0
 // MAC: _AICalculateOddsAgainst i386 0x00084a2e ppc 0x0008f038
 void AICalculateOddsAgainst(ShipObj *ship)
@@ -5883,8 +5785,6 @@ void AICalculateOddsAgainst(ShipObj *ship)
     ship->odds = enemy / (float)friendly;
 }
 
-/* AICallForReinforcements. STATE: MATCH 100.0%, exe 161 / obj 161, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00413610
 // MAC: _AICallForReinforcements i386 0x0007f5a1 ppc 0x000890ec
 Boolean AICallForReinforcements(ShipObj *ship, Boolean force)
@@ -5932,7 +5832,6 @@ Boolean AICallForReinforcements(ShipObj *ship, Boolean force)
     return 0;
 }
 
-/* AIForceBurstReload (mac _AIForceBurstReload). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00413810
 // MAC: _AIForceBurstReload i386 0x00084c37 ppc 0x0008f2d0
 void AIForceBurstReload(ShipObj *ship)
@@ -5948,7 +5847,6 @@ void AIForceBurstReload(ShipObj *ship)
     }
 }
 
-/* AIShipIsOutOfAmmo (mac _AIShipIsOutOfAmmo). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004138a0
 // MAC: _AIShipIsOutOfAmmo i386 0x0007f71f ppc 0x0008928c
 short AIShipIsOutOfAmmo(ShipObj *ship)
@@ -5982,8 +5880,6 @@ short AIShipIsOutOfAmmo(ShipObj *ship)
     return 0;
 }
 
-/* AICalcFormationPositions (mac _AICalcFormationPositions). STATE: MATCH 100.0%, exe 131 / obj 131,
-   byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00413990
 // MAC: _AICalcFormationPositions i386 0x00085040 ppc 0x0008ffb8
 void AICalcFormationPositions(ShipObj *ship, Boolean recalc)
@@ -6041,7 +5937,6 @@ void AICalcFormationPositions(ShipObj *ship, Boolean recalc)
 
 #define kQuarterTurn    90.0f
 
-/* AICalcShipFormPos. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00413b60
 // MAC: _AICalcShipFormPos i386 0x00084cb8 ppc 0x0008f394
 void AICalcShipFormPos(ShipObj *escort, ShipObj *leader, short escortIndex,
@@ -6196,8 +6091,6 @@ void AICalcShipFormPos(ShipObj *escort, ShipObj *leader, short escortIndex,
 #define kAccelScale             10.0
 #define kDampCap                0.8
 
-/* AIMaintainFormation (mac _AIMaintainFormation). STATE: MATCH 100.0%, exe 129 / obj 129
-   instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00414390
 // MAC: _AIMaintainFormation i386 0x00084f04 ppc 0x0008fe50
 void AIMaintainFormation(ShipObj *ship, Boolean snap)
@@ -6241,7 +6134,6 @@ void AIMaintainFormation(ShipObj *ship, Boolean snap)
     }
 }
 
-/* AIShipIsScooping (mac _AIShipIsScooping). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00414530
 // MAC: _AIShipIsScooping i386 0x00088727 ppc 0x00093824
 Boolean AIShipIsScooping(ShipObj *ship)
@@ -6255,8 +6147,6 @@ Boolean AIShipIsScooping(ShipObj *ship)
 #define kHalfTurnDeg       180
 #define kGunSoundFlags     4
 
-/* FireAIShipWeapon. STATE: MATCH 100%, 910/910, relocregcheck 0 of 88.
-   OPEN: none. */
 // FUNCTION: EVNOVA 0x00414550
 // MAC: _FireAIShipWeapon i386 0x0008873d ppc 0x0009383c
 void FireAIShipWeapon(ShipObj *ship)
@@ -6485,8 +6375,6 @@ void FireAIShipWeapon(ShipObj *ship)
 
 #define kAITypes                4
 
-/* AIIssueEscortOrders. STATE: MATCH 100.0%, exe 217 / obj 217 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004152e0
 // MAC: _AIIssueEscortOrders i386 0x0008986d ppc 0x00094c04
 void AIIssueEscortOrders(ShipObj *ship)
@@ -6613,7 +6501,6 @@ void AIIssueEscortOrders(ShipObj *ship)
     }
 }
 
-/* AICheckParentExists (mac _AICheckParentExists). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004156a0
 // MAC: _AICheckParentExists i386 0x0008926a ppc 0x000944cc
 void AICheckParentExists(ShipObj *ship)
@@ -6690,7 +6577,6 @@ void AICheckParentExists(ShipObj *ship)
 #define kDockRange               16.0f
 #define kJumpFuel                100
 
-/* AIShipIsEnteringHypergate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004159a0
 // MAC: _AIShipIsEnteringHypergate i386 0x00089502 ppc 0x000947a0
 Boolean AIShipIsEnteringHypergate(ShipObj *ship)
@@ -6700,7 +6586,6 @@ Boolean AIShipIsEnteringHypergate(ShipObj *ship)
     return 0;
 }
 
-/* AIShipIsEmergingFromHypergate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004159c0
 // MAC: _AIShipIsEmergingFromHypergate i386 0x0007e2e8 ppc 0x00087f14
 Boolean AIShipIsEmergingFromHypergate(ShipObj *ship)
@@ -6715,7 +6600,6 @@ Boolean AIShipIsEmergingFromHypergate(ShipObj *ship)
  * range-checked against 0..359 and converted to a float heading, so that name
  * is wrong for this field.
  */
-/* AIMakeShipEmergeFromHyperGate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004159e0
 // MAC: _AIMakeShipEmergeFromHyperGate i386 0x00089518 ppc 0x000947b8
 void AIMakeShipEmergeFromHyperGate(ShipObj *ship, short stellar)
@@ -6744,7 +6628,6 @@ void AIMakeShipEmergeFromHyperGate(ShipObj *ship, short stellar)
     ship->thrust = -3.0f;
 }
 
-/* AIShipIsShipGoingToStellar. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00415ad0
 // MAC: _AIShipIsShipGoingToStellar i386 0x000895d6 ppc 0x000948e8
 Boolean AIShipIsShipGoingToStellar(ShipObj *ship, short stellar)
@@ -6757,7 +6640,6 @@ Boolean AIShipIsShipGoingToStellar(ShipObj *ship, short stellar)
     return 0;
 }
 
-/* AIShipIsDockedWithShip (mac _AIShipIsDockedWithShip). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00415b00
 // MAC: _AIShipIsDockedWithShip i386 0x0008960a ppc 0x00094918
 Boolean AIShipIsDockedWithShip(ShipObj *ship, ShipObj *other)
@@ -6777,7 +6659,6 @@ Boolean AIShipIsDockedWithShip(ShipObj *ship, ShipObj *other)
     return 0;
 }
 
-/* AIShipHasFuelForJump. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00415b80
 // MAC: _AIShipHasFuelForJump i386 0x0007f48f ppc 0x00088f68
 Boolean AIShipHasFuelForJump(ShipObj *ship)
@@ -6795,7 +6676,6 @@ Boolean AIShipHasFuelForJump(ShipObj *ship)
     return 1;
 }
 
-/* AIHasDestroyingWeapons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00415c10
 // MAC: _AIHasDestroyingWeapons i386 0x0007fc7c ppc 0x00089908
 Boolean AIHasDestroyingWeapons(ShipObj *ship)
@@ -6818,7 +6698,6 @@ Boolean AIHasDestroyingWeapons(ShipObj *ship)
     return 0;
 }
 
-/* AIShipCapturedByPlayer. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00415cb0
 // MAC: _AIShipCapturedByPlayer i386 0x00089693 ppc 0x000949c8
 void AIShipCapturedByPlayer(ShipObj *ship)
@@ -6852,7 +6731,7 @@ void AIShipCapturedByPlayer(ShipObj *ship)
 }
 
 /* AIShipBoardedByPlayer (mac _AIShipBoardedByPlayer; the win body was decompiled first under the invented
-   name ClearTargetsOnShip -- same function, merged). STATE: MATCH, byte-identical. OPEN: none */
+   name ClearTargetsOnShip -- same function, merged). */
 // FUNCTION: EVNOVA 0x00415dc0
 // MAC: _AIShipBoardedByPlayer i386 0x000897a8 ppc 0x00094b0c
 void AIShipBoardedByPlayer(ShipObj *ship)
@@ -6875,7 +6754,6 @@ void AIShipBoardedByPlayer(ShipObj *ship)
     }
 }
 
-/* AIShipIsAttackingAsteroid. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00415e60
 // MAC: _AIShipIsAttackingAsteroid i386 0x0008982b ppc 0x00094bbc
 Boolean AIShipIsAttackingAsteroid(ShipObj *ship)
@@ -6885,7 +6763,6 @@ Boolean AIShipIsAttackingAsteroid(ShipObj *ship)
     return 0;
 }
 
-/* AIShipIsPlundering. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00415e80
 // MAC: _AIShipIsPlundering i386 0x00089841 ppc 0x00094bd4
 Boolean AIShipIsPlundering(ShipObj *ship)
@@ -6895,7 +6772,6 @@ Boolean AIShipIsPlundering(ShipObj *ship)
     return 0;
 }
 
-/* AIAddFighterToParent. STATE: MATCH, byte-identical (reloc rows 0 of 11 differ). OPEN: none */
 // FUNCTION: EVNOVA 0x00415ea0
 // MAC: _AIAddFighterToParent i386 0x000802a5 ppc 0x00089fb8
 void AIAddFighterToParent(ShipObj *fighter)
@@ -6940,7 +6816,6 @@ void AIAddFighterToParent(ShipObj *fighter)
     }
 }
 
-/* AIIsShipDoingCountWait. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00416070
 // MAC: _AIIsShipDoingCountWait i386 0x00089857 ppc 0x00094bec
 Boolean AIIsShipDoingCountWait(ShipObj *ship)

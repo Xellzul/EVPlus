@@ -16,7 +16,6 @@
 #define kBindingCount 0x22
 
 
-/* DoKeyDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b280
 void DoKeyDialog(void)
 {
@@ -119,7 +118,6 @@ void DoKeyDialog(void)
  * read stays a movzx and the widening is a separate movsx hoisted out of the
  * loop.
  */
-/* KeyFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b6d0
 // MAC: _KeyFilter i386 0x00017482 ppc 0x0001b030
 Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -168,7 +166,6 @@ Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
-/* KeyDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b860
 // MAC: _KeyDialogUpdate i386 0x00017199 ppc 0x0001adf8
 void KeyDialogUpdate(void)

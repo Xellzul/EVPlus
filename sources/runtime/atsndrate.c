@@ -6,7 +6,6 @@
 
 
 /* A 16.16 rate to whole hertz, rounded. */
-/* UFix32_To_UInt32. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00507d0b
 ULong UFix32_To_UInt32(ULong rate)
 {
@@ -14,7 +13,6 @@ ULong UFix32_To_UInt32(ULong rate)
 }
 
 /* 16.16 multiply and divide, saturating; 0 if either side is 0. */
-/* UFix32_Multiply. STATE: MATCH 100%, exe 47 / obj 47, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00507d16
 ULong UFix32_Multiply(ULong ratio, ULong rate)
 {
@@ -36,7 +34,6 @@ ULong UFix32_Multiply(ULong ratio, ULong rate)
     return result;
 }
 
-/* UFix32_Divide. STATE: MATCH 100%, exe 48 / obj 48, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00507d96
 ULong UFix32_Divide(ULong device, ULong rate)
 {

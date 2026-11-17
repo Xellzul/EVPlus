@@ -8,7 +8,6 @@
 
 EXTERN_C_BEGIN
 
-/* EvalMissionBitSetString (mac _EvalMissionBitSetString). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00448020
 // MAC: _EvalMissionBitSetString i386 0x00099dc5 ppc 0x000a5b94
 void EvalMissionBitSetString(char *expr)
@@ -20,7 +19,6 @@ void EvalMissionBitSetString(char *expr)
     ResetPlayerPrecalcedValues();
 }
 
-/* EvalCurrentMissionBitSetString (mac _EvalCurrentMissionBitSetString). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00448050
 // MAC: _EvalCurrentMissionBitSetString i386 0x00099a43 ppc 0x000a5748
 void EvalCurrentMissionBitSetString(char *expr, short mission)
@@ -34,7 +32,7 @@ void EvalCurrentMissionBitSetString(char *expr, short mission)
     ResetPlayerPrecalcedValues();
 }
 
-/* DumpMissionBitLog (mac _DumpMissionBitLog, no caller: dead on win). STATE: see the mac gate. */
+/* DumpMissionBitLog (mac _DumpMissionBitLog, no caller: dead on win). */
 // MAC: _DumpMissionBitLog i386 0x00099df1 ppc 0x000a5bf4
 void DumpMissionBitLog(void)
 {

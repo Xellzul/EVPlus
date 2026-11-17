@@ -33,8 +33,7 @@ static __inline Word32 SwapLong(Word32 v)
     return t;
 }
 
-/* ImageParsePPat (BurgerLib ImImageParsePPat): 0 on success, 1 (image freed) on failure.
-   STATE: MATCH 100.0%, exe 191 / obj 191. OPEN: none */
+/* ImageParsePPat (BurgerLib ImImageParsePPat): 0 on success, 1 (image freed) on failure. */
 // FUNCTION: EVNOVA 0x004fdf40
 Word ImageParsePPat(Image_t *ImagePtr, const Word8 *InputPtr)
 {

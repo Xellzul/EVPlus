@@ -11,8 +11,7 @@ extern "C" {
 
 Word OSCursorLastCursor;                         /* 0x00870dc8 */
 
-/* OSCursorShow (BurgerLib OCWin95Code). STATE: MATCH 100.0%, exe 10 / obj 10,
-   byte-identical yes. OPEN: none */
+/* OSCursorShow (BurgerLib OCWin95Code). */
 // FUNCTION: EVNOVA 0x004f1a20
 void OSCursorShow(void)
 {
@@ -23,8 +22,7 @@ void OSCursorShow(void)
     }
 }
 
-/* OSCursorHide (BurgerLib OCWin95Code). STATE: MATCH 100.0%, exe 10 / obj 10,
-   byte-identical yes. OPEN: none */
+/* OSCursorHide (BurgerLib OCWin95Code). */
 // FUNCTION: EVNOVA 0x004f1a50
 void OSCursorHide(void)
 {
@@ -35,8 +33,7 @@ void OSCursorHide(void)
     }
 }
 
-/* OSCursorReset (BurgerLib OCWin95Code). STATE: MATCH 100.0%, exe 27 / obj 27,
-   byte-identical yes. OPEN: none */
+/* OSCursorReset (BurgerLib OCWin95Code). */
 // FUNCTION: EVNOVA 0x004f1a80
 void OSCursorReset(void)
 {

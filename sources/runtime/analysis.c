@@ -14,8 +14,7 @@
 
 int analysis_noisy=1;
 
-/* _analysis_output. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0055bd00
 void _analysis_output(char *base,int i,float *v,int n,int bark,int dB){
 }

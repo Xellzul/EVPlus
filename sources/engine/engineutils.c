@@ -67,9 +67,6 @@ extern void DateToShortString(DateTimeRec date, char *out);
 
 EXTERN_C_BEGIN
 
-/* DestroyAsteroid (mac _DestroyAsteroid). STATE: MATCH 100.0%, exe 223 / obj 223 instrs, relocregcheck 23/23 clean.
-   OPEN: byte-identity unchecked (bytediff only covers baseline-MATCH rows); the function
-   still carries its address name -- no mac twin looked up. see notes */
 // FUNCTION: EVNOVA 0x00462550
 // MAC: _DestroyAsteroid i386 0x0000adc9 ppc 0x0000d688
 void DestroyAsteroid(AsteroidObj *roid)
@@ -119,7 +116,6 @@ void DestroyAsteroid(AsteroidObj *roid)
     SWSetSpriteVisible(roid->sprite, 0);
 }
 
-/* FindNearestShipToPlayer (mac _FindNearestShipToPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00462850
 // MAC: _FindNearestShipToPlayer i386 0x0000923f ppc 0x0000b3e8
 short FindNearestShipToPlayer(void)
@@ -166,7 +162,6 @@ short FindNearestShipToPlayer(void)
     return best;
 }
 
-/* IsThreatToStellar (mac _IsThreatToStellar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004629e0
 // MAC: _IsThreatToStellar i386 0x00009ef7 ppc 0x0000c488
 Boolean IsThreatToStellar(ShipObj *ship, SpobRecord *spob)
@@ -236,7 +231,6 @@ fail:
 
 #define kGateRange2 250000.0
 
-/* FindNearestThreatToPlayer (mac _FindNearestThreatToPlayer). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00462bd0
 // MAC: _FindNearestThreatToPlayer i386 0x000093f9 ppc 0x0000b5f8
 short FindNearestThreatToPlayer(void)
@@ -297,7 +291,6 @@ short FindNearestThreatToPlayer(void)
     return best;
 }
 
-/* FindNearestStellar (mac _FindNearestStellar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00462db0
 // MAC: _FindNearestStellar i386 0x0000276c ppc 0x000031c8
 short FindNearestStellar(ShipObj *ship)
@@ -336,8 +329,6 @@ short FindNearestStellar(ShipObj *ship)
     return best;
 }
 
-/* ShipStatsToSystemInfo. STATE: MATCH 100.0%, 195/195, byte-identical yes (927 bytes).
-   OPEN: none */
 // FUNCTION: EVNOVA 0x00462ec0
 // MAC: _ShipStatsToSystemInfo i386 0x0000caee ppc 0x0000fc04
 void ShipStatsToSystemInfo(void)
@@ -417,7 +408,6 @@ void ShipStatsToSystemInfo(void)
  * the shipyard's persistent-outfit check already use.
  */
 
-/* SystemInfoToShipStats. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463260
 // MAC: _SystemInfoToShipStats i386 0x0000ca33 ppc 0x0000fb0c
 void SystemInfoToShipStats(void)
@@ -443,7 +433,6 @@ void SystemInfoToShipStats(void)
     ResetPlayerPrecalcedValues();
 }
 
-/* ShipFreeMass. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463470
 // MAC: _ShipFreeMass i386 0x0000b462 ppc 0x0000dee4
 int32_t ShipFreeMass(void)
@@ -477,7 +466,6 @@ int32_t ShipFreeMass(void)
 #define kOutfModShieldBoost 4
 #define kOutfModAfterburner 15
 
-/* XYShortToFloat (mac _XYShortToFloat). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463520
 // MAC: _XYShortToFloat i386 0x000028c3 ppc 0x000033ac
 FloatPoint XYShortToFloat(ShortPoint pt)
@@ -520,7 +508,6 @@ float CalcShipStopDist(void)
     return 20000.0f;
 }
 
-/* ShipShieldCapacity (mac _ShipShieldCapacity). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463550
 // MAC: _ShipShieldCapacity i386 0x00002995 ppc 0x000034e8
 float ShipShieldCapacity(ShipObj *ship)
@@ -559,7 +546,6 @@ float ShipShieldCapacity(ShipObj *ship)
 
 #define kOutfModShieldRech 5
 
-/* ShipShieldRechargeRate (mac _ShipShieldRechargeRate). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463680
 // MAC: _ShipShieldRechargeRate i386 0x00002abb ppc 0x0000367c
 float ShipShieldRechargeRate(ShipObj *ship)
@@ -603,7 +589,6 @@ float ShipShieldRechargeRate(ShipObj *ship)
 
 #define kOutfModArmor 6
 
-/* ShipArmorCapacity (mac _ShipArmorCapacity). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004637a0
 // MAC: _ShipArmorCapacity i386 0x00002bc0 ppc 0x000037e4
 float ShipArmorCapacity(ShipObj *ship)
@@ -644,7 +629,6 @@ float ShipArmorCapacity(ShipObj *ship)
 
 #define kOutfModArmorRech 0x1d
 
-/* ShipArmorRechargeRate (mac _ShipArmorRechargeRate). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004638e0
 // MAC: _ShipArmorRechargeRate i386 0x00002e0e ppc 0x00003acc
 float ShipArmorRechargeRate(ShipObj *ship)
@@ -684,7 +668,6 @@ float ShipArmorRechargeRate(ShipObj *ship)
 #define kOutfModType12  0xc
 #define kMaxFuel        32000
 
-/* ShipFuelCapacity. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463a20
 // MAC: _ShipFuelCapacity i386 0x00002f21 ppc 0x00003c74
 short ShipFuelCapacity(ShipObj *ship)
@@ -719,7 +702,6 @@ short ShipFuelCapacity(ShipObj *ship)
 
 #define kOutfModType18  0x12
 
-/* ShipFuelGenRate (mac _ShipFuelGenRate). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463b30
 // MAC: _ShipFuelGenRate i386 0x00002ffb ppc 0x00003d88
 Boolean ShipFuelGenRate(ShipObj *ship, float *rate)
@@ -773,7 +755,6 @@ Boolean ShipFuelGenRate(ShipObj *ship, float *rate)
     return 1;
 }
 
-/* SuitableMissileType. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463dc0
 // MAC: _SuitableMissileType i386 0x000034e1 ppc 0x00004400
 Boolean SuitableMissileType(short weap, ShipObj *ship)
@@ -794,7 +775,6 @@ Boolean SuitableMissileType(short weap, ShipObj *ship)
 
 #define kOutfModTurn    9
 
-/* ShipTurnRate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00463e70
 // MAC: _ShipTurnRate i386 0x000032f7 ppc 0x000041b8
 float ShipTurnRate(ShipObj *ship)
@@ -845,7 +825,6 @@ float ShipTurnRate(ShipObj *ship)
 
 #define kOutfModAccel   7
 
-/* ShipAccelRate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004640a0
 // MAC: _ShipAccelRate i386 0x0000353b ppc 0x00004490
 float ShipAccelRate(ShipObj *ship)
@@ -900,7 +879,6 @@ float ShipAccelRate(ShipObj *ship)
     return v;
 }
 
-/* ShipMaxSpeed. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004642e0
 // MAC: _ShipMaxSpeed i386 0x000036f2 ppc 0x000046c4
 float ShipMaxSpeed(ShipObj *ship)
@@ -951,7 +929,6 @@ float ShipMaxSpeed(ShipObj *ship)
 
 #define kOutfModBay      11
 
-/* HasEscapePod (mac _HasEscapePod). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004644a0
 // MAC: _HasEscapePod i386 0x0000b83d ppc 0x0000e3e0
 Boolean HasEscapePod(ShipObj *ship)
@@ -974,7 +951,6 @@ Boolean HasEscapePod(ShipObj *ship)
     return 0;
 }
 
-/* HasEscapeShip (mac _HasEscapeShip). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464520
 // MAC: _HasEscapeShip i386 0x0000386e ppc 0x000048c4
 Boolean HasEscapeShip(ShipObj *ship)
@@ -993,7 +969,6 @@ Boolean HasEscapeShip(ShipObj *ship)
     return 0;
 }
 
-/* EscapeShipType (mac _EscapeShipType). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464590
 // MAC: _EscapeShipType i386 0x000038d0 ppc 0x00004938
 short EscapeShipType(ShipObj *ship)
@@ -1012,7 +987,6 @@ short EscapeShipType(ShipObj *ship)
     return -1;
 }
 
-/* EscapeShipWeapType. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464600
 // MAC: _EscapeShipWeapType i386 0x00003936 ppc 0x000049ac
 short EscapeShipWeapType(ShipObj *ship)
@@ -1030,7 +1004,6 @@ short EscapeShipWeapType(ShipObj *ship)
     return -1;
 }
 
-/* KeyCarriedShipTypeOnboard (mac _KeyCarriedShipTypeOnboard). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464670
 // MAC: _KeyCarriedShipTypeOnboard i386 0x0000399c ppc 0x00004a28
 Boolean KeyCarriedShipTypeOnboard(ShipObj *ship)
@@ -1058,7 +1031,6 @@ Boolean KeyCarriedShipTypeOnboard(ShipObj *ship)
 
 /* does the player own any outfit carrying modifier type 0x14 */
 
-/* HasAutoEject (mac _HasAutoEject). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464700
 // MAC: _HasAutoEject i386 0x00003a14 ppc 0x00004ab4
 Boolean HasAutoEject(ShipObj *ship)
@@ -1079,7 +1051,6 @@ Boolean HasAutoEject(ShipObj *ship)
     return 0;
 }
 
-/* HasAfterburner (mac _HasAfterburner). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464760
 // MAC: _HasAfterburner i386 0x00003a6d ppc 0x00004b24
 Boolean HasAfterburner(ShipObj *ship)
@@ -1112,7 +1083,6 @@ Boolean HasAfterburner(ShipObj *ship)
 
 #define kOutfModType33  0x21
 
-/* ShipECM (mac _ShipECM). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464810
 // MAC: _ShipECM i386 0x00003aff ppc 0x00004bdc
 short ShipECM(ShipObj *ship, short kind)
@@ -1177,7 +1147,6 @@ short ShipECM(ShipObj *ship, short kind)
 
 #define kDetectRange    200.0f
 
-/* ShipVisibleToShip. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464a90
 // MAC: _ShipVisibleToShip i386 0x0000971c ppc 0x0000ba14
 Boolean ShipVisibleToShip(ShipObj *ship, ShipObj *viewer)
@@ -1219,7 +1188,6 @@ Boolean ShipVisibleToShip(ShipObj *ship, ShipObj *viewer)
  * rather than a single `&&`.
  */
 
-/* HasCloak (mac _HasCloak). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464b50
 // MAC: _HasCloak i386 0x000095f2 ppc 0x0000b85c
 Boolean HasCloak(ShipObj *ship)
@@ -1257,7 +1225,6 @@ Boolean HasCloak(ShipObj *ship)
 /* the same question as HasCloak but only for values carrying bit 12 */
 #define kOutfModVal17Bit12 0x1000
 
-/* HasAreaCloak (mac _HasAreaCloak). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464c80
 // MAC: _HasAreaCloak i386 0x00003d49 ppc 0x00004e84
 Boolean HasAreaCloak(ShipObj *ship)
@@ -1305,7 +1272,6 @@ Boolean HasAreaCloak(ShipObj *ship)
  * as two nibbles and this returns the upper one, with 0 for anything but the
  * player's own ship.
  */
-/* CloakFuelUsage (mac _CloakFuelUsage). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464db0
 // MAC: _CloakFuelUsage i386 0x00003e25 ppc 0x00004fb8
 short CloakFuelUsage(ShipObj *ship)
@@ -1326,7 +1292,6 @@ short CloakFuelUsage(ShipObj *ship)
     return 0;
 }
 
-/* CloakZeroesShields (mac _CloakZeroesShields). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464e30
 // MAC: _CloakZeroesShields i386 0x00003e9d ppc 0x00005040
 Boolean CloakZeroesShields(ShipObj *ship)
@@ -1364,7 +1329,6 @@ Boolean CloakZeroesShields(ShipObj *ship)
     return 0;
 }
 
-/* ShipDecloaksWhenHit (mac _ShipDecloaksWhenHit). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00464f60
 // MAC: _ShipDecloaksWhenHit i386 0x00003f68 ppc 0x00005180
 Boolean ShipDecloaksWhenHit(ShipObj *ship)
@@ -1402,7 +1366,6 @@ Boolean ShipDecloaksWhenHit(ShipObj *ship)
     return 0;
 }
 
-/* CloakShieldUsage (mac _CloakShieldUsage). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465090
 // MAC: _CloakShieldUsage i386 0x00004033 ppc 0x000052c0
 short CloakShieldUsage(ShipObj *ship)
@@ -1441,7 +1404,6 @@ short CloakShieldUsage(ShipObj *ship)
  */
 #define kOutfModVal17Bit1 2
 
-/* ShipCloakVisibleOnRadar. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004651a0
 // MAC: _ShipCloakVisibleOnRadar i386 0x000040f8 ppc 0x000053f8
 Boolean ShipCloakVisibleOnRadar(ShipObj *ship)
@@ -1479,7 +1441,6 @@ Boolean ShipCloakVisibleOnRadar(ShipObj *ship)
 #define kOutfModVal30Bit0 1
 #define kOutfModVal30Bit1 2
 
-/* ShipCanSeeCloakedShips (mac _ShipCanSeeCloakedShips). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004652a0
 // MAC: _ShipCanSeeCloakedShips i386 0x000041a9 ppc 0x000054f4
 Boolean ShipCanSeeCloakedShips(ShipObj *ship, short which)
@@ -1526,7 +1487,6 @@ Boolean ShipCanSeeCloakedShips(ShipObj *ship, short which)
     return 0;
 }
 
-/* HasDensityScanner. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465410
 // MAC: _HasDensityScanner i386 0x000042c0 ppc 0x00005634
 Boolean HasDensityScanner(ShipObj *ship)
@@ -1556,7 +1516,6 @@ Boolean HasDensityScanner(ShipObj *ship)
 }
 
 /* the literal twin of the above, one modifier type along and its own cache */
-/* HasIFF (mac _HasIFF). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004654b0
 // MAC: _HasIFF i386 0x00004348 ppc 0x000056d4
 Boolean HasIFF(ShipObj *ship)
@@ -1587,7 +1546,6 @@ Boolean HasIFF(ShipObj *ship)
 
 #define kOutfModType22 0x16
 
-/* ShipHyperTransitTime (mac _ShipHyperTransitTime). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465550
 // MAC: _ShipHyperTransitTime i386 0x000043d0 ppc 0x00005774
 short ShipHyperTransitTime(ShipObj *ship)
@@ -1622,7 +1580,6 @@ short ShipHyperTransitTime(ShipObj *ship)
  */
 #define kOutfModType23 0x17
 
-/* ShipHyperSafeDist. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465610
 // MAC: _ShipHyperSafeDist i386 0x00004485 ppc 0x00005830
 int32_t ShipHyperSafeDist(ShipObj *ship)
@@ -1651,8 +1608,6 @@ int32_t ShipHyperSafeDist(ShipObj *ship)
 #define kModTypeGunLimit   0x2d
 #define kModTypeTurretLimit 0x2e
 
-/* HasMaxOfItem. STATE: MATCH, 299/299; byte check pending the next regate (bytediff reads
-   the baseline). OPEN: none */
 // FUNCTION: EVNOVA 0x004656a0
 // MAC: _HasMaxOfItem i386 0x00004512 ppc 0x000058b4
 Boolean HasMaxOfItem(short index, short *outBound, short *outCap)
@@ -1778,7 +1733,6 @@ Boolean HasMaxOfItem(short index, short *outBound, short *outCap)
     return 0;
 }
 
-/* DrawCommaNumber. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465af0
 // MAC: _DrawCommaNumber i386 0x00004895 ppc 0x00005cb0
 void DrawCommaNumber(int32_t value)
@@ -1812,7 +1766,6 @@ void DrawCommaNumber(int32_t value)
     }
 }
 
-/* StrcatCommaNumber. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465c10
 // MAC: _StrcatCommaNumber i386 0x00008820 ppc 0x0000a8e0
 void StrcatCommaNumber(int32_t value, char *dst)
@@ -1857,7 +1810,6 @@ void StrcatCommaNumber(int32_t value, char *dst)
  * in its own buffer so the leading letter can be capitalised before it is
  * appended.
  */
-/* StrcatOrdinalNumber. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465d90
 // MAC: _StrcatOrdinalNumber i386 0x00008ab4 ppc 0x0000ab98
 void StrcatOrdinalNumber(short n, char *dst, Boolean capitalize)
@@ -1879,7 +1831,6 @@ void StrcatOrdinalNumber(short n, char *dst, Boolean capitalize)
 }
 
 
-/* CanBuyGoods (mac _CanBuyGoods). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465e50
 // MAC: _CanBuyGoods i386 0x0000ccec ppc 0x0000fe3c
 Boolean CanBuyGoods(short item)
@@ -1891,7 +1842,6 @@ Boolean CanBuyGoods(short item)
     return 1;
 }
 
-/* CanSellGoods (mac _CanSellGoods). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465ea0
 // MAC: _CanSellGoods i386 0x00004a94 ppc 0x00005efc
 Boolean CanSellGoods(short item)
@@ -1911,7 +1861,6 @@ Boolean CanSellGoods(short item)
 
 /* the player's standing in each system, inside the pilot record */
 
-/* ColorCodeShip (mac _ColorCodeShip). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465f00
 // MAC: _ColorCodeShip i386 0x00004ae8 ppc 0x00005f6c
 void ColorCodeShip(ShipObj *ship, RGBColor *color)
@@ -1950,7 +1899,6 @@ void ColorCodeShip(ShipObj *ship, RGBColor *color)
     }
 }
 
-/* ColorCodeStellar (mac _ColorCodeStellar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466030
 // MAC: _ColorCodeStellar i386 0x0000aa26 ppc 0x0000d1ac
 void ColorCodeStellar(SpobRecord *spob, RGBColor *color)
@@ -2021,7 +1969,6 @@ void ColorCodeStellar(SpobRecord *spob, RGBColor *color)
     }
 }
 
-/* ColorCodeSystem (mac _ColorCodeSystem). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466260
 // MAC: _ColorCodeSystem i386 0x0000d672 ppc 0x00010b04
 void ColorCodeSystem(short sys, RGBColor *color)
@@ -2095,7 +2042,6 @@ void ColorCodeSystem(short sys, RGBColor *color)
 
 /* fills `frame` with the picture's bounds (name invented) */
 
-/* CenterPict. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466540
 // MAC: _CenterPict i386 0x00008652 ppc 0x0000a6c8
 void CenterPict(void *pict, Rect *bounds)
@@ -2117,7 +2063,6 @@ void CenterPict(void *pict, Rect *bounds)
 /* MSL <ctype.h> inlines tolower's table lookup; the exe calls the library
    function (0x004d6230), so declare it without the header. */
 
-/* CullNameString (mac _CullNameString). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004665f0
 // MAC: _CullNameString i386 0x0000dbe2 ppc 0x00011150
 void CullNameString(unsigned char *name)
@@ -2150,7 +2095,6 @@ void CullNameString(unsigned char *name)
 
 
 #ifndef MACBUILD
-/* FirstKeyDown. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466810
 short FirstKeyDown(void)
 {
@@ -2176,7 +2120,6 @@ short FirstKeyDown(void)
 #endif
 
 #if !defined(MACBUILD) || !V111
-/* KeyPrefsToSlotTable. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466850
 void KeyPrefsToSlotTable(void)
 {
@@ -2216,7 +2159,6 @@ void KeyPrefsToSlotTable(void)
     newKeyPrefs[33] = keyPrefs.toggleFPS;
 }
 
-/* SlotTableToKeyPrefs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466a30
 void SlotTableToKeyPrefs(void)
 {
@@ -2258,7 +2200,6 @@ void SlotTableToKeyPrefs(void)
 #endif
 
 #ifdef MACBUILD
-/* isPressed (mac _isPressed, mac-only). STATE: see the mac gate. */
 // MAC: _isPressed i386 0x00004d48 ppc 0x0000626c
 int32_t isPressed(unsigned char *keys, unsigned short k)
 {
@@ -2269,7 +2210,6 @@ int32_t isPressed(unsigned char *keys, unsigned short k)
 }
 #endif
 
-/* DupKeyCheck. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466c10
 // MAC: _DupKeyCheck i386 0x00004d69 ppc 0x00006284
 Boolean DupKeyCheck(short value, short skip)
@@ -2283,7 +2223,6 @@ Boolean DupKeyCheck(short value, short skip)
     return 0;
 }
 
-/* IncrementDate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466c40
 // MAC: _IncrementDate i386 0x00004da6 ppc 0x000062cc
 void IncrementDate(DateTimeRec *date, int32_t daysToAdd)
@@ -2321,7 +2260,6 @@ void IncrementDate(DateTimeRec *date, int32_t daysToAdd)
 #define kDefWaveEncoded   0x3e8
 #define kDefGrowOdds      0x1c2
 
-/* IncrementGameTime (mac _IncrementGameTime). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00466cb0
 // MAC: _IncrementGameTime i386 0x0000b516 ppc 0x0000dfdc
 void IncrementGameTime(void)
@@ -2396,8 +2334,6 @@ void IncrementGameTime(void)
         outfitSystem[j].dailyRoll = Rand(kDailyRollRange) + 1;
 }
 
-/* SlapWithPenalty (mac _SlapWithPenalty). STATE: MATCH 100.0%, exe 112 / obj 112
-   instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00466fc0
 // MAC: _SlapWithPenalty i386 0x00009bbc ppc 0x0000c108
 void SlapWithPenalty(short sys, short govt, short type, short mode)
@@ -2428,8 +2364,6 @@ void SlapWithPenalty(short sys, short govt, short type, short mode)
     }
 }
 
-/* RecursivePenaltySlap (mac _RecursivePenaltySlap). STATE: MATCH 100.0%, exe 387 / obj 387
-   instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00467140
 // MAC: _RecursivePenaltySlap i386 0x0000980a ppc 0x0000bb40
 void RecursivePenaltySlap(short sys, short govt, short type, double amount)
@@ -2559,7 +2493,6 @@ int32_t screenGamma = 0x00010000;           /* 0x00575878 — 16.16, 1.0 = full 
  */
 #define SetScreenGamma(level)  ((void)(level))
 
-/* EscapeStellarSearch. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467710
 // MAC: _EscapeStellarSearch i386 0x0000d28f ppc 0x00010648
 short EscapeStellarSearch(short sys)
@@ -2572,7 +2505,6 @@ short EscapeStellarSearch(short sys)
     return RecursiveEscapeStellarSearch(sys);
 }
 
-/* RecursiveEscapeStellarSearch. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004677a0
 // MAC: _RecursiveEscapeStellarSearch i386 0x0000d0fe ppc 0x00010464
 short RecursiveEscapeStellarSearch(short sys)
@@ -2633,7 +2565,6 @@ short RecursiveEscapeStellarSearch(short sys)
     return -1;
 }
 
-/* AutoSetExploration (mac _AutoSetExploration). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467970
 // MAC: _AutoSetExploration i386 0x0000daba ppc 0x00010ff4
 void AutoSetExploration(short sys, short maxDepth, short level)
@@ -2664,7 +2595,6 @@ void AutoSetExploration(short sys, short maxDepth, short level)
     }
 }
 
-/* RecursiveAutoExplore (mac _RecursiveAutoExplore). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467ab0
 // MAC: _RecursiveAutoExplore i386 0x0000d942 ppc 0x00010e4c
 void RecursiveAutoExplore(short sys, short depth, short level)
@@ -2701,7 +2631,6 @@ void RecursiveAutoExplore(short sys, short depth, short level)
 }
 
 /* Any nebula whose (inset) map rectangle contains this system counts as visited. */
-/* ExploreNebulaeFromSystem (mac _ExploreNebulaeFromSystem). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467bd0
 // MAC: _ExploreNebulaeFromSystem i386 0x0000508f ppc 0x00006600
 void ExploreNebulaeFromSystem(short sys)
@@ -2731,7 +2660,6 @@ void ExploreNebulaeFromSystem(short sys)
 }
 
 #ifdef MACBUILD
-/* ShowHint (mac _ShowHint, mac-only). STATE: see the mac gate. */
 // KEPT: a cut feature (nothing calls it, even on mac) -- a random STR# 7000 hint shown as a comm
 // message; possible future use, not enabled on win
 // MAC: _ShowHint i386 0x000051be ppc 0x00006724
@@ -2755,7 +2683,6 @@ void ShowHint(void)
 #endif
 
 /* Show numbered message `index`, letting a plug-in override the built-in text. */
-/* DisplayMessage (mac _DisplayMessage). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467cf0
 // MAC: _DisplayMessage i386 0x00005289 ppc 0x000067d0
 void DisplayMessage(short index)
@@ -2769,7 +2696,6 @@ void DisplayMessage(short index)
 
 /* Walk the gamma ramp to `percent` brightness over `duration` milliseconds. */
 #ifndef MACBUILD
-/* FadeGammaTo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467d60
 void FadeGammaTo(uint32_t percent, uint32_t duration)
 {
@@ -2793,7 +2719,6 @@ void FadeGammaTo(uint32_t percent, uint32_t duration)
 }
 #endif
 
-/* FadeScreenOut (mac _FadeScreenOut). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467de0
 // MAC: _FadeScreenOut i386 0x0000530f ppc 0x00006848
 #ifdef V111 /* V111: the Quartz display fade; mac 1.0.10 imports no CGDisplayFade */
@@ -2847,7 +2772,6 @@ void FadeScreenOut(void)
 }
 #endif
 
-/* FadeScreenIn (mac _FadeScreenIn). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467e20
 // MAC: _FadeScreenIn i386 0x000053b2 ppc 0x00006924
 #ifdef V111 /* V111: the Quartz display fade */
@@ -2868,7 +2792,6 @@ void FadeScreenIn(void)
     screenFaded = false;
 }
 #ifdef MACBUILD
-/* FadeWhiteIn (mac _FadeWhiteIn, mac-only). STATE: see the mac gate. */
 // MAC: _FadeWhiteIn i386 0x0000546f ppc 0x00006a04
 void FadeWhiteIn(void)
 {
@@ -2878,7 +2801,6 @@ void FadeWhiteIn(void)
                       1.0, 1.0, 1.0, false);
 }
 
-/* FadeWhiteOut (mac _FadeWhiteOut, mac-only). STATE: see the mac gate. */
 // MAC: _FadeWhiteOut i386 0x000054d1 ppc 0x00006a98
 void FadeWhiteOut(void)
 {
@@ -2918,8 +2840,7 @@ void FadeScreenIn(void)
 }
 #endif
 
-/* OnTheFlyWhiteFade (mac _OnTheFlyWhiteFade). STATE: MATCH, byte-identical.
-   OPEN: none. `pct' is pushed by the caller and never read here. */
+/* Note: `pct' is pushed by the caller and never read here. */
 // FUNCTION: EVNOVA 0x00467e60
 // MAC: _OnTheFlyWhiteFade i386 0x00005528 ppc 0x00006b18
 void OnTheFlyWhiteFade(short pct)
@@ -2967,15 +2888,13 @@ void OnTheFlyWhiteFade(short pct)
 }
 
 
-/* RestoreOrigClut (mac _RestoreOrigClut). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467e70
 // MAC: _RestoreOrigClut i386 0x00005537 ppc 0x00006b24
 void RestoreOrigClut(void)
 {
 }
 
-/* ShipCanCloak (no mac symbol). STATE: MATCH 100.0%, exe 174 / obj 174 instrs,
-   byte-identical yes. OPEN: none */
+/* ShipCanCloak (no mac symbol). */
 // FUNCTION: EVNOVA 0x00467e80
 // MAC: _ShipCanCloak i386 0x0000553c ppc 0x00006b28
 Boolean ShipCanCloak(ShipObj *ship)
@@ -3040,7 +2959,6 @@ Boolean ShipCanCloak(ShipObj *ship)
     return 0;
 }
 
-/* DoShipCloak. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004680d0
 // MAC: _DoShipCloak i386 0x0000de73 ppc 0x00011490
 void DoShipCloak(ShipObj *ship)
@@ -3062,7 +2980,6 @@ void DoShipCloak(ShipObj *ship)
     }
 }
 
-/* DoShipUncloak. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00468190
 // MAC: _DoShipUncloak i386 0x0000df55 ppc 0x000115f0
 void DoShipUncloak(ShipObj *ship)
@@ -3079,7 +2996,6 @@ void DoShipUncloak(ShipObj *ship)
     }
 }
 
-/* SystemTradesGoods. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00468210
 // MAC: _SystemTradesGoods i386 0x0000d2c4 ppc 0x0001069c
 Boolean SystemTradesGoods(short sysID, short commodity)
@@ -3104,7 +3020,6 @@ Boolean SystemTradesGoods(short sysID, short commodity)
 
 /* the same scan asking for one of three services by index; a `kind` outside
    0..2 leaves the mask unset, which the original does not guard */
-/* SystemHasService. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004682d0
 // MAC: _SystemHasService i386 0x0000d373 ppc 0x0001077c
 Boolean SystemHasService(short sysID, short kind)
@@ -3142,9 +3057,6 @@ Boolean SystemHasService(short sysID, short kind)
    literally and mac 1.1.1 emits a `ror`, so it is in the source. */
 #define SwapHalves(x) (((x) << 16) + ((x) >> 16))
 
-/* Rand (mac _Rand). STATE: MATCH 100.0%, 45/45, byte-identical; mac MATCH on both slices.
-   OPEN: none. Park-Miller 16807 in 16-bit halves, transliterated register by register
-   from the 68k Random(). */
 // FUNCTION: EVNOVA 0x004683b0
 // MAC: _Rand i386 0x000a4c76 ppc 0x000b08b4
 short Rand(short range)
@@ -3203,14 +3115,14 @@ short Rand(short range)
     return result;
 }
 
-/* SetRandSeed (mac _SetRandSeed; dead on win, stripped). STATE: mac MATCH on both slices. OPEN: none */
+/* SetRandSeed (mac _SetRandSeed; dead on win, stripped). */
 // MAC: _SetRandSeed i386 0x000a4d08 ppc 0x000b0968
 void SetRandSeed(uint32_t seed)
 {
     randomSeed = seed;
 }
 
-/* GetRandSeed (mac _GetRandSeed; dead on win, stripped). STATE: mac MATCH on both slices. OPEN: none */
+/* GetRandSeed (mac _GetRandSeed; dead on win, stripped). */
 // MAC: _GetRandSeed i386 0x000a4d17 ppc 0x000b0978
 uint32_t GetRandSeed(void)
 {
@@ -3226,7 +3138,6 @@ uint32_t GetRandSeed(void)
 #define kOrdinalRd      27
 #define kOrdinalTh      28
 
-/* DateToMedString (mac _DateToMedString). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00468450
 // MAC: _DateToMedString i386 0x00008cb6 ppc 0x0000adcc
 void DateToMedString(DateTimeRec date, char *out)
@@ -3259,7 +3170,6 @@ void DateToMedString(DateTimeRec date, char *out)
     strcat(out, dateSuffix);
 }
 
-/* DateToLongString (mac _DateToLongString). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00468600
 // MAC: _DateToLongString i386 0x00008ef8 ppc 0x0000b014
 void DateToLongString(DateTimeRec date, char *out)
@@ -3299,7 +3209,6 @@ void DateToLongString(DateTimeRec date, char *out)
  * otherwise a third.
  */
 
-/* IsDisabled (mac _IsDisabled). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004687b0
 // MAC: _IsDisabled i386 0x00002ce6 ppc 0x0000397c
 Boolean IsDisabled(ShipObj *ship)
@@ -3330,7 +3239,6 @@ Boolean IsDisabled(ShipObj *ship)
     return 0;
 }
 
-/* IsDying (mac _IsDying). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004688e0
 // MAC: _IsDying i386 0x0000253d ppc 0x00002ef0
 unsigned char IsDying(ShipObj *ship)
@@ -3344,7 +3252,6 @@ unsigned char IsDying(ShipObj *ship)
 
 #define kMaxHiredEscorts 6
 
-/* CanHireEscorts (mac _CanHireEscorts). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00468920
 // MAC: _CanHireEscorts i386 0x00005795 ppc 0x00006df0
 Boolean CanHireEscorts(void)
@@ -3363,7 +3270,6 @@ Boolean CanHireEscorts(void)
     return 0;
 }
 
-/* WeaponHasAmmo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00468990
 // MAC: _WeaponHasAmmo i386 0x0000b95a ppc 0x0000e53c
 Boolean WeaponHasAmmo(ShipObj *ship, short weaponIndex)
@@ -3397,7 +3303,6 @@ Boolean WeaponHasAmmo(ShipObj *ship, short weaponIndex)
 
 /* inhabited = at least one stellar that is populated and not a hypergate or wormhole */
 
-/* SystemIsInhabited (mac _SystemIsInhabited). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00468af0
 // MAC: _SystemIsInhabited i386 0x00004c4a ppc 0x00006124
 Boolean SystemIsInhabited(short sys)
@@ -3417,9 +3322,6 @@ Boolean SystemIsInhabited(short sys)
     return 0;
 }
 
-/* StellarsAreDistant. STATE: MATCH 100%, exe 191 / obj 191; relocregcheck 0 of 12 differ;
-   byte identity awaits the next regate (bytediff reads the baseline).
-   OPEN: none. The nav scan counts on the link loop's `i', and `link' was invented. */
 // FUNCTION: EVNOVA 0x00468b50
 // MAC: _StellarsAreDistant i386 0x00009cb9 ppc 0x0000c23c
 Boolean StellarsAreDistant(short a, short b)
@@ -3484,7 +3386,6 @@ Boolean StellarsAreDistant(short a, short b)
     return 1;
 }
 
-/* DrawLegalStatusString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00468d90
 // MAC: _DrawLegalStatusString i386 0x0000d43f ppc 0x00010888
 void DrawLegalStatusString(short sys)
@@ -3561,7 +3462,6 @@ void DrawLegalStatusString(short sys)
         DrawString(legalStatusStrings[rating]);
 }
 
-/* DrawCombatRatingString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469030
 // MAC: _DrawCombatRatingString i386 0x000057e5 ppc 0x00006e68
 void DrawCombatRatingString(void)
@@ -3592,7 +3492,6 @@ void DrawCombatRatingString(void)
     DrawString(ratingStrings[rating]);
 }
 
-/* PlayerShipTradeInPrice. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469100
 // MAC: _PlayerShipTradeInPrice i386 0x0000b079 ppc 0x0000d9cc
 int32_t PlayerShipTradeInPrice(void)
@@ -3613,7 +3512,6 @@ int32_t PlayerShipTradeInPrice(void)
     return value;
 }
 
-/* PlayerCanUseAmmoType. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469230
 // MAC: _PlayerCanUseAmmoType i386 0x00005896 ppc 0x00006f40
 Boolean PlayerCanUseAmmoType(short weapIndex)
@@ -3640,7 +3538,6 @@ Boolean PlayerCanUseAmmoType(short weapIndex)
 #define kPanNear      722500
 #define kPanHalfWidth    200
 
-/* PlaySoundDistance. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004692e0
 // MAC: _PlaySoundDistance i386 0x0000e007 ppc 0x000116f4
 Boolean PlaySoundDistance(int32_t unused, void *sound, short flags, FloatPoint *pos,
@@ -3691,7 +3588,6 @@ Boolean PlaySoundDistance(int32_t unused, void *sound, short flags, FloatPoint *
     return 1;
 }
 
-/* CheckSpeechMgr (mac _CheckSpeechMgr). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469480
 // MAC: _CheckSpeechMgr i386 0x00005906 ppc 0x00006fd0
 #ifdef MACBUILD
@@ -3728,7 +3624,6 @@ void CheckSpeechMgr(void)
 }
 #endif
 
-/* SpeakIt (mac _SpeakIt). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469490
 // MAC: _SpeakIt i386 0x0000b029 ppc 0x0000d948
 #ifdef MACBUILD
@@ -3757,7 +3652,6 @@ void SpeakIt(char *msg, short flag)
 #endif
 
 #ifdef MACBUILD
-/* HasMaxFightersOnBoard (mac _HasMaxFightersOnBoard, mac-only). STATE: MATCH both slices. OPEN: none */
 // MAC: _HasMaxFightersOnBoard i386 0x00005986 ppc 0x00007080
 Boolean HasMaxFightersOnBoard(short shipType)
 {
@@ -3796,7 +3690,6 @@ Boolean HasMaxFightersOnBoard(short shipType)
 }
 #endif
 
-/* CanBuyFighter (mac _CanBuyFighter). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004694a0
 // MAC: _CanBuyFighter i386 0x00005a82 ppc 0x00007190
 Boolean CanBuyFighter(short shipType, short outfitIndex, short weapIndex)
@@ -3867,7 +3760,6 @@ Boolean CanBuyFighter(short shipType, short outfitIndex, short weapIndex)
 
 #define kMaxHolds 32000
 
-/* TotalFleetHolds (mac _TotalFleetHolds). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469760
 // MAC: _TotalFleetHolds i386 0x0000c24d ppc 0x0000ef88
 short TotalFleetHolds(void)
@@ -3888,9 +3780,6 @@ short TotalFleetHolds(void)
     return total;
 }
 
-/* DestroyPartialFleetCargo (mac _DestroyPartialFleetCargo). STATE: MATCH 100.0%, exe 287 /
-   obj 287, byte-identical yes (bytediff after the 2026-09-15 regate). OPEN: none.
-   The dead cargo sum survives DSE because its one reader is itself a dead assignment; notes. */
 // FUNCTION: EVNOVA 0x00469810
 // MAC: _DestroyPartialFleetCargo i386 0x0000cd32 ppc 0x0000feb0
 void DestroyPartialFleetCargo(short shipIndex)
@@ -3955,7 +3844,6 @@ void DestroyPartialFleetCargo(short shipIndex)
 /* The flag is tested (with its companion at 0x007354b2) right before the
    shift/control/alt scancodes are scanned, so clearing it re-arms those. */
 
-/* QuickKeyCheckHandler. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469c90
 // MAC: _QuickKeyCheckHandler i386 0x00005d5a ppc 0x000074b8
 void QuickKeyCheckHandler(void)
@@ -3967,7 +3855,6 @@ void QuickKeyCheckHandler(void)
 }
 
 
-/* QuickKeyCheck (mac _QuickKeyCheck). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469ca0
 // MAC: _QuickKeyCheck i386 0x0000a0f5 ppc 0x0000c6e4
 unsigned char QuickKeyCheck(short scanCode)
@@ -4010,7 +3897,6 @@ unsigned char QuickKeyCheck(short scanCode)
 }
 
 #ifdef MACBUILD
-/* QuickKeyCheckPlusEscorts (mac _QuickKeyCheckPlusEscorts, mac-only). STATE: see the mac gate. */
 // MAC: _QuickKeyCheckPlusEscorts i386 0x0000a158 ppc 0x0000c774
 Boolean QuickKeyCheckPlusEscorts(short code)
 {
@@ -4045,7 +3931,6 @@ Boolean QuickKeyCheckPlusEscorts(short code)
  * than adopting the mac's _QuickKeyCheckPlusEscorts.
  */
 #ifndef MACBUILD
-/* RawKeyCheck. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469cf0
 unsigned char RawKeyCheck(short scanCode)
 {
@@ -4055,7 +3940,6 @@ unsigned char RawKeyCheck(short scanCode)
 }
 #endif
 
-/* KeyCheck (mac _KeyCheck). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469d10
 // MAC: _KeyCheck i386 0x0000a19b ppc 0x0000c7c8
 unsigned char KeyCheck(short scanCode)
@@ -4066,7 +3950,6 @@ unsigned char KeyCheck(short scanCode)
 
 #define kDemandMedium 2
 
-/* CalcPortDemand. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469d30
 // MAC: _CalcPortDemand i386 0x000056b1 ppc 0x00006d04
 short CalcPortDemand(short commodity, uint32_t flags)
@@ -4126,7 +4009,6 @@ short CalcPortDemand(short commodity, uint32_t flags)
 
 #define kPortSpecialTech    8
 
-/* SetupPortAvailableShipTypes (mac _SetupPortAvailableShipTypes). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469e90
 // MAC: _SetupPortAvailableShipTypes i386 0x0000bbe3 ppc 0x0000e880
 void SetupPortAvailableShipTypes(SpobRecord *port)
@@ -4224,8 +4106,6 @@ void SetupPortAvailableShipTypes(SpobRecord *port)
 }
 
 
-/* SetupPortAvailableItems (mac _SetupPortAvailableItems). STATE: MATCH, 208/208,
-   byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046a220
 // MAC: _SetupPortAvailableItems i386 0x0000bedb ppc 0x0000ebd0
 Boolean SetupPortAvailableItems(SpobRecord *port)
@@ -4336,7 +4216,6 @@ Boolean SetupPortAvailableItems(SpobRecord *port)
     return 0;
 }
 
-/* TotalCargo (mac _TotalCargo). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046a5d0
 // MAC: _TotalCargo i386 0x00004a0b ppc 0x00005e3c
 short TotalCargo(ShipObj *ship)
@@ -4361,7 +4240,6 @@ short TotalCargo(ShipObj *ship)
     return total;
 }
 
-/* PlayerHasAnyCargo (mac _PlayerHasAnyCargo). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046a680
 // MAC: _PlayerHasAnyCargo i386 0x00005d77 ppc 0x000074f0
 Boolean PlayerHasAnyCargo(void)
@@ -4385,7 +4263,6 @@ Boolean PlayerHasAnyCargo(void)
 }
 
 #ifdef MACBUILD
-/* InstantFighterRecall (mac _InstantFighterRecall, mac-only). STATE: see the mac gate. */
 // MAC: _InstantFighterRecall i386 0x00005df3 ppc 0x000075ac
 void InstantFighterRecall(void)
 {
@@ -4408,7 +4285,6 @@ void InstantFighterRecall(void)
 #endif
 
 /* the player's own hold capacity, outfit modifiers included */
-/* ShipTotalHolds. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046a730
 // MAC: _ShipTotalHolds i386 0x00005cb3 ppc 0x0000740c
 short ShipTotalHolds(void)
@@ -4429,7 +4305,6 @@ short ShipTotalHolds(void)
     return holds;
 }
 
-/* TotalMissionCargoSpace. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046a7c0
 // MAC: _TotalMissionCargoSpace i386 0x0000cffb ppc 0x00010310
 short TotalMissionCargoSpace(void)
@@ -4465,7 +4340,6 @@ short TotalMissionCargoSpace(void)
 
 #define kStatusStripWidth 194
 
-/* RefreshSAT (mac _RefreshSAT). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046a870
 // MAC: _RefreshSAT i386 0x00006b59 ppc 0x000085e0
 void RefreshSAT(void)
@@ -4530,7 +4404,6 @@ void RefreshSAT(void)
     QDFlushPortBuffer(GetWindowPort(gWind), NULL);
 }
 
-/* PlaySound (mac _PlaySound). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046aad0
 // MAC: _PlaySound i386 0x00005e9a ppc 0x0000768c
 void PlaySound(void *a, short b, short lo, short hi)
@@ -4541,7 +4414,6 @@ void PlaySound(void *a, short b, short lo, short hi)
 }
 
 
-/* AdjustWarpSoundSpeed. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ab00
 // MAC: _AdjustWarpSoundSpeed i386 0x00005ecc ppc 0x000076a8
 void AdjustWarpSoundSpeed(double rate)
@@ -4555,7 +4427,6 @@ void AdjustWarpSoundSpeed(double rate)
 }
 
 /* eight steps per unit, clamped to a byte's worth */
-/* AdjustSoundVolume. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ab60
 // MAC: _AdjustSoundVolume i386 0x00005efb ppc 0x000076e4
 void AdjustSoundVolume(void)
@@ -4573,7 +4444,6 @@ void AdjustSoundVolume(void)
  */
 #define kOutfModType24 0x18
 
-/* ShipAntiInterference. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046abb0
 // MAC: _ShipAntiInterference i386 0x00005f2c ppc 0x0000772c
 short ShipAntiInterference(void)
@@ -4602,9 +4472,6 @@ short ShipAntiInterference(void)
     return playerAntiInterference;
 }
 
-/* SpawnNagShip. STATE: MATCH, 327/327; byte check pending the next regate. OPEN: the
-   `(short)' on the Hector scan's bound is an unexplained device -- the exe compares that
-   counter at 16 bits and indexes the weapon loop with the same long `w'. see notes */
 // FUNCTION: EVNOVA 0x0046ac50
 // MAC: _SpawnNagShip i386 0x00005fdb ppc 0x000077d8
 // NOT USED
@@ -4701,7 +4568,6 @@ void SpawnNagShip(void)
 
 /* the shorter way round a 360-unit circle */
 
-/* AngularDifference. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b210
 // MAC: _AngularDifference i386 0x0000649e ppc 0x00007d40
 short AngularDifference(short a, short b)
@@ -4716,7 +4582,6 @@ short AngularDifference(short a, short b)
     return diff;
 }
 
-/* AIHasAfterburner. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b260
 // MAC: _AIHasAfterburner i386 0x000064f5 ppc 0x00007d80
 Boolean AIHasAfterburner(ShipObj *ship)
@@ -4744,7 +4609,6 @@ Boolean AIHasAfterburner(ShipObj *ship)
 }
 
 /* true for all but the top few hundred of the 0x540 range */
-/* AIPerformsComplexManeuvers (mac _AIPerformsComplexManeuvers). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b330
 // MAC: _AIPerformsComplexManeuvers i386 0x0000659a ppc 0x00007e78
 Boolean AIPerformsComplexManeuvers(ShipObj *ship)
@@ -4754,7 +4618,6 @@ Boolean AIPerformsComplexManeuvers(ShipObj *ship)
     return 0;
 }
 
-/* TurretBlindSpot. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b360
 // MAC: _TurretBlindSpot i386 0x0000b325 ppc 0x0000ddb8
 unsigned char TurretBlindSpot(ShipObj *ship, short heading, short weap)
@@ -4787,7 +4650,6 @@ unsigned char TurretBlindSpot(ShipObj *ship, short heading, short weap)
 
 #define kDudeSlots 16
 
-/* SelectShipFieldFromDude. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b4b0
 // MAC: _SelectShipFieldFromDude i386 0x000065c2 ppc 0x00007ebc
 short SelectShipFieldFromDude(DudeRecord *dude, unsigned char allowAll)
@@ -4834,7 +4696,6 @@ short SelectShipFieldFromDude(DudeRecord *dude, unsigned char allowAll)
 
 #define kSystDudeSlots 8
 
-/* SelectDudeFieldFromSystem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b600
 // MAC: _SelectDudeFieldFromSystem i386 0x0000674d ppc 0x00008070
 short SelectDudeFieldFromSystem(SystRecord *sys)
@@ -4871,7 +4732,6 @@ short SelectDudeFieldFromSystem(SystRecord *sys)
     return pick;
 }
 
-/* SelectFleetFromSystem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b6d0
 // MAC: _SelectFleetFromSystem i386 0x0000682c ppc 0x00008198
 short SelectFleetFromSystem(SystRecord *syst)
@@ -4913,7 +4773,6 @@ short SelectFleetFromSystem(SystRecord *syst)
 
 /* the shipyard's asking-price jitter, as a fraction around 1.00 */
 
-/* RandomSkillLevel. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b870
 // MAC: _RandomSkillLevel i386 0x00006922 ppc 0x000082e0
 float RandomSkillLevel(short type)
@@ -4923,7 +4782,6 @@ float RandomSkillLevel(short type)
 }
 
 /* the player, or something escorting the player directly or one level down */
-/* AlliedWithPlayer. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b8d0
 // MAC: _AlliedWithPlayer i386 0x00006985 ppc 0x00008378
 Boolean AlliedWithPlayer(ShipObj *ship)
@@ -4941,7 +4799,6 @@ Boolean AlliedWithPlayer(ShipObj *ship)
 }
 
 /* the first system of the group that has actually been loaded */
-/* FindActiveCoLocatedSystem (mac _FindActiveCoLocatedSystem). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b920
 // MAC: _FindActiveCoLocatedSystem i386 0x00004be0 ppc 0x000060b8
 short FindActiveCoLocatedSystem(short sys)
@@ -4964,7 +4821,6 @@ short FindActiveCoLocatedSystem(short sys)
     return -1;
 }
 
-/* FindFirstCoLocatedSystem (mac _FindFirstCoLocatedSystem). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b9b0
 // MAC: _FindFirstCoLocatedSystem i386 0x00004baa ppc 0x0000607c
 short FindFirstCoLocatedSystem(short sys)
@@ -4976,7 +4832,6 @@ short FindFirstCoLocatedSystem(short sys)
     return systemData[sys].colocGroup;
 }
 
-/* HideTheCursor (mac _HideTheCursor). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b9f0
 // MAC: _HideTheCursor i386 0x00006a01 ppc 0x00008404
 void HideTheCursor(void)
@@ -4985,7 +4840,6 @@ void HideTheCursor(void)
     cursorHidden = (OSCursorIsVisible() == 0);
 }
 
-/* ShowTheCursor (mac _ShowTheCursor). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ba10
 // MAC: _ShowTheCursor i386 0x00006a1f ppc 0x00008424
 void ShowTheCursor(void)
@@ -4994,7 +4848,6 @@ void ShowTheCursor(void)
     cursorHidden = (OSCursorIsVisible() == 0);
 }
 
-/* FindNearestValidShotTarget. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ba30
 // MAC: _FindNearestValidShotTarget i386 0x00006a3a ppc 0x00008444
 short FindNearestValidShotTarget(ShotObj *shot)
@@ -5025,7 +4878,6 @@ short FindNearestValidShotTarget(ShotObj *shot)
 
 /* paint in the current system's colour, and tell SpriteWorld about it too */
 
-/* SetSystemBackgroundColor. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046bbf0
 // MAC: _SetSystemBackgroundColor i386 0x00006af4 ppc 0x00008568
 void SetSystemBackgroundColor(void)
@@ -5040,7 +4892,6 @@ void SetSystemBackgroundColor(void)
     SWSetBackgroundColor(gSpriteWorld, &systemData[sys].rgb);
 }
 
-/* SetSystemBackgroundBackColor. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046bc50
 // MAC: _SetSystemBackgroundBackColor i386 0x00006e06 ppc 0x00008850
 void SetSystemBackgroundBackColor(void)
@@ -5052,9 +4903,6 @@ void SetSystemBackgroundBackColor(void)
     RGBBackColor(&systemData[shipData[0].curSystem].rgb);
 }
 
-/* GovtAllies (mac _GovtAllies). STATE: MATCH, exe 113 / obj 113, byte-identical yes
-   (relocs masked). OPEN: none. Guard order `a,a,b,b' is the exe's -- do not normalise it
-   to the twin's. see notes */
 // FUNCTION: EVNOVA 0x0046bc90
 // MAC: _GovtAllies i386 0x00004e3d ppc 0x00006390
 Boolean GovtAllies(short a, short b)
@@ -5089,9 +4937,6 @@ Boolean GovtAllies(short a, short b)
     return 0;
 }
 
-/* GovtEnemies (mac _GovtEnemies). STATE: MATCH, exe 159 / obj 159, byte-identical yes
-   (relocs masked). OPEN: none. Guard order `a,b,a,b' is the exe's -- do not normalise it
-   to the twin's. see notes */
 // FUNCTION: EVNOVA 0x0046bdf0
 // MAC: _GovtEnemies i386 0x00004f22 ppc 0x0000647c
 Boolean GovtEnemies(short a, short b)
@@ -5133,7 +4978,6 @@ Boolean GovtEnemies(short a, short b)
     return 0;
 }
 
-/* GovtSharedClass. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046bff0
 // MAC: _GovtSharedClass i386 0x00006e48 ppc 0x0000888c
 Boolean GovtSharedClass(short a, short b)
@@ -5154,7 +4998,6 @@ Boolean GovtSharedClass(short a, short b)
 
 #define kOutfModType39 0x27
 
-/* ShipDeionizationRate (mac _ShipDeionizationRate). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c080
 // MAC: _ShipDeionizationRate i386 0x00006ec3 ppc 0x00008908
 float ShipDeionizationRate(ShipObj *ship)
@@ -5185,7 +5028,6 @@ float ShipDeionizationRate(ShipObj *ship)
 
 #define kOutfModType40 0x28
 
-/* ShipIonizationFactor. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c160
 // MAC: _ShipIonizationFactor i386 0x00003225 ppc 0x00004094
 float ShipIonizationFactor(ShipObj *ship)
@@ -5218,7 +5060,6 @@ float ShipIonizationFactor(ShipObj *ship)
 
 #define kOutfModType28 0x1c
 
-/* PlayerEffectiveMurk (mac _PlayerEffectiveMurk). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c250
 // MAC: _PlayerEffectiveMurk i386 0x00006f8f ppc 0x00008a18
 short PlayerEffectiveMurk(void)
@@ -5245,7 +5086,6 @@ short PlayerEffectiveMurk(void)
     return level;
 }
 
-/* WeaponDisableOnly. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c2f0
 // MAC: _WeaponDisableOnly i386 0x0000704c ppc 0x00008ad0
 Boolean WeaponDisableOnly(short weap)
@@ -5255,8 +5095,6 @@ Boolean WeaponDisableOnly(short weap)
     return 0;
 }
 
-/* ModifyShotStartPosition (mac _ModifyShotStartPosition). STATE: MATCH 100%, exe 130 / obj 130,
-   byte-identical yes (relocs masked). OPEN: none. */
 // FUNCTION: EVNOVA 0x0046c320
 // MAC: _ModifyShotStartPosition i386 0x00007348 ppc 0x00008df0
 short ModifyShotStartPosition(ShipObj *ship, FloatPoint *base, short weapType, FloatPoint *target)
@@ -5295,7 +5133,6 @@ short ModifyShotStartPosition(ShipObj *ship, FloatPoint *base, short weapType, F
     return result;
 }
 
-/* SelectClosestShotStartPosition (mac _SelectClosestShotStartPosition). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c4e0
 // MAC: _SelectClosestShotStartPosition i386 0x00007254 ppc 0x00008d10
 short SelectClosestShotStartPosition(ShipObj *ship, FloatPoint *base, short unused,
@@ -5331,7 +5168,6 @@ short SelectClosestShotStartPosition(ShipObj *ship, FloatPoint *base, short unus
  * Added to the caller's point rather than replacing it, which is what lets the
  * caller run all four lanes from one base.
  */
-/* ModifyShotStartPosition2 (mac _ModifyShotStartPosition2). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c5c0
 // MAC: _ModifyShotStartPosition2 i386 0x0000706e ppc 0x00008af0
 void ModifyShotStartPosition2(ShipObj *ship, FloatPoint *pos, short angle,
@@ -5360,7 +5196,6 @@ void ModifyShotStartPosition2(ShipObj *ship, FloatPoint *pos, short angle,
     pos->y = pos->y + d.y;
 }
 
-/* ShipIsCloaked (mac _ShipIsCloaked). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c7a0
 // MAC: _ShipIsCloaked i386 0x0000255f ppc 0x00002f20
 Boolean ShipIsCloaked(ShipObj *ship)
@@ -5381,7 +5216,6 @@ Boolean ShipIsCloaked(ShipObj *ship)
 
 /* (invented name — no mac symbol; likely static in the mac build) */
 
-/* CronDateInRange. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c800
 // MAC: _CronDateInRange i386 0x000074d3 ppc 0x00008fa0
 Boolean CronDateInRange(CronRecord *cron)
@@ -5427,7 +5261,6 @@ lastShared:
     return 1;
 }
 
-/* ShipCanTargetUntargetableShips. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046c930
 // MAC: _ShipCanTargetUntargetableShips i386 0x0000238f ppc 0x00002c90
 Boolean ShipCanTargetUntargetableShips(ShipObj *ship)
@@ -5471,7 +5304,6 @@ Boolean ShipCanTargetUntargetableShips(ShipObj *ship)
 
 /* the twin of the above: bit 3 of the value rather than bit 2, its own cache */
 
-/* ShipCanTargetCloakedShips. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ca60
 // MAC: _ShipCanTargetCloakedShips i386 0x00002466 ppc 0x00002dc0
 Boolean ShipCanTargetCloakedShips(ShipObj *ship)
@@ -5515,7 +5347,6 @@ Boolean ShipCanTargetCloakedShips(ShipObj *ship)
 
 #define kOutfModType31 0x1f
 
-/* ShipCanScoop. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046cb90
 // MAC: _ShipCanScoop i386 0x000075c7 ppc 0x000090dc
 Boolean ShipCanScoop(ShipObj *ship)
@@ -5546,7 +5377,6 @@ Boolean ShipCanScoop(ShipObj *ship)
     return 0;
 }
 
-/* PutSpriteInLayer. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046cc60
 // MAC: _PutSpriteInLayer i386 0x0000766c ppc 0x000091c0
 void PutSpriteInLayer(SpriteRec *sprite, SpriteLayerRec *layer)
@@ -5559,7 +5389,6 @@ void PutSpriteInLayer(SpriteRec *sprite, SpriteLayerRec *layer)
     SWAddSprite(layer, sprite);
 }
 
-/* GetPlayerContributeBits (mac _GetPlayerContributeBits). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046cca0
 // MAC: _GetPlayerContributeBits i386 0x000076b2 ppc 0x00009224
 void GetPlayerContributeBits(uint32_t *lo, uint32_t *hi)
@@ -5592,7 +5421,6 @@ void GetPlayerContributeBits(uint32_t *lo, uint32_t *hi)
     *hi = bits[1];
 }
 
-/* PlayerMeetsRequirements (mac _PlayerMeetsRequirements). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046cd80
 // MAC: _PlayerMeetsRequirements i386 0x0000776f ppc 0x00009334
 Boolean PlayerMeetsRequirements(uint32_t reqLo, uint32_t reqHi)
@@ -5612,7 +5440,6 @@ Boolean PlayerMeetsRequirements(uint32_t reqLo, uint32_t reqHi)
 
 #define kOutfModType32 0x20
 
-/* ShipJumpsPerJump (mac _ShipJumpsPerJump). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046cdd0
 // MAC: _ShipJumpsPerJump i386 0x000077b4 ppc 0x00009394
 short ShipJumpsPerJump(ShipObj *ship)
@@ -5647,7 +5474,6 @@ short ShipJumpsPerJump(ShipObj *ship)
     return total;
 }
 
-/* ShipMaxWeaponRange. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046cec0
 // MAC: _ShipMaxWeaponRange i386 0x0000bafd ppc 0x0000e734
 short ShipMaxWeaponRange(ShipObj *ship)
@@ -5683,7 +5509,6 @@ short ShipMaxWeaponRange(ShipObj *ship)
 
 #define kOutfModType37 0x25
 
-/* ShipCanExpiditeJumps (mac _ShipCanExpiditeJumps). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046d080
 // MAC: _ShipCanExpiditeJumps i386 0x00007872 ppc 0x00009498
 Boolean ShipCanExpiditeJumps(ShipObj *ship)
@@ -5716,7 +5541,6 @@ Boolean ShipCanExpiditeJumps(ShipObj *ship)
     return 0;
 }
 
-/* ShipsShareParent (mac _ShipsShareParent). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046d190
 // MAC: _ShipsShareParent i386 0x00007926 ppc 0x00009588
 Boolean ShipsShareParent(ShipObj *a, ShipObj *b)
@@ -5758,7 +5582,6 @@ Boolean ShipsShareParent(ShipObj *a, ShipObj *b)
     return 0;
 }
 
-/* PtoCstr (mac _PtoCstr). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046d250
 // MAC: _PtoCstr i386 0x000049e2 ppc 0x00005e04
 #if !defined(MAC1010) || TARGET_API_MAC_CARBON /* 1.0.10 Classic imports InterfaceLib's */
@@ -5774,7 +5597,6 @@ char *PtoCstr(unsigned char *str)
 }
 #endif
 
-/* CtoPstr (mac _CtoPstr). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046d380
 // MAC: _CtoPstr i386 0x00004d13 ppc 0x00006210
 unsigned char *CtoPstr(char *str)
@@ -5800,9 +5622,6 @@ unsigned char *CtoPstr(char *str)
 #define kModScan32 0x32
 
 
-/* ResetPlayerPrecalcedValues. STATE: MATCH 100%, exe 587 / obj 587; relocregcheck 0 of 114
-   differ; mac MATCH on both slices. OPEN: none. The licence code is read at each
-   of the three checks; a `key' copy local was invented (2026-09-24). */
 // FUNCTION: EVNOVA 0x0046d4b0
 // MAC: _ResetPlayerPrecalcedValues i386 0x0000c357 ppc 0x0000f0c8
 void ResetPlayerPrecalcedValues(void)
@@ -5963,7 +5782,6 @@ void ResetPlayerPrecalcedValues(void)
 
 #define kOutfModType38 0x26
 
-/* ShipIsInertialess. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046df70
 // MAC: _ShipIsInertialess i386 0x000079c2 ppc 0x00009640
 Boolean ShipIsInertialess(ShipObj *ship)
@@ -6001,7 +5819,6 @@ Boolean ShipIsInertialess(ShipObj *ship)
  * value is scaled by 0.0333, which is one thirtieth to four figures.
  */
 
-/* ShipAfterburnerFuelUsage (mac _ShipAfterburnerFuelUsage). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e060
 // MAC: _ShipAfterburnerFuelUsage i386 0x00007a82 ppc 0x00009758
 float ShipAfterburnerFuelUsage(ShipObj *ship)
@@ -6030,7 +5847,6 @@ float ShipAfterburnerFuelUsage(ShipObj *ship)
 
 #define kOutfModType41 0x29
 
-/* ShipResistsGravity. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e120
 // MAC: _ShipResistsGravity i386 0x00007b10 ppc 0x00009850
 short ShipResistsGravity(ShipObj *ship)
@@ -6066,7 +5882,6 @@ short ShipResistsGravity(ShipObj *ship)
 
 #define kOutfModType42 0x2a
 
-/* ShipResistsDeadlyStellars. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e210
 // MAC: _ShipResistsDeadlyStellars i386 0x00007bbe ppc 0x00009950
 short ShipResistsDeadlyStellars(ShipObj *ship)
@@ -6104,7 +5919,6 @@ short ShipResistsDeadlyStellars(ShipObj *ship)
  * near-coincident pair cannot produce an unbounded push.
  */
 
-/* ApplyGravity. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e2f0
 // MAC: _ApplyGravity i386 0x00007c5a ppc 0x00009a24
 void ApplyGravity(FloatPoint *a, FloatPoint *b, float force, FloatPoint *out)
@@ -6124,7 +5938,6 @@ void ApplyGravity(FloatPoint *a, FloatPoint *b, float force, FloatPoint *out)
     Accel(CalcInterceptAngle(a, b), force / dist, out);
 }
 
-/* StellarIsDestroyed (mac _StellarIsDestroyed). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e3c0
 // MAC: _StellarIsDestroyed i386 0x00004e14 ppc 0x0000635c
 Boolean StellarIsDestroyed(SpobRecord *spob)
@@ -6134,7 +5947,6 @@ Boolean StellarIsDestroyed(SpobRecord *spob)
     return 0;
 }
 
-/* StellarIsLandable (mac _StellarIsLandable). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e3f0
 // MAC: _StellarIsLandable i386 0x0000a989 ppc 0x0000d0d0
 Boolean StellarIsLandable(SpobRecord *spob)
@@ -6147,7 +5959,6 @@ Boolean StellarIsLandable(SpobRecord *spob)
 }
 
 /* landable and an actual place, i.e. not a hypergate or a wormhole */
-/* StellarIsNormalLandable (mac _StellarIsNormalLandable). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e440
 // MAC: _StellarIsNormalLandable i386 0x0000a9f8 ppc 0x0000d164
 Boolean StellarIsNormalLandable(SpobRecord *spob)
@@ -6159,8 +5970,6 @@ Boolean StellarIsNormalLandable(SpobRecord *spob)
 
 #define kNeutralComponent 0x20
 
-/* GetShipPaintColor (mac _GetShipPaintColor). STATE: win MATCH, byte-identical; mac MATCH on both slices;
-   1.0.10 MATCH on both fragments; one body. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e470
 // MAC: _GetShipPaintColor i386 0x00007d0c ppc 0x00009adc
 void GetShipPaintColor(ShipObj *ship, unsigned short *red, unsigned short *green,
@@ -6187,7 +5996,6 @@ void GetShipPaintColor(ShipObj *ship, unsigned short *red, unsigned short *green
 
 #define kShipDefOutfits 8
 
-/* ShipCanSelfRepair (mac _ShipCanSelfRepair). STATE: MATCH 100.0%, exe 132 / obj 132, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e540
 // MAC: _ShipCanSelfRepair i386 0x00009134 ppc 0x0000b258
 Boolean ShipCanSelfRepair(ShipObj *ship)
@@ -6228,7 +6036,6 @@ Boolean ShipCanSelfRepair(ShipObj *ship)
     return 0;
 }
 
-/* SplitTwoLineString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e6d0
 // MAC: _SplitTwoLineString i386 0x00007dc1 ppc 0x00009b98
 unsigned char SplitTwoLineString(const unsigned char *src, unsigned char *first,
@@ -6267,7 +6074,6 @@ unsigned char SplitTwoLineString(const unsigned char *src, unsigned char *first,
 }
 
 
-/* FindSystemFromStellar (mac _FindSystemFromStellar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e790
 // MAC: _FindSystemFromStellar i386 0x00007ec1 ppc 0x00009cd4
 short FindSystemFromStellar(short stellarID)
@@ -6294,21 +6100,18 @@ short FindSystemFromStellar(short stellarID)
     return -1;
 }
 
-/* BusyIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e840
 // MAC: _BusyIdle i386 0x00005981 ppc 0x0000707c
 void BusyIdle(void)
 {
 }
 
-/* CheckLoMem. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e850
 // MAC: _CheckLoMem i386 0x00007f65 ppc 0x00009d7c
 void CheckLoMem(void)
 {
 }
 
-/* PlayerBlessedByGovt (mac _PlayerBlessedByGovt). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e860
 // MAC: _PlayerBlessedByGovt i386 0x00002732 ppc 0x00003188
 unsigned char PlayerBlessedByGovt(short govt, short which)
@@ -6320,7 +6123,6 @@ unsigned char PlayerBlessedByGovt(short govt, short which)
     return govtData[govt].blessesPlayer[which];
 }
 
-/* ShowWindowNoFlash (mac _ShowWindowNoFlash). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e8b0
 // MAC: _ShowWindowNoFlash i386 0x00007f6a ppc 0x00009d80
 void ShowWindowNoFlash(void *arg)
@@ -6333,7 +6135,6 @@ void ShowWindowNoFlash(void *arg)
     gDisableUpdatesMode = saved;
 }
 
-/* DisposeDialogNoFlash (mac _DisposeDialogNoFlash). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e8e0
 // MAC: _DisposeDialogNoFlash i386 0x00007f91 ppc 0x00009db4
 void DisposeDialogNoFlash(void *dlg)
@@ -6346,7 +6147,6 @@ void DisposeDialogNoFlash(void *dlg)
     gDisableUpdatesMode = saved;
 }
 
-/* AdjustedItemCost (mac _AdjustedItemCost). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e910
 // MAC: _AdjustedItemCost i386 0x00005869 ppc 0x00006f04
 int32_t AdjustedItemCost(OutfRecord *outf, ShipRec *ship)
@@ -6364,7 +6164,6 @@ int32_t AdjustedItemCost(OutfRecord *outf, ShipRec *ship)
     return cost;
 }
 
-/* AdjustedItemMass (mac _AdjustedItemMass). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e950
 // MAC: _AdjustedItemMass i386 0x00002889 ppc 0x00003330
 int32_t AdjustedItemMass(OutfRecord *outf, ShipRec *ship)
@@ -6387,7 +6186,6 @@ int32_t AdjustedItemMass(OutfRecord *outf, ShipRec *ship)
 
 /* mac _PickEmergeStellar. */
 
-/* PickEmergeStellar. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e9e0
 // MAC: _PickEmergeStellar i386 0x00007f9a ppc 0x00009db8
 short PickEmergeStellar(ShipObj *ship)
@@ -6400,7 +6198,6 @@ short PickEmergeStellar(ShipObj *ship)
     return -1;
 }
 
-/* PlayerHasFightersOfOutfitType. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ea40
 // MAC: _PlayerHasFightersOfOutfitType i386 0x00007ff7 ppc 0x00009e2c
 short PlayerHasFightersOfOutfitType(short outfitIndex)
@@ -6455,7 +6252,6 @@ short PlayerHasFightersOfOutfitType(short outfitIndex)
     return 0;
 }
 
-/* StellarNumHyperLinks. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ebb0
 // MAC: _StellarNumHyperLinks i386 0x0000812a ppc 0x00009fc8
 short StellarNumHyperLinks(SpobRecord *spob)
@@ -6476,10 +6272,6 @@ short StellarNumHyperLinks(SpobRecord *spob)
 #define kStarLayers kMaxStars
 
 
-/* RandomizeStars. STATE: MATCH 100.0%, exe 134 / obj 134, relocregcheck 23 of 23; byte-identical
-   pending (bytediff reads the adopted baseline; re-run after regate --update).
-   OPEN: none. The unfolded short twenty is `count = kStarLayers; count *= height / 600.0;' --
-   the compound assignment reads its own lvalue, which the front end does not substitute. */
 // FUNCTION: EVNOVA 0x0046ebf0
 // MAC: _RandomizeStars i386 0x0000b145 ppc 0x0000db10
 void RandomizeStars(void)
@@ -6515,7 +6307,6 @@ void RandomizeStars(void)
 
 /* clears every record's active flag (mac symtab has no name here — likely
    a static in the mac build; keep the address name) */
-/* ClearStarfield (mac _ClearStarfield). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ede0
 // MAC: _ClearStarfield i386 0x00008152 ppc 0x0000a008
 void ClearStarfield(void)
@@ -6526,7 +6317,6 @@ void ClearStarfield(void)
         starData[i].live = 0;
 }
 
-/* ScrollStarfield. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ee50
 // MAC: _ScrollStarfield i386 0x00008171 ppc 0x0000a038
 void ScrollStarfield(float dx, float dy)
@@ -6543,7 +6333,6 @@ void ScrollStarfield(float dx, float dy)
     }
 }
 
-/* pstrcpy (mac _pstrcpy). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046eeb0
 // MAC: _pstrcpy i386 0x00004ce2 ppc 0x000061d8
 void pstrcpy(unsigned char *dst, const unsigned char *src)
@@ -6562,7 +6351,6 @@ void pstrcpy(unsigned char *dst, const unsigned char *src)
  * pair and the body only ever re-checks index 0. The length equality test in
  * front of it already decided the answer.
  */
-/* pstrcmp. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ef00
 // MAC: _pstrcmp i386 0x000084d2 ppc 0x0000a554
 short pstrcmp(const unsigned char *a, const unsigned char *b)
@@ -6578,7 +6366,6 @@ short pstrcmp(const unsigned char *a, const unsigned char *b)
     return 0;
 }
 
-/* HideCursorSprite. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ef80
 // MAC: _HideCursorSprite i386 0x000081d6 ppc 0x0000a0a4
 void HideCursorSprite(void)
@@ -6589,7 +6376,6 @@ void HideCursorSprite(void)
     }
 }
 
-/* WarpSoundDuration. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046efb0
 // MAC: _WarpSoundDuration i386 0x00008203 ppc 0x0000a0f4
 short WarpSoundDuration(void)
@@ -6599,7 +6385,6 @@ short WarpSoundDuration(void)
     return jumpSoundLength[0];
 }
 
-/* StellarsAreIdentical (mac _StellarsAreIdentical). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046efd0
 // MAC: _StellarsAreIdentical i386 0x0000ab35 ppc 0x0000d334
 Boolean StellarsAreIdentical(short a, short b)
@@ -6626,7 +6411,6 @@ Boolean StellarsAreIdentical(short a, short b)
 
 /* the ships of some governments always read as disabled */
 
-/* ShipIsDerelict. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f100
 // MAC: _ShipIsDerelict i386 0x00008225 ppc 0x0000a128
 Boolean ShipIsDerelict(ShipObj *ship)
@@ -6639,7 +6423,6 @@ Boolean ShipIsDerelict(ShipObj *ship)
     return 0;
 }
 
-/* PlayerHasJettisonableCargo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f140
 // MAC: _PlayerHasJettisonableCargo i386 0x0000825a ppc 0x0000a164
 Boolean PlayerHasJettisonableCargo(void)
@@ -6663,7 +6446,6 @@ Boolean PlayerHasJettisonableCargo(void)
     return 0;
 }
 
-/* AddToPlayerKills (mac _AddToPlayerKills). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f1e0
 // MAC: _AddToPlayerKills i386 0x000082dc ppc 0x0000a22c
 void AddToPlayerKills(int amount)
@@ -6678,7 +6460,6 @@ void AddToPlayerKills(int amount)
     }
 }
 
-/* WeaponBurstInterval. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f270
 // MAC: _WeaponBurstInterval i386 0x0000831c ppc 0x0000a2bc
 short WeaponBurstInterval(short weap, short count)
@@ -6688,7 +6469,6 @@ short WeaponBurstInterval(short weap, short count)
     return count * weaponStats[weap].burstCount;
 }
 
-/* WeaponMaxSimultShots. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f2c0
 // MAC: _WeaponMaxSimultShots i386 0x00008350 ppc 0x0000a2f4
 short WeaponMaxSimultShots(ShipObj *ship, short w)
@@ -6731,7 +6511,6 @@ short WeaponMaxSimultShots(ShipObj *ship, short w)
     return count;
 }
 
-/* IonizeShip. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046f3f0
 // MAC: _IonizeShip i386 0x00008409 ppc 0x0000a408
 void IonizeShip(ShipObj *ship, WeapRecord *weap, FloatPoint *pos)

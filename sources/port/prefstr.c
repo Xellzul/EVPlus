@@ -77,7 +77,6 @@ static void FlushPrefs(void);
 static const char kPrefsFileName[] = "9:EVNova.ini";
 
 /* opened on first use, so nothing has to sequence it against startup */
-/* OpenPrefs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcfa0
 void OpenPrefs(void)
 {
@@ -90,7 +89,6 @@ void OpenPrefs(void)
     }
 }
 
-/* ClosePrefs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bcfd0
 void ClosePrefs(void)
 {
@@ -104,7 +102,6 @@ void ClosePrefs(void)
     }
 }
 
-/* GetIniIndString. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bd000
 void GetIniIndString(char *out, int32_t listID, int32_t index)
 {
@@ -125,7 +122,6 @@ void GetIniIndString(char *out, int32_t listID, int32_t index)
 }
 
 /* only written back when something actually changed it */
-/* FlushPrefs. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bd090
 static void FlushPrefs(void)
 {

@@ -16,8 +16,6 @@ extern void *gProcessHeap;                       /* atplatopen.c */
 
 #define kHeapZeroMemory 8
 
-/* MemoryAllocate. STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004fe1f9
 void *MemoryAllocate(ULong size)
 {
@@ -35,8 +33,6 @@ void *MemoryAllocate(ULong size)
     return p;
 }
 
-/* MemoryAllocateClear. STATE: MATCH 100%, exe 15 / obj 15, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004fe22c
 void *MemoryAllocateClear(ULong size)
 {
@@ -54,7 +50,6 @@ void *MemoryAllocateClear(ULong size)
     return p;
 }
 
-/* MemoryDeallocate. STATE: MATCH 100%, exe 10 / obj 10, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe25f
 void MemoryDeallocate(void *p)
 {
@@ -67,7 +62,6 @@ void MemoryDeallocate(void *p)
     HeapFree(gProcessHeap, 0, p);
 }
 
-/* MemoryChecksum. STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe285
 int32_t MemoryChecksum(void *data, uint32_t size)
 {
@@ -81,7 +75,6 @@ int32_t MemoryChecksum(void *data, uint32_t size)
     return crc;
 }
 
-/* MemoryClear. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe2b0
 void MemoryClear(void *p, ULong n)
 {
@@ -92,7 +85,6 @@ void MemoryClear(void *p, ULong n)
 }
 
 /* Byte-fills up to the first dword boundary, then dwords, then the tail. */
-/* MemoryFill. STATE: MATCH 100%, exe 40 / obj 40, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe2c3
 void MemoryFill(void *p, int c, ULong n)
 {
@@ -123,7 +115,6 @@ void MemoryFill(void *p, int c, ULong n)
         *d++ = b;
 }
 
-/* MemoryCopy. STATE: MATCH 100%, exe 11 / obj 11, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe31a
 void MemoryCopy(void *dst, const void *src, ULong n)
 {
@@ -134,7 +125,6 @@ void MemoryCopy(void *dst, const void *src, ULong n)
         memmove(dst, src, n);
 }
 
-/* MemoryMove. STATE: MATCH 100%, exe 11 / obj 11, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe338
 void MemoryMove(void *dst, const void *src, ULong n)
 {
@@ -150,7 +140,6 @@ void MemoryMove(void *dst, const void *src, ULong n)
 static MemBlock *gMemBlockList;                   /* 0x008676f0 block list */
 
 /* Add a block of `count` free records (256 when 0) to the list. */
-/* IndirectPreflight. STATE: MATCH 100%, exe 51 / obj 51, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe356
 int32_t IndirectPreflight(ULong count)
 {
@@ -183,7 +172,6 @@ int32_t IndirectPreflight(ULong count)
 }
 
 /* A new handle of `size` bytes (a zero size still gets one byte). */
-/* IndirectAllocate. STATE: MATCH 100%, exe 73 / obj 73, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe3de
 void **IndirectAllocate(ULong size)
 {
@@ -240,8 +228,7 @@ done:
 
 
 /* IndirectAllocateTempMem (a new handle through IndirectAllocate, after the same three discarded checks;
-   the FT loader's alternative allocator). STATE: MATCH 100%, exe 11 / obj 11, byte-identical yes.
-   OPEN: none */
+   the FT loader's alternative allocator). */
 // FUNCTION: EVNOVA 0x004fe493
 void **IndirectAllocateTempMem(ULong size)
 {
@@ -258,7 +245,6 @@ void **IndirectAllocateTempMem(ULong size)
 }
 
 /* A new handle holding a copy of another's bytes. */
-/* IndirectDuplicate. STATE: MATCH 100%, exe 32 / obj 32, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe4b5
 void **IndirectDuplicate(void **handle)
 {
@@ -284,8 +270,6 @@ void **IndirectDuplicate(void **handle)
 
 AT_EXTERN unsigned char (*gIndirectBusy)(void *p);         /* 0x008707f8, release hook */
 
-/* IndirectInitialize. STATE: MATCH 100%, exe 27 / obj 27, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004fe501
 void *IndirectInitialize(const void *src, ULong size)
 {
@@ -305,7 +289,6 @@ void *IndirectInitialize(const void *src, ULong size)
     return p;
 }
 
-/* IndirectDeallocate. STATE: MATCH 100%, exe 41 / obj 41, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe546
 int32_t IndirectDeallocate(void **p)
 {
@@ -336,7 +319,6 @@ int32_t IndirectDeallocate(void **p)
        zero left by the stores on success */
 }
 
-/* IndirectGetSize. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe5b8
 ULong IndirectGetSize(void **handle)
 {
@@ -353,7 +335,6 @@ ULong IndirectGetSize(void **handle)
     return result;
 }
 
-/* IndirectSetSize. STATE: MATCH 100%, exe 45 / obj 45, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe5cd
 int32_t IndirectSetSize(void **handle, ULong size)
 {
@@ -384,7 +365,6 @@ int32_t IndirectSetSize(void **handle, ULong size)
     return err;
 }
 
-/* IndirectGetLock. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe636
 LockResult IndirectGetLock(void **handle)
 {
@@ -401,7 +381,6 @@ LockResult IndirectGetLock(void **handle)
     return result;
 }
 
-/* IndirectSetLock. STATE: MATCH 100%, exe 13 / obj 13, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe64b
 LockResult IndirectSetLock(void **handle, unsigned char lock)
 {
@@ -423,8 +402,7 @@ LockResult IndirectSetLock(void **handle, unsigned char lock)
     return old;
 }
 
-/* IndirectAppend (append one handle's bytes to another). STATE: MATCH 100%, exe 53 / obj 53, byte-identical yes.
-   OPEN: none */
+/* IndirectAppend (append one handle's bytes to another). */
 // FUNCTION: EVNOVA 0x004fe674
 int32_t IndirectAppend(void **handle, void **from)
 {
@@ -452,8 +430,7 @@ int32_t IndirectAppend(void **handle, void **from)
     return err;
 }
 
-/* IndirectReplace (make a handle a copy of another). STATE: MATCH 100%, exe 41 / obj 41, byte-identical yes.
-   OPEN: none */
+/* IndirectReplace (make a handle a copy of another). */
 // FUNCTION: EVNOVA 0x004fe6f1
 int32_t IndirectReplace(void **handle, void **from)
 {
@@ -477,8 +454,7 @@ int32_t IndirectReplace(void **handle, void **from)
     return err;
 }
 
-/* IndirectInsertData (insert bytes at the front of a handle). STATE: MATCH 100%, exe 51 / obj 51, byte-identical yes.
-   OPEN: none */
+/* IndirectInsertData (insert bytes at the front of a handle). */
 // FUNCTION: EVNOVA 0x004fe74e
 int32_t IndirectInsertData(void **handle, const void *data, ULong length)
 {
@@ -506,8 +482,7 @@ int32_t IndirectInsertData(void **handle, const void *data, ULong length)
     return err;
 }
 
-/* IndirectAppendData (append bytes to a handle). STATE: MATCH 100%, exe 46 / obj 46,
-   byte-identical yes. OPEN: none */
+/* IndirectAppendData (append bytes to a handle). */
 // FUNCTION: EVNOVA 0x004fe7c3
 int32_t IndirectAppendData(void **handle, const void *data, ULong length)
 {
@@ -533,8 +508,7 @@ int32_t IndirectAppendData(void **handle, const void *data, ULong length)
     return err;
 }
 
-/* IndirectReplaceData (replace a handle's contents with length bytes of data). STATE: MATCH 100%, exe 37 / obj 37, byte-identical yes.
-   OPEN: none */
+/* IndirectReplaceData (replace a handle's contents with length bytes of data). */
 // FUNCTION: EVNOVA 0x004fe82c
 int32_t IndirectReplaceData(void **handle, const void *data, ULong length)
 {
@@ -557,7 +531,6 @@ int32_t IndirectReplaceData(void **handle, const void *data, ULong length)
 }
 
 /* Replaces oldLength bytes at offset with newLength bytes of data. */
-/* IndirectSpliceData. STATE: MATCH 100%, exe 78 / obj 78, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe884
 int32_t IndirectSpliceData(void **handle, ULong offset, ULong oldLength, const void *data,
                   ULong newLength)
@@ -612,8 +585,6 @@ done:
 
 /* Packs a handle in place: 'zlib' (deflate), 'pack'/'PACK' (PackBits), 'none'; '****' and
    'best' mean zlib, 'fast' means pack. */
-/* IndirectCompress. STATE: MATCH 100%, exe 571 / obj 571, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004fe949
 int32_t IndirectCompress(void **handle, ULong tag, PackInfo *info)
 {
@@ -870,7 +841,6 @@ done:
 }
 
 /* Unpacks a handle in place; the inverse of IndirectCompress. */
-/* IndirectDecompress. STATE: MATCH 100%, exe 468 / obj 468, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ff112
 int32_t IndirectDecompress(void **handle, ULong tag, PackInfo *info)
 {
@@ -1120,7 +1090,6 @@ done:
 }
 
 #ifndef MAC1010
-/* _IndirectValidate. STATE: MATCH 100%, exe 70 / obj 70, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ff774
 int32_t _IndirectValidate(void **handle)
 {

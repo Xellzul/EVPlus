@@ -114,8 +114,7 @@ AT_STATIC ULong _PT_ParseTreeRenumber(ITElement *e, ULong n);
 
 /* _PT_ParseTreeInsert (a new element or text node linked into a tree: text tags -3..-1 copy the
    text, element tags 1..2 copy the name and get an attribute table; UTF-16 when `wide';
-   NULL when out of memory). STATE: MATCH 100.0%, exe 145 / obj 145, byte-identical yes. OPEN:
-   the seventh argument is never read */
+   NULL when out of memory). Note: the seventh argument is never read */
 // FUNCTION: EVNOVA 0x0052489d
 ITElement *_PT_ParseTreeInsert(ITElement *root, ITElement *where, unsigned char before, int32_t tag,
                         const void *text, ULong length, ULong unused, unsigned char wide)
@@ -206,16 +205,14 @@ done:
     return node;
 }
 
-/* PT_ParseTreeCreate (a new detached node from a C string). STATE: MATCH 100%, exe 12 / obj 12, byte-identical yes.
-   OPEN: none */
+/* PT_ParseTreeCreate (a new detached node from a C string). */
 // FUNCTION: EVNOVA 0x00524a2b
 ITElement *PT_ParseTreeCreate(int32_t tag, const char *text, ULong length)
 {
     return _PT_ParseTreeInsert(0, 0, 1, tag, text, length, length, 0);
 }
 
-/* PT_ParseTreeCreateUnicode (a new detached node from UTF-16 text, `count' characters). STATE:
-   MATCH 100%, exe 20 / obj 20, byte-identical yes. OPEN: none */
+/* PT_ParseTreeCreateUnicode (a new detached node from UTF-16 text, `count' characters). */
 // FUNCTION: EVNOVA 0x00524a4a
 ITElement *PT_ParseTreeCreateUnicode(int32_t tag, const unsigned short *text, ULong count)
 {
@@ -224,7 +221,7 @@ ITElement *PT_ParseTreeCreateUnicode(int32_t tag, const unsigned short *text, UL
 
 /* PT_ParseTreeInsertNode (link `node' into a tree: with no `where', as the root's successor, or as the new
    root before it when `before'; else at the end of where's children, or, when `before', ahead of
-   them; the tree renumbered). STATE: MATCH 100%, exe 45 / obj 45, byte-identical yes. OPEN: none */
+   them; the tree renumbered). */
 // FUNCTION: EVNOVA 0x00524a75
 ITElement *PT_ParseTreeInsertNode(ITElement *root, ITElement *where, ITElement *node,
                         unsigned char before)
@@ -254,8 +251,7 @@ ITElement *PT_ParseTreeInsertNode(ITElement *root, ITElement *where, ITElement *
     return node;
 }
 
-/* PT_ParseTreeGetParent (the parent of `node', found by the document-order numbers). STATE: MATCH 100%,
-   exe 29 / obj 29, byte-identical yes. OPEN: none */
+/* PT_ParseTreeGetParent (the parent of `node', found by the document-order numbers). */
 // FUNCTION: EVNOVA 0x00524ad5
 ITElement *PT_ParseTreeGetParent(ITElement *root, ITElement *node)
 {
@@ -284,8 +280,7 @@ ITElement *PT_ParseTreeGetParent(ITElement *root, ITElement *node)
     return 0;
 }
 
-/* PT_ParseTreeGetNext (the element after `node' in document order). STATE: MATCH 100%, exe 24 / obj 24,
-   byte-identical yes. OPEN: none */
+/* PT_ParseTreeGetNext (the element after `node' in document order). */
 // FUNCTION: EVNOVA 0x00524b11
 ITElement *PT_ParseTreeGetNext(ITElement *root, ITElement *node)
 {
@@ -306,8 +301,7 @@ ITElement *PT_ParseTreeGetNext(ITElement *root, ITElement *node)
 }
 
 /* PT_ParseTreeRemove (unlink `node' from a tree, with its children when `subtree', else leaving them
-   in its place; disposed when asked; the tree renumbered and its root answered). STATE: MATCH
-   100%, exe 56 / obj 56, byte-identical yes. OPEN: none */
+   in its place; disposed when asked; the tree renumbered and its root answered). */
 // FUNCTION: EVNOVA 0x00524b45
 ITElement *PT_ParseTreeRemove(ITElement *root, ITElement *node, unsigned char dispose,
                         unsigned char subtree)
@@ -343,8 +337,7 @@ ITElement *PT_ParseTreeRemove(ITElement *root, ITElement *node, unsigned char di
 /* PT_ParseTreeLoad (parse a markup text into a tree: a UTF-16 text is parsed from a converted
    copy, NULs become spaces; text, comment and tag nodes placed through 0x0052624b; the
    content of a `raw' tag kept as one node up to its end tag; elements left open reported and
-   closed; an empty text gives a lone text node). STATE: MATCH 100%, exe 710 / obj 710,
-   byte-identical yes (2446 bytes). OPEN: none; notes/itmarkup.md */
+   closed; an empty text gives a lone text node). */
 // FUNCTION: EVNOVA 0x00524bc7
 int32_t PT_ParseTreeLoad(void **text, const char *rawTags, const char *emptyTags, void **errors,
                   ITElement **out)
@@ -689,8 +682,7 @@ done:
     return err;
 }
 
-/* PT_ParseTreeDispose (dispose a list of elements and everything under them). STATE: MATCH 100%, exe 53
-   / obj 53, byte-identical yes. OPEN: none */
+/* PT_ParseTreeDispose (dispose a list of elements and everything under them). */
 // FUNCTION: EVNOVA 0x00525555
 void PT_ParseTreeDispose(ITElement *e)
 {
@@ -727,7 +719,7 @@ void PT_ParseTreeDispose(ITElement *e)
 }
 
 /* _PT_ParseTreeRenumber (number a list of elements and their descendants in document order from
-   `n'; the next number). STATE: MATCH 100%, exe 21 / obj 21, byte-identical yes. OPEN: none */
+   `n'; the next number). */
 // FUNCTION: EVNOVA 0x005255cd
 AT_STATIC ULong _PT_ParseTreeRenumber(ITElement *e, ULong n)
 {
@@ -744,8 +736,7 @@ AT_STATIC ULong _PT_ParseTreeRenumber(ITElement *e, ULong n)
 
 /* _PT_ParseTreeLoadTag (parse one tag between `start' (its `<') and `end' (its `>'): the element
    and its attributes, values unquoted and %-decoded; `opener' a special tag's second
-   character, which becomes its tag; `raw' set for a tag whose content is not markup).
-   STATE: MATCH 100%, exe 779 / obj 779, byte-identical yes. OPEN: none */
+   character, which becomes its tag; `raw' set for a tag whose content is not markup). */
 // FUNCTION: EVNOVA 0x005255f8
 AT_STATIC int32_t _PT_ParseTreeLoadTag(ITParser *parser, void **errors, const char *start, const char *end,
                   char opener, unsigned char *raw)
@@ -1062,8 +1053,7 @@ done:
 }
 
 /* _PT_ParseTreeLoadText (a text node (tag -1) for the text between `start' and `end', its entities decoded
-   first (0x00526abd), its source offset kept, inserted by 0x0052624b). STATE: MATCH 100%, exe 95
-   / obj 95, byte-identical yes. OPEN: none */
+   first (0x00526abd), its source offset kept, inserted by 0x0052624b). */
 // FUNCTION: EVNOVA 0x00526076
 AT_STATIC int32_t _PT_ParseTreeLoadText(ITParser *parser, void **errors, const char *start, const char *end)
 {
@@ -1111,8 +1101,7 @@ done:
 }
 
 /* IT_ParseCommentNode (a comment node (tag -2) for the text between `start' and `end', its source
-   offset kept, inserted by 0x0052624b). STATE: MATCH 100%, exe 56 / obj 56, byte-identical
-   yes. OPEN: none */
+   offset kept, inserted by 0x0052624b). */
 // FUNCTION: EVNOVA 0x0052614f
 AT_STATIC int32_t IT_ParseCommentNode(ITParser *parser, void **errors, const char *start, const char *end)
 {
@@ -1144,8 +1133,7 @@ done:
     return err;
 }
 
-/* IT_ParseSpecialNode (the same for a tag -3 node). STATE: MATCH 100%, exe 56 / obj 56,
-   byte-identical yes. OPEN: none */
+/* IT_ParseSpecialNode (the same for a tag -3 node). */
 // FUNCTION: EVNOVA 0x005261cd
 AT_STATIC int32_t IT_ParseSpecialNode(ITParser *parser, void **errors, const char *start, const char *end)
 {
@@ -1180,9 +1168,7 @@ done:
 /* _PT_ParseTreeLoad (place a parsed node: an open tag is pushed on the open list; an end tag
    closes its innermost open namesake, every element opened inside it reported as badly
    nested and closed first, and is disposed, or is reported and kept when nothing matches;
-   anything else goes under the innermost open element or at the top level). STATE: MATCH
-   100%, exe 213 / obj 213, byte-identical yes. OPEN: none (one walker `e` for both list
-   walks, two labels for the shared tail: 335 cross-jumps the two identical stores otherwise) */
+   anything else goes under the innermost open element or at the top level). */
 // FUNCTION: EVNOVA 0x0052624b
 AT_STATIC void _PT_ParseTreeLoad(ITParser *parser, ITElement *node, void **errors, unsigned char open,
                   unsigned char close)
@@ -1278,7 +1264,7 @@ done:
 }
 
 /* _PT_ParseFindDelim (the end of a tag: the first `close' outside quotes, or inside quotes that saw
-   nothing odd). STATE: MATCH 100%, exe 157 / obj 157, byte-identical yes. OPEN: none */
+   nothing odd). */
 // FUNCTION: EVNOVA 0x00526458
 AT_STATIC const char *_PT_ParseFindDelim(ITParser *parser, const char *start, const char *end, char close)
 {
@@ -1367,7 +1353,7 @@ retest:
 }
 
 /* IT_SkipSlash (skip white space, an optional `/', white space again; whether there was a
-   `/'). STATE: MATCH 100%, exe 85 / obj 85, byte-identical yes. OPEN: none */
+   `/'). */
 // FUNCTION: EVNOVA 0x00526646
 AT_STATIC unsigned char IT_SkipSlash(ITParser *parser, const char **cursor, const char *end)
 {
@@ -1404,7 +1390,7 @@ AT_STATIC unsigned char IT_SkipSlash(ITParser *parser, const char **cursor, cons
 }
 
 /* _PT_ParseHashAppend (set an attribute from a counted name: copied NUL-terminated, as UTF-16 for a
-   wide table). STATE: MATCH 100%, exe 81 / obj 81, byte-identical yes. OPEN: none */
+   wide table). */
 // FUNCTION: EVNOVA 0x00526725
 AT_STATIC int32_t _PT_ParseHashAppend(struct HashTable *table, const void *key, ULong keyLength, const void *value,
                   ULong valueLength)
@@ -1458,8 +1444,6 @@ static const char kTagSlash[] = "/";
 
 /* One character off the text, UTF-16 when a code point is asked for; answers
    the bytes it used. */
-/* _PT_ParseAdvance. STATE: MATCH 100%, exe 32 / obj 32, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x005267ef
 AT_STATIC ULong _PT_ParseAdvance(const unsigned char *s, ULong *ch, ULong *code)
 {
@@ -1478,7 +1462,6 @@ AT_STATIC ULong _PT_ParseAdvance(const unsigned char *s, ULong *ch, ULong *code)
 static char kHexDigits[] = "0123456789ABCDEF";
 
 /* Escapes a handle's text in place, for a URL or for HTML. */
-/* PT_ParseEncode. STATE: MATCH 100%, exe 178 / obj 178, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0052682e
 int32_t PT_ParseEncode(void **h, unsigned char wide, unsigned char url,
                   unsigned char spaces, unsigned char quotes)
@@ -1587,8 +1570,7 @@ static unsigned char sMarkupPad[24];           /* 0x0086bdc0 */
 
 /* PT_ParseDecode (decode a text in place: `&name;' entities, or with `escapes' `%xx' and
    `%uxxxx'; the numeric forms `&#nn;' / `&#unnnn;' and the % escapes never replace anything,
-   their digit counter is never advanced, as in the exe). STATE: MATCH 100%, exe 304 / obj 304,
-   byte-identical yes. OPEN: none */
+   their digit counter is never advanced, as in the exe). */
 // FUNCTION: EVNOVA 0x00526abd
 int32_t PT_ParseDecode(void **text, unsigned char wide, unsigned char escapes)
 {
@@ -1710,8 +1692,7 @@ int32_t PT_ParseDecode(void **text, unsigned char wide, unsigned char escapes)
 }
 
 /* _PT_ParseError (append a parse error: its line number, line start and length found in the text,
-   the file name and the message FORMAT). STATE: MATCH 100%, exe 213 / obj 213, byte-identical
-   yes. OPEN: none */
+   the file name and the message FORMAT). */
 // FUNCTION: EVNOVA 0x00526eac
 AT_STATIC int32_t _PT_ParseError(void **text, void **errors, int32_t unk00, int32_t unk04, int32_t unk08, ULong offset,
                   ULong length, const char *file, const char *format, const void *argument,

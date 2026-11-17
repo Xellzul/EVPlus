@@ -9,7 +9,6 @@
 
 EXTERN_C_BEGIN
 
-/* DrawStringCentered. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004622f0
 void DrawStringCentered(const unsigned char *str, short left, short right,
                         short v)

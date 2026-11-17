@@ -15,7 +15,6 @@
 
 
 
-/* FindNextShipInSystem (mac _FindNextShipInSystem). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00461bd0
 // MAC: _FindNextShipInSystem i386 0x0000a5b1 ppc 0x0000cc80
 short FindNextShipInSystem(short cur, short system)

@@ -29,7 +29,6 @@ ULong gDurationBuffer;                           /* 0x00870010 */
 #define kBufferBytes    0x1000
 
 
-/* ST_Open. STATE: MATCH 100%, exe 107 / obj 107, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6290
 int32_t ST_Open(unsigned short channels, ULong device)
 {
@@ -120,7 +119,6 @@ ULong gSaveMaxVolume;                              /* 0x00870dcc, 4 B */
 
 #define kDefaultRate 0x10000
 
-/* ST_Close. STATE: MATCH 100%, exe 30 / obj 30, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6440
 void ST_Close(void)
 {
@@ -143,8 +141,6 @@ void ST_Close(void)
     }
 }
 
-/* ST_GetSysVolume. STATE: MATCH 100%, exe 10 / obj 10, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d64b0
 ULong ST_GetSysVolume(void)
 {
@@ -158,8 +154,6 @@ ULong ST_GetSysVolume(void)
     return level;
 }
 
-/* ST_DisposeSound. STATE: MATCH 100%, exe 11 / obj 11, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d64d0
 void ST_DisposeSound(void *sound)
 {
@@ -170,8 +164,6 @@ void ST_DisposeSound(void *sound)
         MemoryDeallocate(sound);
 }
 
-/* ST_PlaySound (mac _ST_PlaySound). STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d64f0
 int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level)
 {
@@ -197,8 +189,6 @@ int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level)
 #define kMaxLevel    0x80
 #define kIdStep      2
 
-/* ST_PlaySoundParam (mac _ST_PlaySoundParam). STATE: MATCH 100%, exe 142 / obj 142,
-   byte-identical yes (relocs resolved at the exe's VAs: tools/resolvedcmp.py). OPEN: none */
 // FUNCTION: EVNOVA 0x004d6550
 ULong ST_PlaySoundParam(SoundRequest *req)
 {
@@ -290,7 +280,6 @@ char gCriticalSection[16];                           /* 0x0086dc88, the lock */
 SoundRequest gSoundVoiceStatus;                       /* 0x008707dc, callback ref */
 
 /* Counts the channels this sound occupies; a null sound counts them all. */
-/* ST_IsSoundPlaying. STATE: MATCH 100%, exe 33 / obj 33, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6770
 unsigned short ST_IsSoundPlaying(void *sound)
 {
@@ -315,7 +304,6 @@ unsigned short ST_IsSoundPlaying(void *sound)
     return found;
 }
 
-/* ST_HaltSound. STATE: MATCH 100%, exe 62 / obj 62, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d67d0
 void ST_HaltSound(void *sound)
 {
@@ -355,7 +343,6 @@ void ST_HaltSound(void *sound)
 }
 
 /* Drop one channel and close the table up behind it. */
-/* _ST_HaltASound. STATE: MATCH 100%, exe 34 / obj 34, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6890
 void _ST_HaltASound(short index)
 {
@@ -425,7 +412,6 @@ typedef struct MemSound {
 
 /* Pack a parsed sound as IMA ADPCM behind a MemSound header. Mac `ima4'
    data is already ADPCM and only loses each packet's two-byte header. */
-/* _ST_SoundRefCreate. STATE: MATCH 100%, exe 216 / obj 216, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6900
 void *_ST_SoundRefCreate(SoundDesc *desc)
 {
@@ -542,7 +528,6 @@ void *_ST_SoundRefCreate(SoundDesc *desc)
    the voice limit are decoded without being heard. */
 typedef void (*MixerNotifyProc)(int32_t reason, ULong id, SoundRequest *request);
 
-/* _ST_MixVoices. STATE: MATCH 100%, exe 109 / obj 109, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6b90
 void _ST_MixVoices(short *buffer, ULong frames)
 {
@@ -593,7 +578,6 @@ void _ST_MixVoices(short *buffer, ULong frames)
     }
 }
 
-/* _ST_MixerDispatch. STATE: MATCH 100%, exe 14 / obj 14 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6d00
 void _ST_MixerDispatch(short *buffer, ULong frames)
 {
@@ -604,8 +588,6 @@ void _ST_MixerDispatch(short *buffer, ULong frames)
 
 /* Where the sound header sits in a `snd ' resource: the data offset its
    first soundCmd or bufferCmd carries. 0 if there is none. */
-/* _ST_SndDataOffset. STATE: MATCH 100%, exe 96 / obj 96 instrs, byte-identical yes.
-   OPEN: none */
 // FUNCTION: EVNOVA 0x004d6d30
 int32_t _ST_SndDataOffset(void **handle)
 {
@@ -699,7 +681,6 @@ typedef struct CmpSoundHeader {
     unsigned short sampleSize;                        /* +0x3e */
 } CmpSoundHeader;
 
-/* ST_LoadSndResourceIndirect. STATE: MATCH 100.0%, exe 315 / obj 315, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004d6e60
 void *ST_LoadSndResourceIndirect(void **handle, int32_t flags)
 {

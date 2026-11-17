@@ -51,7 +51,6 @@ static int32_t Once;                                /* 0x008676b0, registered */
 #define kMappingSize        0x20
 #define kAlreadyExists      0xb7                 /* ERROR_ALREADY_EXISTS */
 
-/* UnlockMe. STATE: MATCH 100%, exe 8 / obj 8 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9bd0
 void UnlockMe(void)
 {
@@ -61,7 +60,6 @@ void UnlockMe(void)
     }
 }
 
-/* Win95Allow1Instance. STATE: MATCH 100%, exe 27 / obj 27 instrs, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9c00
 int32_t Win95Allow1Instance(const char *name)
 {

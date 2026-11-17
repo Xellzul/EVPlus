@@ -10,8 +10,7 @@
 #include "scales.h"
 #include "misc.h"
 
-/* vorbis_lpc_from_data. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054c530
 float vorbis_lpc_from_data(float *data,float *lpc,int n,int m){
   float *aut=(float *)alloca(sizeof(*aut)*(m+1));
@@ -52,8 +51,7 @@ float vorbis_lpc_from_data(float *data,float *lpc,int n,int m){
   return error;
 }
 
-/* vorbis_lpc_from_curve. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054c9e0
 float vorbis_lpc_from_curve(float *curve,float *lpc,lpc_lookup *l){
   int n=l->ln;
@@ -80,8 +78,7 @@ float vorbis_lpc_from_curve(float *curve,float *lpc,lpc_lookup *l){
   return(vorbis_lpc_from_data(work,lpc,n,m));
 }
 
-/* lpc_init. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054cc10
 void lpc_init(lpc_lookup *l,int32_t mapped, int m){
   FastMemSet(l,0,sizeof(*l));
@@ -92,8 +89,7 @@ void lpc_init(lpc_lookup *l,int32_t mapped, int m){
   drft_init(&l->fft,mapped*2);
 }
 
-/* lpc_clear. STATE: genuine libvorbis 1.0rc3 (runtime band, a floor).
-   OPEN: none. */
+/* From libvorbis 1. */
 // FUNCTION: EVNOVA 0x0054cc60
 void lpc_clear(lpc_lookup *l){
   if(l){

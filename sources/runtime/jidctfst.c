@@ -25,8 +25,7 @@
 
 #define IDESCALE(x,n)  ((int) IRIGHT_SHIFT(x, n))
 
-/* jpeg_idct_ifast. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x005697f8
 GLOBAL(void)
 jpeg_idct_ifast (j_decompress_ptr cinfo, jpeg_component_info * compptr,

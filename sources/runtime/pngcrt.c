@@ -4,16 +4,14 @@
 #include "win32.h"
 #include "privcrt.h"
 
-/* pngcrt_malloc (pngmem.c's malloc). STATE: MATCH, byte-identical (29 B).
-   OPEN: the original's name is unknown. */
+/* pngcrt_malloc (pngmem.c's malloc). Note: the original's name is unknown. */
 // FUNCTION: EVNOVA 0x0054f7d2
 void *pngcrt_malloc(size_t size)
 {
     return size != 0 ? HeapAlloc(GetProcessHeap(), 0, size) : NULL;
 }
 
-/* pngcrt_free (pngmem.c's free). STATE: MATCH, byte-identical (25 B).
-   OPEN: the original's name is unknown. */
+/* pngcrt_free (pngmem.c's free). Note: the original's name is unknown. */
 // FUNCTION: EVNOVA 0x0054f7b9
 void pngcrt_free(void *ptr)
 {
@@ -21,8 +19,7 @@ void pngcrt_free(void *ptr)
         HeapFree(GetProcessHeap(), 0, ptr);
 }
 
-/* pngcrt_memcpy (png_memcpy). STATE: MATCH, byte-identical (34 B).
-   OPEN: none. */
+/* pngcrt_memcpy (png_memcpy). */
 // FUNCTION: EVNOVA 0x0054f797
 void *pngcrt_memcpy(void *dest, const void *source, size_t len)
 {
@@ -34,8 +31,7 @@ void *pngcrt_memcpy(void *dest, const void *source, size_t len)
     return dest;
 }
 
-/* pngcrt_strlen (png_strlen). STATE: MATCH, byte-identical (18 B).
-   OPEN: none. */
+/* pngcrt_strlen (png_strlen). */
 // FUNCTION: EVNOVA 0x0054f785
 size_t pngcrt_strlen(const char *s)
 {
@@ -46,8 +42,7 @@ size_t pngcrt_strlen(const char *s)
     return n;
 }
 
-/* pngcrt_strcpy (png_strcpy). STATE: MATCH, byte-identical (30 B).
-   OPEN: none. */
+/* pngcrt_strcpy (png_strcpy). */
 // FUNCTION: EVNOVA 0x0054f767
 char *pngcrt_strcpy(char *dest, const char *source)
 {
@@ -58,8 +53,7 @@ char *pngcrt_strcpy(char *dest, const char *source)
     return save;
 }
 
-/* pngcrt_memcmp (png_memcmp). STATE: MATCH, byte-identical (47 B).
-   OPEN: none. */
+/* pngcrt_memcmp (png_memcmp). */
 // FUNCTION: EVNOVA 0x0054f738
 int pngcrt_memcmp(const void *s1, const void *s2, size_t len)
 {
@@ -73,8 +67,7 @@ int pngcrt_memcmp(const void *s1, const void *s2, size_t len)
     return 0;
 }
 
-/* pngcrt_memset (png_memset). STATE: MATCH, byte-identical (29 B).
-   OPEN: none. */
+/* pngcrt_memset (png_memset). */
 // FUNCTION: EVNOVA 0x0054f71b
 void *pngcrt_memset(void *dest, int c, size_t len)
 {
@@ -109,8 +102,7 @@ static const int pngcrt_ctype[256] = {
 static int pngcrt_isspace(int c) { return (pngcrt_ctype[c] & CT_SPACE) ? 1 : 0; }
 static int pngcrt_isdigit(int c) { return (pngcrt_ctype[c] & CT_DIGIT) ? 1 : 0; }
 
-/* pngcrt_strtod (png_handle_sCAL's strtod). STATE: MATCH, byte-identical (389 B).
-   OPEN: none. */
+/* pngcrt_strtod (png_handle_sCAL's strtod). */
 // FUNCTION: EVNOVA 0x0054f596
 double pngcrt_strtod(const char *s, char **endptr)
 {
@@ -187,8 +179,7 @@ double pngcrt_strtod(const char *s, char **endptr)
     return result;
 }
 
-/* pngcrt_abs (png_set_dither's PNG_COLOR_DIST). STATE: MATCH, byte-identical (11 B).
-   OPEN: none. */
+/* pngcrt_abs (png_set_dither's PNG_COLOR_DIST). */
 // FUNCTION: EVNOVA 0x0054f58b
 int pngcrt_abs(int x)
 {

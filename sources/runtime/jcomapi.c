@@ -4,8 +4,7 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 
-/* jpeg_abort. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054dd01
 GLOBAL(void)
 jpeg_abort (j_common_ptr cinfo)
@@ -28,8 +27,7 @@ jpeg_abort (j_common_ptr cinfo)
   }
 }
 
-/* jpeg_destroy. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054dce2
 GLOBAL(void)
 jpeg_destroy (j_common_ptr cinfo)
@@ -41,8 +39,7 @@ jpeg_destroy (j_common_ptr cinfo)
   cinfo->global_state = 0;
 }
 
-/* jpeg_alloc_quant_table. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054dcc3
 GLOBAL(JQUANT_TBL *)
 jpeg_alloc_quant_table (j_common_ptr cinfo)
@@ -55,8 +52,7 @@ jpeg_alloc_quant_table (j_common_ptr cinfo)
   return tbl;
 }
 
-/* jpeg_alloc_huff_table. STATE: genuine libjpeg 6b; MATCH, byte-identical.
-   OPEN: none. */
+/* From libjpeg 6b. */
 // FUNCTION: EVNOVA 0x0054dca4
 GLOBAL(JHUFF_TBL *)
 jpeg_alloc_huff_table (j_common_ptr cinfo)

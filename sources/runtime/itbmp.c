@@ -16,8 +16,7 @@
 #define kBmpOs2MinFile      0x28
 
 /* DT_BmpUnpack4 (4-bit pixels to one byte each; `odd' starts on a low nibble; answers whether
-   it stopped halfway through a byte). STATE: MATCH 100%, exe 37 / obj 37, byte-identical yes.
-   OPEN: none */
+   it stopped halfway through a byte). */
 // FUNCTION: EVNOVA 0x0051247c
 unsigned char DT_BmpUnpack4(unsigned char *dst, const unsigned char *src, ULong count,
                            unsigned char odd)
@@ -42,8 +41,7 @@ unsigned char DT_BmpUnpack4(unsigned char *dst, const unsigned char *src, ULong 
 #define RowAt(y)    (height < 0 ? (y) : rows - (y) - 1)
 
 /* _BMP_DecodePixels (decode BI_RLE8 / BI_RLE4 rows off the stream, storing each finished row;
-   escapes: end of line, end of bitmap, delta, absolute run). STATE: MATCH 100%, exe 350 /
-   obj 350, byte-identical yes. OPEN: none */
+   escapes: end of line, end of bitmap, delta, absolute run). */
 // FUNCTION: EVNOVA 0x005124d2
 int32_t _BMP_DecodePixels(ITStream *stream, ITImage *image, unsigned char *buf, unsigned char *row,
                   int32_t width, int32_t height, unsigned char rle4, ULong rows)
@@ -181,7 +179,7 @@ done:
 }
 
 /* BMP_CheckFileType (a "BM" file over 0x36 bytes or a "BA" array of at least 0x28, with a bits
-   offset). STATE: MATCH 100%, exe 56 / obj 56, byte-identical yes. OPEN: none */
+   offset). */
 // FUNCTION: EVNOVA 0x00512903
 #define FixLE32(v)
 #define FixLE16(v)
@@ -279,9 +277,7 @@ typedef struct BmpInfoHeader {
     } while (0)
 
 /* BMP_Decode (load a Windows bitmap, or the first of an OS/2 array, off a stream: 1/4/8-bit
-   through its palette, RLE4/RLE8 through 0x005124d2, 16/32-bit bit fields, 24-bit BGR). STATE:
-   MATCH 100%, exe 899 / obj 899, byte-identical yes. OPEN: none; quadSize is the exe's two
-   dead `mov eax,4'; ReadOrFail's block-local `r' keeps `e' off the reload reuse; notes/itbmp.md */
+   through its palette, RLE4/RLE8 through 0x005124d2, 16/32-bit bit fields, 24-bit BGR). */
 // FUNCTION: EVNOVA 0x0051299a
 int32_t BMP_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
                   ITTransparent *trans, ITBackground *bg)
