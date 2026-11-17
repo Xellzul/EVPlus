@@ -221,10 +221,6 @@ void MainScreenUpdate(short which)
                 gSpriteWorld->workFrameP, &box, &box);
         }
     }
-#ifdef MACBUILD
-    if (!useLegacyRenderingPipeline)
-        ForeColor(blackColor);
-#endif
     MainScreenRolloverDraw();
     if (which == 1) {
         CopyBits(GetPortBitMapForCopyBits(
@@ -248,9 +244,6 @@ void MainScreenUpdate(short which)
         CopyBits(GWorldContainerBits(&loadPort),
                  GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                  &box, &dst, 0, NULL);
-#ifdef MACBUILD
-        QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
-#endif
     }
 }
 
@@ -269,7 +262,6 @@ void MainScreenIdle(void)
     HandleIntroMusic(0);
 #endif
     MainScreenAnimIdle();
-#if !V111
 #if !defined(MACBUILD) || TARGET_API_MAC_OS8
     strip = *GetCWindowPortRect((WindowRef)gWind);
     strip.bottom = strip.top + kHotStripHeight;
@@ -295,7 +287,6 @@ void MainScreenIdle(void)
         PaintRect(&strip);
         mBarHidden = 1;
     }
-#endif
 }
 
 /*
@@ -312,19 +303,6 @@ void MainScreenIdle(void)
 #define kMenuHalfWidth      512
 #define kMenuHalfHeight     384
 
-#ifdef MACBUILD
-/* MainScreenClose (mac _MainScreenClose): mac only, no caller. */
-// MAC: _MainScreenClose i386 0x00016313 ppc 0x0001a0ac
-void MainScreenClose(void)
-{
-}
-
-/* MainScreenClobber (mac _MainScreenClobber): mac only, no caller. */
-// MAC: _MainScreenClobber i386 0x00016318 ppc 0x0001a0b0
-void MainScreenClobber(void)
-{
-}
-#endif
 
 /* SetupInterfaceBackground (mac _SetupInterfaceBackground). STATE:MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00488380
@@ -435,14 +413,6 @@ void PrefsDialogUpdate(void)
 /* DoPrefsDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00488650
 // MAC: _DoPrefsDialog i386 0x00016459 ppc 0x0001a1ec
-#if V111
-void DoPrefsDialog(void)
-{
-#ifdef MACBUILD
-    CERunPrefsDialog();
-#endif
-}
-#else
 #ifdef MAC1010
 extern int32_t gSystemVersion;
 extern int32_t startupMemoryFree;
@@ -1041,7 +1011,6 @@ void DoPrefsDialog(void)
         StopIntroMusic(0);
 }
 #endif
-#endif
 
 /* entergame -- EnterGameFromMainScreen and DoNewPilot. Notes: Research/notes/entergame.md */
 
@@ -1112,9 +1081,6 @@ void EnterGameFromMainScreen(void)
         FadeScreenOut();
     }
     StopIntroMusic(1);
-#ifdef MACBUILD
-    MaxMem(&grow);
-#endif
     crashlog("drawing stuff");
     LoadIntfResource();
     SWSetPortToWorkArea(gSpriteWorld);
@@ -1166,9 +1132,6 @@ void EnterGameFromMainScreen(void)
     GetGlobalMouse(&lastMousePos);
     lastMouseMoveTime = TickCount();
     crashlog("changing window attributes");
-#ifdef MACBUILD
-    SetRetainedWindow(gWind, true);
-#endif
     IterateInGameEventLoop(-1);
     RefreshWindowBuffer();
     crashlog("playing game");
@@ -1176,24 +1139,12 @@ void EnterGameFromMainScreen(void)
         PlayGame();
     crashlog("paused");
     crashlog("resetting window attributes");
-#ifdef MACBUILD
-    SetRetainedWindow(gWind, false);
-#endif
     if (!settings.windowed)
         HideTheMenuBar();
     if (strictPlay && IsDying(shipData) && shipData->type != kShipTypeEscapePod) {
         crashlog("deleting pilot file due to strict play death");
-#ifdef MACBUILD
-        DeletePilotFile(playerName);
-#else
         pstrcpy(pilotName, playerName);
-#ifdef V111 /* V111: PtoCstr is void */
-        PtoCstr(pilotName);
-        DeletePilotFile((char *)pilotName);
-#else
         DeletePilotFile(PtoCstr(pilotName));
-#endif
-#endif
     }
     crashlog("restoring stuff");
     KillVoiceSound();
@@ -1251,16 +1202,10 @@ void DoNewPilot(void)
 {
     uint32_t resType;
     Boolean wantStrictPlay;
-#ifdef MACBUILD
-    Str255 prompt;
-    Str255 charName;
-    Str255 newShipName;
-#else
     Str255 newShipName;
     char path[2048];
     Str255 charName;
     Str255 prompt;
-#endif
     char **h;
     unsigned char *shipNameP;
     short i;
@@ -1284,15 +1229,11 @@ void DoNewPilot(void)
     CullNameString(shipNameP);
     TrimResourceName(newPlayerName[0]);
     TrimResourceName(shipNameP);
-#ifdef MACBUILD
-    if (DoesPilotExist(newPlayerName[0])) {
-#else
     strcpy(path, pilotsFolder);
     PStr2CStr((char *)prompt, newPlayerName[0]);
     strcat(path, (char *)prompt);
     strcat(path, ".plt");
     if (DoesPilotExist(path)) {
-#endif
         SWSetPortToWindow(gSpriteWorld);
         MainScreenAnimDraw();
         MainScreenUpdate(1);

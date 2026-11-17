@@ -121,9 +121,6 @@ void DoBarDialog(void)
                 StrcatIndCString(textShowString, kGameStrList,
                                 kBrokeStrIndex);
                 ShowTextDialog(0, 0, 0);
-#ifdef MACBUILD
-                RefreshSAT();
-#endif
             }
             PortDialogUpdate();
             SetDialogGWorld(barDialog);
@@ -145,13 +142,7 @@ void DoBarDialog(void)
                 DoShipyardDialog();
                 ShipStatsToSystemInfo();
                 DrawStatusCargo();
-#ifdef MACBUILD
-                PortDialogUpdate();
-                SetDialogGWorld(barDialog);
-                BarDialogUpdate();
-#else
                 RedrawDialogs(1);
-#endif
             }
         }
         if (itemHit == kBarOfferItem) {
@@ -204,9 +195,6 @@ void DoBarDialog(void)
     }
     DisposeDialogNoFlash(barDialog);
     barDialog = NULL;
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     ResetMissionOfferVenue();
 }
 
@@ -264,12 +252,8 @@ Boolean BarFilter(int32_t unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
-#if V111
-    char key;
-#else
     EventChar c;
     EventChar key;
-#endif
 
     if (absquatulateStr[0] != 0) {
         ev->what = kMouseDown;
@@ -293,28 +277,6 @@ Boolean BarFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = kBarMissionInfoItem;
             return 1;
         }
-#if V111
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-            *itemHit = kBarLeaveItem;
-            return 1;
-        }
-        if (key == kGKeyCode || key == kRKeyCode) {
-            ev->what = kMouseDown;
-            *itemHit = kBarRaceItem;
-            return 1;
-        }
-        if (key == kWKeyCode || key == kNKeyCode) {
-            ev->what = kMouseDown;
-            *itemHit = kBarNewsItem;
-            return 1;
-        }
-        if (key == kHKeyCode || key == kEKeyCode) {
-            ev->what = kMouseDown;
-            *itemHit = kBarHireItem;
-            return 1;
-        }
-#else
         c = EventCharOf(ev);
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = kBarLeaveItem;
@@ -336,13 +298,9 @@ Boolean BarFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = kBarHireItem;
             return 1;
         }
-#endif
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         BarDialogUpdate();
         button = TrackBarButtons(where);
         if (button == 0) {
@@ -370,13 +328,7 @@ Boolean BarFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(barDialog));
         BarDialogUpdate();
-        EndUpdate(GetDialogWindow(barDialog));
-#else
-        BarDialogUpdate();
-#endif
         return 0;
     }
     return 0;
@@ -417,13 +369,6 @@ void BarDialogUpdate(void)
     CopyBits(GWorldContainerBits(&loadPort),
              GetPortBitMapForCopyBits(GetDialogPort(barDialog)),
              GetDialogPortRect(barDialog), GetDialogPortRect(barDialog), srcCopy, NULL);
-#ifdef MAC1010
-    QDFlushPortBuffer(GetWindowGrafPort(GetDialogWindow(barDialog)), NULL);
-#else
-#if V111
-    QDFlushPortBuffer(GetWindowGrafPort(FrontWindow(barDialog)), NULL);
-#endif
-#endif
 }
 
 /* DoNewsDialog. STATE: MATCH, byte-identical. OPEN: none */
@@ -473,9 +418,6 @@ void DoNewsDialog(void)
     FlushEvents(4, 0);
     FlushEvents(5, 0);
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
 }
 
 /* NewsDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
@@ -523,9 +465,6 @@ void NewsDialogUpdate(void)
     CopyBits(GWorldContainerBits(&loadPort),
              GetPortBitMapForCopyBits(GetDialogPort(newsDialog)),
              GetDialogPortRect(newsDialog), GetDialogPortRect(newsDialog), srcCopy, NULL);
-#if defined(MACBUILD) || V111
-    QDFlushPortBuffer(GetDialogPort(newsDialog), NULL);
-#endif
 }
 
 /* NewsDialogFilter. STATE: MATCH, byte-identical. OPEN: none */
@@ -533,47 +472,25 @@ void NewsDialogUpdate(void)
 // MAC: _NewsDialogFilter i386 0x00048160 ppc 0x00050acc
 Boolean NewsDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
 {
-#if V111
-    char key;
-#endif
     Point where;
 
     *itemHit = -1;
-#if V111
-    if ((int)ev->what == kKeyDown) {
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-            *itemHit = kNewsDoneItem;
-            return 1;
-        }
-    }
-#else
     if ((int)ev->what == kKeyDown &&
         (IsReturnChar(EventCharOf(ev)) ||
          EventCharOf(ev) == kEscapeChar)) {
         *itemHit = kNewsDoneItem;
         return 1;
     }
-#endif
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         SetDialogGWorld(newsDialog);
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         if (PtInRectPoint(where, GetDialogPortRect(newsDialog)) != 0) {
             *itemHit = kNewsDoneItem;
             return 1;
         }
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(newsDialog));
         NewsDialogUpdate();
-        EndUpdate(GetDialogWindow(newsDialog));
-#else
-        NewsDialogUpdate();
-#endif
         return 0;
     }
     return 0;
@@ -587,19 +504,6 @@ Boolean NewsDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
 // MAC: _RandomizeNewsDialog i386 0x00048238 ppc 0x00050bd0
 void RandomizeNewsDialog(void)
 {
-#ifdef MACBUILD
-    Boolean cronActive[kMaxCrons];
-    short i;
-    short pick;
-    short j;
-    short cronNewsID[kMaxCrons];
-    Str255 line;
-    Str255 tmp;
-    Boolean anyGovtNews;
-    Boolean anyActiveCron;
-    short eligible;
-    short matching;
-#else
     Boolean cronActive[kMaxCrons];
     Boolean anyGovtNews;
     Boolean anyActiveCron;
@@ -611,7 +515,6 @@ void RandomizeNewsDialog(void)
     short matching;
     short j;
     short pick;
-#endif
 
     GetRandomIndString((unsigned char *)sponsorString, kSponsorStrList);
     if ((unsigned char)sponsorString[0] != 0) {
@@ -778,11 +681,7 @@ void DoRaceDialog(void)
         }
         if (itemHit >= kRaceFirstButton &&
             itemHit < kRaceFirstButton + kRacerCount) {
-#ifdef MACBUILD
-            if (KeyCheck(kScanOption) != 0)
-#else
             if (KeyCheck(kKeyLeftAlt) != 0 || KeyCheck(kKeyRightAlt) != 0)
-#endif
             {
                 if (shipData[0].credits > kMaxRaceBet)
                     credits = kMaxRaceBet;
@@ -861,34 +760,17 @@ void DoRaceDialog(void)
 // MAC: _RaceFilter i386 0x0004890e ppc 0x00051284
 Boolean RaceFilter(int32_t unused, EventRecord *ev, short *itemHit)
 {
-#if V111
-    char key;
-#endif
     Point where;
     short button;
 
-#if V111
-    if ((int)ev->what == kKeyDown) {
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-            *itemHit = kRaceDoneItem;
-            return 1;
-        }
-        return 0;
-    }
-#else
     if ((int)ev->what == kKeyDown &&
         (IsReturnChar(EventCharOf(ev)) ||
          EventCharOf(ev) == kEscapeChar)) {
         *itemHit = kRaceDoneItem;
         return 1;
     }
-#endif
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         RaceDialogUpdate();
         button = TrackRaceButtons(where);
         if (button >= 0 && button < kRaceButtonCount) {
@@ -899,13 +781,7 @@ Boolean RaceFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(raceDialog));
         RaceDialogUpdate();
-        EndUpdate(GetDialogWindow(raceDialog));
-#else
-        RaceDialogUpdate();
-#endif
         return 0;
     }
     return 0;
@@ -931,13 +807,6 @@ void RaceDialogUpdate(void)
     CopyBits(GWorldContainerBits(&loadPort),
              GetPortBitMapForCopyBits(GetDialogPort(raceDialog)),
              GetDialogPortRect(raceDialog), GetDialogPortRect(raceDialog), srcCopy, NULL);
-#ifdef MAC1010
-    QDFlushPortBuffer(GetWindowGrafPort(GetDialogWindow(raceDialog)), NULL);
-#else
-#if V111
-    QDFlushPortBuffer(GetWindowGrafPort(FrontWindow(raceDialog)), NULL);
-#endif
-#endif
 }
 
 EXTERN_C_END

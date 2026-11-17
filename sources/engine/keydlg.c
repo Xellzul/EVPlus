@@ -18,8 +18,6 @@
 
 /* DoKeyDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b280
-#if V111
-#else
 void DoKeyDialog(void)
 {
     Boolean done;
@@ -64,16 +62,8 @@ void DoKeyDialog(void)
             matched = 0;
             for (j = 0; j < kBindingCount; j++) {
                 if (DupKeyCheck(newKeyPrefs[j], j)) {
-#ifdef MAC1010
-                    GetDialogItem(keyDialog, keyDialogSel + 5, &itemType, &item, &box);
-                    InvalWindowRect(GetDialogWindow(keyDialog), &box);
-                    keyDialogSel = j;
-                    GetDialogItem(keyDialog, j + 5, &itemType, &item, &box);
-                    InvalWindowRect(GetDialogWindow(keyDialog), &box);
-#else
                     keyDialogSel = j;
                     RedrawDialog(keyDialog);
-#endif
                     SysBeep(0);
                     matched = 1;
                     break;
@@ -104,16 +94,8 @@ void DoKeyDialog(void)
             RedrawDialog(keyDialog);
         }
         if (itemHit >= 5 && itemHit <= 0x27) {
-#ifdef MAC1010
-            GetDialogItem(keyDialog, keyDialogSel + 5, &itemType, &item, &box);
-            InvalWindowRect(GetDialogWindow(keyDialog), &box);
-            keyDialogSel = itemHit - 5;
-            GetDialogItem(keyDialog, keyDialogSel + 5, &itemType, &item, &box);
-            InvalWindowRect(GetDialogWindow(keyDialog), &box);
-#else
             keyDialogSel = itemHit - 5;
             RedrawDialog(keyDialog);
-#endif
         }
     } while (!done);
 
@@ -124,7 +106,6 @@ void DoKeyDialog(void)
     DisposeDialog(keyDialog);
     keyDialog = NULL;
 }
-#endif
 
 #define kFirstBindingItem   5
 #define kNoNameStrIndex  0x119
@@ -141,61 +122,6 @@ void DoKeyDialog(void)
 /* KeyFilter. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b6d0
 // MAC: _KeyFilter i386 0x00017482 ppc 0x0001b030
-#ifdef MACBUILD
-Boolean KeyFilter(DialogPtr dialog, EventRecord *ev, short *itemHit)
-{
-    short itemType;
-    Point where;
-    Handle item;
-    Rect box;
-    int32_t n;
-    short i;
-    short code;
-    short sel;
-
-    SetPort((GrafPtr)GetDialogPort(keyDialog));
-    if (ev->what == mouseDown) {
-        if (DialogSelect(ev, &keyDialog, itemHit))
-            return true;
-        SetPort((GrafPtr)GetDialogPort(keyDialog));
-        where = ev->where;
-        GlobalToLocal(&where);
-        *itemHit = -1;
-        for (i = 0; i < kBindingCount; i++) {
-            GetDialogItem(keyDialog, n = i + kFirstBindingItem, &itemType, &item, &box);
-            if (PtInRectPoint(where, &box)) {
-                *itemHit = n;
-                return true;
-            }
-        }
-    }
-#ifndef MAC1010
-    if (ev->what == keyDown || ev->what == nullEvent)
-#endif
-    {
-        code = ScanForKeys();
-        if (code != -1 && keyDialogSel != -1) {
-            newKeyPrefs[keyDialogSel] = code;
-            sel = keyDialogSel;
-            keyDialogSel = (keyDialogSel + 1) % kBindingCount;
-            GetDialogItem(keyDialog, sel + kFirstBindingItem, &itemType, &item, &box);
-            InvalWindowRect(GetDialogWindow(keyDialog), &box);
-            GetDialogItem(keyDialog, keyDialogSel + kFirstBindingItem, &itemType, &item, &box);
-            InvalWindowRect(GetDialogWindow(keyDialog), &box);
-            while (KeyCheck(code))
-                BusyIdle();
-            return true;
-        }
-    }
-    if (ev->what == updateEvt) {
-        BeginUpdate(GetDialogWindow(keyDialog));
-        KeyDialogUpdate();
-        EndUpdate(GetDialogWindow(keyDialog));
-        return false;
-    }
-    return false;
-}
-#else
 Boolean KeyFilter(int32_t unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
@@ -241,7 +167,6 @@ Boolean KeyFilter(int32_t unused, EventRecord *ev, short *itemHit)
     KeyDialogUpdate();
     return 0;
 }
-#endif
 
 /* KeyDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0048b860
@@ -269,11 +194,7 @@ void KeyDialogUpdate(void)
     ForeColor(blackColor);
     TextFont(0);
     TextSize(12);
-#ifdef MACBUILD
-    DrawPicture(keyPic, &picBox);
-#else
     DrawPicHandle(keyPic, &picBox);
-#endif
     for (i = 0; i < kBindingCount; i++) {
         GetDialogItem(keyDialog, i + kFirstBindingItem, &itemType, &item, &itemBox);
         if (RectInRgn(&itemBox, GetWindowVisRgn(FrontWindow(keyDialog)))) {

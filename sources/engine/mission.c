@@ -27,20 +27,11 @@
 #include "prototypes.h"
 #include "endianswap.h"
 
-#if V111 /* V111: the 1.1.1 source file is UTF-8 */
-#define kDudeResName "d\xc3\xbc" "de"
-#define kSpobResName "sp\xc3\xb6" "b"
-#else
 #define kDudeResName "d\x9f" "de"
 #define kSpobResName "sp\x9a" "b"
-#endif
 
 /* the resource through the handle's own cast: 1.0.10 keeps one deref, win and 1.1.1 reread it */
-#ifdef MAC1010
-#define MisnFileRec rec
-#else
 #define MisnFileRec ((MisnRes *)*missionFileHand)
-#endif
 
 /* InitMissions (mac _InitMissions). STATE: MATCH 100.0%, exe 509 / obj 509
    instrs, byte-identical yes. OPEN: nothing. */
@@ -270,9 +261,6 @@ void DoMissionDialog(void)
             StrcatIndCString((char *)msg, kGameStrList, kStrTooManyB);
             strncpy(textShowString, (char *)msg, kShowStringMax);
             ShowTextDialog(0, 0, 0);
-#ifdef MACBUILD
-            RefreshSAT();
-#endif
             SetDialogGWorld(portDialog);
         }
         return;
@@ -293,9 +281,6 @@ void DoMissionDialog(void)
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, kStrNoMissions);
             ShowTextDialog(0, 0, 0);
-#ifdef MACBUILD
-            RefreshSAT();
-#endif
         }
         SetDialogGWorld(portDialog);
         return;
@@ -442,9 +427,6 @@ void DoMissionDialog(void)
         LDispose(missionList);
     DisposeDialogNoFlash(missionDialog);
     missionDialog = NULL;
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     return;
 }
 
@@ -462,12 +444,6 @@ void SetupMissionList(void)
     short itemType;
     Handle itemHandle;
     Str255 buf;
-#ifdef MACBUILD
-    FontInfo fontInfo;
-#if TARGET_API_MAC_CARBON
-    ListDefSpec ldefSpec;
-#endif
-#endif
     unsigned char visible;
     Point cellSize;
     Point rowPt;
@@ -506,26 +482,10 @@ void SetupMissionList(void)
     }
     cellSize.h = box.right - box.left;
 
-#ifdef MACBUILD
-#if TARGET_API_MAC_OS8
-    missionList = LNew(&box, &cellBounds, cellSize, 128, missionDialog,
-                       false, false, false, visible);
-#else
-    ldefSpec.defType = kListDefUserProcType;
-    ldefSpec.u.userProc = NewListDefUPP((ListDefProcPtr)MissionListDefinition);
-    CreateCustomList(&box, &cellBounds, cellSize, &ldefSpec, GetDialogWindow(missionDialog),
-                     true, false, false, visible, &missionList);
-#endif
-    HLock((Handle)missionList);
-    (*missionList)->selFlags = lOnlyOne;
-    (*missionList)->refCon = (int32_t)ldefColors;
-    HUnlock((Handle)missionList);
-#else
     missionList = nv_NewDialog(&box, &cellBounds, cellSize,
         (ListDrawProcPtr)MissionListDefinition, (CGrafPtr)missionDialog, visible);
     LockAHandle((Handle)missionList);
     UnlockAHandle((Handle)missionList);
-#endif
     LSetDrawingMode(0, missionList);
 
     rowPt.h = 0;
@@ -684,9 +644,6 @@ void RandomizeOneMission(short mission)
 {
     short i;
     short loc;
-#ifdef MAC1010
-    short s;
-#endif
 
     if (offeringFromShip != 0) {
         loc = 0;
@@ -725,17 +682,6 @@ void RandomizeOneMission(short mission)
             SelectMissionStellar(missionAvailData[mission].destStellar, loc,
                          briefMissionInfo[mission].destStellar, mission);
     }
-#ifdef MAC1010
-    s = briefMissionInfo[mission].returnStellar;
-    briefMissionInfo[mission].returnStellar = briefMissionInfo[mission].returnStellar; /* 1.0.10 pad: the address's second use, so it is the optimiser's temp and the arm's store does not share its add; deleted, no word */
-    if (s >= 0 && s < kMaxStellars) {
-        briefMissionInfo[mission].returnSystem = stellarData[s].system;
-        if (briefMissionInfo[mission].returnSystem == -1)
-            briefMissionInfo[mission].returnSystem = FindSystemFromStellar(s);
-    } else {
-        briefMissionInfo[mission].returnSystem = -1;
-    }
-#else
     if (briefMissionInfo[mission].returnStellar >= 0
             && briefMissionInfo[mission].returnStellar < kMaxStellars) {
         briefMissionInfo[mission].returnSystem =
@@ -746,7 +692,6 @@ void RandomizeOneMission(short mission)
     } else {
         briefMissionInfo[mission].returnSystem = -1;
     }
-#endif
 
     briefMissionInfo[mission].cargoType = SelectMissionCargoType(missionAvailData[mission].cargoType);
     briefMissionInfo[mission].cargoUnits = SelectMissionCargoQty(missionAvailData[mission].cargoQty);
@@ -1467,18 +1412,12 @@ Boolean DoMissionAccept(short mission)
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, kStrNoHoldsAtAll);
             ShowTextDialog(0, 0, 0);
-#ifdef MACBUILD
-            RefreshSAT();
-#endif
             return 0;
         }
         if (TotalMissionCargoSpace() < briefMissionInfo[mission].cargoUnits) {
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, kStrHoldsAreFull);
             ShowTextDialog(0, 0, 0);
-#ifdef MACBUILD
-            RefreshSAT();
-#endif
             return 0;
         }
     }
@@ -1528,9 +1467,6 @@ Boolean DoMissionAccept(short mission)
         if (portDialog != NULL && !offeringFromShip)
             PortDialogUpdate();
         ShowTextDialog(1, 0, 1);
-#ifdef MACBUILD
-        RefreshSAT();
-#endif
         greenMissionSyst = -1;
     }
     if (currentMissions[slot].pickupMode == 0) {
@@ -1801,18 +1737,12 @@ Boolean DoMissionCargoPickup(short unused, short needed)
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, 357);
             ShowTextDialog(0, 0, 0);
-#ifdef MACBUILD
-            RefreshSAT();
-#endif
             return 0;
         }
         if (TotalMissionCargoSpace() < needed) {
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, 358);
             ShowTextDialog(0, 0, 0);
-#ifdef MACBUILD
-            RefreshSAT();
-#endif
             return 0;
         }
     }
@@ -1835,9 +1765,6 @@ void DoMissionSuccess(short mission)
         MungeBriefing(0, mission);
         strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
         ShowTextDialog(0, 0, 1);
-#ifdef MACBUILD
-        RefreshSAT();
-#endif
     }
     currentMissionObjectives[mission].active = 0;
     crashlog_mission_bit_set("mission success", currentMissions[mission].name, 1,
@@ -1942,9 +1869,6 @@ void DoMissionFailure(short mission)
         MungeBriefing(0, mission);
         strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
         ShowTextDialog(0, 0, 1);
-#ifdef MACBUILD
-        RefreshSAT();
-#endif
     }
     AbortMission(mission, 0);
     lastMissionStellar = -1;
@@ -2017,11 +1941,7 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
     short itemType;
     Point where;
     Point cell;
-#ifdef MACBUILD
-    Handle item;
-#else
     void *item;
-#endif
     short old;
     short button;
 
@@ -2044,24 +1964,6 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = kItemMissionInfo;
             return 1;
         }
-#if V111
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if ((int)ev->what == kKeyDown) {
-            if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-                *itemHit = kItemDone;
-                return 1;
-            }
-            if (key == kLKeyCode) {
-                *itemHit = kItemDone;
-                return 1;
-            }
-            if (key == kAKeyCode && selMissionListItem != -1) {
-                *itemHit = kItemAccept;
-                return 1;
-            }
-        }
-        if (key == kTabKeyCode) {
-#else
         key = EventCharOf(ev);
         key = tolower(key);
         if ((int)ev->what == kKeyDown) {
@@ -2079,7 +1981,6 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
             }
         }
         if (key == kTabChar) {
-#endif
             cell.h = 0;
             cell.v = selMissionListItem;
             if (selMissionListItem != -1) {
@@ -2089,6 +1990,7 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
                     LScroll(0, 1, missionList);
             }
             old = selMissionListItem;
+            // BUG (all versions, theoretical): no `< kMaxMissions' bound, unlike the down-arrow path
             selMissionListItem++;
             if (dockedPortMissions[missionsOutside][selMissionListItem] == -1)
                 selMissionListItem = 0;
@@ -2104,25 +2006,14 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
                 LAutoScroll(missionList);
             }
             if (selMissionListItem != old) {
-#ifdef MACBUILD
-                GetDialogItem(missionDialog, 4, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionDialog), &box);
-                GetDialogItem(missionDialog, 5, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionDialog), &box);
-#else
                 InvalDialogItem(missionDialog, 4);
                 InvalDialogItem(missionDialog, 5);
-#endif
             }
             cell.v = selMissionListItem;
             LSetSelect(1, cell, missionList);
             LAutoScroll(missionList);
         }
-#if V111
-        if (key == kDownArrowKeyCode) {
-#else
         if (key == kDownArrowChar) {
-#endif
             if (selMissionListItem + 1 < kMaxMissions) {
                 cell.h = 0;
                 cell.v = selMissionListItem;
@@ -2150,23 +2041,12 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
                     LAutoScroll(missionList);
                 }
                 if (selMissionListItem != old) {
-#ifdef MACBUILD
-                    GetDialogItem(missionDialog, 4, &itemType, &item, &box);
-                    InvalWindowRect(FrontWindow(missionDialog), &box);
-                    GetDialogItem(missionDialog, 5, &itemType, &item, &box);
-                    InvalWindowRect(FrontWindow(missionDialog), &box);
-#else
                     InvalDialogItem(missionDialog, 4);
                     InvalDialogItem(missionDialog, 5);
-#endif
                 }
             }
         }
-#if V111
-        if (key == kUpArrowKeyCode) {
-#else
         if (key == kUpArrowChar) {
-#endif
             if (selMissionListItem == -1) {
                 selMissionListItem = kMaxMissions - 1;
                 while (dockedPortMissions[missionsOutside]
@@ -2209,29 +2089,16 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
                     LAutoScroll(missionList);
                 }
                 if (selMissionListItem != old) {
-#ifdef MACBUILD
-                    GetDialogItem(missionDialog, 4, &itemType, &item, &box);
-                    InvalWindowRect(FrontWindow(missionDialog), &box);
-                    GetDialogItem(missionDialog, 5, &itemType, &item, &box);
-                    InvalWindowRect(FrontWindow(missionDialog), &box);
-#else
                     InvalDialogItem(missionDialog, 4);
                     InvalDialogItem(missionDialog, 5);
-#endif
                 }
             }
         }
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-        GetDialogItem(missionDialog, 2, &itemType, &item, &box);
-        if ((PtInRect)(where, &box)) {
-#else
         GetDialogItem(missionDialog, 2, &itemType, (Handle *)&item, &box);
         if (PtInRect(where.h, where.v, &box)) {
-#endif
             LClick(where, ev->modifiers, missionList);
             old = selMissionListItem;
             selMissionListItem = -1;
@@ -2251,23 +2118,12 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
                               dockedPortMissions[missionsOutside][selMissionListItem]);
             }
             if (selMissionListItem != old) {
-#ifdef MACBUILD
-                GetDialogItem(missionDialog, 4, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionDialog), &box);
-                GetDialogItem(missionDialog, 5, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionDialog), &box);
-#else
                 InvalDialogItem(missionDialog, 4);
                 InvalDialogItem(missionDialog, 5);
-#endif
             }
         }
         GetDialogItem(missionDialog, 3, &itemType, (Handle *)&item, &box);
-#ifdef MACBUILD
-        if ((PtInRect)(where, &box))
-#else
         if (PtInRect(where.h, where.v, &box))
-#endif
             LClick(where, ev->modifiers, missionList);
         MissionDialogUpdate();
         button = TrackMissionButtons(where);
@@ -2284,13 +2140,7 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
     }
     if ((int)ev->what == kUpdateEvt) {
         SetDialogGWorld(missionDialog);
-#ifdef MACBUILD
-        BeginUpdate(FrontWindow(missionDialog));
-#endif
         MissionDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(FrontWindow(missionDialog));
-#endif
     }
     return 0;
 }
@@ -2300,19 +2150,11 @@ Boolean MissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
 // MAC: _MissionDialogUpdate i386 0x0009f156 ppc 0x000aaf3c
 void MissionDialogUpdate(void)
 {
-#ifdef MACBUILD
-    char savedBriefing[0x2000];
-    Handle item;
-    short itemType;
-    Str255 text;
-    Rect box;
-#else
     char savedBriefing[0x2000];
     void *item;
     short itemType;
     char text[256];
     Rect box;
-#endif
 
     SetGWorldContainer(&loadPort);
     ForeColor(blackColor);
@@ -2400,9 +2242,6 @@ void MissionDialogUpdate(void)
     if (missionList != NULL) {
         SetDialogGWorld(missionDialog);
         ListUpdate(GetWindowVisRgn(FrontWindow(missionDialog)), missionList);
-#ifdef MACBUILD
-        DrawControls(FrontWindow(missionDialog));
-#endif
     }
 }
 
@@ -2700,55 +2539,6 @@ Boolean IsMissionAvailable(short mission, Boolean offer)
 // MAC: _OfferOneMission i386 0x000a21ac ppc 0x000adfd8
 short OfferOneMission(short mission)
 {
-#ifdef MAC1010
-    Rect box;
-    int32_t missionResID;
-    short refuseDescID;
-    Handle itemHandle;
-    Point pt;
-    short itemHit;
-    short itemType;
-    char setString[255];
-    short i;
-    short shift;
-    short widest;
-    short otherWidth;
-    short savedTarget;
-    short savedRoute;
-    short shown;
-    Boolean savedUp;
-    Boolean savedDown;
-    Boolean refused;
-    Boolean accepted;
-    Boolean done;
-    unsigned char labelChar;
-#define itemHeight savedRoute
-#define savedScroll otherWidth
-#elif defined(MACBUILD)
-    Point pt;
-    Rect box;
-    int32_t missionResID;
-    short refuseDescID;
-    Handle itemHandle;
-    short itemType;
-    short itemHit;
-    char setString[255];
-    short i;
-    short itemHeight;
-    short shift;
-    short widest;
-    short otherWidth;
-    short savedTarget;
-    short savedRoute;
-    short shown;
-    short savedScroll;
-    Boolean savedUp;
-    Boolean savedDown;
-    Boolean refused;
-    Boolean accepted;
-    Boolean done;
-    unsigned char labelChar;
-#else
     Rect box;
     short refuseDescID;
     Boolean refused;
@@ -2773,7 +2563,6 @@ short OfferOneMission(short mission)
     Boolean accepted;
     Boolean savedUp;
     Boolean savedDown;
-#endif
 
     refused = 0;
     accepted = 0;
@@ -2855,21 +2644,6 @@ short OfferOneMission(short mission)
         itemHeight = box.bottom - box.top;
         if (shown < itemHeight) {
             if (descResourcePictId < 128) {
-#ifdef MACBUILD
-                if (shown >= kMinTextHeight)
-                    shift = shown;
-                else
-                    shift = kMinTextHeight;
-                box = *GetDialogPortRect(missionDialog);
-                shift = itemHeight - shift - kTextMargin;
-                box.bottom -= shift;
-                SizeWindow(FrontWindow(missionDialog), box.right - box.left,
-                           box.bottom - box.top, true);
-                pt.h = pt.v = 0;
-                LocalToGlobal(&pt);
-                pt.v += shift * 0.3;
-                MoveWindow(FrontWindow(missionDialog), pt.h, pt.v, true);
-#else
                 shown = shown < kMinTextHeight
                              ? (short)kMinTextHeight : shown;
                 wr = GetDialogPortRect(missionDialog);
@@ -2884,7 +2658,6 @@ short OfferOneMission(short mission)
                 floatZero = 0;
                 floatZero += shift * 0.3;
                 OffsetDialogWindow(missionDialog, 0, floatZero, 1);
-#endif
 
                 GetDialogItem(missionDialog, kItemAccept, &itemType,
                               (Handle *)&itemHandle, &box);
@@ -3010,33 +2783,21 @@ short OfferOneMission(short mission)
                 FlushEvents(1, 0);
                 FlushEvents(2, 0);
                 SetDialogVisible(missionDialog, 0);
-#ifdef MACBUILD
-                RefreshSAT();
-#endif
                 accepted = DoMissionAccept(mission);
                 SingleMissionDialogUpdate();
                 LoadDescription(briefingTextPtr, mission + kMissionDescBase);
                 MungeBriefing(1, mission);
-#ifdef MACBUILD
-                RefreshSAT();
-#endif
                 SetDialogGWorld(missionDialog);
                 done = 1;
             }
             if (itemHit == kItemRefuse) {
                 if (refuseDescID != -1) {
                     SetDialogVisible(missionDialog, 0);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                     strncpy(briefingTextPtr, "", 3);
                     LoadDescription(briefingTextPtr, refuseDescID);
                     MungeBriefing(0, -1);
                     strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
                     ShowTextDialog(0, 0, 1);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                 }
                 crashlog_mission_bit_set("refusing mission", NULL, 0,
                                          mission + kFirstResourceID, setString);
@@ -3137,21 +2898,11 @@ short OfferOneMission(short mission)
                                  -kBriefScrollStep, 1);
         }
         if (canScrollTextUp != savedUp) {
-#ifdef MACBUILD
-            GetDialogItem(missionDialog, kItemScrollUp, &itemType, &itemHandle, &box);
-            InvalWindowRect(FrontWindow(missionDialog), &box);
-#else
             InvalDialogItem(missionDialog, kItemScrollUp);
-#endif
             savedUp = canScrollTextUp;
         }
         if (canScrollTextDown != savedDown) {
-#ifdef MACBUILD
-            GetDialogItem(missionDialog, kItemScrollDown, &itemType, &itemHandle, &box);
-            InvalWindowRect(FrontWindow(missionDialog), &box);
-#else
             InvalDialogItem(missionDialog, kItemScrollDown);
-#endif
             savedDown = canScrollTextDown;
         }
     } while (done == 0);
@@ -3177,15 +2928,9 @@ short OfferOneMission(short mission)
     if (screenFaded != 0) {
         if (playerIsLanded != 0)
             UpdateAllPortDialogs();
-#ifdef MACBUILD
-        RefreshSAT();
-#endif
         RedrawStatus(1);
         FadeScreenIn();
     }
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     FlushEvents(7, 0);
     if (refused != 0)
         return 0;
@@ -3193,10 +2938,6 @@ short OfferOneMission(short mission)
         return 1;
     return -1;
 }
-#ifdef MAC1010
-#undef itemHeight
-#undef savedScroll
-#endif
 
 /* MissionHandler (mac _MissionHandler). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00443760
@@ -3270,9 +3011,6 @@ void MissionLandCargoCheck(short slot, short stel)
                     MungeBriefing(0, slot);
                     strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
                     ShowTextDialog(0, 0, 1);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                 }
             }
         } else {
@@ -3291,9 +3029,6 @@ void MissionLandCargoCheck(short slot, short stel)
                 strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
                 ShowTextDialog(0, 0, 1);
                 ResetPlayerPrecalcedValues();
-#ifdef MACBUILD
-                RefreshSAT();
-#endif
             }
             statusRedraw[kRedrawCargo] = 1;
         }
@@ -3313,9 +3048,6 @@ void MissionLandCargoCheck(short slot, short stel)
                     MungeBriefing(0, slot);
                     strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
                     ShowTextDialog(0, 0, 1);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                 }
                 statusRedraw[kRedrawCargo] = 1;
             }
@@ -3456,9 +3188,6 @@ void MissionObjectivesCheck(short slot)
             MungeBriefing(0, slot);
             strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
             ShowTextDialog(0, 0, 1);
-#ifdef MACBUILD
-            RefreshSAT();
-#endif
         }
         if (currentMissions[slot].shipGoal != kMissionGoalNone) {
             crashlog_mission_bit_set("mission ship goal complete",
@@ -3523,11 +3252,7 @@ void MungeBriefing(Boolean briefing, short which)
     stringHandle = (Handle)AllocAHandle2(strlen(briefingTextPtr), 0);
     if (stringHandle == NULL)
         return;
-#ifdef MACBUILD
-    BlockMoveData(briefingTextPtr, *stringHandle, GetAHandleSize(stringHandle));
-#else
     memmove(*stringHandle, briefingTextPtr, GetAHandleSize(stringHandle));
-#endif
     for (i = 0; i < kBriefingSize; i++)
         briefingTextPtr[i] = '\0';
 
@@ -3618,14 +3343,9 @@ void MungeBriefing(Boolean briefing, short which)
             pay = briefMissionInfo[which].payment;
         } else if (briefMissionInfo[which].payment <= -(kPctOfCashBase + 1) &&
                    briefMissionInfo[which].payment > -(kPctOfCashBase + 100)) {
-#ifdef MAC1010
-            pay = abs(briefMissionInfo[which].payment) - kPctOfCashBase;
-            pay = (shipData[0].credits * (pay * 0.01));
-#else
             pct = abs(briefMissionInfo[which].payment);
             pct -= kPctOfCashBase;
             pay = (shipData[0].credits * (pct * 0.01));
-#endif
         } else if (briefMissionInfo[which].payment < -kOwedBase) {
             pay = -kOwedBase - briefMissionInfo[which].payment;
         }
@@ -3719,14 +3439,9 @@ void MungeBriefing(Boolean briefing, short which)
             pay = currentMissions[which].payment;
         } else if (currentMissions[which].payment <= -(kPctOfCashBase + 1) &&
                    currentMissions[which].payment > -(kPctOfCashBase + 100)) {
-#ifdef MAC1010
-            pay = abs(currentMissions[which].payment) - kPctOfCashBase;
-            pay = (shipData[0].credits * (pay * 0.01));
-#else
             pct = abs(currentMissions[which].payment);
             pct -= kPctOfCashBase;
             pay = (shipData[0].credits * (pct * 0.01));
-#endif
         } else if (currentMissions[which].payment < -kOwedBase) {
             pay = -kOwedBase - currentMissions[which].payment;
         }
@@ -3930,37 +3645,6 @@ void MungeForSymbol(char *needle, char *replacement)
 // MAC: _SetupMissionInfoList i386 0x0009de7a ppc 0x000a9a9c
 void SetupMissionInfoList(void)
 {
-#ifdef MAC1010
-    char marker[256];
-    char nameBuf[255];
-    short i;
-    short count;
-    int32_t len;
-    Rect box;
-    Rect cellBounds;
-#if TARGET_API_MAC_CARBON
-    ListDefSpec ldefSpec;
-#endif
-    FontInfo fontInfo;
-    Handle itemHandle;
-    unsigned char hasScrollbar;
-    Point cellSize;
-    Point rowPt;
-    short itemType;
-#elif defined(MACBUILD)
-    char bullet[2];
-    short i;
-    short count;
-    short itemType;
-    Handle itemHandle;
-    ListDefSpec ldefSpec;
-    FontInfo fontInfo;
-    Rect cellBounds;
-    Rect box;
-    unsigned char hasScrollbar;
-    Point cellSize;
-    Point rowPt;
-#else
     char marker[256];
     char nameBuf[256];
     short i;
@@ -3973,7 +3657,6 @@ void SetupMissionInfoList(void)
     Point cellSize;
     Point rowPt;
     int32_t len;
-#endif
 
     for (i = 0; i < kMaxActiveMissions; i++)
         activeMissions[i] = -1;
@@ -4033,6 +3716,7 @@ void SetupMissionInfoList(void)
         PtoCstr((unsigned char *)nameBuf);
         strncpy(briefingTextPtr, nameBuf, kMissionInfoTextSize);
         MungeBriefing(0, i);
+        // BUG: no NUL when the expanded name is kMissionInfoTextSize or longer; the strcat below then overruns
         strncpy(nameBuf, briefingTextPtr, kMissionInfoTextSize);
         strcat(marker, nameBuf);
         len = strlen(marker);
@@ -4084,6 +3768,7 @@ void SetupMissionInfoList(void)
         PtoCstr((unsigned char *)nameBuf);
         strncpy(briefingTextPtr, nameBuf, kMissionInfoTextSize);
         MungeBriefing(0, i);
+        // BUG: no NUL when the expanded name is kMissionInfoTextSize or longer; the strcat below then overruns
         strncpy(nameBuf, briefingTextPtr, kMissionInfoTextSize);
         strcat(marker, nameBuf);
         len = strlen(marker);
@@ -4251,11 +3936,7 @@ void DoMissionInfoDialog(void)
         QDReleaseResource(missionInfoBackgroundPic);
         missionInfoBackgroundPic = NULL;
     }
-#ifdef MACBUILD
-    RefreshSAT();
-#else
     RedrawDialogs(1);
-#endif
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
 }
 
@@ -4268,11 +3949,7 @@ Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
     short itemType;
     Point where;
     Point cell;
-#ifdef MACBUILD
-    Handle item;
-#else
     void *item;
-#endif
     EventKeyByte c;
     short old;
     short i;
@@ -4285,17 +3962,6 @@ Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 6;
             return 1;
         }
-#if V111
-        c = (ev->message & kKeyCodeMask) >> 8;
-        if ((int)ev->what == kKeyDown) {
-            if (c == kReturnKeyCode || c == kEnterKeyCode || c == kEscapeKeyCode
-                    || KeyCheck(keyPrefs.missions)) {
-                *itemHit = 1;
-                return 1;
-            }
-        }
-        if (c == kTabKeyCode || c == kDownArrowKeyCode) {
-#else
         c = EventCharOf(ev);
         if ((int)ev->what == kKeyDown) {
             if (IsReturnChar(c) || c == kEscapeChar || KeyCheck(keyPrefs.missions)) {
@@ -4304,7 +3970,6 @@ Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
             }
         }
         if (c == kTabChar || c == kDownArrowChar) {
-#endif
             cell.h = 0;
             cell.v = selMissionInfoListItem;
             if (selMissionInfoListItem != -1) {
@@ -4340,22 +4005,11 @@ Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
                 showAbortMissionButton = 0;
             }
             if (selMissionInfoListItem != old) {
-#ifdef MACBUILD
-                GetDialogItem(missionInfoDialog, 4, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionInfoDialog), &box);
-                GetDialogItem(missionInfoDialog, 5, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionInfoDialog), &box);
-#else
                 InvalDialogItem(missionInfoDialog, 4);
                 InvalDialogItem(missionInfoDialog, 5);
-#endif
             }
         }
-#if V111
-        if (c == kUpArrowKeyCode) {
-#else
         if (c == kUpArrowChar) {
-#endif
             cell.h = 0;
             cell.v = selMissionInfoListItem;
             if (selMissionInfoListItem != -1) {
@@ -4391,28 +4045,15 @@ Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
                 showAbortMissionButton = 0;
             }
             if (selMissionInfoListItem != old) {
-#ifdef MACBUILD
-                GetDialogItem(missionInfoDialog, 4, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionInfoDialog), &box);
-                GetDialogItem(missionInfoDialog, 5, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionInfoDialog), &box);
-#else
                 InvalDialogItem(missionInfoDialog, 4);
                 InvalDialogItem(missionInfoDialog, 5);
-#endif
             }
         }
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-        GetDialogItem(missionInfoDialog, 2, &itemType, &item, &box);
-        if ((PtInRect)(where, &box)) {
-#else
         GetDialogItem(missionInfoDialog, 2, &itemType, (Handle *)&item, &box);
         if (PtInRect(where.h, where.v, &box)) {
-#endif
             LClick(where, ev->modifiers, missionInfoList);
             old = selMissionInfoListItem;
             selMissionInfoListItem = -1;
@@ -4435,15 +4076,8 @@ Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
                 showAbortMissionButton = 0;
             }
             if (selMissionInfoListItem != old) {
-#ifdef MACBUILD
-                GetDialogItem(missionInfoDialog, 4, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionInfoDialog), &box);
-                GetDialogItem(missionInfoDialog, 5, &itemType, &item, &box);
-                InvalWindowRect(FrontWindow(missionInfoDialog), &box);
-#else
                 InvalDialogItem(missionInfoDialog, 4);
                 InvalDialogItem(missionInfoDialog, 5);
-#endif
             }
         }
         MissionInfoDialogUpdate();
@@ -4461,13 +4095,7 @@ Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
     }
     if ((int)ev->what == kUpdateEvt) {
         SetDialogGWorld(missionInfoDialog);
-#ifdef MACBUILD
-        BeginUpdate(FrontWindow(missionInfoDialog));
-#endif
         MissionInfoDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(FrontWindow(missionInfoDialog));
-#endif
     }
     return 0;
 }
@@ -4477,17 +4105,10 @@ Boolean MissionInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
 // MAC: _MissionInfoDialogUpdate i386 0x00098508 ppc 0x000a42a0
 void MissionInfoDialogUpdate(void)
 {
-#ifdef MACBUILD
-    short itemType;
-    Handle item;
-    char text[256];
-    Rect box;
-#else
     short itemType;
     void *item;
     char text[256];
     Rect box;
-#endif
 
     SetGWorldContainer(&loadPort);
     TextFont(smallTextFont);
@@ -4553,18 +4174,6 @@ void MissionInfoDialogUpdate(void)
 // MAC: _SingleMissionFilter i386 0x00098d9a ppc 0x000a4984
 Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
 {
-#if V111
-    Rect box;
-    short itemType;
-    Point where;
-#ifdef MACBUILD
-    Handle item;
-#else
-    void *item;
-#endif
-    short button;
-    char c;
-#else
     Rect box;
     short itemType;
     Point where;
@@ -4574,7 +4183,6 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
     int refuseKey;
     EventChar c;
     int what;
-#endif
 
     QuickKeyCheckHandler();
     if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
@@ -4589,26 +4197,6 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
         *itemHit = kBriefItemMissionInfo;
         return 1;
     }
-#if V111
-    if (ev->what == kKeyDown || ev->what == kAutoKey) {
-        c = tolower((char)EventCharOf(ev));
-        if (ev->what == kKeyDown) {
-            if (c == kReturnChar || c == kEnterChar) {
-                *itemHit = kItemAccept;
-                return 1;
-            }
-            if (tolower(missionButtonLabel[0][1]) != tolower(missionButtonLabel[1][1])) {
-                if (c == tolower(missionButtonLabel[0][1])) {
-                    *itemHit = kItemAccept;
-                    return 1;
-                }
-                if (canRefuseMission != 0 && c == tolower(missionButtonLabel[1][1])) {
-                    *itemHit = kItemRefuse;
-                    return 1;
-                }
-            }
-        }
-#else
     what = ev->what;
     if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
         c = EventCharOf(ev);
@@ -4631,7 +4219,6 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
                 }
             }
         }
-#endif
         if (canScrollTextUp != 0) {
             if (c == kUpArrowChar) {
                 *itemHit = kItemScrollUp;
@@ -4667,22 +4254,11 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
             }
         }
     }
-#if V111
-    if (ev->what == kMouseDown) {
-#else
     if (what == kMouseDown) {
-#endif
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         if (canScrollTextUp != 0) {
             GetDialogItem(missionDialog, kItemScrollUp, &itemType, (Handle *)&item, &box);
-#ifdef MACBUILD
-            if ((PtInRect)(where, &box) && canScrollTextUp != 0) {
-#else
             if (PtInRect(where.h, where.v, &box) && canScrollTextUp != 0) {
-#endif
                 lastTextScrollTime = ReadTick();
                 while (StillDown()) {
                     BusyIdle();
@@ -4700,11 +4276,7 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
         }
         if (canScrollTextDown != 0) {
             GetDialogItem(missionDialog, kItemScrollDown, &itemType, (Handle *)&item, &box);
-#ifdef MACBUILD
-            if ((PtInRect)(where, &box) && canScrollTextDown != 0) {
-#else
             if (PtInRect(where.h, where.v, &box) && canScrollTextDown != 0) {
-#endif
                 lastTextScrollTime = ReadTick();
                 while (StillDown()) {
                     BusyIdle();
@@ -4733,19 +4305,9 @@ Boolean SingleMissionFilter(int32_t unused, EventRecord *ev, short *itemHit)
         *itemHit = -1;
         return 1;
     }
-#if V111
-    if (ev->what == kUpdateEvt) {
-#else
     if (what == kUpdateEvt) {
-#endif
         SetDialogGWorld(missionDialog);
-#ifdef MACBUILD
-        BeginUpdate(FrontWindow(missionDialog));
-#endif
         SingleMissionDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(FrontWindow(missionDialog));
-#endif
     }
     return 0;
 }

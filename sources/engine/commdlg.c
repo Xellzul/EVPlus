@@ -25,9 +25,6 @@
 #include "endianswap.h"
 
 /* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
-#ifdef MACBUILD
-#define InvalDialogItem(dlg, n)     (GetDialogItem(dlg, n, &itemType, &item, &box), InvalWindowRect(GetDialogWindow(dlg), &box))
-#endif
 #define kCommButtons  3
 
 DialogPtr commDialog;
@@ -95,11 +92,6 @@ void DoCommDialog(short shipIndex)
     int32_t amount;
     short halfW;
     short halfH;
-#ifdef MACBUILD
-    short itemType;
-    Handle item;
-    Rect box;
-#endif
     done = 0;
     if (screenFaded)
         return;
@@ -460,9 +452,6 @@ void DoCommDialog(short shipIndex)
     commShip->hailed = 1;
     commShip = NULL;
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
 }
 
 /*
@@ -506,15 +495,9 @@ Boolean CommFilter(int32_t unused, EventRecord *ev, short *itemHit)
 
     what = ev->what;
     if (what == kKeyDown) {
-#if V111
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEKeyCode
-            || key == kEscapeKeyCode) {
-#else
         key = EventCharOf(ev);
         key = tolower(key);
         if (IsReturnChar(key) || key == 'e' || key == kEscapeChar) {
-#endif
             *itemHit = 1;
             return 1;
         }
@@ -526,18 +509,6 @@ Boolean CommFilter(int32_t unused, EventRecord *ev, short *itemHit)
                     noRefuel = 1;
             }
         }
-#if V111
-        if (!noRefuel) {
-            if (key == kRKeyCode) {
-                *itemHit = 2;
-                return 1;
-            }
-        }
-        if (key == kGKeyCode) {
-            *itemHit = 3;
-            return 1;
-        }
-#else
         if (!noRefuel) {
             if (key == 'r') {
                 *itemHit = 2;
@@ -548,13 +519,9 @@ Boolean CommFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 3;
             return 1;
         }
-#endif
     }
     if (what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         CommDialogUpdate();
         button = TrackCommDialogButtons(where);
         if (button >= 0 && button <= kCommButtons) {
@@ -565,13 +532,7 @@ Boolean CommFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if (what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(commDialog));
         CommDialogUpdate();
-        EndUpdate(GetDialogWindow(commDialog));
-#else
-        CommDialogUpdate();
-#endif
     }
     return 0;
 }
@@ -694,11 +655,6 @@ void DoPlanetCommDialog(short stellar)
     Boolean done;
     short halfW;
     short halfH;
-#ifdef MACBUILD
-    short itemType;
-    Handle item;
-    Rect box;
-#endif
 
     done = 0;
     if (screenFaded)
@@ -975,9 +931,6 @@ void DoPlanetCommDialog(short stellar)
     PaintRect(&gSpriteWorld->windRect);
     ForeColor(blackColor);
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     RedrawStatus(1);
     RedrawComm(0);
 }
@@ -993,29 +946,6 @@ Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit)
 
     what = ev->what;
     if (what == kKeyDown) {
-#if V111
-        short key;
-
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEKeyCode
-            || key == kEscapeKeyCode) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (key == kOKeyCode || key == kBKeyCode) {
-            if (hatesPlayer != 0) {
-                *itemHit = 2;
-                return 1;
-            }
-        }
-        if (key == kGKeyCode) {
-            if (hatesPlayer == 0) {
-                *itemHit = 2;
-                return 1;
-            }
-        }
-        if (key == kDKeyCode || key == kTKeyCode) {
-#else
         EventChar key;
 
         key = EventCharOf(ev);
@@ -1037,17 +967,12 @@ Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit)
             }
         }
         if (key == 'd' || key == 't') {
-#endif
             if (stellarData[shipData->targetStellar].dominated == 0) {
                 *itemHit = 3;
                 return 1;
             }
         }
-#if V111
-        if (key == kRKeyCode) {
-#else
         if (key == 'r') {
-#endif
             if (stellarData[shipData->targetStellar].dominated != 0 &&
                 (stellarData[shipData->targetStellar].flags2 & kSpobAlwaysDominated) == 0) {
                 *itemHit = 3;
@@ -1057,9 +982,6 @@ Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit)
     }
     if (what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         PlanetCommDialogUpdate();
         button = TrackPlanetCommDialogButtons(where);
         if (button >= 0 && button <= kStellarCommButtons) {
@@ -1070,13 +992,7 @@ Boolean PlanetCommFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if (what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(commDialog));
         PlanetCommDialogUpdate();
-        EndUpdate(GetDialogWindow(commDialog));
-#else
-        PlanetCommDialogUpdate();
-#endif
     }
     return 0;
 }
@@ -1539,9 +1455,6 @@ short DoHaggleDialog(Boolean raise, short chance)
     halfH = (GetCWindowPortRect((WindowRef)gWind)->bottom - GetCWindowPortRect((WindowRef)gWind)->top) / 2;
     DisposeDialogNoFlash(haggleDialog);
     haggleDialog = NULL;
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     return result;
 }
 
@@ -1575,6 +1488,7 @@ Boolean HaggleFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 1;
             return 1;
         }
+        // BUG: no tolower here (every other filter has one), so Shift+A/L and Caps Lock do nothing
         if (EventCharOf(ev) == 'a') {
             *itemHit = 1;
             return 1;
@@ -1587,9 +1501,6 @@ Boolean HaggleFilter(int32_t unused, EventRecord *ev, short *itemHit)
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         HaggleDialogUpdate();
         button = TrackHaggleButtons(where);
         if (button == 0) {
@@ -1604,13 +1515,7 @@ Boolean HaggleFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(haggleDialog));
         HaggleDialogUpdate();
-        EndUpdate(GetDialogWindow(haggleDialog));
-#else
-        HaggleDialogUpdate();
-#endif
     }
     return 0;
 }
@@ -1806,9 +1711,6 @@ void DoPlunderDialog(void)
                 CtoPstr((char *)text);
                 PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
                 DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                RefreshSAT();
-#endif
             }
         }
     }
@@ -1858,9 +1760,6 @@ void DoPlunderDialog(void)
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
                     GetIndString(text, kGameStrList, 0x72);
                     DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                 } else {
                     strcpy((char *)text, "");
                     StrcatIndCString((char *)text, kGameStrList, 0x73);
@@ -1884,9 +1783,6 @@ void DoPlunderDialog(void)
                     CtoPstr((char *)text);
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
                     DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                     shipData->cargo[salvageType] += salvageQty;
                     statusRedraw[kRedrawCargo] = 1;
                     salvageQty = 0;
@@ -1914,9 +1810,6 @@ void DoPlunderDialog(void)
                 StrcatIndCString((char *)text, kGameStrList, 0x6c);
                 CtoPstr((char *)text);
                 DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                RefreshSAT();
-#endif
                 shipData->credits += salvageCredits;
                 risk *= 1.25;
                 risky = 1;
@@ -1970,16 +1863,10 @@ void DoPlunderDialog(void)
                     CtoPstr((char *)text);
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
                     DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                 } else {
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
                     GetIndString(text, kGameStrList, 0x75);
                     DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                 }
                 statusRedraw[kRedrawWeap] = 1;
                 risk *= 2.0;
@@ -2006,14 +1893,8 @@ void DoPlunderDialog(void)
                         DisplayComm((PStrChar *)fuelString[1], kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
                     else
                         DisplayComm((PStrChar *)fuelString[2], kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                 } else {
                     DisplayComm((PStrChar *)fuelString[3], kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                 }
                 statusRedraw[kRedrawFuel] = 1;
                 DrawStatus();
@@ -2040,9 +1921,6 @@ void DoPlunderDialog(void)
                     shipData[shipData->targetShip].deathTimer = 0;
                     GetIndString(text, kGameStrList, 0x71);
                     DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                    RefreshSAT();
-#endif
                     SetDialogGWorld(plunderDialog);
                 } else {
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
@@ -2104,9 +1982,6 @@ void DoPlunderDialog(void)
                                 shipData[shipData->targetShip].jamming[i] = -1;
                             GetIndString(text, kGameStrList, 0x7b);
                             DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                            RefreshSAT();
-#endif
                             SetDialogGWorld(plunderDialog);
                             statusRedraw[kRedrawCargo] = 1;
                         }
@@ -2114,9 +1989,6 @@ void DoPlunderDialog(void)
                         PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
                         GetIndString(text, kGameStrList, 0x7c);
                         DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                        RefreshSAT();
-#endif
                         SetDialogGWorld(plunderDialog);
                     }
                 }
@@ -2125,9 +1997,6 @@ void DoPlunderDialog(void)
                 PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
                 GetIndString(text, kGameStrList, 0x7d);
                 DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
-#ifdef MACBUILD
-                RefreshSAT();
-#endif
                 SetDialogGWorld(plunderDialog);
             }
         }
@@ -2145,9 +2014,6 @@ void DoPlunderDialog(void)
     DisposeDialogNoFlash(plunderDialog);
     plunderDialog = NULL;
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     ResetPlayerPrecalcedValues();
 #undef n
 #undef idx
@@ -2337,24 +2203,14 @@ Boolean PlunderFilter(int32_t unused, EventRecord *ev, short *itemHit)
     short button;
 
     if ((int)ev->what == kKeyDown) {
-#if V111
-        short key;
-
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-#else
         if (IsReturnChar(EventCharOf(ev)) ||
             EventCharOf(ev) == kEscapeChar) {
-#endif
             *itemHit = 1;
             return 1;
         }
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         PlunderDialogUpdate();
         button = TrackPlunderButtons(where);
         if (button == 0) {
@@ -2385,13 +2241,7 @@ Boolean PlunderFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(plunderDialog));
         PlunderDialogUpdate();
-        EndUpdate(GetDialogWindow(plunderDialog));
-#else
-        PlunderDialogUpdate();
-#endif
     }
     return 0;
 }
@@ -2637,9 +2487,6 @@ void DoEscortDialog(ShipObj *ship)
         commBackgroundPic = NULL;
     }
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
 }
 
 /* EscortFilter. STATE: MATCH, byte-identical. OPEN: none */
@@ -2653,31 +2500,6 @@ Boolean EscortFilter(int32_t unused, EventRecord *ev, short *itemHit)
 
     what = ev->what;
     if (what == kKeyDown) {
-#if V111
-        short key;
-
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (key == kUKeyCode) {
-            *itemHit = 3;
-            return 1;
-        }
-        if (key == kSKeyCode) {
-            *itemHit = 4;
-            return 1;
-        }
-        if (key == kRKeyCode) {
-            *itemHit = 2;
-            return 1;
-        }
-        if (key == kCKeyCode) {
-            *itemHit = 1;
-            return 1;
-        }
-#else
         EventChar c;
         EventChar key;
 
@@ -2703,13 +2525,9 @@ Boolean EscortFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 1;
             return 1;
         }
-#endif
     }
     if (what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         EscortDialogUpdate();
         button = TrackEscortButtons(where);
         if (button == 0) {
@@ -2732,13 +2550,7 @@ Boolean EscortFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if (what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(commDialog));
         EscortDialogUpdate();
-        EndUpdate(GetDialogWindow(commDialog));
-#else
-        EscortDialogUpdate();
-#endif
     }
     return 0;
 }

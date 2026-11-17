@@ -321,6 +321,7 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
                         if (strcmp((char *)name, (char *)savedName) == 0) {
                             selected = idx;
                             selected++;
+                            // BUG: the break skips ReleaseResource(res) -- one chär resource leaks per dialog
                             break;
                         }
                     }

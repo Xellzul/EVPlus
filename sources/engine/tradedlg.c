@@ -96,13 +96,6 @@ uint32_t ambientNoiseDelay;
 GWorldContainer iconsPort;
 GWorldContainer planetPicContainer;
 char playerInfoText[3][4096];
-#ifdef MACBUILD
-AEEventHandlerUPP OAPPHandlerUPP;
-AEEventHandlerUPP ODOCHandlerUPP;
-AEEventHandlerUPP PDOCHandlerUPP;
-AEEventHandlerUPP QUITHandlerUPP;
-AEEventHandlerUPP PREFHandlerUPP;
-#endif
 short nagCount;
 short previewPicID;
 RGBColor shopGridColor[2];
@@ -110,22 +103,8 @@ RGBColor shopGridColor[2];
 void *gIntroMovieData;
 Rect gMovieBox;
 #endif
-#ifdef MACBUILD
-extern int32_t gSystemVersion;
-extern void SetRetainedWindow(WindowRef window, Boolean retained);
-extern void KeepMenuBarHidden(GrafPtr port);
-extern void AdjustMenus(void);
-extern void DoMenuClick(int32_t menuResult);
-extern void KeyDialogUpdate(void);
-void GetWindowDragBounds(Rect *bounds, Point where);
-void ForceWindowOnscreen(void);
-#endif
 /* the menu icon cache draws into a port on mac, into the port's container on win */
-#ifdef MACBUILD
-#define MenuIconPort(gwc) ((gwc)->world)
-#else
 #define MenuIconPort(gwc) (gwc)
-#endif
 
 EXTERN_C_BEGIN
 
@@ -146,9 +125,6 @@ EXTERN_C_BEGIN
 
 #define kOutfModRaiseMax 0x1b   /* outfit ModType 27: raises another outfit's maximum */
 /* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
-#ifdef MACBUILD
-#define InvalDialogItem(dlg, n)     (GetDialogItem(dlg, n, &itemType, &item, &box), InvalWindowRect(GetDialogWindow(dlg), &box))
-#endif
 /* DoTradeDialog (mac _DoTradeDialog). STATE: MATCH, 628/628, byte-identical yes.
    OPEN: none */
 // FUNCTION: EVNOVA 0x0048c730
@@ -159,11 +135,6 @@ void DoTradeDialog(void)
     short savedStellar;
     short savedRoute;
     short itemHit;
-#ifdef MACBUILD
-    short itemType;
-    Handle item;
-    Rect box;
-#endif
     short mods;
     double mult;
     short j;
@@ -283,24 +254,14 @@ void DoTradeDialog(void)
             if (qty > 0) {
                 DoMissionInfoDialog();
                 SetDialogGWorld(portDialog);
-#ifdef MACBUILD
-                /* BUG: invalidates the trade window by the port dialog's bounds */
-                InvalWindowRect(GetDialogWindow(tradeDialog), GetDialogPortRect(portDialog));
-#else
                 RedrawDialog(tradeDialog);
-#endif
                 UpdateAllPortDialogs();
                 SetDialogGWorld(tradeDialog);
                 RedrawDialog(tradeDialog);
             }
         }
         if (itemHit == kBuyItem) {
-#ifdef MACBUILD
-            InvalDialogItem(tradeDialog, kBuyItem);
-            InvalDialogItem(tradeDialog, kSellItem);
-#else
             RedrawDialog(tradeDialog);
-#endif
             space = TotalFleetHolds() - TotalCargo(shipData);
             if (space > 0) {
                 afford = shipData->credits / (float)tradePrice[selTradeItem];
@@ -328,11 +289,7 @@ void DoTradeDialog(void)
                             .held += qty;
                     shipData->credits -= tradePrice[selTradeItem] * qty;
                 }
-#ifdef MACBUILD
-                InvalDialogItem(tradeDialog, selTradeItem + kFirstRowItem);
-#else
                 RedrawDialog(tradeDialog);
-#endif
                 statusRedraw[kRedrawCargo] = 1;
                 DrawStatus();
                 SetDialogGWorld(tradeDialog);
@@ -340,12 +297,7 @@ void DoTradeDialog(void)
             RedrawDialog(tradeDialog);
         }
         if (itemHit == kSellItem) {
-#ifdef MACBUILD
-            InvalDialogItem(tradeDialog, kBuyItem);
-            InvalDialogItem(tradeDialog, kSellItem);
-#else
             RedrawDialog(tradeDialog);
-#endif
             /* BUG: an empty junk row leaves qty unset, so maxSell comes from garbage */
             if (selTradeItem <= kLastCommodity)
                 qty = shipData->cargo[selTradeItem];
@@ -380,11 +332,7 @@ void DoTradeDialog(void)
                             .held -= qty;
                     shipData->credits += tradePrice[selTradeItem] * qty;
                 }
-#ifdef MACBUILD
-                InvalDialogItem(tradeDialog, selTradeItem + kFirstRowItem);
-#else
                 RedrawDialog(tradeDialog);
-#endif
                 statusRedraw[kRedrawCargo] = 1;
                 DrawStatus();
                 SetDialogGWorld(tradeDialog);
@@ -404,9 +352,6 @@ void DoTradeDialog(void)
         QDReleaseResource(tradeBackgroundPic);
         tradeBackgroundPic = NULL;
     }
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     shipData->targetStellar = savedStellar;
     shipData->navTargetKind = savedRoute;
     statusRedraw[kRedrawNav] = 1;
@@ -426,11 +371,7 @@ Boolean TradeFilter(int32_t unused, EventRecord *ev, short *itemHit)
     short j;
     short last;
     short i;
-#if V111
-    short key;
-#else
     EventChar c;
-#endif
     short button;
 
     SetDialogGWorld(tradeDialog);
@@ -453,34 +394,6 @@ Boolean TradeFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 17;
             return 1;
         }
-#if V111
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if ((int)ev->what == kKeyDown) {
-            if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-                ev->what = kMouseDown;
-                *itemHit = 1;
-                return 1;
-            }
-        }
-        if (key == kTabKeyCode) {
-            if ((ev->modifiers & shiftKey) != 0)
-                TradeDialogTabKey(1);
-            else
-                TradeDialogTabKey(0);
-        }
-        if (key == kDownArrowKeyCode)
-            TradeDialogTabKey(0);
-        if (key == kUpArrowKeyCode)
-            TradeDialogTabKey(1);
-        if (key == kBKeyCode) {
-            *itemHit = kBuyItem;
-            return 1;
-        }
-        if (key == kSKeyCode) {
-            *itemHit = kSellItem;
-            return 1;
-        }
-#else
         c = EventCharOf(ev);
         if ((int)ev->what == kKeyDown) {
             if (IsReturnChar(c) || c == kEscapeChar) {
@@ -508,14 +421,10 @@ Boolean TradeFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = kSellItem;
             return 1;
         }
-#endif
     }
     if ((int)ev->what == kMouseDown) {
         SetDialogGWorld(tradeDialog);
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         for (i = kFirstRowItem; i <= kLastRowItem; i++) {
             GetDialogItem(tradeDialog, i, &itemType, &item, &box);
             if (PtInRectPoint(where, &box) &&
@@ -572,20 +481,11 @@ Boolean TradeFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(tradeDialog));
-#endif
         TradeDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(GetDialogWindow(tradeDialog));
-#endif
         return 0;
     }
     return 0;
 }
-#ifdef MACBUILD
-#undef InvalDialogItem
-#endif
 
 #define kMapFilterCount 8
 
@@ -618,15 +518,8 @@ void TradeDialogTabKey(Boolean back)
         if (selTradeItem < 0)
             selTradeItem = kMapFilterCount - 1;
     }
-#ifdef MACBUILD
-    GetDialogItem(tradeDialog, 13, &itemType, (Handle *)&item, &box);
-    InvalWindowRect(GetDialogWindow(tradeDialog), &box);
-    GetDialogItem(tradeDialog, 14, &itemType, (Handle *)&item, &box);
-    InvalWindowRect(GetDialogWindow(tradeDialog), &box);
-#else
     InvalDialogItem(tradeDialog, 13);
     InvalDialogItem(tradeDialog, 14);
-#endif
     GetDialogItem(tradeDialog, 3, &itemType, (Handle *)&item, &box);
     bounds = box;
     GetDialogItem(tradeDialog, 12, &itemType, (Handle *)&item, &box);
@@ -642,32 +535,6 @@ void TradeDialogUpdate(void)
 {
     extern char *strcpy(char *, const char *);   /* MSL, CALLED not inlined */
 
-#ifdef MACBUILD
-    Rect box;
-    Boolean seen[kMaxCargo];
-    Handle item;
-    short itemType;
-    short available;
-    short missionTons;
-    short junkTons;
-    short missionSlots;
-    Boolean junkSeen[kMaxJunks];
-    short junkSlots;
-    short k;
-    Rect insetBox;
-    unsigned char num[256];
-    char message[255];
-    char text[2048];
-    short i;
-    Boolean found;
-    short j;
-    short qty;
-    short p;
-    short fleetHolds;
-    short holds;
-    short totalCargo;
-    short over;
-#else
     unsigned char message[256];
     void *item;
     short itemType;
@@ -691,7 +558,6 @@ void TradeDialogUpdate(void)
     short totalCargo;
     short available;
     short over;
-#endif
 
     SetGWorldContainer(&loadPort);
     ForeColor(blackColor);
@@ -856,47 +722,6 @@ void TradeDialogUpdate(void)
         InsetRect(&insetBox, 5, 3);
         strcpy((char *)text, "");
 
-#ifdef MACBUILD
-        available = 0;
-        k = 0;
-        missionTons = 0;
-        junkTons = 0;
-        missionSlots = 0;
-        junkSlots = 0;
-
-        for (i = 0; i < kMaxCargo; i++)
-            seen[i] = 0;
-#ifdef MAC1010 /* 1.0.10 spelling */
-        for (i = 0; i < kMaxJunks; i++)
-#else
-        for (i = 0; i < sizeof(junkSeen); i++)
-#endif
-            junkSeen[i] = 0;
-        for (i = 0; i <= 1; i++)
-            if (junkType[i] != -1)
-                junkSeen[junkType[i]] = 1;
-        for (j = 0; j < kMaxActiveMissions; j++) {
-            if (currentMissionObjectives[j].active && currentMissions[j].hasCargo &&
-                currentMissions[j].cargoType != -1 && currentMissions[j].cargoQty >= 0) {
-                available++;
-                missionSlots++;
-                missionTons += currentMissions[j].cargoQty;
-                if (seen[currentMissions[j].cargoType] == 0) {
-                    seen[currentMissions[j].cargoType] = 1;
-                    k++;
-                }
-            }
-        }
-        for (p = 0; p < kMaxJunks; p++) {
-            if (junkData[p].held > 0 && p != junkType[0] && p != junkType[1]) {
-                available++;
-                junkTons += junkData[p].held;
-                junkSlots++;
-                k++;
-            }
-        }
-        if (available > 0) {
-#else
         available = 0;
         k = 0;
         missionTons = 0;
@@ -927,7 +752,6 @@ void TradeDialogUpdate(void)
             }
         }
         if (available > 0) {
-#endif
             if (missionSlots + junkSlots > 0) {
                 StrcatIndCString((char *)text, kGameStrList, 0x16b);
                 strcat((char *)text, " ");
@@ -1092,11 +916,7 @@ void PreloadPortDialog(SpobRecord *spob, short stellar)
     if (pic != NULL) {
         QDGetPictureBounds(pic, &rect);
         OffsetRect(&rect, -rect.left, -rect.top);
-#ifdef MACBUILD
-        CreateGWorldContainer(&planetPicContainer, GetMainDevice(), gSpriteWorld->pixelDepth, &rect);
-#else
         CreateGWorldContainer(&planetPicContainer, 0, gSpriteWorld->pixelDepth, &rect);
-#endif
         if (planetPicContainer.world != NULL) {
             SetGWorldContainer(&planetPicContainer);
             ForeColor(blackColor);
@@ -1124,602 +944,8 @@ void PreloadPortDialog(SpobRecord *spob, short stellar)
    weapID and the sell quantity (see notes). */
 // FUNCTION: EVNOVA 0x0048ea70
 // MAC: _DoOutfitDialog i386 0x0005bacf ppc 0x00063b20
-#ifdef MACBUILD
-#define InvalDialogItem(dlg, n)     (GetDialogItem(dlg, n, &itemType, &item, &box), InvalWindowRect(GetDialogWindow(dlg), &box))
-#endif
 void DoOutfitDialog(void)
-#ifdef MAC1010
 {
-    short i;
-    short j;
-    short count;
-    short shortfall;
-    short ammo;
-    short weapID;
-    Boolean shown;
-    short itemHit;
-    int32_t cost;
-    short itemType;
-    short savedUnk6C;
-    short savedUnk6A;
-    int32_t qtyLimit;
-    int have;
-    Boolean done;
-    short filterKey;
-    Handle item;
-    short maxAfford;
-    short savedOutfits[kMaxOutfits];
-    Rect box;
-    unsigned char msg[256];
-    unsigned char nameBuf[256];
-    short m;
-    short k;
-
-    done = 0;
-    for (i = 0; i < kMaxOutfits; i++)
-        savedOutfits[i] = shipSystems[i];
-    savedUnk6C = shipData->targetStellar;
-    savedUnk6A = shipData->navTargetKind;
-    selOutfitItem = -1;
-    selOutfitListItem = -1;
-    outfitScroll = 0;
-    boughtMap = boughtID = 0;
-    canBuy = canSell = 0;
-    ShipStatsToSystemInfo();
-    SetupPortAvailableItems(dockedPort);
-    if (dockedPort->techLevel == 0) {
-        portBuysNoOutfits = 1;
-        for (i = 0; i < 8; i++) {
-            if (dockedPort->specialTech[i] > 0) {
-                portBuysNoOutfits = 0;
-                break;
-            }
-        }
-    } else
-        portBuysNoOutfits = 0;
-    m = 0;
-    for (i = 0; i < kMaxOutfits; i++) {
-        if (dockedPortItems[i] != -1) {
-            m++;
-            break;
-        }
-    }
-    if (m == 0) {
-        extern char *strcpy(char *, const char *);
-
-        strcpy(textShowString, "");
-        StrcatIndCString(textShowString, kGameStrList, 0xce);
-        ShowTextDialog(0, 0, 0);
-        return;
-    }
-    previewPic = NULL;
-    previewPicID = -1;
-    missionsOutside = kOutfitVenue;
-    offeringFromShip = 0;
-    missionOfferTime = ReadTick() + Rand(30) + 30;
-    outfitDialog = NULL;
-    outfitDialog = GetNewDialog(kOutfitDlogID, OutfitDialogUpdate, OutfitFilter);
-    if (outfitDialog == NULL)
-        return;
-    outfitBackgroundPic = GetPicture(kOutfitPictID);
-    CenterWindow(FrontWindow(outfitDialog), FrontWindow(portDialog));
-    GetDialogItem(outfitDialog, kGridItem, &itemType, &item, &box);
-    SetupListRects((Point *)&box);
-    strncpy(dialogDescTextPtr, "", 3);
-    ShowWindowNoFlash(FrontWindow(outfitDialog));
-    SetDialogGWorld(outfitDialog);
-    FlushEvents(everyEvent - diskMask, 0);
-    ForeColor(blackColor);
-    OutfitDialogUpdate();
-    SelectWindow(FrontWindow(outfitDialog));
-    BringToFront(FrontWindow(outfitDialog));
-    OfferMissionFromPort(kOutfitVenue);
-    RedrawDialog(outfitDialog);
-
-    do {
-        if (gQuit)
-            done = 1;
-        MyModalDialog(outfitDialog, OutfitFilter, &itemHit, &filterKey);
-        if (itemHit == 1)
-            done = 1;
-        if (itemHit == 2) {
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedUnk6C;
-            shipData->navTargetKind = savedUnk6A;
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            UpdateAllPortDialogs();
-            SetDialogGWorld(outfitDialog);
-            RedrawDialog(outfitDialog);
-        }
-        if (itemHit == 13) {
-            count = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active != 0
-                    && (currentMissionObjectives[i].flags & kMissionHidden) == 0)
-                    count++;
-            }
-            if (count > 0) {
-                DoMissionInfoDialog();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                UpdateAllPortDialogs();
-                SetDialogGWorld(outfitDialog);
-                RedrawDialog(portDialog);
-            }
-        }
-        if (itemHit == 8) {
-            if (OfferMissionFromPort(kOutfitVenue)) {
-                SetDialogGWorld(portDialog);
-                UpdateAllPortDialogs();
-                SetDialogGWorld(outfitDialog);
-            }
-        }
-        if (itemHit == 7) {
-            if (selOutfitItem != -1)
-                canBuy = CanBuyOutfitItem(selOutfitItem);
-            else
-                canBuy = 0;
-            if (canBuy && selOutfitItem != -1) {
-                count = 1;
-                if ((filterKey & optionKey) != 0) {
-                    cost = ApplyPriceAndTechnologyFlux(
-                        outfitSystem[selOutfitItem].cost, priceFluxMult[0],
-                        outfitSystem[selOutfitItem].techLevel,
-                        stellarData[shipData->targetStellar].techLevel);
-                    cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
-                                            &shipClass[shipData->type]);
-                    if (cost > 0) {
-                        qtyLimit = shipData->credits / cost;
-                        if (qtyLimit > kMaxTradeQty)
-                            qtyLimit = kMaxTradeQty;
-                    } else
-                        qtyLimit = kMaxTradeQty;
-                    if (outfitSystem[selOutfitItem].maxCount
-                        > shipSystems[selOutfitItem]) {
-                        if (qtyLimit > outfitSystem[selOutfitItem].maxCount
-                                       - shipSystems[selOutfitItem])
-                            qtyLimit = outfitSystem[selOutfitItem].maxCount
-                                       - shipSystems[selOutfitItem];
-                    }
-                    if (qtyLimit > 1) {
-                        HasMaxOfItem(selOutfitItem, 0, &maxAfford);
-                        if (maxAfford < qtyLimit)
-                            qtyLimit = maxAfford;
-                        if (maxAfford - shipSystems[selOutfitItem] < qtyLimit)
-                            qtyLimit = maxAfford - shipSystems[selOutfitItem];
-                    }
-                    if (qtyLimit > 1) {
-                        count = DoQuantityDialog(qtyLimit, 0);
-                        OutfitDialogUpdate();
-                    }
-                }
-                for (i = 0; i < count; i++) {
-                    if (canBuy) {
-                        cost = ApplyPriceAndTechnologyFlux(
-                            outfitSystem[selOutfitItem].cost, priceFluxMult[0],
-                            outfitSystem[selOutfitItem].techLevel,
-                            stellarData[shipData->targetStellar].techLevel);
-                        cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
-                                                &shipClass[shipData->type]);
-                        GrantOutfitItem(selOutfitItem);
-                        shipData->credits -= cost;
-                        crashlog_mission_bit_set(
-                            "purchasing outfit",
-                            (char *)outfitSystem[selOutfitItem].name, 1,
-                            selOutfitItem + kFirstResourceID,
-                            outfitSystem[selOutfitItem].onPurchase);
-                        if (shipData->credits < 0) {
-                            crashlog("warning: player's cash went below zero");
-                            shipData->credits = 0;
-                            i = count;
-                        }
-                        EvalMissionBitSetString(outfitSystem[selOutfitItem].onPurchase);
-                    }
-                    if (selOutfitItem != -1)
-                        canBuy = CanBuyOutfitItem(selOutfitItem);
-                    else
-                        canBuy = 0;
-                }
-                SystemInfoToShipStats();
-                if (SetupPortAvailableItems(dockedPort)) {
-                    selOutfitItem = 0;
-                    selOutfitListItem = -1;
-                    outfitScroll = 0;
-                    canBuy = canSell = 0;
-                    strncpy(dialogDescTextPtr, "", 3);
-                    InvalDialogItem(outfitDialog, 6);
-                    InvalDialogItem(outfitDialog, 8);
-                    m = 0;
-                    for (i = 0; i < kMaxOutfits; i++) {
-                        if (dockedPortItems[i] != -1) {
-                            m++;
-                            break;
-                        }
-                    }
-                    if (m == 0)
-                        done = 1;
-                }
-                InvalDialogItem(outfitDialog, 4);
-                InvalDialogItem(outfitDialog, 5);
-                InvalDialogItem(outfitDialog, 7);
-                InvalDialogItem(outfitDialog, 9);
-                didOutfit = 1;
-                if (shipSystems[selOutfitItem] > 0) {
-                    if ((outfitSystem[selOutfitItem].flags & kOutfCantSell) != 0)
-                        canSell = 0;
-                    else
-                        canSell = 1;
-                } else
-                    canSell = 0;
-                statusRedraw[kRedrawCargo] = 1;
-                DrawStatus();
-                SetDialogGWorld(outfitDialog);
-                DrawOutfitButtons(-1);
-            }
-        }
-        if (itemHit == 4 && canSell) {
-            count = 1;
-            if ((filterKey & optionKey) != 0) {
-                qtyLimit = shipSystems[selOutfitItem];
-                if (qtyLimit > kMaxTradeQty)
-                    qtyLimit = kMaxTradeQty;
-                if (qtyLimit > 1) {
-                    count = DoQuantityDialog(qtyLimit, 1);
-                    OutfitDialogUpdate();
-                }
-            }
-            shown = 0;
-            for (i = 0; i < count; i++) {
-                if (canSell) {
-                    have = AdjustedItemMass(&outfitSystem[selOutfitItem],
-                                            &shipClass[shipData->type]);
-                    if (have < 0 && ShipFreeMass() + have < 0) {
-                        if (!shown) {
-                            GetIndString(msg, kGameStrList, 0xcf);
-                            PtoCstr(msg);
-                            strcpy(textShowString, (char *)msg);
-                            ShowTextDialog(0, 0, 0);
-                            shown = 1;
-                        }
-                        canSell = 0;
-                    }
-                }
-                if (canSell) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[selOutfitItem].modType[j] == kOutfModRaiseMax
-                            && outfitSystem[selOutfitItem].modVal[j] >= kFirstResourceID
-                            && outfitSystem[selOutfitItem].modVal[j] < kFirstResourceID + kMaxOutfits) {
-                            k = (shipSystems[selOutfitItem] - count)
-                                * outfitSystem[outfitSystem[selOutfitItem].modVal[j] - kFirstResourceID].maxCount;
-                            shortfall = shipSystems[outfitSystem[selOutfitItem].modVal[j] - kFirstResourceID] - k;
-                            if (shortfall > 0) {
-                                if (!shown) {
-                                    strcpy((char *)msg,"");
-
-                                    StrcatIndCString((char *)msg,kGameStrList, 0xd0);
-                                    strcat((char *)msg," ");
-                                    if (shortfall > 3)
-                                        StrcatCommaNumber(shortfall, (char *)msg);
-                                    else
-                                        StrcatOrdinalNumber(shortfall, (char *)msg,0);
-                                    strcat((char *)msg," ");
-                                    if (shortfall > 1)
-                                        pstrcpy(nameBuf,
-                                            lcPluralOutfitName[outfitSystem[selOutfitItem].modVal[j] - kFirstResourceID]);
-                                    else
-                                        pstrcpy(nameBuf,
-                                            lcOutfitName[outfitSystem[selOutfitItem].modVal[j] - kFirstResourceID]);
-                                    PtoCstr(nameBuf);
-                                    strcat((char *)msg,(char *)nameBuf);
-                                    strcat((char *)msg," ");
-                                    StrcatIndCString((char *)msg,kGameStrList, 0xd4);
-                                    strcat((char *)msg," ");
-                                    if (i < count - 1)
-                                        pstrcpy(nameBuf, lcPluralOutfitName[selOutfitItem]);
-                                    else
-                                        pstrcpy(nameBuf, lcOutfitName[selOutfitItem]);
-                                    PtoCstr(nameBuf);
-                                    strcat((char *)msg,(char *)nameBuf);
-                                    strcat((char *)msg,".");
-                                    strcpy(textShowString, (char *)msg);
-                                    ShowTextDialog(0, 0, 0);
-                                    shown = 1;
-                                }
-                                canSell = 0;
-                            }
-                        }
-                    }
-                    weapID = -1;
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[selOutfitItem].modType[j] == kOutfModWeapon) {
-                            weapID = outfitSystem[selOutfitItem].modVal[j];
-                            break;
-                        }
-                    }
-                    if (weapID != -1 && weaponStats[weapID].maxAmmo > 0) {
-                        if (weaponStats[weapID].ammoType >= 0
-                            && weaponStats[weapID].ammoType < kMaxWeapTypes
-                            && weaponStats[weapID].guidance != kGuidanceBay)
-                            ammo = shipData->weap[weaponStats[weapID].ammoType].ammo;
-                        else
-                            ammo = shipData->weap[weapID].ammo;
-                        if (weaponStats[weapID].guidance == kGuidanceBay) {
-                            for (j = 1; j < kMaxShips; j++) {
-                                if (shipData[j].active != 0
-                                    && shipData[j].parentShip == 0
-                                    && shipData[j].aiType == kShipTypeFighter
-                                    && shipData[j].type
-                                       == weaponStats[weapID].ammoType - kFirstResourceID
-                                    && !IsDisabled(&shipData[j]))
-                                    ammo++;
-                            }
-                        }
-                        shortfall = ammo
-                            - ((shipSystems[selOutfitItem] - (i + 1))
-                                      * weaponStats[weapID].maxAmmo);
-                        if (shortfall > 0 && ammo > 0) {
-                            if (!shown) {
-                                strcpy((char *)msg,"");
-
-                                StrcatIndCString((char *)msg,kGameStrList, 0xd0);
-                                strcat((char *)msg," ");
-                                if (shortfall > 3)
-                                    StrcatCommaNumber(shortfall, (char *)msg);
-                                else
-                                    StrcatOrdinalNumber(shortfall, (char *)msg,0);
-                                strcat((char *)msg," ");
-                                k = -1;
-                                for (j = 0; j < kMaxOutfits; j++) {
-                                    for (m = 0; m < kOutfMods; m++) {
-                                        if (outfitSystem[j].modType[m] == kOutfModAmmo
-                                            && outfitSystem[j].modVal[m] == weapID) {
-                                            k = j;
-                                            break;
-                                        }
-                                    }
-                                    if (k != -1)
-                                        break;
-                                }
-                                if (k != -1) {
-                                    if (shortfall > 1)
-                                        pstrcpy(nameBuf, lcPluralOutfitName[k]);
-                                    else
-                                        pstrcpy(nameBuf, lcOutfitName[k]);
-                                    PtoCstr(nameBuf);
-                                    strcat((char *)msg,(char *)nameBuf);
-                                } else {
-                                    if (shortfall > 1)
-                                        StrcatIndCString((char *)msg,kGameStrList, 0xd2);
-                                    else
-                                        StrcatIndCString((char *)msg,kGameStrList, 0xd1);
-                                    strcat((char *)msg," ");
-                                    StrcatIndCString((char *)msg,kGameStrList, 0xd3);
-                                }
-                                strcat((char *)msg," ");
-                                StrcatIndCString((char *)msg,kGameStrList, 0xd4);
-                                strcat((char *)msg," ");
-                                if (i < count - 1)
-                                    pstrcpy(nameBuf, lcPluralOutfitName[selOutfitItem]);
-                                else
-                                    pstrcpy(nameBuf, lcOutfitName[selOutfitItem]);
-                                PtoCstr(nameBuf);
-                                strcat((char *)msg,(char *)nameBuf);
-                                strcat((char *)msg,".");
-                                strcpy(textShowString, (char *)msg);
-                                ShowTextDialog(0, 0, 0);
-                                shown = 1;
-                            }
-                            canSell = 0;
-                        }
-                    }
-                }
-                if (canSell) {
-                    cost = ApplyPriceAndTechnologyFlux(
-                        outfitSystem[selOutfitItem].cost, priceFluxMult[0],
-                        outfitSystem[selOutfitItem].techLevel,
-                        stellarData[shipData->targetStellar].techLevel);
-                    cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
-                                            &shipClass[shipData->type]);
-                    if (shipSystems[selOutfitItem]
-                        <= savedOutfits[selOutfitItem])
-                        cost *= 0.5;
-                    have = ShipFreeMass();
-                    shipSystems[selOutfitItem] -= 1;
-                    if (ShipFreeMass() < 0 && have >= 0) {
-                        shipSystems[selOutfitItem] += 1;
-                        PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-                        break;
-                    } else {
-                        shipData->credits += cost;
-                        for (j = 0; j < kOutfMods; j++) {
-                            if (shipSystems[selOutfitItem] <= 0) {
-                                if (outfitSystem[selOutfitItem].modType[j] == kOutfModWeapon
-                                    && shipData->selectedWeapon
-                                       == outfitSystem[selOutfitItem].modVal[j]) {
-                                    shipData->selectedWeapon = -1;
-                                    statusRedraw[kRedrawWeap] = 1;
-                                    break;
-                                }
-                            }
-                        }
-                        crashlog_mission_bit_set(
-                            "selling outfit",
-                            (char *)outfitSystem[selOutfitItem].name, 1,
-                            selOutfitItem + kFirstResourceID,
-                            outfitSystem[selOutfitItem].onSell);
-                        EvalMissionBitSetString(outfitSystem[selOutfitItem].onSell);
-                        SystemInfoToShipStats();
-                        if (SetupPortAvailableItems(dockedPort)) {
-                            selOutfitItem = 0;
-                            selOutfitListItem = -1;
-                            outfitScroll = 0;
-                            canBuy = canSell = 0;
-                            strncpy(dialogDescTextPtr, "", 3);
-                            InvalDialogItem(outfitDialog, 6);
-                            InvalDialogItem(outfitDialog, 8);
-                            m = 0;
-                            for (i = 0; i < kMaxOutfits; i++) {
-                                if (dockedPortItems[i] != -1) {
-                                    m++;
-                                    break;
-                                }
-                            }
-                            if (m == 0)
-                                done = 1;
-                        }
-                    }
-                }
-                if (selOutfitItem != -1 && shipSystems[selOutfitItem] > 0) {
-                    if ((outfitSystem[selOutfitItem].flags & kOutfCantSell) != 0)
-                        canSell = 0;
-                    else
-                        canSell = 1;
-                } else
-                    canSell = 0;
-            }
-            if (selOutfitItem != -1)
-                canBuy = CanBuyOutfitItem(selOutfitItem);
-            else
-                canBuy = 0;
-            InvalDialogItem(outfitDialog, 4);
-            InvalDialogItem(outfitDialog, 5);
-            InvalDialogItem(outfitDialog, 7);
-            InvalDialogItem(outfitDialog, 9);
-            didOutfit = 1;
-            statusRedraw[kRedrawCargo] = 1;
-            DrawStatus();
-            SetDialogGWorld(outfitDialog);
-            DrawOutfitButtons(-1);
-        }
-        if (itemHit == 10 && outfitScroll >= kGridCols) {
-            outfitScroll -= kGridCols;
-            if (selOutfitListItem >= 0 && selOutfitListItem < kGridCells - kGridCols) {
-                selOutfitListItem += kGridCols;
-                selOutfitItem =
-                    dockedPortItems[outfitScroll + selOutfitListItem];
-                LoadDescription(dialogDescTextPtr, selOutfitItem + kOutfitDescBase);
-            } else {
-                selOutfitItem = selOutfitListItem = -1;
-                strncpy(dialogDescTextPtr, "", 3);
-            }
-            SetDialogGWorld(outfitDialog);
-            InvalDialogItem(outfitDialog, 4);
-            InvalDialogItem(outfitDialog, 7);
-            InvalDialogItem(outfitDialog, 5);
-            InvalDialogItem(outfitDialog, 6);
-            InvalDialogItem(outfitDialog, 8);
-            InvalDialogItem(outfitDialog, 9);
-            InvalDialogItem(outfitDialog, 10);
-            InvalDialogItem(outfitDialog, 11);
-            InvalDialogItem(outfitDialog, 13);
-        }
-        if (itemHit == 11) {
-            count = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (dockedPortItems[i] != -1)
-                    count++;
-            }
-            if (outfitScroll < count - kGridCells) {
-                outfitScroll += kGridCols;
-                if (selOutfitListItem >= kGridCols) {
-                    selOutfitListItem -= kGridCols;
-                    selOutfitItem =
-                        dockedPortItems[outfitScroll + selOutfitListItem];
-                    LoadDescription(dialogDescTextPtr, selOutfitItem + kOutfitDescBase);
-                } else {
-                    selOutfitItem = selOutfitListItem = -1;
-                    strncpy(dialogDescTextPtr, "", 3);
-                }
-                SetDialogGWorld(outfitDialog);
-                InvalDialogItem(outfitDialog, 4);
-                InvalDialogItem(outfitDialog, 7);
-                InvalDialogItem(outfitDialog, 5);
-                InvalDialogItem(outfitDialog, 6);
-                InvalDialogItem(outfitDialog, 8);
-                InvalDialogItem(outfitDialog, 9);
-                InvalDialogItem(outfitDialog, 10);
-                InvalDialogItem(outfitDialog, 11);
-                InvalDialogItem(outfitDialog, 13);
-            }
-        }
-    } while (!done);
-
-    k = ShipFuelCapacity(shipData);
-    if (shipData->fuel > k) {
-        shipData->fuel = k;
-        statusRedraw[kRedrawFuel] = 1;
-    }
-    count = ShipShieldCapacity(shipData);
-    if (shipData->shield > count) {
-        shipData->shield = count;
-        statusRedraw[kRedrawShield] = 1;
-    }
-    count = ShipArmorCapacity(shipData);
-    if (shipData->armor > count) {
-        shipData->armor = count;
-        statusRedraw[kRedrawShield] = 1;
-    }
-    for (i = 0; i < kMaxOutfits; i++) {
-        if (shipSystems[i] > 0 && (outfitSystem[i].flags & kOutfRemoveAfterBuy) != 0)
-            shipSystems[i] = 0;
-    }
-    SystemInfoToShipStats();
-    DisposeDialogNoFlash(outfitDialog);
-    outfitDialog = NULL;
-    if (outfitBackgroundPic != NULL) {
-        QDReleaseResource(outfitBackgroundPic);
-        outfitBackgroundPic = NULL;
-    }
-    if (previewPic != NULL) {
-        HUnlock((Handle)previewPic);
-        QDReleaseResource(previewPic);
-        previewPic = NULL;
-    }
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->backFrameP->frameRect);
-    ForeColor(blackColor);
-#if !TARGET_API_MAC_CARBON
-    RedrawStatus(0);
-#endif
-    SWSetPortToWindow(gSpriteWorld);
-    RefreshSAT();
-    shipData->targetStellar = savedUnk6C;
-    shipData->navTargetKind = savedUnk6A;
-    statusRedraw[kRedrawNav] = 1;
-    ResetMissionOfferVenue();
-}
-#else
-{
-#ifdef MACBUILD
-    short shortfall;
-    short itemHit;
-    int32_t cost;
-    short itemType;
-    short savedUnk6C;
-    short savedUnk6A;
-    int32_t qtyLimit;
-    int have;
-    short count;
-    short weapID;
-    Boolean shown;
-    Boolean done;
-    short filterKey;
-    Handle item;
-    short maxAfford;
-    short savedOutfits[kMaxOutfits];
-    Rect box;
-    unsigned char nameBuf[256];
-    unsigned char msg[256];
-    short i;
-    short j;
-    short k;
-    short m;
-    short ammo;
-    short n;
-#else
     short itemHit;
     short itemType;
     void *item;
@@ -1745,7 +971,6 @@ void DoOutfitDialog(void)
     short m;
     Boolean shown;
     int32_t cost;
-#endif
 
     done = 0;
     for (i = 0; i < kMaxOutfits; i++)
@@ -1769,16 +994,6 @@ void DoOutfitDialog(void)
         }
     } else
         portBuysNoOutfits = 0;
-#ifdef MACBUILD
-    m = 0;
-    for (count = 0; count < kMaxOutfits; count++) {
-        if (dockedPortItems[count] != -1) {
-            m++;
-            break;
-        }
-    }
-    if (m == 0) {
-#else
     count = 0;
     for (i = 0; i < kMaxOutfits; i++) {
         if (dockedPortItems[i] != -1) {
@@ -1787,7 +1002,6 @@ void DoOutfitDialog(void)
         }
     }
     if (count == 0) {
-#endif
         extern char *strcpy(char *, const char *);
 
         strcpy(textShowString, "");
@@ -1937,12 +1151,7 @@ void DoOutfitDialog(void)
                     outfitScroll = 0;
                     canBuy = canSell = 0;
                     strncpy(dialogDescTextPtr, "", 3);
-#ifdef MACBUILD
-                    InvalDialogItem(outfitDialog, 6);
-                    InvalDialogItem(outfitDialog, 8);
-#else
                     RedrawDialog(outfitDialog);
-#endif
                     m = 0;
                     for (i = 0; i < kMaxOutfits; i++) {
                         if (dockedPortItems[i] != -1) {
@@ -1953,14 +1162,7 @@ void DoOutfitDialog(void)
                     if (m == 0)
                         done = 1;
                 }
-#ifdef MACBUILD
-                InvalDialogItem(outfitDialog, 4);
-                InvalDialogItem(outfitDialog, 5);
-                InvalDialogItem(outfitDialog, 7);
-                InvalDialogItem(outfitDialog, 9);
-#else
                 RedrawDialog(outfitDialog);
-#endif
                 didOutfit = 1;
                 if (shipSystems[selOutfitItem] > 0) {
                     if ((outfitSystem[selOutfitItem].flags & kOutfCantSell) != 0)
@@ -2175,13 +1377,10 @@ void DoOutfitDialog(void)
                             outfitScroll = 0;
                             canBuy = canSell = 0;
                             strncpy(dialogDescTextPtr, "", 3);
-#ifdef MACBUILD
-                            InvalDialogItem(outfitDialog, 6);
-                            InvalDialogItem(outfitDialog, 8);
-#else
                             RedrawDialog(outfitDialog);
-#endif
                             k = 0;
+                            // BUG (all versions): reuses the outer sell loop's `count', so after the item list
+                            // changes a quantity sale stops early or runs the wrong number of times
                             for (count = 0; count < kMaxOutfits; count++) {
                                 if (dockedPortItems[count] != -1) {
                                     k++;
@@ -2205,14 +1404,7 @@ void DoOutfitDialog(void)
                 canBuy = CanBuyOutfitItem(selOutfitItem);
             else
                 canBuy = 0;
-#ifdef MACBUILD
-            InvalDialogItem(outfitDialog, 4);
-            InvalDialogItem(outfitDialog, 5);
-            InvalDialogItem(outfitDialog, 7);
-            InvalDialogItem(outfitDialog, 9);
-#else
             RedrawDialog(outfitDialog);
-#endif
             didOutfit = 1;
             statusRedraw[kRedrawCargo] = 1;
             DrawStatus();
@@ -2231,19 +1423,7 @@ void DoOutfitDialog(void)
                 strncpy(dialogDescTextPtr, "", 3);
             }
             SetDialogGWorld(outfitDialog);
-#ifdef MACBUILD
-            InvalDialogItem(outfitDialog, 4);
-            InvalDialogItem(outfitDialog, 7);
-            InvalDialogItem(outfitDialog, 5);
-            InvalDialogItem(outfitDialog, 6);
-            InvalDialogItem(outfitDialog, 8);
-            InvalDialogItem(outfitDialog, 9);
-            InvalDialogItem(outfitDialog, 10);
-            InvalDialogItem(outfitDialog, 11);
-            InvalDialogItem(outfitDialog, 13);
-#else
             RedrawDialog(outfitDialog);
-#endif
         }
         if (itemHit == 11) {
             m = 0;
@@ -2263,19 +1443,7 @@ void DoOutfitDialog(void)
                     strncpy(dialogDescTextPtr, "", 3);
                 }
                 SetDialogGWorld(outfitDialog);
-#ifdef MACBUILD
-                InvalDialogItem(outfitDialog, 4);
-                InvalDialogItem(outfitDialog, 7);
-                InvalDialogItem(outfitDialog, 5);
-                InvalDialogItem(outfitDialog, 6);
-                InvalDialogItem(outfitDialog, 8);
-                InvalDialogItem(outfitDialog, 9);
-                InvalDialogItem(outfitDialog, 10);
-                InvalDialogItem(outfitDialog, 11);
-                InvalDialogItem(outfitDialog, 13);
-#else
                 RedrawDialog(outfitDialog);
-#endif
             }
         }
     } while (!done);
@@ -2307,9 +1475,6 @@ void DoOutfitDialog(void)
         outfitBackgroundPic = NULL;
     }
     if (previewPic != NULL) {
-#ifdef MACBUILD
-        HUnlock((Handle)previewPic);
-#endif
         QDReleaseResource(previewPic);
         previewPic = NULL;
     }
@@ -2321,38 +1486,19 @@ void DoOutfitDialog(void)
     RedrawStatus(0);
 #endif
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     shipData->targetStellar = savedUnk6C;
     shipData->navTargetKind = savedUnk6A;
     statusRedraw[kRedrawNav] = 1;
     ResetMissionOfferVenue();
 }
-#endif
-#ifdef MACBUILD
-#undef InvalDialogItem
-#endif
 
 /* the grid filters' arrow keys: virtual key codes in 1.1.1, characters on win */
-#if V111
-#define kGridLeftKey        0x7b
-#define kGridRightKey       0x7c
-#define kGridUpKey          kUpArrowKeyCode
-#define kGridDownKey        kDownArrowKeyCode
-#define kGridPageUpKey      kPageUpKeyCode
-#define kGridPageDownKey    kPageDownKeyCode
-#else
 #define kGridLeftKey        kLeftArrowChar
 #define kGridRightKey       kRightArrowChar
 #define kGridUpKey          kUpArrowChar
 #define kGridDownKey        kDownArrowChar
 #define kGridPageUpKey      kPageUpChar
 #define kGridPageDownKey    kPageDownChar
-#endif
-#ifdef MACBUILD
-#define InvalDialogItem(dlg, n)     (GetDialogItem(dlg, n, &itemType, &item, &r), InvalWindowRect(GetDialogWindow(dlg), &r))
-#endif
 /* OutfitFilter. STATE: MATCH 100%, 562/562, relocregcheck 0 of 154.
    OPEN: none. */
 // FUNCTION: EVNOVA 0x004903c0
@@ -2360,9 +1506,6 @@ void DoOutfitDialog(void)
 Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
-#ifdef MACBUILD
-    Rect r;
-#endif
     short itemType;
     Handle item;
     Point where;
@@ -2406,32 +1549,8 @@ Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 13;
             return 1;
         }
-#if V111
-        c = (ev->message & kKeyCodeMask) >> 8;
-        if ((int)ev->what == kKeyDown) {
-            if (c == kReturnKeyCode || c == kEnterKeyCode || c == kEscapeKeyCode) {
-                ev->what = kMouseDown;
-                *itemHit = 1;
-                return 1;
-            }
-        }
-        if (c == kBKeyCode) {
-            ev->what = kMouseDown;
-            *itemHit = 7;
-            return 1;
-        }
-        if (c == kSKeyCode) {
-            ev->what = kMouseDown;
-            *itemHit = 4;
-            return 1;
-        }
-#else
         c = EventCharOf(ev);
-#ifdef MAC1010 /* 1.0.10 real: 0x10037490 the what test jumps over all three chars, escape too */
-        if ((int)ev->what == kKeyDown && (IsReturnChar(c) || c == kEscapeChar)) {
-#else
         if (((int)ev->what == kKeyDown && IsReturnChar(c)) || c == kEscapeChar) {
-#endif
             ev->what = kMouseDown;
             *itemHit = 1;
             return 1;
@@ -2447,13 +1566,8 @@ Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 4;
             return 1;
         }
-#endif
-#ifdef MAC1010 /* 1.0.10 spelling */
-        if ((c >= kGridLeftKey && c <= kGridDownKey) || c == kGridPageUpKey || c == kGridPageDownKey) {
-#else
         if (c == kGridLeftKey || c == kGridRightKey || c == kGridUpKey ||
             c == kGridDownKey || c == kGridPageUpKey || c == kGridPageDownKey) {
-#endif
             old = selOutfitItem;
             if (selOutfitListItem != -1) {
                 count = 0;
@@ -2502,13 +1616,6 @@ Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
                     selOutfitListItem = 0;
                 else
                     selOutfitListItem = kGridCells - 1;
-#ifdef MACBUILD
-                selOutfitItem = dockedPortItems[outfitScroll + selOutfitListItem];
-                while (selOutfitItem == -1 && selOutfitListItem > 0) {
-                    selOutfitListItem--;
-                    selOutfitItem = dockedPortItems[outfitScroll + selOutfitListItem];
-                }
-#else
                 what = selOutfitListItem;
                 what += outfitScroll;
                 selOutfitItem = dockedPortItems[what];
@@ -2517,7 +1624,6 @@ Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
                     selOutfitListItem--;
                     selOutfitItem = dockedPortItems[what];
                 }
-#endif
             }
             if (selOutfitItem != old) {
                 if (selOutfitListItem != -1) {
@@ -2545,9 +1651,6 @@ Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
         SetDialogGWorld(outfitDialog);
         RedrawDialog(outfitDialog);
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         GetDialogItem(outfitDialog, kGridItem, &itemType, &item, &box);
         if (PtInRectPoint(where, &box)) {
 #ifdef CEFIX /* F13.01 */
@@ -2628,13 +1731,7 @@ Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if (what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(outfitDialog));
-#endif
         OutfitDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(GetDialogWindow(outfitDialog));
-#endif
         return 1;
     }
     if (ReadTick() >= missionOfferTime) {
@@ -2644,9 +1741,6 @@ Boolean OutfitFilter(int32_t unused, EventRecord *ev, short *itemHit)
     }
     return 0;
 }
-#ifdef MACBUILD
-#undef InvalDialogItem
-#endif
 
 /* OutfitDialogUpdate. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00490c70
@@ -2789,23 +1883,12 @@ void OutfitDialogUpdate(void)
         if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(outfitDialog)))) {
             if (previewPicID != selOutfitItem + kOutfitPictBase) {
                 if (previewPic != NULL) {
-#ifdef MACBUILD
-                    HUnlock((Handle)previewPic);
-#endif
                     QDReleaseResource(previewPic);
                     previewPic = NULL;
                 }
                 previewPicID = selOutfitItem + kOutfitPictBase;
-#ifdef MACBUILD
-                if (previewPicID >= kFirstResourceID) {
-                    previewPic = GetPicture(previewPicID);
-                    if (previewPic != NULL)
-                        HLock((Handle)previewPic);
-                }
-#else
                 if (previewPicID >= kFirstResourceID)
                     previewPic = GetPicture(previewPicID);
-#endif
             }
             if (previewPic != NULL) {
                 ForeColor(blackColor);
@@ -2902,13 +1985,6 @@ void OutfitDialogUpdate(void)
              GetPortBitMapForCopyBits(GetDialogPort(outfitDialog)),
              GetDialogPortRect(outfitDialog), GetDialogPortRect(outfitDialog), 0,
              NULL);
-#ifdef MAC1010
-    QDFlushPortBuffer(GetWindowGrafPort(GetDialogWindow(outfitDialog)), NULL);
-#else
-#if V111
-    QDFlushPortBuffer(GetWindowGrafPort(FrontWindow(outfitDialog)), NULL);
-#endif
-#endif
 }
 
 #define kSpecialTechCount  8
@@ -2943,9 +2019,6 @@ Boolean CanBuyOutfitItem(short outfit)
     Boolean avail;
     short i;
     short stellar;
-#ifdef MAC1010
-    short cargoDelta;
-#endif
 
     if (outfit != -1) {
         freeMass = ShipFreeMass();
@@ -3113,9 +2186,6 @@ Boolean CanBuyOutfitItem(short outfit)
 }
 
 /* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
-#ifdef MACBUILD
-#define InvalDialogItem(dlg, n)     (GetDialogItem(dlg, n, &itemType, &item, &box), InvalWindowRect(GetDialogWindow(dlg), &box))
-#endif
 /* DoPortDialog (mac _DoPortDialog). STATE: MATCH 561/561, byte-identical yes (2413 bytes),
    relocregcheck 0 of 237. `n' holds the fuel call's result and counts the shown missions;
    the sound handle is stored straight into planetSnd. OPEN: none. */
@@ -3132,11 +2202,6 @@ void DoPortDialog(SpobRecord *spob, short stellar)
     short j;
     unsigned short vol;
     Boolean quit;
-#ifdef MACBUILD
-    short itemType;
-    Handle item;
-    Rect box;
-#endif
 
     quit = 0;
     if (screenFaded != 0)
@@ -3206,15 +2271,6 @@ void DoPortDialog(SpobRecord *spob, short stellar)
     missionOfferTime = ReadTick() + Rand(kMissionOfferSpread)
                        + kMissionOfferSpread;
     OfferMissionFromPort(kPortVenue);
-#if V111
-    if (!useLegacyRenderingPipeline) {
-        statusRedraw[kRedrawFuel] = 1;
-        statusRedraw[kRedrawCargo] = 1;
-        gSpriteWorld->fastBlit = 1;
-        DrawStatus();
-        gSpriteWorld->fastBlit = 0;
-    }
-#endif
     do {
         if (gQuit)
             quit = 1;
@@ -3299,11 +2355,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
                 savedStellar = shipData->targetStellar;
                 savedRoute = shipData->navTargetKind;
                 SetDialogGWorld(portDialog);
-#ifdef MACBUILD
-                InvalDialogItem(portDialog, 10);
-#else
                 RedrawDialog(portDialog);
-#endif
                 UpdateAllPortDialogs();
                 reenterMissionDialog = 0;
                 do {
@@ -3322,11 +2374,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
             }
         } else if (itemHit == 11) {
             SetDialogGWorld(portDialog);
-#ifdef MACBUILD
-            InvalDialogItem(portDialog, 11);
-#else
             RedrawDialog(portDialog);
-#endif
             UpdateAllPortDialogs();
             if (SpobHasBar(dockedPort) != 0) {
                 DoBarDialog();
@@ -3378,9 +2426,6 @@ void DoPortDialog(SpobRecord *spob, short stellar)
     portDialog = NULL;
     onPlanet = 0;
 }
-#ifdef MACBUILD
-#undef InvalDialogItem
-#endif
 
 #define kActivateEvt  8
 
@@ -3405,11 +2450,7 @@ Boolean PortFilter(int32_t unused, EventRecord *ev, short *itemHit)
     void *item;
     Point where;
     short button;
-#if V111
-    short key;
-#else
     EventChar c;
-#endif
 
     *itemHit = -1;
     if ((absquatulateStr)[0] != 0) {
@@ -3448,38 +2489,6 @@ Boolean PortFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 14;
             return 1;
         }
-#if V111
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-            ev->what = kMouseDown;
-            *itemHit = 12;
-            return 1;
-        }
-        if (key == kRKeyCode || key == kFKeyCode) {
-            *itemHit = 4;
-            return 1;
-        }
-        if (key == kCKeyCode || key == kTKeyCode) {
-            *itemHit = 7;
-            return 1;
-        }
-        if (key == kOKeyCode) {
-            *itemHit = 8;
-            return 1;
-        }
-        if (key == kSKeyCode) {
-            *itemHit = 9;
-            return 1;
-        }
-        if (key == kNKeyCode) {
-            *itemHit = 10;
-            return 1;
-        }
-        if (key == kBKeyCode) {
-            *itemHit = 11;
-            return 1;
-        }
-#else
         c = EventCharOf(ev);
         c = tolower(c);
         if (IsReturnChar(c) || c == kEscapeChar) {
@@ -3511,13 +2520,9 @@ Boolean PortFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 11;
             return 1;
         }
-#endif
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         PortDialogUpdate();
         button = TrackPlanetButtons(where);
         GetDialogItem(portDialog, 5, &itemType, (Handle *)&item, &box);
@@ -3557,13 +2562,7 @@ Boolean PortFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(portDialog));
-#endif
         PortDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(GetDialogWindow(portDialog));
-#endif
         return 1;
     }
     return 0;
@@ -3574,10 +2573,6 @@ Boolean PortFilter(int32_t unused, EventRecord *ev, short *itemHit)
 // MAC: _PortDialogUpdate i386 0x0004ebbd ppc 0x00057884
 void PortDialogUpdate(void)
 {
-#ifdef MACBUILD
-    Rect memBox;
-    Str255 memText;
-#endif
     Rect box;
     short itemType;
     Handle item;
@@ -3614,24 +2609,6 @@ void PortDialogUpdate(void)
                      (BitMapPtr)GWorldContainerBits(&loadPort),
                      &planetPicContainer.bounds, &box, 0,
                      GetWindowVisRgn(FrontWindow(portDialog)));
-#ifdef MACBUILD
-        if (cheatsActive) {
-            memBox.top = box.top + 3;
-            memBox.left = box.left + 3;
-            memBox.right = memBox.left + 64;
-            memBox.bottom = memBox.top + 11;
-            ForeColor(blackColor);
-            PaintRect(&memBox);
-            MoveTo(memBox.left + 3, memBox.top + 9);
-            TextFont(smallTextFont);
-            TextSize(smallTextSize);
-            ForeColor(whiteColor);
-            NumToString(FreeMem() / 1000, memText);
-            DrawString(memText);
-            DrawString("\pK free");
-            ForeColor(blackColor);
-        }
-#endif
     }
     GetDialogItem(portDialog, 6, &itemType, &item, &box);
     inside = RectInRgn(&box, GetWindowVisRgn(FrontWindow(portDialog)));
@@ -3665,193 +2642,11 @@ void PortDialogUpdate(void)
 // MAC: _MyModalDialog i386 0x00059954 ppc 0x00061ac4
 void MyModalDialog(DialogPtr dlg, void *eventProc, short *itemHit,
                     short *modifiers)
-#ifdef MACBUILD
-{
-    EventRecord ev;
-    Rect r;
-    GrafPtr savedPort;
-    WindowPtr window;
-    int32_t sleep;
-
-    *itemHit = -1;
-#ifdef MAC1010
-    HandleIntroMusic(0);
-    sleep = inBackground ? ((gameLoaded && inBackground) ? 30 : 0) : 0;
-    WaitNextEvent(everyEvent, &ev, sleep, NULL);
-#else
-    WaitNextEvent(everyEvent, &ev, (inBackground && gameLoaded) ? 30 : 0, NULL);
-#endif
-    if (ev.what == kHighLevelEvent)
-        AEProcessAppleEvent(&ev);
-    if (ev.what == activateEvt && (ev.modifiers & activeFlag))
-        SwitchedIn(&ev);
-    if (ev.what == osEvt && (ev.message & (suspendResumeMessage << 24))) {
-        if (ev.message & resumeFlag) {
-            inBackground = 0;
-            InitCursor();
-            cursorHidden = 0;
-            ShowTheCursor();
-            if (!settings.windowed) {
-#if V111
-                SetSystemUIMode(kUIModeAllHidden, kUIOptionAutoShowMenuBar);
-#else
-                HideTheMenuBar();
-#endif
-                mBarHidden = 1;
-                r = *GetCWindowPortRect((WindowRef)gWind);
-                r.top -= 30;
-                InvalWindowRect((WindowRef)gWind, &r);
-                if (gSystemVersion < kMacOSXSystemVersion && mBarHidden && SWIsWindowInForeground(gSpriteWorld))
-                    KeepMenuBarHidden((GrafPtr)gSpriteWorld->windowFrameP->framePort);
-            }
-            SwitchedIn(&ev);
-        } else {
-            if (!settings.windowed) {
-#if V111
-                SetSystemUIMode(kUIModeNormal, 0);
-#else
-                ShowTheMenuBar();
-#endif
-                mBarHidden = 0;
-            }
-            inBackground = 1;
-            InitCursor();
-            cursorHidden = 0;
-            ShowTheCursor();
-            SwitchedOut(&ev);
-        }
-    }
-    if (!inBackground) {
-        SelectWindow(GetDialogWindow(dlg));
-        SetPort((GrafPtr)GetDialogPort(dlg));
-    }
-    if (ev.what == updateEvt) {
-        GetPort(&savedPort);
-        window = (WindowPtr)ev.message;
-        BeginUpdate(window);
-        if (window == (WindowPtr)gWind) {
-            SetPort((GrafPtr)GetCWindowGrafPort((WindowRef)gWind));
-            if (gPause) {
-                if (showingIntroText) {
-                    SetGWorldContainer(&loadPort);
-                    ForeColor(blackColor);
-                    PaintRect(&loadPort.bounds);
-                    SWSetPortToWindow(gSpriteWorld);
-                    ForeColor(blackColor);
-                    PaintRect(GetWindowPortRect((WindowRef)gWind));
-                } else {
-                    mainScreenBackgroundDirty = 1;
-                    MainScreenUpdate(1);
-                }
-            } else {
-                RedrawStatus(0);
-                RefreshSAT();
-            }
-        }
-        if (portDialog != NULL && window == GetDialogWindow(portDialog)) {
-            SetPort((GrafPtr)GetDialogPort(portDialog));
-            PortDialogUpdate();
-        }
-        if (shipyardDialog != NULL && window == GetDialogWindow(shipyardDialog)) {
-            SetPort((GrafPtr)GetDialogPort(shipyardDialog));
-            ShipyardDialogUpdate();
-        }
-        if (shipDescDialog != NULL && window == GetDialogWindow(shipDescDialog)) {
-            SetPort((GrafPtr)GetDialogPort(shipDescDialog));
-            ShipDescDialogUpdate();
-        }
-        if (outfitDialog != NULL && window == GetDialogWindow(outfitDialog)) {
-            SetPort((GrafPtr)GetDialogPort(outfitDialog));
-            OutfitDialogUpdate();
-        }
-        if (tradeDialog != NULL && window == GetDialogWindow(tradeDialog)) {
-            SetPort((GrafPtr)GetDialogPort(tradeDialog));
-            TradeDialogUpdate();
-        }
-        if (textDialog != NULL && window == GetDialogWindow(textDialog)) {
-            SetPort((GrafPtr)GetDialogPort(textDialog));
-            TextDialogUpdate();
-        }
-        if (infoDialog != NULL && window == GetDialogWindow(infoDialog)) {
-            SetPort((GrafPtr)GetDialogPort(infoDialog));
-            PlayerInfoDialogUpdate();
-        }
-        if (missionDialog != NULL && window == GetDialogWindow(missionDialog)) {
-            SetPort((GrafPtr)GetDialogPort(missionDialog));
-            if (missionsOutside == 0 && portDialog != NULL)
-                MissionDialogUpdate();
-            else
-                SingleMissionDialogUpdate();
-        }
-        if (missionInfoDialog != NULL && window == GetDialogWindow(missionInfoDialog)) {
-            SetPort((GrafPtr)GetDialogPort(missionInfoDialog));
-            MissionInfoDialogUpdate();
-        }
-        if (barDialog != NULL && window == GetDialogWindow(barDialog)) {
-            SetPort((GrafPtr)GetDialogPort(barDialog));
-            BarDialogUpdate();
-        }
-        if (raceDialog != NULL && window == GetDialogWindow(raceDialog)) {
-            SetPort((GrafPtr)GetDialogPort(raceDialog));
-            RaceDialogUpdate();
-        }
-        if (newsDialog != NULL && window == GetDialogWindow(newsDialog)) {
-            SetPort((GrafPtr)GetDialogPort(newsDialog));
-            NewsDialogUpdate();
-        }
-        if (commDialog != NULL && window == GetDialogWindow(commDialog)) {
-            SetPort((GrafPtr)GetDialogPort(commDialog));
-            if (commDialogMode == 1) {
-                PlanetCommDialogUpdate();
-            } else if (commShip != NULL) {
-                if (commDialogMode == 2)
-                    EscortDialogUpdate();
-                else
-                    CommDialogUpdate();
-            }
-        }
-        if (haggleDialog != NULL && window == GetDialogWindow(haggleDialog)) {
-            SetPort((GrafPtr)GetDialogPort(haggleDialog));
-            HaggleDialogUpdate();
-        }
-        if (plunderDialog != NULL && window == GetDialogWindow(plunderDialog)) {
-            SetPort((GrafPtr)GetDialogPort(plunderDialog));
-            PlunderDialogUpdate();
-        }
-        if (mapDialog != NULL && window == GetDialogWindow(mapDialog)) {
-            SetPort((GrafPtr)GetDialogPort(mapDialog));
-            MapDialogUpdate();
-        }
-        if (captureDialog != NULL && window == GetDialogWindow(captureDialog)) {
-            SetPort((GrafPtr)GetDialogPort(captureDialog));
-            CapturedAssignmentDialogUpdate();
-        }
-        if (newsDialog != NULL && window == GetDialogWindow(newsDialog)) {
-            SetPort((GrafPtr)GetDialogPort(newsDialog));
-            NewsDialogUpdate();
-        }
-        if (keyDialog != NULL && window == GetDialogWindow(keyDialog)) {
-            SetPort((GrafPtr)GetDialogPort(keyDialog));
-            KeyDialogUpdate();
-        }
-        EndUpdate(window);
-        SetPort(savedPort);
-    }
-    if (ev.what != osEvt && !inBackground) {
-        if (eventProc != NULL) {
-            ((ModalFilterProcPtr)eventProc)(dlg, &ev, itemHit);
-            if (modifiers != NULL)
-                *modifiers = ev.modifiers;
-        }
-    }
-}
-#else
 {
     ModalDialog(NULL, itemHit);
     if (modifiers != NULL)
         *modifiers = GetKeyModifiers();
 }
-#endif
 
 #define kShipDescBase 13000    /* desc ID of ship 0's shipyard blurb */
 #define kHireDescBase 14000     /* ...and of its hire-an-escort blurb */
@@ -3975,9 +2770,6 @@ void DoShipyardDialog(void)
                         CtoPstr((char *)defaultName);
                         confirmed = EVTextInputDialog(msgText,
                                                       defaultName, 0x40);
-#ifdef MACBUILD
-                        RefreshSAT();
-#endif
                         SetDialogGWorld(shipyardDialog);
                         RedrawDialog(shipyardDialog);
                         if (confirmed != 0) {
@@ -4122,15 +2914,9 @@ void DoShipyardDialog(void)
         if (itemHit == 8 && shipBuyMode == 0) {
             if (OfferMissionFromPort(5) != 0) {
                 SetDialogGWorld(portDialog);
-#ifdef MACBUILD
-                UpdateAllPortDialogs(portDialog);
-                SetDialogGWorld(shipyardDialog);
-                ShipyardDialogUpdate(shipyardDialog);
-#else
                 UpdateAllPortDialogs();
                 SetDialogGWorld(shipyardDialog);
                 ShipyardDialogUpdate();
-#endif
             }
         }
         if (itemHit == 0xb) {
@@ -4195,9 +2981,6 @@ void DoShipyardDialog(void)
         shipyardBackgroundPic = NULL;
     }
     if (previewPic != NULL) {
-#ifdef MACBUILD
-        HUnlock((Handle)previewPic);
-#endif
         QDReleaseResource(previewPic);
         previewPic = NULL;
     }
@@ -4219,18 +3002,12 @@ void DoShipyardDialog(void)
     ForeColor(blackColor);
     RedrawStatus(0);
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
     shipData->targetStellar = savedTargetStellar;
     shipData->navTargetKind = savedUnk6A;
     statusRedraw[kRedrawNav] = 1;
     ResetMissionOfferVenue();
 }
 
-#ifdef MACBUILD
-#define InvalDialogItem(dlg, n)     (GetDialogItem(dlg, n, &itemType, &item, &movieBox), InvalWindowRect(GetDialogWindow(dlg), &movieBox))
-#endif
 /* ShipyardFilter (mac _ShipyardFilter). STATE: MATCH 587/587 (2026-09-24).
    OPEN: none */
 // FUNCTION: EVNOVA 0x00493fc0
@@ -4303,12 +3080,8 @@ Boolean ShipyardFilter(int32_t unused, EventRecord *ev, short *itemHit)
 #endif
         }
 #endif
-#ifdef MAC1010 /* 1.0.10 spelling */
-        if ((c >= kGridLeftKey && c <= kGridDownKey) || c == kGridPageUpKey || c == kGridPageDownKey) {
-#else
         if (c == kGridLeftKey || c == kGridRightKey || c == kGridUpKey ||
             c == kGridDownKey || c == kGridPageUpKey || c == kGridPageDownKey) {
-#endif
             old = selShipyardItem;
             if (selShipListItem != -1) {
                 count = 0;
@@ -4402,18 +3175,11 @@ Boolean ShipyardFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 11;
             return 1;
         }
-#if V111
-        return 0;
-#else
         c = tolower(EventCharOf(ev));
         return 0;
-#endif
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         GetDialogItem(shipyardDialog, kGridItem, &itemType, &item, &box);
         if (PtInRectPoint(where, &box)) {
 #ifdef CEFIX /* F13.02 */
@@ -4505,20 +3271,11 @@ Boolean ShipyardFilter(int32_t unused, EventRecord *ev, short *itemHit)
         }
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(shipyardDialog));
-#endif
         ShipyardDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(GetDialogWindow(shipyardDialog));
-#endif
         return 0;
     }
     return 0;
 }
-#ifdef MACBUILD
-#undef InvalDialogItem
-#endif
 
 /* ShipyardDialogUpdate (mac _ShipyardDialogUpdate). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004948b0
@@ -4658,23 +3415,12 @@ void ShipyardDialogUpdate(void)
             } else {
                 if (previewPicID != shipClass[selShipyardItem].shipyardPictID) {
                     if (previewPic != NULL) {
-#ifdef MACBUILD
-                        HUnlock((Handle)previewPic);
-#endif
                         QDReleaseResource(previewPic);
                         previewPic = NULL;
                     }
                     previewPicID = shipClass[selShipyardItem].shipyardPictID;
-#ifdef MACBUILD
-                    if (previewPicID >= kFirstResourceID) {
-                        previewPic = GetPicture(previewPicID);
-                        if (previewPic != NULL)
-                            HLock((Handle)previewPic);
-                    }
-#else
                     if (previewPicID >= kFirstResourceID)
                         previewPic = GetPicture(previewPicID);
-#endif
                 }
                 if (previewPic != NULL) {
                     ForeColor(blackColor);
@@ -4879,9 +3625,6 @@ void DoShipyardDescription(short ship)
     if (bigShipPic != NULL)
         QDReleaseResource(bigShipPic);
     bigShipPic = NULL;
-#ifdef MACBUILD
-    RefreshSAT();
-#endif
 }
 
 /* ShipDescFilter. STATE: MATCH, byte-identical. OPEN: none */
@@ -4896,11 +3639,7 @@ Boolean ShipDescFilter(int32_t unused, EventRecord *ev, short *itemHit)
     Point where;
     short lastHit;
     short hit;
-#if V111
-    short key;
-#else
     EventChar c;
-#endif
 
     if ((int)ev->what == kKeyDown) {
         QuickKeyCheckHandler();
@@ -4916,11 +3655,6 @@ Boolean ShipDescFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 6;
             return 1;
         }
-#if V111
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode
-                || key == kSpaceKeyCode) {
-#else
         c = EventCharOf(ev);
         c = tolower(c);
 #ifdef CEFIX /* F19.02 */
@@ -4928,28 +3662,18 @@ Boolean ShipDescFilter(int32_t unused, EventRecord *ev, short *itemHit)
 #else
         if (IsReturnChar(c) || c == kEscapeChar) {
 #endif
-#endif
             ev->what = kMouseDown;
             *itemHit = 1;
             return 1;
         }
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(shipDescDialog));
-#endif
         DrawDialog(shipDescDialog);
         ShipDescDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(GetDialogWindow(shipDescDialog));
-#endif
         return 0;
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         GetDialogItem(shipDescDialog, 1, &itemType, (Handle *)&item, &box);
         if (PtInRectPoint(where, &box)) {
             GetIndString(label, kLabelStrList, kLabelStrIdx);
@@ -5703,9 +4427,6 @@ void EVNoteAlert(const unsigned char *text)
     short itemHit;
     short itemType;
     Handle item;
-#ifdef MACBUILD
-    Str255 str;
-#endif
 
     done = 0;
     alertDialog = NULL;
@@ -5720,15 +4441,8 @@ void EVNoteAlert(const unsigned char *text)
     SetDialogGWorld(alertDialog);
     DrawDialog(alertDialog);
     FrameDefaultButton(alertDialog, 1);
-#ifdef MACBUILD
-    strncpy((char *)str, (const char *)text, 254);
-#endif
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
-#ifdef MACBUILD
-    SetDialogItemText(item, str);
-#else
     SetDialogItemText((Handle)item,text);
-#endif
     FlushEvents(everyEvent - diskMask, 0);
     ShowTheCursor();
     do {
@@ -5736,9 +4450,6 @@ void EVNoteAlert(const unsigned char *text)
         if (itemHit == 1)
             done = 1;
     } while (done == 0);
-#ifdef MACBUILD
-    HideWindow(GetDialogWindow(alertDialog));
-#endif
     DisposeDialog(alertDialog);
     alertDialog = NULL;
 }
@@ -5754,9 +4465,6 @@ Boolean EVYesNoDialog(unsigned char *text)
     short itemHit;
     short itemType;
     Handle item;
-#ifdef MACBUILD
-    Str255 str;
-#endif
 
     done = 0;
     alertDialog = NULL;
@@ -5768,15 +4476,8 @@ Boolean EVYesNoDialog(unsigned char *text)
     SelectWindow(FrontWindow(alertDialog));
     SetDialogGWorld(alertDialog);
     FrameDefaultButton(alertDialog, 1);
-#ifdef MACBUILD
-    strncpy((char *)str, (const char *)text, 254);
-#endif
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
-#ifdef MACBUILD
-    SetDialogItemText(item, str);
-#else
     SetDialogItemText((Handle)item,text);
-#endif
     FlushEvents(everyEvent - diskMask, 0);
     ShowTheCursor();
     do {
@@ -5791,9 +4492,6 @@ Boolean EVYesNoDialog(unsigned char *text)
         }
     } while (done == 0);
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    HideWindow(GetDialogWindow(alertDialog));
-#endif
     DisposeDialog(alertDialog);
     alertDialog = NULL;
     SWSetPortToWindow(gSpriteWorld);
@@ -5812,9 +4510,6 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
     Rect box;
     Handle item;
     short itemType;
-#ifdef MACBUILD
-    short len;
-#endif
 
     done = 0;
     alertDialog = NULL;
@@ -5828,14 +4523,8 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
     FrameDefaultButton(alertDialog, 1);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
     SetDialogItemText((Handle)item,prompt);
-#ifdef MACBUILD
-    strncpy((char *)text, (const char *)initial, 254);
-    GetDialogItem(alertDialog, 5, &itemType, &item, &box);
-    SetDialogItemText(item, text);
-#else
     GetDialogItem(alertDialog, 5, &itemType, &item, &box);
     SetDialogItemText((Handle)item,initial);
-#endif
     SelectDialogItemText(alertDialog, 5, 0, 254);
     FlushEvents(everyEvent - diskMask, 0);
     ShowTheCursor();
@@ -5844,13 +4533,7 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
         if (itemHit == 1) {
             GetDialogItem(alertDialog, 5, &itemType, &item, &box);
             GetDialogItemText((Handle)item,text);
-#ifdef MACBUILD
-            PtoCstr(text);
-            len = strlen((char *)text);
-            if (len <= maxLen) {
-#else
             if (text[0] <= maxLen) {
-#endif
                 result = 1;
                 done = 1;
             } else {
@@ -5880,58 +4563,6 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
    long: a 16-bit-int Mac compiler carried an address in a long, never an int. */
 // FUNCTION: EVNOVA 0x00497b70
 // MAC: _RetrieveMenuIcon i386 0x0004f425 ppc 0x000580cc
-#ifdef MACBUILD
-Boolean RetrieveMenuIcon(short picID, CGrafPtr dest, Rect *destRect)
-{
-    short i;
-    short slot;
-    uint32_t oldest;
-    PicHandle pic;
-    CGrafPtr savedPort;
-    Boolean missed;
-
-    slot = -1;
-    for (i = 0; i < kPictCacheSlots; i++) {
-        if (iconCache[i].picID == -1)
-            slot = i;
-        if (iconCache[i].picID == picID) {
-            CopyBits(GetPortBitMapForCopyBits(iconsPort.world), GetPortBitMapForCopyBits(dest),
-                     &listPicOffRect[i], destRect, 0, NULL);
-            iconCache[i].stamp = TickCount();
-            return true;
-        }
-    }
-    if (slot == -1) {
-        oldest = iconCache[0].stamp;
-        for (i = 0; i < kPictCacheSlots; i++) {
-            if (iconCache[i].stamp < oldest) {
-                oldest = iconCache[i].stamp;
-                slot = i;
-            }
-        }
-    }
-    if (slot < 0 || slot >= kPictCacheSlots)
-        slot = 0;
-    GetPort((GrafPtr *)&savedPort);
-    SetPort((GrafPtr)iconsPort.world);
-    ForeColor(blackColor);
-    pic = GetPicture(picID);
-    if (pic != NULL) {
-        DrawPicHandle(pic, &listPicOffRect[slot]);
-        QDReleaseResource(pic);
-        iconCache[slot].picID = picID;
-        iconCache[slot].stamp = TickCount();
-        missed = false;
-    } else {
-        PaintRect(&listPicOffRect[slot]);
-        missed = true;
-    }
-    SetPort((GrafPtr)savedPort);
-    CopyBits(GetPortBitMapForCopyBits(iconsPort.world), GetPortBitMapForCopyBits(dest),
-             &listPicOffRect[slot], destRect, 0, NULL);
-    return missed;
-}
-#else
 Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
 {
     int slot;
@@ -5991,19 +4622,12 @@ Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
              (Rect *)j, destRect, 0, 0);
     return missed;
 }
-#endif
 
 /* SwitchedIn. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00497cf0
 // MAC: _SwitchedIn i386 0x000513a4 ppc 0x00059ca0
 void SwitchedIn(EventRecord *ev)
 {
-#if TARGET_API_MAC_CARBON
-    ProcessSerialNumber psn;
-
-    if (GetCurrentProcess(&psn) != procNotFound)
-        SetFrontProcess(&psn);
-#endif
     inBackground = 0;
     lastFPSUpdateTime = 0;
     fpsCounter = 0;
@@ -6025,20 +4649,11 @@ void SwitchedOut(EventRecord *ev)
     inBackground = 1;
     if (introMusicMovie != NULL)
         StopMovie(introMusicMovie);
-#ifdef MAC1010
-#if TARGET_API_MAC_CARBON
-    if (warpUpSnd[0] != NULL && ST_IsSoundPlaying(warpUpSnd[0]) != 0)
-        ST_HaltSound(warpUpSnd[0]);
-    if (warpUpSnd[1] != NULL && ST_IsSoundPlaying(warpUpSnd[1]) != 0)
-        ST_HaltSound(warpUpSnd[1]);
-#endif
-#else
     if (warpUpSnd[0] != NULL && ST_IsSoundPlaying(warpUpSnd[0]) != 0)
         ST_HaltSound(warpUpSnd[0]);
     snd = warpUpSnd[1];
     if (snd != NULL && ST_IsSoundPlaying(snd) != 0)
         ST_HaltSound(warpUpSnd[1]);
-#endif
     OSCursorReset();
     cursorHidden = 0;
     ShowTheCursor();
@@ -6057,7 +4672,6 @@ void SwitchedOut(EventRecord *ev)
 // MAC: _RefreshWindowBuffer i386 0x00051420 ppc 0x00059d54
 void RefreshWindowBuffer(void)
 {
-#if !defined(MAC1010) || TARGET_API_MAC_CARBON
     SWSetPortToWorkArea(gSpriteWorld);
     if (gameLoaded && gameInProgress)
         SetSystemBackgroundColor();
@@ -6066,25 +4680,6 @@ void RefreshWindowBuffer(void)
     PaintRect(&gSpriteWorld->workFrameP->frameRect);
     ForeColor(blackColor);
     SWSetPortToWindow(gSpriteWorld);
-#if V111 || defined(MAC1010)
-    if (useLegacyRenderingPipeline) {
-#ifdef MACBUILD
-        SetRetainedWindow(gWind, false);
-#endif
-        CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
-                 GetPortPixMapBits(GetWindowPort(gWind)),
-                 &gSpriteWorld->workFrameP->frameRect,
-                 &gSpriteWorld->windowFrameP->frameRect,
-                 0, NULL);
-        QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-#ifdef MACBUILD
-        SetRetainedWindow(gWind, true);
-#endif
-        QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-    } else {
-        QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-    }
-#else
     CopyBits(GetPortBitMapForCopyBits(
                  gSpriteWorld->workFrameP->framePort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
@@ -6092,8 +4687,6 @@ void RefreshWindowBuffer(void)
              &gSpriteWorld->windowFrameP->frameRect,
              0, 0);
     ScreenEndScene();
-#endif
-#endif
 }
 
 /*
@@ -6171,17 +4764,6 @@ Boolean CapturedAssignmentFilter(int32_t unused, EventRecord *ev, short *itemHit
 
     what = ev->what;
     if (what == kKeyDown) {
-#if V111
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kMKeyCode) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (key == kEKeyCode) {
-            *itemHit = 2;
-            return 1;
-        }
-#else
         key = EventCharOf(ev);
         key = tolower(key);
         if (key == 'm') {
@@ -6192,13 +4774,9 @@ Boolean CapturedAssignmentFilter(int32_t unused, EventRecord *ev, short *itemHit
             *itemHit = 2;
             return 1;
         }
-#endif
     }
     if (what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         CapturedAssignmentDialogUpdate();
         button = TrackCapAssignButtons(where);
         if (button == 0) {
@@ -6213,13 +4791,7 @@ Boolean CapturedAssignmentFilter(int32_t unused, EventRecord *ev, short *itemHit
         return 1;
     }
     if (what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(captureDialog));
-#endif
         CapturedAssignmentDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(GetDialogWindow(captureDialog));
-#endif
     }
     return 0;
 }
@@ -6280,10 +4852,6 @@ void CapturedAssignmentDialogUpdate(void)
                                                          /* 0x004d1a30 (mac _MoveWindow) */
 
 /* on mac ShowTextDialog paints gWind through GetWindowPortRect and invalidates items itself */
-#ifdef MACBUILD
-#define GetCWindowPortRect(w)       GetWindowPortRect(w)
-#define InvalDialogItem(dlg, n)     (GetDialogItem(dlg, n, &itemType, &item, &box), InvalWindowRect(GetDialogWindow(dlg), &box))
-#endif
 /* ShowTextDialog. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004982a0
 // MAC: _ShowTextDialog i386 0x0005a752 ppc 0x000628d4
@@ -6382,22 +4950,12 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
         box = *win;
         slack = viewHeight - minHeight - kTextDlgSlackMargin;
         box.bottom -= slack;
-#ifdef MACBUILD
-        SizeWindow(GetDialogWindow(textDialog), (box.right - box.left),
-                   (box.bottom - box.top), true);
-        pt.v = 0;
-        pt.h = 0;
-        LocalToGlobal(&pt);
-        pt.v += slack * kTextDlgRecentre;
-        MoveWindow(GetDialogWindow(textDialog), pt.h, pt.v, true);
-#else
         SizeDialogWindow(textDialog, (box.right - box.left),
                      (box.bottom - box.top), 1);
         pt.v = 0;
         pt.h = 0;
         pt.v += slack * kTextDlgRecentre;
         OffsetDialogWindow(textDialog, pt.h, pt.v, 1);
-#endif
         GetDialogItem(textDialog, 1, &itemType, &item, &box);
         OffsetRect(&box, 0, -slack);
         SetDialogItem(textDialog, 1, itemType, item, &box);
@@ -6571,10 +5129,6 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
         }
     }
 }
-#ifdef MACBUILD
-#undef GetCWindowPortRect
-#undef InvalDialogItem
-#endif
 
 /* CalcShipCanBuy (mac _CalcShipCanBuy). STATE: MATCH 100.0%, exe 212 / obj 212 instrs,
    byte-identical yes. OPEN: none */
@@ -6757,11 +5311,7 @@ Boolean TextDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
     short itemType;
     void *item;
     short button;
-#if V111
-    short key;
-#else
     EventChar c;
-#endif
 
     if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
         QuickKeyCheckHandler();
@@ -6769,49 +5319,6 @@ Boolean TextDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
             *itemHit = 4;
             return 1;
         }
-#if V111
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if ((int)ev->what == kKeyDown) {
-            if (key == kReturnKeyCode || key == kEnterKeyCode || key == kEscapeKeyCode) {
-                *itemHit = 1;
-                return 1;
-            }
-        }
-        if (canScrollTextUp != 0) {
-            if (key == kUpArrowKeyCode) {
-                *itemHit = 5;
-                return 1;
-            }
-            if (key == kHomeKeyCode) {
-                ScrollDialogText(textDialog, 3, textDialogTextHandle, kScrollToEnd, 1);
-                *itemHit = -1;
-                canScrollTextUp = 0;
-                return 1;
-            }
-            if (key == kPageUpKeyCode) {
-                ScrollDialogText(textDialog, 3, textDialogTextHandle, kScrollPageStep, 1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
-        if (canScrollTextDown != 0) {
-            if (key == kDownArrowKeyCode) {
-                *itemHit = 6;
-                return 1;
-            }
-            if (key == kEndKeyCode) {
-                ScrollDialogText(textDialog, 3, textDialogTextHandle, -kScrollToEnd, 1);
-                *itemHit = -1;
-                canScrollTextDown = 0;
-                return 1;
-            }
-            if (key == kPageDownKeyCode) {
-                ScrollDialogText(textDialog, 3, textDialogTextHandle, -kScrollPageStep, 1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
-#else
         c = EventCharOf(ev);
         if ((int)ev->what == kKeyDown) {
             if (IsReturnChar(c) || c == kEscapeChar) {
@@ -6853,14 +5360,10 @@ Boolean TextDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
                 return 1;
             }
         }
-#endif
     }
     if ((int)ev->what == kMouseDown) {
         SetDialogGWorld(textDialog);
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         if (canScrollTextUp != 0) {
             GetDialogItem(textDialog, 5, &itemType, (Handle *)&item, &box);
             if (PtInRectPoint(where, &box) && canScrollTextUp != 0) {
@@ -6914,13 +5417,7 @@ Boolean TextDialogFilter(int32_t unused, EventRecord *ev, short *itemHit)
     if ((int)ev->what == kUpdateEvt) {
         if (gPause != 0)
             mainScreenBackgroundDirty = 1;
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(textDialog));
-#endif
         TextDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(GetDialogWindow(textDialog));
-#endif
     }
     return 0;
 }
@@ -7048,14 +5545,6 @@ void TextDialogUpdate(void)
 #define kPlayerInfoFirstPictID 0x2146
 #define kRetireQuestionIdx     0x123
 
-#ifdef MACBUILD
-/* MyModalDialogIsland (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _MyModalDialogIsland i386 0x0005a749 ppc 0x000628d0
-void MyModalDialogIsland(DialogPtr dlg, void *eventProc, short *itemHit, short *modifiers)
-{
-    MyModalDialog(dlg, eventProc, itemHit, modifiers);
-}
-#endif
 
 /* DoPlayerInfoDialog (mac _DoPlayerInfoDialog). STATE: MATCH 100.0%, exe 470 / obj 470,
    byte-identical yes. OPEN: none */
@@ -7079,9 +5568,6 @@ void DoPlayerInfoDialog(void)
     short boxHeight;
     short dv;
     char *p;
-#ifdef MACBUILD
-    Point pt;
-#endif
 
     done = 0;
     if (screenFaded != 0)
@@ -7128,21 +5614,11 @@ void DoPlayerInfoDialog(void)
         delta = tallest - boxHeight + 4;
         r = saved;
         r.bottom += delta;
-#ifdef MACBUILD
-        SizeWindow(GetDialogWindow(infoDialog), (r.right - r.left),
-                   (r.bottom - r.top), true);
-        pt.v = 0;
-        pt.h = 0;
-        LocalToGlobal(&pt);
-        pt.v -= delta * 0.5;
-        MoveWindow(GetDialogWindow(infoDialog), pt.h, pt.v, true);
-#else
         SizeDialogWindow(infoDialog, (r.right - r.left),
                      (r.bottom - r.top), 1);
         dv = 0;
         dv -= delta * 0.5;
         OffsetDialogWindow(infoDialog, 0, dv, 1);
-#endif
         r = buttonBox[0];
         OffsetRect(&r, 0, delta);
         GetDialogItem(infoDialog, 1, &itemType, &item, &buttonBox[0]);
@@ -7210,37 +5686,8 @@ Boolean PlayerInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
-#if V111
-    short key;
-#else
     int c;
-#endif
 
-#if V111
-    if (ev->what == kKeyDown || ev->what == kAutoKey) {
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kTabKeyCode) {
-            if ((ev->modifiers & shiftKey) != 0)
-                selPlayerInfoMode -= 1;
-            else
-                selPlayerInfoMode += 1;
-            if (selPlayerInfoMode > kPlayerInfoPages)
-                selPlayerInfoMode = 1;
-            if (selPlayerInfoMode < 1)
-                selPlayerInfoMode = kPlayerInfoPages;
-            RedrawDialog(infoDialog);
-            *itemHit = selPlayerInfoMode + 1;
-            return 1;
-        }
-        if (ev->what == kKeyDown) {
-            if (key == kEnterKeyCode || key == kReturnKeyCode || key == kEscapeKeyCode
-                    || KeyCheck(keyPrefs.playerInfo)) {
-                *itemHit = 1;
-                return 1;
-            }
-        }
-    }
-#else
     if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
         c = EventCharOf(ev);
         if (c == kTabChar) {
@@ -7257,22 +5704,14 @@ Boolean PlayerInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
             return 1;
         }
         if ((int)ev->what == kKeyDown) {
-#ifdef MAC1010 /* 1.0.10 spelling */
-            if (c == kEnterChar || c == kReturnChar || c == kEscapeChar || KeyCheck(keyPrefs.playerInfo)) {
-#else
             if (IsReturnChar(c) || c == kEscapeChar || KeyCheck(keyPrefs.playerInfo)) {
-#endif
                 *itemHit = 1;
                 return 1;
             }
         }
     }
-#endif
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
-#ifdef MACBUILD
-        GlobalToLocal(&where);
-#endif
         PlayerInfoDialogUpdate();
         button = TrackPlayerInfoButtons(selPlayerInfoMode, where);
         if (button == 0) {
@@ -7303,13 +5742,7 @@ Boolean PlayerInfoFilter(int32_t unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
-#ifdef MACBUILD
-        BeginUpdate(GetDialogWindow(infoDialog));
-#endif
         PlayerInfoDialogUpdate();
-#ifdef MACBUILD
-        EndUpdate(GetDialogWindow(infoDialog));
-#endif
         return 0;
     }
     return 0;
@@ -7801,459 +6234,7 @@ blit_back:
 // FUNCTION: EVNOVA 0x0049c050
 // MAC: _SetupPlayerInfoText i386 0x00053cb8 ppc 0x0005c3e4
 void SetupPlayerInfoText(void)
-#ifdef MAC1010
 {
-    Boolean rankShown[kMaxRanks];
-    short i;
-    short shown;
-    short count;
-    short freeSpace;
-    short n;
-    short len;
-    short maxWeight;
-    short found;
-    short type;
-    int32_t credits;
-    short j;
-    short weight;
-    char c;
-    short cargoQty[kMaxCargo];
-    short outfitQty[kMaxOutfits];
-    unsigned char str[256];
-    Boolean seen[kMaxCargo];
-    short missionTons;
-    short missionCount;
-    short junkTons;
-    short numTypes;
-    short numJunk;
-    int starred;
-
-    for (i = 0; i < 3; i++)
-        playerInfoText[i][0] = 0;
-    missionTons = 0;
-    junkTons = 0;
-    missionCount = 0;
-    numJunk = 0;
-    numTypes = 0;
-    for (i = 0; i < kMaxCargo; i++) {
-        seen[i] = 0;
-        cargoQty[i] = -1;
-    }
-
-    for (i = 0; i <= kLastCommodity; i++) {
-        if (shipData->cargo[i] > 0) {
-            if (cargoQty[i] < 0)
-                cargoQty[i] = 0;
-            cargoQty[i] += shipData->cargo[i];
-        }
-    }
-
-    for (j = 0; j < kMaxActiveMissions; j++) {
-        if (currentMissionObjectives[j].active != 0 && currentMissions[j].hasCargo != 0 &&
-            currentMissions[j].cargoType != -1 && currentMissions[j].cargoQty >= 0) {
-            if (cargoQty[currentMissions[j].cargoType] < 0)
-                cargoQty[currentMissions[j].cargoType] = 0;
-            cargoQty[currentMissions[j].cargoType] += currentMissions[j].cargoQty;
-            missionTons += currentMissions[j].cargoQty;
-            missionCount++;
-        }
-    }
-
-    for (i = 0; i < kMaxCargo; i++) {
-        if (cargoQty[i] >= 0)
-            numTypes++;
-    }
-
-    for (i = 0; i < kMaxJunks; i++) {
-        if (junkData[i].held > 0) {
-            junkTons += junkData[i].held;
-            numJunk++;
-            numTypes++;
-        }
-    }
-
-    StrcatIndCString(playerInfoText[0], kGameStrList, kStrCargoHeader);
-    strcat(playerInfoText[0], " ");
-    if (TotalFleetHolds() > ShipTotalHolds())
-        StrcatIndCString(playerInfoText[0], kGameStrList, kStrHolds);
-    else
-        StrcatIndCString(playerInfoText[0], kGameStrList, kStrHold);
-    strcat(playerInfoText[0], ":\r\r");
-    len = strlen(playerInfoText[0]);
-
-    if (numTypes > 0) {
-        shown = 0;
-        for (i = 0; i < kMaxCargo; i++) {
-            n = cargoQty[i];
-            if (n >= 0) {
-                starred = lcCargoName[i][1] == '*';
-                if (n > 0 && (Boolean)starred == 0) {
-                    if (shown == 0)
-                        StrcatOrdinalNumber(n, playerInfoText[0], 1);
-                    else
-                        StrcatOrdinalNumber(n, playerInfoText[0], 0);
-                    strcat(playerInfoText[0], " ");
-                    if (n == 1)
-                        pstrcpy(str, tonString);
-                    else
-                        pstrcpy(str, tonsString);
-                    PtoCstr(str);
-                    strcat(playerInfoText[0], (char *)str);
-                    strcat(playerInfoText[0], " ");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrOf);
-                    strcat(playerInfoText[0], " ");
-                }
-                /* BUG: copies 64 bytes of a Pascal name, so a name over 63 characters keeps stale bytes */
-                strncpy((char *)str, (char *)lcCargoName[i], 64);
-                PtoCstr(str);
-                if (lcCargoName[i][1] == '*')
-                    strcat(playerInfoText[0], (char *)&str[1]);
-                else
-                    strcat(playerInfoText[0], (char *)str);
-                if (shown < numTypes - 2) {
-                    strcat(playerInfoText[0], ", ");
-                } else if (shown == numTypes - 2) {
-                    if ((Boolean)starred != 0) {
-                        strcat(playerInfoText[0], ", ");
-                    } else {
-                        if (numTypes >= 3)
-                            strcat(playerInfoText[0], ",");
-                        strcat(playerInfoText[0], " ");
-                        StrcatIndCString(playerInfoText[0], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[0], " ");
-                    }
-                }
-                shown++;
-            }
-        }
-
-        if (numJunk > 0) {
-            for (i = 0; i < kMaxJunks; i++) {
-                if (junkData[i].held > 0) {
-                    if (shown == 0)
-                        StrcatOrdinalNumber(junkData[i].held, playerInfoText[0], 1);
-                    else
-                        StrcatOrdinalNumber(junkData[i].held, playerInfoText[0], 0);
-                    strcat(playerInfoText[0], " ");
-                    if (junkData[i].held == 1)
-                        pstrcpy(str, tonString);
-                    else
-                        pstrcpy(str, tonsString);
-                    PtoCstr(str);
-                    strcat(playerInfoText[0], (char *)str);
-                    strcat(playerInfoText[0], " ");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrOf);
-                    strcat(playerInfoText[0], " ");
-                    /* BUG: a junk name of 64+ characters is left unterminated for the strcat below */
-                    strncpy((char *)str, junkData[i].lcName, 64);
-                    strcat(playerInfoText[0], (char *)str);
-                    if (shown < numTypes - 2)
-                        strcat(playerInfoText[0], ", ");
-                    if (shown == numTypes - 2) {
-                        if (numTypes >= 3)
-                            strcat(playerInfoText[0], ",");
-                        strcat(playerInfoText[0], " ");
-                        StrcatIndCString(playerInfoText[0], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[0], " ");
-                    }
-                    shown++;
-                }
-            }
-        }
-
-        if (len != -1)
-            playerInfoText[0][len] = toupper(playerInfoText[0][len]);
-        strcat(playerInfoText[0], ".");
-        strcat(playerInfoText[0], "\r\r");
-
-        freeSpace = TotalFleetHolds() - TotalCargo(shipData);
-        if (freeSpace > 0) {
-            if (freeSpace < 0)
-                freeSpace = 0;
-            NumToString(freeSpace, str);
-            if (TotalFleetHolds() > ShipTotalHolds()) {
-                StrcatIndCString(playerInfoText[0], kGameStrList, kStrFreeSpace);
-                strcat(playerInfoText[0], " ");
-                StrcatIndCString(playerInfoText[0], kGameStrList, kStrHolds);
-                strcat(playerInfoText[0], ":  ");
-                PtoCstr(str);
-                strcat(playerInfoText[0], (char *)str);
-                strcat(playerInfoText[0], " ");
-                if (freeSpace == 1)
-                    pstrcpy(str, tonString);
-                else
-                    pstrcpy(str, tonsString);
-                PtoCstr(str);
-                strcat(playerInfoText[0], (char *)str);
-                n = TotalMissionCargoSpace();
-                if (n < 0)
-                    n = 0;
-                if (n != freeSpace && n > 0) {
-                    strcat(playerInfoText[0], "  (");
-                    NumToString(n, str);
-                    PtoCstr(str);
-                    strcat(playerInfoText[0], (char *)str);
-                    strcat(playerInfoText[0], " ");
-                    if (n == 1)
-                        pstrcpy(str, tonString);
-                    else
-                        pstrcpy(str, tonsString);
-                    PtoCstr(str);
-                    strcat(playerInfoText[0], (char *)str);
-                    strcat(playerInfoText[0], " ");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrFree);
-                    strcat(playerInfoText[0], ")");
-                } else if (n == 0 && freeSpace > 0) {
-                    strcat(playerInfoText[0], "(");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrNo);
-                    strcat(playerInfoText[0], " ");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrFree);
-                    strcat(playerInfoText[0], ")");
-                }
-            } else {
-                StrcatIndCString(playerInfoText[0], kGameStrList, kStrFreeSpace);
-                strcat(playerInfoText[0], ": ");
-                PtoCstr(str);
-                strcat(playerInfoText[0], (char *)str);
-                strcat(playerInfoText[0], " ");
-                if (freeSpace == 1)
-                    pstrcpy(str, tonString);
-                else
-                    pstrcpy(str, tonsString);
-                PtoCstr(str);
-                strcat(playerInfoText[0], (char *)str);
-            }
-        }
-    }
-
-    StrcatIndCString(playerInfoText[1], kGameStrList, kStrOutfitHeader);
-    strcat(playerInfoText[1], "\r\r");
-
-    for (i = 0; i < kMaxOutfits; i++)
-        outfitQty[i] = 0;
-
-    count = 0;
-    for (i = 0; i < kMaxOutfits; i++) {
-        missionTons = shipSystems[i];
-        if (missionTons > 0 && lcOutfitName[i][0] != 0 &&
-            (outfitSystem[i].flags & kOutfShowInRanks) == 0) {
-            if (outfitSystem[i].sameNameIndex >= 0 && outfitSystem[i].sameNameIndex < i)
-                type = outfitSystem[i].sameNameIndex;
-            else
-                type = i;
-            if (outfitQty[type] == 0) {
-                if (outfitSystem[type].dispWeight > maxWeight || count == 0)
-                    maxWeight = outfitSystem[type].dispWeight;
-                count++;
-            }
-            outfitQty[type] += missionTons;
-        }
-    }
-
-    shown = 0;
-    len = strlen(playerInfoText[1]);
-    do {
-        freeSpace = 0;
-        n = 0;
-        type = 0;
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (outfitQty[i] > 0 && lcOutfitName[i][0] != 0 &&
-                (outfitSystem[i].flags & kOutfShowInRanks) == 0) {
-                if (maxWeight == (weight = outfitSystem[i].dispWeight)) {
-                    freeSpace++;
-                    if (outfitQty[i] == 1) {
-                        c = tolower(lcOutfitName[i][1]);
-                        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
-                            StrcatIndCString(playerInfoText[1], kGameStrList, kStrAn);
-                        else
-                            StrcatIndCString(playerInfoText[1], kGameStrList, kStrA);
-                    } else if (outfitQty[i] == 2) {
-                        StrcatIndCString(playerInfoText[1], kOrdinalsSTR, kOrdinalsBase + 2);
-                    } else if (outfitQty[i] == 3) {
-                        StrcatIndCString(playerInfoText[1], kOrdinalsSTR, kOrdinalsBase + 3);
-                    } else if (outfitQty[i] > 3) {
-                        NumToString(outfitQty[i], str);
-                        PtoCstr(str);
-                        strcat(playerInfoText[1], (char *)str);
-                    }
-                    strcat(playerInfoText[1], " ");
-                    if (outfitQty[i] <= 3 && len > 0)
-                        playerInfoText[1][len] = toupper(playerInfoText[1][len]);
-                    len = -1;
-                    if (outfitQty[i] > 1)
-                        pstrcpy(str, lcPluralOutfitName[i]);
-                    else
-                        pstrcpy(str, lcOutfitName[i]);
-                    PtoCstr(str);
-                    strcat(playerInfoText[1], (char *)str);
-                    shown++;
-                    if (shown <= count - 1 && count > 2)
-                        strcat(playerInfoText[1], ",");
-                    if (shown < count - 1) {
-                        strcat(playerInfoText[1], " ");
-                    } else if (shown == count - 1) {
-                        strcat(playerInfoText[1], " ");
-                        StrcatIndCString(playerInfoText[1], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[1], " ");
-                    }
-                    outfitQty[i] = 0;
-                } else if (weight < maxWeight) {
-                    if (weight > type || n == 0)
-                        type = weight;
-                }
-                n++;
-            }
-        }
-        maxWeight = type;
-    } while (freeSpace > 0);
-
-    strcat(playerInfoText[1], ".\r\r");
-
-    credits = PlayerShipTradeInPrice();
-    if (credits > 0) {
-        StrcatIndCString(playerInfoText[1], kGameStrList, kStrTradeInValue);
-        strcat(playerInfoText[1], " ");
-        StrcatCommaNumber(credits, playerInfoText[1]);
-        strcat(playerInfoText[1], " ");
-        if (credits == 1)
-            strcat(playerInfoText[1], creditCString);
-        else
-            strcat(playerInfoText[1], creditsCString);
-        strcat(playerInfoText[1], "\r");
-    }
-
-    count = 0;
-    for (i = 0; i < kMaxRanks; i++) {
-        rankShown[i] = 0;
-        if (rankData[i].active != 0 && rankData[i].loaded != 0 &&
-            strlen(rankData[i].name) != 0) {
-            if (rankData[i].priority > maxWeight || count == 0)
-                maxWeight = rankData[i].priority;
-            count++;
-        }
-    }
-
-    for (i = 0; i < kMaxOutfits; i++)
-        outfitQty[i] = 0;
-
-    for (i = 0; i < kMaxOutfits; i++) {
-        j = shipSystems[i];
-        if (j > 0 && lcOutfitName[i][0] != 0 &&
-            (outfitSystem[i].flags & kOutfShowInRanks) != 0) {
-            if (outfitSystem[i].sameNameIndex >= 0 && outfitSystem[i].sameNameIndex < i)
-                type = outfitSystem[i].sameNameIndex;
-            else
-                type = i;
-            outfitQty[type] += j;
-        }
-    }
-
-    for (i = 0; i < kMaxOutfits; i++) {
-        if (outfitQty[i] > 0 && lcOutfitName[i][0] != 0 &&
-            (outfitSystem[i].flags & kOutfShowInRanks) != 0)
-            count++;
-    }
-
-    if (count > 0) {
-        strcpy(playerInfoText[2], "");
-        StrcatIndCString(playerInfoText[2], kGameStrList, kStrAwardsHeader);
-        strcat(playerInfoText[2], "\r\r");
-        shown = 0;
-        do {
-            for (i = 0; i < kMaxRanks; i++) {
-                if (rankData[i].active != 0 && rankData[i].loaded != 0 &&
-                    strlen(rankData[i].name) != 0 &&
-                    rankData[i].priority >= maxWeight && rankShown[i] == 0) {
-                    strcat(playerInfoText[2], rankData[i].name);
-                    shown++;
-                    rankShown[i] = 1;
-                    if (shown <= count - 1)
-                        strcat(playerInfoText[2], ",");
-                    if (shown < count - 1) {
-                        strcat(playerInfoText[2], " ");
-                    } else if (shown == count - 1) {
-                        strcat(playerInfoText[2], " ");
-                        StrcatIndCString(playerInfoText[2], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[2], " ");
-                    }
-                }
-            }
-            found = 0;
-            for (i = 0; i < kMaxRanks; i++) {
-                if (rankData[i].active != 0 && rankData[i].loaded != 0 &&
-                    strlen(rankData[i].name) != 0 && rankShown[i] == 0) {
-                    if (rankData[i].priority > maxWeight || found == 0)
-                        maxWeight = rankData[i].priority;
-                    found++;
-                }
-            }
-        } while (found > 0);
-
-        len = (shown == 0) ? (short)strlen(playerInfoText[2]) : (short)-1;
-
-        for (i = 0; i < kMaxOutfits; i++) {
-            type = outfitQty[i];
-            if (type > 0 && lcOutfitName[i][0] != 0 &&
-                (outfitSystem[i].flags & kOutfShowInRanks) != 0) {
-                if (type == 1) {
-                    c = tolower(lcOutfitName[i][1]);
-                    if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
-                        StrcatIndCString(playerInfoText[2], kGameStrList, kStrAn);
-                    else
-                        StrcatIndCString(playerInfoText[2], kGameStrList, kStrA);
-                } else if (type == 2) {
-                    StrcatIndCString(playerInfoText[2], kOrdinalsSTR, kOrdinalsBase + 2);
-                } else if (type == 3) {
-                    StrcatIndCString(playerInfoText[2], kOrdinalsSTR, kOrdinalsBase + 3);
-                } else if (type > 3) {
-                    NumToString(type, str);
-                    PtoCstr(str);
-                    strcat(playerInfoText[2], (char *)str);
-                }
-                strcat(playerInfoText[2], " ");
-                if (type <= 3 && len > 0)
-                    playerInfoText[2][len] = toupper(playerInfoText[2][len]);
-                len = -1;
-                if (type > 1)
-                    pstrcpy(str, lcPluralOutfitName[i]);
-                else
-                    pstrcpy(str, lcOutfitName[i]);
-                PtoCstr(str);
-                strcat(playerInfoText[2], (char *)str);
-                shown++;
-                if (shown <= count - 1)
-                    strcat(playerInfoText[2], ", ");
-            }
-        }
-        strcat(playerInfoText[2], "\r");
-    }
-}
-#else
-{
-#ifdef MACBUILD
-    Boolean rankShown[kMaxRanks];
-    int32_t credits;
-    char c;
-    short shown;
-    short count;
-    short numTypes;
-    short numJunk;
-    short j;
-    short n;
-    short maxWeight;
-    short weight;
-    short found;
-    short freeSpace;
-    short space;
-    short len;
-    short type;
-    short qty;
-    short i;
-    Boolean starred;
-    short cargoQty[kMaxCargo];
-    short outfitQty[kMaxOutfits];
-    unsigned char str[256];
-#else
     Boolean rankShown[kMaxRanks];
     int32_t credits;
     char c;
@@ -8276,24 +6257,11 @@ void SetupPlayerInfoText(void)
     short cargoQty[kMaxCargo];
     short outfitQty[kMaxOutfits];
     unsigned char str[256];
-#endif
 
     for (qty = 0; qty < 3; qty++)
         playerInfoText[qty][0] = 0;
     numJunk = 0;
     numTypes = 0;
-#ifdef MACBUILD
-    for (j = 0; j < kMaxCargo; j++)
-        cargoQty[j] = -1;
-
-    for (j = 0; j <= kLastCommodity; j++) {
-        if (shipData->cargo[j] > 0) {
-            if (cargoQty[j] < 0)
-                cargoQty[j] = 0;
-            cargoQty[j] += shipData->cargo[j];
-        }
-    }
-#else
     for (qty = 0; qty < kMaxCargo; qty++)
         cargoQty[qty] = -1;
 
@@ -8304,7 +6272,6 @@ void SetupPlayerInfoText(void)
             cargoQty[qty] += shipData->cargo[qty];
         }
     }
-#endif
 
     for (i = 0; i < kMaxActiveMissions; i++) {
         if (currentMissionObjectives[i].active != 0 && currentMissions[i].hasCargo != 0 &&
@@ -8340,18 +6307,6 @@ void SetupPlayerInfoText(void)
     if (numTypes > 0) {
         shown = 0;
         for (i = 0; i < kMaxCargo; i++) {
-#ifdef MACBUILD
-            n = cargoQty[i];
-            if (n >= 0) {
-                starred = (lcCargoName[i][1] == '*') ? 1 : 0;
-                if (n > 0 && starred == 0) {
-                    if (shown == 0)
-                        StrcatOrdinalNumber(n, playerInfoText[0], 1);
-                    else
-                        StrcatOrdinalNumber(n, playerInfoText[0], 0);
-                    strcat(playerInfoText[0], " ");
-                    if (n == 1)
-#else
             qty = cargoQty[i];
             if (qty >= 0) {
                 starred = (lcCargoName[i][1] == '*') ? (Boolean)1 : (Boolean)0;
@@ -8362,7 +6317,6 @@ void SetupPlayerInfoText(void)
                         StrcatOrdinalNumber(qty, playerInfoText[0], 0);
                     strcat(playerInfoText[0], " ");
                     if (qty == 1)
-#endif
                         pstrcpy(str, tonString);
                     else
                         pstrcpy(str, tonsString);
@@ -8519,66 +6473,6 @@ void SetupPlayerInfoText(void)
         }
     }
 
-#ifdef MACBUILD
-    shown = 0;
-    len = strlen(playerInfoText[1]);
-    do {
-        j = 0;
-        type = 0;
-        n = 0;
-        for (i = 0; i < kMaxOutfits; i++) {
-            qty = outfitQty[i];
-            if (qty > 0 && lcOutfitName[i][0] != 0 &&
-                (outfitSystem[i].flags & kOutfShowInRanks) == 0) {
-                weight = outfitSystem[i].dispWeight;
-                if (maxWeight == weight) {
-                    j++;
-                    if (qty == 1) {
-                        c = tolower(lcOutfitName[i][1]);
-                        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
-                            StrcatIndCString(playerInfoText[1], kGameStrList, kStrAn);
-                        else
-                            StrcatIndCString(playerInfoText[1], kGameStrList, kStrA);
-                    } else if (qty == 2) {
-                        StrcatIndCString(playerInfoText[1], kOrdinalsSTR, kOrdinalsBase + 2);
-                    } else if (qty == 3) {
-                        StrcatIndCString(playerInfoText[1], kOrdinalsSTR, kOrdinalsBase + 3);
-                    } else if (qty > 3) {
-                        NumToString(qty, str);
-                        PtoCstr(str);
-                        strcat(playerInfoText[1], (char *)str);
-                    }
-                    strcat(playerInfoText[1], " ");
-                    if (qty <= 3 && len > 0)
-                        playerInfoText[1][len] = toupper(playerInfoText[1][len]);
-                    len = -1;
-                    if (qty > 1)
-                        pstrcpy(str, lcPluralOutfitName[i]);
-                    else
-                        pstrcpy(str, lcOutfitName[i]);
-                    PtoCstr(str);
-                    strcat(playerInfoText[1], (char *)str);
-                    shown++;
-                    if (shown <= count - 1 && count > 2)
-                        strcat(playerInfoText[1], ",");
-                    if (shown < count - 1) {
-                        strcat(playerInfoText[1], " ");
-                    } else if (shown == count - 1) {
-                        strcat(playerInfoText[1], " ");
-                        StrcatIndCString(playerInfoText[1], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[1], " ");
-                    }
-                    outfitQty[i] = 0;
-                } else if (weight < maxWeight) {
-                    if (weight > n || type == 0)
-                        n = weight;
-                }
-                type++;
-            }
-        }
-        maxWeight = n;
-    } while (j > 0);
-#else
     numTypes = 0;
     len = strlen(playerInfoText[1]);
     do {
@@ -8637,7 +6531,6 @@ void SetupPlayerInfoText(void)
         }
         maxWeight = nextWeight;
     } while (found > 0);
-#endif
 
     strcat(playerInfoText[1], ".\r\r");
 
@@ -8669,17 +6562,6 @@ void SetupPlayerInfoText(void)
         outfitQty[i] = 0;
 
     for (i = 0; i < kMaxOutfits; i++) {
-#ifdef MACBUILD
-        j = shipSystems[i];
-        if (j > 0 && lcOutfitName[i][0] != 0 &&
-            (outfitSystem[i].flags & kOutfShowInRanks) != 0) {
-            if (outfitSystem[i].sameNameIndex < 0 || outfitSystem[i].sameNameIndex >= i)
-                type = i;
-            else
-                type = outfitSystem[i].sameNameIndex;
-            outfitQty[type] += j;
-        }
-#else
         qty = shipSystems[i];
         if (qty > 0 && lcOutfitName[i][0] != 0 &&
             (outfitSystem[i].flags & kOutfShowInRanks) != 0) {
@@ -8688,7 +6570,6 @@ void SetupPlayerInfoText(void)
                 slot = i;
             outfitQty[slot] += qty;
         }
-#endif
     }
 
     for (i = 0; i < kMaxOutfits; i++) {
@@ -8774,26 +6655,12 @@ void SetupPlayerInfoText(void)
         strcat(playerInfoText[2], "\r");
     }
 }
-#endif
 
 /* FrameDefaultButton (mac _FrameDefaultButton). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049d630
 // MAC: _FrameDefaultButton i386 0x00055200 ppc 0x0005d578
 void FrameDefaultButton(void *dlg, short flag)
 {
-#ifdef MACBUILD
-    short itemType;
-    Handle item;
-    Rect box;
-
-    if (gSystemVersion < kMacOSXSystemVersion) {
-        SetPort((GrafPtr)GetDialogPort(dlg));
-        GetDialogItem(dlg, flag, &itemType, &item, &box);
-        PenSize(3, 3);
-        InsetRect(&box, -4, -4);
-        FrameRoundRect(&box, 16, 16);
-    }
-#endif
 }
 
 /* ApplyPriceAndTechnologyFlux. STATE: MATCH 100.0%, exe 114 / obj 114, byte-identical yes. OPEN: none */
@@ -8829,39 +6696,6 @@ int32_t ApplyPriceAndTechnologyFlux(int32_t cost, float multiplier, short itemTe
     return price;
 }
 
-#ifdef MAC1010
-void HideTheMenuBar(void)
-{
-    if (!settings.windowed)
-        HideMenuBar();
-}
-
-void ShowTheMenuBar(void)
-{
-    if (!settings.windowed)
-        ShowMenuBar();
-}
-#elif defined(MACBUILD)
-/* ShowTheMenuBar (mac _ShowTheMenuBar). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _ShowTheMenuBar i386 0x0005588b ppc 0x0005dac4
-void ShowTheMenuBar(void)
-{
-#if V111
-    if (!settings.windowed)
-        SetSystemUIMode(kUIModeNormal, 0);
-#endif
-}
-
-/* HideTheMenuBar. STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _HideTheMenuBar i386 0x000558b2 ppc 0x0005dae4
-void HideTheMenuBar(void)
-{
-#if V111
-    if (!settings.windowed)
-        SetSystemUIMode(kUIModeAllHidden, kUIOptionAutoShowMenuBar);
-#endif
-}
-#else
 /* HideTheMenuBar. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049d7a0
 void HideTheMenuBar(void)
@@ -8873,102 +6707,12 @@ void HideTheMenuBar(void)
 void ShowTheMenuBar(void)
 {
 }
-#endif
 
 
 /* StartLoopingMovie. STATE: MATCH. OPEN: none */
 // FUNCTION: EVNOVA 0x0049d7c0
 // MAC: _StartLoopingMovie i386 0x00060266 ppc 0x00067fb8
 void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
-#ifdef MAC1010
-{
-    short resID;
-    short vRefNum;
-    int32_t dirID;
-    FSSpec spec;
-    TimeBase timeBase;
-    OSErr err;
-    int32_t flags;
-
-    if (settings.noMovies != 0)
-        return;
-    if (loopingMovie != NULL)
-        EndLoopingMovie();
-    err = GetPluginSubfolder(gARef, "\pNova Plug-Ins", &dirID, &vRefNum);
-    if (err != noErr) {
-        err = GetPluginSubfolder(gARef, "\pNova Files", &dirID, &vRefNum);
-        if (err != noErr)
-            return;
-    }
-    FSMakeFSSpec(vRefNum, dirID, name, &spec);
-    err = OpenMovieFile(&spec, &loopingMovieResRefNum, fsRdPerm);
-    if (err != noErr) {
-        err = GetPluginSubfolder(gARef, "\pNova Files", &dirID, &vRefNum);
-        if (err != noErr)
-            return;
-        FSMakeFSSpec(vRefNum, dirID, name, &spec);
-        err = OpenMovieFile(&spec, &loopingMovieResRefNum, fsRdPerm);
-        if (err != noErr)
-            return;
-    }
-    resID = 0;
-    NewMovieFromFile((Movie *)&loopingMovie, loopingMovieResRefNum, &resID, NULL, newMovieActive, NULL);
-    CloseMovieFile(loopingMovieResRefNum);
-    if (err != noErr) {
-        loopingMovie = NULL;
-        return;
-    }
-#if TARGET_API_MAC_CARBON
-    SetMovieGWorld(loopingMovie, GetCWindowGrafPort(window), 0);
-#else
-    SetMovieGWorld(loopingMovie, window, 0);
-#endif
-    SetMovieBox(loopingMovie, box);
-    SetMoviePlayHints(loopingMovie, hintsLoop, hintsLoop);
-    timeBase = GetMovieTimeBase(loopingMovie);
-    flags = GetTimeBaseFlags(timeBase);
-    SetTimeBaseFlags(timeBase, flags | loopTimeBase);
-    GoToBeginningOfMovie(loopingMovie);
-    SetMovieRate(loopingMovie, 0x10000);
-    StartMovie(loopingMovie);
-}
-#elif defined(MACBUILD)
-{
-    HFSUniStr255 uniName;
-    FSRef ref;
-    Handle dataRef;
-    OSType dataRefType;
-    void *timeBase;
-    short movieResId = -1;
-
-    introMusicMovie = NULL;
-    if (settings.noMovies != 0)
-        return;
-    EndLoopingMovie();
-    HFSNameGetUnicodeName(name, kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(&pluginsFolder, uniName.length, uniName.unicode,
-                           kTextEncodingUnknown, &ref) != noErr
-        && FSMakeFSRefUnicode(&novaFilesFolder, uniName.length, uniName.unicode,
-                              kTextEncodingUnknown, &ref) != noErr)
-        goto fail;
-    if (QTNewDataReferenceFromFSRef(&ref, 0, &dataRef, &dataRefType) != noErr)
-        goto fail;
-    if (NewMovieFromDataRef(&loopingMovie, newMovieActive, &movieResId, dataRef,
-                            dataRefType) != noErr)
-        goto fail;
-    SetMovieGWorld(loopingMovie, GetCWindowGrafPort(window), 0);
-    SetMovieBox(loopingMovie, box);
-    SetMoviePlayHints(loopingMovie, hintsLoop, hintsLoop);
-    timeBase = GetMovieTimeBase(loopingMovie);
-    SetTimeBaseFlags(timeBase, GetTimeBaseFlags(timeBase) | loopTimeBase);
-    GoToBeginningOfMovie(loopingMovie);
-    SetMovieRate(loopingMovie, 0x10000);
-    StartMovie(loopingMovie);
-    return;
-fail:
-    loopingMovie = NULL;
-}
-#else
 {
     short found;
     CGrafPtr port;
@@ -9038,27 +6782,16 @@ fail:
     SetMovieRate(loopingMovie, 0x10000);
     StartMovie(loopingMovie);
 }
-#endif
 
 /* LoopingMovieIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0049da80
 // MAC: _LoopingMovieIdle i386 0x000558d9 ppc 0x0005db04
 void LoopingMovieIdle(void)
 {
-#if V111
-    EventRecord ev;
-
-#endif
     if (loopingMovie != NULL) {
         MoviesTask(loopingMovie, 0);
-#ifdef MACBUILD
-#if V111
-        WaitNextEvent(0, &ev, gameLoaded && inBackground ? 30 : 0, NULL);
-#endif
-#else
         nv_UpdateDialogWindow(0);
         ScreenEndScene();
-#endif
     }
 }
 
@@ -9325,6 +7058,8 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
         return;
 found:
         resId = 0;
+        // BUG: NewMovieFromFile's result is dropped and the err test below is the stale OpenMovieFile one;
+        // a file that opens but is not a movie leaves `movie' uninitialised and it is played
         NewMovieFromFile(&movie, refNum, &resId, 0, 1, 0);
         CloseMovieFile(refNum);
         if (err != 0)
@@ -9705,83 +7440,6 @@ void ShowEscortMenu(void)
     DrawEscortMenuInFrame();
 }
 
-#ifdef MACBUILD
-/* GetWindowDragBounds (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _GetWindowDragBounds i386 0x0005665d ppc 0x0005e994
-void GetWindowDragBounds(Rect *bounds, Point where)
-{
-    Point origin;
-    Rect portRect;
-    GDHandle device;
-
-    bounds->left = bounds->right = bounds->top = bounds->bottom = 0;
-    if (useLegacyRenderingPipeline && gSpriteWorld != NULL && gSpriteWorld->mainSWGDH != NULL) {
-        device = gSpriteWorld->mainSWGDH;
-        *bounds = (*device)->gdRect;
-        SWSetPortToWindow(gSpriteWorld);
-        origin.v = 0;
-        origin.h = 0;
-        LocalToGlobal(&origin);
-        portRect = *GetCWindowPortRect((WindowRef)gWind);
-        OffsetRect(&portRect, -portRect.left, -portRect.top);
-        OffsetRect(&portRect, origin.h, origin.v);
-        bounds->left = where.h - portRect.left;
-        bounds->right -= portRect.right - where.h;
-        bounds->top = GetMBarHeight() + where.v - portRect.top;
-        bounds->bottom -= portRect.bottom - where.v;
-    }
-}
-
-/* ForceWindowOnscreen (mac only). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _ForceWindowOnscreen i386 0x0005677b ppc 0x0005eae4
-void ForceWindowOnscreen(void)
-{
-    Rect bounds;
-    Rect screen;
-    short h;
-    short v;
-    short left;
-    short top;
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    Point pt;
-#endif
-
-    if (useLegacyRenderingPipeline) {
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-        bounds = *GetCWindowPortRect((WindowRef)gWind);
-        OffsetRect(&bounds, -bounds.left, -bounds.top);
-        pt.v = 0;
-        pt.h = 0;
-        SetPort((GrafPtr)gWind);
-        LocalToGlobal(&pt);
-        OffsetRect(&bounds, pt.h, pt.v);
-        screen = (*GetMainDevice())->gdRect;
-        h = left = pt.h;
-        v = top = pt.v;
-#else
-        GetWindowBounds(gWind, kWindowContentRgn, &bounds);
-        left = bounds.left;
-        top = bounds.top;
-        screen = (*GetMainDevice())->gdRect;
-        h = left;
-        v = top;
-#endif
-        if (bounds.left < screen.left)
-            h = left + (screen.left - bounds.left);
-        if (bounds.top < screen.top)
-            v += screen.top - bounds.top;
-        if (bounds.right > screen.right)
-            h -= bounds.right - screen.right;
-        if (bounds.bottom > screen.bottom)
-            v -= bounds.bottom - screen.bottom;
-        if (h == left) {
-            if (v == top)
-                return;
-        }
-        MoveWindow((WindowRef)gWind, h, v, false);
-    }
-}
-#endif
 
 
 #define kQtyDlogID 0x3eb
@@ -9798,15 +7456,6 @@ void ForceWindowOnscreen(void)
 // MAC: _DoQuantityDialog i386 0x00056d5b ppc 0x0005f1e4
 int32_t DoQuantityDialog(int32_t maxCount, short mode)
 {
-#if V111 || defined(MAC1010)
-    int32_t value;
-    short itemHit;
-    Boolean done;
-    Rect box;
-    Handle item;
-    short itemType;
-    Str255 text;
-#else
     Handle item;
     short itemHit;
     int32_t value;
@@ -9815,12 +7464,8 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
     Rect box;
     short itemType;
     Str255 text;
-#endif
     Str255 digits;
     Boolean allDigits;
-#if V111 || defined(MAC1010)
-    short i;
-#endif
     short destIdx;
     int32_t result;
 
@@ -9951,11 +7596,7 @@ void SetupDialogs(void)
 #else
     SetRect(&r, 0, 0, kMapWorldWide, kMapWorldHigh);
 #endif
-#ifdef MACBUILD
-    CreateGWorldContainer(&iconsPort, GetMainDevice(), 0, &r);
-#else
     CreateGWorldContainer(&iconsPort, 0, 0, &r);
-#endif
 }
 
 /* DisposeDialogs. STATE: MATCH, byte-identical. OPEN: none */
