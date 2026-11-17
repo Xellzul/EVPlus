@@ -27,38 +27,7 @@
 #include "crashlog.h"
 #include "cefix.h"
 
-#ifdef MACBUILD
-
-extern void SetRetainedWindow(WindowRef window, Boolean retained);
-extern Boolean QuickKeyCheckPlusEscorts(short code);
-#else
-/* the port keeps no retained-window state */
-#define SetRetainedWindow(window, retained) ((void)(window))
-#endif
-
-/* keys HandlePlayer reads by code: win scan codes, mac virtual key codes */
-#ifdef MACBUILD
-#define kScanKey1           MacKey(0x12)
-#define kScanKey2           MacKey(0x13)
-#define kScanKey3           MacKey(0x14)
-#define kScanKey4           MacKey(0x15)
-#define kScanKey5           MacKey(0x17)
-#define kScanF5             MacKey(0x60)
-#define kScanShift          MacKey(0x38)
-#define kScanCommand        MacKey(0x37)
-#define kScanExploreCheat   MacKey(0x51)
-#define kScanArmorCheat     MacKey(0x64)
-#define kScanDamageCheat    MacKey(0x65)
-#define kScanInfoCheat      MacKey(0x6d)
-#define kScanMinus          MacKey(0x1b)
-#define kScanPadMinus       MacKey(0x4e)
-#define kScanEquals         MacKey(0x18)
-#define kScanPadPlus        MacKey(0x45)
-#define AltKeyQuick()       QuickKeyCheck(kScanOption)
-#define CmdKeyQuick()       QuickKeyCheck(kScanCommand)
-#define ShiftKeyQuick()     QuickKeyCheck(kScanShift)
-#define CtrlKeyQuick()      QuickKeyCheck(kScanControl)
-#else
+/* keys HandlePlayer reads by code (win scan codes) */
 #define kScanKey1           0x02
 #define kScanKey2           0x03
 #define kScanKey3           0x04
@@ -68,6 +37,7 @@ extern Boolean QuickKeyCheckPlusEscorts(short code);
 #define kScanExploreCheat   0x72
 #define kScanArmorCheat     0x42
 #define kScanDamageCheat    0x43
+#define kScanInfoCheat      0x57 /* F11: the mac's F10 is CE's explore cheat here */
 #define kScanMinus          0x0c
 #define kScanPadMinus       0x4a
 #define kScanEquals         0x0d
@@ -76,7 +46,6 @@ extern Boolean QuickKeyCheckPlusEscorts(short code);
 #define CmdKeyQuick()       (QuickKeyCheck(kScanLAlt) || QuickKeyCheck(kScanRAlt))
 #define ShiftKeyQuick()     (QuickKeyCheck(kScanLShift) || QuickKeyCheck(kScanRShift))
 #define CtrlKeyQuick()      (QuickKeyCheck(kScanLCtrl) || QuickKeyCheck(kScanRCtrl))
-#endif
 
 Boolean warpSoundDone;
 Boolean playerTurnedThisFrame;
@@ -273,14 +242,12 @@ void HandlePlayer(ShipObj *player)
                         for (j = 0; j < kOutfMods; j++) {
                             if (outfitSystem[i].modType[j] == kOutfModType47
                                     && outfitSystem[i].modVal[j] > 0) {
-                                SetRetainedWindow((WindowRef)gWind, false);
                                 HideCursorSprite();
                                 RefreshSAT();
                                 ShowTheCursor();
                                 LoadDescription(textShowString,
                                                 outfitSystem[i].modVal[j]);
                                 ShowTextDialog(0, 0, 1);
-                                SetRetainedWindow((WindowRef)gWind, true);
                                 SetAllKeyCmdFlags();
                                 break;
                             }
@@ -378,14 +345,12 @@ void HandlePlayer(ShipObj *player)
             PaintRect(GetCWindowPortRect((WindowRef)gWind));
             FadeScreenIn();
             ShowTheCursor();
-            SetRetainedWindow((WindowRef)gWind, false);
             SWSetPortToWindow(gSpriteWorld);
             ForeColor(blackColor);
             PaintRect(GetCWindowPortRect((WindowRef)gWind));
             ShowTheCursor();
             LoadDescription(textShowString, 0x36af);
             ShowTextDialog(0, 0, 1);
-            SetRetainedWindow((WindowRef)gWind, true);
             SWSetPortToWindow(gSpriteWorld);
             ForeColor(blackColor);
             PaintRect(GetCWindowPortRect((WindowRef)gWind));
@@ -891,14 +856,12 @@ void HandlePlayer(ShipObj *player)
                 && fadePending[0] == 0 && fadePending[1] == 0
                 && frameCounter >= 0) {
             PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-            SetRetainedWindow((WindowRef)gWind, false);
             HideCursorSprite();
             RefreshSAT();
             ShowTheCursor();
             hypergateMapMode = 0;
             DoSystemMap();
             PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
-            SetRetainedWindow((WindowRef)gWind, true);
             SWSetPortToWindow(gSpriteWorld);
             RedrawStatus(1);
             RedrawComm(0);
@@ -1895,11 +1858,7 @@ void HandlePlayer(ShipObj *player)
                 PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
         } else {
             for (k = 0; k < 5; k++) {
-#ifdef MACBUILD
-                if (QuickKeyCheckPlusEscorts(keyPrefs.quickKey[k])) {
-#else
                 if (RawKeyCheck(keyPrefs.quickKey[k])) {
-#endif
                     if (!escortGroupFlag[k]) {
                         escortGroupFlag[k] = 1;
                         if (k > 0) {
@@ -2033,16 +1992,8 @@ void HandlePlayer(ShipObj *player)
             }
         }
 
-#ifdef MACBUILD
-        if (QuickKeyCheck(keyPrefs.cheatSpare) || QuickKeyCheck(kScanInfoCheat)) {
-            static int32_t stealQty;
-            static int32_t memFree;
-            static Size grow;
-
-            memFree = MaxMem(&grow);
-            NumToString(memFree, msg);
-            PtoCstr(msg);
-            strcat((char *)msg, " bytes free, gSpeedMult = ");
+        if (QuickKeyCheck(kScanInfoCheat)) {
+            strcpy((char *)msg, "gSpeedMult = ");
             NumToString(gSpeedMult * 100.0, name);
             PtoCstr(name);
             strcat((char *)msg, (char *)name);
@@ -2059,7 +2010,6 @@ void HandlePlayer(ShipObj *player)
             DisplayComm((PStrChar *)msg, 0x3c, 0, kCommTextSize, &rgbWhite, 0, 0);
         }
 
-#endif
         if (QuickKeyCheck(keyPrefs.cheatSpawn) || QuickKeyCheck(kCEScanNumEnter)) {
             if (!spawnShipFlag) {
                 spawnShipFlag = 1;
@@ -2549,7 +2499,6 @@ void HandlePlayer(ShipObj *player)
             playerInfoFlag = 1;
             if (player->jumpTimer <= 0.0f && player->escapePods <= 0
                     && frameCounter >= 0 && !dying) {
-                SetRetainedWindow((WindowRef)gWind, false);
                 HideCursorSprite();
                 RefreshSAT();
                 ShowTheCursor();
@@ -2557,7 +2506,6 @@ void HandlePlayer(ShipObj *player)
                 gSpeedMult = 0;
                 RedrawStatus(1);
                 RedrawComm(0);
-                SetRetainedWindow((WindowRef)gWind, true);
                 SetAllKeyCmdFlags();
             } else {
                 PlaySound(beepSnd[3], 5, gSoundVolume, gSoundVolume);
@@ -2590,13 +2538,11 @@ void HandlePlayer(ShipObj *player)
                     n++;
             }
             if (n > 0) {
-                SetRetainedWindow((WindowRef)gWind, false);
                 HideCursorSprite();
                 RefreshSAT();
                 ShowTheCursor();
                 DoMissionInfoDialog();
                 gSpeedMult = 0;
-                SetRetainedWindow((WindowRef)gWind, true);
                 RedrawStatus(1);
                 RedrawComm(0);
                 SetAllKeyCmdFlags();
@@ -2832,12 +2778,10 @@ void HandlePlayerCommunication(void)
                     DisplayComm((PStrChar *)buf, kCommFrames, 0, kCommTextSize,
                                 &rgbWhite, 0, 0);
                 } else {
-                    SetRetainedWindow((WindowRef)gWind, false);
                     HideCursorSprite();
                     RefreshSAT();
                     ShowTheCursor();
                     DoPlanetCommDialog(me->targetStellar);
-                    SetRetainedWindow((WindowRef)gWind, true);
                     SetAllKeyCmdFlags();
                 }
             } else {
@@ -2872,13 +2816,11 @@ void HandlePlayerCommunication(void)
                     if (IsMissionAvailable(
                             personData[shipData[me->targetShip].persType].linkMission, 1) != 0) {
                         PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-                        SetRetainedWindow((WindowRef)gWind, false);
                         HideCursorSprite();
                         RefreshSAT();
                         ShowTheCursor();
                         mission = OfferOneMission(
                             personData[shipData[me->targetShip].persType].linkMission);
-                        SetRetainedWindow((WindowRef)gWind, true);
                         SetAllKeyCmdFlags();
                         RefreshSAT();
                         if (mission == 1) {
@@ -2926,41 +2868,33 @@ void HandlePlayerCommunication(void)
                             }
                         }
                     } else {
-                        SetRetainedWindow((WindowRef)gWind, false);
                         HideCursorSprite();
                         RefreshSAT();
                         ShowTheCursor();
                         DoCommDialog(me->targetShip);
-                        SetRetainedWindow((WindowRef)gWind, true);
                         SetAllKeyCmdFlags();
                     }
                     offeringFromShip = 0;
                     offeringShipIndex = me->targetShip;
                     } else {
-                    SetRetainedWindow((WindowRef)gWind, false);
                     HideCursorSprite();
                     RefreshSAT();
                     ShowTheCursor();
                     DoCommDialog(me->targetShip);
-                    SetRetainedWindow((WindowRef)gWind, true);
                     SetAllKeyCmdFlags();
                     }
                   } else {
-                    SetRetainedWindow((WindowRef)gWind, false);
                     HideCursorSprite();
                     RefreshSAT();
                     ShowTheCursor();
                     DoCommDialog(me->targetShip);
-                    SetRetainedWindow((WindowRef)gWind, true);
                     SetAllKeyCmdFlags();
                   }
                 } else {
-                    SetRetainedWindow((WindowRef)gWind, false);
                     HideCursorSprite();
                     RefreshSAT();
                     ShowTheCursor();
                     DoCommDialog(me->targetShip);
-                    SetRetainedWindow((WindowRef)gWind, true);
                     SetAllKeyCmdFlags();
                 }
                 RedrawStatus(1);
@@ -3245,7 +3179,6 @@ void PlayerLandOnStellar(void)
     EraseParticlesOffscreen(gSpriteWorld);
     SWUpdateSpriteWorld(gSpriteWorld, 1);
     UpdateParticlesInWindow(gSpriteWorld);
-    SetRetainedWindow((WindowRef)gWind, false);
     HideCursorSprite();
     RefreshSAT();
     RedrawStatus(1);
@@ -3307,7 +3240,6 @@ void PlayerLandOnStellar(void)
     }
     SavePilotFile(ship->targetStellar);
     ship->heading = Rand(kFullCircle);
-    SetRetainedWindow((WindowRef)gWind, true);
     SetAllKeyCmdFlags();
     playerIsLanded = 0;
     if (absquatulateStr[0] != 0) {
@@ -3369,7 +3301,6 @@ short PlayerEnterHypergate(void)
     if (link == 0)
         return -1;
     ShowTheCursor();
-    SetRetainedWindow((WindowRef)gWind, false);
     HideCursorSprite();
     RefreshSAT();
     hypergateMapMode = 1;
@@ -3377,7 +3308,6 @@ short PlayerEnterHypergate(void)
     DoSystemMap();
     hypergateMapMode = 0;
     hypergateMapModeStellar = -1;
-    SetRetainedWindow((WindowRef)gWind, true);
     SetAllKeyCmdFlags();
     if (shipData->navTargetKind == kNavTargetGate && shipData->targetStellar != -1) {
         destSyst = -1;
@@ -3396,12 +3326,10 @@ short PlayerEnterHypergate(void)
             }
         }
         if (destSyst != -1) {
-            SetRetainedWindow((WindowRef)gWind, false);
             HideCursorSprite();
             RefreshSAT();
             if (!settings.noMovies)
                 PlayQTMovieFromDesc(ship->targetStellar + kFirstResourceID);
-            SetRetainedWindow((WindowRef)gWind, true);
             SetAllKeyCmdFlags();
             ship->curSystem = destSyst;
             n = FindFirstCoLocatedSystem(destSyst);
@@ -3421,28 +3349,6 @@ short PlayerEnterHypergate(void)
             ship->vel.x = ship->vel.y = 0;
             ship->accelMag = (ShipMaxSpeed(ship) * 0.5);
             Accel(ship->heading, ship->accelMag, &ship->vel);
-#if V111
-            SWSetPortToWorkArea(gSpriteWorld);
-            ForeColor(whiteColor);
-            PaintRect(&gSpriteWorld->workFrameP->frameRect);
-            ForeColor(blackColor);
-            if (useLegacyRenderingPipeline) {
-                BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                             &gSpriteWorld->workFrameP->frameRect,
-                             &gSpriteWorld->windowFrameP->frameRect);
-            } else {
-                SWSetPortToWindow(gSpriteWorld);
-                CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
-                         GetPortPixMapBits(gSpriteWorld->windowFrameP->framePort),
-                         &gSpriteWorld->workFrameP->frameRect,
-                         &gSpriteWorld->windowFrameP->frameRect, 0, NULL);
-                QDFlushPortBuffer(gSpriteWorld->windowFrameP->framePort, NULL);
-            }
-#ifdef MACBUILD
-            if (!settings.windowed && !settings.noHyperGamma && !ignoreKeys)
-                FadeWhiteOut();
-#endif
-#else
             SWSetPortToWindow(gSpriteWorld);
             CE_SetFlashColor(whiteColor);
             PaintRect(&gSpriteWorld->workFrameP->frameRect);
@@ -3452,7 +3358,6 @@ short PlayerEnterHypergate(void)
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
                          &gSpriteWorld->workFrameP->frameRect,
                          &gSpriteWorld->windowFrameP->frameRect);
-#endif
             strcpy((char *)msg, "");
             StrcatIndCString((char *)msg, kGameStrList, 0x2e);
             strcat((char *)msg, " ");
@@ -3614,11 +3519,9 @@ short PlayerEnterWormhole(void)
         dest = ship->curSystem;
         destStellar = dockTarget;
     }
-    SetRetainedWindow((WindowRef)gWind, false);
     if (!settings.noMovies)
         PlayQTMovieFromDesc(ship->targetStellar + kFirstResourceID);
     RefreshSAT();
-    SetRetainedWindow((WindowRef)gWind, true);
     SetAllKeyCmdFlags();
     ship->curSystem = dest;
     n = FindFirstCoLocatedSystem(dest);
@@ -3642,9 +3545,7 @@ short PlayerEnterWormhole(void)
     CE_SetFlashColor(whiteColor);
     PaintRect(&gSpriteWorld->windRect);
     ForeColor(blackColor);
-#ifndef MACBUILD
     ScreenEndScene();
-#endif
     PlaySound(warpOutSnd, 0x32, gSoundVolume, gSoundVolume);
     strcpy((char *)msg, "");
     StrcatIndCString((char *)msg, kGameStrList, 0x2f);
@@ -4447,12 +4348,10 @@ reject:
         m = shipData[me->targetShip].specialMission;
         if (currentMissionObjectives[m].active) {
             if (currentMissions[m].pickupMode == 2) {
-                SetRetainedWindow((WindowRef)gWind, false);
                 HideCursorSprite();
                 RefreshSAT();
                 ShowTheCursor();
                 canBoard = DoMissionCargoPickup(currentMissions[m].cargoType, currentMissions[m].cargoQty);
-                SetRetainedWindow((WindowRef)gWind, true);
                 SetAllKeyCmdFlags();
                 if (canBoard) {
                     if (shipData[me->targetShip].specialMission != -1 &&
@@ -4545,14 +4444,12 @@ reject:
                         offeringFromShip = 1;
                         offeringShipIndex = me->targetShip;
                         if (IsMissionAvailable(personData[shipData[me->targetShip].persType].linkMission, 1)) {
-                            SetRetainedWindow((WindowRef)gWind, false);
                             HideCursorSprite();
                             RefreshSAT();
                             ShowTheCursor();
                             PlaySound(hardDockSnd, 8, gSoundVolume, gSoundVolume);
                             if (OfferOneMission(personData[shipData[me->targetShip].persType].linkMission) != 1)
                                 skip = 1;
-                            SetRetainedWindow((WindowRef)gWind, true);
                             SetAllKeyCmdFlags();
                             RefreshSAT();
                             if (personData[shipData[me->targetShip].persType].flags &
@@ -4560,11 +4457,9 @@ reject:
                                 personData[shipData[me->targetShip].persType].loaded = 0;
                         } else {
                             PlaySound(hardDockSnd, 8, gSoundVolume, gSoundVolume);
-                            SetRetainedWindow((WindowRef)gWind, false);
                             HideCursorSprite();
                             RefreshSAT();
                             DoPlunderDialog();
-                            SetRetainedWindow((WindowRef)gWind, true);
                             SetAllKeyCmdFlags();
                         }
                         offeringFromShip = 0;
@@ -4584,11 +4479,9 @@ reject:
                             AIAddFighterToParent(&shipData[me->targetShip]);
                         } else {
                             PlaySound(hardDockSnd, 8, gSoundVolume, gSoundVolume);
-                            SetRetainedWindow((WindowRef)gWind, false);
                             HideCursorSprite();
                             RefreshSAT();
                             DoPlunderDialog();
-                            SetRetainedWindow((WindowRef)gWind, true);
                             SetAllKeyCmdFlags();
                         }
                     }
@@ -4608,11 +4501,9 @@ reject:
                     } else {
                         DoGoodSamaritan(&shipData[me->targetShip], me);
                         PlaySound(hardDockSnd, 8, gSoundVolume, gSoundVolume);
-                        SetRetainedWindow((WindowRef)gWind, false);
                         HideCursorSprite();
                         RefreshSAT();
                         DoPlunderDialog();
-                        SetRetainedWindow((WindowRef)gWind, true);
                         SetAllKeyCmdFlags();
                     }
                 }
@@ -4666,22 +4557,18 @@ reject:
                 } else {
                     DoGoodSamaritan(&shipData[me->targetShip], me);
                     PlaySound(hardDockSnd, 8, gSoundVolume, gSoundVolume);
-                    SetRetainedWindow((WindowRef)gWind, false);
                     HideCursorSprite();
                     RefreshSAT();
                     DoPlunderDialog();
-                    SetRetainedWindow((WindowRef)gWind, true);
                     SetAllKeyCmdFlags();
                 }
             }
         } else if (m == -1) {
             DoGoodSamaritan(&shipData[me->targetShip], me);
             PlaySound(hardDockSnd, 8, gSoundVolume, gSoundVolume);
-            SetRetainedWindow((WindowRef)gWind, false);
             HideCursorSprite();
             RefreshSAT();
             DoPlunderDialog();
-            SetRetainedWindow((WindowRef)gWind, true);
             SetAllKeyCmdFlags();
         }
         if (skip)

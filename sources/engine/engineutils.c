@@ -49,7 +49,6 @@ extern Boolean isG3(void);
 extern Boolean isG4(void);
 extern Boolean meetsMinimumRequirements(void);
 extern short ScanForKeys(void);
-extern Boolean QuickKeyCheckPlusEscorts(short code);
 extern Boolean HasMaxFightersOnBoard(short shipType);
 extern void UnsplitTwoLineString(const unsigned char *src, unsigned char *dst);
 /* the AmbrosiaTools DrawTools calls DrawPicHandle makes that burger.h does not declare */
@@ -3866,40 +3865,6 @@ unsigned char QuickKeyCheck(short scanCode)
 #endif
 }
 
-#ifdef MACBUILD
-// MAC: _QuickKeyCheckPlusEscorts i386 0x0000a158 ppc 0x0000c774
-Boolean QuickKeyCheckPlusEscorts(short code)
-{
-#ifdef MAC1010
-    short word;
-    short bit;
-#else
-    Boolean result;
-#endif
-
-    if (ignoreKeys)
-        return 0;
-#ifdef MAC1010
-    word = (code >> 4) & 0xf;
-    bit = code & 0xf;
-    if (keyMap[word] & (1 << bit)) {
-        quickKeyCheckResult = true;
-        return 1;
-    }
-    return 0;
-#else
-    result = isPressed(keyMap, code);
-    if (result)
-        quickKeyCheckResult = true;
-    return result;
-#endif
-}
-#endif
-
-/*
- * The 1.0.10 body carries no escort logic, so the name stays descriptive rather
- * than adopting the mac's _QuickKeyCheckPlusEscorts.
- */
 #ifndef MACBUILD
 // FUNCTION: EVNOVA 0x00469cf0
 unsigned char RawKeyCheck(short scanCode)
