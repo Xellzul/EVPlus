@@ -910,11 +910,7 @@ int32_t _IT_ItemExecute(WindowNode *window, ITControl *control, const char *link
 #endif
                 IT_ViewDispose(window);
             } else if (StringCompare(command, "BEEP") == 0) {
-#ifdef MAC1010
-                SysBeep(7);
-#else
                 MessageBeep(0);
-#endif
             }
             goto done;
         }
@@ -990,12 +986,6 @@ int32_t _IT_ItemCallback(WindowNode *window, ITControl *control, ULong msg, ULon
     hwnd = window->hwnd;
     for (root = window; root->parent != 0; root = root->parent)
         ;
-#ifdef MAC1010
-    if (root->buffer != 0 && msg == kMsgPaint)
-        dc = DT_PeekAtSysContext(root->buffer->portSelf);
-    else
-        dc = GetWindowPort(hwnd);
-#else
     if (root->buffer != 0 && msg == kMsgPaint) {
         dc = DT_PeekAtSysContext(root->buffer->portSelf);
     } else {
@@ -1008,7 +998,6 @@ int32_t _IT_ItemCallback(WindowNode *window, ITControl *control, ULong msg, ULon
         SetTextColor(dc, DT_2SysColor(&window->fore));
         SetBkColor(dc, DT_2SysColor(&window->back));
     }
-#endif
     if (control->proc != 0) {
         savedWindow = gIT_CurrentView;
         savedControl = gIT_CurrentItem;
@@ -1308,22 +1297,6 @@ done:
     return err;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-int32_t IT_ViewGetPageElement(WindowNode *window, ITElement **element)
-{
-    int32_t err;
-    ITPage *page;
-
-    *element = 0;
-    err = 0;
-    page = window->page;
-    if (page == 0)
-        err = kNotAWindow;
-    else
-        *element = page->element;
-    return err;
-}
-#endif
 
 /* IT_ViewGetItemCount (how many controls a window has). STATE: MATCH 100%, exe 14 / obj 14, byte-
    identical yes. OPEN: none */

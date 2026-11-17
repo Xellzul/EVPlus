@@ -992,13 +992,7 @@ void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t en
 // FUNCTION: EVNOVA 0x004cfd30
 Rect *GetDialogPortRect(DialogPtr dlg)
 {
-#ifdef MACBUILD
-    GetWindowBounds(GetDialogWindow(dlg), kWindowContentRgn, &gPortRect);
-    OffsetRect(&gPortRect, -gPortRect.left, -gPortRect.top);
-    return &gPortRect;
-#else
     return &dlg->portRect;
-#endif
 }
 
 #ifndef MACBUILD

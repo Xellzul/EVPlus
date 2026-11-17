@@ -24,11 +24,7 @@ static ITRect gIT_ShowControlZeroRect;                      /* 0x0086bb90 IT_Vie
 
 #define INDEX_LEFT(i) (i--)
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-#define ParamWideArg unsigned char
-#else
 #define ParamWideArg int32_t
-#endif
 #if defined(MAC1010) && TARGET_API_MAC_CARBON
 #define kHashWide 0x01000001
 extern ULong C2UGetByteCount(const char *s);
@@ -273,11 +269,7 @@ done:
 int32_t IT_ViewSetItemVisible(void *windowRef, int32_t index, unsigned char show)
 {
     WindowNode *window;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    ITRect clip = {0, 0, 0, 0};
-#else
     ITRect clip;
-#endif
     void *saved;
     int32_t err;
     int32_t e;
@@ -384,11 +376,7 @@ done:
 int32_t IT_ViewSetItemEnabled(void *windowRef, int32_t index, unsigned char enable)
 {
     WindowNode *window;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    ITRect clip = {0, 0, 0, 0};
-#else
     ITRect clip;
-#endif
     void *saved;
     int32_t err;
     int32_t e;
@@ -664,14 +652,6 @@ int32_t IT_ItemCallbackGetImage(const char *name, ITImage **image, ITImage **mas
     WindowNode *root;
     void **data;
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    err = 0;
-    created = 0;
-    data = 0;
-    CHECK_WINDOWS(0);
-    *image = 0;
-    *mask = 0;
-#else
     err = 0;
     p = 0;
     created = 0;
@@ -680,7 +660,6 @@ int32_t IT_ItemCallbackGetImage(const char *name, ITImage **image, ITImage **mas
     root = 0;
     *image = (ITImage *)(root = 0);
     *mask = 0;
-#endif
     DT_AlphaInfoDefaults(trans);
     for (root = gIT_CurrentView; root->parent != 0; root = root->parent)
         ;

@@ -20,11 +20,7 @@ typedef unsigned char UTF8;
 #define kByteMask           0xbf
 #define kByteMark           0x80
 
-#ifdef MAC1010      /* the exe holds them with the code */
-#define UTF_TABLE static const
-#else
 #define UTF_TABLE
-#endif
 
 UTF_TABLE signed char trailingBytesForUTF8[256] = {                /* 0x00582050 trailing bytes for UTF-8 */
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

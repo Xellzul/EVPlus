@@ -57,13 +57,8 @@ typedef struct PpatRecord {
 #define kPpatPixelSizeAt    0x3c
 #define kFixed72            0x00480000
 
-#ifdef MAC1010
-#define SwapLong(v)     (v)
-typedef ULong PpatField; /* 1.0.10 spelling */
-#else
 #define SwapLong(v)     Swap32(v)
 typedef long long PpatField;
-#endif
 
 /* PPAT_CheckFileType (a colour 'ppat': type 1, its PixMap at 0x1c, data after it, 72 dpi, a pixel
    size of 1, 2, 4, 8, 16 or 32; all fields big-endian). STATE: MATCH 100%, exe 187 / obj 187,
@@ -195,24 +190,9 @@ int32_t PPAT_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     ReadLong(rec.map.pmTable);
     ReadLong(rec.map.pmReserved);
 
-#ifdef MAC1010
-    if (rec.map.left >= rec.map.right) {
-        err = kStreamOverrun;
-        goto done;
-    }
-    if (rec.map.top >= rec.map.bottom) {
-        err = kStreamOverrun;
-        goto done;
-    }
-    if ((rec.map.rowBytes & kRowBytesInvalid) != 0) {
-        err = kStreamOverrun;
-        goto done;
-    }
-#else
     if (rec.map.left >= rec.map.right || rec.map.top >= rec.map.bottom ||
         (rec.map.rowBytes & kRowBytesInvalid) != 0)
         goto bad;
-#endif
     if (rec.map.pmTable > stream->size) {
         err = kStreamOverrun;
         goto done;
@@ -240,27 +220,12 @@ int32_t PPAT_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
             }
         }
     }
-#ifdef MAC1010
-    if (rec.patData > stream->size) {
-        err = kStreamOverrun;
-        goto done;
-    }
-    if (rowBytes * height + rec.patData > stream->size) {
-        err = kStreamOverrun;
-        goto done;
-    }
-    if (rec.map.packType != 0) {
-        err = kStreamOverrun;
-        goto done;
-    }
-#else
     if (rec.patData > stream->size || rowBytes * height + rec.patData > stream->size ||
         rec.map.packType != 0) {
 bad:
         err = kStreamOverrun;
         goto done;
     }
-#endif
 
     DT_SetRect(&bounds, 0, 0, width, height);
     depth = rec.map.pixelSize < kMinDepth ? kMinDepth : rec.map.pixelSize;

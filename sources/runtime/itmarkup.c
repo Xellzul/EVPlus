@@ -17,9 +17,6 @@ extern unsigned short *UnicodeCopySafe(unsigned short *dst, const unsigned short
 extern ULong UnicodeGetByteCountFromChars(const unsigned short *s, ULong index);        /* atcharset.c */
 
 /* the parser's state (0x24 bytes, a local of 0x00524bc7) */
-#ifdef MAC1010 /* 1.0.10 layout: 0x22 bytes */
-#pragma options align=mac68k
-#endif
 typedef struct ITParser {
     ITElement *root;
     ITElement *open;                /* the elements still open, innermost first */
@@ -31,9 +28,6 @@ typedef struct ITParser {
     struct HashTable *empty;        /* tag names that take no end tag */
     unsigned char wide;
 } ITParser;
-#ifdef MAC1010
-#pragma options align=reset
-#endif
 
 /* one parse error as appended to the error handle */
 typedef struct ITParseError {

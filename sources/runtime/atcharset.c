@@ -25,11 +25,7 @@ typedef struct CharsetInfo {
 #define kTagUtf32           'UT32'
 #define kBomUtf8            0xefbbbfff
 #define kBomUtf16Big        0xfeffffff
-#ifdef MAC1010
-#define kBomUtf16Little     0xfeffffff
-#else
 #define kBomUtf16Little     0xfffeffff
-#endif
 #define kBomUtf16Fffe       0xfffeffff
 #define kBomUtf32Big        0x0000feff
 #define kBomUtf32Little     0xfffe0000
@@ -59,9 +55,6 @@ static WinEntry gUnicodeMappings[256];               /* 0x00868db4 */
 /* Placement only: no reader in the exe. */
 static unsigned char sCharsetPad[0x1008];       /* 0x00867dac */
 static ULong DAT_00867da8;                       /* 0x00867da8 */
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-static CFStringEncoding sIndirectEncoding;
-#endif
 static ULong gUnicodeMappingCount;                       /* 0x00867da4 win count */
 static unsigned char gTextMappingsValid;               /* 0x00867da0 tables built */
 static struct HashTable *gTextEncodingsHashRef;           /* 0x00867d9c names */
@@ -432,11 +425,7 @@ AT_STATIC int32_t _EncodingPreflightMappings(struct HashTable *table)
             gTextMappingsFlags[row->mac] |= kHasMac;
         }
         if ((row->unicode & kNonAscii) != 0 && nWin < 0x100) {
-#ifdef MAC1010
-            index = row->mac;
-#else
             index = row->win;
-#endif
             if (index != 0) {
                 gUnicodeMappings[nWin].unicode = row->unicode;
                 gUnicodeMappings[nWin].win = index;
@@ -495,16 +484,6 @@ CharEntry *_EncodingLookupTable(ULong tag)
     switch (tag) {
     case 0:
         break;
-#ifdef MAC1010
-    case kTagMac:
-        break;
-    case kTagWin:
-        table = gTextMappingsWin;
-        break;
-    case kTagIso:
-        table = gTextMappingsIso;
-        break;
-#else
     case kTagMac:
         table = gTextMappingsMac;
         break;
@@ -513,7 +492,6 @@ CharEntry *_EncodingLookupTable(ULong tag)
         break;
     case kTagWin:
         break;
-#endif
     }
     return table;
 }
@@ -542,13 +520,8 @@ char EncodingLookupTag(const char *entity)
         index = (unsigned char *)HashLookup(gTextMappingsHashRef, String2Lower(key), 0);
     if (index != 0) {
         row = &kCharEntries.rows[*index];
-#ifdef MAC1010
-        if (row->mac != 0)
-            code = row->mac;
-#else
         if (row->win != 0)
             code = row->win;
-#endif
         else
             code = gTextMappingSubstitute;
         c = code;
@@ -823,11 +796,7 @@ unsigned char IndirectIsNormalizedEncoding(void **handle)
         break;
     case kKindMacText:
     case kKindText:
-#ifdef MAC1010
-        ok = (tag == kTagMac) ? true : false;
-#else
         ok = (tag == kTagWin || tag == kTagIso) ? true : false;
-#endif
         break;
     case kKindUnicode:
         ok = (kind == kKindUnicode && bom == kBomUtf16Little) ? true : false;
@@ -886,17 +855,6 @@ int32_t IndirectNormalizeEncoding(void **handle, const char *charset)
     }
     if (table != 0 && gTextMappingsValid == 0)
         _EncodingPreflightMappings(0);
-#ifdef MAC1010
-    if (table != 0) {
-        char *p = *handle;
-
-        size = IndirectGetSize(handle);
-        for (i = 0; i < size; i++, p++) {
-            c = *p;
-            *p = table[c].mac;
-        }
-    }
-#else
     if (table != 0 && table != gTextMappingsIso) {
         p = *handle;
         size = IndirectGetSize(handle);
@@ -905,7 +863,6 @@ int32_t IndirectNormalizeEncoding(void **handle, const char *charset)
             *p = table[c].win;
         }
     }
-#endif
 done:
     return err;
 }
@@ -1366,23 +1323,6 @@ unsigned short *UnicodeCopySafe(unsigned short *dst, const unsigned short *src,
     return dst;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-unsigned short *UnicodeAppendSafe(unsigned short *dst, const unsigned short *src, ULong size, ULong count)
-{
-    ULong bytes;
-    ULong chars;
-
-    size -= size & 1;
-    bytes = UnicodeGetByteCount(dst);
-    chars = UnicodeGetCharCount(dst);
-    if (bytes < size && chars < count) {
-        count -= chars;
-        size -= bytes;
-        UnicodeCopySafe((unsigned short *)((char *)dst + bytes), src, size, count);
-    }
-    return dst;
-}
-#endif
 
 /* UnicodeCompare. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes.
    OPEN: none */
@@ -1575,11 +1515,7 @@ unsigned short *C2UStringCopySafe(unsigned short *dst, const unsigned char *src,
     table = 0;
     p = dst;
     dstBytes -= dstBytes & 1;
-#ifdef MAC1010
-    table = gTextMappingsMac;
-#else
     table = gTextMappingsWin;
-#endif
     dstBytes -= 2;
     while (dstBytes != 0 && maxChars != 0 && (c = *src) != 0) {
         *p = table[c].unicode;
@@ -1592,54 +1528,6 @@ unsigned short *C2UStringCopySafe(unsigned short *dst, const unsigned char *src,
     return dst;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-unsigned short *C2UStringAppendSafe(unsigned short *dst, const char *src, ULong size, ULong count)
-{
-    ULong bytes;
-    ULong chars;
-
-    size -= size & 1;
-    bytes = UnicodeGetByteCount(dst);
-    chars = UnicodeGetCharCount(dst);
-    if (bytes < size && chars < count) {
-        count -= chars;
-        size -= bytes;
-        C2UStringCopySafe((unsigned short *)((char *)dst + bytes), (const unsigned char *)src, size, count);
-    }
-    return dst;
-}
-
-void **IndirectAllocateU2C(void **handle)
-{
-    ULong count;
-    ULong size;
-    void **out;
-
-    count = UnicodeGetCharCountFromBytes(*handle, IndirectGetSize(handle));
-    size = count + 1;
-    if ((out = IndirectAllocate(size)) != 0) {
-        U2CStringCopySafe(*out, *handle, size, count);
-        IndirectSetSize(out, size - 1);
-    }
-    return out;
-}
-
-void **IndirectAllocateC2U(void **handle, unsigned char tag)
-{
-    ULong count;
-    ULong size;
-    void **out;
-
-    count = IndirectGetSize(handle);
-    size = (count + 1) * 2;
-    if ((out = IndirectAllocate(size)) != 0) {
-        C2UStringCopySafe(*out, *handle, size, count);
-        if (IndirectSetSize(out, size - 2) == 0 && tag)
-            IndirectAddUnicodeTag(out);
-    }
-    return out;
-}
-#endif
 
 /* Unicode2UpperCopySafe. STATE: MATCH 100%, exe 81 / obj 81, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00505e16
@@ -1679,34 +1567,3 @@ unsigned short *Unicode2UpperCopySafe(unsigned short *dst, const unsigned short 
     return dst;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-CFStringRef UnicodeCreateCFString(const unsigned short *s, ULong count)
-{
-    ULong chars;
-
-    chars = UnicodeGetCharCount(s);
-    if (count > chars)
-        count = chars;
-    return CFStringCreateWithCharacters(0, s, count);
-}
-
-CFStringRef IndirectCopyCFString(void **handle)
-{
-    unsigned char locked;
-    const char *encoding;
-    CFStringRef string;
-
-    locked = IndirectSetLock(handle, 1);
-    encoding = _IndirectGetUnicodeEncoding(handle, 0, 0);
-    if (encoding != 0) {
-        StringCompare(encoding, "UTF-16");
-        IndirectGetSize(handle);
-        string = CFStringCreateWithBytes(0, (UInt8 *)*handle + 2, IndirectGetSize(handle) - 2, kCFStringEncodingUnicode, 1);
-    } else {
-        string = CFStringCreateWithBytes(0, *handle, IndirectGetSize(handle), sIndirectEncoding, 0);
-    }
-    if (!locked)
-        IndirectSetLock(handle, 0);
-    return string;
-}
-#endif

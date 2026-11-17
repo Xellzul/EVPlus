@@ -4,34 +4,6 @@
 #include "burger.h"
 
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-int32_t SInt32_To_SFix32(int32_t value)
-{
-    int32_t result;
-
-    if (value > 0x7fff)
-        result = 0x7fffffff;
-    else if (value < -0x8000)
-        result = 0x80000000;
-    else
-        result = value << 16;
-    return result;
-}
-
-ULong UInt32_To_UFix32(ULong value)
-{
-    return value > 0xffff ? 0xffffffff : value << 16;
-}
-
-int32_t SFix32_To_SInt32(Fixed value)
-{
-    if (value >= 0) {
-        value >>= 15;
-        return (value + 1) >> 1;
-    }
-    return ((value >> 15) - 1) >> 1;
-}
-#endif
 
 /* A 16.16 rate to whole hertz, rounded. */
 /* UFix32_To_UInt32. STATE: MATCH, byte-identical. OPEN: none */

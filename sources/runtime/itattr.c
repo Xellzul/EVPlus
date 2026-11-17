@@ -426,9 +426,6 @@ int32_t _IT_ParseAttributeGetAlign(unsigned char wide, const char *s)
 
 static char kAlignCenter[] = "CENTER";
 
-#ifdef MAC1010
-static
-#endif
 ITColor gIT_DefaultColor = { 0xff, 0xff, 0xff, 0xff };  /* 0x00581b74 the default colour */
 
 /* _IT_ParseAttributeGetColor (a colour attribute: `#rgb' or `#rrggbb', any number of leading '#', opaque;
@@ -512,19 +509,11 @@ static char kRectFormat[] = "%ld,%ld,%ld,%ld";
    its terminator, a NUL too, as the exe's does). STATE: MATCH 100%, exe 67 / obj 67, byte-
    identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0054072a
-#ifdef MAC1010
-void _IT_ParseAttributeGetRect(void *rect, unsigned char wide, char *s)
-#else
 ITRect *_IT_ParseAttributeGetRect(void *rect, unsigned char wide, const char *s)
-#endif
 {
     ITRect *r = rect;
     int32_t err = 0;
-#ifdef MAC1010
-    char *p = s;
-#else
     const char *p = s;
-#endif
     ITRect parsed = {0, 0, 0, 0};
     unsigned char negative;
     int32_t value;

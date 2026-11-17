@@ -101,7 +101,6 @@ enum {
 #define kHalfCircle             180
 #define kHalfTurn               180.0f
 #define kHiliteFull         0x20
-#define ROTL(x, n)          (((unsigned char)(x) >> (8 - (n))) | ((x) << (n)))
 #define kHyperFuelUnit      100.0   /* one jump costs this much fuel */
 #define kItemAccept                    1
 #define kMaxJunks           128

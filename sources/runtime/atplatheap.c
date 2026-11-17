@@ -3,20 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "burgertypes.h"
-#ifdef MAC1010
-#define IndirectGetLock IndirectGetLockByte
-#define IndirectSetLock IndirectSetLockByte
-#endif
 #include "burger.h"
-#ifdef MAC1010
-#undef IndirectGetLock
-#undef IndirectSetLock
-extern int32_t IndirectGetLock(void **handle);
-extern int32_t IndirectSetLock(void **handle, unsigned char lock);
-#define LockResult int32_t /* the Mac returns the bit whole; callers' prototype is a byte */
-#else
 #define LockResult unsigned char
-#endif
 #include "burgerplat.h"
 #ifndef MAC1010
 #include "win32.h"
@@ -41,11 +29,7 @@ void *MemoryAllocate(ULong size)
     SystemCheckCallback();
     _AtomicCheckCritical();
     _ThreadCheckCritical();
-#ifdef MAC1010
-    p = NewPtr(size);
-#else
     p = HeapAlloc(gProcessHeap, 0, size);
-#endif
     if (p == 0)
         err = kOutOfMemory;
     return p;
@@ -64,11 +48,7 @@ void *MemoryAllocateClear(ULong size)
     SystemCheckCallback();
     _AtomicCheckCritical();
     _ThreadCheckCritical();
-#ifdef MAC1010
-    p = NewPtrClear(size);
-#else
     p = HeapAlloc(gProcessHeap, kHeapZeroMemory, size);
-#endif
     if (p == 0)
         err = kOutOfMemory;
     return p;
@@ -84,11 +64,7 @@ void MemoryDeallocate(void *p)
     SystemCheckCallback();
     _AtomicCheckCritical();
     _ThreadCheckCritical();
-#ifdef MAC1010
-    DisposePtr(p);
-#else
     HeapFree(gProcessHeap, 0, p);
-#endif
 }
 
 /* MemoryChecksum. STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes. OPEN: none */
@@ -105,40 +81,6 @@ int32_t MemoryChecksum(void *data, uint32_t size)
     return crc;
 }
 
-#ifdef MAC1010
-extern void (*gMemoryClearProc)(void *p, ULong n);
-
-#if TARGET_API_MAC_CARBON
-void MemoryClear(void *p, ULong n)
-{
-    BlockZero(p, n);
-}
-#else
-void MemoryClear(void *p, ULong n)
-{
-    ULong i;
-    unsigned char *d;
-
-    if (gMemoryClearProc != 0) {
-        gMemoryClearProc(p, n);
-        return;
-    }
-    d = p;
-    while (((ULong)d & 3) != 0 && n != 0) {
-        *d++ = 0;
-        n--;
-    }
-    i = n >> 2;
-    while (i--) {
-        *(ULong *)d = 0;
-        d += 4;
-    }
-    i = n & 3;
-    while (i--)
-        *d++ = 0;
-}
-#endif
-#else
 /* MemoryClear. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe2b0
 void MemoryClear(void *p, ULong n)
@@ -148,7 +90,6 @@ void MemoryClear(void *p, ULong n)
     err = 0;
     memset(p, 0, n);
 }
-#endif
 
 /* Byte-fills up to the first dword boundary, then dwords, then the tail. */
 /* MemoryFill. STATE: MATCH 100%, exe 40 / obj 40, byte-identical yes. OPEN: none */
@@ -190,11 +131,7 @@ void MemoryCopy(void *dst, const void *src, ULong n)
 
     err = 0;
     if (n != 0)
-#ifdef MAC1010
-        BlockMoveData(src, dst, n);
-#else
         memmove(dst, src, n);
-#endif
 }
 
 /* MemoryMove. STATE: MATCH 100%, exe 11 / obj 11, byte-identical yes. OPEN: none */
@@ -205,14 +142,9 @@ void MemoryMove(void *dst, const void *src, ULong n)
 
     err = 0;
     if (n != 0)
-#ifdef MAC1010
-        BlockMoveData(src, dst, n);
-#else
         memmove(dst, src, n);
-#endif
 }
 
-#ifndef MAC1010
 #define kRecordsPerBlock  0x100
 
 static MemBlock *gMemBlockList;                   /* 0x008676f0 block list */
@@ -306,15 +238,6 @@ done:
     return (void **)found;
 }
 
-#else
-void **IndirectAllocate(ULong size)
-{
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
-    return (void **)NewHandle(size);
-}
-#endif
 
 /* IndirectAllocateTempMem (a new handle through IndirectAllocate, after the same three discarded checks;
    the FT loader's alternative allocator). STATE: MATCH 100%, exe 11 / obj 11, byte-identical yes.
@@ -324,22 +247,13 @@ void **IndirectAllocateTempMem(ULong size)
 {
     int32_t err;
     void **result;
-#ifdef MAC1010
-    OSErr e;
-
-    e = 0;
-#endif
 
     err = 0;
     result = 0;
     SystemCheckCallback();
     _AtomicCheckCritical();
     _ThreadCheckCritical();
-#ifdef MAC1010
-    result = (void **)TempNewHandle(size, &e);
-#else
     result = IndirectAllocate(size);
-#endif
     return result;
 }
 
@@ -347,16 +261,6 @@ void **IndirectAllocateTempMem(ULong size)
 /* IndirectDuplicate. STATE: MATCH 100%, exe 32 / obj 32, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe4b5
 void **IndirectDuplicate(void **handle)
-#ifdef MAC1010
-{
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
-    if (HandToHand((Handle *)&handle) != 0)
-        handle = 0;
-    return handle;
-}
-#else
 {
     int32_t err;
     void **copy;
@@ -376,7 +280,6 @@ void **IndirectDuplicate(void **handle)
         MemoryCopy(*copy, rec->ptr, size);
     return copy;
 }
-#endif
 
 
 AT_EXTERN unsigned char (*gIndirectBusy)(void *p);         /* 0x008707f8, release hook */
@@ -416,10 +319,6 @@ int32_t IndirectDeallocate(void **p)
 
     if (gIndirectBusy != 0)
         gIndirectBusy(p);
-#ifdef MAC1010
-    if (gIndirectBusy == 0 || gIndirectBusy(p) == 0)
-        DisposeHandle((Handle)p);
-#else
     if (gIndirectBusy != 0) {
         if (gIndirectBusy(p) != 0)
             return kBadArgument;
@@ -433,7 +332,6 @@ int32_t IndirectDeallocate(void **p)
         ((char *)p)[0xc] = 0;
         ((char *)p)[0xd] = 0;
     }
-#endif
     /* BUG: no return here: the caller reads eax, _IndirectValidate's code on its failure and a
        zero left by the stores on success */
 }
@@ -441,11 +339,6 @@ int32_t IndirectDeallocate(void **p)
 /* IndirectGetSize. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe5b8
 ULong IndirectGetSize(void **handle)
-#ifdef MAC1010
-{
-    return GetHandleSize((Handle)handle);
-}
-#else
 {
     int32_t err;
     ULong result;
@@ -459,29 +352,10 @@ ULong IndirectGetSize(void **handle)
     result = rec->size;
     return result;
 }
-#endif
 
 /* IndirectSetSize. STATE: MATCH 100%, exe 45 / obj 45, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe5cd
 int32_t IndirectSetSize(void **handle, ULong size)
-#ifdef MAC1010
-{
-    int32_t err;
-
-    err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
-    if ((unsigned char)IndirectGetLock(handle) != 0) {
-        err = kBadArgument;
-    } else {
-        SetHandleSize((Handle)handle, size);
-        if (MemError() != 0)
-            err = kOutOfMemory;
-    }
-    return err;
-}
-#else
 {
     int32_t err;
     MemRecord *rec;
@@ -509,25 +383,10 @@ int32_t IndirectSetSize(void **handle, ULong size)
     }
     return err;
 }
-#endif
 
 /* IndirectGetLock. STATE: MATCH 100%, exe 9 / obj 9, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe636
 LockResult IndirectGetLock(void **handle)
-#ifdef MAC1010
-{
-    LockResult result;
-    int32_t state;
-
-    result = 0;
-    state = HGetState((Handle)handle);
-    if (MemError() != 0)
-        MemError();
-    else
-        result = (state >> 7) & 1;
-    return result;
-}
-#else
 {
     int32_t err;
     unsigned char result;
@@ -541,32 +400,10 @@ LockResult IndirectGetLock(void **handle)
     result = rec->locked;
     return result;
 }
-#endif
 
 /* IndirectSetLock. STATE: MATCH 100%, exe 13 / obj 13, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004fe64b
 LockResult IndirectSetLock(void **handle, unsigned char lock)
-#ifdef MAC1010
-{
-    LockResult old;
-    int32_t state;
-
-    old = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
-    state = HGetState((Handle)handle);
-    if (MemError() != 0)
-        MemError();
-    else
-        old = (state >> 7) & 1;
-    if (lock != 0)
-        HLock((Handle)handle);
-    else
-        HUnlock((Handle)handle);
-    return old;
-}
-#else
 {
     unsigned char old;
     int32_t err;
@@ -585,7 +422,6 @@ LockResult IndirectSetLock(void **handle, unsigned char lock)
     rec->locked = lock;
     return old;
 }
-#endif
 
 /* IndirectAppend (append one handle's bytes to another). STATE: MATCH 100%, exe 53 / obj 53, byte-identical yes.
    OPEN: none */

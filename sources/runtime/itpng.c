@@ -23,33 +23,11 @@
 #define kPpmAt72Dpi         2835          /* 72 dpi in pixels per metre */
 #define kMicronsPerInch     25400.0
 #define kTransparentNone    0
-#ifdef MAC1010
-#define kAlphaSide          PNG_FILLER_BEFORE     /* the Mac's pixels are ARGB */
-#define kAlphaByte          0
-#else
 #define kAlphaSide          PNG_FILLER_AFTER      /* Windows' are BGRA */
 #define kAlphaByte          3
-#endif
 
 static char kNoMemoryText[] = "Out of memory.";
 
-#ifdef MAC1010
-AT_STATIC png_voidp DT_png_malloc(png_structp png_ptr, png_size_t size)
-{
-    png_voidp ptr;
-
-    ptr = MemoryAllocate(size);
-    if (ptr == NULL)
-        png_error(png_ptr, kNoMemoryText);
-    return ptr;
-}
-
-AT_STATIC void DT_png_free(png_structp png_ptr, png_voidp ptr)
-{
-    if (ptr != NULL)
-        MemoryDeallocate(ptr);
-}
-#endif
 
 /* DT_png_read_data (libpng's read callback: the loaders' memory stream). STATE: MATCH 100%, exe 18 / obj 18, byte-identical yes.
    OPEN: none */
@@ -150,12 +128,7 @@ int32_t PNG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     if (bg != NULL)
         DT_FileInfoDefaults(bg);
 
-#ifdef MAC1010
-    if ((png_ptr = png_create_read_struct_2(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL, NULL,
-                                            DT_png_malloc, DT_png_free)) == NULL) {
-#else
     if ((png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)) == NULL) {
-#endif
         err = kOutOfMemory;
         goto done;
     }
@@ -292,9 +265,6 @@ int32_t PNG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
             png_set_strip_16(png_ptr);
         if (!png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
             png_set_filler(png_ptr, 0xff, kAlphaSide);
-#ifdef MAC1010
-        png_set_swap_alpha(png_ptr);
-#endif
         png_set_gray_to_rgb(png_ptr);
         bit_depth = kDirectDepth;
         format = kFormatDirect;
@@ -304,13 +274,8 @@ int32_t PNG_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     case PNG_COLOR_TYPE_RGB_ALPHA:
         if (bit_depth == 16)
             png_set_strip_16(png_ptr);
-#ifdef MAC1010
-        png_set_filler(png_ptr, 0xff, kAlphaSide);
-        png_set_swap_alpha(png_ptr);
-#else
         png_set_bgr(png_ptr);
         png_set_filler(png_ptr, 0xff, kAlphaSide);
-#endif
         bit_depth = kDirectDepth;
         format = kFormatDirect;
         if ((color_type & PNG_COLOR_MASK_ALPHA) != 0)

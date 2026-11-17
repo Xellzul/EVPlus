@@ -4638,7 +4638,7 @@ reject:
     }
 
     if (canBoard == 0)
-        goto cantBoard;
+        goto reject;
     {
         me->vel.x = shipData[me->targetShip].vel.x;
         me->vel.y = shipData[me->targetShip].vel.y;
@@ -4806,11 +4806,6 @@ reject:
     }
     goto out;
 
-cantBoard:
-    PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-    GetIndString(msg, kGameStrList, kStrCannotBoard);
-    DisplayComm((PStrChar *)msg, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
-    goto out;
 notClose:
     PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
     GetIndString(msg, kGameStrList, kStrNotAligned);

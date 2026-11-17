@@ -529,12 +529,6 @@ void CreateMapTriggerRgn(void)
                                                  /* 0x004b8df0 */
                                                  /* 0x00468210 */
 
-static inline void MapPoint(Rect *r, float y, float x, Rect *b, short w, short h, int32_t sx, short sy)
-{
-    r->left = (b->left + w / 2 + x / mapZoom - sx / mapZoom);
-    r->top = (b->top + h / 2 + y / mapZoom - sy / mapZoom);
-}
-
 /* MapDialogUpdate. STATE: MATCH 100.0%, 2173/2173. `w / 2' and `h / 2' are written at
    each use (DrawMap's spelling); the service count is a later web of the long `temp'.
    OPEN: none. */

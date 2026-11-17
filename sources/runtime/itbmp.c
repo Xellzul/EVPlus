@@ -183,13 +183,8 @@ done:
 /* BMP_CheckFileType (a "BM" file over 0x36 bytes or a "BA" array of at least 0x28, with a bits
    offset). STATE: MATCH 100%, exe 56 / obj 56, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00512903
-#ifdef MAC1010
-#define FixLE32(v) (v) = ((((v) & 0xff000000) >> 24) | (((v) & 0xff0000) >> 8) | (((v) & 0xff00) << 8) | (((v) & 0xff) << 24))
-#define FixLE16(v) (v) = ((((v) & 0xff00) >> 8) | (((v) & 0xff) << 8))
-#else
 #define FixLE32(v)
 #define FixLE16(v)
-#endif
 
 unsigned char BMP_CheckFileType(const void *buffer, ULong size)
 {
@@ -483,12 +478,8 @@ int32_t BMP_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     if (info.bitCount <= 8) {
         if (info.clrUsed == 0)
             info.clrUsed = 1 << info.bitCount;
-#ifdef MAC1010 /* 1.0.10 spelling */
-        ReadOrFail(quads, info.clrUsed * 4);
-#else
         quadSize = 4;
         ReadOrFail(quads, info.clrUsed * quadSize);
-#endif
     } else {
         info.clrUsed = 0;
     }
@@ -503,12 +494,7 @@ int32_t BMP_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut,
     }
 
     palette.count = info.clrUsed;
-#ifdef MAC1010 /* 1.0.10 spelling */
-    /* BUG: the first pass adds quadSize before it is ever set (the compiler folds the 3) */
-    for (n = k = 0; n < palette.count; n++, k += quadSize + 1, quadSize = 3) {
-#else
     for (n = k = 0; n < palette.count; n++, quadSize = 4, k += quadSize) {
-#endif
         palette.entry[n].alpha = 0xff;
         palette.entry[n].red = quads[k + 2];
         palette.entry[n].green = quads[k + 1];

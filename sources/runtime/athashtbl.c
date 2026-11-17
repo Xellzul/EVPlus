@@ -46,11 +46,7 @@ struct HashTable {
 /* Every function here is a HashProc (key, length) or a CompareProc (a, length, b, length)
    of the table below; each views its keys through a local of the key's own type. */
 
-#ifdef MAC1010 /* 1.0.10 spelling */
-typedef ULong HashChar;
-#else
 typedef unsigned char HashChar;
-#endif
 
 /* _Hash. STATE: MATCH 100%, exe 19 / obj 19, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9c86
@@ -244,11 +240,7 @@ static ULong _HashBinary(const void *key, ULong len)
     return h;
 }
 
-#ifdef MAC1010
-#define MatchResult int32_t
-#else
 #define MatchResult unsigned char
-#endif
 
 /* _MatchBinary. STATE: MATCH 100%, exe 25 / obj 25, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004f9ea1

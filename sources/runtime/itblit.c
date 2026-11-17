@@ -9,16 +9,7 @@
 #endif
 #include "ambrosia.h"
 
-#ifdef MAC1010
-#if TARGET_API_MAC_CARBON
-#define memset(p, c, n) BlockZero(p, n)
-#else
-#define memset(p, c, n) MemoryClear(p, n)
-#endif
-#define memmove(d, s, n) BlockMoveData(s, d, n)
-#else
 extern void *memset(void *dst, int c, unsigned int n);
-#endif
 
 int32_t gGDIDIBSectionFunc;                               /* 0x00870dd0, 8 B bound */
 AT_EXTERN unsigned char gDT_Open;            /* 0x00870e0a, 1 B, the palettes-built guard */
@@ -43,13 +34,6 @@ ITColor gDT_ColorLtGray = { 0xff, 0xc0, 0xc0, 0xc0 }; /* 0x00576d28 */
 ITColor gDT_ColorMdGray = { 0xff, 0x80, 0x80, 0x80 }; /* 0x00576d2c */
 ITColor gDT_ColorDkGray = { 0xff, 0x40, 0x40, 0x40 }; /* 0x00576d30 */
 ITColor gDT_ColorBlack = { 0xff, 0x00, 0x00, 0x00 }; /* 0x00576d34 default text colour, black */
-#ifdef MAC1010      /* QuickDraw patterns */
-unsigned char gDT_PatternWhite[8] = { 0 };
-unsigned char gDT_PatternLtGray[8] = { 0x88, 0x22, 0x88, 0x22, 0x88, 0x22, 0x88, 0x22 };
-unsigned char gDT_PatternMdGray[8] = { 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55 };
-unsigned char gDT_PatternDkGray[8] = { 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd };
-unsigned char gDT_PatternBlack[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-#else
 unsigned char gDT_PatternWhite[16] = {              /* 0x00576d38 the white pattern */
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
@@ -67,7 +51,6 @@ unsigned char gDT_PatternDkGray[16] = {              /* 0x00576d68 the dark grey
     0x88, 0x88, 0x22, 0x22, 0x88, 0x88, 0x22, 0x22
 };
 unsigned char gDT_PatternBlack[16] = { 0 };          /* 0x00576d78 the solid pattern */
-#endif
 
 /* DT_Open. STATE: MATCH 100%, exe 137 / obj 137, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004db31b
@@ -175,13 +158,7 @@ unsigned char DT_IsOpen(void)
 
 
 #define kPortSize           sizeof(ITPort)
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-#define kDeviceSize         0x3c
-#elif defined(MAC1010)
-#define kDeviceSize         0x34
-#else
 #define kDeviceSize         0x7c
-#endif
 #define kPixelsSize         sizeof(ITPixels)
 #define kSniffHead          0x10
 #define kSniffPict          0x264
@@ -566,14 +543,6 @@ int32_t DT_ImageFileLoad(void **handle, ITImage **imageOut, ITImage **maskOut, I
         err = kUnknownFormat;
         goto done;
     }
-#ifdef MAC1010
-    if (trans != NULL && trans->mode == kTransparentKey) {
-        ITPixels *pixels = _DT_ImageGetImage(*imageOut);
-
-        _DT_MacCTabMakeUnique((*(PixMapHandle)pixels->dib)->pmTable, trans->key.alpha);
-        pixels->info[0] = (*(*(PixMapHandle)pixels->dib)->pmTable)->ctSeed;
-    }
-#endif
 done:
     return err;
 }
@@ -668,10 +637,6 @@ int32_t DT_ImageLock(ITImage *image, ITImage *other, ITPixelInfo *info, unsigned
         err = e;
         goto done;
     }
-#ifdef MAC1010
-    if ((pixels->flags & kPixelsInBitmap) != 0)
-        pixels->flags &= ~kPixelsInBitmap;
-#else
     if ((pixels->flags & kPixelsInBitmap) != 0) {
         e = DT_SyncDib(pixels->dib, 0, 1);
         if (e != 0) {
@@ -681,7 +646,6 @@ fail:
         }
         pixels->flags &= ~kPixelsInBitmap;
     }
-#endif
     pixels->flags |= kPixelsBitsChanged;
     if (info != 0)
         DT_ImageGetInfo(image, other, info);
@@ -767,27 +731,15 @@ typedef void (*ITSpanTiled)(ITPixels *dst, ITPixels *src, ITPixels *mask, unsign
 
 static ITPoint gDT_TileOrigin;                        /* 0x00865b08 the default tiling origin */
 
-#ifdef MAC1010 /* big-endian: the low byte is the last */
-#define STORE_BYTES(p, v)                                                       \
-    for (i = dst->bytesPerPixel; i != 0; ) {                                    \
-        (p)[--i] = (v);                                          \
-        v >>= 8;                                                                \
-    }
-#else
 #define STORE_BYTES(p, v)                                                       \
     for (i = 0; i < dst->bytesPerPixel; ) {                                     \
         (p)[i++] = (v);                                          \
         v >>= 8;                                                                \
     }
-#endif
 
 /* ---- one pixel, any format ---- */
 
-#ifdef MAC1010
-#define CASE_3(rv, rq)  case 3: rv = rq[0] << 16 | rq[1] << 8; rv |= rq[2]; break;
-#else
 #define CASE_3(rv, rq)  case 3: rv = rq[0]; rv |= rq[1] << 8; rv |= rq[2] << 16; break;
-#endif
 
 #define READ_PIXEL(pix, p, clut, out)                                           \
     {                                                                           \
@@ -938,13 +890,10 @@ skip:
 #define PIXEL_KEY_8         v = *s; a = 0xff; if (*s != extra) { dv = v; *d = (unsigned char)v; }
 #define KEY_SETUP_15        keyMask = 0x7fff;
 #define KEY_SETUP_16        keyMask = 0xffff;
-#ifdef MAC1010 /* big-endian: the colour is the low three bytes */
-#define KEY_SETUP_24        keyMask = 0x00ffffff;
-#define KEY_SETUP_32        keyMask = 0x00ffffff;
-#else
+// BUG (suspected, win): 24bpp copies use bytes 0..2 (STORE_BYTES) but this mask and UNPACK in PIXEL_MASK_24
+// use bytes 1..3 -- keyed/masked 24-bit blits compare shifted channels and read one byte past the pixel
 #define KEY_SETUP_24        keyMask = 0xffffff00;
 #define KEY_SETUP_32        keyMask = 0xffffff00;
-#endif
 
 #define PIXEL_KEY_16                                                            \
     v = *(unsigned short *)s; a = 0xff;                                         \
@@ -985,18 +934,6 @@ skip:
 #define WIDEN5(x)           ((x) << 3 | (x) >> 2)
 #define WIDEN6(x)           ((x) << 2 | (x) >> 4)
 
-#ifdef MAC1010 /* big-endian: red is the high channel */
-#define UNPACK_ARGB(p, c1, c2, c3, K)                                           \
-    K(p) c1 = (p) >> 24 & 0xff; K(c1) c2 = (p) >> 16 & 0xff; K(c2) c3 = (p) >> 8 & 0xff; K(c3)
-#define UNPACK_555(p, c1, c2, c3, K)                                            \
-    K(p) c1 = (p) >> 10 & 0x1f; c2 = (p) >> 5 & 0x1f; c3 = (p) & 0x1f;                     \
-    c1 = WIDEN5(c1); c2 = WIDEN5(c2); c3 = WIDEN5(c3);
-#define UNPACK_565(p, c1, c2, c3, K)                                            \
-    K(p) c1 = (p) >> 11 & 0x1f; c2 = (p) >> 5 & 0x3f; c3 = (p) & 0x1f;                     \
-    c1 = WIDEN5(c1); c2 = WIDEN6(c2); c3 = WIDEN5(c3);
-#define UNPACK_8888(p, c1, c2, c3, K)                                           \
-    K(p) c1 = (p) >> 16 & 0xff; K(c1) c2 = (p) >> 8 & 0xff; K(c2) c3 = (p) & 0xff; K(c3)
-#else
 #define UNPACK_ARGB(p, c1, c2, c3, K)                                           \
     K(p) c1 = (p) >> 8 & 0xff; K(c1) c2 = (p) >> 16 & 0xff; K(c2) c3 = (p) >> 24 & 0xff; K(c3)
 #define UNPACK_555(p, c1, c2, c3, K)                                            \
@@ -1007,25 +944,10 @@ skip:
     c1 = WIDEN5(c1); c2 = WIDEN6(c2); c3 = WIDEN5(c3);
 #define UNPACK_8888(p, c1, c2, c3, K)                                           \
     K(p) c1 = (p) & 0xff; K(c1) c2 = (p) >> 8 & 0xff; K(c2) c3 = (p) >> 16 & 0xff; K(c3)
-#endif
 
 #define STORE_INDEX                                                             \
     dv = (dr & 0xf0) << 4 | (dg & 0xf0) | (db & 0xf0) >> 4;                     \
     *d = inverse[dv]
-#ifdef MAC1010 /* big-endian: red is the high channel */
-#define STORE_555                                                               \
-    dv = r = 0x8000 | (dr & 0x1f) << 10 | (dg & 0x1f) << 5 | (db & 0x1f);       \
-    *(unsigned short *)d = r
-#define STORE_565                                                               \
-    dv = r = (dr & 0x1f) << 11 | (dg & 0x3f) << 5 | (db & 0x1f);                \
-    *(unsigned short *)d = r
-#define STORE_24                                                                \
-    dv = 0xff000000 | (dr & 0xff) << 16 | (dg & 0xff) << 8 | (db & 0xff);       \
-    STORE_BYTES(d, dv)
-#define STORE_32                                                                \
-    dv = 0xff000000 | (dr & 0xff) << 16 | (dg & 0xff) << 8 | (db & 0xff);       \
-    *(ULong *)d = dv
-#else
 #define STORE_555                                                               \
     dv = r = 0x8000 | (dr & 0x1f) | (dg & 0x1f) << 5 | (db & 0x1f) << 10;       \
     *(unsigned short *)d = r
@@ -1038,7 +960,6 @@ skip:
 #define STORE_32                                                                \
     dv = 0xff000000 | (dr & 0xff) | (dg & 0xff) << 8 | (db & 0xff) << 16;      \
     *(ULong *)d = dv
-#endif
 
 #define PIXEL_MASK_8        PIXEL_MASK_FIXED(srcClut[*s], dstClut[*d], UNPACK_ARGB, BLEND_RGB, STORE_INDEX)
 #define PIXEL_MASK_15       PIXEL_MASK_FIXED(*(unsigned short *)s, *(unsigned short *)d, UNPACK_555, BLEND_RGB, STORE_555)
@@ -1975,9 +1896,6 @@ done:
 #define kImageLocked        -7305
 #define kMinTileSide        128
 
-#ifdef MAC1010
-static
-#endif
 ULong gDT_NextIndexedKey = 0x888a;                     /* 0x00576fc8 next indexed-format key */
 
 /* _DT_PaletteToInverse (the inverse table: every 4-4-4 colour to its nearest palette index). STATE: MATCH
@@ -2218,11 +2136,7 @@ int32_t _DT_ImageCalcFormat(ULong format, unsigned char *flag, unsigned char *bi
         mask[i] = (1 << bits[i]) - 1;
         scale[i] = gDT_Mults[bits[i]];
     }
-#ifdef MAC1010
-    *flag = bytes - 4;
-#else
     *flag = 0;
-#endif
     return bytes;
 }
 
@@ -2302,18 +2216,9 @@ void _DT_SurfaceReplace(ITImage *a, ITImage *b)
    is taken as it is, else each is redrawn into a fresh image of its format and the pixel maps
    swapped). STATE: MATCH 100%, exe 133 / obj 133, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ea528
-#ifdef MAC1010
-/* a new image's GWorld takes the temporary-memory setting of the image it replaces */
-extern unsigned char gDT_TempMem;
-#define kPixelsTempMem 0x80000000
-#define TempMemSave(v)      ((v) = gDT_TempMem)
-#define TempMemLike(p)      (gDT_TempMem = (p)->flags & kPixelsTempMem)
-#define TempMemRestore(v)   (gDT_TempMem = (v))
-#else
 #define TempMemSave(v)
 #define TempMemLike(p)
 #define TempMemRestore(v)
-#endif
 
 int32_t DT_ImageResize(ITImage *image, ITImage *mask, const ITRect *bounds)
 {
@@ -2337,10 +2242,6 @@ int32_t DT_ImageResize(ITImage *image, ITImage *mask, const ITRect *bounds)
     } else if (bounds->right - bounds->left == pixels->bounds.right - pixels->bounds.left &&
                bounds->bottom - bounds->top == pixels->bounds.bottom - pixels->bounds.top) {
         pixels->bounds = *bounds;
-#ifdef MAC1010
-        if (pixels->dib != NULL)
-            CopyDT_2SysRect(&(*(PixMapHandle)pixels->dib)->bounds, bounds);
-#endif
     } else {
         format = pixels->bytesPerPixel == 1 ? kIndexedDepth :
                  pixels->bits[0] << 12 | pixels->bits[1] << 8 | pixels->bits[2] << 4 |
@@ -2543,18 +2444,6 @@ void DT_ImageSetRawColors(ITImage *image, ITImage *mask, ULong row, const ITColo
     dst = (unsigned char *)(row * pixels->rowBytes + pixels->baseAddr);
     if (maskPixels != 0)
         maskRow = (unsigned char *)(row * maskPixels->rowBytes + maskPixels->baseAddr);
-#ifdef MAC1010
-    for (i = 0; i < width; i++, dst += pixels->bytesPerPixel) {
-        value = pixels->mask[0] << pixels->shift[0] |
-                (src[i].red >> (8 - pixels->bits[1])) << pixels->shift[1] |
-                (src[i].green >> (8 - pixels->bits[2])) << pixels->shift[2] |
-                (src[i].blue >> (8 - pixels->bits[3])) << pixels->shift[3];
-        for (b = pixels->bytesPerPixel; b != 0; value >>= 8)
-            dst[--b] = value;
-        if (maskRow != 0)
-            maskRow[i] = src[i].alpha;
-    }
-#else
     for (i = 0; i < width; i++, dst += pixels->bytesPerPixel) {
         value = (src[i].green >> (8 - pixels->bits[2])) << pixels->shift[2];
         value |= (src[i].red >> (8 - pixels->bits[1])) << pixels->shift[1] |
@@ -2565,7 +2454,6 @@ void DT_ImageSetRawColors(ITImage *image, ITImage *mask, ULong row, const ITColo
         if (maskRow != 0)
             maskRow[i] = src[i].alpha;
     }
-#endif
     if (locked != 0)
         DT_ImageUnlock(image, mask);
 }

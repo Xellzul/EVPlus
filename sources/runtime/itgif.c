@@ -372,11 +372,7 @@ AT_STATIC int32_t DT_GifReadByte(struct ITStream *stream, unsigned char *b)
     return DT_BufferRead(stream, b, 1);
 }
 
-#ifdef MAC1010
-#define FixLE16(v) (v) = (((v) >> 8) & 0xff) | (((v) & 0xff) << 8)
-#else
 #define FixLE16(v)
-#endif
 
 /* DT_GifReadWord (a little-endian word off the stream). STATE: MATCH 100%, exe 13 / obj 13, byte-identical yes.
    OPEN: none */

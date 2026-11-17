@@ -5,11 +5,7 @@
 #include "burgerchan.h"
 
 #define kMaxStepIndex 88
-#ifdef MAC1010
-#define FromBE32(v) (v)
-#else
 #define FromBE32(v) Swap32(v)
-#endif
 
 static int indexTable[16] = {                    /* 0x005794e8 */
     -1, -1, -1, -1, 2, 4, 6, 8,

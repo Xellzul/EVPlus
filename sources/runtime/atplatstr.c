@@ -22,16 +22,9 @@ uint32_t StringGetLength(const unsigned char *s)
 
     err = 0;
     n = -1;
-#ifdef MAC1010
-    s--;
-    do {
-        n++;
-    } while (*++s != 0);
-#else
     do {
         n++;
     } while (*s++ != 0);
-#endif
     return n;
 }
 
@@ -41,12 +34,7 @@ uint32_t StringGetLength(const unsigned char *s)
 char *StringDuplicate(const char *s)
 {
     char *copy;
-#ifdef MAC1010
-    unsigned char *p;
-    const unsigned char *q;
-#else
     char *start;
-#endif
     int32_t err;
 
     err = 0;
@@ -54,14 +42,6 @@ char *StringDuplicate(const char *s)
     copy = 0;
 #endif
     copy = MemoryAllocate(StringGetLength((const unsigned char *)s) + 1);
-#ifdef MAC1010
-    if (copy != 0) {
-        p = (unsigned char *)copy - 1;
-        q = (const unsigned char *)s - 1;
-        while ((*++p = *++q) != 0)
-            ;
-    }
-#else
     if (copy == 0) {
         err = kOutOfMemory;
     } else {
@@ -70,7 +50,6 @@ char *StringDuplicate(const char *s)
             ;
         copy = start;
     }
-#endif
     return copy;
 }
 
@@ -78,15 +57,6 @@ char *StringDuplicate(const char *s)
 // FUNCTION: EVNOVA 0x004eb7c2
 char *StringCopy(char *dst, const char *src)
 {
-#ifdef MAC1010
-    unsigned char *p;
-    const unsigned char *q;
-
-    p = (unsigned char *)dst - 1;
-    q = (const unsigned char *)src - 1;
-    while ((*++p = *++q) != 0)
-        ;
-#else
     char *start;
     int32_t err;
 
@@ -95,7 +65,6 @@ char *StringCopy(char *dst, const char *src)
     while ((*dst++ = *src++) != 0)
         ;
     dst = start;
-#endif
     return dst;
 }
 
@@ -103,17 +72,6 @@ char *StringCopy(char *dst, const char *src)
 // FUNCTION: EVNOVA 0x004eb7e6
 char *StringCopySafe(char *dst, const char *src, ULong size)
 {
-#ifdef MAC1010
-    unsigned char *p;
-    const unsigned char *q;
-
-    p = (unsigned char *)dst - 1;
-    q = (const unsigned char *)src - 1;
-    while (--size != 0 && (*++p = *++q) != 0)
-        ;
-    if (size == 0)
-        p[1] = 0;
-#else
     char *start;
     int32_t err;
 
@@ -124,7 +82,6 @@ char *StringCopySafe(char *dst, const char *src, ULong size)
     if (size == 0)
         *dst = 0;
     dst = start;
-#endif
     return dst;
 }
 
@@ -138,19 +95,6 @@ unsigned char *StringAppendSafe(unsigned char *dst, const unsigned char *src, ui
     int32_t err;
 
     err = 0;
-#ifdef MAC1010
-    start = dst - 1;
-    src--;
-    while (*++start != 0 && --n != 0)
-        ;
-    if (n != 0) {
-        start--;
-        while (--n != 0 && (*++start = *++src) != 0)
-            ;
-        if (n == 0)
-            start[1] = 0;
-    }
-#else
     start = dst;
     while (*dst++ != 0 && --n != 0)
         ;
@@ -162,7 +106,6 @@ unsigned char *StringAppendSafe(unsigned char *dst, const unsigned char *src, ui
             *dst = 0;
     }
     dst = start;
-#endif
     return dst;
 }
 
@@ -177,15 +120,9 @@ int32_t StringCompare(const char *a, const char *b)
     int32_t err;
 
     err = 0;
-#ifdef MAC1010
-    s1 = (const unsigned char *)a - 1;
-    s2 = (const unsigned char *)b - 1;
-    while ((ca = *++s1) == (cb = *++s2)) {
-#else
     s1 = (const unsigned char *)a;
     s2 = (const unsigned char *)b;
     while ((ca = *s1++) == (cb = *s2++)) {
-#endif
         if (ca == 0)
             return 0;
     }
@@ -204,15 +141,9 @@ int32_t StringCompareSafe(const char *a, const char *b, ULong n)
     const unsigned char *s2;
 
     err = 0;
-#ifdef MAC1010
-    s1 = (const unsigned char *)a - 1;
-    s2 = (const unsigned char *)b - 1;
-    while (n-- && (ca = *++s1) == (cb = *++s2)) {
-#else
     s1 = (const unsigned char *)a;
     s2 = (const unsigned char *)b;
     while (n-- && (ca = *s1++) == (cb = *s2++)) {
-#endif
         if (ca == 0)
             return 0;
     }
@@ -221,9 +152,6 @@ int32_t StringCompareSafe(const char *a, const char *b, ULong n)
     return ca < cb ? (signed char)-1 : (signed char)1;
 }
 
-#ifdef MAC1010
-static
-#endif
 char *gStringBlank = "";                         /* 0x005771bc the exhausted-token mark */
 
 /* StringTokenize (a strtok on one delimiter, its state in *next). STATE: MATCH 100%, exe 36 /
@@ -231,40 +159,19 @@ char *gStringBlank = "";                         /* 0x005771bc the exhausted-tok
 // FUNCTION: EVNOVA 0x004eb8e2
 char *StringTokenize(char *s, int delim, char **next)
 {
-#ifdef MAC1010
-    unsigned char c;
-    unsigned char d;
-    unsigned char *p;
-#else
     char c;
     char d;
     char *p;
-#endif
     int32_t err;
 
     err = 0;
-#ifdef MAC1010
-    d = (char)delim;
-    if (*next != 0)
-        s = *next;
-#else
     d = delim;
     p = *next;
     if (p != 0)
         s = p;
-#endif
     *next = gStringBlank;
     if (*s == 0)
         return 0;
-#ifdef MAC1010
-    p = (unsigned char *)s - 1;
-    while ((c = *++p) != 0 && c != d)
-        ;
-    if (c != 0) {
-        *p = 0;
-        *next = (char *)p + 1;
-    }
-#else
     p = s;
     while ((c = *p++) != 0 && c != d)
         ;
@@ -272,7 +179,6 @@ char *StringTokenize(char *s, int delim, char **next)
         p[-1] = 0;
         *next = p;
     }
-#endif
     return s;
 }
 
@@ -281,24 +187,6 @@ char *StringTokenize(char *s, int delim, char **next)
 // FUNCTION: EVNOVA 0x004eb92e
 char *StringFindString(const char *s, const char *sub)
 {
-#ifdef MAC1010
-    ULong first;
-    const unsigned char *p;
-    const unsigned char *q;
-
-    first = *(const unsigned char *)sub;
-    s--;
-    while (*(const unsigned char *)++s != 0) {
-        if (*(const unsigned char *)s == first) {
-            p = (const unsigned char *)sub;
-            q = (const unsigned char *)s;
-            while (*++p != 0 && *p == *++q)
-                ;
-            if (*p == 0)
-                return (char *)s;
-        }
-    }
-#else
     int32_t err;
     char first;
     ULong i;
@@ -317,7 +205,6 @@ char *StringFindString(const char *s, const char *sub)
         }
         s++;
     }
-#endif
     return 0;
 }
 
@@ -325,20 +212,6 @@ char *StringFindString(const char *s, const char *sub)
 // FUNCTION: EVNOVA 0x004eb96d
 char *StringFindDelimiter(const char *s, const char *set)
 {
-#ifdef MAC1010
-    const unsigned char *b;
-    const unsigned char *p;
-
-    s--;
-    b = (const unsigned char *)set - 1;
-    while (*(const unsigned char *)++s != 0) {
-        p = b;
-        while (*++p != 0) {
-            if (*(const unsigned char *)s == *p)
-                return (char *)s;
-        }
-    }
-#else
     int32_t err;
     const char *p;
 
@@ -350,7 +223,6 @@ char *StringFindDelimiter(const char *s, const char *set)
         }
         s = s + 1;
     }
-#endif
     return 0;
 }
 
@@ -381,44 +253,6 @@ char *StringFromNumber(char *out, ULong value)
     return start;
 }
 
-#ifdef MAC1010
-static char kHexUpper[17];
-
-ULong StringFromBytes(const void *data, ULong size, ULong offset, char *hex, char *ascii)
-{
-    const unsigned char *p;
-    ULong i, j;
-    char c;
-
-    if (hex != 0) {
-        *hex = 0;
-        p = (const unsigned char *)data + offset;
-        j = 0;
-        for (i = offset; i < offset + 16; i++, p++) {
-            hex[j++] = i < size ? kHexUpper[*p >> 4] : ':';
-            hex[j++] = i < size ? kHexUpper[*p & 0x0f] : ':';
-            if ((j + 1) % 9 == 0)
-                hex[j++] = ' ';
-            hex[j] = 0;
-        }
-    }
-    if (ascii != 0) {
-        *ascii = 0;
-        p = (const unsigned char *)data + offset;
-        for (j = 0; j < 16; j++, p++) {
-            c = ':';
-            if (offset + j < size) {
-                c = *p;
-                if (c < ' ' || c > '~')
-                    c = '*';
-            }
-            ascii[j] = c;
-            ascii[j + 1] = 0;
-        }
-    }
-    return offset + 16;
-}
-#endif
 
 /* StringToNumber (the leading decimal digits of a string). STATE: MATCH 100%, exe 20 / obj 20, byte-identical yes.
    OPEN: none */
@@ -437,87 +271,6 @@ ULong StringToNumber(const char *s)
     return value;
 }
 
-#ifdef MAC1010
-unsigned char *StringP2CCopy(unsigned char *dst, const unsigned char *src)
-{
-    int32_t n;
-    unsigned char *p;
-
-    n = *src + 1;
-    p = dst - 1;
-    while (--n != 0)
-        *++p = *++src;
-    p[1] = 0;
-    return dst;
-}
-
-unsigned char *StringC2PCopy(unsigned char *dst, const char *src)
-{
-    unsigned char *p;
-    ULong n;
-    unsigned char c;
-
-    src--;
-    p = dst;
-    n = -1;
-    while (++n < 0xff && (c = *++src) != 0)
-        *++p = c;
-    *dst = n;
-    return dst;
-}
-
-unsigned char *StringP2C(unsigned char *s)
-{
-    int32_t n;
-    unsigned char *p;
-
-    n = *s + 1;
-    p = s;
-    while (--n != 0) {
-        *p = p[1];
-        p++;
-    }
-    *p = 0;
-    return s;
-}
-
-char *StringC2P(char *s)
-{
-    int32_t c;
-    char *p;
-    ULong n;
-    int32_t next;
-
-    c = *s;
-    if (c == 0)
-        return s;
-    p = s + 1;
-    n = 0;
-    while (n++ < 0xfe && *(unsigned char *)p != 0) {
-        next = *(unsigned char *)p;
-        *p = c;
-        c = next;
-        p++;
-    }
-    *p = c;
-    *s = n;
-    return s;
-}
-
-unsigned char *StringPascalAppend(unsigned char *dst, const unsigned char *src)
-{
-    int32_t n;
-    int32_t room;
-
-    room = 0xff - dst[0];
-    n = room;
-    if (src[0] + dst[0] <= 0xff)
-        n = src[0];
-    MemoryCopy(dst + dst[0] + 1, src + 1, n);
-    dst[0] += n;
-    return dst;
-}
-#endif
 
 /* String2UpperCopySafe. STATE: MATCH 100%, exe 52 / obj 52, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004eba1b
@@ -636,15 +389,9 @@ typedef long long LongLong;
 #define kPointerDigits  8
 
 /* 1.0.10 spells the field copy's text unsigned and unqualified, and holds the conversion character in a long */
-#ifdef MAC1010
-#define FmtChar unsigned char
-#define FMT_CONST
-#define FmtConv ULong
-#else
 #define FmtChar char
 #define FMT_CONST const
 #define FmtConv unsigned char
-#endif
 
 void _StringFormatNumber(char *buf, ULongLong value, ULong base, const char *digits,
                   ULong flags, ULong width, ULong precision);

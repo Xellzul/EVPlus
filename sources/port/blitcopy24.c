@@ -1095,22 +1095,14 @@ void QDGetPictureBounds(PicHandle pic, Rect *r)
 // FUNCTION: EVNOVA 0x004b9160
 void *GetPortVisRgn(void *port)
 {
-#ifdef MACBUILD
-    return GetPortVisibleRegion(port, gVisRgn);
-#else
     return NULL;
-#endif
 }
 
 /* GetCWindowVisRgn (mac _GetCWindowVisRgn). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b9170
 void *GetCWindowVisRgn(void *window)
 {
-#ifdef MACBUILD
-    return GetPortVisibleRegion(GetWindowPort(window), gVisRgn);
-#else
     return 0;
-#endif
 }
 
 #ifndef MACBUILD
@@ -2445,13 +2437,7 @@ PixMapPtr GetGWorldPixMap(CGrafPtr world)
 // FUNCTION: EVNOVA 0x004bba80
 Rect *GetWindowPortRect(CWindowPtr window)
 {
-#ifdef MACBUILD
-    GetWindowBounds(window, kWindowContentRgn, &gPortRect);
-    OffsetRect(&gPortRect, -gPortRect.left, -gPortRect.top);
-    return &gPortRect;
-#else
     return &window->pix.bounds;
-#endif
 }
 
 /* GetCWindowPortRect (mac _GetCWindowPortRect). STATE: MATCH, byte-identical. OPEN: none */
@@ -2465,11 +2451,7 @@ Rect *GetCWindowPortRect(CWindowPtr window)
 // FUNCTION: EVNOVA 0x004bbaa0
 CGrafPtr GetCWindowGrafPort(CWindowPtr window)
 {
-#ifdef MACBUILD
-    return GetWindowPort(window);
-#else
     return window;
-#endif
 }
 
 #ifndef MACBUILD
@@ -2492,22 +2474,14 @@ void *GetGWorldDevice(CGrafPtr port)
 // FUNCTION: EVNOVA 0x004bbae0
 PixMapPtr GetCWindowPixMap(CWindowPtr window)
 {
-#ifdef MACBUILD
-    return GetPortPixMap(GetWindowPort(window));
-#else
     return &window->pix;
-#endif
 }
 
 /* GetWindowPixMap (mac _GetWindowPixMap). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bbaf0
 PixMapPtr GetWindowPixMap(CWindowPtr window)
 {
-#ifdef MACBUILD
-    return GetPortPixMap(GetWindowPort(window));
-#else
     return GetCWindowPixMap(GetCWindowGrafPort(window));
-#endif
 }
 
 #ifndef MACBUILD

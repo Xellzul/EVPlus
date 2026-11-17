@@ -87,11 +87,7 @@ typedef struct TGAExtension {
 /* DT_ReverseBytes (reverse n bytes in place). STATE: MATCH 100%, exe 24 / obj 24, byte-identical
    yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00518757
-#ifdef MAC1010
-char *DT_ReverseBytes(char *p, ULong n)
-#else
 void DT_ReverseBytes(char *p, ULong n)
-#endif
 {
     ULong i;
     ULong j;
@@ -99,22 +95,17 @@ void DT_ReverseBytes(char *p, ULong n)
 
     for (i = 0, j = n - 1; i < n >> 1; i++, j--) {
         t = p[i];
+        // BUG (all versions): the saved `t' is never written back -- p[j] = p[i] copies the value just
+        // written, so the row is mirrored, not reversed (right-to-left TGAs come out wrong)
         p[i] = p[j];
         p[j] = p[i];
     }
-#ifdef MAC1010
-    return p;
-#endif
 }
 
 /* _TGA_ReverseColors (reverse n dwords in place). STATE: MATCH 100%, exe 25 / obj 25, byte-identical
    yes. OPEN: none */
 // FUNCTION: EVNOVA 0x00518786
-#ifdef MAC1010
-ULong *_TGA_ReverseColors(ULong *p, ULong n)
-#else
 void _TGA_ReverseColors(ULong *p, ULong n)
-#endif
 {
     ULong i;
     ULong j;
@@ -122,24 +113,18 @@ void _TGA_ReverseColors(ULong *p, ULong n)
 
     for (i = 0, j = n - 1; i < n >> 1; i++, j--) {
         t = ((ITColor *)p)[i];
+        // BUG (all versions): the saved `t' is never written back -- p[j] = p[i] copies the value just
+        // written, so the row is mirrored, not reversed (right-to-left TGAs come out wrong)
         p[i] = p[j];
         p[j] = p[i];
     }
-#ifdef MAC1010
-    return p;
-#endif
 }
 
 /* TGA_CheckFileType (is this a Targa file this reader takes). STATE: MATCH 100%, exe 177 / obj 177,
    byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x005187bd
-#ifdef MAC1010
-#define FixLE16(v) (v) = (((v) >> 8) & 0xff) | (((v) & 0xff) << 8)
-#define LE16(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
-#else
 #define FixLE16(v)
 #define LE16(v) (v)
-#endif
 
 unsigned char TGA_CheckFileType(const void *buffer, ULong size)
 {
@@ -227,11 +212,7 @@ unsigned char TGA_CheckFileType(const void *buffer, ULong size)
     return 0;
 }
 
-#ifdef MAC1010
-#define FixLE32(v) (v) = Swap32(v)
-#else
 #define FixLE32(v)
-#endif
 
 /* a 5-bit channel already shifted to the top of a byte, its top bits repeated below */
 #define Widen5(c)   ((c) | (c) >> 5)
