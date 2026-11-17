@@ -848,9 +848,6 @@ void LoadObjectData(void)
                     weaponStats[i].rgbScratch.red = ((weaponStats[i].beamColor >> 16) & 0xff) * 256;
                     weaponStats[i].rgbScratch.green = ((weaponStats[i].beamColor >> 8) & 0xff) * 256;
                     weaponStats[i].rgbScratch.blue = (weaponStats[i].beamColor & 0xff) * 256;
-#ifdef MAC1010 /* 1.0.10 clamps before the depth test; no effect, ClampRGB never fires on unsigned short */
-                    ClampRGB(weaponStats[i].rgbScratch);
-#endif
                     if (gSpriteWorld->pixelDepth == 16) {
                         weaponStats[i].beamColor = (weaponStats[i].beamColor >> 9) & 0x7c00 |
                                           (weaponStats[i].beamColor >> 6) & 0x3e0 |
@@ -859,9 +856,7 @@ void LoadObjectData(void)
                                             (weaponStats[i].coronaColor >> 6) & 0x3e0 |
                                             (weaponStats[i].coronaColor >> 3) & 0x1f;
                     } else {
-#ifndef MAC1010
                         ClampRGB(weaponStats[i].rgbScratch);
-#endif
                         weaponStats[i].beamColor = Color2Index(&weaponStats[i].rgbScratch);
                         rgb.red = ((weaponStats[i].coronaColor >> 16) & 0xff) << 7;
                         rgb.green = ((weaponStats[i].coronaColor >> 8) & 0xff) << 7;
@@ -874,23 +869,12 @@ void LoadObjectData(void)
                 rgb.red = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 16) & 0xff) * 256;
                 rgb.green = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 8) & 0xff) * 256;
                 rgb.blue = (ResRec(WeapRes, weaponFileHand)->hitPartColor & 0xff) * 256;
-#ifndef MAC1010 /* 1.0.10 has no clamp here; no effect either way */
                 ClampRGB(rgb);
-#endif
                 weaponStats[i].hitPartColor = Color2Index(&rgb);
                 weaponStats[i].hitPartLife = ResRec(WeapRes, weaponFileHand)->hitPartLife;
                 weaponStats[i].hitPartVel = ResRec(WeapRes, weaponFileHand)->hitPartVel * 0.01;
-#if V111
-                if (useLegacyRenderingPipeline) {
-                    if (gSpriteWorld->pixelDepth == 8)
-                        weaponStats[i].hitPartLife /= 2;
-                    else
-                        weaponStats[i].hitPartLife /= 2; /* POTENTIAL BUG (win V111): hitPartLife halved at all depths, 1.0.10 only at 8-bit */
-                }
-#else
                 if (gSpriteWorld->pixelDepth == 8)
                     weaponStats[i].hitPartLife /= 2;
-#endif
                 GetResInfo(weaponFileHand, &resID, &resType, name);
                 TrimResourceName(name);
                 pstrcpy(weapName[i], name);
@@ -909,10 +893,7 @@ void LoadObjectData(void)
                     shade.green = rgb.green * factor;
                     shade.blue = rgb.blue * factor;
                     // BUG (all versions): factor reaches 1.40, so a component above ~0xb6ff wraps when stored in
-                    // the unsigned short -- bright particle colours turn dark; the clamp below runs too late
-#ifdef MAC1010 /* 1.0.10 clamps the shade; no effect, see above */
-                    ClampRGB(shade);
-#endif
+                    // the unsigned short -- bright particle colours turn dark (mac 1.0.10 clamped the shade, too late)
                     weaponStats[i].partColor[j] = Color2Index(&shade);
                     weaponStats[i].partVel[j] = base * factor;
                 }
@@ -1533,18 +1514,9 @@ void LoadObjectData(void)
                 govtData[i].rgb.red = ((ResRec(GovtRes, govtFileHand)->color >> 16) & 0xff) * 256;
                 govtData[i].rgb.green = ((ResRec(GovtRes, govtFileHand)->color >> 8) & 0xff) * 256;
                 govtData[i].rgb.blue = (ResRec(GovtRes, govtFileHand)->color & 0xff) * 256;
-#ifdef MACBUILD
                 govtData[i].rgb2.red = (ResRec(GovtRes, govtFileHand)->shipColor >> 19) & 0x1f;
                 govtData[i].rgb2.green = (ResRec(GovtRes, govtFileHand)->shipColor >> 11) & 0x1f;
                 govtData[i].rgb2.blue = (ResRec(GovtRes, govtFileHand)->shipColor >> 3) & 0x1f;
-#else
-                // BUG: 16-bit components (0..0xff00), but GetShipPaintColor adds rgb2 to a sprite tint that
-                // takes 5-bit ones (0..31, like person shipColor and playerPaint) -- the short tint overflows
-                // and govt ship colours come out wrong; the mac's >>19 / >>11 / >>3 & 0x1f is right
-                govtData[i].rgb2.red = ((ResRec(GovtRes, govtFileHand)->shipColor >> 16) & 0xff) * 256;
-                govtData[i].rgb2.green = ((ResRec(GovtRes, govtFileHand)->shipColor >> 8) & 0xff) * 256;
-                govtData[i].rgb2.blue = (ResRec(GovtRes, govtFileHand)->shipColor & 0xff) * 256;
-#endif
                 govtData[i].rgbBytes.red = govtData[i].rgb.red >> 8;
                 govtData[i].rgbBytes.green = govtData[i].rgb.green >> 8;
                 govtData[i].rgbBytes.blue = govtData[i].rgb.blue >> 8;
@@ -1639,12 +1611,7 @@ void LoadObjectData(void)
                 personData[i].flags2 = ResRec(PersRes, personFileHand)->flags2;
                 personData[i].hailPict = ResRec(PersRes, personFileHand)->hailPict;
                 personData[i].shipColor.red = (ResRec(PersRes, personFileHand)->shipColor >> 19) & 0x1f;
-#ifdef MACBUILD
                 personData[i].shipColor.green = (ResRec(PersRes, personFileHand)->shipColor >> 11) & 0x1f;
-#else
-                /* BUG: takes bits 5-9 (green low, blue high); the mac takes green's top five, >> 11 */
-                personData[i].shipColor.green = (ResRec(PersRes, personFileHand)->shipColor >> 5) & 0x1f;
-#endif
                 personData[i].shipColor.blue = (ResRec(PersRes, personFileHand)->shipColor >> 3) & 0x1f;
                 if (personData[i].linkMission >= kFirstResourceID)
                     personData[i].linkMission -= kFirstResourceID;
@@ -1866,16 +1833,6 @@ void LoadObjectData(void)
                 UnlockAHandle(disasterFileHand);
                 ResourcePurge(disasterFileHand);
                 ReleaseResource(disasterFileHand);
-#ifdef MACBUILD
-                if (disasterData[i].commodity != -1
-                    && abs(disasterData[i].amount) < basePrice[disasterData[i].commodity] * 0.5) {
-                    crashlog_print("warning: disaster ");
-                    crashlog_print_num(i + kFirstResourceID);
-                    crashlog_print(" (");
-                    crashlog_print_pstr(disasterData[i].name);
-                    crashlog_print(") has an unusually small price delta\n");
-                }
-#endif
                 LoadingIntroMusic();
             } else {
                 strcpy(disasterData[i].text, "");
@@ -2495,7 +2452,6 @@ Boolean LoadPluginString(short id, void *dst)
     return 0;
 }
 
-#ifndef MACBUILD /* the mac keeps its preferences in EVPrefsDialogWrapper.o */
 // FUNCTION: EVNOVA 0x004c7400
 void LoadPrefs(void)
 {
@@ -2699,7 +2655,6 @@ void SavePrefs(void)
             fclose(f);
     }
 }
-#endif
 
 // FUNCTION: EVNOVA 0x004c7d40
 // MAC: _MakeAlias i386 0x00071e36 ppc 0x0007a9bc
@@ -3046,11 +3001,7 @@ void DumpPilotLog(void)
     short i;
     short mi;
     short found;
-#ifdef MACBUILD
-    char *dir;
-    char *path;
     uint32_t contribute[2];
-#endif
 
     log = fopen("pilotlog.txt", "r");
     if (log == NULL)
@@ -3199,13 +3150,11 @@ void DumpPilotLog(void)
     }
     if (found == 0)
         fprintf(log, "  none\n");
-#ifdef MACBUILD
 
     fprintf(log, "\nContribute bits:\n");
     GetPlayerContributeBits(&contribute[0], &contribute[1]);
     fprintf(log, "  0x%08X\n", contribute[0]);
     fprintf(log, "  0x%08X\n", contribute[1]);
-#endif
 
     fprintf(log, "\nEscorts:\n");
     found = 0;
