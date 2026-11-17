@@ -99,6 +99,7 @@ short FindPrevShipInSystem(short cur, short system)
 
 #ifdef MACBUILD
 /* FindNextStellarInSystem (mac _FindNextStellarInSystem, mac-only). STATE: see the mac gate. */
+// KEPT: unfinished feature -- next planet/station in a system, wrapping; no caller in any version
 // MAC: _FindNextStellarInSystem i386 0x000025a2 ppc 0x00002f80
 short FindNextStellarInSystem(short cur, short system)
 {
@@ -117,13 +118,5 @@ short FindNextStellarInSystem(short cur, short system)
                 return i;
     }
     return cur;
-}
-
-/* DrawCenteredText (mac _DrawCenteredText, mac-only). STATE: see the mac gate. */
-// MAC: _DrawCenteredText i386 0x0000263d ppc 0x00003058
-void DrawCenteredText(StringPtr s, short left, short right, short y)
-{
-    MoveTo((left + right) / 2 - StringWidth(s) / 2, y);
-    DrawString(s);
 }
 #endif

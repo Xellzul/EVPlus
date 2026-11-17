@@ -245,9 +245,6 @@ void DrawStatusShield(void)
         SWSetPortToWindow(gSpriteWorld);
         if (gSpriteWorld->fastBlit != 0 && preventStatusCopy == 0) {
             CopyRect(&barRect, &dstRect);
-#if V111 || TARGET_API_MAC_CARBON
-            OffsetRect(&barRect, GetCWindowPortRect(gWind)->left, GetCWindowPortRect(gWind)->top);
-#endif
             CopyBits(GWorldContainerBits(&loadPort),
                      GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                      &dstRect, &barRect, 0, 0);
@@ -289,9 +286,6 @@ void DrawStatusShield(void)
         SWSetPortToWindow(gSpriteWorld);
         if (gSpriteWorld->fastBlit != 0 && preventStatusCopy == 0) {
             CopyRect(&barRect, &dstRect);
-#if V111 || TARGET_API_MAC_CARBON
-            OffsetRect(&barRect, GetCWindowPortRect(gWind)->left, GetCWindowPortRect(gWind)->top);
-#endif
             CopyBits(GWorldContainerBits(&loadPort),
                      GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                      &dstRect, &barRect, 0, 0);
@@ -361,9 +355,6 @@ void DrawStatusFuel(void)
     SWSetPortToWindow(gSpriteWorld);
     if (gSpriteWorld->fastBlit != 0 && preventStatusCopy == 0) {
         CopyRect(&barRect, &dstRect);
-#if V111 || TARGET_API_MAC_CARBON
-        OffsetRect(&barRect, GetCWindowPortRect(gWind)->left, GetCWindowPortRect(gWind)->top);
-#endif
         CopyBits(GWorldContainerBits(&loadPort),
                  GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                  &dstRect, &barRect, 0, 0);
@@ -1019,8 +1010,4 @@ void DrawStatusCargo(void)
                  GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                  &dstRect, &dstRect, 0, 0);
     }
-#if V111
-    if (!useLegacyRenderingPipeline)
-        QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-#endif
 }

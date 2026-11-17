@@ -75,11 +75,6 @@ extern void DrawStatusTarg(void);
 extern void DrawStatusWeap(void);
 extern void DrawStringCentered(const unsigned char *str, short left,
                                short right, short v);
-#ifdef MACBUILD
-/* the mac engine draws centred text with its own DrawCenteredText (Util.o) */
-extern void DrawCenteredText(StringPtr s, short left, short right, short y);
-#define DrawStringCentered(str, left, right, v) DrawCenteredText(str, left, right, v)
-#endif
 extern void EndLoopingMovie(void);
 extern void FloaterEraseCallback(void *a);
 extern void SetupListRects(Point *where);

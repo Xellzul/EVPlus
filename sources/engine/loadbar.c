@@ -10,9 +10,6 @@
 #include "sound.h"
 #include "missions.h"
 #include "player.h"
-#ifdef MACBUILD
-extern GWorldContainer progressLoadPort;
-#endif
 
 /* the bar's rect comes out of the colr resource */
 
@@ -37,27 +34,6 @@ void InitIntroProgressBar(void)
     midV = ((GetCWindowPortRect((WindowRef)gWind)->top
                     + GetCWindowPortRect((WindowRef)gWind)->bottom) / 2);
 
-#ifdef MACBUILD
-    progressRect = progressDefRect;
-    OffsetRect(&progressRect, midH, midV);
-
-    line = progressRect;
-    InsetRect(&line, 0, (line.bottom - line.top) / 2);
-
-    while (line.bottom <= progressRect.bottom) {
-        RGBForeColor(&progressColor[2]);
-        FrameRect(&line);
-        ForeColor(blackColor);
-        fill = line;
-        InsetRect(&fill, 1, 1);
-        PaintRect(&fill);
-        InsetRect(&line, 0, -1);
-#ifdef MAC1010
-        HandleIntroMusic(0);
-#endif
-        Delay(2, &tix);
-    }
-#else
     progressRect.top = progressDefRect.top;
     progressRect.left = progressDefRect.left;
     progressRect.bottom = progressDefRect.bottom;
@@ -87,7 +63,6 @@ void InitIntroProgressBar(void)
         Delay(2, &tix);
         } while (line.bottom <= progressRect.bottom);
     }
-#endif
     DrawIntroProgressBar();
 }
 
@@ -113,24 +88,10 @@ void DeltaIntroProgressBar(double amount)
 void DrawIntroProgressBar(void)
 {
     Rect box;
-#ifdef MAC1010
-    Rect bar;
-    Rect start;
-
-    start = progressLoadPort.bounds;
-    bar = start;
-    bar.right = (progressCount / progressMax * 198.0 + bar.left);
-    if (bar.right > progressLoadPort.bounds.right)
-        bar.right = progressLoadPort.bounds.right;
-    box = start;
-#elif defined(MACBUILD)
-    box = progressLoadPort.bounds;
-#else
     box.left = gLoadBarBase.left;
     box.top = gLoadBarBase.top;
     box.bottom = gLoadBarBase.bottom;
     box.right = gLoadBarBase.right;
-#endif
     box.right = box.left + 30;
 
     SetGWorldContainer(&loadPort);

@@ -1,9 +1,5 @@
 // COMPILE: -lang c++ -bool off
 /* setup.c --tu-map object O26, the original Setup.c: SpriteWorld and sprite setup, loading, cleanup and game-state reset, then the QuickDraw state shims. Notes: Research/notes/setup.md */
-#if defined(MACBUILD) && V111
-#define IMPLICIT_RESOURCEEXISTS
-#define IMPLICIT_SWGWORLDS
-#endif
 #include <math.h>
 #include <stddef.h>
 
@@ -45,300 +41,12 @@ extern int CGSSetWindowDepth(int cid, int window, int depth);
 #endif
 
 /* the resource type names in the log lines: MacRoman in the 1.0.10 text, UTF-8 in 1.1.1's */
-#if V111 /* V111: the log text carries UTF-8, 1.0.10's is MacRoman */
-#define kSpinTypeName "sp\xc3\xafn"
-#define kShanTypeName "sh\xc3\xa4n"
-#else
 #define kSpinTypeName "sp\x95n"
 #define kShanTypeName "sh\x8an"
-#endif
 
 #define kMaxRoidTypes    16
 
-#ifdef MACBUILD
-/* SetupToolbox (mac _SetupToolbox, mac-only). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _SetupToolbox i386 0x0001b389 ppc 0x0001f3f8
-void SetupToolbox(void)
-{
-    short i;
 
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    InitGraf(&qd.thePort);
-    InitFonts();
-    InitWindows();
-    InitMenus();
-    TEInit();
-    InitDialogs(NULL);
-#endif
-    InitCursor();
-    FlushEvents(everyEvent, 0);
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    MaxApplZone();
-    for (i = 0; i < 6; i++)
-        MoreMasters();
-#elif defined(MAC1010)
-    for (i = 0; i < 6; i++)
-        MoreMasterPointers(64);
-#else
-    for (i = 0; i < 6; i++)
-        MoreMasterPointers(128);
-#endif
-    Rand(0);
-}
-
-#endif
-#if V111
-/* DestroySpriteWorld (mac _DestroySpriteWorld, mac-only: the middle of the 1.1.1 Bye, which
-   keeps its own copy). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _DestroySpriteWorld i386 0x000240a7 ppc 0x00028450
-void DestroySpriteWorld(void)
-{
-    int32_t i;
-    int32_t j;
-
-    SetPort(GetCWindowGrafPort(gWind));
-    DisposeButtons();
-    ShowTheMenuBar();
-
-    for (i = 0; i < kMaxShips; i++) {
-        if (shipData[i].sprite)
-            DisposeClonedSprite(&shipData[i].sprite);
-        if (shipData[i].altSprite)
-            DisposeClonedSprite(&shipData[i].altSprite);
-        if (shipData[i].glowSprite)
-            DisposeClonedSprite(&shipData[i].glowSprite);
-        if (shipData[i].lightSprite)
-            DisposeClonedSprite(&shipData[i].lightSprite);
-        if (shipData[i].weapSprite)
-            DisposeClonedSprite(&shipData[i].weapSprite);
-        if (shipData[i].shieldSprite)
-            DisposeClonedSprite(&shipData[i].shieldSprite);
-    }
-    for (i = 0; i < kMaxPods; i++) {
-        if (podData[i].sprite)
-            DisposeClonedSprite(&podData[i].sprite);
-    }
-    for (i = 0; i < kMaxShipTypes; i++) {
-        if (masterShipSprite[i])
-            SWDisposeSprite(&masterShipSprite[i]);
-        if (masterShipGlowSprite[i])
-            SWDisposeSprite(&masterShipGlowSprite[i]);
-        if (masterShipLightSprite[i])
-            SWDisposeSprite(&masterShipLightSprite[i]);
-        if (masterShipWeaponSprite[i])
-            SWDisposeSprite(&masterShipWeaponSprite[i]);
-        if (masterShipAltSprite[i])
-            SWDisposeSprite(&masterShipAltSprite[i]);
-        if (masterShipShieldSprite[i])
-            SWDisposeSprite(&masterShipShieldSprite[i]);
-        if (shipClass[i].frameAngles != NULL)
-            DeallocAPointer(shipClass[i].frameAngles);
-    }
-    for (i = 0; i < kStellarSprites; i++) {
-        if (stellarSprite[i] != NULL)
-            DeallocAPointer(stellarSprite[i]);
-    }
-    for (i = 0; i < kMasterStellarSprites; i++) {
-        if (masterStellarSprite[i] != NULL) {
-            if (masterStellarSprite[i]->frameArray != NULL) {
-                for (j = 0; j < masterStellarSprite[i]->numFrames; j++) {
-                    DeallocAPointer(masterStellarSprite[i]->frameArray[j]);
-                    masterStellarSprite[i]->frameArray[j] = NULL;
-                }
-                masterStellarSprite[i]->numFrames = 0;
-                DeallocAPointer(masterStellarSprite[i]->frameArray);
-                masterStellarSprite[i]->frameArray = NULL;
-            }
-            SWDisposeSprite(&masterStellarSprite[i]);
-        }
-    }
-    for (i = 0; i < kMaxExplods; i++) {
-        if (explodData[i].sprite)
-            DisposeClonedSprite(&explodData[i].sprite);
-    }
-    for (i = 0; i < kMaxExplodTypes; i++) {
-        if (masterExplodSprite[i])
-            SWDisposeSprite(&masterExplodSprite[i]);
-    }
-    for (i = 0; i < kMaxShots; i++) {
-        if (shotData[i].sprite)
-            DisposeClonedSprite(&shotData[i].sprite);
-    }
-    for (i = 0; i < kMaxWeapTypes; i++) {
-        if (masterShotSprite[i])
-            SWDisposeSprite(&masterShotSprite[i]);
-    }
-    for (i = 0; i < kMaxDebris; i++) {
-        if (smokeData[i].sprite)
-            DisposeClonedSprite(&smokeData[i].sprite);
-    }
-    for (i = 0; i < 8; i++) {
-        if (masterSmokeSprite[i])
-            SWDisposeSprite(&masterSmokeSprite[i]);
-    }
-    for (i = 0; i < kMaxAsteroids; i++) {
-        if (asteroidData[i].sprite)
-            DisposeClonedSprite(&asteroidData[i].sprite);
-    }
-    for (i = 0; i < kMaxRoidTypes; i++) {
-        if (masterAsteroidSprite[i])
-            SWDisposeSprite(&masterAsteroidSprite[i]);
-    }
-    for (i = 0; i < kMainButtons; i++) {
-        if (menuButtonSprite[i])
-            SWDisposeSprite(&menuButtonSprite[i]);
-    }
-    if (menuRolloverSprite != NULL)
-        SWDisposeSprite(&menuRolloverSprite);
-    for (i = 0; i < kMaxBoxes; i++) {
-        if (boxData[i].sprite)
-            DisposeClonedSprite(&boxData[i].sprite);
-    }
-    for (i = 0; i < 5; i++) {
-        if (masterBoxSprite[i])
-            SWDisposeSprite(&masterBoxSprite[i]);
-    }
-    for (i = 0; i < kMaxStars; i++) {
-        if (starData[i].sprite)
-            DisposeClonedSprite(&starData[i].sprite);
-    }
-    if (masterStarSprite != NULL)
-        SWDisposeSprite(&masterStarSprite);
-    if (alertSprite != NULL)
-        SWDisposeSprite(&alertSprite);
-    if (doubleTimeSprite != NULL)
-        SWDisposeSprite(&doubleTimeSprite);
-    if (cursorSprite != NULL)
-        SWDisposeSprite(&cursorSprite);
-    for (i = 0; i < kMaxNavTargets; i++) {
-        if (navTargetSprite[i])
-            DisposeClonedSprite(&navTargetSprite[i]);
-    }
-    for (i = 0; i < kMaxNavTargets; i++) {
-        if (weapTargetSprite[i])
-            DisposeClonedSprite(&weapTargetSprite[i]);
-    }
-    if (masterNavTargetSprite != NULL)
-        SWDisposeSprite(&masterNavTargetSprite);
-    if (masterWeapTargetSprite != NULL)
-        SWDisposeSprite(&masterWeapTargetSprite);
-    if (redMapArrow != NULL)
-        DisposeCIcon(redMapArrow);
-    if (greenMapArrow != NULL)
-        DisposeCIcon(greenMapArrow);
-
-    DisposeParticles();
-    SWDisposeFrame(&floatingMapFrame);
-    SWDisposeFrame(&floatingEscortMenuFrame);
-
-    if (gSpriteWorld->pixelDepth == 8)
-        Dispose8BitAlphaTable();
-    for (i = 0; i < 0xa; i++) {
-        if (staticPat[i] != NULL)
-            DisposePixPat((Image_t *)staticPat[i]);
-    }
-    for (i = 0; i < kMaxShipTypes; i++) {
-        if (targetInfoPic[i] != NULL) {
-            QDReleaseResource((PicHandle)targetInfoPic[i]);
-            targetInfoPic[i] = NULL;
-        }
-    }
-
-    if (shipLayer != NULL)
-        SWDisposeSpriteLayer(&shipLayer);
-    if (stellarLayer != NULL)
-        SWDisposeSpriteLayer(&stellarLayer);
-    if (explodLayer != NULL)
-        SWDisposeSpriteLayer(&explodLayer);
-    if (shotLayer != NULL)
-        SWDisposeSpriteLayer(&shotLayer);
-    if (guidedShotLayer != NULL)
-        SWDisposeSpriteLayer(&guidedShotLayer);
-    if (pointDefenseLayer != NULL)
-        SWDisposeSpriteLayer(&pointDefenseLayer);
-    if (targetLayer != NULL)
-        SWDisposeSpriteLayer(&targetLayer);
-    if (asteroidLayer != NULL)
-        SWDisposeSpriteLayer(&asteroidLayer);
-    if (smokeLayer != NULL)
-        SWDisposeSpriteLayer(&smokeLayer);
-    if (disabledShipLayer != NULL)
-        SWDisposeSpriteLayer(&disabledShipLayer);
-    if (escortLayer != NULL)
-        SWDisposeSpriteLayer(&escortLayer);
-    if (boxLayer != NULL)
-        SWDisposeSpriteLayer(&boxLayer);
-    if (starLayer != NULL)
-        SWDisposeSpriteLayer(&starLayer);
-    if (turretedShotLayer != NULL)
-        SWDisposeSpriteLayer(&turretedShotLayer);
-    if (gSpriteWorld != NULL) {
-        if (gSpriteWorld->deadSpriteLayerP != NULL)
-            SWDisposeSpriteLayer(&gSpriteWorld->deadSpriteLayerP);
-        SWDisposeFrame(&gSpriteWorld->backFrameP);
-        SWDisposeFrame(&gSpriteWorld->workFrameP);
-        SWDisposeFrame(&gSpriteWorld->extraBackFrameP);
-    }
-
-    if (gSpriteWorld != NULL)
-        DeallocAPointer(gSpriteWorld);
-    SWExitSpriteWorld();
-
-    DisposeGWorldContainer(&loadPort);
-    DisposeGWorldContainer(&statusOffPort);
-#ifdef MACBUILD
-    if (tempRgn != NULL)
-        DisposeRgn(tempRgn);
-#endif
-
-    DeallocAPointer(shipData);
-    DeallocAPointer(shotData);
-    DeallocAPointer(govtData);
-    DeallocAPointer(dudeData);
-    DeallocAPointer(beamData);
-    DeallocAPointer(stellarData);
-    DeallocAPointer(systemData);
-    DeallocAPointer(shipClass);
-    DeallocAPointer(weaponStats);
-    DeallocAPointer(explodData);
-    DeallocAPointer(explodType);
-    DeallocAPointer(smokeData);
-    DeallocAPointer(outfitSystem);
-    DeallocAPointer(personData);
-    DeallocAPointer(asteroidData);
-    DeallocAPointer(disasterData);
-    DeallocAPointer(nebulaData);
-    DeallocAPointer(fleetData);
-    DeallocAPointer(boxData);
-    DeallocAPointer(podData);
-    DeallocAPointer(junkData);
-    DeallocAPointer(cronEvent);
-    DeallocAPointer(rankData);
-    DeallocAPointer(starData);
-    DeallocAPointer(missionBit);
-    DeallocAPointer(currentMissions);
-    DeallocAPointer(currentMissionObjectives);
-}
-#endif
-
-#ifdef MACBUILD
-#if V111
-/* changeWindowModes (mac _changeWindowModes, mac-only; CheckSystem repeats its body). STATE: mac
-   MATCH i386 and ppc. OPEN: none */
-// MAC: _changeWindowModes i386 0x0001b402 ppc 0x0001f480
-void changeWindowModes(void)
-{
-    CGRect bounds;
-
-    bounds = CGDisplayBounds(CGMainDisplayID());
-    mainWindRect.top = bounds.origin.x;
-    mainWindRect.left = bounds.origin.y;
-    mainWindRect.bottom = bounds.size.height;
-    mainWindRect.right = bounds.size.width;
-}
-#endif
-
-#endif
 /* SetupSpriteWorld (mac _SetupSpriteWorld). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab980
 // MAC: _SetupSpriteWorld i386 0x00021b3a ppc 0x00025fac
@@ -420,9 +128,6 @@ void SetupSpriteWorld(void)
     SWSetLayerCallBack(stellarLayer, BeamDrawOffscreenCallback);
     SWSetLayerCallBack(targetLayer, BeamDrawCallback);
     SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
-#if defined(MACBUILD) && (!defined(MAC1010) || TARGET_API_MAC_CARBON) /* the Carbon screen blitter */
-    SWSetSpriteWorldScreenDrawProc(gSpriteWorld, SWCopyBitsDrawProc);
-#endif
 
     crashlog("creating scratch frames");
     windRect.top = 0;
@@ -456,9 +161,6 @@ void SetupSpriteWorld(void)
 
     color.red = color.green = color.blue = 0;
     SWSetBackgroundColor(gSpriteWorld, &color);
-#ifdef MACBUILD
-    BlitPixieDitherInit();
-#endif
     SWSetPostEraseCallBack(gSpriteWorld, PostEraseCallback);
     SWSetPostDrawCallBack(gSpriteWorld, PostDrawCallback);
     SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
@@ -486,18 +188,12 @@ void SetupSpriteWorld(void)
     for (i = 0; i < kMaxWeapTypes; i++)
         masterShotSprite[i] = 0;
 
-#if V111
-    err = InitParticles(1024, 0);
-    if (err != 0)
-        EV_ASSERT_FAIL("Setup.c", 0x133, 583);
-#else
 #ifdef CEFIX /* F25.01 */
     if ((int32_t)InitParticles(100000, 0) != 0)
         SWAssertFail("Setup.c", SW_LINE(0x133));
 #else
     if ((int32_t)InitParticles(1024, 0) != 0)
         SWAssertFail("Setup.c", SW_LINE(0x133));
-#endif
 #endif
     SWSetPortToBackground(gSpriteWorld);
     if (gSpriteWorld->pixelDepth == 8) {
@@ -646,10 +342,6 @@ void SetupWind(void)
 // MAC: _InitArrays i386 0x0001b796 ppc 0x0001f8b4
 void InitArrays(void)
 {
-#ifdef MACBUILD
-    Str255 msg;
-    Str255 num;
-#endif
 
     if (AllocFailed(shipData, (ShipObj *)AllocAPointer(sizeof(ShipObj) * kMaxShips)))
         EV_ASSERT_FAIL("Setup.c", 0x1b6, 747);
@@ -765,11 +457,7 @@ void InitOffscreen(void)
 #define kHighPriority        32000
 
 /* 1.1.1 logs no shutdown steps */
-#if V111
-#define ByeLog(s)
-#else
 #define ByeLog(s) crashlog(s)
-#endif
 
 /* Bye. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004acac0
@@ -1025,10 +713,6 @@ void Bye(void)
     ByeLog("disposing offscreen buffers");
     DisposeGWorldContainer(&loadPort);
     DisposeGWorldContainer(&statusOffPort);
-#ifdef MACBUILD
-    if (tempRgn != NULL)
-        DisposeRgn(tempRgn);
-#endif
 
     ByeLog("disposing array pointers");
     DeallocAPointer(shipData);
@@ -1061,49 +745,21 @@ void Bye(void)
 
     ByeLog("disposing dialog buffer");
     DisposeDialogs();
-#if TARGET_API_MAC_CARBON
-    if ((Ptr)fullScreenRestore != NULL)
-        EndFullScreen((Ptr)fullScreenRestore, 0);
-#endif
 
 #if !TARGET_API_MAC_CARBON
     ByeLog("disposing window");
 #endif
     HideWindow((WindowRef)gWind);
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    CloseWindow((WindowRef)gWind);
-#else
     DisposeWindow(gWind);
-#endif
     gWind = NULL;
 
     ByeLog("closing QuickTime");
     ExitMovies();
 
     ByeLog("carbon cleanup");
-#ifdef MACBUILD
-    CarbonHackCleanup();
-    ShowCursor();
-#else
     ShowTheCursor();
-#endif
-#if V111
-    FadeScreenIn();
-#endif
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    ByeLog("closing RezLib");
-    if (gScreenRef != 0) {
-        FadeToGamma(gScreenRef, &gOrigGamma, 0.1f);
-        DisposeScreenRef(gScreenRef);
-    }
-#else
     ByeLog("closing MT");
-#endif
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    FadeScreenIn();
-    DisposeGammaTools();
-#endif
 
     ByeLog("closing other tools");
     ST_Close();
@@ -1111,9 +767,6 @@ void Bye(void)
     DT_Close();
     FT_Close();
     PlatformClose();
-#if defined(MACBUILD) && V111
-    free(novaSupportFolder);
-#endif
 #if !V111
 
 #if !TARGET_API_MAC_CARBON
@@ -1513,15 +1166,9 @@ void LoadSprites(void)
         staticPat[i] = GetPixPat(i + 128);
     IterateInGameEventLoop(1);
 
-#if defined(MACBUILD) || V111
-    for (i = 0; i < 2; i++) {
-        masterSmokeSprite[i] = 0;
-        err = SWCreateSpriteFromCicnResource(gSpriteWorld, &masterSmokeSprite[i], NULL, resID = 1000 + i * 8, 8, 1);
-#else
     for (i = 0, resID = 1000, q = masterSmokeSprite; i < 2; i++, resID += 8, q++) {
         masterSmokeSprite[i] = 0;
         err = SWCreateSpriteFromCicnResource(gSpriteWorld, q, NULL, resID, 8, 1);
-#endif
         if ((int32_t)err == 0 && masterSmokeSprite[i] != NULL) {
             SWLockSprite(masterSmokeSprite[i]);
             err = SWCreateRLEData(masterSmokeSprite[i], 0);
@@ -2084,9 +1731,6 @@ void InitSprites(void)
             GetCWindowPortRect((WindowRef)gWind)->bottom - 5);
     commRect.top -= 29470 / (commRect.right - commRect.left);
 #endif
-#ifdef MACBUILD
-    tempRgn = NewRgn();
-#endif
 }
 
 
@@ -2632,9 +2276,6 @@ void InitObjects(void)
     menuTextColor[1].green = 0;
     menuTextColor[1].blue = 0;
     statusFontID = 0;
-#ifdef MAC1010 /* BUG: overwritten by the next line */
-    statusFontSize[0] = 12;
-#endif
     statusFontSize[0] = 11;
     menuFontID = 3;
     menuTextSize = 9;
@@ -3481,216 +3122,11 @@ void ResetGameData(void)
     seenIntroScreen = 0;
 }
 
-#ifdef MACBUILD
-/* MeasureProcessorSpeed (mac _MeasureProcessorSpeed, mac-only). STATE: mac MATCH i386 and ppc.
-   OPEN: none */
-// MAC: _MeasureProcessorSpeed i386 0x0001dfea ppc 0x00022904
-void MeasureProcessorSpeed(void)
-{
-    int32_t counts[10];
-    int32_t total;
-    uint32_t start;
-    int32_t average;
-    int32_t i;
-
-    total = 0;
-    for (i = 0; i < 10; i++) {
-        counts[i] = 0;
-        start = TickCount();
-        while (TickCount() <= start + 2)
-            counts[i]++;
-        total += counts[i];
-    }
-    average = total / 10.0;
-    userSpeedSetting = 7200.0f / average;
-    if (userSpeedSetting > 3.0)
-        userSpeedSetting = 3.0;
-    else if (userSpeedSetting < 1.05)
-        userSpeedSetting = 1.0;
-}
-
-/* EmergencyBail (mac _EmergencyBail, mac-only). STATE: mac MATCH i386 and ppc. OPEN: none */
-// MAC: _EmergencyBail i386 0x0001e091 ppc 0x00022a18
-void EmergencyBail(void)
-{
-    ST_Close();
-}
-
-/* SWAddFramesFromSinglePictXY (mac _SWAddFramesFromSinglePictXY, mac-only). STATE: mac MATCH
-   i386 and ppc. OPEN: none */
-// MAC: _SWAddFramesFromSinglePictXY i386 0x0001e09a ppc 0x00022a1c
-short SWAddFramesFromSinglePictXY(SpriteWorldPtr destSpriteWorldP, SpritePtr srcSpriteP,
-        short pictResID, short maskResID, short frameWidth, short frameHeight,
-        short borderWidth, short borderHeight, short maxFrames, MaskType maskType)
-{
-    short err;
-    PicHandle tempPic;
-    CGrafPtr tempPictGWorldP;
-    CGrafPtr tempMaskGWorldP;
-    CGrafPtr tempTempMaskGWorldP;
-    FramePtr newFrameP;
-    Rect frameRect;
-    short frame;
-    Boolean needToInvertMask;
-
-    err = noErr;
-
-    if (destSpriteWorldP == NULL)
-        SWAssertFail(kEngineSourceDir "Setup.c", 4047);
-
-    tempPictGWorldP = NULL;
-    tempMaskGWorldP = NULL;
-    needToInvertMask = true;
-
-    tempPic = GetPicture(pictResID);
-    if (tempPic == NULL) {
-        err = MemError();
-        if (err == noErr)
-            err = resNotFound;
-    } else {
-        ReleaseResource((Handle)tempPic);
-    }
-
-    if (err == noErr) {
-        err = SWCreateGWorldFromPictResource(destSpriteWorldP, &tempPictGWorldP, pictResID);
-        if (err == noErr && maskType != kNoMask)
-            err = SWCreateGWorldFromPictResource(destSpriteWorldP, &tempMaskGWorldP, maskResID);
-
-        if (err == noErr) {
-            if (pictResID == maskResID && tempMaskGWorldP != NULL) {
-                err = SWCreatePixelMaskFromGWorld(tempPictGWorldP, tempMaskGWorldP, NULL);
-                needToInvertMask = false;
-                if (destSpriteWorldP->pixelDepth <= 8 && (maskType & kRegionMask) != 0) {
-                    SWInvertGWorld(tempMaskGWorldP);
-                    needToInvertMask = true;
-                }
-            } else if ((maskType & kPixelMask) != 0) {
-                SWFixImageGWorld(tempPictGWorldP, tempMaskGWorldP, NULL);
-                SetPort((GrafPtr)tempMaskGWorldP);
-                ForeColor(blackColor);
-                BackColor(whiteColor);
-                InvertRect(GetWindowPortRect(GetWindowFromPort(tempMaskGWorldP)));
-                needToInvertMask = true;
-            }
-        }
-
-        if (maxFrames == 0) {
-            maxFrames = (GetWindowPortRect(GetWindowFromPort(tempPictGWorldP))->right / frameWidth) *
-                        (GetWindowPortRect(GetWindowFromPort(tempPictGWorldP))->bottom / frameHeight);
-        }
-
-        if (err == noErr)
-            err = SWCreateFrameFromGWorldAndRectStart(&tempTempMaskGWorldP, frameWidth,
-                    frameHeight, maskType);
-
-        if (err == noErr) {
-            frameRect.left = 0;
-            frameRect.top = 0;
-            frameRect.right = frameWidth;
-            frameRect.bottom = frameHeight;
-
-            for (frame = 0; frame < maxFrames; frame++) {
-                err = SWCreateFrameFromGWorldAndRectPartial(&newFrameP, tempPictGWorldP,
-                        tempMaskGWorldP, tempTempMaskGWorldP, &frameRect, maskType);
-
-                if (err == noErr) {
-                    err = SWAddFrame(srcSpriteP, newFrameP);
-                    if (frame < maxFrames - 1) {
-                        frameRect.left += frameWidth + borderWidth;
-                        frameRect.right = frameRect.left + frameWidth;
-                        if (frameRect.right >
-                                GetWindowPortRect(GetWindowFromPort(tempPictGWorldP))->right) {
-                            frameRect.left = 0;
-                            frameRect.right = frameWidth;
-                            frameRect.top += frameHeight + borderHeight;
-                            frameRect.bottom = frameRect.top + frameHeight;
-
-                            if (frameRect.bottom >
-                                    GetWindowPortRect(GetWindowFromPort(tempPictGWorldP))->bottom)
-                                err = kOutOfRangeErr;
-                        }
-                    }
-                }
-
-                if (err != noErr) {
-                    SWDisposeFrame(&newFrameP);
-                    break;
-                }
-            }
-
-            SWCreateFrameFromGWorldAndRectFinish(tempTempMaskGWorldP);
-        }
-
-        if (err == noErr) {
-            if ((maskType & kPixelMask) != 0) {
-                if (destSpriteWorldP->pixelDepth <= 8 && needToInvertMask)
-                    SWInvertGWorld(tempMaskGWorldP);
-            } else {
-                if (tempMaskGWorldP != NULL) {
-                    DisposeGWorld(tempMaskGWorldP);
-                    tempMaskGWorldP = NULL;
-                }
-            }
-
-            SWSetSpriteFrameRange(srcSpriteP, 0, maxFrames - 1);
-            SWSetCurrentFrameIndex(srcSpriteP, 0);
-        }
-    }
-
-    SWSetStickyIfError(err);
-    return err;
-}
-
-#endif
 #pragma opt_repositioncode off
 
 /* ConvertSpriteToRLE (mac _ConvertSpriteToRLE). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4cf0
 // MAC: _ConvertSpriteToRLE i386 0x0001e489 ppc 0x00022d98
-#ifdef MACBUILD
-short ConvertSpriteToRLE(SpriteRec *set)
-{
-    Rect r;
-    int32_t result;
-    short err;
-    short i;
-
-    if (set->frameArray[0]->framePort != NULL) {
-        r = *GetCPortPortRect(set->frameArray[0]->framePort);
-        if ((r.right - r.left) * (r.bottom - r.top) !=
-            (set->frameArray[0]->frameRect.right - set->frameArray[0]->frameRect.left) * set->numFrames *
-            (set->frameArray[0]->frameRect.bottom - set->frameArray[0]->frameRect.top)) {
-            crashlog("error - bad sprite image size");
-            return -1;
-        }
-    }
-    err = SWCreateRLEData(set, 0);
-    result = err;
-    if (result != 0)
-        return err;
-    if (set->frameArray[0]->framePort != NULL)
-        DisposeGWorld(set->frameArray[0]->framePort);
-    if (set->frameArray[0]->maskPort != NULL)
-        DisposeGWorld(set->frameArray[0]->maskPort);
-    if (set->frameArray[0]->maskRgn != NULL)
-        DisposeRgn(set->frameArray[0]->maskRgn);
-    for (i = 0; i < set->maxFrames; i++) {
-        set->frameArray[i]->framePort = NULL;
-        set->frameArray[i]->frameDevice = NULL;
-        set->frameArray[i]->framePixHndl = NULL;
-        set->frameArray[i]->maskPort = NULL;
-        set->frameArray[i]->maskDevice = NULL;
-        set->frameArray[i]->maskPixHndl = NULL;
-        set->frameArray[i]->maskRgn = NULL;
-    }
-    if (result == 0) {
-        set->sharedPictGWorld = NULL;
-        set->sharedMaskGWorld = NULL;
-    }
-    SWLockSprite(set);
-    return err;
-}
-#else
 short ConvertSpriteToRLE(SpriteRec *set)
 {
     int i;
@@ -3740,7 +3176,6 @@ clearCaches:
     set->sharedMaskGWorld = NULL;
     goto finish;
 }
-#endif
 
 #pragma opt_repositioncode reset
 
@@ -3748,13 +3183,8 @@ clearCaches:
    passes NULL for the rest. */
 
 /* the setup object's globals, here and after ShanRec below */
-#ifdef MACBUILD
-extern SpinRec spriteInfo;
-SpinHandle spriteInfoHand;
-#else
 SpinRec spriteInfo;
 SpinHandle spriteInfoHand;
-#endif
 
 /* GetSpriteInfo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4e10
@@ -3783,13 +3213,8 @@ Boolean GetSpriteInfo(short id, short *spriteID, short *maskID, short *xSize,
 }
 
 
-#ifdef MACBUILD
-extern ShanRec shipSpriteInfo;
-ShanRec **shipSpriteInfoHand;
-#else
 ShanRec shipSpriteInfo;
 ShanRec **shipSpriteInfoHand;
-#endif
 short firstShipGlowIndex;
 short firstShipLightIndex;
 short firstShipAltIndex;
@@ -4262,9 +3687,6 @@ void FatalStartupError(short index)
 {
     unsigned char text[256];
 
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    DisposeGammaTools();
-#endif
     GetIndString(text, kAlertStrList, index);
     ParamText(text, "\p", "\p", "\p");
     StopAlert(128, NULL);

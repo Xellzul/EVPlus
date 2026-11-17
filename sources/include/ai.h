@@ -46,7 +46,7 @@ extern Boolean AIShipIsShipGoingToStellar(ShipObj *ship, short stellar);
 extern Boolean AIVerifySwarmLeader(ShipObj *ship);
 extern void BraveTraderAI(ShipObj *ship);
 extern Boolean CanHireEscorts(void);
-extern void ClearTargetsOnShip(ShipObj *ship);
+extern void AIShipBoardedByPlayer(ShipObj *ship);
 #pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern void *hardDockSnd;

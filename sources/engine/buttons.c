@@ -23,11 +23,7 @@
 #define kButtonMaskPictID     7600
 
 /* the mac builds the offscreens on the main screen's device; the port's take none */
-#ifdef MACBUILD
-#define kButtonDevice GetMainDevice()
-#else
 #define kButtonDevice 0
-#endif
 
 /* button slots: the index into a Track/Draw pair's Rect array */
 enum { kTradeDoneButton, kTradeBuyButton, kTradeSellButton };
@@ -996,70 +992,6 @@ void DrawHaggleButtons(short hilited)
 // FUNCTION: EVNOVA 0x004a22e0
 // MAC: _TrackPlunderButtons i386 0x0002732a ppc 0x0002b9e0
 short TrackPlunderButtons(Point where)
-#ifdef MAC1010
-{
-    short i;
-    short drawnButton;
-    short downButton;
-    short over;
-    Rect box[6];
-    Boolean enabled[6];
-    Handle item;
-    Point mouse;
-    short itemType;
-
-    ForeColor(blackColor);
-    for (i = 0; i <= 3; i++)
-        GetDialogItem(plunderDialog, i + 1, &itemType, &item, &box[i]);
-    for (i = 4; i <= 5; i++)
-        GetDialogItem(plunderDialog, i + 2, &itemType, &item, &box[i]);
-    enabled[0] = 1;
-    if (salvageType != -1)
-        enabled[1] = 1;
-    else
-        enabled[1] = 0;
-    if (0 < salvageCredits)
-        enabled[2] = 1;
-    else
-        enabled[2] = 0;
-    if (salvageAmmoType != -1)
-        enabled[3] = 1;
-    else
-        enabled[3] = 0;
-    if (0 < salvageFuelQty)
-        enabled[4] = 1;
-    else
-        enabled[4] = 0;
-    if (0 < captureOdds)
-        enabled[5] = 1;
-    else
-        enabled[5] = 0;
-    drawnButton = -1;
-    for (i = 0; i <= 5; i++) {
-        if (enabled[i] != 0 && (PtInRect)(where, &box[i]))
-            drawnButton = i;
-    }
-    downButton = drawnButton;
-    if (drawnButton != -1) {
-        DrawPlunderButtons(drawnButton);
-        while (StillDown() != 0) {
-            BusyIdle();
-            GetMouse(&mouse);
-            over = -1;
-            for (i = 0; i <= 5; i++) {
-                if (enabled[i] != 0 && (PtInRect)(mouse, &box[i]))
-                    over = i;
-            }
-            if (over != drawnButton && over != downButton)
-                over = -1;
-            if (over != drawnButton)
-                DrawPlunderButtons(over);
-            drawnButton = over;
-        }
-    }
-    return drawnButton;
-}
-#else
 {
     short i;
     short drawnButton;
@@ -1126,7 +1058,6 @@ short TrackPlunderButtons(Point where)
     }
     return drawnButton;
 }
-#endif
 
 /* DrawPlunderButtons. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004a24e0
@@ -1537,21 +1468,6 @@ void InitButtons(void)
     CreateGWorldContainer(&buttonMaskPort, kButtonDevice, 1, &bounds);
     SetGWorldContainer(&buttonImagePort);
     ForeColor(blackColor);
-#ifdef MAC1010
-    for (n = 0; n < kButtonPieceCount; n++) {
-        PaintRect(&buttonPieceRect[n]);
-        if (buttonPic[n] != 0)
-            DrawPicHandle(buttonPic[n], &buttonPieceRect[n]);
-    }
-    UnsetGWorldContainer(&buttonImagePort);
-    SetGWorldContainer(&buttonMaskPort);
-    ForeColor(blackColor);
-    for (n = 0; n < kButtonPieceCount; n++) {
-        PaintRect(&buttonPieceRect[n]);
-        if (buttonMaskPic[n] != 0)
-            DrawPicHandle(buttonMaskPic[n], &buttonPieceRect[n]);
-    }
-#else
     mask = buttonPieceRect;
     for (n = 0, piece = buttonPieceRect; n < kButtonPieceCount; n++) {
         PaintRect(piece);
@@ -1568,7 +1484,6 @@ void InitButtons(void)
             DrawPicHandle(buttonMaskPic[n], mask);
         mask++;
     }
-#endif
     UnsetGWorldContainer(&buttonMaskPort);
     for (n = 0; n < kButtonPieceCount; n++) {
         if (buttonPic[n] != 0)

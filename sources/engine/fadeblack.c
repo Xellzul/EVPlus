@@ -36,26 +36,12 @@ void ShowSplashScreen(void)
     PaintRect(GetCWindowPortRect((WindowRef)gWind));
     CopyBits(GWorldContainerBits(&loadPort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-#ifdef MAC1010
-             &loadPort.bounds, GetCWindowPortRect((WindowRef)gWind), 0, 0);
-#else
              rect, GetCWindowPortRect(gWind), 0, 0);
-#endif
 #ifndef MACBUILD
     ScreenEndScene();
 #endif
 }
 
-#ifdef MACBUILD
-/* HideSplashScreen (mac _HideSplashScreen): mac only. */
-// MAC: _HideSplashScreen i386 0x00060f76 ppc 0x00068d04
-void HideSplashScreen(void)
-{
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect((WindowRef)gWind));
-}
-#endif
 
 /* ShowAmbrosiaLogo. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ab070

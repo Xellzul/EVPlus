@@ -7,11 +7,7 @@
 
 #define kProfileSlots 64
 
-#ifdef MACBUILD
-UnsignedWide lastMicroseconds[kProfileSlots];
-#else
 static unsigned long long lastMicroseconds[kProfileSlots];
-#endif
 uint32_t iterations[kProfileSlots];
 uint32_t totalMilliseconds[kProfileSlots];    /* milliseconds */
 char name[kProfileSlots][32];
@@ -70,12 +66,7 @@ void MyProfileReset(void)
     short i;
 
     for (i = 0; i < kProfileSlots; i++) {
-#ifdef MACBUILD
-        lastMicroseconds[i].hi = 0;
-        lastMicroseconds[i].lo = 0;
-#else
         lastMicroseconds[i] = 0;
-#endif
         totalMilliseconds[i] = 0;
         dependency[i] = -1;
         iterations[i] = 0;
@@ -100,11 +91,7 @@ void MyProfileEnter(short slot)
 {
     if (slot < 0 || slot >= kProfileSlots)
         return;
-#ifdef MACBUILD
-    Microseconds(&lastMicroseconds[slot]);
-#else
     lastMicroseconds[slot] = TimerGetMicroseconds();
-#endif
     if (lastEntered != -1 && dependency[slot] == -1)
         dependency[slot] = lastEntered;
     lastEntered = slot;
@@ -115,26 +102,12 @@ void MyProfileEnter(short slot)
 // MAC: _MyProfileExit i386 0x000a4e11 ppc 0x000b0a94
 void MyProfileExit(short slot)
 {
-#ifdef MACBUILD
-    UnsignedWide now;
-    uint32_t elapsed;
-#else
     unsigned long long now;
-#endif
 
     if (slot < 0 || slot >= kProfileSlots)
         return;
-#ifdef MACBUILD
-    Microseconds(&now);
-    if (now.hi > lastMicroseconds[slot].hi)
-        elapsed = (0xffffffff - (lastMicroseconds[slot].lo - now.lo)) / 1000;
-    else
-        elapsed = (now.lo - lastMicroseconds[slot].lo) / 1000;
-    totalMilliseconds[slot] += elapsed;
-#else
     now = TimerGetMicroseconds();
     totalMilliseconds[slot] += ((now - lastMicroseconds[slot]) / 1000);
-#endif
     iterations[slot]++;
     if (lastEntered == slot) {
         if (dependency[slot] != -1)

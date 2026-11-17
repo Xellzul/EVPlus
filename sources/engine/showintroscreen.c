@@ -24,13 +24,8 @@
 #include "game.h"
 
 #define kIntroPictSlots 4
-#ifdef MACBUILD
-#define kKeyReturn MacKey(0x24)
-#define kKeySpace  MacKey(0x31)
-#else
 #define kKeyReturn 0x1c
 #define kKeySpace  0x39
-#endif
 
 
 
@@ -110,9 +105,6 @@ void ShowIntroScreen(void)
                 HandleIntroMusic(0);
                 if (Button()) {
                     rect = *GetCWindowPortRect((WindowRef)gWind);
-#if defined(MACBUILD) && (!defined(MAC1010) || TARGET_API_MAC_CARBON)
-                    SectRect(&rect, &screenMinusDockRect, &rect);
-#endif
                     GetGlobalMouse(&pt);
                     if (PtInRectPoint(pt, &rect)) {
                         hit = 1;

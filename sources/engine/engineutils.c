@@ -34,8 +34,6 @@
 /* Util.o's own globals and its mac-only functions (defined below at their places) */
 extern void PointToXYShort(Point pt, ShortPoint *xy);
 extern void XYShortToPoint(ShortPoint xy, Point *pt);
-extern short FindNextStellarInSystem(short cur, short system);
-extern void DrawCenteredText(StringPtr s, short left, short right, short y);
 extern StringPtr KeyCodeToString(short code);
 extern int32_t isPressed(unsigned char *keys, unsigned short k);
 extern void ShowHint(void);
@@ -1880,28 +1878,6 @@ void StrcatOrdinalNumber(short n, char *dst, Boolean capitalize)
     strcat(dst, (char *)word);
 }
 
-#ifdef MACBUILD
-/* DateToShortString (mac _DateToShortString, mac-only). STATE: see the mac gate. */
-// MAC: _DateToShortString i386 0x00008b79 ppc 0x0000ac68
-void DateToShortString(DateTimeRec date, char *out)
-{
-    Str255 str;
-
-    strcpy(out, datePrefix);
-    NumToString(date.month, str);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, "/");
-    NumToString(date.day, str);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, "/");
-    NumToString(date.year, str);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, dateSuffix);
-}
-#endif
 
 /* CanBuyGoods (mac _CanBuyGoods). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00465e50
@@ -2137,18 +2113,6 @@ void CenterPict(void *pict, Rect *bounds)
     }
 }
 
-#ifdef MACBUILD
-/* KeyCodeToString (mac _KeyCodeToString, mac-only). STATE: see the mac gate. */
-// MAC: _KeyCodeToString i386 0x00004ca0 ppc 0x00006190
-StringPtr KeyCodeToString(short code)
-{
-    Str255 name;
-
-    GetIndString(name, kKeyNameStrList, code + 1);
-    /* BUG: returns the address of a dead stack buffer */
-    return name[0] ? name : "\pUnknown";
-}
-#endif
 
 /* MSL <ctype.h> inlines tolower's table lookup; the exe calls the library
    function (0x004d6230), so declare it without the header. */
@@ -2184,28 +2148,6 @@ void CullNameString(unsigned char *name)
     pstrcpy(name, culled);
 }
 
-#ifdef MAC1010
-/* ScanForKeys (mac _ScanForKeys, mac-only): 1.0.10 defines it where win has FirstKeyDown.
-   STATE: see the mac gate. */
-short ScanForKeys(void)
-{
-    KeyMap keys;
-    short i;
-    short word;
-    short bit;
-
-    GetKeys(keys);
-    for (i = 0; i <= 127; i++) {
-        word = (i >> 4) & 0xf;
-        bit = i & 0xf;
-        if (i != 0x1a && i != 0x1b && i != 0x1c && i != 0x1d && i != 0x77 && i != 0x31
-            && i != 0x72 && i != 0x70 && i != 0x7e && i != 0x6b && i != 0x68 && i != 0x32
-            && (((unsigned short *)keys)[word] & (1 << bit)))
-            return i;
-    }
-    return -1;
-}
-#endif
 
 #ifndef MACBUILD
 /* FirstKeyDown. STATE: MATCH, byte-identical. OPEN: none */
@@ -2982,6 +2924,8 @@ void FadeScreenIn(void)
 // MAC: _OnTheFlyWhiteFade i386 0x00005528 ppc 0x00006b18
 void OnTheFlyWhiteFade(short pct)
 {
+    // BUG (win): the only body is the mac 1.0.10 gamma one below, so on windows the hyperspace white-out
+    // never happens and settings.noHyperGamma does nothing (1.1.1 uses FadeWhiteIn/Out instead)
 #if defined(MAC1010) && TARGET_API_MAC_CARBON
     ScreenGamma gamma;
     float scale;
@@ -3022,19 +2966,6 @@ void OnTheFlyWhiteFade(short pct)
 #endif
 }
 
-#ifdef MACBUILD
-/* InitCluts (mac _InitCluts, mac-only). STATE: see the mac gate. */
-// MAC: _InitCluts i386 0x0000552d ppc 0x00006b1c
-void InitCluts(void)
-{
-}
-
-/* SetOrigClut (mac _SetOrigClut, mac-only). STATE: see the mac gate. */
-// MAC: _SetOrigClut i386 0x00005532 ppc 0x00006b20
-void SetOrigClut(void)
-{
-}
-#endif
 
 /* RestoreOrigClut (mac _RestoreOrigClut). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00467e70
@@ -3203,11 +3134,6 @@ Boolean SystemHasService(short sysID, short kind)
 
 #endif /* MAC_FASTRANDOM_ONLY */
 #ifndef MAC_NO_FASTRANDOM
-#ifdef MAC1010
-static uint32_t randomSeed;
-#elif defined(MACBUILD)
-uint32_t randomSeed;
-#endif
 
 #define kRandMultiplier 16807
 
@@ -3696,17 +3622,6 @@ Boolean PlayerCanUseAmmoType(short weapIndex)
 
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (shipData->weap[i].count > 0) {
-#ifdef MAC1010
-            int32_t w;
-
-            if (weaponStats[i].guidance == kGuidanceBay) {
-                w = weaponStats[i].ammoType != weaponStats[weapIndex].ammoType;
-                return w == 0;
-            }
-            if (weapIndex == weaponStats[i].ammoType)
-                return 1;
-            w = weaponStats[weapIndex].ammoType;
-#else
             int32_t w = weapIndex;
 
             if (weaponStats[i].guidance == kGuidanceBay) {
@@ -3716,7 +3631,6 @@ Boolean PlayerCanUseAmmoType(short weapIndex)
             }
             if (weapIndex == weaponStats[i].ammoType)
                 return 1;
-#endif
         }
     }
     return 0;
@@ -4037,19 +3951,6 @@ void DestroyPartialFleetCargo(short shipIndex)
     ResetPlayerPrecalcedValues();
 }
 
-#ifdef MACBUILD
-/* FlushKeys (mac _FlushKeys, mac-only). STATE: see the mac gate. */
-// MAC: _FlushKeys i386 0x00005d35 ppc 0x00007498
-void FlushKeys(void)
-{
-    int32_t *keys = (int32_t *)keyMap;
-
-    keys[0] = 0;
-    keys[1] = 0;
-    keys[2] = 0;
-    keys[3] = 0;
-}
-#endif
 
 /* The flag is tested (with its companion at 0x007354b2) right before the
    shift/control/alt scancodes are scanned, so clearing it re-arms those. */
@@ -4065,21 +3966,6 @@ void QuickKeyCheckHandler(void)
     quickKeyCheckResult = 0;
 }
 
-#if defined(MACBUILD) && !defined(MAC1010)
-/* ScanForKeys (mac _ScanForKeys, mac-only). STATE: see the mac gate. */
-// MAC: _ScanForKeys i386 0x0000a0af ppc 0x0000c684
-short ScanForKeys(void)
-{
-    KeyMap keys;
-    short i;
-
-    GetKeys(keys);
-    for (i = 0; i < 128; i++)
-        if (isPressed((unsigned char *)keys, i))
-            return i;
-    return -1;
-}
-#endif
 
 /* QuickKeyCheck (mac _QuickKeyCheck). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469ca0
@@ -4172,32 +4058,11 @@ unsigned char RawKeyCheck(short scanCode)
 /* KeyCheck (mac _KeyCheck). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00469d10
 // MAC: _KeyCheck i386 0x0000a19b ppc 0x0000c7c8
-#ifdef MACBUILD
-unsigned char KeyCheck(short scanCode)
-{
-    KeyMap keys;
-
-    if (ignoreKeys)
-        return 0;
-    GetKeys(keys);
-#ifdef MAC1010
-    {
-        short word = (scanCode >> 4) & 0xf;
-        short bit = scanCode & 0xf;
-
-        return (((unsigned short *)keys)[word] & (1 << bit)) != 0;
-    }
-#else
-    return isPressed((unsigned char *)keys, scanCode);
-#endif
-}
-#else
 unsigned char KeyCheck(short scanCode)
 {
     KeyboardKbhit();
     return KeyIsDown(scanCode);
 }
-#endif
 
 #define kDemandMedium 2
 
@@ -4630,26 +4495,15 @@ void RefreshSAT(void)
     if (commCount >= 0) {
         RedrawComm(1);
         SWSetPortToWindow(gSpriteWorld);
-#ifdef V111
-        if (useLegacyRenderingPipeline)
-#endif
             BlitPixieFloatingRectDrawProc(gSpriteWorld->backFrameP, gSpriteWorld->workFrameP,
                          &commRect, &commRect, 0, gSpriteWorld->backgroundValue);
     }
 
-#ifdef MACBUILD
-    CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
-             GetPortPixMapBits(GetWindowPort(gWind)),
-             &gSpriteWorld->workFrameP->frameRect,
-             &gSpriteWorld->windowFrameP->frameRect,
-             0, 0);
-#else
     CopyBits(GetPortBitMapForCopyBits(*(CGrafPtr *)gSpriteWorld->workFrameP),
              GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
              &gSpriteWorld->workFrameP->frameRect,
              &gSpriteWorld->windowFrameP->frameRect,
              0, 0);
-#endif
 
     r = GetCWindowPortRect((WindowRef)gWind);
     box = *r;
@@ -4664,15 +4518,9 @@ void RefreshSAT(void)
     RedrawStatus(0);
     DrawStatusRadar(0);
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortPixMapBits(GetWindowPort(gWind)),
-             &box, &box, 0, 0);
-#else
     CopyBits((BitMapPtr)GetGWCPixMap(&loadPort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
              &box, &box, 0, 0);
-#endif
 
     if (playerIsLanded == 0) {
         RedrawComm(0);
@@ -4692,14 +4540,6 @@ void PlaySound(void *a, short b, short lo, short hi)
     ST_PlaySound(a, b, (lo + hi) / 2);
 }
 
-#ifdef MACBUILD
-/* ShowFreeMem (mac _ShowFreeMem, mac-only). STATE: see the mac gate. */
-// MAC: _ShowFreeMem i386 0x00005ec3 ppc 0x000076a4
-void ShowFreeMem(void)
-{
-    FreeMem();
-}
-#endif
 
 /* AdjustWarpSoundSpeed. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ab00
@@ -4858,14 +4698,6 @@ void SpawnNagShip(void)
     }
 }
 
-#ifdef MACBUILD
-/* LoadFrameFromCICN (mac _LoadFrameFromCICN, mac-only). STATE: see the mac gate. */
-// MAC: _LoadFrameFromCICN i386 0x00006497 ppc 0x00007d38
-void *LoadFrameFromCICN(short id)
-{
-    return 0;
-}
-#endif
 
 /* the shorter way round a 360-unit circle */
 
@@ -5078,14 +4910,6 @@ short SelectFleetFromSystem(SystRecord *syst)
     return -1;
 }
 
-#ifdef MACBUILD
-/* FindDecayedShotPower (mac _FindDecayedShotPower, mac-only). STATE: see the mac gate. */
-// MAC: _FindDecayedShotPower i386 0x0000691b ppc 0x000082d4
-float FindDecayedShotPower(ShotObj *shot)
-{
-    return 1.0f;
-}
-#endif
 
 /* the shipyard's asking-price jitter, as a fraction around 1.00 */
 
@@ -5155,44 +4979,20 @@ short FindFirstCoLocatedSystem(short sys)
 /* HideTheCursor (mac _HideTheCursor). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046b9f0
 // MAC: _HideTheCursor i386 0x00006a01 ppc 0x00008404
-#ifdef MACBUILD
-void HideTheCursor(void)
-{
-#if !TARGET_API_MAC_CARBON
-    if (CrsrVis)
-        cursorHidden = 0;
-#endif
-    if (cursorHidden < 10) {
-        cursorHidden++;
-        HideCursor();
-    }
-}
-#else
 void HideTheCursor(void)
 {
     OSCursorHide();
     cursorHidden = (OSCursorIsVisible() == 0);
 }
-#endif
 
 /* ShowTheCursor (mac _ShowTheCursor). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ba10
 // MAC: _ShowTheCursor i386 0x00006a1f ppc 0x00008424
-#ifdef MACBUILD
-void ShowTheCursor(void)
-{
-    if (cursorHidden > 0) {
-        cursorHidden = 0;
-        InitCursor();
-    }
-}
-#else
 void ShowTheCursor(void)
 {
     OSCursorShow();
     cursorHidden = (OSCursorIsVisible() == 0);
 }
-#endif
 
 /* FindNearestValidShotTarget. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046ba30
@@ -5927,16 +5727,6 @@ Boolean ShipsShareParent(ShipObj *a, ShipObj *b)
 
     if (a == 0 || b == 0)
         return 0;
-#ifdef MAC1010
-    rootA = a->index;
-    while (shipData[rootA].active != 0 && (next = shipData[rootA].parentShip) >= 0
-           && next < kMaxShips && rootA != next)
-        rootA = next;
-    rootB = b->index;
-    while (shipData[rootB].active != 0 && (next = shipData[rootB].parentShip) >= 0
-           && next < kMaxShips && rootB != next)
-        rootB = next;
-#else
     rootA = a->index;
     while (1) {
         if (shipData[rootA].active == '\0')
@@ -5963,7 +5753,6 @@ Boolean ShipsShareParent(ShipObj *a, ShipObj *b)
             break;
         rootB = next;
     }
-#endif
     if (rootA == rootB)
         return 1;
     return 0;
@@ -5972,17 +5761,6 @@ Boolean ShipsShareParent(ShipObj *a, ShipObj *b)
 /* PtoCstr (mac _PtoCstr). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046d250
 // MAC: _PtoCstr i386 0x000049e2 ppc 0x00005e04
-#ifdef V111 /* V111: 1.1.1 defines it void */
-void PtoCstr(unsigned char *str)
-{
-    short len = *str;
-    short i;
-
-    for (i = 0; i < len; i++)
-        str[i] = str[i + 1];
-    str[len] = 0;
-}
-#else
 #if !defined(MAC1010) || TARGET_API_MAC_CARBON /* 1.0.10 Classic imports InterfaceLib's */
 char *PtoCstr(unsigned char *str)
 {
@@ -5995,23 +5773,10 @@ char *PtoCstr(unsigned char *str)
     return (char *)str;
 }
 #endif
-#endif
 
 /* CtoPstr (mac _CtoPstr). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046d380
 // MAC: _CtoPstr i386 0x00004d13 ppc 0x00006210
-#ifdef V111 /* V111: 1.1.1 defines it void */
-void CtoPstr(char *str)
-{
-    short len = strlen(str);
-    short i;
-
-    for (i = len; i >= 1; i--)
-        str[i] = str[i - 1];
-    *str = len;
-}
-#else
-#ifndef MAC1010
 unsigned char *CtoPstr(char *str)
 {
     short len = strlen(str);
@@ -6022,18 +5787,6 @@ unsigned char *CtoPstr(char *str)
     *str = len;
     return (unsigned char *)str;
 }
-#elif TARGET_API_MAC_CARBON /* 1.0.10 Classic imports InterfaceLib's; Carbon's tail returns nothing */
-void CtoPstr(char *str)
-{
-    short len = strlen(str);
-    short i;
-
-    for (i = len; i >= 1; i--)
-        str[i] = str[i - 1];
-    *str = len;
-}
-#endif
-#endif
 
 /* junkData's record, padded to its true 0x526 stride */
 
@@ -6513,31 +6266,6 @@ unsigned char SplitTwoLineString(const unsigned char *src, unsigned char *first,
     return afterBreak;
 }
 
-#ifdef MACBUILD
-/* UnsplitTwoLineString (mac _UnsplitTwoLineString, mac-only). STATE: see the mac gate. */
-// MAC: _UnsplitTwoLineString i386 0x00007e4f ppc 0x00009c50
-void UnsplitTwoLineString(const unsigned char *src, unsigned char *dst)
-{
-    short i;
-    short out;
-    short len;
-
-    out = 1;
-    len = src[0];
-    dst[0] = 0;
-    for (i = 1; i <= len; i++) {
-        if (i < len && src[i] == '\\' && (src[i + 1] == 'n' || src[i + 1] == 'N')) {
-            i++;
-            dst[out] = ' ';
-            dst[0]++;
-        } else {
-            dst[out] = src[i];
-            dst[0]++;
-        }
-        out++;
-    }
-}
-#endif
 
 /* FindSystemFromStellar (mac _FindSystemFromStellar). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e790
@@ -6571,11 +6299,6 @@ short FindSystemFromStellar(short stellarID)
 // MAC: _BusyIdle i386 0x00005981 ppc 0x0000707c
 void BusyIdle(void)
 {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    EventRecord ev;
-
-    WaitNextEvent(0, &ev, (gameLoaded && inBackground) ? 30 : 0, NULL);
-#endif
 }
 
 /* CheckLoMem. STATE: MATCH, byte-identical. OPEN: none */
@@ -6583,26 +6306,6 @@ void BusyIdle(void)
 // MAC: _CheckLoMem i386 0x00007f65 ppc 0x00009d7c
 void CheckLoMem(void)
 {
-#if TARGET_API_MAC_OS8
-    Size grow;
-    Str255 text;
-
-    grow = 0x7fffffff;
-    if (MaxMem(&grow) < 3000UL * 1024
-        && (lastLoMemWarningTime == 0 || TickCount() > lastLoMemWarningTime + 3 * 60 * 60)) {
-        if (cursorHidden > 0) {
-            cursorHidden = 0;
-            InitCursor();
-        }
-        GetIndString(text, kAlertStrList, 49);
-        EVNoteAlert(text);
-        if (gameInProgress && !gPause) {
-            RefreshSAT();
-            RedrawStatus(1);
-        }
-        lastLoMemWarningTime = TickCount();
-    }
-#endif
 }
 
 /* PlayerBlessedByGovt (mac _PlayerBlessedByGovt). STATE: MATCH, byte-identical. OPEN: none */
@@ -6620,22 +6323,6 @@ unsigned char PlayerBlessedByGovt(short govt, short which)
 /* ShowWindowNoFlash (mac _ShowWindowNoFlash). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e8b0
 // MAC: _ShowWindowNoFlash i386 0x00007f6a ppc 0x00009d80
-#ifdef MACBUILD
-void ShowWindowNoFlash(void *arg)
-{
-#if TARGET_API_MAC_OS8
-    int32_t saved;
-
-    saved = LMGetPaintWhite();
-    LMSetPaintWhite(0);
-    ShowWindow(arg);
-    LMSetPaintWhite(saved);
-#else
-    SendBehind(arg, NULL);
-    ShowWindow(arg);
-#endif
-}
-#else
 void ShowWindowNoFlash(void *arg)
 {
     int saved;
@@ -6645,26 +6332,10 @@ void ShowWindowNoFlash(void *arg)
     ShowMacWindow(arg);
     gDisableUpdatesMode = saved;
 }
-#endif
 
 /* DisposeDialogNoFlash (mac _DisposeDialogNoFlash). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e8e0
 // MAC: _DisposeDialogNoFlash i386 0x00007f91 ppc 0x00009db4
-#ifdef MACBUILD
-void DisposeDialogNoFlash(void *dlg)
-{
-#if TARGET_API_MAC_OS8
-    int32_t saved;
-
-    saved = LMGetPaintWhite();
-    LMSetPaintWhite(0);
-    DisposeDialog(dlg);
-    LMSetPaintWhite(saved);
-#else
-    DisposeDialog(dlg);
-#endif
-}
-#else
 void DisposeDialogNoFlash(void *dlg)
 {
     int saved;
@@ -6674,7 +6345,6 @@ void DisposeDialogNoFlash(void *dlg)
     DisposeDialog((DialogRecord *)dlg);
     gDisableUpdatesMode = saved;
 }
-#endif
 
 /* AdjustedItemCost (mac _AdjustedItemCost). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0046e910
@@ -7091,85 +6761,6 @@ void IonizeShip(ShipObj *ship, WeapRecord *weap, FloatPoint *pos)
     }
 }
 
-#ifdef MACBUILD
-/* DrawPicHandle (mac _DrawPicHandle, mac-only). STATE: see the mac gate. */
-// MAC: _DrawPicHandle i386 0x0000850d ppc 0x0000a5a8
-short DrawPicHandle(PicHandle pic, Rect *dstRect)
-{
-    short err = noErr;
-    struct ITImage *image = NULL;
-    struct ITImage *mask = NULL;
-    GrafPtr port;
-    struct ITImage *ctx;
-    ITTransparent trans;
-    struct ITRect dstR;
-
-    if (pic != NULL && dstRect != NULL) {
-        GetPort(&port);
-        ctx = DT_ContextCreateRaw(port, 0);
-        if (ctx != NULL) {
-            err = DT_ImageFileLoad((void **)pic, &image, &mask, &trans, 0);
-            if (err == noErr) {
-                dstR = Sys2DT_Rect(dstRect);
-                err = DT_DrawImage(ctx, CopySys2DT_Rect(&dstR, (DTSysRect *)dstRect), image,
-                                   mask, &trans, 0);
-                DT_ImageDispose(image);
-                if (mask != NULL)
-                    DT_ImageDispose(mask);
-            } else
-                DrawPicture(pic, dstRect);
-            DT_ContextDispose(ctx);
-        } else
-            err = memFullErr;
-    }
-    return err;
-}
-
-#if V111
-/* isPowerPC (mac _isPowerPC, mac-only). STATE: see the mac gate. */
-// MAC: _isPowerPC i386 0x00008710 ppc 0x0000a788
-Boolean isPowerPC(void)
-{
-    host_basic_info_data_t info;
-    mach_msg_type_number_t count = HOST_BASIC_INFO_COUNT;
-
-    return host_info(mach_host_self(), HOST_BASIC_INFO, (host_info_t)&info, &count) == KERN_SUCCESS
-           && info.cpu_type == CPU_TYPE_POWERPC;
-}
-
-/* isG3 (mac _isG3, mac-only). STATE: see the mac gate. */
-// MAC: _isG3 i386 0x00008758 ppc 0x0000a7dc
-Boolean isG3(void)
-{
-    host_basic_info_data_t info;
-    mach_msg_type_number_t count = HOST_BASIC_INFO_COUNT;
-
-    return host_info(mach_host_self(), HOST_BASIC_INFO, (host_info_t)&info, &count) == KERN_SUCCESS
-           && info.cpu_type == CPU_TYPE_POWERPC
-           && info.cpu_subtype == CPU_SUBTYPE_POWERPC_750;
-}
-
-/* isG4 (mac _isG4, mac-only). STATE: see the mac gate. */
-// MAC: _isG4 i386 0x000087a6 ppc 0x0000a83c
-Boolean isG4(void)
-{
-    host_basic_info_data_t info;
-    mach_msg_type_number_t count = HOST_BASIC_INFO_COUNT;
-
-    return host_info(mach_host_self(), HOST_BASIC_INFO, (host_info_t)&info, &count) == KERN_SUCCESS
-           && info.cpu_type == CPU_TYPE_POWERPC
-           && (info.cpu_subtype == CPU_SUBTYPE_POWERPC_7400
-               || info.cpu_subtype == CPU_SUBTYPE_POWERPC_7450);
-}
-
-/* meetsMinimumRequirements (mac _meetsMinimumRequirements, mac-only). STATE: see the mac gate. */
-// MAC: _meetsMinimumRequirements i386 0x000087fc ppc 0x0000a8a0
-Boolean meetsMinimumRequirements(void)
-{
-    return !(isG3() || isG4());
-}
-#endif
-#endif
 
 EXTERN_C_END
 #endif /* MAC_FASTRANDOM_ONLY */

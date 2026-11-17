@@ -47,58 +47,5 @@ void HandleStatus(void)
         interferenceThisFrame = 0;
 }
 
-#if defined(MACBUILD) && V111
-#define kStatusPanelWidth 194
-
-/* BlitStatusArea (mac-only, new in 1.1.1). STATE: MATCH both slices. OPEN: none */
-// MAC: _BlitStatusArea i386 0x00049550 ppc 0x00051f4c
-void BlitStatusArea(void)
-{
-    Rect box;
-    PixMapHandle srcPix;
-    PixMapHandle dstPix;
-    int32_t srcRowBytes;
-    int32_t dstRowBytes;
-    char *src;
-    char *srcBase;
-    int32_t width;
-    int32_t height;
-    int32_t top;
-    short left;
-    FramePtr frame;
-
-    if (useLegacyRenderingPipeline) {
-        SWSetPortToWindow(gSpriteWorld);
-        box = *GetCWindowPortRect(gWind);
-        box.left = box.right - kStatusPanelWidth;
-        ForeColor(blackColor);
-        if (gSpriteWorld->fastBlit) {
-            srcPix = GetPortPixMap(loadPort.world);
-            dstPix = GetCWindowPixMap(gWind);
-            srcRowBytes = GetPixRowBytes(srcPix);
-            dstRowBytes = GetPixRowBytes(dstPix);
-            srcBase = (*srcPix)->baseAddr;
-            top = box.top;
-            left = box.left;
-            height = box.bottom - top;
-            frame = gSpriteWorld->windowFrameP;
-            if (frame->frameDepth == 16) {
-                src = srcBase + left * 2;
-                width = (box.right - left) * 2;
-            } else {
-                src = srcBase + left;
-                width = box.right - left;
-            }
-            BlitPixieRect((unsigned char *)src,
-                          (unsigned char *)SW_PIXELPTR(frame, left, top),
-                          srcRowBytes, dstRowBytes, width, height);
-        } else {
-            CopyBits(GetPortBitMapForCopyBits(loadPort.world),
-                     GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                     &box, &box, srcCopy, NULL);
-        }
-    }
-}
-#endif
 
 EXTERN_C_END

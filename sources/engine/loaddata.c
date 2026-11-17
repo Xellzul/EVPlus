@@ -15,11 +15,7 @@
 #include "game.h"
 
 /* a resource handle's record: 1.0.10 casts the handle, an array field then indexes off the record */
-#ifdef MAC1010
-#define ResRec(T, h) (*(T **)(h))
-#else
 #define ResRec(T, h) ((T *)*(h))
-#endif
 #define ClampRGB(c) \
     if ((c).red > 0xffff) (c).red = 0xffff; \
     if ((c).green > 0xffff) (c).green = 0xffff; \
@@ -42,45 +38,13 @@
 
 #define kPrefStringMax 0x100
 
-#if V111 /* V111: the 1.1.1 source file is UTF-8 */
-#define kSpobResName "sp\xc3\xb6" "b"
-#define kSystResName "s\xc3\xbf" "st"
-#define kShipResName "sh\xc3\xaf" "p"
-#define kOutfResName "o\xc3\xbc" "tf"
-#define kDudeResName "d\xc3\xbc" "de"
-#define kPersResName "p\xc3\xab" "rs"
-#else
 #define kSpobResName "sp\x9a" "b"
 #define kSystResName "s\xd8" "st"
 #define kShipResName "sh\x95" "p"
 #define kOutfResName "o\x9f" "tf"
 #define kDudeResName "d\x9f" "de"
 #define kPersResName "p\x91" "rs"
-#endif
 
-#ifdef MACBUILD
-#define kLdefRed 0
-#define kLdefGreen 1
-#define kLdefBlue 2
-/* a pilot file's type 'Np' 0x95 'L' and the game's creator 'N' 0x9a 'v' 0x8a (MacRoman) */
-#define kPilotFileType 0x4e70954c
-#define kNovaCreator 0x4e9a768a
-/* CoreGraphics' private window-server calls (navEventHandler) */
-extern int _CGSDefaultConnection(void);
-extern int CGSGetWindowCount(int cid, int owner, int *count);
-extern int CGSGetWindowList(int cid, int owner, int size, int *list, int *count);
-extern int CGSSetWindowLevel(int cid, int window, int level);
-extern Boolean ColorSearchProc(RGBColor *rgb, int32_t *position);
-extern OSErr MyOpenDocument(const FSSpec *defaultSpec, FSSpec *outSpec);
-#define kPilotResID 128
-extern OSStatus FlipNpil(short resID, void *data, int32_t size, Boolean toDisk);
-/* AmbrosiaTools */
-extern OSErr FSRefMakeFSSpec(const FSRef *ref, FSSpec *spec);
-extern short gARef;
-/* the file type of a pilot file, MacRoman */
-#define kPilotFileType 0x4e70954c
-FSRef *novaSupportFolder = NULL;
-#endif
 
 /*
  * Set up the pilot-file directory at startup (win 0x004bd0c0): "9:" plus
@@ -88,56 +52,6 @@ FSRef *novaSupportFolder = NULL;
  * folder beside the application. The two debug switches are read here because
  * this is the first thing that runs after the resource file opens.
  */
-#ifdef MACBUILD
-#if V111
-/* SelectNovaSupport (mac _SelectNovaSupport): mac only. Asks for the EV Nova support folder,
-   offering Application Support/EV Nova (created if missing). */
-// MAC: _SelectNovaSupport i386 0x0007111e ppc 0x00079b80
-void SelectNovaSupport(void)
-{
-    FSRef novaRef;
-    FSRef asupRef;
-    HFSUniStr255 uniName;
-    NavDialogCreationOptions options;
-    AEDesc defaultLocation;
-    NavDialogRef dialog;
-    Size actualSize;
-    NavReplyRecord reply;
-    OSErr err;
-    DescType actualType;
-    AEKeyword keyword;
-    int32_t count;
-
-    if (FSFindFolder(kUserDomain, kApplicationSupportFolderType, kCreateFolder, &asupRef) != noErr)
-        return;
-    HFSNameGetUnicodeName("\pEV Nova", kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(&asupRef, uniName.length, uniName.unicode, kTextEncodingUnknown,
-                           &novaRef) != noErr)
-        FSCreateDirectoryUnicode(&asupRef, uniName.length, uniName.unicode, kFSCatInfoNone, NULL,
-                                 &novaRef, NULL, NULL);
-    err = NavGetDefaultDialogCreationOptions(&options);
-    if (err != noErr)
-        return;
-    options.optionFlags |= kNavNoTypePopup | kNavSelectDefaultLocation;
-    if (AECreateDesc(typeFSRef, &novaRef, sizeof(FSRef), &defaultLocation) != noErr)
-        return;
-    err = NavCreateChooseFolderDialog(&options, NULL, NULL, NULL, &dialog);
-    if (err == noErr) {
-        NavCustomControl(dialog, kNavCtlSetLocation, &defaultLocation);
-        NavDialogRun(dialog);
-        err = NavDialogGetReply(dialog, &reply);
-        if (err == noErr && reply.validRecord
-            && AECountItems(&reply.selection, &count) == noErr && count == 1) {
-            novaSupportFolder = malloc(sizeof(FSRef));
-            AEGetNthPtr(&reply.selection, 1, typeFSRef, &keyword, &actualType, novaSupportFolder,
-                        sizeof(FSRef), &actualSize);
-        }
-        NavDialogDispose(dialog);
-    }
-    AEDisposeDesc(&defaultLocation);
-}
-#endif
-#endif
 
 /* InitDataFiles. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bd0c0
@@ -285,9 +199,6 @@ void LoadObjectData(void)
     short maxGuns, maxTurrets;
     float base;
     int32_t tradeEst;
-#ifdef MACBUILD
-    ColorSearchUPP colorSearch;
-#endif
     short mountCount[8];
     short mountID[8];
     unsigned char name[256];
@@ -866,10 +777,6 @@ void LoadObjectData(void)
         n = count = CountResources(kWeapType);
         for (i = 0; i < kMaxWeapTypes; i++)
             weaponStats[i].guidance = kResAbsent;
-#if defined(MACBUILD) && V111
-        colorSearch = NewColorSearchUPP(ColorSearchProc);
-        AddSearch(colorSearch);
-#endif
         for (i = 0; i < kMaxWeapTypes; i++) {
             weaponFileHand = GetResource(kWeapType, i + kFirstResourceID);
             if (weaponFileHand != NULL) {
@@ -1049,9 +956,6 @@ void LoadObjectData(void)
             if (found >= n)
                 break;
         }
-#if defined(MACBUILD) && V111
-        DelSearch(colorSearch);
-#endif
         if (!gameLoaded)
             IterateInGameEventLoop(10);
 
@@ -1852,13 +1756,8 @@ void LoadObjectData(void)
         personData[kPersCaptainHector].flags = 2;
         personData[kPersCaptainHector].shipColor.red = personData[kPersCaptainHector].shipColor.green = personData[kPersCaptainHector].shipColor.blue = 0;
         personData[kPersCaptainHector].loaded = 1;
-#if V111 /* V111 spelling */
-        strcpy(personData[kPersCaptainHector].name, (char *)"\pCaptain Hector");
-        strcpy(personData[kPersCaptainHector].subtitle, (char *)"\pShareware Enforcer");
-#else
         CStr2PStr(personData[kPersCaptainHector].name, "Captain Hector");
         CStr2PStr(personData[kPersCaptainHector].subtitle, "Shareware Enforcer");
-#endif
 
         /* pick him a ship: sufficiently shielded and agile vs the fleet average */
         shieldSum = 0;
@@ -2384,17 +2283,6 @@ void LoadObjectData(void)
         escortMenuColor.blue = (ResRec(ColrRes, colorFileHand)->escortHiliteColor & 0xff) * 256;
         escortMenuColor.green = ((ResRec(ColrRes, colorFileHand)->escortHiliteColor >> 8) & 0xff) * 256;
         escortMenuColor.red = ((ResRec(ColrRes, colorFileHand)->escortHiliteColor >> 16) & 0xff) * 256;
-#ifdef MACBUILD
-        ldefColors[0][kLdefBlue] = (ResRec(ColrRes, colorFileHand)->listColor[0] & 0xff) * 256;
-        ldefColors[0][kLdefGreen] = ((ResRec(ColrRes, colorFileHand)->listColor[0] >> 8) & 0xff) * 256;
-        ldefColors[0][kLdefRed] = ((ResRec(ColrRes, colorFileHand)->listColor[0] >> 16) & 0xff) * 256;
-        ldefColors[1][kLdefBlue] = (ResRec(ColrRes, colorFileHand)->listColor[1] & 0xff) * 256;
-        ldefColors[1][kLdefGreen] = ((ResRec(ColrRes, colorFileHand)->listColor[1] >> 8) & 0xff) * 256;
-        ldefColors[1][kLdefRed] = ((ResRec(ColrRes, colorFileHand)->listColor[1] >> 16) & 0xff) * 256;
-        ldefColors[2][kLdefBlue] = (ResRec(ColrRes, colorFileHand)->listColor[2] & 0xff) * 256;
-        ldefColors[2][kLdefGreen] = ((ResRec(ColrRes, colorFileHand)->listColor[2] >> 8) & 0xff) * 256;
-        ldefColors[2][kLdefRed] = ((ResRec(ColrRes, colorFileHand)->listColor[2] >> 16) & 0xff) * 256;
-#else
         ldefColors[0].blue = (ResRec(ColrRes, colorFileHand)->listColor[0] & 0xff) * 256;
         ldefColors[0].green = ((ResRec(ColrRes, colorFileHand)->listColor[0] >> 8) & 0xff) * 256;
         ldefColors[0].red = ((ResRec(ColrRes, colorFileHand)->listColor[0] >> 16) & 0xff) * 256;
@@ -2404,15 +2292,10 @@ void LoadObjectData(void)
         ldefColors[2].blue = (ResRec(ColrRes, colorFileHand)->listColor[2] & 0xff) * 256;
         ldefColors[2].green = ((ResRec(ColrRes, colorFileHand)->listColor[2] >> 8) & 0xff) * 256;
         ldefColors[2].red = ((ResRec(ColrRes, colorFileHand)->listColor[2] >> 16) & 0xff) * 256;
-#endif
-#ifdef MACBUILD
-        progressDefRect = ResRec(ColrRes, colorFileHand)->progressBar;
-#else
         progressDefRect.top = ResRec(ColrRes, colorFileHand)->progressBar.top;
         progressDefRect.left = ResRec(ColrRes, colorFileHand)->progressBar.left;
         progressDefRect.bottom = ResRec(ColrRes, colorFileHand)->progressBar.bottom;
         progressDefRect.right = ResRec(ColrRes, colorFileHand)->progressBar.right;
-#endif
         strcpy((char *)name, ResRec(ColrRes, colorFileHand)->menuFont);
         CtoPstr((char *)name);
         GetFNum(name, &menuFontID);
@@ -2471,11 +2354,7 @@ void LoadDescription(char *dst, short id)
             descFlags = ResRec(DescRes, textFileHand)->text[size + 0x23] << 8;
             descFlags += ResRec(DescRes, textFileHand)->text[size + 0x24];
         } else {
-#ifdef MACBUILD
-            pstrcpy(descMovieName, "\p");
-#else
             pstrcpy(descMovieName, (unsigned char *)"");
-#endif
             descResourcePictId = 0;
             descFlags = 0;
         }
@@ -2514,16 +2393,8 @@ void LoadDescription(char *dst, short id)
             }
         }
     } else {
-#if V111 /* V111 spelling */
-        memset(dst, 0, 4);
-#else
         strcpy(dst, "");
-#endif
-#ifdef MACBUILD
-        pstrcpy(descMovieName, "\p");
-#else
         pstrcpy(descMovieName, (unsigned char *)"");
-#endif
         descResourcePictId = 0;
     }
 }
@@ -2888,67 +2759,11 @@ void MakeAlias(char *name)
 // FUNCTION: EVNOVA 0x004c7db0
 // MAC: _SavePilotFile i386 0x00076876 ppc 0x0007f6b4
 short SavePilotFile(short stellar)
-#ifdef MAC1010
-{
-    FSSpec spec;
-    OSErr err;
-
-    if (noSavePilotFiles != 0)
-        return 0;
-    err = FSMakeFSSpec(pilotsVRefNum, pilotsDirID, playerName, &spec);
-    if (err == noErr) {
-        err = FSpDelete(&spec);
-        if (err == noErr) {
-            err = FSMakeFSSpec(pilotsVRefNum, pilotsDirID, playerName, &spec);
-            if (err == fnfErr)
-                err = WritePilotData(stellar);
-        }
-    } else if (err == fnfErr)
-        err = WritePilotData(stellar);
-    return err;
-}
-#elif defined(MACBUILD)
-{
-    FSRef ref;
-    FSRef tmpRef;
-    UniChar tmpName[255];
-    HFSUniStr255 uniName;
-    CFStringRef name;
-    CFMutableStringRef tmpNameStr;
-    OSErr err;
-
-    if (noSavePilotFiles != 0)
-        return 0;
-    HFSNameGetUnicodeName(playerName, kTextEncodingUnknown, &uniName);
-    err = FSMakeFSRefUnicode(&pilotsFolder, uniName.length, uniName.unicode, kTextEncodingUnknown,
-                             &ref);
-    if (err == noErr) {
-        name = CFStringCreateWithCharacters(kCFAllocatorDefault, uniName.unicode, uniName.length);
-        if (name == NULL)
-            return -1;
-        tmpNameStr = CFStringCreateMutableCopy(kCFAllocatorDefault, uniName.length + 10, name);
-        CFStringAppend(tmpNameStr, CFSTR("-tmp"));
-        CFStringGetCharacters(tmpNameStr, CFRangeMake(0, CFStringGetLength(tmpNameStr)), tmpName);
-        FSMakeFSRefUnicode(&pilotsFolder, CFStringGetLength(tmpNameStr), tmpName,
-                           kTextEncodingUnknown, &tmpRef);
-        FSDeleteObject(&tmpRef);
-        err = FSMakeFSRefUnicode(&pilotsFolder, CFStringGetLength(tmpNameStr), tmpName,
-                                 kTextEncodingUnknown, &ref);
-        if (err == fnfErr)
-            err = WritePilotData(stellar);
-        CFRelease(name);
-        CFRelease(tmpNameStr);
-    } else if (err == fnfErr)
-        err = WritePilotData(stellar);
-    return err;
-}
-#else
 {
     if (noSavePilotFiles != 0)
         return 0;
     return WritePilotData(stellar);
 }
-#endif
 
 
 /* WritePilotData. STATE: MATCH 100% (1367 exact, 356 reloc), 1723/1723, byte-identical yes
@@ -2957,18 +2772,6 @@ short SavePilotFile(short stellar)
 // MAC: _WritePilotData i386 0x00071ffb ppc 0x0007ab1c
 short WritePilotData(short stellar)
 {
-#ifdef MAC1010 /* 1.0.10 real: 0x1002e224 FSMakeFSSpec, 0x1002e244 FSpCreateResFile, no FSRef */
-    FSSpec spec;
-    short savedResFile;
-#elif defined(MACBUILD)
-    HFSUniStr255 uniName;
-    HFSUniStr255 forkName;
-    FSRef tmpRef;
-    UniChar tmpUni[265];
-    short savedResFile;
-    CFStringRef nameStr;
-    CFMutableStringRef tmpNameStr;
-#endif
     char name[0x100];
     char path[0x800];
     FILE *f;
@@ -2994,15 +2797,10 @@ short WritePilotData(short stellar)
         (*playerFileHand)->stellar = stellar;
         (*playerFileHand)->shipType = shipData[0].type;
 
-#ifdef MAC1010
-        for (i = 0; i <= 5; i++)
-            (*playerFileHand)->cargo[i] = shipData[0].cargo[i];
-#else
         i = 0;
         do {
             (*playerFileHand)->cargo[i] = shipData[0].cargo[i];
         } while (++i < kCargoTypes);
-#endif
         (*playerFileHand)->shield = shipData[0].shield;
         (*playerFileHand)->fuel = shipData[0].fuel;
         (*playerFileHand)->month = gameTime.month;
@@ -3175,100 +2973,6 @@ short WritePilotData(short stellar)
 // FUNCTION: EVNOVA 0x004c9e90
 // MAC: _OpenPilotFile i386 0x00076644 ppc 0x0007f498
 Boolean OpenPilotFile(char *missingResource)
-#ifdef MACBUILD
-{
-#ifdef MAC1010
-#if TARGET_API_MAC_CARBON
-    unsigned char text[256];
-    Str255 name;
-    Str255 path;
-    FSSpec spec;
-    short i;
-    short result;
-    Boolean good;
-
-    good = 0;
-    *missingResource = 0;
-    crashlog("building file spec");
-    GetIndString(name, kPilotDirList, 3);
-    path[1] = ':';
-    path[0] = name[0] + 1;
-    for (i = 1; i <= name[0]; i++)
-        path[i + 1] = name[i];
-    FSMakeFSSpec(pilotsVRefNum, pilotsDirID, path, &spec);
-    crashlog("showing nav services dialog");
-    if (MyOpenDocument(&spec, &spec) == noErr)
-        good = 1;
-#else
-    unsigned char text[256];
-    StandardFileReply reply;
-    FSSpec spec;
-    SFTypeList types;
-    short result;
-    Boolean good;
-
-    *missingResource = 0;
-    LMSetCurDirStore(pilotsDirID);
-    types[0] = kPilotFileType;
-    StandardGetFile(NULL, 1, types, &reply);
-    good = reply.sfGood;
-    if (good) {
-        if (FSMakeFSSpec(reply.sfFile.vRefNum, reply.sfFile.parID, reply.sfFile.name, &spec) != noErr)
-            good = 0;
-    }
-#endif
-#else
-    FSSpec spec;
-    FSRef ref;
-    unsigned char text[256];
-    short result;
-    Boolean good;
-
-    *missingResource = 0;
-    crashlog("building file spec");
-    FSRefMakeFSSpec(&pilotsFolder, &spec);
-    crashlog("showing nav services dialog");
-    if (MyOpenDocument(&spec, &spec) != noErr)
-        good = false;
-    else
-        good = true;
-#endif
-    if (good) {
-        crashlog("open file setup 1");
-        DeleteAllComputerShips(1, 1);
-        ResetPlayer(1);
-        ResetPlayerRecord(1);
-        DeleteAllComputerShips(1, 1);
-        crashlog("loading pilot data");
-#ifdef MAC1010
-        result = LoadPilotData(&spec);
-#else
-        FSpMakeFSRef(&spec, &ref);
-        result = LoadPilotData(&ref);
-#endif
-        InitCursor();
-        ShowTheCursor();
-        crashlog("open file setup 2");
-        if (result == 0) {
-            shipData[0].deathTimer = -1.0f;
-            shipData[0].escapePods = -1;
-            return 1;
-        }
-        if (result == -0x2a) {
-            GetIndString(text, kAlertStrList, 0x22);
-            EVNoteAlert(text);
-        } else if (result == -0x2e) {
-            *missingResource = 1;
-            return 1;
-        }
-        return 0;
-    } else {
-        InitCursor();
-        ShowTheCursor();
-        return 0;
-    }
-}
-#else
 {
     OPENFILENAMEA ofn;
     int32_t mode[4];
@@ -3355,61 +3059,11 @@ Boolean OpenPilotFile(char *missingResource)
         return 0;
     }
 }
-#endif
 
 /* OpenLastPilotFile (mac _OpenLastPilotFile). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004ca120
 // MAC: _OpenLastPilotFile i386 0x000764ad ppc 0x0007f2fc
 void OpenLastPilotFile(void)
-#ifdef MACBUILD
-{
-#ifdef MAC1010 /* 1.0.10 real: 0x1002f524 FSMakeFSSpec, no FSRef */
-    FSSpec spec;
-    OSErr err;
-#else
-    FSRef ref;
-#endif
-    Str255 name;
-    HFSUniStr255 uniName;
-    short i;
-    short j;
-
-    GetIndString(name, kPilotDirList, 4);
-    if (!DoesPilotExist(name))
-        return;
-    DeleteAllComputerShips(1, 1);
-    ResetPlayer(1);
-    ResetPlayerRecord(1);
-    GetIndString(name, kPilotDirList, 4);
-#ifdef MAC1010
-    err = FSMakeFSSpec(pilotsVRefNum, pilotsDirID, name, &spec);
-    if (err == noErr)
-        err = LoadPilotData(&spec);
-    if (err != 0)
-        return;
-#else
-    HFSNameGetUnicodeName(name, kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(&pilotsFolder, uniName.length, uniName.unicode, kTextEncodingUnknown,
-                           &ref) != noErr)
-        return;
-    if (LoadPilotData(&ref) != 0)
-        return;
-#endif
-    gameInProgress = 1;
-    for (i = 0; i < kMaxSystems; i++) {
-        if (systemData[i].loaded != 0 && systemData[i].exploreLevel > 0)
-            ExploreNebulaeFromSystem(i);
-    }
-    for (j = 0; j < kMaxActiveMissions; j++) {
-        if (currentMissionObjectives[j].active != 0) {
-            if ((currentMissions[j].flags & kMissionInfiniteAuxShips) != 0)
-                currentMissions[j].auxShipsLeft = currentMissions[j].auxShipCount;
-            currentMissions[j].auxShipDelay = (Rand(0x46) + 0x46);
-            currentMissions[j].auxShipsSpawned = 0;
-        }
-    }
-}
-#else
 {
     char name[256];
     char path[0x800];
@@ -3422,6 +3076,7 @@ void OpenLastPilotFile(void)
     strcpy(path, pilotsFolder);
     strcat(path, name);
     data = (char *)LoadAFile(path, &len);
+    // BUG: reads data[-1] when the last-pilot file is empty (len == 0)
     if (data != NULL && data[len - 1] != 0) {
         data = (char *)ResizeAPointer(data, len + 1);
         data[len] = 0;
@@ -3449,7 +3104,6 @@ void OpenLastPilotFile(void)
     if (data != NULL)
         DeallocAPointer(data);
 }
-#endif
 
 /* CountEVPlugins counts+logs files of one extension in a directory (filescan.c) */
 
@@ -3470,28 +3124,6 @@ void DumpPilotLog(void)
     uint32_t contribute[2];
 #endif
 
-#if defined(MACBUILD) && V111
-    if (novaSupportFolder != NULL) {
-        dir = malloc(512);
-        FSRefMakePath(novaSupportFolder, (UInt8 *)dir, 512);
-        path = malloc(strlen(dir) + 1 + strlen("pilotlog.txt")); /* BUG: no room for the NUL */
-        sprintf(path, "%s/%s", dir, "pilotlog.txt");
-        free(dir);
-    }
-    /* BUG: path is never set when there is no support folder */
-    log = fopen(path, "r");
-    if (log == NULL) {
-        if (path != NULL)
-            free(path);
-        return;
-    }
-    fclose(log);
-    log = fopen(path, "w");
-    if (path != NULL)
-        free(path);
-    if (log == NULL)
-        return;
-#else
     log = fopen("pilotlog.txt", "r");
     if (log == NULL)
         return;
@@ -3499,7 +3131,6 @@ void DumpPilotLog(void)
     log = fopen("pilotlog.txt", "w");
     if (log == NULL)
         return;
-#endif
 
     fprintf(log, "EV Nova pilot data dump\n\n");
     GetTime(&dtr);
@@ -3511,21 +3142,11 @@ void DumpPilotLog(void)
     else
         fprintf(log, "%i:%02i PM", dtr.hour - 12, dtr.minute);
     fprintf(log, "\n\n");
-#if V111
-    fprintf(log, "Game version:      %s", "1.1.1");
-#else
     fprintf(log, "Game version:      %s", "1.0.A");
-#endif
     fprintf(log, "\n\n");
 
     fprintf(log, "Plugins loaded:\n");
-#ifdef MAC1010
-    if (CountEVPlugins(gARef, "\pNova Plug-Ins", kPlugInFileType, log) == 0)
-#elif defined(MACBUILD)
-    if (CountEVPlugins(pluginsFolder, kPlugInFileType) == 0)
-#else
     if (CountEVPlugins("Nova Plug-Ins", ".rez", log) == 0)
-#endif
         fprintf(log, "  none\n");
     fprintf(log, "\n");
 
@@ -3776,29 +3397,8 @@ void DumpPilotLog(void)
    OPEN: none. */
 // FUNCTION: EVNOVA 0x004cb260
 // MAC: _LoadPilotData i386 0x000750b5 ppc 0x0007dd04
-#ifdef MAC1010
-short LoadPilotData(FSSpec *spec)
-#elif defined(MACBUILD)
-short LoadPilotData(const FSRef *ref)
-#else
 short LoadPilotData(char *path)
-#endif
 {
-#ifdef MAC1010 /* 1.0.10 real: 0x1002f6b4 ResolveAliasFile, 0x1002f6e4 FSpOpenResFile, no HFSUniStr255 */
-    Boolean targetIsFolder;
-    Boolean wasAliased;
-    short resID;
-    ResType resType;
-    Handle h;
-#elif defined(MACBUILD)
-    Boolean wasAliased;
-    Boolean targetIsFolder;
-    HFSUniStr255 uniName;
-    Str255 hfsName;
-    short resID;
-    ResType resType;
-    Handle h;
-#endif
     char buf[0x40];
     Str255 text;
     FILE *f;
@@ -3971,16 +3571,10 @@ short LoadPilotData(char *path)
                 }
             }
 
-#ifdef MAC1010
-            for (i = 0; i < kMaxMissionBits; i++) {
-                missionBit[i] = (*playerFileHand)->missionBits[i];
-            }
-#else
             i = 0;
             do {
                 missionBit[i] = (*playerFileHand)->missionBits[i];
             } while (++i < kMaxMissionBits);
-#endif
 
             for (i = 0; i < kMaxStellars; i++) {
                 if (stellarData[i].prepared != 0)
@@ -4161,16 +3755,10 @@ short LoadPilotData(char *path)
                 }
             }
 
-#ifdef MAC1010
-            for (i = 0; i < kMaxSystems; i++) {
-                systemData[i].reinforceDaysLeft = (*altPlayerFileHand)->systState[i];
-            }
-#else
             i = 0;
             do {
                 systemData[i].reinforceDaysLeft = (*altPlayerFileHand)->systState[i];
             } while (++i < kMaxSystems);
-#endif
 
             for (i = 0; i < kMaxStellars; i++) {
                 if ((*altPlayerFileHand)->spobDead[i] > 0) {
@@ -4194,18 +3782,11 @@ short LoadPilotData(char *path)
                         playerEscortOrders[shipClass[shipData[i].type].escortType];
             }
 
-#ifdef MAC1010
-            for (i = 0; i <= 1; i++) {
-                globalPriceFlux[i] = (*altPlayerFileHand)->priceFlux[0][i];
-                localPriceFlux[i] = (*altPlayerFileHand)->priceFlux[1][i];
-            }
-#else
             i = 0;
             do {
                 globalPriceFlux[i] = (*altPlayerFileHand)->priceFlux[0][i];
                 localPriceFlux[i] = (*altPlayerFileHand)->priceFlux[1][i];
             } while (++i < 2);
-#endif
 
             strncpy(datePrefix, (*altPlayerFileHand)->datePrefix, 0xf);
             strncpy(dateSuffix, (*altPlayerFileHand)->dateSuffix, 0xf);
@@ -4262,18 +3843,6 @@ short LoadPilotData(char *path)
     crashlog("dumping pilot log");
     DumpPilotLog();
 
-#ifdef MAC1010
-    } else
-        return kPilotUnreadable;
-    } else
-        return kPilotUnreadable;
-    return junk != 0 ? (short)kPilotHasJunk : (short)kPilotOK;
-#elif defined(MACBUILD)
-    return junk != 0 ? kPilotHasJunk : kPilotOK;
-
-badFile:
-    return kPilotUnreadable;
-#else
     if (junk == 0)
         goto ok;
     return kPilotHasJunk; /* BUG: f is not closed on this path, only the junk == 0 path reaches fclose */
@@ -4284,81 +3853,19 @@ badFile:
 ok:
     fclose(f);
     return kPilotOK;
-#endif
 }
 
 /* DoesPilotExist. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd030
 // MAC: _DoesPilotExist i386 0x00072def ppc 0x0007bc7c
-#ifdef MAC1010
-Boolean DoesPilotExist(ConstStr255Param name)
-{
-    short vRefNum;
-    int32_t dirID;
-    FSSpec spec;
-    Str255 pname;
-    OSErr err;
-
-    if (HGetVol(pname, &vRefNum, &dirID) == noErr) {
-        pstrcpy(pname, (unsigned char *)name);
-        err = FSMakeFSSpec(pilotsVRefNum, pilotsDirID, pname, &spec);
-        if (err == fnfErr)
-            return 0;
-        if (err == noErr)
-            return 1;
-    }
-    return 0;
-}
-#elif defined(MACBUILD)
-Boolean DoesPilotExist(ConstStr255Param name)
-{
-    FSRef ref;
-    Str255 pname;
-    HFSUniStr255 uniName;
-
-    pstrcpy(pname, (unsigned char *)name);
-    HFSNameGetUnicodeName(pname, kTextEncodingUnknown, &uniName);
-    return FSMakeFSRefUnicode(&pilotsFolder, uniName.length, uniName.unicode,
-                              kTextEncodingUnknown, &ref) == noErr;
-}
-#else
 Boolean DoesPilotExist(const char *path)
 {
     return DoesFileExist(path);
 }
-#endif
 
 /* DeletePilotFile. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd040
 // MAC: _DeletePilotFile i386 0x00072e6b ppc 0x0007bcec
-#ifdef MAC1010
-void DeletePilotFile(ConstStr255Param name)
-{
-    FSSpec spec;
-    Str255 pname;
-
-    if (!DoesPilotExist(name))
-        return;
-    pstrcpy(pname, (unsigned char *)name);
-    if (FSMakeFSSpec(pilotsVRefNum, pilotsDirID, pname, &spec) == noErr)
-        FSpDelete(&spec);
-}
-#elif defined(MACBUILD)
-void DeletePilotFile(ConstStr255Param name)
-{
-    FSRef ref;
-    Str255 pname;
-    HFSUniStr255 uniName;
-
-    if (!DoesPilotExist(name))
-        return;
-    pstrcpy(pname, (unsigned char *)name);
-    HFSNameGetUnicodeName(pname, kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(&pilotsFolder, uniName.length, uniName.unicode,
-                           kTextEncodingUnknown, &ref) == noErr)
-        FSDeleteObject(&ref);
-}
-#else
 void DeletePilotFile(const char *name)
 {
     char path[2048];
@@ -4370,16 +3877,11 @@ void DeletePilotFile(const char *name)
         return;
     DeleteAFile(path);
 }
-#endif
 
 #define kEBugLastField 0x1f
 typedef struct {
     short flag[kEBugLastField + 1];
 } EBugRec;
-#if V111
-/* the ebug resource of the last EVBugResourceFieldTest */
-Handle bugHandle;
-#endif
 
 #define kCharRecordSize 0x16a
 
@@ -4395,12 +3897,7 @@ Boolean EVBugResourceFieldTest(short field)
     on = 0;
     if (field < 0 || field > kEBugLastField)
         return 0;
-#if V111
-    bugHandle = GetResource(kEBugType, 128);
-    h = bugHandle;
-#else
     h = GetResource(kEBugType, 128);
-#endif
     if (h != NULL) {
         if ((*(EBugRec **)h)->flag[field] != 0)
             on = 1;
@@ -4411,53 +3908,6 @@ Boolean EVBugResourceFieldTest(short field)
 
 /* The memset is inlined by mwcc (rep stosb): it needs -opt level=4,intrinsics with <string.h>
    included. */
-#ifdef MAC1010
-OSErr GetSubfolderOfFile(short refNum, ConstStr255Param name, int32_t *dirID, short *vRefNum)
-{
-    FCBPBRec fcb;
-    FSSpec spec;
-    Boolean wasAliased;
-    Boolean isFolder;
-    Str255 fileName;
-    CInfoPBRec *pb;
-    OSErr err;
-    OSErr aliasErr;
-
-    fcb.ioRefNum = refNum;
-    fcb.ioNamePtr = fileName;
-    fcb.ioFCBIndx = 0;
-    err = PBGetFCBInfoSync(&fcb);
-    if (err == noErr) {
-        fileName[0] = 0;
-        pb = (CInfoPBRec *)NewPtrClear(sizeof(CInfoPBRec));
-        if (pb != NULL) {
-            spec.vRefNum = fcb.ioFCBVRefNum;
-            spec.parID = fcb.ioFCBParID;
-            BlockMove(name, spec.name, name[0] + 1);
-            BlockMove(name, fileName, name[0] + 1);
-            aliasErr = ResolveAliasFile(&spec, true, &isFolder, &wasAliased);
-            if (aliasErr == noErr && wasAliased) {
-                pb->dirInfo.ioNamePtr = spec.name;
-                pb->dirInfo.ioVRefNum = spec.vRefNum;
-                pb->dirInfo.ioDrDirID = spec.parID;
-            } else {
-                pb->dirInfo.ioNamePtr = fileName;
-                pb->dirInfo.ioVRefNum = fcb.ioFCBVRefNum;
-                pb->dirInfo.ioDrDirID = fcb.ioFCBParID;
-            }
-            pb->dirInfo.ioFDirIndex = 0;
-            pb->dirInfo.ioCompletion = NULL;
-            err = PBGetCatInfoSync(pb);
-            if (err == noErr) {
-                *dirID = pb->dirInfo.ioDrDirID;
-                *vRefNum = pb->dirInfo.ioVRefNum;
-            }
-            DisposePtr((Ptr)pb);
-        }
-    }
-    return err;
-}
-#endif
 
 /* AdjustHandleSize (mac _AdjustHandleSize). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004cd100
@@ -4567,11 +4017,7 @@ void GetDefaultCharResourceName(unsigned char *name)
     uint32_t type;
 
     count = CountResources(kCharType);
-#ifdef MACBUILD
-    pstrcpy(name, "\p");
-#else
     pstrcpy(name, (unsigned char *)"");
-#endif
     for (i = 0; i < count; i++) {
         if (name[0] == 0) {
             /* cleared first so a failed load leaves no stale handle behind */
@@ -4741,49 +4187,3 @@ void ActivateCharResource(const unsigned char *name, Boolean applyStats)
         strcpy(dateSuffix, "");
     }
 }
-
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-OSErr MyOpenDocument(const FSSpec *defaultSpec, FSSpec *outSpec)
-{
-    NavDialogOptions options;
-    AEDesc defaultLocation;
-    OSErr err;
-    int32_t index;
-    NavReplyRecord reply;
-    int32_t count;
-    AEKeyword keyword;
-    DescType actualType;
-    Size actualSize;
-    FSSpec spec;
-    NavTypeListHandle typeList;
-
-    err = NavGetDefaultDialogOptions(&options);
-    if (err == noErr) {
-        options.dialogOptionFlags |= kNavSelectDefaultLocation;
-        options.dialogOptionFlags |= kNavNoTypePopup;
-        options.dialogOptionFlags ^= kNavAllowPreviews;
-        options.dialogOptionFlags ^= kNavAllowMultipleFiles;
-        err = AECreateDesc(typeFSS, defaultSpec, sizeof(FSSpec), &defaultLocation);
-        if (err == noErr) {
-            typeList = (NavTypeListHandle)GetResource('open', 128);
-            if (NavGetFile(&defaultLocation, &reply, &options, NULL, NULL, NULL, typeList, NULL) == noErr
-                && reply.validRecord) {
-                if (AECountItems(&reply.selection, &count) == noErr) {
-                    for (index = 1; index <= count; index++) {
-                        if (AEGetNthPtr(&reply.selection, index, typeFSS, &keyword, &actualType,
-                                        &spec, sizeof(FSSpec), &actualSize) == noErr)
-                            *outSpec = spec;
-                    }
-                }
-                err = NavDisposeReply(&reply);
-            } else
-                err = fnfErr;
-            if (typeList != NULL)
-                ReleaseResource((Handle)typeList);
-            AEDisposeDesc(&defaultLocation);
-        }
-    }
-    return err;
-}
-#endif
-

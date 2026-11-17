@@ -1940,16 +1940,6 @@ void HighLevelAIHandler(ShipObj *ship)
                         i = (ShipMaxWeaponRange(ship) * 0.85);
                         if (IsDisabled(&shipData[ship->targetShip]))
                             i *= 0.5;
-#ifdef MACBUILD
-                        if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) > i
-                                || FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) > i)
-                            ship->aiSubstate = kSubMissile;
-                        else if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) > 165.0f
-                                || FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) > 165.0f)
-                            ship->aiSubstate = kSubWaitTarg;
-                        else
-                            ship->aiSubstate = kSubRunAwy;
-#else
                         {
                             float fx;
                             float fy;
@@ -1964,7 +1954,6 @@ void HighLevelAIHandler(ShipObj *ship)
                             else
                                 ship->aiSubstate = kSubRunAwy;
                         }
-#endif
                     } else if (AIEvalHopelessChase(ship)) {
                         if (ship->aiType >= kShipTypeWarship)
                             ship->aiSubstate = kSubWaitTarg;
@@ -2046,19 +2035,11 @@ void HighLevelAIHandler(ShipObj *ship)
                         reach = ((10.0f - shipClass[ship->type].turnRate) * 30.0f);
                         if (ShipIsInertialess(ship))
                             reach *= 4;
-#ifdef MACBUILD
-                        if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) <= reach
-#else
                         if (FloatAbs((double)(ship->pos.x - shipData[ship->targetShip].pos.x)) <= reach
-#endif
                                 && FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) <= reach) {
                             ship->aiSubstate = kSubBoard;
                         } else {
-#ifdef MACBUILD
-                            if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) <= reach * 2
-#else
                             if (FloatAbs((double)(ship->pos.x - shipData[ship->targetShip].pos.x)) <= reach * 2
-#endif
                                     && FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) <= reach * 2)
                                 ship->aiSubstate = kSubChasSlw;
                             else
@@ -2127,16 +2108,6 @@ void HighLevelAIHandler(ShipObj *ship)
             else
                 ship->aiSubstate = kSubChase;
         } else {
-#ifdef MACBUILD
-            if (FloatAbs(ship->pos.x - shipData[ship->parentShip].pos.x) <= 300.0f
-                    && FloatAbs(ship->pos.y - shipData[ship->parentShip].pos.y) <= 300.0f)
-                ship->aiSubstate = kSubFormFly;
-            else if (FloatAbs(ship->pos.x - shipData[ship->parentShip].pos.x) <= 600.0f
-                    && FloatAbs(ship->pos.y - shipData[ship->parentShip].pos.y) <= 600.0f)
-                ship->aiSubstate = kSubChasSlw;
-            else
-                ship->aiSubstate = kSubChase;
-#else
             float fy;
             float fx;
 
@@ -2151,7 +2122,6 @@ void HighLevelAIHandler(ShipObj *ship)
                 ship->aiSubstate = kSubChasSlw;
             else
                 ship->aiSubstate = kSubChase;
-#endif
         }
     }
 
@@ -2165,20 +2135,12 @@ void HighLevelAIHandler(ShipObj *ship)
         } else if (!ShipVisibleToShip(shipData, ship)) {
             ship->aiSubstate = kSubKillSpd;
         } else {
-#ifdef MACBUILD
-            if (FloatAbs(ship->pos.x - shipData->pos.x) <= reach
-#else
             if (FloatAbs((double)(ship->pos.x - shipData->pos.x)) <= reach
-#endif
                     && FloatAbs(ship->pos.y - shipData->pos.y) <= reach) {
                 ship->aiSubstate = kSubFormFly;
             } else {
                 reach = ((10.0f - shipClass[ship->type].turnRate) * 60.0f);
-#ifdef MACBUILD
-                if (FloatAbs(ship->pos.x - shipData->pos.x) <= reach
-#else
                 if (FloatAbs((double)(ship->pos.x - shipData->pos.x)) <= reach
-#endif
                         && FloatAbs(ship->pos.y - shipData->pos.y) <= reach)
                     ship->aiSubstate = kSubChasSlw;
                 else
@@ -3459,12 +3421,6 @@ void AIFireTurret(ShipObj *ship)
                         bearing = CalcInterceptAngle(&ship->pos,
                                                &shipData[ship->targetShip].pos);
                         ok = 0;
-#ifdef MACBUILD
-                        if (weaponStats[k].guidance == kGuidanceFrontQuad)
-                            angle = abs((bearing - ship->heading)) % kFullCircle;
-                        if (weaponStats[k].guidance == kGuidanceRearQuad)
-                            angle = abs(bearing - ((short)ship->heading + kHalfCircle) % kFullCircle) % kFullCircle;
-#else
                         if (weaponStats[k].guidance == kGuidanceFrontQuad) {
                             d = fabs(bearing - ship->heading);
                             angle = (short)d % kFullCircle;
@@ -3473,7 +3429,6 @@ void AIFireTurret(ShipObj *ship)
                             angle = (short)abs(bearing
                                                   - ((short)ship->heading + kHalfCircle) % kFullCircle) % kFullCircle;
                         }
-#endif
                         if (angle <= 0x2d)
                             ok = 1;
                     } else
@@ -6250,9 +6205,6 @@ void AIMaintainFormation(ShipObj *ship, Boolean snap)
     float damp;
     float step;
     float dy;
-#ifdef MACBUILD
-    float x;
-#endif
     float fy;
     float y;
     float band;
@@ -6276,18 +6228,10 @@ void AIMaintainFormation(ShipObj *ship, Boolean snap)
         ship->pos = ship->formPos;
     }
     else {
-#ifdef MACBUILD
-        x = ship->pos.x;
-        if (x <= ship->formPos.x - band)
-            ship->pos.x += step;
-        else if (x >= ship->formPos.x + band)
-            ship->pos.x -= step;
-#else
         if (ship->pos.x <= ship->formPos.x - band)
             ship->pos.x += step;
         else if (ship->pos.x >= ship->formPos.x + band)
             ship->pos.x -= step;
-#endif
         y = ship->pos.y;
         fy = ship->formPos.y;
         if (y <= fy - band)
@@ -6386,14 +6330,6 @@ void FireAIShipWeapon(ShipObj *ship)
                             angle = CalcInterceptAngle(
                                         &ship->pos,
                                         &shipData[ship->targetShip].pos);
-#ifdef MACBUILD
-                            if (weaponStats[ship->selectedWeapon].guidance == kGuidanceFrontQuad)
-                                cone = abs((int32_t)(angle - ship->heading)) % kFullCircle;
-                            if (weaponStats[ship->selectedWeapon].guidance == kGuidanceRearQuad)
-                                cone = abs(angle
-                                           - ((short)ship->heading + kHalfTurnDeg)
-                                             % kFullCircle) % kFullCircle;
-#else
                             if (weaponStats[ship->selectedWeapon].guidance == kGuidanceFrontQuad)
                                 cone = (short)FloatAbs(angle
                                            - ship->heading) % kFullCircle;
@@ -6401,7 +6337,6 @@ void FireAIShipWeapon(ShipObj *ship)
                                 cone = (short)abs(angle
                                            - ((short)ship->heading + kHalfTurnDeg)
                                              % kFullCircle) % kFullCircle;
-#endif
                             if (cone <= 45) {
                                 SpawnShot(ship->index, ship->targetShip, ship->selectedWeapon, 0);
                                 shotsFired++;
@@ -6916,32 +6851,11 @@ void AIShipCapturedByPlayer(ShipObj *ship)
     }
 }
 
-/* AIShipBoardedByPlayer (mac _AIShipBoardedByPlayer, dead on win: uncalled, the linker strips it). STATE: see the mac baseline. OPEN: none */
+/* AIShipBoardedByPlayer (mac _AIShipBoardedByPlayer; the win body was decompiled first under the invented
+   name ClearTargetsOnShip -- same function, merged). STATE: MATCH, byte-identical. OPEN: none */
+// FUNCTION: EVNOVA 0x00415dc0
 // MAC: _AIShipBoardedByPlayer i386 0x000897a8 ppc 0x00094b0c
 void AIShipBoardedByPlayer(ShipObj *ship)
-{
-    short i;
-
-    for (i = 1; i < kMaxShips; i++) {
-        if (shipData[i].active != 0 && i != ship->index
-                && (ship->index == shipData[i].targetShip
-                    || ship->index == shipData[i].targetStellar)) {
-            shipData[i].aiState = kAIStateHiJack;
-            shipData[i].aiSubstate = kSubLoJack;
-            shipData[i].targetShip = -1;
-            shipData[i].targetStellar = -1;
-            shipData[i].grudge = 0;
-        }
-    }
-}
-
-/*
- * Name invented - no mac twin has been identified for it.
- */
-#ifndef MACBUILD
-/* ClearTargetsOnShip. STATE: MATCH, byte-identical. OPEN: none */
-// FUNCTION: EVNOVA 0x00415dc0
-void ClearTargetsOnShip(ShipObj *ship)
 {
     short i;
 
@@ -6960,7 +6874,6 @@ void ClearTargetsOnShip(ShipObj *ship)
         }
     }
 }
-#endif
 
 /* AIShipIsAttackingAsteroid. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00415e60

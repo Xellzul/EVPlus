@@ -19,17 +19,10 @@ void MainScreenAnimDraw(void)
 
     SetGWorldContainer(&loadPort);
     if (logoPort.world != NULL) {
-#ifdef MACBUILD
-        rect.left = logoPort.bounds.left;
-        rect.top = logoPort.bounds.top + logoFrameSize.height * logoIndex;
-        rect.bottom = rect.top + logoFrameSize.height;
-        rect.right = rect.left + logoFrameSize.width;
-#else
         rect.left = logoPort.bounds.left;
         rect.top = logoPort.bounds.top + gMainPicHeightDelta * logoIndex;
         rect.bottom = rect.top + gMainPicHeightDelta;
         rect.right = rect.left + gMainPicWidthDelta;
-#endif
 
         logoDestRect.right = (rect.right - rect.left) + logoDestRect.left;
         logoDestRect.bottom = (rect.bottom - rect.top) + logoDestRect.top;

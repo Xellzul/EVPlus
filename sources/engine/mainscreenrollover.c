@@ -39,19 +39,9 @@ Boolean doMainScreenAnim;
 Boolean majorPrefsChange;
 #endif
 Boolean creatingPilotFile;
-#ifdef MACBUILD
-#ifndef MAC1010 /* 1.0.10: at the head of Main Screen.c */
-Boolean gUpdateFlag = 0;
-#endif
-#else
 Boolean gUpdateFlag;
-#endif
 Boolean regNoticeShown;
 Boolean showingIntroText;
-#ifdef MACBUILD
-EventRecord gEvent;
-#else
-#endif
 Str255 newPlayerName[2];
 Str255 newPilotPopupChoice[2];
 void *mainScreenSnd[4];
@@ -63,12 +53,8 @@ short logoIndex;
 short rolloverIndex;
 short slideIndex[3];
 short rolloverAlpha;
-#ifdef MACBUILD
-AnimDelta logoFrameSize;
-#else
 short gMainPicWidthDelta;
 short gMainPicHeightDelta;
-#endif
 ShortPoint logoDestPoint;
 ShortPoint rolloverDestPoint;
 AnimDelta slideFrameSize[3];

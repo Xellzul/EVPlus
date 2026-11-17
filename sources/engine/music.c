@@ -30,19 +30,11 @@
 
 /* the load-bar and intro-music object's globals */
 Rect progressRect;
-#ifdef MACBUILD
-Rect fireOffRect[18];
-#else
 unsigned char fireOffRect[144];
-#endif
 Rect progressDefRect;
 double progressCount;
 double progressMax;
-#ifdef MACBUILD
-GWorldContainer progressLoadPort;
-#else
 Rect gLoadBarBase;
-#endif
 RGBColor progressColor[3];
 uint32_t lastMoviesTaskTime;
 Movie introMusicMovie;

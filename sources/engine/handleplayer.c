@@ -30,7 +30,6 @@
 #ifdef MACBUILD
 
 extern void SetRetainedWindow(WindowRef window, Boolean retained);
-extern void AIShipBoardedByPlayer(ShipObj *ship);
 extern void FadeWhiteOut(void);
 extern void FadeWhiteIn(void);
 extern Boolean QuickKeyCheckPlusEscorts(short code);
@@ -164,11 +163,7 @@ EXTERN_C_BEGIN
                                                             /* 0x00475830 */
                                                             /* 0x00470220 */
 
-#ifdef MACBUILD
-#define mapLink i
-#else
 #define mapLink j
-#endif
 
 /* HandlePlayer (mac _HandlePlayer). STATE: win MATCH 100%, exe 9548 / obj 9548, frame 0x29c,
    byte-identical yes (relocregcheck 0). mac MATCH on both slices.
@@ -584,18 +579,11 @@ void HandlePlayer(ShipObj *player)
                     DisplayComm((PStrChar *)msg, 0x168, 0, kCommTextSize, &rgbWhite, 0, 0);
                 } else {
                     for (i = 0; i < kMaxOutfits; i++) {
-#ifdef MACBUILD
-                        if (shipSystems[i] > 0) {
-                            for (j = 0; j < kOutfMods; j++) {
-                                if (outfitSystem[i].modType[j] == kOutfModType50) {
-                                    if (shipSystems[i] > 1) {
-#else
                         count = shipSystems[i];
                         if (count > 0) {
                             for (j = 0; j < kOutfMods; j++) {
                                 if (outfitSystem[i].modType[j] == kOutfModType50) {
                                     if (count > 1) {
-#endif
                                         strcpy((char *)msg, "");
                                         StrcatIndCString((char *)msg, kGameStrList, 0x27);
                                         strcat((char *)msg, " ");
@@ -640,11 +628,7 @@ void HandlePlayer(ShipObj *player)
         sabotageCounter = 0;
     }
 
-#ifdef MACBUILD
-    if (QuickKeyCheck(keyPrefs.clearTarget) && KeyCheck(kScanOption)) {
-#else
     if (QuickKeyCheck(keyPrefs.clearTarget) && (KeyCheck(kScanLAlt) || KeyCheck(kScanRAlt))) {
-#endif
         keyPressedThisFrame = 1;
         if (!navModeSelectFlag) {
             navModeSelectFlag = 1;
@@ -655,11 +639,7 @@ void HandlePlayer(ShipObj *player)
             }
         }
     }
-#ifdef MACBUILD
-    if (((QuickKeyCheck(keyPrefs.clearTarget) && !KeyCheck(kScanOption))
-#else
     if (((QuickKeyCheck(keyPrefs.clearTarget) && !KeyCheck(kScanLAlt) && !KeyCheck(kScanRAlt))
-#endif
             || QuickKeyCheck(keyPrefs.hyperspace))
         && player->jumpTimer <= 0.0f) {
         keyPressedThisFrame = 1;
@@ -1357,13 +1337,8 @@ void HandlePlayer(ShipObj *player)
             if (hyperRoute[1] != -1
                     && FindActiveCoLocatedSystem(sys)
                        == FindActiveCoLocatedSystem(hyperRoute[1])
-#ifdef MACBUILD
-                    && (k = ShipJumpsPerJump(player)) > 1) {
-                for (i = 1; i < k; i++) {
-#else
                     && (count = k = ShipJumpsPerJump(player)) > 1) {
                 for (i = 1; i < count; i++) {
-#endif
                     sys = FindActiveCoLocatedSystem(hyperRoute[1]);
                     if (sys == -1)
                         break;
@@ -1381,30 +1356,6 @@ void HandlePlayer(ShipObj *player)
             player->targetStellar = -1;
             player->targetShip = -1;
             player->fuel = player->fuel - 100.0f;
-#if V111
-            SWSetPortToWorkArea(gSpriteWorld);
-            ForeColor(whiteColor);
-            PaintRect(&gSpriteWorld->workFrameP->frameRect);
-            ForeColor(blackColor);
-            if (useLegacyRenderingPipeline) {
-                BlitPixieRectDrawProc(gSpriteWorld->workFrameP, SWWindowFrame(gSpriteWorld),
-                             &gSpriteWorld->workFrameP->frameRect,
-                             &SWWindowFrame(gSpriteWorld)->frameRect);
-            } else {
-                SWSetPortToWindow(gSpriteWorld);
-                CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
-                         GetPortPixMapBits(SWWindowFrame(gSpriteWorld)->framePort),
-                         &gSpriteWorld->workFrameP->frameRect,
-                         &SWWindowFrame(gSpriteWorld)->frameRect, 0, NULL);
-                QDFlushPortBuffer(SWWindowFrame(gSpriteWorld)->framePort, NULL);
-            }
-#else
-#ifdef MAC1010
-            SWSetPortToWorkArea(gSpriteWorld);
-            ForeColor(whiteColor);
-            PaintRect(&gSpriteWorld->workFrameP->frameRect);
-            ForeColor(blackColor);
-#else
             SWSetPortToWindow(gSpriteWorld);
 #ifdef CEFIX /* F22.01 */
             CE_SetFlashColor(whiteColor);
@@ -1415,11 +1366,9 @@ void HandlePlayer(ShipObj *player)
             ForeColor(blackColor);
             ScreenEndScene();
             SWSetPortToWorkArea(gSpriteWorld);
-#endif
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, SWWindowFrame(gSpriteWorld),
                          &gSpriteWorld->workFrameP->frameRect,
                          &SWWindowFrame(gSpriteWorld)->frameRect);
-#endif
             PropagateMissionBitEffects();
             if (systemData[shipData->curSystem].murk < 0)
                 ClearStarfield();
@@ -1541,11 +1490,7 @@ void HandlePlayer(ShipObj *player)
             killAsteroids = 1;
             missionSoundID = -1;
             escortMenuOnscreen = 0;
-#ifdef MACBUILD
-            CreateAsteroids(0);
-#else
             CreateAsteroids();
-#endif
             ResetPlayerPrecalcedValues();
             if (shipClass[player->type].shanFlags & kShanUnfoldsWhenFiring) {
                 player->foldSet =
@@ -1561,14 +1506,7 @@ void HandlePlayer(ShipObj *player)
             SWHideAllSprites(gSpriteWorld);
             HandleStellarSystemVisibility();
             PrepareAllSprites();
-#if V111
-            if (useLegacyRenderingPipeline)
-                SWSetPortToWorkArea(gSpriteWorld);
-            else
-                SWSetPortToBackground(gSpriteWorld);
-#else
             SWSetPortToWorkArea(gSpriteWorld);
-#endif
             SetSystemBackgroundColor();
             PaintRect(&gSpriteWorld->backFrameP->frameRect);
             SWSetPortToWorkArea(gSpriteWorld);
@@ -2601,11 +2539,7 @@ void HandlePlayer(ShipObj *player)
     if (CmdKeyQuick()
             && QuickKeyCheck(keyPrefs.jettison)) {
         keyPressedThisFrame = 1;
-#ifdef MACBUILD
-        if (QuickKeyCheck(kScanOption))
-#else
         if (QuickKeyCheck(kScanLShift) || QuickKeyCheck(kScanRShift))
-#endif
             JettisonCargo(0);
         else
             JettisonCargo(1);
@@ -2845,12 +2779,7 @@ void HandlePlayer(ShipObj *player)
                 pstrcpy(name, newbieString[2]);
                 PtoCstr(name);
                 strcat((char *)msg, (char *)name);
-#ifdef MACBUILD
-                GetIndString(name, kKeyNameStrList, keyPrefs.land + 1);
-                PtoCstr(name);
-#else
                 KeyboardScanCodeToString((char *)name, 0x100, keyPrefs.land);
-#endif
                 strcat((char *)msg, (char *)name);
                 pstrcpy(name, newbieString[3]);
                 PtoCstr(name);
@@ -2865,22 +2794,12 @@ void HandlePlayer(ShipObj *player)
                 PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
                 pstrcpy(msg, newbieString[4]);
                 PtoCstr(msg);
-#ifdef MACBUILD
-                GetIndString(name, kKeyNameStrList, keyPrefs.map + 1);
-                PtoCstr(name);
-#else
                 KeyboardScanCodeToString((char *)name, 0x100, keyPrefs.map);
-#endif
                 strcat((char *)msg, (char *)name);
                 pstrcpy(name, newbieString[5]);
                 PtoCstr(name);
                 strcat((char *)msg, (char *)name);
-#ifdef MACBUILD
-                GetIndString(name, kKeyNameStrList, keyPrefs.jump + 1);
-                PtoCstr(name);
-#else
                 KeyboardScanCodeToString((char *)name, 0x100, keyPrefs.jump);
-#endif
                 strcat((char *)msg, (char *)name);
                 pstrcpy(name, newbieString[6]);
                 PtoCstr(name);
@@ -2922,14 +2841,9 @@ void HandlePlayer(ShipObj *player)
         playerTurnedThisFrame = 1;
 
     if (showFloatingMap > 0 && !quickKeyCheckResult
-#ifdef MACBUILD
-            && !QuickKeyCheck(kScanShift) && !QuickKeyCheck(kScanOption)
-            && !QuickKeyCheck(kScanControl) && !QuickKeyCheck(kScanCommand)) {
-#else
             && !QuickKeyCheck(kScanLShift) && !QuickKeyCheck(kScanRShift)
             && !QuickKeyCheck(kScanLCtrl) && !QuickKeyCheck(kScanRCtrl)
             && !QuickKeyCheck(kScanLAlt) && !QuickKeyCheck(kScanRAlt)) {
-#endif
         if ((QuickKeyCheck(kScanMinus) || QuickKeyCheck(kScanPadMinus)) && !mapZoomFlag
                 && floatingMapZoom < 2.0) {
             floatingMapZoom *= 1.333333;
@@ -2986,12 +2900,8 @@ void HandlePlayerCommunication(void)
 
     if (ShipIsCloaked(me) == 0 && IsDying(me) == 0 &&
             me->jumpTimer <= 0.0f) {
-#ifdef MACBUILD
-        if (me->targetShip == -1 || QuickKeyCheck(kScanOption) != 0) {
-#else
         if (me->targetShip == -1 || QuickKeyCheck(kScanLAlt) != 0 ||
                 QuickKeyCheck(kScanRAlt) != 0) {
-#endif
             if (me->navTargetKind == kNavTargetStellar && me->targetStellar != -1) {
                 canLand = !(stellarData[me->targetStellar].flags
                            & kSpobUninhabited);
@@ -3624,12 +3534,6 @@ short PlayerEnterHypergate(void)
                 FadeWhiteOut();
 #endif
 #else
-#ifdef MAC1010
-            SWSetPortToWorkArea(gSpriteWorld);
-            ForeColor(whiteColor);
-            PaintRect(&gSpriteWorld->workFrameP->frameRect);
-            ForeColor(blackColor);
-#else
             SWSetPortToWindow(gSpriteWorld);
 #ifdef CEFIX /* F22.02 */
             CE_SetFlashColor(whiteColor);
@@ -3640,7 +3544,6 @@ short PlayerEnterHypergate(void)
             ForeColor(blackColor);
             ScreenEndScene();
             SWSetPortToWorkArea(gSpriteWorld);
-#endif
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
                          &gSpriteWorld->workFrameP->frameRect,
                          &gSpriteWorld->windowFrameP->frameRect);
@@ -3905,25 +3808,6 @@ short PlayerEnterWormhole(void)
 // MAC: _HandlePlayerDockRequest i386 0x00066691 ppc 0x0006e890
 void HandlePlayerDockRequest(void)
 {
-#ifdef MACBUILD
-    short spawnStellar;
-    short distY;
-    unsigned char msg[256];
-    Boolean granted;
-    short i;
-    int iVal2;
-    short qtStellar;
-    short commResult;
-#ifdef MAC1010
-    unsigned char t1;
-#else
-    short sVal2;
-    short distX;
-#endif
-    ShipObj *ship = shipData;
-    unsigned char pbuf[256];
-    short sVal;
-#else
     ShipObj *ship = shipData;
     unsigned char msg[256];
     Boolean granted;
@@ -3937,7 +3821,6 @@ void HandlePlayerDockRequest(void)
     unsigned int distX;
     unsigned int distY;
     short sVal;
-#endif
 
     if (!StellarIsLandable(&stellarData[ship->targetStellar]) ||
         ship->curSystem != stellarData[ship->targetStellar].system ||
@@ -3976,12 +3859,7 @@ void HandlePlayerDockRequest(void)
     if (IsDying(ship))
         goto done;
     dockLand = stellarData[ship->targetStellar].flags & kSpobIsStation;
-#ifdef MACBUILD
-    iVal2 = !(stellarData[ship->targetStellar].flags & kSpobUninhabited);
-    if (iVal2 == 0) {
-#else
     if (stellarData[ship->targetStellar].flags & kSpobUninhabited) {
-#endif
         dockPermission = 0x2ee;
         ship->aiTimer = 0;
         dockTarget = ship->targetStellar;
@@ -4432,13 +4310,8 @@ void HandlePlayerDockApproach(void)
     unsigned char tmp[256];
 
     me = shipData;
-#ifdef MAC1010
-#define targ dockTarget
-    if (me->curSystem == stellarData[targ].system) {
-#else
     targ = dockTarget;
     if (stellarData[targ].system == shipData[0].curSystem) {
-#endif
         if (dockPermission <= -1)
             goto out;
         inhabited = !(stellarData[targ].flags & kSpobUninhabited);
@@ -4596,9 +4469,6 @@ void HandlePlayerDockApproach(void)
     }
 out: ;
 }
-#ifdef MAC1010
-#undef targ
-#endif
 
 /* STR# 2002 indexes */
 #define kStrTookCargo       106     /* "You pick up the" */
@@ -4651,9 +4521,6 @@ void HandlePlayerBoardAttempt(void)
 
     if (shipData[me->targetShip].boarded != 0 &&
         (shipData[me->targetShip].specialMission != -1 || shipData[me->targetShip].formerEscort < 0))
-#if defined(MACBUILD) || V111
-        goto reject;
-#else
     {
 reject:
         PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
@@ -4661,7 +4528,6 @@ reject:
         DisplayComm(msg, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
         goto out;
     }
-#endif
     if (!IsDisabled(&shipData[me->targetShip]))
         goto reject;
     if (shipData[me->targetShip].active == 0)
@@ -4705,11 +4571,7 @@ reject:
                     if (shipData[me->targetShip].specialMission != -1 &&
                         currentMissionObjectives[shipData[me->targetShip].specialMission].active)
                         currentMissions[shipData[me->targetShip].specialMission].specialShipsBoarded++;
-#ifdef MACBUILD
                     AIShipBoardedByPlayer(&shipData[me->targetShip]);
-#else
-                    ClearTargetsOnShip(&shipData[me->targetShip]);
-#endif
                     shipData[me->targetShip].boarded = 1;
                     currentMissions[m].hasCargo = 1;
                     statusRedraw[kRedrawCargo] = 1;
@@ -4760,11 +4622,7 @@ reject:
                     currentMissions[shipData[me->targetShip].specialMission].specialShipsBoarded++;
                 shipData[me->targetShip].aiTimer = 100.0;
                 shipData[me->targetShip].boarded = 1;
-#ifdef MACBUILD
                 AIShipBoardedByPlayer(&shipData[me->targetShip]);
-#else
-                ClearTargetsOnShip(&shipData[me->targetShip]);
-#endif
                 canBoard = 1;
             } else {
                 canBoard = 1;
@@ -4785,12 +4643,8 @@ reject:
         me->vel.x = shipData[me->targetShip].vel.x;
         me->vel.y = shipData[me->targetShip].vel.y;
         j = 0;
-#ifdef MAC1010
-        m = shipData[me->targetShip].specialMission;
-#else
         k = me->targetShip;
         m = shipData[k].specialMission;
-#endif
         if (m == -1)
             j = 1;
         else if (currentMissionObjectives[m].active && currentMissionObjectives[m].failed)
@@ -4948,11 +4802,7 @@ reject:
         if (me->targetShip == -1)
             goto out;
         shipData[me->targetShip].boarded = 1;
-#ifdef MACBUILD
         AIShipBoardedByPlayer(&shipData[me->targetShip]);
-#else
-        ClearTargetsOnShip(&shipData[me->targetShip]);
-#endif
     }
     goto out;
 
@@ -4971,12 +4821,6 @@ tooFast:
     GetIndString(msg, kGameStrList, kStrTooFast);
     DisplayComm((PStrChar *)msg, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
     goto out;
-#if defined(MACBUILD) || V111
-reject:
-    PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-    GetIndString(msg, kGameStrList, kStrCannotBoard);
-    DisplayComm((PStrChar *)msg, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
-#endif
 out:;
 }
 

@@ -40,16 +40,9 @@ uint32_t missionOfferTime;
 Handle stringHandle;
 TEHandle offerTextHandle;
 short currentMissionIndexForSetParser;
-#ifndef MACBUILD
 BriefMissionRec briefMissionInfo[1000];
 Handle missionFileHand;
 MissionAvailRec missionAvailData[kMaxMissions];
-#else
-/* tentative here too; ResourceTypes.o's equal-size definitions come later in link order and win */
-BriefMissionRec briefMissionInfo[1000];
-Handle missionFileHand;
-MissionAvailRec missionAvailData[kMaxMissions];
-#endif
 
 /*
  * Per-arrival mission housekeeping (win 0x00448910). A mission wanting the

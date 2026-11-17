@@ -9,11 +9,7 @@
 EXTERN_C_BEGIN
 
 // GLOBAL: EVNOVA 0x007cdab0
-#ifdef MAC1010
-FILE *logfile;
-#else
 static FILE *logfile;
-#endif
 
 /* crashlog_open (mac _crashlog_open). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00470000
@@ -63,22 +59,6 @@ void crashlog_print(const char *str)
     }
 }
 
-#ifdef MACBUILD
-/* PtoCstring (mac _PtoCstring, mac-only: the win port calls the Toolbox PtoCstr). STATE: mac MATCH
-   i386 and ppc. OPEN: none */
-// MAC: _PtoCstring i386 0x000a48fa ppc 0x000b0464
-void PtoCstring(unsigned char *s)
-{
-    short len = s[0];
-    short i;
-
-    for (i = 0; i < len; i++)
-        s[i] = s[i + 1];
-    s[len] = 0;
-}
-#undef PtoCstr
-#define PtoCstr PtoCstring
-#endif
 
 /* crashlog_print_pstr (mac _crashlog_print_pstr). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00470150
@@ -87,15 +67,9 @@ void crashlog_print_pstr(StringPtr pstr)
 {
     char buf[256];
 
-#if V111 /* V111: converts before it tests logfile */
-    strncpy(buf, (char *)pstr, 255);
-    PtoCstr((unsigned char *)buf);
-    if (logfile) {
-#else
     if (logfile) {
         strncpy(buf, (char *)pstr, 255);
         PtoCstr((unsigned char *)buf);
-#endif
         fprintf(logfile, "%s", buf);
         fflush(logfile);
     }
@@ -145,37 +119,6 @@ void crashlog_mission_bit_set(char *str, char *pstr, short num, short num2, char
 {
     char buf[255];
 
-#if V111 /* V111: logfile tested per call, 1.0.10 tests it once on entry */
-    if (setString) {
-        if (strlen(setString) && logfile)
-            fprintf(logfile, "evaluating ncb set string '%s'", setString);
-        if (str && strlen(str)) {
-            if (*setString) {
-                if (logfile)
-                    fprintf(logfile, " (%s", str);
-            } else if (logfile)
-                fprintf(logfile, "%s", str);
-            if (pstr) {
-                if (strlen(pstr)) {
-                    strcpy(buf, pstr);
-                    if (num)
-                        PtoCstr((unsigned char *)buf);
-                    if (logfile)
-                        fprintf(logfile, " %s", buf);
-                    if (num2 > 0 && logfile)
-                        fprintf(logfile, " (%i)", num2);
-                }
-            } else if (num && logfile)
-                fprintf(logfile, " %i", num);
-            if (*setString && logfile)
-                fprintf(logfile, ")");
-        }
-        if (logfile) {
-            fprintf(logfile, "\n");
-            fflush(logfile);
-        }
-    }
-#else
     if (logfile && setString) {
         if (strlen(setString))
             fprintf(logfile, "evaluating ncb set string '%s'", setString);
@@ -187,7 +130,7 @@ void crashlog_mission_bit_set(char *str, char *pstr, short num, short num2, char
                     fprintf(logfile, "%s", str);
                 if (pstr != NULL) {
                     if (strlen(pstr)) {
-                        strcpy(buf, pstr);
+                        strcpy(buf, pstr); // BUG (all versions): no length bound on buf
                         if (num)
                             PtoCstr((unsigned char *)buf);
                         fprintf(logfile, " %s", buf);
@@ -206,7 +149,6 @@ void crashlog_mission_bit_set(char *str, char *pstr, short num, short num2, char
         fprintf(logfile, "\n");
         fflush(logfile);
     }
-#endif
 }
 
 /* crashlog (mac _crashlog). STATE: MATCH, byte-identical. OPEN: none */
@@ -233,11 +175,7 @@ Boolean crashlog_isactive(void)
 // MAC: _crashlog_get_file i386 0x000a4a29 ppc 0x000b0640
 FILE *crashlog_get_file(void)
 {
-#ifdef MAC1010 /* 1.0.10 real: 0x100b7760 three words, lwz, lwz, blr: no stderr */
-    return logfile;
-#else
     return logfile ? logfile : stderr;
-#endif
 }
 
 EXTERN_C_END

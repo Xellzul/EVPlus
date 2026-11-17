@@ -45,42 +45,6 @@
 // MAC: _HandleShipDisplay i386 0x0002b514 ppc 0x0002fb54
 void HandleShipDisplay(ShipObj *ship)
 {
-#ifdef MACBUILD
-#ifdef MAC1010
-    short impact;
-#else
-    int32_t impact;
-#endif
-    unsigned char msg[256];
-    short sizes[kSpriteSizeSlots];
-    float dy;
-    float rate;
-    float ion;
-    short h;
-    short best;
-    short i;
-    short jitter;
-    FloatPoint explod;
-    unsigned short red;
-    unsigned short green;
-    unsigned short blue;
-    short w;
-    short blastRadius;
-    short nFrames;
-    short frame;
-    Boolean hasGlow;
-    Boolean hasAlt;
-    Boolean hasLight;
-    Boolean hasWeap;
-    Boolean hasShield;
-    Boolean altTimed;
-    Boolean advanceAlt;
-    Boolean disabled;
-    Boolean hideAll;
-    float angleScale;
-    float dx;
-    short damage;
-#else
     Boolean hasGlow;
     short damage;
     Boolean altTimed;
@@ -111,7 +75,6 @@ void HandleShipDisplay(ShipObj *ship)
     Boolean advanceAlt;
     short w;
     short frame;
-#endif
 
     altTimed = advanceAlt = 0;
 
@@ -1803,14 +1766,10 @@ void HandleComm(void)
 /* shotData, stride 0x48 */
 
 
-#ifdef MACBUILD
-#define FloatSqrt(x) sqrt(x)
-#else
 static __inline float FloatSqrt(float x)
 {
     return FUN_004eed20(x);
 }
-#endif
 
 #define kMaxCoronaFrames        0x10
 
@@ -2512,21 +2471,12 @@ void HandleShotGuidance(ShotObj *shot)
                             shot->target != -1 &&
                             abs((short)(shipData[shot->target].pos.x - shot->pos.x)) < 250 &&
                             abs((short)(shipData[shot->target].pos.y - shot->pos.y)) < 250) {
-#ifdef MAC1010
-                            lock = abs((CalcInterceptAngle(&shot->pos, &shipData[shot->target].pos) -
-                                shot->angle)) % 360;
-#else
                             off = CalcInterceptAngle(&shot->pos,
                                   &shipData[shot->target].pos) -
                                   shot->angle;
-#ifdef MACBUILD
-                            lock = abs(off) % 360;
-#else
                             off = fabs(off);
                             lock = off;
                             lock = lock % 360;
-#endif
-#endif
                             if (lock > 45)
                                 shot->target = -1;
                         }
@@ -2559,20 +2509,11 @@ void HandleShotGuidance(ShotObj *shot)
                 if (asteroidData[i].active != 0) {
                     if (abs((short)(asteroidData[i].pos.x - shot->pos.x)) < 200 &&
                         abs((short)(asteroidData[i].pos.y - shot->pos.y)) < 200) {
-#ifdef MAC1010
-                        lock = abs((CalcInterceptAngle(&shot->pos, &asteroidData[i].pos) -
-                              shot->angle)) % 360;
-#else
                         off = CalcInterceptAngle(&shot->pos, &asteroidData[i].pos) -
                               shot->angle;
-#ifdef MACBUILD
-                        lock = abs(off) % 360;
-#else
                         off = fabs(off);
                         lock = off;
                         lock = lock % 360;
-#endif
-#endif
                         if (lock <= 15) {
                             shot->guidanceState = kShotStateRock;
                             shot->target = i;
@@ -2584,18 +2525,10 @@ void HandleShotGuidance(ShotObj *shot)
         }
     } else if (shot->guidanceState == kShotStateWobble) {
         if (weaponStats[shot->weapType].lifetime - (double)shot->life > 15.0) {
-#ifdef MAC1010
-            off = weaponStats[shot->weapType].guidedTurn;
-            if (frameCounter % 300 < 150)
-                shot->angle -= off;
-            else
-                shot->angle += off;
-#else
             if (frameCounter % 300 < 150)
                 shot->angle = shot->angle - weaponStats[shot->weapType].guidedTurn;
             else
                 shot->angle = shot->angle + weaponStats[shot->weapType].guidedTurn;
-#endif
         }
         if (shot->angle >= 360.0f)
             shot->angle = shot->angle - 360.0f;
@@ -2769,9 +2702,6 @@ void HandleStellarSystemVisibility(void)
             SWUnlockSprite(masterStellarSprite[i]);
             if (masterStellarSprite[i]->frameArray != NULL) {
                 if (masterStellarSprite[i]->rleDataH != NULL) {
-#ifdef MACBUILD
-                    HUnlock(masterStellarSprite[i]->rleDataH);
-#endif
                     DeallocAHandle(masterStellarSprite[i]->rleDataH);
                     masterStellarSprite[i]->rleDataH = NULL;
                 }
@@ -2932,15 +2862,6 @@ void HandleTimeAdjustment(void)
         aiComplexity = 1;
 }
 
-#if defined(MACBUILD) || V111 /* mac spelling */
-#define JumpDrift(s, fast, push) \
-    d = (ReadTick() - (s)->jumpTick) \
-        * (doubleTime ? fast : 1.0) \
-        * shipClass[(s)->type].mobilityFactor \
-        / (WarpSoundDuration() * 0.01); \
-    if (shipClass[(s)->type].mobilityFactor != 0) \
-        d = d - push / shipClass[(s)->type].mobilityFactor
-#else
 #define JumpDrift(s, fast, push) \
     span =WarpSoundDuration() * 0.01; \
     factor = doubleTime ? fast : 1.0; \
@@ -2957,33 +2878,6 @@ void HandleTimeAdjustment(void)
         if (mobility != 0) \
             d = d - push / mobility; \
     }
-#endif
-
-static inline void TractorDrag(ShipObj *ship, float *drag)
-{
-    float vy;
-    float vx;
-
-    if (ship->tractorShip == ship->index) {
-        vx = 0.0f;
-        vy = 0.0f;
-    } else {
-        vx = shipData[ship->tractorShip].vel.x;
-        vy = shipData[ship->tractorShip].vel.y;
-    }
-    if (ship->vel.x > vx + *drag)
-        ship->vel.x -= *drag;
-    if (ship->vel.x < vx - *drag)
-        ship->vel.x += *drag;
-    if (ship->vel.y > vy + *drag)
-        ship->vel.y -= *drag;
-    if (ship->vel.y < vy - *drag)
-        ship->vel.y += *drag;
-    if (FloatAbs(ship->vel.x - vx) < *drag)
-        ship->vel.x = vx;
-    if (FloatAbs(ship->vel.y - vy) < *drag)
-        ship->vel.y = vy;
-}
 
 /* HandleShip (mac _HandleShip). STATE: MATCH 100.0%, exe 2290 / obj 2290; relocregcheck 0 of
    342; byte-identical: yes. OPEN: none. */
@@ -3237,9 +3131,6 @@ void HandleShip(ShipObj *ship)
     /* three consecutive ifs, each with its arm parked far away */
     if (ship->tractorShip != -1) {
         d = ShipAccelRate(shipData) * 0.25;
-#ifdef MAC1010
-        TractorDrag(ship, &d);
-#else
         if (ship->tractorShip == ship->index) {
             vx = 0.0f;
             vy = 0.0f;
@@ -3255,12 +3146,6 @@ void HandleShip(ShipObj *ship)
             ship->vel.y -= d;
         if (ship->vel.y < vy - d)
             ship->vel.y += d;
-#ifdef MACBUILD
-        if (FloatAbs(ship->vel.x - vx) < d)
-            ship->vel.x = vx;
-        if (FloatAbs(ship->vel.y - vy) < d)
-            ship->vel.y = vy;
-#else
         {
             float dv;
 
@@ -3271,8 +3156,6 @@ void HandleShip(ShipObj *ship)
             if (dv < d)
                 ship->vel.y = vy;
         }
-#endif
-#endif
     }
     if (cloaked) {
         if (!ShipCanCloak(ship))
@@ -3355,14 +3238,9 @@ void HandleShip(ShipObj *ship)
 
     if (ship->jumpTimer > 0.0f) {
         if (!IsDisabled(ship) && gameFrozen == 0) {
-#ifdef MACBUILD
-            if (abs(AngularDifference(ship->heading, ship->desiredHeading))
-                    <= ShipTurnRate(ship)) {
-#else
             turnRate = ShipTurnRate(ship);
             inRange = abs(AngularDifference(ship->heading, ship->desiredHeading)) <= turnRate;
             if (inRange) {
-#endif
                 if (AIIsShipJumping(ship)) {
                     ship->vel.x *= 0.95;
                     ship->vel.y *= 0.95;
@@ -3808,12 +3686,8 @@ void HandleShot(ShotObj *shot)
 
         if (weaponStats[shot->weapType].particles > 0 && settings.noDebris == 0
                 && gameFrozen == 0) {
-#ifdef MACBUILD
-            pt = shot->pos;
-#else
             pt.x = shot->pos.x;
             pt.y = shot->pos.y;
-#endif
             Accel((short)(shot->angle + kHalfTurn) % kAngleWrap,
                   GetSpriteXSize(shot->sprite) / 2, &pt);
             SpawnParticles(pt.x, pt.y,
@@ -4381,15 +4255,10 @@ void CheckShotProximities(void)
                         if (asteroidData[j].active != 0) {
                             range = weaponStats[shotData[i].weapType].proxRadius;
                             range *= range;
-#ifdef MACBUILD
-                            ax = abs((asteroidData[j].pos.x - shotData[i].pos.x));
-                            ay = abs((asteroidData[j].pos.y - shotData[i].pos.y));
-#else
                             f = FloatAbs(asteroidData[j].pos.x - shotData[i].pos.x);
                             ax = f;
                             f = FloatAbs(asteroidData[j].pos.y - shotData[i].pos.y);
                             ay = f;
-#endif
                             if (ax * ax + ay * ay <= range) {
                                 HandleAsteroidHit(&shotData[i], &asteroidData[j]);
                                 break;
@@ -4435,9 +4304,6 @@ void PointDefenseCollisionHandler(SpriteRec *shotSpr, SpriteRec *otherSpr, Rect 
 /* BeamEraseCallback (mac _BeamEraseCallback). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004386f0
 // MAC: _BeamEraseCallback i386 0x0003785e ppc 0x0003d83c
-#ifdef MAC1010
-inline
-#endif
 void BeamEraseCallback(SpriteWorldPtr world)
 {
     short count;
@@ -4775,15 +4641,10 @@ void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite)
     int32_t dist;
     float f;
 
-#ifdef MACBUILD
-    dx = abs((shipData->pos.x - x));
-    dy = abs((shipData->pos.y - y));
-#else
     f = fabs(shipData->pos.x - x);
     dx = f;
     f = fabs(shipData->pos.y - y);
     dy = f;
-#endif
     dist = dx * dx + dy * dy;
     sprite->tintMode = dist * playerEffectiveMurk * kSoundVolumeScale;
     if (gSpriteWorld->pixelDepth == 8) {
@@ -5194,11 +5055,7 @@ void FloaterDrawCallback(SpriteWorldPtr world)
                      &floatingEscortMenuFrame->frameRect, &escortMenuRect,
                      0x20 - escortMenuOnscreen, gSpriteWorld->backgroundValue);
         if (redrawEscortMenu != 0) {
-#ifdef MACBUILD
-            DrawEscortMenuInFrame(-1);
-#else
             DrawEscortMenuInFrame();
-#endif
             redrawEscortMenu = 0;
         }
     }

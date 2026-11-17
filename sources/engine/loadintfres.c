@@ -102,11 +102,7 @@ void LoadIntfResource(void)
 #ifdef CEFIX /* F12.84 */
         CE_ScaleStatusRects();
 #endif
-#ifdef MACBUILD
-        HUnlock((Handle)rec2);
-#else
         UnlockAHandle(intfFileHand);
-#endif
         ReleaseResource(intfFileHand);
     } else {
         picID = kFirstResourceID;
@@ -115,11 +111,7 @@ void LoadIntfResource(void)
     pict = GetPicture(picID);
     if (pict != NULL) {
         SetGWorldContainer(&statusOffPort);
-#ifdef MACBUILD
-        ForeColor(blackColor);
-#else
         RGBForeColor(&rgbBlack);
-#endif
         PaintRect(&statusOffPort.bounds);
         QDGetPictureBounds(pict, &pictRect);
         OffsetRect(&pictRect, -pictRect.left, -pictRect.top);
@@ -137,22 +129,3 @@ void LoadIntfResource(void)
     }
 }
 
-#ifdef MACBUILD
-/* ColorSearchProc (mac _ColorSearchProc): mac only. */
-// MAC: _ColorSearchProc i386 0x000767b4 ppc 0x0007f604
-Boolean ColorSearchProc(RGBColor *rgb, int32_t *position)
-{
-    CTabHandle ctab = GetCTable(40);
-    Rect bounds = { 0, 0, 10, 10 };
-    GWorldPtr world;
-    GWorldPtr savedWorld;
-    GetGWorld(&savedWorld, NULL);
-    (NewGWorld)(&world, 16, &bounds, ctab, NULL, kNativeEndianPixMap);
-    SetGWorld(world, NULL);
-    *position = Color2Index(rgb);
-    SetGWorld(savedWorld, NULL);
-    DisposeGWorld(world);
-    DisposeCTable(ctab);
-    return 1;
-}
-#endif

@@ -89,10 +89,6 @@ void RedrawStatus(Boolean copyToScreen)
                      &box, &box, 0, GetCWindowVisRgn((WindowRef)gWind));
         }
     }
-#if V111
-    if (!useLegacyRenderingPipeline)
-        QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-#endif
 }
 
 /* DrawStatus (mac _DrawStatus). STATE: MATCH 100.0%, exe 150 / obj 150, relocregcheck
@@ -103,10 +99,6 @@ void RedrawStatus(Boolean copyToScreen)
 // MAC: _DrawStatus i386 0x0004c85d ppc 0x00055688
 void DrawStatus(void)
 {
-#ifdef MACBUILD
-    Boolean drew;
-
-#endif
     if (fadePending[0] || fadePending[1] || creatingPilotFile)
         return;
     if (shipData[0].navTargetKind != -1 && ReadTick() % 30 == 0)
@@ -115,17 +107,10 @@ void DrawStatus(void)
         if (ReadTick() % 45 == 0)
             statusRedraw[kRedrawTarg] = statusRedraw[kRedrawCargo] = 1;
     }
-#ifdef MACBUILD
-    if (QuickKeyCheck(kScanControl))
-#else
     if (QuickKeyCheck(kScanLCtrl) || QuickKeyCheck(kScanRCtrl))
-#endif
         targKeyOnNow = 1;
     else
         targKeyOnNow = 0;
-#ifdef MACBUILD
-    drew = 0;
-#endif
     if (ReadTick() >= lastRadarUpdateTime + 15) {
         lastRadarUpdateTime = ReadTick();
         radarCount = (radarCount + 1) % 2;
@@ -139,16 +124,10 @@ void DrawStatus(void)
             lastTargetedShipClass = lastTargetedShipShields = 0x8001;
         }
         statusRedraw[kRedrawRadar] = 1;
-#ifdef MACBUILD
-        drew = 1;
-#endif
     }
     if (statusRedraw[kRedrawTarg]) {
         DrawStatusTarg();
         statusRedraw[kRedrawTarg] = 0;
-#ifdef MACBUILD
-        drew = 1;
-#endif
     }
     if (statusRedraw[kRedrawRadar]) {
         if (!onPlanet && !playerIsLanded)
@@ -156,47 +135,25 @@ void DrawStatus(void)
         else
             DrawStatusRadar(1);
         statusRedraw[kRedrawRadar] = 0;
-#ifdef MACBUILD
-        drew = 1;
-#endif
     }
     if (statusRedraw[kRedrawWeap]) {
         DrawStatusWeap();
         statusRedraw[kRedrawWeap] = 0;
-#ifdef MACBUILD
-        drew = 1;
-#endif
     }
     if (statusRedraw[kRedrawNav]) {
         DrawStatusNav();
         statusRedraw[kRedrawNav] = 0;
-#ifdef MACBUILD
-        drew = 1;
-#endif
     }
     if (statusRedraw[kRedrawShield]) {
         DrawStatusShield();
         statusRedraw[kRedrawShield] = 0;
-#ifdef MACBUILD
-        drew = 1;
-#endif
     }
     if (statusRedraw[kRedrawFuel]) {
         DrawStatusFuel();
         statusRedraw[kRedrawFuel] = 0;
-#ifdef MACBUILD
-        drew = 1;
-#endif
     }
     if (statusRedraw[kRedrawCargo]) {
         DrawStatusCargo();
         statusRedraw[kRedrawCargo] = 0;
-#ifdef MACBUILD
-        drew = 1;
-#endif
     }
-#ifdef MACBUILD
-    if (drew)
-        QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
-#endif
 }

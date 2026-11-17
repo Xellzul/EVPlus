@@ -206,21 +206,12 @@ short EvalTestExp(short *pos)
     if (end == -1)
         end = j;
 
-#ifdef MACBUILD
-    result = 1;
-    lastVal = 0;
-    negate = 0;
-    count = 0;
-    op = '?';
-    i = *pos;
-#else
     op = '?';
     i = *pos;
     result = 1;
     lastVal = 0;
     negate = 0;
     count = 0;
-#endif
     while (i < strlen(parseBuffer)) {
         if (parseBuffer[i] == ' ') {
             Trim(&i);
@@ -230,14 +221,7 @@ short EvalTestExp(short *pos)
                 sub = EvalTestExp(&i);
                 if (negate != 0) {
                     negate = 0;
-#ifdef MACBUILD
-                    if (sub == 0)
-                        sub = 1;
-                    else
-                        sub = 0;
-#else
                     sub = sub == 0 ? 1 : 0;
-#endif
                 }
                 if (op == '&') {
                     if (sub == 0)
@@ -438,23 +422,14 @@ void EvalSetExp(void)
                 }
                 break;
             case 'S':
-#if V111 /* V111 spelling */
-                n = num - kFirstResourceID;
-                if (n >= 0 && n < kMaxMissions) {
-#else
                 if (num >= kFirstResourceID && num < kFirstResourceID + kMaxMissions) {
-#endif
                     wasSet = offeringFromShip;
                     if (playerIsLanded != 0)
                         offeringFromShip = 0;
                     else
                         offeringFromShip = 1;
                     saved = SaveBuffer();
-#if V111 /* V111 spelling */
-                    j = n;
-#else
                     j = num - kFirstResourceID;
-#endif
                     RandomizeOneMission(j);
                     DoMissionAccept(j);
                     offeringFromShip = wasSet;
@@ -821,30 +796,6 @@ void ParseTextDescription(void)
     if (strlen(parseBuffer) > 5) {
         for (i = 0; i < strlen(parseBuffer) - 5; i++) {
             if (parseBuffer[i] == '<') {
-#ifdef MAC1010
-                if ((parseBuffer[i + 1] == 'P' || parseBuffer[i + 1] == 'S')
-                    && parseBuffer[i + 2] == 'R' && parseBuffer[i + 3] == 'K'
-                    && parseBuffer[i + 4] != '>') {
-                    num = 0;
-                    for (outLen = i + 4; outLen < strlen(parseBuffer); outLen++) {
-                        if (parseBuffer[outLen] < '0' || parseBuffer[outLen] > '9')
-                            break;
-                        num = num * 10 + parseBuffer[outLen] - '0';
-                    }
-                    if (num >= kFirstResourceID && num < kFirstResourceID + kMaxGovts) {
-                        if (parseBuffer[i + 1] == 'P')
-                            descRankGovt[0] = num - kFirstResourceID;
-                        else
-                            descRankGovt[1] = num - kFirstResourceID;
-                    } else {
-                        if (parseBuffer[i + 1] == 'P')
-                            descRankGovt[0] = -1;
-                        else
-                            descRankGovt[1] = -1;
-                    }
-                    i += 4;
-                }
-#else
                 j = i + 1;
                 if (parseBuffer[j] == 'P' || parseBuffer[j] == 'S') {
                     k = i + 2;
@@ -875,7 +826,6 @@ void ParseTextDescription(void)
                         }
                     }
                 }
-#endif
             }
         }
     }

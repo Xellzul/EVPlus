@@ -60,13 +60,8 @@ void LoadMainScreenAnim(void)
     short i;
     uint32_t tick;
 
-#ifdef MACBUILD
-    if (GetSpriteInfo(0x25e, &spriteID, NULL, &logoFrameSize.width, &logoFrameSize.height,
-                       &xTiles, &logoFrameCount)) {
-#else
     if (GetSpriteInfo(0x25e, &spriteID, NULL, &gMainPicWidthDelta, &gMainPicHeightDelta,
                        &xTiles, &logoFrameCount)) {
-#endif
         if (xTiles != 1)
             crashlog("warning: logo animation image has wrong dimensions");
         CreateGWorldContainerFromPictResource(&logoPort, GetMainDevice(), 0, spriteID);
