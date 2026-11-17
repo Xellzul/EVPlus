@@ -189,6 +189,7 @@
                 depth = map.pixelSize;
                 for (x = 0; x * 8 < width * depth; x++) {
                     c = ((unsigned char *)*packed)[x];
+                    // BUG: the pixel mask should be (1 << depth) - 1; (depth << 1) - 1 is 7 at 4-bit, so a nibble loses its top bit
                     for (n = 0, v = (depth << 1) - 1; n * depth < 8; n++, c <<= depth) {
                         ULong bits = c >> (8 - depth);
                         row[x * 8 / depth + n] = bits & v;
@@ -287,6 +288,7 @@
                 depth = map.pixelSize;
                 for (x = 0; x * 8 < width * depth; x++) {
                     c = ((unsigned char *)*packed)[x];
+                    // BUG: the pixel mask should be (1 << depth) - 1; (depth << 1) - 1 is 7 at 4-bit, so a nibble loses its top bit
                     for (n = 0, v = (depth << 1) - 1; n * depth < 8; n++, c <<= depth) {
                         ULong bits = c >> (8 - depth);
                         row[x * 8 / depth + n] = bits & v;

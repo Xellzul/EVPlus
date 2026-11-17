@@ -4425,11 +4425,6 @@ void BackColor(const RGBColor *color)
 #endif
 
 #ifdef MACBUILD
-#ifdef MAC1010
-void PreflightMemoryUsage(int32_t *base, int32_t *engineGlow, int32_t *runningLights, int32_t *weaponGlow);
-int32_t PreflightMemoryUsageTotal(void)
-#include "../engine/preflighttotal.inc"
-#endif
 
 /* PreflightMemoryUsage (mac _PreflightMemoryUsage, mac-only). STATE: mac MATCH i386 and ppc.
    OPEN: none */
@@ -4505,13 +4500,25 @@ void PreflightMemoryUsage(int32_t *base, int32_t *engineGlow, int32_t *runningLi
     }
 }
 
-#ifndef MAC1010
 /* PreflightMemoryUsageTotal (mac _PreflightMemoryUsageTotal, mac-only). STATE: mac MATCH i386
    and ppc. OPEN: none */
 // MAC: _PreflightMemoryUsageTotal i386 0x00022438 ppc 0x000268b0
 int32_t PreflightMemoryUsageTotal(void)
-#include "../engine/preflighttotal.inc"
-#endif
+{
+    int32_t engineGlow;
+    int32_t runningLights;
+    int32_t weaponGlow;
+    int32_t total;
+
+    PreflightMemoryUsage(&total, &engineGlow, &runningLights, &weaponGlow);
+    if (settings.runningLights)
+        total += runningLights;
+    if (settings.weaponGlows)
+        total += weaponGlow;
+    if (settings.engineGlows)
+        total += engineGlow;
+    return total;
+}
 
 /* DoMemoryUsageDialog (mac _DoMemoryUsageDialog, mac-only). STATE: mac MATCH i386 and ppc.
    OPEN: none */

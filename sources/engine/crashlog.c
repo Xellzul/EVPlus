@@ -68,11 +68,14 @@ void crashlog_print(const char *str)
    i386 and ppc. OPEN: none */
 // MAC: _PtoCstring i386 0x000a48fa ppc 0x000b0464
 void PtoCstring(unsigned char *s)
-#ifdef MAC1010
-;
-#else
-#include "../engine/ptocstring.inc"
-#endif
+{
+    short len = s[0];
+    short i;
+
+    for (i = 0; i < len; i++)
+        s[i] = s[i + 1];
+    s[len] = 0;
+}
 #undef PtoCstr
 #define PtoCstr PtoCstring
 #endif
@@ -236,10 +239,5 @@ FILE *crashlog_get_file(void)
     return logfile ? logfile : stderr;
 #endif
 }
-
-#ifdef MAC1010
-void PtoCstring(unsigned char *s)
-#include "../engine/ptocstring.inc"
-#endif
 
 EXTERN_C_END

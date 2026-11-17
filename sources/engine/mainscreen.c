@@ -599,14 +599,60 @@ void MainScreenKey(char key, int32_t a, int32_t b)
 }
 #endif
 
-#if defined(MACBUILD) && !defined(MAC1010)
+#ifdef MACBUILD
 /* DoMenuClick (mac _DoMenuClick): mac only. */
 // MAC: _DoMenuClick i386 0x00019c49 ppc 0x0001d8f8
 void DoMenuClick(int32_t menuChoice)
-#include "../engine/domenuclick.inc"
+{
+    short menu;
+    short item;
+
+    menu = HiWord(menuChoice);
+    item = LoWord(menuChoice);
+    if (menu == kAppleMenu) {
+        if (item == kAboutItem)
+            DoAboutBox();
+    } else if (menu == kFileMenu) {
+        if (item == kQuitItem)
+            gQuit = 1;
+    } else if (menu == kEditMenu) {
+        if (item == kPrefsItem && gameLoaded)
+            DoPrefsDialog();
+    }
+    HiliteMenu(0);
+}
 
 /* MainScreenActivate (mac _MainScreenActivate): mac only. */
 // MAC: _MainScreenActivate i386 0x000193ea ppc 0x0001d0cc
 void MainScreenActivate(Boolean activate)
-#include "../engine/mainscreenactivate.inc"
+{
+#ifndef MAC1010 /* 1.0.10 real: 0x1005b19c the body begins on `activate`, no gWind test */
+    if (gWind == NULL)
+        return;
+#endif
+    inBackground = !activate;
+    if (activate) {
+        InitCursor();
+        cursorHidden = 0;
+        ShowTheCursor();
+        SWSetPortToWindow(gSpriteWorld);
+        if (!settings.windowed) {
+            HideTheMenuBar();
+            mBarHidden = 1;
+            ShowWindow((WindowRef)gWind);
+        }
+        SelectWindow((WindowRef)gWind);
+        SWSetPortToWindow(gSpriteWorld);
+        InvalWindowPortRect((WindowRef)gWind);
+        MainScreenAnimDraw();
+        if (useLegacyRenderingPipeline)
+            MainScreenUpdate(1);
+        if (!regNoticeShown) {
+            regNoticeShown = 1;
+        }
+    } else if (!settings.windowed) {
+        ShowTheMenuBar();
+        HideWindow((WindowRef)gWind);
+    }
+}
 #endif

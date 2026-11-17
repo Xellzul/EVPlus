@@ -1037,9 +1037,6 @@ done:
 /* IndirectDecompress. STATE: MATCH 100%, exe 468 / obj 468, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x004ff112
 int32_t IndirectDecompress(void **handle, ULong tag, PackInfo *info)
-#ifdef MAC1010
-#include "../runtime/indirectdecompress1010.inc"
-#else
 {
     int32_t err;
     void **out;
@@ -1285,7 +1282,6 @@ done:
         IndirectDeallocate(out);
     return err;
 }
-#endif
 
 #ifndef MAC1010
 /* _IndirectValidate. STATE: MATCH 100%, exe 70 / obj 70, byte-identical yes. OPEN: none */

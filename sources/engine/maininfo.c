@@ -257,11 +257,6 @@ void MainScreenUpdate(short which)
 #define kHotStripHeight 0x14
 #define kBarHeight      0x1e
 
-#ifdef MAC1010
-void MainScreenActivate(Boolean activate)
-#include "../engine/mainscreenactivate.inc"
-#endif
-
 /* MainScreenIdle. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00488080
 // MAC: _MainScreenIdle i386 0x00018ae8 ppc 0x0001c6f0
@@ -329,11 +324,6 @@ void MainScreenClose(void)
 void MainScreenClobber(void)
 {
 }
-#endif
-
-#ifdef MAC1010
-void DoMenuClick(int32_t menuChoice)
-#include "../engine/domenuclick.inc"
 #endif
 
 /* SetupInterfaceBackground (mac _SetupInterfaceBackground). STATE:MATCH, byte-identical. OPEN: none */
