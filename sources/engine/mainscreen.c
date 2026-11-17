@@ -15,14 +15,9 @@
 #define kMainScreenPrefs    4
 #define kMainScreenAbout    5
 
-#ifdef MACBUILD
-#define kKeyS               MacKey(0x01)
-#define kKeyL               MacKey(0x25)
-#define kKeyE               MacKey(0x0e)
-#else
 #define kKeyS               0x1f
 #define kKeyL               0x26
-#endif
+#define kKeyE               0x12
 #define kCreditsTextID      0x7ffe
 
 #include "resources.h"
@@ -49,9 +44,7 @@
 
 /* ---- DoMainScreen (0x00486880) ---- */
 
-#ifndef MACBUILD
 uint32_t LastTick;                   /* 0x008700f0 */
-#endif
 
 /* 0x0058f8ac, 0x0058f8b0 and 0x0058f710 are IAT slots, not variables:
    dllimport is what makes the call go through them. */
@@ -290,11 +283,7 @@ void MainScreenChoice(short which)
     if (which == kMainScreenEnter) {
         if (gameInProgress) {
             if (!IsDying(shipData)) {
-#if V111
-#ifdef MACBUILD
-                FlushKeys();
-#endif
-#endif
+                KeyboardFlush();
                 EnterGameFromMainScreen();
             } else {
                 PlaySound(beepSnd[3], 0xa, gSoundVolume, gSoundVolume);
@@ -336,52 +325,6 @@ void MainScreenChoice(short which)
 
 // FUNCTION: EVNOVA 0x004872a0
 // MAC: _MainScreenKey i386 0x0001aba0 ppc 0x0001eabc
-#ifdef MACBUILD
-void MainScreenKey(char key, unsigned char code, short modifiers)
-{
-    key = tolower(key);
-    if (key == 'n') {
-        PlayMainScreenClickSound();
-        MainScreenChoice(kMainScreenNew);
-    }
-    if (key == 'o') {
-        if (KeyCheck(kKeyS) == 0 && KeyCheck(kKeyL) == 0) {
-            PlayMainScreenClickSound();
-            MainScreenChoice(kMainScreenOpen);
-        }
-    }
-    if (key == 'q') {
-        PlayMainScreenClickSound();
-        MainScreenChoice(kMainScreenQuit);
-    }
-    if (key == 'e') {
-#ifndef MAC1010
-        do
-            QuickKeyCheckHandler();
-        while (QuickKeyCheck(kKeyE));
-#endif
-        PlayMainScreenClickSound();
-        MainScreenChoice(kMainScreenEnter);
-    }
-    if (key == 'p') {
-        PlayMainScreenClickSound();
-        MainScreenChoice(kMainScreenPrefs);
-    }
-    if (key == 'a') {
-        PlayMainScreenClickSound();
-        MainScreenChoice(kMainScreenAbout);
-    }
-    if (key == 'x') {
-        PlayMainScreenClickSound();
-        mainScreenBackgroundDirty = 1;
-        LoadDescription(briefingTextPtr, kCreditsTextID);
-        MungeBriefing(0, -1);
-        strcpy(textShowString, briefingTextPtr);
-        ShowTextDialog(0, 0, 1);
-        mainScreenBackgroundDirty = 1;
-    }
-}
-#else
 void MainScreenKey(char key, int32_t a, int32_t b)
 {
     key = tolower(key);
@@ -400,6 +343,8 @@ void MainScreenKey(char key, int32_t a, int32_t b)
         MainScreenChoice(kMainScreenQuit);
     }
     if (key == 'e') {
+        while (KeyCheck(kKeyE))
+            ;
         PlayMainScreenClickSound();
         MainScreenChoice(kMainScreenEnter);
     }
@@ -421,5 +366,4 @@ void MainScreenKey(char key, int32_t a, int32_t b)
         mainScreenBackgroundDirty = 1;
     }
 }
-#endif
 
