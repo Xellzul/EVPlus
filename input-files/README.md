@@ -1,12 +1,7 @@
-# EV Nova build kit: input files
+# EV Nova: input files
 
-Files needed to build this game. Check a copy with `sha256sum -c --ignore-missing SHA256SUMS`, or `7z h FILE` for the CRC32.
-
-## win and ce: EV Nova 1.0.10 for Windows, and the CE build of the same sources
+Files the build needs. Check a copy with `sha256sum -c --ignore-missing SHA256SUMS`, or `7z h FILE` for the CRC32.
 
 | file | source | bytes | CRC32 |
 |---|---|---|---|
-| `CW_Windows_9.2.exe` | https://archive.org/download/cwpro9/Metrowerks%20CodeWarrior%20for%20Windows%209.4.7z/Metrowerks%20CodeWarrior%20for%20Windows%209.4%2FCW_Windows_9.2.exe (archive.org item `cwpro9`) | 221461396 | B21A5C36 |
-| `CW_Windows_9.3_Update.exe` | https://archive.org/download/ftp-metrowerks-updates-archive/ftp_metrowerks_updates.7z/Metrowerks%2FCWWindows9%2FCW_Windows_9.3_Update.exe (archive.org item `ftp-metrowerks-updates-archive`, Metrowerks' `ftp.metrowerks.com/pub/updates/` of late 2005) | 54669609 | FBD8BBBD |
-| `CW_Windows_9_license.dat` (your CodeWarrior 9 `license.dat`, renamed; any one with the `Win32_Plugins_Win32` 9.0 features) | https://archive.org/download/cwpro9/Metrowerks%20CodeWarrior%20for%20Windows%209.4.7z/Metrowerks%20CodeWarrior%20for%20Windows%209.4%2Flicense.dat (archive.org item `cwpro9`; 452 B, CRC32 F97B7AF0) | any | any |
-| `QT6SDK_Win.hqx` | https://discmaster.textfiles.com/browse/17099/staticky.com.zip/staticky.com/staticky.com/mirrors/ftp.apple.com/developer/Development_Kits/QT6SDK_Win.hqx | 4425850 | E83855BE |
+| `QT6SDK_Win.hqx` (Apple's QuickTime 6 SDK for Windows: CMake takes `qtmlClient.lib` from it) | https://discmaster.textfiles.com/browse/17099/staticky.com.zip/staticky.com/staticky.com/mirrors/ftp.apple.com/developer/Development_Kits/QT6SDK_Win.hqx | 4425850 | E83855BE |

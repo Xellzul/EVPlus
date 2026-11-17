@@ -5,7 +5,6 @@
 #
 # Needs: llvm-mingw (default /opt/llvm-mingw), and `unar` (package unarchiver) once, to unpack
 # input-files/QT6SDK_Win.hqx for QuickTime's qtmlClient.lib -- or pass -DQTML_CLIENT_LIB=/path/qtmlClient.lib.
-# The Metrowerks build (buildkit/, in Docker) is separate and unchanged.
 cmake_minimum_required(VERSION 3.20)
 project(EVNova C CXX RC)
 
@@ -32,7 +31,7 @@ endif()
 
 # QuickTime's own DisposeGWorld/GetPixBaseAddr/GetGWorldDevice/GetGWorldPixMap live beside the port's
 # same-named emulation: the game calls QuickTime's four by their exe addresses (burgerpict.c, tradedlg.c), so
-# that member is linked with those four renamed (buildkit/tables/qtorder.tsv does the same for the MW link)
+# that member is linked with those four renamed
 set(QT_RENAMED ${CMAKE_BINARY_DIR}/qtsdk/QDOffScreenShim_renamed.obj)
 if(NOT EXISTS ${QT_RENAMED} OR ${QTML_CLIENT_LIB} IS_NEWER_THAN ${QT_RENAMED})
   set(_x ${CMAKE_BINARY_DIR}/qtsdk/extract)
@@ -79,10 +78,10 @@ set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-e
     -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double -fcommon -w
     $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
 
-# iconv.dll's import library (the exe loads iconv.dll; tables/iconv.def has its hints)
+# iconv.dll's import library (the exe loads iconv.dll; cmake/iconv.def has its hints)
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/libiconv_imp.a
-  COMMAND ${EVNOVA_DLLTOOL} -d ${CMAKE_SOURCE_DIR}/buildkit/tables/iconv.def -D iconv.dll -l ${CMAKE_BINARY_DIR}/libiconv_imp.a
-  DEPENDS ${CMAKE_SOURCE_DIR}/buildkit/tables/iconv.def)
+  COMMAND ${EVNOVA_DLLTOOL} -d ${CMAKE_SOURCE_DIR}/cmake/iconv.def -D iconv.dll -l ${CMAKE_BINARY_DIR}/libiconv_imp.a
+  DEPENDS ${CMAKE_SOURCE_DIR}/cmake/iconv.def)
 add_custom_target(iconv_imp DEPENDS ${CMAKE_BINARY_DIR}/libiconv_imp.a)
 
 set(WIN_LIBS kernel32 user32 gdi32 winmm wsock32 advapi32 comctl32 shell32 version comdlg32 iphlpapi ole32
