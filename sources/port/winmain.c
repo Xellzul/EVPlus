@@ -1,6 +1,7 @@
 // COMPILE: -lang c++ -bool off
 /* winmain.c -- the port's WinMain (win 0x004d2a80). Notes: Research/notes/winmain.md */
 #include <stddef.h>
+#include <float.h>
 #include "macport.h"
 #include "burger.h"
 #include "game.h"
@@ -20,6 +21,12 @@ int __stdcall WinMain(void *hInstance, void *hPrevInstance, char *lpCmdLine,
     MemoryStatus ms;
     char buf[256];
 
+#ifndef CEFIX
+    /* mingw's startup (_fpreset) runs fninit, leaving the x87 at 64-bit precision; the original
+       exe's MSL startup leaves Windows' 53-bit default, and every float result depends on it
+       (CE keeps 64: cefix/cestartup.c) */
+    _controlfp(_PC_53, _MCW_PC);
+#endif
 #ifdef V111 /* V111: the mac main picks the pipeline first; win draws through the window frame */
     useLegacyRenderingPipeline = 1;
 #endif

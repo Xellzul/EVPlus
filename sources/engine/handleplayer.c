@@ -463,6 +463,9 @@ void HandlePlayer(ShipObj *player)
             RandomizeStars();
             player->fuel = ShipFuelCapacity(player);
             player->shield = ShipShieldCapacity(player);
+            // BUG: armour is refilled to the SHIELD capacity after the escape pod, so the new ship starts
+            // with too much or too little armour; CE fixed the same slip in the debug restore (F21.04) but
+            // not here
             player->armor = ShipShieldCapacity(player);
             SetupShipsInSystem(player->curSystem, 1);
             n = Rand(0x1e) + 15;
