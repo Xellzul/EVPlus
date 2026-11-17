@@ -35,25 +35,17 @@ void RedrawStatus(Boolean copyToScreen)
 
     if (creatingPilotFile || gPause)
         return;
-#ifdef CEFIX /* F14.03 */
     SetRect(&box, GetCWindowPortRect(gWind)->right - ceStatusBarWidth,
             GetCWindowPortRect(gWind)->top, GetCWindowPortRect(gWind)->right,
             GetCWindowPortRect(gWind)->bottom);
-#else
-    SetRect(&box, GetCWindowPortRect((WindowRef)gWind)->right - kTargPanelInset,
-            GetCWindowPortRect((WindowRef)gWind)->top, GetCWindowPortRect((WindowRef)gWind)->right,
-            GetCWindowPortRect((WindowRef)gWind)->bottom);
-#endif
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
              &statusOffPort.bounds, &box, 0, 0);
     if (HasIFF(shipData)) {
         SetGWorldContainer(&loadPort);
         box2 = statusOffRect[0];
-#ifdef CEFIX /* F14.04 */
+        // BUG (all versions): offsets box, but paints the unshifted box2 (status-bar coordinates);
+        // CE F14.04 keeps it
         OffsetRect(&box, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-        OffsetRect(&box, GetCWindowPortRect((WindowRef)gWind)->right - kTargPanelInset, 0);
-#endif
         ForeColor(blackColor);
         PaintRect(&box2);
         SWSetPortToWindow(gSpriteWorld);
@@ -73,11 +65,7 @@ void RedrawStatus(Boolean copyToScreen)
     preventStatusCopy = 0;
     if (copyToScreen) {
         box = *GetCWindowPortRect((WindowRef)gWind);
-#ifdef CEFIX /* F14.05 */
         box.left = box.right - ceStatusBarWidth;
-#else
-        box.left = box.right - kTargPanelInset;
-#endif
         if (gSpriteWorld->fastBlit) {
             CopyBits(GWorldContainerBits(&loadPort),
                      GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),

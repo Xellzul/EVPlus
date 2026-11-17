@@ -229,17 +229,9 @@ void MainScreenUpdate(short which)
                  &gSpriteWorld->workFrameP->frameRect, 0, NULL);
         /* and the 0xc2-wide status strip, loadPort -> the window's right edge. */
         box = loadPort.bounds;
-#ifdef CEFIX /* F14.15 */
         box.left = (box.right - ceStatusBarWidth);
-#else
-        box.left = (box.right - 0xc2);
-#endif
         dst = *GetCWindowPortRect((WindowRef)gWind);
-#ifdef CEFIX /* F14.16 */
         dst.left = (dst.right - ceStatusBarWidth);
-#else
-        dst.left = (dst.right - 0xc2);
-#endif
         CopyBits(GWorldContainerBits(&loadPort),
                  GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                  &box, &dst, 0, NULL);

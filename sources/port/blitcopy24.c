@@ -1260,14 +1260,7 @@ void LineTo(short h, short v)
 // FUNCTION: EVNOVA 0x004ba2f0
 void MoveTo(short h, short v)
 {
-#ifdef CEFIX /* F12.83 */
     CE_MoveTo(h, v);
-#else
-    if (CurrentGrafPort == NULL)
-        return;
-    CurrentGrafPort->pnLoc.h = h;
-    CurrentGrafPort->pnLoc.v = v;
-#endif
 }
 
 // FUNCTION: EVNOVA 0x004ba320

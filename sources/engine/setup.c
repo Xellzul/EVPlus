@@ -60,11 +60,7 @@ void SetupSpriteWorld(void)
 
     mBarHidden = 1;
     windRect = mainWindRect;
-#ifdef CEFIX /* F14.18 */
     windRect.right -= ceStatusBarWidth;
-#else
-    windRect.right -= kTargPanelInset;
-#endif
     SetPortWindowPort((WindowRef)gWind);
     err = SWCreateSpriteWorldFromWindow(&gSpriteWorld, gWind, &windRect, &windRect, 0);
     if ((int32_t)err != 0) {
@@ -138,20 +134,10 @@ void SetupSpriteWorld(void)
     SWCreateFrame(GetGDevice(), &floatingMapFrame, &windRect, gSpriteWorld->pixelDepth, 1);
     SWLockFrame(floatingMapFrame);
     floatingMapRect = windRect;
-#ifdef CEFIX /* F14.19 */
     OffsetRect(&floatingMapRect,
             GetCWindowPortRect(gWind)->right - GetCWindowPortRect(gWind)->left
             - (windRect.right - windRect.left + ceStatusBarWidth + 16), 150);
-#else
-    OffsetRect(&floatingMapRect,
-            GetCWindowPortRect((WindowRef)gWind)->right - GetCWindowPortRect((WindowRef)gWind)->left
-            - (windRect.right - windRect.left + 210), 150);
-#endif
-#ifdef CEFIX /* F12.79 */
     SetRect(&windRect, 0, 0, CE_Scale(160), CE_Scale(120));
-#else
-    SetRect(&windRect, 0, 0, 160, 120);
-#endif
     SWCreateFrame(GetGDevice(), &floatingEscortMenuFrame, &windRect, gSpriteWorld->pixelDepth, 1);
     SWLockFrame(floatingEscortMenuFrame);
     escortMenuRect = floatingEscortMenuFrame->frameRect;
@@ -321,13 +307,8 @@ void SetupWind(void)
         HideTheMenuBar();
         mBarHidden = 1;
     }
-#ifdef CEFIX /* F14.20 */
     screenCenter.h = ((GetCWindowPortRect(gWind)->right
                              - GetCWindowPortRect(gWind)->left - ceStatusBarWidth) * 0.5);
-#else
-    screenCenter.h = ((GetCWindowPortRect(gWind)->right
-                             - GetCWindowPortRect(gWind)->left - kTargPanelInset) * 0.5);
-#endif
     screenCenter.v = ((GetCWindowPortRect(gWind)->bottom
                              - GetCWindowPortRect(gWind)->top) * 0.5);
 #endif
@@ -418,11 +399,7 @@ void InitOffscreen(void)
         ST_Close();
         ExitToShell();
     }
-#ifdef CEFIX /* F14.21 */
     r.right = r.left + ceStatusBarWidth;
-#else
-    r.right = r.left + kTargPanelInset;
-#endif
     CreateGWorldContainer(&statusOffPort, GetMainDevice(), 0, &r);
     if (statusOffPort.world == NULL) {
         HideWindow((WindowRef)gWind);
@@ -1703,22 +1680,14 @@ void InitSprites(void)
 
     ServiceIntroMusic(0);
 
-#ifdef CEFIX /* F12.80-81 */
     commRect.left = GetCWindowPortRect(gWind)->left + 25;
     commRect.right = GetCWindowPortRect(gWind)->right - ceStatusBarWidth - 50;
     commRect.bottom = GetCWindowPortRect(gWind)->bottom - 5;
     commRect.top = commRect.bottom - CE_Scale(26) - 4;
-    /* CE bug: CE drops only the store of 29470 / width; its idiv still runs and faults on a
-       zero width. */
+    // BUG (CE F12.80-81): CE drops only the store of 29470 / width; its idiv still runs, so a zero
+    // width faults (divide by zero), reproduced here
     if (commRect.right - commRect.left == 0)
         RaiseException(kCEIntDivideByZero, 0, 0, NULL);
-#else
-    SetRect(&commRect, GetCWindowPortRect((WindowRef)gWind)->left + 25,
-            GetCWindowPortRect((WindowRef)gWind)->bottom - 5,
-            GetCWindowPortRect((WindowRef)gWind)->right - 244,
-            GetCWindowPortRect((WindowRef)gWind)->bottom - 5);
-    commRect.top -= 29470 / (commRect.right - commRect.left);
-#endif
 }
 
 
@@ -3722,14 +3691,8 @@ void TextFont(short font)
 // FUNCTION: EVNOVA 0x004b6920
 void TextSize(short size)
 {
-#ifdef CEFIX /* F12.82 */
-    /* CE bug: CE's replacement drops the NULL-port test (no caller in play has no port). */
+    // BUG (CE F12.82): CE's replacement drops the NULL-port test; no caller in play has no port
     CurrentGrafPort->txSize = CE_Scale(size);
-#else
-    if (CurrentGrafPort == NULL)
-        return;
-    CurrentGrafPort->txSize = size;
-#endif
 }
 
 // FUNCTION: EVNOVA 0x004b6940

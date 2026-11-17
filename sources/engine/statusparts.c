@@ -70,11 +70,7 @@ void DrawStatusNav(void)
     ForeColor(blackColor);
     srcRect = statusOffRect[kNavRect];
     dstRect = srcRect;
-#ifdef CEFIX /* F14.07 */
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-    OffsetRect(&dstRect, GetCWindowPortRect((WindowRef)gWind)->right - kTargPanelInset, 0);
-#endif
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
              &srcRect, &dstRect, 0, 0);
     TextFont(statusFontID);
@@ -83,37 +79,20 @@ void DrawStatusNav(void)
     if (shipData[0].navTargetKind == -1) {
         RGBForeColor(statusDimColor);
         GetIndString(buf, kGameStrList, kNavNoDestination);
-#ifdef CEFIX /* F12.11 */
         DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(0x16));
-#else
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0x16);
-#endif
     }
     if (shipData[0].navTargetKind == 2) {
         RGBForeColor(statusDimColor);
         GetIndString(buf, kGameStrList, kNavStellarLabel);
-#ifdef CEFIX /* F12.12 */
         DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(0xc));
-#else
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0xc);
-#endif
         if (shipData[0].targetStellar != -1) {
             RGBForeColor(statusBrightColor);
-#ifdef CEFIX /* F12.13 */
             DrawStringCentered(stellarData[shipData[0].targetStellar].name,
                                dstRect.left, dstRect.right, dstRect.top + CE_Scale(0x1d));
-#else
-            DrawStringCentered(stellarData[shipData[0].targetStellar].name,
-                               dstRect.left, dstRect.right, dstRect.top + 0x1d);
-#endif
         } else {
             RGBForeColor(statusDimColor);
             GetIndString(buf, kGameStrList, kNavUnknown);
-#ifdef CEFIX /* F12.14 */
             DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(0x1d));
-#else
-            DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0x1d);
-#endif
         }
     }
     if (shipData[0].navTargetKind == 3) {
@@ -122,11 +101,7 @@ void DrawStatusNav(void)
         else
             RGBForeColor(statusDimColor);
         GetIndString(buf, kGameStrList, kNavHyperLabel);
-#ifdef CEFIX /* F12.10 */
         DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(0xc));
-#else
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0xc);
-#endif
         if (shipData[0].targetStellar != -1) {
             origin.x = origin.y = 0.0f;
             safe = 1;
@@ -149,31 +124,17 @@ void DrawStatusNav(void)
                 RGBForeColor(statusDimColor);
             i = systemData[shipData[0].curSystem].links[shipData[0].targetStellar];
             if (systemData[i].exploreLevel > 0) {
-#ifdef CEFIX /* F12.15 */
                 DrawStringCentered(systemData[systemData[shipData[0].curSystem]
                                        .links[shipData[0].targetStellar]].name,
                                    dstRect.left, dstRect.right, dstRect.top + CE_Scale(0x1d));
-#else
-                DrawStringCentered(systemData[systemData[shipData[0].curSystem]
-                                       .links[shipData[0].targetStellar]].name,
-                                   dstRect.left, dstRect.right, dstRect.top + 0x1d);
-#endif
             } else {
                 GetIndString(buf, kGameStrList, kNavUnexplored);
-#ifdef CEFIX /* F12.15 */
                 DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(0x1d));
-#else
-                DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0x1d);
-#endif
             }
         } else {
             RGBForeColor(statusDimColor);
             GetIndString(buf, kGameStrList, kNavUnknown);
-#ifdef CEFIX /* F12.15 */
             DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(0x1d));
-#else
-            DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0x1d);
-#endif
         }
     }
 
@@ -206,11 +167,7 @@ void DrawStatusShield(void)
         statusOffRect[kShieldRect].bottom > statusOffRect[kShieldRect].top) {
         CopyRect(&srcRect, &statusOffRect[kShieldRect]);
         CopyRect(&dstRect, &srcRect);
-#ifdef CEFIX /* F14.08 */
         OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-        OffsetRect(&dstRect, GetCWindowPortRect((WindowRef)gWind)->right - kTargPanelInset, 0);
-#endif
         CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
                  &srcRect, &dstRect, 0, 0);
         if (shipData[0].shield > 0.0f) {
@@ -249,11 +206,7 @@ void DrawStatusShield(void)
         statusOffRect[kArmorRect].bottom > statusOffRect[kArmorRect].top) {
         CopyRect(&srcRect, &statusOffRect[kArmorRect]);
         CopyRect(&dstRect, &srcRect);
-#ifdef CEFIX /* F14.09 */
         OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-        OffsetRect(&dstRect, GetCWindowPortRect((WindowRef)gWind)->right - kTargPanelInset, 0);
-#endif
         CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
                  &srcRect, &dstRect, 0, 0);
         if (shipData[0].armor > 0.0f) {
@@ -303,11 +256,7 @@ void DrawStatusFuel(void)
     SetGWorldContainer(&loadPort);
     CopyRect(&srcRect, &statusOffRect[kFuelRect]);
     CopyRect(&dstRect, &srcRect);
-#ifdef CEFIX /* F14.10 */
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-    OffsetRect(&dstRect, GetCWindowPortRect((WindowRef)gWind)->right - kTargPanelInset, 0);
-#endif
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
              &srcRect, &dstRect, 0, 0);
     if (shipData[0].fuel > 0.0f && IsDisabled(shipData) == 0) {
@@ -386,11 +335,7 @@ void DrawStatusTarg(void)
 
     srcRect = statusOffRect[kTargRect];
     dstRect = srcRect;
-#ifdef CEFIX /* F14.11 */
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-    OffsetRect(&dstRect, GetCWindowPortRect((WindowRef)gWind)->right - kTargPanelInset, 0);
-#endif
     ForeColor(blackColor);
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
              &srcRect, &dstRect, 0, 0);
@@ -551,40 +496,21 @@ void DrawStatusTarg(void)
                 found = 1;
         }
         if (found) {
-#ifdef CEFIX /* F12.16 */
             DrawStringCentered((unsigned char *)currentMissions[shipData[shipData[0].targetShip].specialMission].shipName,
                                dstRect.left, dstRect.right,
                                dstRect.top + CE_Scale(16));
-#else
-            DrawStringCentered((unsigned char *)currentMissions[shipData[shipData[0].targetShip].specialMission].shipName,
-                               dstRect.left, dstRect.right,
-                               dstRect.top + 16);
-#endif
         } else {
-#ifdef CEFIX /* F12.21-22 */
             if (shipData[shipData[0].targetShip].persType != -1)
                 DrawStringCentered((unsigned char *)personData[shipData[shipData[0].targetShip].persType].name, dstRect.left, dstRect.right,
                                    dstRect.top + CE_Scale(16));
             else
                 DrawStringCentered(shipClass[shipData[shipData[0].targetShip].type].name, dstRect.left,
                                    dstRect.right, dstRect.top + CE_Scale(16));
-#else
-            if (shipData[shipData[0].targetShip].persType != -1)
-                DrawStringCentered((unsigned char *)personData[shipData[shipData[0].targetShip].persType].name, dstRect.left, dstRect.right,
-                                   dstRect.top + 16);
-            else
-                DrawStringCentered(shipClass[shipData[shipData[0].targetShip].type].name, dstRect.left,
-                                   dstRect.right, dstRect.top + 16);
-#endif
         }
 
         h = (dstRect.left + dstRect.right) / 2;
         v = (dstRect.top + dstRect.bottom) / 2;
-#ifdef CEFIX /* F12.17 */
         SetRect(&picRect, h - CE_Scale(64), v - CE_Scale(32), h + CE_Scale(64), v + CE_Scale(32));
-#else
-        SetRect(&picRect, h - 64, v - 32, h + 64, v + 32);
-#endif
         ForeColor(blackColor);
         h = shipClass[shipData[shipData[0].targetShip].type].targetPictID;
         if (targetInfoPic[h] != NULL)
@@ -607,32 +533,19 @@ void DrawStatusTarg(void)
         }
         TextSize(statusFontSize[1]);
         RGBForeColor(statusBrightColor);
-#ifdef CEFIX /* F12.18 */
         DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(29));
-#else
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 29);
-#endif
         TextSize(statusFontSize[0]);
         ForeColor(blackColor);
 
         if (shipData[shipData[0].targetShip].persType == kPersCaptainHector) {
             RGBForeColor(statusBrightColor);
-#ifdef CEFIX /* F12.23 */
             DrawStringCentered("\pAmbrosia", dstRect.left, dstRect.right, dstRect.bottom - CE_Scale(6));
-#else
-            DrawStringCentered("\pAmbrosia", dstRect.left, dstRect.right, dstRect.bottom - 6);
-#endif
         } else if ((shipClass[shipData[shipData[0].targetShip].type].flags & kShipHideStatus) != 0) {
             if (shipData[shipData[0].targetShip].govt >= 0) {
                 RGBForeColor(statusDimColor);
                 MoveTo(dstRect.left + 87, dstRect.bottom - 6);
-#ifdef CEFIX /* F12.19 */
                 DrawStringCentered(govtTargStrings[shipData[shipData[0].targetShip].govt], dstRect.left,
                                    dstRect.right, dstRect.bottom - CE_Scale(6));
-#else
-                DrawStringCentered(govtTargStrings[shipData[shipData[0].targetShip].govt], dstRect.left,
-                                   dstRect.right, dstRect.bottom - 6);
-#endif
             }
         } else {
             found = 0;
@@ -643,27 +556,14 @@ void DrawStatusTarg(void)
                 if (shipData[shipData[0].targetShip].govt >= 0) {
                     RGBForeColor(statusDimColor);
                     MoveTo(dstRect.left + 87, dstRect.bottom - 6);
-#ifdef CEFIX /* F12.24 */
                     DrawStringCentered(govtTargStrings[shipData[shipData[0].targetShip].govt], dstRect.left,
                                        dstRect.right, dstRect.bottom - CE_Scale(6));
-#else
-                    DrawStringCentered(govtTargStrings[shipData[shipData[0].targetShip].govt], dstRect.left,
-                                       dstRect.right, dstRect.bottom - 6);
-#endif
                 }
             } else {
-#ifdef CEFIX /* F12.25 */
             CE_SetPen(dstRect.left + CE_Scale(5), dstRect.bottom - CE_Scale(6));
-#else
-            MoveTo(dstRect.left + 5, dstRect.bottom - 6);
-#endif
             if (shipData[shipData[0].targetShip].shield <= 0.0f || IsDisabled(&shipData[shipData[0].targetShip]) != 0) {
                 RGBForeColor(statusBrightColor);
-#ifdef CEFIX /* F12.27 */
                 CE_SetPen(dstRect.left + CE_Scale(5), dstRect.bottom - CE_Scale(6));
-#else
-                MoveTo(dstRect.left + 5, dstRect.bottom - 6);
-#endif
                 if (IsDisabled(&shipData[shipData[0].targetShip]) != 0) {
                     vulnerable = 0;
                     mission = shipData[shipData[0].targetShip].specialMission;
@@ -734,13 +634,8 @@ void DrawStatusTarg(void)
 
             if (shipData[shipData[0].targetShip].govt >= 0) {
                 RGBForeColor(statusDimColor);
-#ifdef CEFIX /* F12.28 */
                 CE_SetPen(dstRect.right - CE_Scale(7) - StringWidth(govtTargStrings[shipData[shipData[0].targetShip].govt]),
                           dstRect.bottom - CE_Scale(6));
-#else
-                MoveTo(dstRect.right - 7 - StringWidth(govtTargStrings[shipData[shipData[0].targetShip].govt]),
-                       dstRect.bottom - 6);
-#endif
                 DrawString(govtTargStrings[shipData[shipData[0].targetShip].govt]);
             } else {
                 if (shipData[shipData[0].targetShip].parentShip == 0 || shipData[shipData[0].targetShip].formerEscort >= 0) {
@@ -753,11 +648,7 @@ void DrawStatusTarg(void)
                         GetIndString(numBuf, kGameStrList, kStatusNeutral);
                     }
                     RGBForeColor(statusDimColor);
-#ifdef CEFIX /* F12.26 */
                     CE_SetPen(dstRect.right - CE_Scale(7) - StringWidth(numBuf), dstRect.bottom - CE_Scale(6));
-#else
-                    MoveTo(dstRect.right - 7 - StringWidth(numBuf), dstRect.bottom - 6);
-#endif
                     DrawString(numBuf);
                 }
             }
@@ -766,11 +657,7 @@ void DrawStatusTarg(void)
     } else {
         RGBForeColor(statusDimColor);
         GetIndString(numBuf, kGameStrList, kStatusNoTarget);
-#ifdef CEFIX /* F12.20 */
         DrawStringCentered(numBuf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(47));
-#else
-        DrawStringCentered(numBuf, dstRect.left, dstRect.right, dstRect.top + 47);
-#endif
     }
 
     ForeColor(blackColor);
@@ -799,32 +686,19 @@ void DrawStatusWeap(void)
     TextSize(statusFontSize[0]);
     srcRect = statusOffRect[kWeapRect];
     dstRect = srcRect;
-#ifdef CEFIX /* F14.12 */
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-    OffsetRect(&dstRect, GetCWindowPortRect((WindowRef)gWind)->right - 0xc2, 0);
-#endif
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
              &srcRect, &dstRect, 0, 0);
     if (shipData[0].selectedWeapon == -1) {
         RGBForeColor(statusDimColor);
         GetIndString(buf, kGameStrList, kStatusNoWeapon);
-#ifdef CEFIX /* F12.29 */
         DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + CE_Scale(0xc));
-#else
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0xc);
-#endif
     } else {
         RGBForeColor(statusBrightColor);
         if (weaponStats[shipData[0].selectedWeapon].ammoType == -1 ||
             (weaponStats[shipData[0].selectedWeapon].flags2 & kWeapNoAmmoDisplay) != 0) {
-#ifdef CEFIX /* F12.31 */
             DrawStringCentered(weapName[shipData[0].selectedWeapon], dstRect.left,
                                dstRect.right, dstRect.top + CE_Scale(0xc));
-#else
-            DrawStringCentered(weapName[shipData[0].selectedWeapon], dstRect.left,
-                               dstRect.right, dstRect.top + 0xc);
-#endif
         } else if (weaponStats[shipData[0].selectedWeapon].ammoType > -kWeapAmmoFuelBase) {
             pstrcpy(buf, weapName[shipData[0].selectedWeapon]);
             PtoCstr(buf);
@@ -840,21 +714,11 @@ void DrawStatusWeap(void)
             PtoCstr(numBuf);
             strcat((char *)buf, (char *)numBuf);
             CtoPstr((char *)buf);
-#ifdef CEFIX /* F12.32 */
             DrawStringCentered(buf, dstRect.left, dstRect.right,
                                dstRect.top + CE_Scale(0xc));
-#else
-            DrawStringCentered(buf, dstRect.left, dstRect.right,
-                               dstRect.top + 0xc);
-#endif
         } else if (weaponStats[shipData[0].selectedWeapon].ammoType <= -kWeapAmmoFuelBase) {
-#ifdef CEFIX /* F12.30 */
             DrawStringCentered(weapName[shipData[0].selectedWeapon], dstRect.left,
                                dstRect.right, dstRect.top + CE_Scale(0xc));
-#else
-            DrawStringCentered(weapName[shipData[0].selectedWeapon], dstRect.left,
-                               dstRect.right, dstRect.top + 0xc);
-#endif
         }
     }
     ForeColor(blackColor);
@@ -889,11 +753,7 @@ void DrawStatusCargo(void)
     TextSize(statusFontSize[0]);
     srcRect = statusOffRect[kCargoRect];
     dstRect = srcRect;
-#ifdef CEFIX /* F14.13 */
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-    OffsetRect(&dstRect, GetCWindowPortRect((WindowRef)gWind)->right - 0xc2, 0);
-#endif
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
              &srcRect, &dstRect, 0, 0);
     for (i = 0; i <= 5; i++) {
@@ -907,18 +767,10 @@ void DrawStatusCargo(void)
             DrawString(buf);
         }
     }
-#ifdef CEFIX /* F12.33 */
     CE_SetPen(dstRect.left + CE_Scale(0x4d), dstRect.top + CE_Scale(0xc));
-#else
-    MoveTo(dstRect.left + 0x4d, dstRect.top + 0xc);
-#endif
     RGBForeColor(statusDimColor);
     DrawIndString(kGameStrList, 0x13);
-#ifdef CEFIX /* F12.34 */
     CE_SetPen(dstRect.left + CE_Scale(0x6e), dstRect.top + CE_Scale(0xc));
-#else
-    MoveTo(dstRect.left + 0x6e, dstRect.top + 0xc);
-#endif
     RGBForeColor(statusBrightColor);
     missionCargoCount = TotalFleetHolds() - TotalCargo(shipData);
     if (missionCargoCount < 0)
@@ -945,18 +797,10 @@ void DrawStatusCargo(void)
         }
     }
     if (missionCargoCount > 0 || junkCount > 0) {
-#ifdef CEFIX /* F12.37 */
         CE_SetPen(dstRect.left + CE_Scale(0x4d), dstRect.top + CE_Scale(0x1e));
-#else
-        MoveTo(dstRect.left + 0x4d, dstRect.top + 0x1e);
-#endif
         RGBForeColor(statusDimColor);
         DrawIndString(kGameStrList, 0x14);
-#ifdef CEFIX /* F12.38 */
         CE_SetPen(dstRect.left + CE_Scale(0x57), dstRect.top + CE_Scale(0x2e));
-#else
-        MoveTo(dstRect.left + 0x57, dstRect.top + 0x2e);
-#endif
         RGBForeColor(statusBrightColor);
         if (missionCargoCount == 1) {
             DrawString(cargoAbbrev[missionCargoType]);
@@ -970,22 +814,14 @@ void DrawStatusCargo(void)
             }
         }
     }
-#ifdef CEFIX /* F12.35 */
     CE_SetPen(dstRect.left + CE_Scale(0x4d), dstRect.top + CE_Scale(0x42));
-#else
-    MoveTo(dstRect.left + 0x4d, dstRect.top + 0x42);
-#endif
     RGBForeColor(statusDimColor);
     pstrcpy(buf, creditsString);
     if (buf[0] != 0)
         buf[1] = toupper(buf[1]);
     DrawString(buf);
     DrawString("\p:");
-#ifdef CEFIX /* F12.36 */
     CE_SetPen(dstRect.left + CE_Scale(0x57), dstRect.top + CE_Scale(0x52));
-#else
-    MoveTo(dstRect.left + 0x57, dstRect.top + 0x52);
-#endif
     RGBForeColor(statusBrightColor);
     DrawCommaNumber(shipData[0].credits);
     ForeColor(blackColor);

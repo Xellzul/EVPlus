@@ -87,11 +87,7 @@ void DrawStatusRadar(Boolean highlight)
     SetGWorldContainer(&loadPort);
     srcRect = statusOffRect[kRadarRect];
     dstRect = srcRect;
-#ifdef CEFIX /* F14.06 */
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
-#else
-    OffsetRect(&dstRect, GetCWindowPortRect((WindowRef)gWind)->right - kTargPanelInset, 0);
-#endif
     if (highlight == 0 && interferenceThisFrame != 0) {
         cx = Rand(kRadarStaticFrames);
         if (staticPat[cx] != NULL)

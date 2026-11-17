@@ -140,11 +140,7 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
         tempFrameP->rleDataH = 0;
 
         if (createGWorld) {
-#ifdef CEFIX /* F11.02 */
             err = CE_NewGWorld(&frameGWorld, depth, frameRect, theGDH);
-#else
-            err = NewGWorld(&frameGWorld, depth, frameRect, theGDH);
-#endif
 
             if ((int)err == noErr) {
                 tempFrameP->framePort = frameGWorld;

@@ -44,9 +44,9 @@ int CE_Scale(int value)
     return CE_Round(value * ceScaleFactor);
 }
 
-/* CE bug: the grid hit-test is CE's DIV r8, the 16-bit offset by the cell size's low byte,
-   so a cell of 256 px or more (ui_scale 3.08 and up) makes a click divide by 0 or need a
-   quotient over 255, and both fault (#DE). */
+// BUG (CE F13): the grid hit-test is CE's DIV r8, the 16-bit offset by the cell size's low byte,
+// so a cell of 256 px or more (ui_scale 3.08 and up) makes a click divide by 0 or need a
+// quotient over 255, and both fault (#DE)
 int CE_GridDivide(int offset, int cell)
 {
     unsigned int quotient;
@@ -71,7 +71,7 @@ void CE_ScaleRect(Rect *r)
    SET_ORIGIN_SCALED sites pass (x - xo + CE_Scale(xo), y - yo + CE_Scale(yo)). */
 void CE_SetPen(short h, short v)
 {
-    /* CE bug: no NULL-port test, as in CE (no caller in play has no port). */
+    // BUG (CE F12.83): no NULL-port test, as in CE; no caller in play has no port
     CurrentGrafPort->pnLoc.h = h;
     CurrentGrafPort->pnLoc.v = v;
 }

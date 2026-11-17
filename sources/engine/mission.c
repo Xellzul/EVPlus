@@ -461,11 +461,7 @@ void SetupMissionList(void)
     GetFontInfo(&fontInfo);
     cellSize.v = fontInfo.ascent + fontInfo.descent + fontInfo.leading;
 #else
-#ifdef CEFIX /* F12.01 */
     cellSize.v = (ceListItemBaseHeight * 1.5);
-#else
-    cellSize.v = (smallTextSize * 1.5);
-#endif
 #endif
     if (cellSize.v * count <= box.bottom - box.top) {
         visible = 0;
@@ -2140,11 +2136,7 @@ void MissionDialogUpdate(void)
         TextFont(smallTextFont);
         TextSize(smallTextSize);
         RGBForeColor(&rgbLightGrey);
-#ifdef CEFIX /* F12.02 */
         CE_SetPen(box.left, box.top + CE_Scale(12));
-#else
-        MoveTo(box.left, (box.top + 12));
-#endif
         DrawIndString(kGameStrList, kListCaptionIdx);
         ForeColor(blackColor);
     }
@@ -3691,11 +3683,7 @@ void SetupMissionInfoList(void)
         rowPt.v++;
     }
 #else
-#ifdef CEFIX /* F12.03 */
     cellSize.v = (ceListItemBaseHeight * 1.5);
-#else
-    cellSize.v = (smallTextSize * 1.5);
-#endif
 
     if (cellSize.v * count <= box.bottom - box.top) {
         hasScrollbar = 0;
@@ -4079,14 +4067,8 @@ void MissionInfoDialogUpdate(void)
     DateToMedString(gameTime, text);
     CtoPstr(text);
     GetDialogItem(missionInfoDialog, 7, &itemType, (Handle *)&item, &box);
-#ifdef CEFIX /* F12.04 */
     CE_SetPen((box.right + box.left) / 2 - StringWidth((unsigned char *)text) / 2,
               box.top + smallTextSize - 9 + CE_Scale(9));
-#else
-    MoveTo(((box.right + box.left) / 2 -
-                   StringWidth((unsigned char *)text) / 2),
-           (box.top + smallTextSize));
-#endif
     DrawString((unsigned char *)text);
     ForeColor(blackColor);
     GetDialogItem(missionInfoDialog, 4, &itemType, (Handle *)&item, &box);
@@ -4289,38 +4271,23 @@ void SingleMissionDialogUpdate(void)
                 OffsetRect(&r2, -r2.left, -r2.top);
                 OffsetRect(&r, 0, r2.bottom);
             }
-#ifdef CEFIX /* F12.05 */
             CE_ScaleOffsetRect(&r, GetDialogPortRect(missionDialog)->left,
                                GetDialogPortRect(missionDialog)->top);
-#else
-            OffsetRect(&r, GetDialogPortRect(missionDialog)->left,
-                       GetDialogPortRect(missionDialog)->top);
-#endif
             DrawPicHandle(missionBackgroundPic[1], &r);
         }
         if (missionBackgroundPic[0] != NULL) {
             QDGetPictureBounds(missionBackgroundPic[0], &r);
             OffsetRect(&r, -r.left, -r.top);
-#ifdef CEFIX /* F12.06 */
             CE_ScaleOffsetRect(&r, GetDialogPortRect(missionDialog)->left,
                                GetDialogPortRect(missionDialog)->top);
-#else
-            OffsetRect(&r, GetDialogPortRect(missionDialog)->left,
-                       GetDialogPortRect(missionDialog)->top);
-#endif
             DrawPicHandle(missionBackgroundPic[0], &r);
         }
         pic = missionBackgroundPic[2];
         if (pic != NULL) {
             QDGetPictureBounds(pic, &r);
             OffsetRect(&r, -r.left, -r.top);
-#ifdef CEFIX /* F12.07 */
             CE_ScaleOffsetRectBottom(&r, GetDialogPortRect(missionDialog)->left,
                                      GetDialogPortRect(missionDialog)->bottom - (r.bottom - r.top));
-#else
-            OffsetRect(&r, GetDialogPortRect(missionDialog)->left,
-                       GetDialogPortRect(missionDialog)->bottom - (r.bottom - r.top));
-#endif
             DrawPicHandle(missionBackgroundPic[2], &r);
         }
     } else if (missionBackgroundPic[0] != NULL) {

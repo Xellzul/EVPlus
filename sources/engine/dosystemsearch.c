@@ -36,13 +36,8 @@ short selSystem;
 short influenceStepSize;
 short nextInfluenceSyst;
 DialogPtr mapDialog;
-#ifdef CEFIX
 unsigned char influenceValue[kCEBordersWidth][kCEBordersHeight][4];
 unsigned char influenceOwner[kCEBordersWidth][kCEBordersHeight][4];
-#else
-unsigned char influenceValue[256][256][4];
-unsigned char influenceOwner[256][256][4];
-#endif
 
 #define kSearchDlogID 0xbbd
 #define kSearchTextItem 5

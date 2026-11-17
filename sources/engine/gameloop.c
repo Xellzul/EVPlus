@@ -4652,11 +4652,7 @@ void HandleMouse(void)
         HideTheCursor();
     else
         ShowTheCursor();
-#ifdef CEFIX /* F14.01 */
     box.right -= ceStatusBarWidth;
-#else
-    box.right -= kStatusBarWidth;
-#endif
 
     if (mouse.h != lastMousePos.h || mouse.v != lastMousePos.v || Button()) {
         lastMousePos.h = mouse.h;

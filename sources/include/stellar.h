@@ -90,17 +90,9 @@ extern double floatingMapZoom;
 extern Boolean partialMapDialogUpdate;
 extern short hypergateMapModeStellar;
 extern Boolean influenceCoordsCached;
-#ifdef CEFIX
 extern unsigned char influenceOwner[kCEBordersWidth][kCEBordersHeight][4];
-#else
-extern unsigned char influenceOwner[256][256][4];
-#endif
 extern short influenceStepSize;
-#ifdef CEFIX
 extern unsigned char influenceValue[kCEBordersWidth][kCEBordersHeight][4];
-#else
-extern unsigned char influenceValue[256][256][4];
-#endif
 extern PicHandle mapBackgroundPic;
 extern PicHandle nebulaPic[32][7];
 extern Boolean doneFlag[];

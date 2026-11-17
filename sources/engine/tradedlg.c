@@ -566,26 +566,14 @@ void TradeDialogUpdate(void)
         RGBForeColor(&rgbDarkGrey);
         FrameRect(&box);
         RGBForeColor(&rgbLightGrey);
-#ifdef CEFIX /* F12.42 */
         CE_SetPen(box.left + CE_Scale(7), box.top + CE_Scale(12));
-#else
-        MoveTo((box.left + 7), (box.top + 12));
-#endif
         DrawIndString(kGameStrList, 0xc5);
-#ifdef CEFIX /* F12.43 */
         CE_SetPen(box.right - CE_Scale(0x7b), box.top + CE_Scale(12));
-#else
-        MoveTo((box.right - 0x7b), (box.top + 12));
-#endif
         if (TotalFleetHolds() > ShipTotalHolds())
             DrawIndString(kGameStrList, 0xc6);
         else
             DrawIndString(kGameStrList, 0xc7);
-#ifdef CEFIX /* F12.44 */
         CE_SetPen(box.right - CE_Scale(0x46), box.top + CE_Scale(12));
-#else
-        MoveTo((box.right - 0x46), (box.top + 12));
-#endif
         DrawIndString(kGameStrList, 0xc8);
         ForeColor(blackColor);
     }
@@ -619,52 +607,28 @@ void TradeDialogUpdate(void)
             if (tradePrice[i] != 0) {
                 RGBForeColor((RGBColor *)&ldefColors[0]);
                 if (i <= kLastCommodity) {
-#ifdef CEFIX /* F12.49 */
                     CE_SetPen(box.left + CE_Scale(7), box.top + CE_Scale(10));
-#else
-                    MoveTo((box.left + 7), (box.top + 10));
-#endif
                     DrawString(cargoName[i]);
                     qty = shipData->cargo[i];
                     if (qty > 0) {
                         NumToString(qty, (StringPtr)text);
-#ifdef CEFIX /* F12.50 */
                         CE_SetPen(box.right - (StringWidth((StringPtr)text) + CE_Scale(0x6e)),
                                   box.top + CE_Scale(10));
-#else
-                        MoveTo((box.right -
-                                       (StringWidth((StringPtr)text) + 0x6e)),
-                               (box.top + 10));
-#endif
                         DrawString((StringPtr)text);
                     }
                 } else if (junkType[i - kFirstJunkItem] != -1) {
-#ifdef CEFIX /* F12.45 */
                     CE_SetPen(box.left + CE_Scale(6), box.top + CE_Scale(10));
-#else
-                    MoveTo((box.left + 6), (box.top + 10));
-#endif
                     DrawString(junkData[junkType[i - kFirstJunkItem]].name);
                     qty = junkData[junkType[i - kFirstJunkItem]].held;
                     if (qty > 0) {
                         NumToString(qty, (StringPtr)text);
-#ifdef CEFIX /* F12.46 */
                         CE_SetPen(box.right - (StringWidth((StringPtr)text) + CE_Scale(0x6e)),
                                   box.top + CE_Scale(10));
-#else
-                        MoveTo((box.right -
-                                       (StringWidth((StringPtr)text) + 0x6e)),
-                               (box.top + 10));
-#endif
                         DrawString((StringPtr)text);
                     }
                 }
 
-#ifdef CEFIX /* F12.47 */
                 CE_SetPen(box.right - CE_Scale(0x46), box.top + CE_Scale(10));
-#else
-                MoveTo((box.right - 0x46), (box.top + 10));
-#endif
                 found = 0;
                 for (k = 0; k < kMaxDisasters; k++) {
                     if (disasterData[k].loaded != 0 && disasterData[k].countdown > 0 &&
@@ -695,13 +659,8 @@ void TradeDialogUpdate(void)
                 }
 
                 NumToString(tradePrice[i], (StringPtr)text);
-#ifdef CEFIX /* F12.48 */
                 CE_SetPen(box.right - (StringWidth((StringPtr)text) + CE_Scale(10)),
                           box.top + CE_Scale(10));
-#else
-                MoveTo((box.right - (StringWidth((StringPtr)text) + 10)),
-                       (box.top + 10));
-#endif
                 DrawString((StringPtr)text);
             }
             ForeColor(blackColor);
@@ -1639,13 +1598,8 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         where = ev->where;
         GetDialogItem(outfitDialog, kGridItem, &itemType, &item, &box);
         if (PtInRectPoint(where, &box)) {
-#ifdef CEFIX /* F13.01 */
             count = CE_GridDivide(where.h - box.left, ceGridCellWidth);
             row = CE_GridDivide(where.v - box.top, ceGridCellHeight);
-#else
-            count = (where.h - box.left) / kGridCellWide;
-            row = (where.v - box.top) / kGridCellHigh;
-#endif
             if (count >= 0 && count <= kGridCols - 1 && row >= 0 &&
                 row <= kGridCells / kGridCols - 1) {
                 oldPos = selOutfitListItem;
@@ -1776,15 +1730,9 @@ void OutfitDialogUpdate(void)
                 if (shipSystems[dockedPortItems[i]] > 0) {
                     NumToString(shipSystems[dockedPortItems[i]], line1);
                     ForeColor(whiteColor);
-#ifdef CEFIX /* F12.54 */
                     CE_SetPen(listScreenRect[i - outfitScroll].right
                                   - (StringWidth(line1) + CE_Scale(3)),
                               listScreenRect[i - outfitScroll].top + CE_Scale(12));
-#else
-                    MoveTo((listScreenRect[i - outfitScroll].right
-                                   - (StringWidth(line1) + 3)),
-                           (listScreenRect[i - outfitScroll].top + 12));
-#endif
                     DrawString(line1);
                     ForeColor(blackColor);
                 }
@@ -1805,48 +1753,27 @@ void OutfitDialogUpdate(void)
                         ForeColor(whiteColor);
                     else
                         RGBForeColor(&rgbLessDarkGrey);
-#ifdef CEFIX /* F12.51 */
                     CE_SetPen((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
                                   - StringWidth(line1) / 2,
                               listScreenRect[i - outfitScroll].bottom - CE_Scale(14));
-#else
-                    MoveTo(((listScreenRect[i - outfitScroll].left
-                                    + listScreenRect[i - outfitScroll].right) / 2
-                                   - StringWidth(line1) / 2),
-                           (listScreenRect[i - outfitScroll].bottom - 14));
-#endif
                     DrawString(line1);
                     c = line2[1];
                     if (isalpha(HeldChar(c, line2[1])) || isdigit(HeldChar(c, line2[1])))
                         ForeColor(whiteColor);
                     else
                         RGBForeColor(&rgbLessDarkGrey);
-#ifdef CEFIX /* F12.52 */
                     CE_SetPen((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
                                   - StringWidth(line2) / 2,
                               listScreenRect[i - outfitScroll].bottom - CE_Scale(3));
-#else
-                    MoveTo(((listScreenRect[i - outfitScroll].left
-                                    + listScreenRect[i - outfitScroll].right) / 2
-                                   - StringWidth(line2) / 2),
-                           (listScreenRect[i - outfitScroll].bottom - 3));
-#endif
                     DrawString(line2);
                     ForeColor(blackColor);
                 } else {
-#ifdef CEFIX /* F12.53 */
                     CE_SetPen((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
                                   - StringWidth(line1) / 2,
                               listScreenRect[i - outfitScroll].bottom - CE_Scale(6));
-#else
-                    MoveTo(((listScreenRect[i - outfitScroll].left
-                                    + listScreenRect[i - outfitScroll].right) / 2
-                                   - StringWidth(line1) / 2),
-                           (listScreenRect[i - outfitScroll].bottom - 6));
-#endif
                     ForeColor(whiteColor);
                     DrawString(line1);
                     ForeColor(blackColor);
@@ -2571,13 +2498,8 @@ void PortDialogUpdate(void)
         MoveTo(box.left, (box.top + kNameBaseline));
         TextFont(gTimesFont);
         TextSize(kNameSize);
-#ifdef CEFIX /* F12.55 */
         DrawStringCentered(dockedPort->name, box.left, box.right,
                            box.top + CE_Scale(kNameBaseline));
-#else
-        DrawStringCentered(dockedPort->name, box.left, box.right,
-                           (box.top + kNameBaseline));
-#endif
         ForeColor(blackColor);
     }
     GetDialogItem(portDialog, 5, &itemType, &item, &box);
@@ -3154,13 +3076,8 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         where = ev->where;
         GetDialogItem(shipyardDialog, kGridItem, &itemType, &item, &box);
         if (PtInRectPoint(where, &box)) {
-#ifdef CEFIX /* F13.02 */
             count = CE_GridDivide(where.h - box.left, ceGridCellWidth);
             row = CE_GridDivide(where.v - box.top, ceGridCellHeight);
-#else
-            count = (where.h - box.left) / kGridCellWide;
-            row = (where.v - box.top) / kGridCellHigh;
-#endif
             if (count >= 0 && count <= kGridCols - 1 && row >= 0 &&
                 row <= kGridCells / kGridCols - 1) {
                 oldPos = selShipListItem;
@@ -3317,48 +3234,27 @@ void ShipyardDialogUpdate(void)
                             ForeColor(whiteColor);
                         else
                             RGBForeColor(&rgbLessDarkGrey);
-#ifdef CEFIX /* F12.56 */
                         CE_SetPen((listScreenRect[i - shipyardScroll].left
                                        + listScreenRect[i - shipyardScroll].right) / 2
                                       - StringWidth(line1) / 2,
                                   listScreenRect[i - shipyardScroll].bottom - CE_Scale(14));
-#else
-                        MoveTo(((listScreenRect[i - shipyardScroll].left
-                                        + listScreenRect[i - shipyardScroll].right) / 2
-                                       - StringWidth(line1) / 2),
-                               (listScreenRect[i - shipyardScroll].bottom - 14));
-#endif
                         DrawString(line1);
                         c = line2[1];
                         if (isalpha(HeldChar(c, line2[1])) || isdigit(HeldChar(c, line2[1])))
                             ForeColor(whiteColor);
                         else
                             RGBForeColor(&rgbLessDarkGrey);
-#ifdef CEFIX /* F12.57 */
                         CE_SetPen((listScreenRect[i - shipyardScroll].left
                                        + listScreenRect[i - shipyardScroll].right) / 2
                                       - StringWidth(line2) / 2,
                                   listScreenRect[i - shipyardScroll].bottom - CE_Scale(3));
-#else
-                        MoveTo(((listScreenRect[i - shipyardScroll].left
-                                        + listScreenRect[i - shipyardScroll].right) / 2
-                                       - StringWidth(line2) / 2),
-                               (listScreenRect[i - shipyardScroll].bottom - 3));
-#endif
                         DrawString(line2);
                         ForeColor(blackColor);
                     } else {
-#ifdef CEFIX /* F12.58 */
                         CE_SetPen((listScreenRect[i - (int32_t)shipyardScroll].left
                                        + listScreenRect[i - (int32_t)shipyardScroll].right) / 2
                                       - StringWidth(line1) / 2,
                                   listScreenRect[i - (int32_t)shipyardScroll].bottom - CE_Scale(6));
-#else
-                        MoveTo(((listScreenRect[i - (int32_t)shipyardScroll].left
-                                        + listScreenRect[i - (int32_t)shipyardScroll].right) / 2
-                                       - StringWidth(line1) / 2),
-                               (listScreenRect[i - (int32_t)shipyardScroll].bottom - 6));
-#endif
                         ForeColor(whiteColor);
                         DrawString(line1);
                         ForeColor(blackColor);
@@ -3716,21 +3612,12 @@ void ShipDescDialogUpdate(void)
         TextSize(18);
         MoveTo(box.left, (box.top + 18));
         ForeColor(whiteColor);
-#ifdef CEFIX /* F12.59 */
         if (hasPict)
             DrawStringCentered(shipyardLongNames[selShipyardItem], box.left,
                                box.right, box.top + CE_Scale(18));
         else
             DrawStringCentered(shipClass[selShipyardItem].name, box.left,
                                box.right, box.top + CE_Scale(18));
-#else
-        if (hasPict)
-            DrawStringCentered(shipyardLongNames[selShipyardItem], box.left,
-                               box.right, (box.top + 18));
-        else
-            DrawStringCentered(shipClass[selShipyardItem].name, box.left,
-                               box.right, (box.top + 18));
-#endif
         ForeColor(blackColor);
     }
     GetDialogItem(shipDescDialog, 5, &itemType, &item, &box);
@@ -5151,7 +5038,6 @@ void CalcShipCanBuy(void)
 // MAC: _SetupListRects i386 0x00051a2c ppc 0x0005a340
 void SetupListRects(Point *where)
 {
-#ifdef CEFIX /* F12.60 */
     int i;
     Rect *cell;
     Rect *icon;
@@ -5174,24 +5060,6 @@ void SetupListRects(Point *where)
         listPicOffRect[i].right = listPicOffRect[i].left + ceGridThumbSize;
         listPicOffRect[i].bottom = ceGridThumbSize;
     }
-#else
-    short i;
-    short col;
-    short row;
-
-    for (i = 0; i < kGridCells; i++) {
-        row = i / 4;
-        col = i % 4;
-        SetRect(&listScreenRect[i], col * kCellWide + where->h, row * kCellHigh + where->v,
-                (col + 1) * kCellWide + where->h + 1,
-                (row + 1) * kCellHigh + where->v + 1);
-        col = (listScreenRect[i].right + listScreenRect[i].left) / 2;
-        row = (listScreenRect[i].top + listScreenRect[i].bottom) / 2;
-        SetRect(&listPicScreenRect[i], col - 0x10, row - 0x18, col + 0x10, row + 8);
-    }
-    for (i = 0; i < kStripCells; i++)
-        SetRect(&listPicOffRect[i], i * 0x20, 0, (i + 1) * 0x20, 0x20);
-#endif
 }
 
 #define kScrollTicksToLines 0.01667     /* ~1/60: ticks to scroll units */
@@ -5392,38 +5260,23 @@ void TextDialogUpdate(void)
                 OffsetRect(&r2, -r2.left, -r2.top);
                 OffsetRect(&r, 0, r2.bottom);
             }
-#ifdef CEFIX /* F12.61 */
             CE_ScaleOffsetRect(&r, GetDialogPortRect(textDialog)->left,
                                GetDialogPortRect(textDialog)->top);
-#else
-            OffsetRect(&r, GetDialogPortRect(textDialog)->left,
-                       GetDialogPortRect(textDialog)->top);
-#endif
             DrawPicHandle(textDialogBackgroundPic[1], &r);
         }
         if (textDialogBackgroundPic[0] != NULL) {
             QDGetPictureBounds(textDialogBackgroundPic[0], &r);
             OffsetRect(&r, -r.left, -r.top);
-#ifdef CEFIX /* F12.62 */
             CE_ScaleOffsetRect(&r, GetDialogPortRect(textDialog)->left,
                                GetDialogPortRect(textDialog)->top);
-#else
-            OffsetRect(&r, GetDialogPortRect(textDialog)->left,
-                       GetDialogPortRect(textDialog)->top);
-#endif
             DrawPicHandle(textDialogBackgroundPic[0], &r);
         }
         pic = textDialogBackgroundPic[2];
         if (pic != NULL) {
             QDGetPictureBounds(pic, &r);
             OffsetRect(&r, -r.left, -r.top);
-#ifdef CEFIX /* F12.63 */
             CE_ScaleOffsetRectBottom(&r, GetDialogPortRect(textDialog)->left,
                                      GetDialogPortRect(textDialog)->bottom - (r.bottom - r.top));
-#else
-            OffsetRect(&r, GetDialogPortRect(textDialog)->left,
-                       GetDialogPortRect(textDialog)->bottom - (r.bottom - r.top));
-#endif
             DrawPicHandle(textDialogBackgroundPic[2], &r);
         }
     } else if (textDialogBackgroundPic[0] != NULL) {
@@ -5729,41 +5582,25 @@ void PlayerInfoDialogUpdate(void)
         QDGetPictureBounds(playerInfoBackgroundPic[1], &box2);
         if (box.bottom - box.top < box2.bottom - box2.top)
             box.bottom = box.top + (box2.bottom - box2.top);
-#ifdef CEFIX /* F12.64 */
         CE_ScaleOffsetRect(&box, GetDialogPortRect(infoDialog)->left,
                            GetDialogPortRect(infoDialog)->top);
-#else
-        OffsetRect(&box, GetDialogPortRect(infoDialog)->left,
-                   GetDialogPortRect(infoDialog)->top);
-#endif
         DrawPicHandle(playerInfoBackgroundPic[1], &box);
     }
 
     if (playerInfoBackgroundPic[0] != NULL) {
         QDGetPictureBounds(playerInfoBackgroundPic[0], &box);
         OffsetRect(&box, -box.left, -box.top);
-#ifdef CEFIX /* F12.65 */
         CE_ScaleOffsetRect(&box, GetDialogPortRect(infoDialog)->left,
                            GetDialogPortRect(infoDialog)->top);
-#else
-        OffsetRect(&box, GetDialogPortRect(infoDialog)->left,
-                   GetDialogPortRect(infoDialog)->top);
-#endif
         DrawPicHandle(playerInfoBackgroundPic[0], &box);
     }
 
     if (playerInfoBackgroundPic[2] != NULL) {
         QDGetPictureBounds(playerInfoBackgroundPic[2], &box);
         OffsetRect(&box, -box.left, -box.top);
-#ifdef CEFIX /* F12.66 */
         CE_ScaleOffsetRectBottom(&box, GetDialogPortRect(infoDialog)->left,
                                  GetDialogPortRect(infoDialog)->bottom -
                                  (box.bottom - box.top));
-#else
-        OffsetRect(&box, GetDialogPortRect(infoDialog)->left,
-                   GetDialogPortRect(infoDialog)->bottom -
-                   (box.bottom - box.top));
-#endif
         DrawPicHandle(playerInfoBackgroundPic[2], &box);
     }
 
@@ -6079,11 +5916,7 @@ void PlayerInfoDialogUpdate(void)
                 GetIndString((StringPtr)buf, kGameStrList, 0x10c);
             else
                 GetIndString((StringPtr)buf, kGameStrList, 0x10d);
-#ifdef CEFIX /* F12.67 */
             DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + CE_Scale(0x37));
-#else
-            DrawStringCentered((StringPtr)buf, box.left, box.right, (box.top + 0x37));
-#endif
         }
     } else if (selPlayerInfoMode == 3) {
         count = 0;
@@ -6106,11 +5939,7 @@ void PlayerInfoDialogUpdate(void)
         } else {
             RGBForeColor(&rgbLightGrey);
             GetIndString((StringPtr)buf, kGameStrList, 0x10e);
-#ifdef CEFIX /* F12.67 */
             DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + CE_Scale(0x37));
-#else
-            DrawStringCentered((StringPtr)buf, box.left, box.right, (box.top + 0x37));
-#endif
         }
     } else if (selPlayerInfoMode == 4) {
         count = 0;
@@ -6137,11 +5966,7 @@ void PlayerInfoDialogUpdate(void)
         } else {
             RGBForeColor(&rgbLightGrey);
             GetIndString((StringPtr)buf, kGameStrList, 0x10f);
-#ifdef CEFIX /* F12.67 */
             DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + CE_Scale(0x37));
-#else
-            DrawStringCentered((StringPtr)buf, box.left, box.right, (box.top + 0x37));
-#endif
         }
     }
 
@@ -7243,11 +7068,7 @@ void DrawEscortMenuInFrame()
     TextSize(smallTextSize);
 
     GetIndString(str, kGameStrList, 0x85);
-#ifdef CEFIX /* F12.68 */
     CE_SetPen((box.left + box.right) / 2 - StringWidth(str) / 2, CE_Scale(box.top + 0xf));
-#else
-    MoveTo((box.left + box.right) / 2 - StringWidth(str) / 2, box.top + 0xf);
-#endif
     DrawString(str);
 
     for (i = 1; i < kMaxShips; i++) {
@@ -7268,13 +7089,9 @@ void DrawEscortMenuInFrame()
             bar.top = box.top + 0x1e + (i + 1) * 18;
             bar.bottom = box.top + 0x2b + (i + 1) * 18;
             RGBForeColor(&escortMenuColor);
-#ifdef CEFIX /* F12.71 */
             bar.top = CE_Scale(bar.top);
             bar.bottom = CE_Scale(bar.bottom);
             PaintRect(&bar);
-#else
-            PaintRect(&bar);
-#endif
         }
 
         if (i == -1)
@@ -7284,11 +7101,7 @@ void DrawEscortMenuInFrame()
         else
             RGBForeColor(&rgbDarkGrey);
 
-#ifdef CEFIX /* F12.69 */
         CE_SetPen(box.left + 7, CE_Scale(box.top + 0x28 + (i + 1) * 18));
-#else
-        MoveTo(box.left + 7, box.top + 0x28 + (i + 1) * 18);
-#endif
         NumToString(i + 2, str);
         DrawString(str);
         DrawString("\p) ");
@@ -7317,11 +7130,7 @@ void DrawEscortMenuInFrame()
             else
                 GetIndString(str, kGameStrList, 0x95);
             ForeColor(whiteColor);
-#ifdef CEFIX /* F12.70 */
             CE_SetPen(box.right - StringWidth(str) - 7, CE_Scale(box.top + 0x28 + (i + 1) * 18));
-#else
-            MoveTo(box.right - StringWidth(str) - 7, box.top + 0x28 + (i + 1) * 18);
-#endif
             DrawString(str);
         }
     }
@@ -7485,11 +7294,7 @@ void SetupDialogs(void)
         iconCache[i].stamp = 0;
     }
     nagCount = 0;
-#ifdef CEFIX /* F12.72 */
     SetRect(&r, 0, 0, ceGridThumbSize * 128, ceGridThumbSize);
-#else
-    SetRect(&r, 0, 0, kMapWorldWide, kMapWorldHigh);
-#endif
     CreateGWorldContainer(&iconsPort, 0, 0, &r);
 }
 

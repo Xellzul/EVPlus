@@ -51,9 +51,7 @@ int __stdcall WinMain(void *hInstance, void *hPrevInstance, char *lpCmdLine,
         GetLastError();
         LoadStringA(hInstance, 0x3b8, buf, 0x100);
         GetLastError();
-#ifdef CEFIX /* F12.88 */
         CE_InitScaleFactor();
-#endif
         InitFonts();
         InitEVNova();
         TerminateQTML();

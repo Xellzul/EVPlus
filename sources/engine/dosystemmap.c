@@ -122,21 +122,13 @@ void DoSystemMap(void)
     partialMapDialogUpdate = 0;
     y = 0;
     do {
-#ifdef CEFIX /* F15.01-05 */
         for (sys = 0; sys < kCEBordersWidth; sys++) {
-#else
-        for (sys = 0; sys < 256; sys++) {
-#endif
             for (i = 0; i < 4; i++) {
                 influenceOwner[sys][y][i] = 0;
                 influenceValue[sys][y][i] = 0;
             }
         }
-#ifdef CEFIX /* F15.01-05 */
     } while (++y < kCEBordersHeight);
-#else
-    } while (++y < 256);
-#endif
     RecalcMissionSystsForMap();
     if (shipData->navTargetKind == kNavTargetLink && shipData->targetStellar != -1 && onPlanet == 0)
         selSystem = FindActiveCoLocatedSystem(
@@ -494,11 +486,7 @@ void DoSystemMap(void)
     SetRect(&r, found - x, sys - y, found + x, sys + y);
     pr = GetCWindowPortRect(gWind);
     box2 = *pr;
-#ifdef CEFIX /* F14.17 */
     box2.left = box2.right - ceStatusBarWidth;
-#else
-    box2.left = box2.right - kTargPanelInset;
-#endif
     if (SectRect(&r, &box2, &box2))
         RedrawStatus(1);
     RedrawDialogs(1);
@@ -880,11 +868,7 @@ void MapDialogUpdate(void)
             DateToMedString(gameTime, (char *)buf);
             CtoPstr((char *)buf);
         }
-#ifdef CEFIX /* F12.78 */
         CE_SetPen(box.right - StringWidth(buf) + CE_Scale(-5), box.top + CE_Scale(0x24));
-#else
-        MoveTo(box.right - StringWidth(buf) - 5, box.top + 0x24);
-#endif
         DrawString(buf);
         ForeColor(blackColor);
         didUpdateMap = 1;
@@ -1683,9 +1667,7 @@ void DrawMap(Rect box)
             InsetRect(&sysBox, -2, -2);
         ForeColor(cyanColor);
         PaintOval(&sysBox);
-#ifdef CEFIX /* F15.11 */
         FrameOval(&sysBox);
-#endif
         ForeColor(blackColor);
     }
     /* BUG: the upper bound tests hypergateMapMode, not the stellar, and can never fail
@@ -1846,11 +1828,7 @@ void RecalcAllMapInfluence(Rect *r)
     influenceStepSize = kInfluenceCoarseStep;
     nextInfluenceSyst = -1;
     influenceCoordsCached = 0;
-#ifdef CEFIX /* F15.12 */
     CE_RecalcMapInfluence(0, 0, kInfluenceGridMax, kInfluenceGridMax, r);
-#else
-    RecalcMapInfluence(0, 0, kInfluenceGridMax, kInfluenceGridMax, r);
-#endif
 }
 
 // FUNCTION: EVNOVA 0x004a9d50
@@ -1868,7 +1846,6 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
     if (influenceStepSize < 1)
         influenceStepSize = 1;
 
-#ifdef CEFIX /* F15.13-23 */
     for (x = 0; x < kCEBordersWidth; x += influenceStepSize) {
         for (y = 0; y < kCEBordersHeight; y += influenceStepSize) {
             for (group = 0; group < kInfluenceLayers; group++) {
@@ -1877,16 +1854,6 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
             }
         }
     }
-#else
-    for (x = 0; x < kInfluenceGridSize; x += influenceStepSize) {
-        for (y = 0; y < kInfluenceGridSize; y += influenceStepSize) {
-            for (group = 0; group < kInfluenceLayers; group++) {
-                influenceOwner[x][y][group] = 0;
-                influenceValue[x][y][group] = 0;
-            }
-        }
-    }
-#endif
 
     for (i = 0; i < kMaxSystems; i++)
         seen[i] = 0;
@@ -1948,15 +1915,10 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
 }
 
 #define kInfluenceSlots 4
-#ifdef CEFIX /* F15.52-53 */
 #define kInfluenceRadius 22.0
 #define kTightInfluenceRadius 11.0
 #define kInfluenceMargin 12         /* cells added to the rounded radius */
 #define kTightInfluenceMargin 9
-#else
-#define kInfluenceRadius 30.72
-#define kTightInfluenceRadius 15.36
-#endif
 #define kInfluenceFalloff 0.2
 #define kTightInfluenceFalloff 0.4
 
@@ -1997,17 +1959,10 @@ Boolean AddSystemInfluenceToMap(short sys, Rect *r)
         }
 
         govt = systemData[sys].govt;
-#ifdef CEFIX /* F15.32-33,52-53 */
         if ((govtData[govt].flags2 & kGovtMinor) != 0)
             radius = CE_RoundD(kTightInfluenceRadius / mapZoom) + kTightInfluenceMargin;
         else
             radius = CE_RoundD(kInfluenceRadius / mapZoom) + kInfluenceMargin;
-#else
-        if ((govtData[govt].flags2 & kGovtMinor) != 0)
-            radius = (kTightInfluenceRadius / mapZoom);
-        else
-            radius = (kInfluenceRadius / mapZoom);
-#endif
         if (influenceStepSize > 1)
             radius -= radius % influenceStepSize;
         r2 = radius * radius;
@@ -2181,7 +2136,6 @@ void DrawMapInfluence(Rect bounds)
     if (influenceStepSize < 1)
         influenceStepSize = 1;
 
-#ifdef CEFIX /* F15.46-51 */
     for (x = 0; x < kCEBordersWidth; x += influenceStepSize) {
         for (y = 0; y < kCEBordersHeight; y += influenceStepSize) {
             if (influenceValue[x][y][0] == 0)
@@ -2227,53 +2181,6 @@ void DrawMapInfluence(Rect bounds)
             PaintRect(&cell);
         }
     }
-#else
-    for (x = 0; x < kInfluenceGridSize; x += influenceStepSize) {
-        for (y = 0; y < kInfluenceGridSize; y += influenceStepSize) {
-            if (influenceValue[x][y][0] == 0)
-                continue;
-
-            cell.left = x * 2 + bounds.left;
-            cell.right = cell.left + influenceStepSize * 2;
-            cell.top = y * 2 + bounds.top;
-            cell.bottom = cell.top + influenceStepSize * 2;
-
-            if (cell.right < bounds.left)
-                continue;
-            if (cell.left > bounds.right)
-                continue;
-            if (cell.bottom < bounds.top)
-                continue;
-            if (cell.top > bounds.bottom)
-                continue;
-
-            if (cell.left < bounds.left)
-                cell.left = bounds.left;
-            if (cell.right > bounds.right)
-                cell.right = bounds.right;
-            if (cell.top < bounds.top)
-                cell.top = bounds.top;
-            if (cell.bottom > bounds.bottom)
-                cell.bottom = bounds.bottom;
-
-            best = 0;
-            for (k = 0; k < kInfluenceLayers; k++) {
-                v = influenceValue[x][y][k];
-                if (v > 255)
-                    v = 255;
-                if (v > best) {
-                    color.red = ((v * 0.5) * govtData[influenceOwner[x][y][k]].rgbBytes.red);
-                    color.green = ((v * 0.5) * govtData[influenceOwner[x][y][k]].rgbBytes.green);
-                    color.blue = ((v * 0.5) * govtData[influenceOwner[x][y][k]].rgbBytes.blue);
-                    best = v;
-                }
-            }
-
-            RGBForeColor(&color);
-            PaintRect(&cell);
-        }
-    }
-#endif
     ForeColor(blackColor);
 }
 

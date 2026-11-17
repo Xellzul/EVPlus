@@ -764,11 +764,7 @@ void HandlePlayer(ShipObj *player)
             GetGlobalMouse(&pt);
             portRect = GetCWindowPortRect((WindowRef)gWind);
             box = *portRect;
-#ifdef CEFIX /* F14.02 */
             box.right -= ceStatusBarWidth;
-#else
-            box.right -= kTargPanelInset;
-#endif
             if (escortMenuOnscreen > 0
                     && PtInRectPoint(pt, &escortMenuRect)) {
                 for (i = 0; i < 5; i++) {

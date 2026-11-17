@@ -4351,11 +4351,7 @@ void RefreshSAT(void)
 
     r = GetCWindowPortRect((WindowRef)gWind);
     box = *r;
-#ifdef CEFIX /* F14.14 */
     box.left = box.right - ceStatusBarWidth;
-#else
-    box.left = box.right - kStatusStripWidth;
-#endif
     strip = box;
     OffsetRect(&strip, -strip.left, -strip.top);
 

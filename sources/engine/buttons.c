@@ -1460,11 +1460,7 @@ void InitButtons(void)
     buttonColor[0].red = buttonColor[0].green = buttonColor[0].blue = 0xffff;
     buttonColor[1].red = buttonColor[1].green = buttonColor[1].blue = 0x8000;
     buttonColor[2].red = buttonColor[2].green = buttonColor[2].blue = 0x8000;
-#ifdef CEFIX /* F12.73-74 */
     SetRect(&bounds, 0, 0, 500, 75);
-#else
-    SetRect(&bounds, 0, 0, 200, 0x32);
-#endif
     CreateGWorldContainer(&buttonPort, kButtonDevice, gSpriteWorld->pixelDepth, &bounds);
 }
 
@@ -1531,9 +1527,7 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
             OffsetRect(&piece, -piece.left, -piece.top);
             OffsetRect(&piece, box.left, box.top);
             piece.bottom = box.bottom;
-#ifdef CEFIX /* F12.75 */
             piece.right = piece.left + CE_Scale(piece.right - piece.left);
-#endif
             CopyMask(GWorldContainerBits(&buttonImagePort), GWorldContainerBits(&buttonMaskPort),
                      GWorldContainerBits(&buttonPort), &buttonPieceRect[mode * 3],
                      &buttonPieceRect[mode * 3], &piece);
@@ -1542,9 +1536,7 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
             OffsetRect(&piece, -piece.left, -piece.top);
             OffsetRect(&piece, box.right - piece.right, box.top);
             piece.bottom = box.bottom;
-#ifdef CEFIX /* F12.76 */
             piece.left = piece.right - CE_Scale(piece.right - piece.left);
-#endif
             CopyMask(GWorldContainerBits(&buttonImagePort), GWorldContainerBits(&buttonMaskPort),
                      GWorldContainerBits(&buttonPort), &buttonPieceRect[mode * 3 + 2],
                      &buttonPieceRect[mode * 3 + 2], &piece);
@@ -1586,13 +1578,8 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
             } else {
                 TextFont(buttonFontID);
                 TextSize(buttonFontSize);
-#ifdef CEFIX /* F12.77 */
                 CE_SetPen((box.left + box.right) / 2 - StringWidth(label) / 2,
                           (box.top + box.bottom) / 2 + CE_Scale(5));
-#else
-                MoveTo((box.left + box.right) / 2 - StringWidth(label) / 2,
-                       (box.top + box.bottom) / 2 + 5);
-#endif
                 DrawString(label);
             }
         }

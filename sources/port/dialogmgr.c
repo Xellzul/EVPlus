@@ -534,9 +534,7 @@ void ParseDITL(DialogPtr dlg, unsigned char *p)
             p += 1;
         }
 
-#ifdef CEFIX /* F12.86 */
         CE_ScaleRect(&box);
-#endif
         switch (type) {
         case 0:
             item = nv_AppendDialogItem(0, 0, 0, 1, &box, NULL, 0, dlg);
@@ -717,12 +715,7 @@ DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventPro
     dlg->visible = 1;
     dlogRes = GetResource(kDLOGType, dlogID);
     LockAHandle(dlogRes);
-#ifdef CEFIX /* F12.87 */
     ditlID = CE_SetDialogTemplateBounds(dlg, (const unsigned short *)*dlogRes);
-#else
-    ditlID = nv_SetDialogTemplateBounds(dlg,
-                                        (const unsigned short *)*dlogRes);
-#endif
     ditlRes = GetResource(kDITLType, ditlID);
     LockAHandle(ditlRes);
     ParseDITL(dlg, (unsigned char *)*ditlRes);

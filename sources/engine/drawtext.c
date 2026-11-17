@@ -16,11 +16,7 @@ void DrawStringCentered(const unsigned char *str, short left, short right,
     short width;
 
     width = StringWidth(str);
-#ifdef CEFIX /* F12.39 */
     CE_SetPen(((left + right) / 2 - width / 2), v);
-#else
-    MoveTo(((left + right) / 2 - width / 2), v);
-#endif
     DrawString(str);
 }
 

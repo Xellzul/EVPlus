@@ -125,11 +125,7 @@ short SWCreateGWorldFromCIconMask(SpriteWorldPtr destSpriteWorld,
 
     SetRect(&bounds, 0, 0, cIconH->Width, cIconH->Height);
 
-#ifdef CEFIX /* F11.04 */
     err = CE_NewGWorld(&tempGWorldP, depth, &bounds, 0);
-#else
-    err = NewGWorld(&tempGWorldP, depth, &bounds, 0);
-#endif
 
     if ((int)err == noErr) {
         SetPort(tempGWorldP);
