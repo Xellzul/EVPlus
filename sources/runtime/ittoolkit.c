@@ -75,10 +75,6 @@ typedef struct Win32DialogTemplate {
     short cy;
 } Win32DialogTemplate;
 
-#ifdef MAC1010
-#define kITWindowKind 0x4954
-extern int32_t _IT_WindowInstall(WindowNode *window, void *hwnd);
-#endif
 
 /* what the dialog procedure receives as its creation parameter */
 typedef struct DialogParams {
@@ -484,11 +480,7 @@ int32_t IT_ViewCreate(void *hwnd, const ITRect *bounds, ITWindowProc proc, int32
     int32_t e;
     WindowNode *window;
     WindowNode *root;
-#ifdef MAC1010
-    Rect client;
-#else
     WinRect client;
-#endif
 
     err = 0;
     window = 0;
@@ -508,41 +500,17 @@ int32_t IT_ViewCreate(void *hwnd, const ITRect *bounds, ITWindowProc proc, int32
         gIT_ViewList = window;
         window->parent = gIT_CurrentView;
         window->hwnd = hwnd;
-#ifndef MAC1010
         window->dc = GetDC(window->hwnd);
         if (window->dc == 0 || GetClientRect(window->hwnd, &client) == 0) {
             err = GetLastError();
             err = kOutOfMemory;
             goto done;
         }
-#elif TARGET_API_MAC_CARBON
-        window->dc = GetWindowPort(window->hwnd);
-        GetWindowPortBounds(window->hwnd, &client);
-#else
-        window->dc = window->hwnd;
-        client = ((GrafPtr)window->hwnd)->portRect;
-#endif
         if (bounds != 0)
             window->bounds = *bounds;
         else
             CopySys2DT_Rect(&window->bounds, (DTSysRect *)&client);
     }
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (GetWindowKind(hwnd) != kITWindowKind) {
-        window->savedKind = GetWindowKind(hwnd);
-        SetWindowKind(hwnd, kITWindowKind);
-    }
-#elif defined(MAC1010)
-    if (((WindowPeek)hwnd)->windowKind != kITWindowKind) {
-        e = _IT_WindowInstall(window, hwnd);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        window->savedKind = ((WindowPeek)hwnd)->windowKind;
-        ((WindowPeek)hwnd)->windowKind = kITWindowKind;
-    }
-#endif
     window->fore = gDT_ColorBlack;
     window->back = gDT_ColorWhite;
     window->visible = 1;
@@ -603,7 +571,6 @@ done:
    that closed it is copied to `result'; -8400 when Windows refuses the dialog). STATE: MATCH
    100%, exe 147 / obj 147, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0051a695
-#ifndef MAC1010
 int32_t IT_ViewCreateModal(void *folder, const char *file, const char *path, ITWindowProc proc,
                   int32_t refcon, char *result)
 {
@@ -663,9 +630,6 @@ done:
         IndirectDeallocate(handle);
     return err;
 }
-#else
-#include "../mac/at/itdialog.inc"
-#endif
 
 /* _IT_ViewChange (load a page file into a window when the current page may be left: drawing clipped
    to nothing meanwhile, the old page dropped, colours and title reset; the file read and parsed
@@ -764,7 +728,8 @@ int32_t _IT_ViewChange(void *windowRef, struct FolderSpec **folder, const char *
                 if (value == 0 || *value != 0)
                     break;
             }
-            /* BUG: the narrow arm never fills upper, so its NAME test upper-cases an uninitialised buffer */
+            /* BUG: the narrow arm never fills upper, so its NAME test upper-cases an uninitialised buffer;
+               and the match test is inverted on both arms (a mismatch stops the search, a match moves on) */
             if (StringCompare(String2Upper(upper), window->path) != 0)
                 break;
         }
@@ -934,153 +899,6 @@ done:
    freed, and the record unlinked and freed). STATE: MATCH 100%, exe 148 / obj 148, byte-identical
    yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0051add8
-#ifdef MAC1010
-#if !TARGET_API_MAC_CARBON
-int32_t IT_ViewDispose(WindowNode *window)
-{
-    ControlType *type;
-    ITPreload *preload;
-    WindowNode **link;
-
-    if (window->hwnd != 0 && window->titled)
-        HideWindow(window->hwnd);
-    _IT_ViewCallback(window, window->page, 0, kEventLeave);
-    _IT_ViewCallback(window, 0, 0, kEventClose);
-    _IT_ViewUnload(window);
-    if (window->hwnd != 0 && window->titled) {
-        window->closing = 1;
-        DisposeDialog(window->modal);
-        window->closing = 0;
-    } else if (window->hwnd != 0) {
-        ((WindowPeek)window->hwnd)->windowKind = window->savedKind;
-    }
-    if (window->colors != 0) {
-        DisposeHandle(window->colors);
-        window->colors = 0;
-    }
-    window->hwnd = 0;
-    window->dc = 0;
-    window->titled = 0;
-    if (window->variables != 0) {
-        HashDispose(window->variables);
-        window->variables = 0;
-    }
-    if (window->buffer != 0) {
-        DT_SurfaceDispose(window->buffer);
-        window->buffer = 0;
-    }
-    if (window->image != 0) {
-        if (window->parent == 0)
-            DT_ContextDispose(window->image);
-        window->image = 0;
-    }
-    if (window->focusables != 0) {
-        IndirectDeallocate(window->focusables);
-        window->focusables = 0;
-    }
-    while ((type = window->controlTypes) != 0) {
-        window->controlTypes = type->next;
-        MemoryDeallocate(type);
-    }
-    while ((preload = window->preloads) != 0) {
-        window->preloads = preload->next;
-        if (preload->image != 0)
-            DT_ImageDispose(preload->image);
-        if (preload->mask != 0)
-            DT_ImageDispose(preload->mask);
-        MemoryDeallocate(preload);
-    }
-    for (link = &gIT_ViewList; *link != 0; link = &(*link)->next) {
-        if (*link == window) {
-            *link = window->next;
-            window->next = 0;
-            break;
-        }
-    }
-    MemoryDeallocate(window);
-}
-#else
-extern unsigned char _PlatformIsThreaded(void);
-
-static const Rect kOffscreenBounds = { 20000, 20000, 20050, 20050 };
-
-int32_t IT_ViewDispose(WindowNode *window)
-{
-    ControlType *type;
-    ITPreload *preload;
-    WindowNode **link;
-    WindowRef temp;
-    WindowRef front;
-    Rect bounds;
-
-    IT_ViewCheckWindows(window);
-    if (window->hwnd != 0 && window->titled) {
-        HideWindow(window->hwnd);
-        if (_PlatformIsThreaded() && FrontWindow() != 0) {
-            bounds = kOffscreenBounds;
-            front = FrontWindow();
-            temp = NewWindow(0, &bounds, (const unsigned char *)"", true, 0, (WindowRef)-1, false, 0);
-            if (temp != 0) {
-                SelectWindow(front);
-                DisposeWindow(temp);
-            } else {
-                SelectWindow(front);
-            }
-        }
-    }
-    _IT_ViewCallback(window, window->page, 0, kEventLeave);
-    _IT_ViewCallback(window, 0, 0, kEventClose);
-    _IT_ViewUnload(window);
-    if (window->hwnd != 0 && window->titled) {
-        window->closing = 1;
-        DisposeDialog(window->modal);
-        window->closing = 0;
-    } else if (window->hwnd != 0) {
-        SetWindowKind(window->hwnd, window->savedKind);
-    }
-    window->hwnd = 0;
-    window->dc = 0;
-    window->titled = 0;
-    if (window->variables != 0) {
-        HashDispose(window->variables);
-        window->variables = 0;
-    }
-    if (window->buffer != 0) {
-        DT_SurfaceDispose(window->buffer);
-        window->buffer = 0;
-    }
-    if (window->image != 0) {
-        if (window->parent == 0)
-            DT_ContextDispose(window->image);
-        window->image = 0;
-    }
-    if (window->focusables != 0) {
-        IndirectDeallocate(window->focusables);
-        window->focusables = 0;
-    }
-    while ((type = window->controlTypes) != 0) {
-        window->controlTypes = type->next;
-        MemoryDeallocate(type);
-    }
-    while ((preload = window->preloads) != 0) {
-        window->preloads = preload->next;
-        if (preload->image != 0)
-            DT_ImageDispose(preload->image);
-        if (preload->mask != 0)
-            DT_ImageDispose(preload->mask);
-        MemoryDeallocate(preload);
-    }
-    for (link = &gIT_ViewList; *link != 0; link = &(*link)->next) {
-        if (*link == window) {
-            *link = window->next;
-            window->next = 0;
-            break;
-        }
-    }
-    MemoryDeallocate(window);
-}
-#endif
-#else
 int32_t IT_ViewDispose(WindowNode *window)
 {
     ControlType *type;
@@ -1153,7 +971,6 @@ int32_t IT_ViewDispose(WindowNode *window)
     window = 0;
     return 0;
 }
-#endif
 
 /* IT_ViewExists (whether a window is on the window list). STATE: MATCH 100%, exe 18 / obj 18,
    byte-identical yes. OPEN: none */
@@ -1982,147 +1799,11 @@ int32_t _IT_ViewInvalidate(WindowNode *window)
     return err;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-extern unsigned short *UnicodeAppendSafe(unsigned short *dst, const unsigned short *src, ULong size, ULong count);
-extern CFStringRef UnicodeCreateCFString(const unsigned short *s, ULong count);
-static unsigned short kTitleSepW[] = { ' ', '/', ' ', 0 };
-#endif
 
 /* _IT_ViewValidate (bring a window up to date: its area invalidated, its caption (title, then " / "
    and the page's title) and colours applied to the Windows window, the dirty flag cleared).
    STATE: MATCH 100%, exe 109 / obj 109, byte-identical yes. OPEN: none */
 // FUNCTION: EVNOVA 0x0051ba8d
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-int32_t _IT_ViewValidate(WindowNode *window)
-{
-    int32_t err;
-    int32_t e;
-    WindowRef hwnd;
-    CFStringRef title;
-    GrafPtr savedPort;
-    RGBColor oldText;
-    RGBColor textColor;
-    RGBColor oldBack;
-    RGBColor backColor;
-    unsigned short caption[256];
-
-    err = 0;
-    title = 0;
-    hwnd = window->hwnd;
-    if (hwnd != 0) {
-        e = DT_AddInvalidRect(window->image, &window->bounds);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-    }
-    if (window->titled) {
-        UnicodeCopySafe(caption, window->title, sizeof(caption), -1);
-        if (window->page != 0) {
-            if (caption[0] != 0 && *(unsigned short *)window->page->title != 0)
-                UnicodeAppendSafe(caption, kTitleSepW, sizeof(caption), -1);
-            UnicodeAppendSafe(caption, (unsigned short *)window->page->title, sizeof(caption), (ULong)-1);
-        }
-        title = UnicodeCreateCFString(caption, -1);
-        if (title == 0) {
-            err = kOutOfMemory;
-            goto done;
-        }
-        e = SetWindowTitleWithCFString(hwnd, title);
-        if (e != 0)
-            err = e;
-        CFRelease(title);
-        title = 0;
-        textColor = DT_2SysColor(&window->fore);
-        backColor = DT_2SysColor(&window->back);
-        GetPortForeColor(GetWindowPort(window->hwnd), &oldText);
-        GetWindowContentColor(window->hwnd, &oldBack);
-        if (textColor.red != oldText.red || textColor.green != oldText.green || textColor.blue != oldText.blue ||
-            backColor.blue != oldBack.blue || backColor.green != oldBack.green || backColor.red != oldBack.red) {
-            GetPort(&savedPort);
-            SetWindowContentColor(window->hwnd, &backColor);
-            SetPortWindowPort(window->hwnd);
-            RGBForeColor(&textColor);
-            RGBBackColor(&backColor);
-            SetPort(savedPort);
-        }
-    }
-    window->dirty = 0;
-done:
-    if (title != 0)
-        CFRelease(title);
-    return err;
-}
-#elif defined(MAC1010)
-int32_t _IT_ViewValidate(WindowNode *window)
-{
-    int32_t err;
-    int32_t e;
-    void *hwnd;
-    GrafPtr savedPort;
-    RGBColor oldText;
-    RGBColor textColor;
-    RGBColor oldBack;
-    RGBColor backColor;
-    char current[256];
-    char caption[256];
-
-    err = 0;
-    hwnd = window->hwnd;
-    if (hwnd != 0) {
-        e = DT_AddInvalidRect(window->image, &window->bounds);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-    }
-    if (window->titled) {
-        StringCopySafe(caption, window->title, sizeof(caption));
-        if (window->page != 0) {
-            if (caption[0] != 0 && window->page->title[0] != 0)
-                StringAppendSafe((unsigned char *)caption, (const unsigned char *)" / ", sizeof(caption));
-            StringAppendSafe((unsigned char *)caption, (const unsigned char *)window->page->title,
-                      sizeof(caption));
-        }
-        GetWTitle(hwnd, (unsigned char *)current);
-        StringP2C((unsigned char *)current);
-        if (StringCompare(caption, current) != 0)
-            SetWTitle(hwnd, (unsigned char *)StringC2P(caption));
-        if (window->colors == 0) {
-            if ((window->colors = GetResource('wctb', 0)) == 0) {
-                ResError();
-                err = kOutOfMemory;
-                goto done;
-            }
-            err = HandToHand(&window->colors);
-            if (err != 0) {
-                window->colors = 0;
-                err = kOutOfMemory;
-                goto done;
-            }
-            HNoPurge(window->colors);
-        }
-        textColor = DT_2SysColor(&window->fore);
-        backColor = DT_2SysColor(&window->back);
-        oldText = (*(CTabHandle)window->colors)->ctTable[wTextColor].rgb;
-        oldBack = (*(CTabHandle)window->colors)->ctTable[wContentColor].rgb;
-        if (textColor.red != oldText.red || textColor.green != oldText.green || textColor.blue != oldText.blue
-            || backColor.blue != oldBack.blue || backColor.green != oldBack.green || backColor.red != oldBack.red) {
-            GetPort(&savedPort);
-            (*(CTabHandle)window->colors)->ctTable[wTextColor].rgb = textColor;
-            (*(CTabHandle)window->colors)->ctTable[wContentColor].rgb = backColor;
-            SetWinColor(window->hwnd, (WCTabHandle)window->colors);
-            SetPort(window->hwnd);
-            RGBForeColor(&textColor);
-            RGBBackColor(&backColor);
-            SetPort(savedPort);
-        }
-    }
-    window->dirty = 0;
-done:
-    return err;
-}
-#else
 int32_t _IT_ViewValidate(WindowNode *window)
 {
     int32_t err;
@@ -2171,7 +1852,6 @@ int32_t _IT_ViewValidate(WindowNode *window)
 done:
     return err;
 }
-#endif
 
 /* _IT_ViewCheckPage (ask whether a window may leave its page: its callback (event 6) and the focus
    holder (a blur) may refuse with -8404, which clears `may'). STATE: MATCH 100%, exe 42 / obj 42,
@@ -2336,11 +2016,7 @@ done:
 }
 
 /* 1.0.10 counts a view's items down in an unsigned long */
-#ifdef MAC1010
-#define ViewItemIndex ULong
-#else
 #define ViewItemIndex int32_t
-#endif
 
 /* _IT_ViewSetRect (move a window: when its origin changes every control is moved by the same amount,
    last first). STATE: MATCH 100%, exe 55 / obj 55, byte-identical yes. OPEN: none */
@@ -2778,62 +2454,6 @@ void _IT_ParseTupleDispose(ITSource *source)
     }
 }
 
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-#define kWindowDefInfo 0x3bb0
-#define kStubJump 0x207a0004    /* movea.l 4(pc),a0 */
-#define kStubJmp 0x4ed0         /* jmp (a0) */
-
-pascal int32_t IT_WindowDefProc(short varCode, WindowPtr hwnd, short message, int32_t param);
-
-int32_t _IT_WindowInstall(WindowNode *window, void *hwnd)
-{
-    int32_t err;
-    Handle stub;
-    int32_t proc;
-
-    err = 0;
-    stub = NewHandle(10);
-    if (stub == 0) {
-        err = kOutOfMemory;
-        goto done;
-    }
-    HLockHi(stub);
-    *(ULong *)*stub = kStubJump;
-    *(unsigned short *)(*stub + 4) = kStubJmp;
-    proc = (int32_t)NewRoutineDescriptor((ProcPtr)IT_WindowDefProc, kWindowDefInfo, 1);
-    *(int32_t *)(*stub + 6) = proc;
-    if (proc == 0) {
-        err = kOutOfMemory;
-        goto done;
-    }
-    window->tracking = (ULong)((WindowPeek)hwnd)->windowDefProc;
-    ((WindowPeek)hwnd)->windowDefProc = stub;
-done:
-    if (err != 0 && stub != 0)
-        DisposeHandle(stub);
-    return err;
-}
-
-pascal int32_t IT_WindowDefProc(short varCode, WindowPtr hwnd, short message, int32_t param)
-{
-    WindowNode *window;
-    int32_t msg;
-    UniversalProcPtr def;
-
-    window = IT_WindowFindView(hwnd);
-    msg = message;
-    def = *(UniversalProcPtr *)window->tracking;
-    if (msg == 4) {
-        window->hwnd = 0;
-        window->titled = 0;
-        if (!window->closing)
-            IT_ViewDispose(window);
-    }
-    return CallUniversalProc(def, kWindowDefInfo, varCode, hwnd, msg, param);
-}
-
-#include "../mac/at/itmodal.inc"
-#endif
 
 /* IT_WindowProc (the window procedure of the interface tool's window classes: the body 0x004eae3e,
    else Windows' default). STATE: MATCH 100%, exe 37 / obj 37, byte-identical yes. OPEN: none */
@@ -2952,36 +2572,3 @@ done:
 }
 #endif
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-static unsigned char gIT_Checking;
-
-void IT_ViewCheckWindows(WindowNode *window)
-{
-    WindowNode *w;
-    WindowRef h;
-
-    if (gIT_Checking == 0) {
-        gIT_Checking = 1;
-        w = gIT_ViewList;
-        while (w != 0) {
-            if (w->hwnd != 0) {
-                for (h = GetFrontWindowOfClass(kAllWindowClasses, false); h != 0 && h != w->hwnd; h = GetNextWindow(h))
-                    ;
-                if (h == 0) {
-                    w->hwnd = 0;
-                    w->titled = 0;
-                    if (!w->closing)
-                        IT_ViewDispose(w);
-                    w = 0;
-                }
-            }
-            if (w != 0)
-                w = w->next;
-            else
-                w = gIT_ViewList;
-        }
-        gIT_Checking = 0;
-    }
-}
-#include "../mac/at/itmodal.inc"
-#endif

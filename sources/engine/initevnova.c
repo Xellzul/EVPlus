@@ -388,55 +388,8 @@ EXTERN_C_BEGIN
                                                          /* 0x004d9e10 BurgerLib */
                                                          /* 0x0046f690 */
 
-#if V111
-/* EVPlatformInit (mac _EVPlatformInit, mac-only: 1.1.1 moved the tool opens out of InitEVNova,
-   called by the open-application AppleEvent handler). STATE: mac MATCH on both slices. OPEN: none */
-// MAC: _EVPlatformInit i386 0x0003a064 ppc 0x00040454
-int EVPlatformInit(void)
-{
-    int32_t err;
-
-    crashlog_print("opening platform tool");
-    err = PlatformOpen();
-    if (err != 0) {
-        FatalStartupError(kAlertPlatformOpen);
-        goto fail;
-    }
-    crashlog_print("opening file tool");
-    err = FT_Open();
-    if (err != 0) {
-        FatalStartupError(kAlertFileOpen);
-        goto fail;
-    }
-    crashlog_print("opening draw tool");
-    err = DT_Open();
-    if (err != 0) {
-        FatalStartupError(kAlertDrawOpen);
-        goto fail;
-    }
-    crashlog_print("opening interface tool");
-    err = IT_Open();
-    if (err != 0) {
-        FatalStartupError(kAlertInterfaceOpen);
-        goto fail;
-    }
-    crashlog_print("opening sound tool");
-    err = ST_Open(8, 0);
-    oldVolume = ST_GetSysVolume();
-    return err;
-fail:
-    crashlog_print("fail: ");
-    crashlog_print_num(err);
-    crashlog_print("\n");
-    ExitToShell();
-    return err;
-}
-#endif
 
 
-#ifdef MAC1010
-#define InitEVNova main /* __start calls this body on 1.0.10 */
-#endif
 
 /* InitEVNova (mac _InitEVNova). STATE: win MATCH 100.0%, exe 1393 / obj 1393, byte-identical yes
    (relocs masked); mac MATCH both slices; 1.0.10 MATCH both fragments.
@@ -447,9 +400,6 @@ void InitEVNova(void)
 #if !defined(MACBUILD) || defined(MAC1010)
 {
     unsigned char alertText[256];
-#ifdef MACBUILD
-    FSSpec licenseSpec;
-#endif
     long grow;
 #ifndef MACBUILD
     int32_t qtVersion;
@@ -464,10 +414,6 @@ void InitEVNova(void)
     gSpriteWorld = 0;
     screenFaded = 0;
 
-#ifdef MACBUILD
-    SetupToolbox();
-    CarbonHackInit();
-#else
     ScrambleRand();
     PlatformOpen();
     KeyboardInit();
@@ -475,26 +421,15 @@ void InitEVNova(void)
     InitMemory();
     SetDefaultPrefixs();
     OpenPrefs();
-#endif
 
     crashlog_open("debuglog.txt");
     crashlog_print("game engine was compiled ");
-#ifdef MACBUILD
-    crashlog_print("Apr 24 2006");
-#else
     crashlog_print("Jun 24 2006");
-#endif
     crashlog_print("\n");
     gameIsRegisteredIndex = Rand(0x300);
     crashlog_print("game engine version is ");
     crashlog_print("1.0.A");
-#if !defined(MACBUILD)
     crashlog_print(" Windows");
-#elif TARGET_API_MAC_CARBON
-    crashlog_print(" Carbon");
-#else
-    crashlog_print(" PPC");
-#endif
     crashlog_print("\n\n");
     gameIsHackedIndex = Rand(0x300);
 
@@ -604,11 +539,7 @@ void InitEVNova(void)
     LICENSE_STEP_BEGIN
     shipData[5].licenseCode = 0;
     LICENSE_STEP_END
-#ifdef MACBUILD
-    InitAEVTHandlers();
-#else
     FUN_0049e420();
-#endif
     LICENSE_STEP_BEGIN
     shipData[17].licenseName = (unsigned char *)"";
     LICENSE_STEP_END
@@ -625,17 +556,9 @@ void InitEVNova(void)
     SetupDialogs();
 
 
-#ifdef MACBUILD
-    pluginCount = CountEVPlugins(gARef, "\pNova Plug-Ins", kPlugInFileType, 0);
-#else
     pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
-#endif
     OpenDataFiles();
-#ifdef MACBUILD
-    pluginCount = CountEVPlugins(gARef, "\pNova Plug-Ins", kPlugInFileType, 0);
-#else
     pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
-#endif
     if (pluginCount != 0) {
         if ((shipClass[gameIsRegisteredIndex].registered ? 1 : 0) == 0
                 != (pluginCount == 0)) {
@@ -650,10 +573,6 @@ void InitEVNova(void)
     if (settings.windowed == 0)
         HideTheCursor();
     FUN_00486ec0();
-#if defined(MACBUILD) && !TARGET_API_MAC_CARBON
-    if (settings.windowed == 0)
-        HideControlStrip();
-#endif
     ST_Open(8, 0);
     oldVolume = ST_GetSysVolume();
 
@@ -723,10 +642,6 @@ void InitEVNova(void)
     LoadSprites();
 
     crashlog("checking memory");
-#ifdef MACBUILD
-    grow = 0x7fffffff;
-    startupMemoryFree = MaxMem(&grow);
-#endif
 
     crashlog("loading ship sprites");
     LoadShipSprites();
@@ -1079,9 +994,6 @@ void PlayGame(void)
     PrepareAllSprites();
     RefreshWindowBuffer();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
-#if V111
-    if (useLegacyRenderingPipeline)
-#endif
         RefreshSAT();
 #if !V111
     FadeScreenIn();
@@ -1091,9 +1003,6 @@ void PlayGame(void)
     lastSmokeUpdateTime = ReadTick();
     lastEventLoopTime = ReadTick();
     lastKeypressTime = ReadTick();
-#if V111
-    FadeScreenIn();
-#endif
     AdjustSoundVolume();
     MyProfileInit();
     MyProfileSetName(kProfGameLoop, "game loop");
@@ -1192,11 +1101,6 @@ void PlayGame(void)
                 HandleMouse();
                 MyProfileExit(kProfPreDraw);
                 MyProfileEnter(kProfDrawing);
-#if TARGET_API_MAC_CARBON
-                MyProfileEnter(kProfLocking);
-                LockPortBits(GetCWindowGrafPort(gWind));
-                MyProfileExit(kProfLocking);
-#endif
                 MyProfileEnter(kProfProcessSW);
                 SWProcessSpriteWorld(gSpriteWorld);
                 MyProfileExit(kProfProcessSW);
@@ -1206,12 +1110,6 @@ void PlayGame(void)
                 MyProfileEnter(kProfPostAnimate);
                 PostAnimateHandler();
                 MyProfileExit(kProfPostAnimate);
-#if TARGET_API_MAC_CARBON
-                MyProfileEnter(kProfLocking);
-                UnlockPortBits(GetCWindowGrafPort(gWind));
-                QDFlushPortBuffer(GetCWindowGrafPort(gWind), 0);
-                MyProfileExit(kProfLocking);
-#endif
 #ifndef MACBUILD
                 ScreenEndScene();
 #endif
@@ -1278,37 +1176,6 @@ void PlayGame(void)
                     gameFrozen = 0;
                 if (keyPressedThisFrame != 0)
                     lastKeypressTime = ReadTick();
-#ifdef MACBUILD
-#if !TARGET_API_MAC_CARBON
-                if (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0) {
-                    if (Button() || (QuickKeyCheck(4) && QuickKeyCheck(0x3f))) {
-                        IterateInGameEventLoop(kEventLoopTicks);
-                        lastEventLoopTime = ReadTick();
-                    } else if (settings.windowed != 0) {
-                        if (settings.yieldEvents != 0) {
-                            IterateInGameEventLoop(1);
-                            lastEventLoopTime = ReadTick();
-                        }
-                    } else if (settings.yieldEvents != 0) {
-                        IterateInGameEventLoop(1);
-                        lastEventLoopTime = ReadTick();
-                    }
-                }
-#else
-                if (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0) {
-                    if (ReadTick() > lastEventLoopTime + 30
-                            || (QuickKeyCheck(MacKey(0xc)) && QuickKeyCheck(MacKey(0x37)))) {
-                        if (QuickKeyCheck(MacKey(0xc)) && QuickKeyCheck(MacKey(0x37)))
-                            IterateInGameEventLoop(kEventLoopTicks);
-                        else
-                            IterateInGameEventLoop(1);
-                        lastEventLoopTime = ReadTick();
-                    }
-                } else {
-                    BusyIdle();
-                }
-#endif
-#else
                 if (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0) {
                     if (ReadTick() - lastEventLoopTime > 30) {
                         IterateInGameEventLoop(1);
@@ -1317,7 +1184,6 @@ void PlayGame(void)
                 } else {
                     BusyIdle();
                 }
-#endif
                 MyProfileExit(kProfPostDraw);
             } else {
                 SWUpdateSpriteWorld(gSpriteWorld, 0);
@@ -1601,9 +1467,6 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
     short myTop;
     FloatPoint spob;
     short i;
-#ifdef MAC1010
-    Boolean hostile;
-#endif
 
     if (ship->index < 0 || ship->index >= kMaxShips)
         return;
@@ -2603,21 +2466,12 @@ void EnterMoreShips(short sys)
 {
     FloatPoint spot;
     FloatPoint origin;
-#ifdef MAC1010
-    short i;
-    short toSpawn;
-    short count;
-    short n;
-    short left;
-    short j;
-#else
     short count;
     short n;
     short i;
     short left;
     short j;
     short toSpawn;
-#endif
     short which;
     short heading;
     FloatPoint dest;
@@ -3347,9 +3201,6 @@ short SpawnShot(short ship, short target, short weapType, Boolean flag)
         if (AIIsShipAttemptingDisable(&shipData[ship]) != 0) {
             shotData[slot].disableOnly = 1;
         }
-#if V111 /* V111 pad: shift pair, buys i386 block J at PRE (combine deletes its insns) */
-        target = (target << 16) >> 16;
-#endif
     }
 
     if (0 <= ship && ship < kMaxShips) {
@@ -4016,13 +3867,8 @@ short SpawnEscort(short shipType, short fromSpob)
 // MAC: _DoEscortLand i386 0x0004031f ppc 0x00047904
 void DoEscortLand(void)
 {
-#ifdef MAC1010
-    int32_t total;
-    short days;
-#else
     short days;
     int32_t total;
-#endif
     short i;
     short numSold;
     short numUpgraded;
@@ -4195,16 +4041,7 @@ void DoEscortPayment(short days)
     if (numDismissed > 0) {
         if (hyperGamma >= 0.0) {
             hyperGamma = -1.0f;
-#if V111
-#elif defined(MAC1010)
-#if TARGET_API_MAC_CARBON
-            SetGamma(gScreenRef, &gOrigGamma);
-#else
-            GammaFadeTo(1, 100, 0);
-#endif
-#else
             FadeGammaTo(100, 0);
-#endif
         }
         strcpy(textShowString, "");
         if (numDismissed == 1) {
@@ -4214,9 +4051,6 @@ void DoEscortPayment(short days)
         }
         statusRedraw[kRedrawCargo] = 1;
         ShowTextDialog(0, 0, 0);
-#ifdef MACBUILD
-        RefreshSAT();
-#endif
         DrawStatus();
     }
 }
@@ -5001,18 +4835,11 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
             digit = 0;
             for (j = 1; j <= buf[0]; j++) {
                 if (buf[j] == '#') {
-#ifdef MACBUILD
-                    if (digit)
-                        buf[j] = Rand(10) + '0';
-                    else
-                        buf[j] = Rand(9) + '1';
-#else
                     if (digit)
                         c = Rand(10) + '0';
                     else
                         c = Rand(9) + '1';
                     buf[j] = c;
-#endif
                     digit = 1;
                 } else
                     digit = 0;
