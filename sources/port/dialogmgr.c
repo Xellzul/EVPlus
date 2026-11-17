@@ -36,9 +36,6 @@ void *gClickDialog;
 void *gClickItem;
 int32_t gRezOpenPending;
 int32_t paintBlackFlag;
-void *gKeyboardHook;
-int32_t gUseKeyboardHook;
-OSVERSIONINFOA gOSVersionInfo;
 
 /* the port has exactly one window, so there is nothing to search */
 
@@ -230,10 +227,7 @@ static __inline void DisposeControl(void *ctl)
 
 /*
  * Register the window class and create the app's single window (win
- * 0x004d2950), called once from WinMain with the instance handle. Also
- * decides whether to poll or hook the keyboard: Win95/98/Me (dwPlatformId
- * 1, VER_PLATFORM_WIN32_WINDOWS) leave the screen saver disabled instead,
- * everything else installs a low-level keyboard hook once.
+ * 0x004d2950), called once from WinMain with the instance handle.
  */
 
 #define CS_DBLCLKS  0x0008
@@ -243,16 +237,10 @@ static __inline void DisposeControl(void *ctl)
 
 #define WS_EX_APPWINDOW 0x00040000
 
-#define VER_PLATFORM_WIN32_WINDOWS 1
-
-#define SPI_SCREENSAVERRUNNING 0x61
-
-#define WH_KEYBOARD_LL 0xd
 
 /*
  * The rest of the window plumbing: the list scrollbar pair the dialog list
- * accessors above reach through nv_NewDialog records, the WinKey-eating
- * low-level keyboard hook, the main window proc CreateGameWindow registers, and
+ * accessors above reach through nv_NewDialog records, the main window proc CreateGameWindow registers, and
  * the atexit handler winmain.c installs by pointer.
  */
 
@@ -285,11 +273,6 @@ typedef struct MINMAXINFO {
  * against the same 15-wide geometry LUpdate draws) or picks the row
  * under the point. Both paths timestamp the click for the callers that
  * detect double clicks.
- */
-
-/*
- * WH_KEYBOARD_LL hook: eat the two Windows keys so a fullscreen game does
- * not lose focus. CreateGameWindow installs it on NT-family systems only.
  */
 
 // FUNCTION: EVNOVA 0x004cea90
@@ -2249,23 +2232,6 @@ void LUpdate(void *list)
     }
 }
 
-// FUNCTION: EVNOVA 0x004d23f0
-int32_t __stdcall KeyboardHookProc(int code, uint32_t wParam, int32_t lParam)
-{
-    int32_t *key;
-
-    key = (int32_t *)lParam;
-#ifndef CEFIX /* F27.01 */
-    if (code == HC_ACTION) {
-        if (*key == VK_LWIN)
-            return 1;
-        if (*key == VK_RWIN)
-            return 1;
-    }
-#endif
-    return CallNextHookEx(gKeyboardHook, code, wParam, lParam);
-}
-
 // FUNCTION: EVNOVA 0x004d2440
 int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
                             uint32_t wParam, int32_t lParam)
@@ -2386,8 +2352,6 @@ int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
 // FUNCTION: EVNOVA 0x004d28b0
 void ShutdownWinGame(void)
 {
-    int wasRunning;
-
     JoystickDestroy();
     KeyboardDestroy();
     MouseDestroy();
@@ -2399,14 +2363,6 @@ void ShutdownWinGame(void)
         UpdateAndPageFlip();
         ReleaseVideo();
     }
-    if (gUseKeyboardHook != 0) {
-        if (gKeyboardHook != NULL) {
-            UnhookWindowsHookEx(gKeyboardHook);
-            gKeyboardHook = NULL;
-        }
-    } else {
-        SystemParametersInfoA(SPI_SCREENSAVERRUNNING, 0, &wasRunning, 0);
-    }
 }
 
 // FUNCTION: EVNOVA 0x004d2950
@@ -2414,8 +2370,6 @@ void CreateGameWindow(void *hInstance, int32_t nCmdShow)
 {
     WNDCLASSA wc;
     int classAtom;
-    int screenSaverWasRunning;
-
     FastMemSet(&wc, 0, sizeof(wc));
     wc.style = CS_OWNDC | CS_DBLCLKS;
     wc.lpfnWndProc = (void *)CE_WndProc;
@@ -2431,16 +2385,6 @@ void CreateGameWindow(void *hInstance, int32_t nCmdShow)
         Fatal("Can't allocate my window");
     UpdateWindow(Win95MainWindow);
     SetFocus(Win95MainWindow);
-    gOSVersionInfo.dwOSVersionInfoSize = sizeof(gOSVersionInfo);
-    GetVersionExA(&gOSVersionInfo);
-    if (gOSVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS)
-        gUseKeyboardHook = 0;
-    else
-        gUseKeyboardHook = 1;
-    if (gUseKeyboardHook == 0)
-        SystemParametersInfoA(SPI_SCREENSAVERRUNNING, 1, &screenSaverWasRunning, 0);
-    else if (gKeyboardHook == NULL)
-        gKeyboardHook = SetWindowsHookExA(WH_KEYBOARD_LL, (void *)KeyboardHookProc, hInstance, 0);
 }
 
 EXTERN_C_END

@@ -30,11 +30,7 @@ int __stdcall WinMain(void *hInstance, void *hPrevInstance, char *lpCmdLine,
         CreateGameWindow(hInstance, nCmdShow);
         ms.dwLength = 0x20;
         GlobalMemoryStatus(&ms);
-#ifdef CEFIX /* F30.01-02 */
         MaxMemSize = kCEMemoryPoolSize;
-#else
-        MaxMemSize = ms.dwTotalPhys * 2 / 4;
-#endif
         if (MaxMemSize < 0x8000000)
             MaxMemSize = 0x8000000;
         InitMemory();

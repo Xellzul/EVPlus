@@ -3494,21 +3494,10 @@ void SpawnAsteroid(unsigned char type)
             asteroidData[i].active = 1;
 
             w = screenCenter.h + 128;
-#ifdef CEFIX /* F26.01 */
             h = screenCenter.v;
-#else
-            h = screenCenter.v + 128;
-#endif
 
             if (type != 0) {
-#ifdef CEFIX /* F26.02-03 */
                 radius = h;
-#else
-                if (w > h)
-                    radius = w * 0.7;
-                else
-                    radius = h * 0.7;
-#endif
                 if (radius < 2.0f)
                     radius = 2.0f;
 

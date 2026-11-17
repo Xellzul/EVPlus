@@ -1,6 +1,5 @@
 /* cetext.c -- EV Nova CE: MacRoman text drawn as UTF-16 in place of iconv's CP1252, and the
-   version text on the main menu (CEFIX only). Notes: Research/cefix-plan.md */
-#ifdef CEFIX
+   version text on the main menu. Notes: Research/cefix-plan.md */
 
 #include <stddef.h>
 #include "macport.h"
@@ -45,5 +44,3 @@ void CE_DrawVersion(void)
     TextSize(kVersionTextSize);
     DrawTextRun(version, sizeof(version) - 1, NULL, 0, 0);
 }
-
-#endif /* CEFIX */

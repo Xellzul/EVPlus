@@ -1,6 +1,5 @@
-/* cemap.c -- EV Nova CE: the galaxy map's border grid, recomputed over its visible part only
-   (CEFIX only). Notes: Research/cefix-plan.md */
-#ifdef CEFIX
+/* cemap.c -- EV Nova CE: the galaxy map's border grid, recomputed over its visible part only.
+   Notes: Research/cefix-plan.md */
 
 #include "macport.h"
 #include "stellar.h"
@@ -25,5 +24,3 @@ void CE_RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bot
         ceMapBordersVisibleHeight = height;
     RecalcMapInfluence(left, top, right, bottom, r);
 }
-
-#endif /* CEFIX */

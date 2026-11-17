@@ -1,6 +1,5 @@
-/* cescale.c -- EV Nova CE: the ui_scale factor and the dialog scaling core (CEFIX only).
+/* cescale.c -- EV Nova CE: the ui_scale factor and the dialog scaling core.
    Notes: Research/cefix-plan.md */
-#ifdef CEFIX
 
 #include <stddef.h>
 #include "macport.h"
@@ -109,5 +108,3 @@ int32_t CE_SetDialogTemplateBounds(DialogPtr dlg, const unsigned short *tmpl)
     dlg->bounds.right = dlg->bounds.left + width;
     return SwapShort(tmpl[9]);
 }
-
-#endif /* CEFIX */

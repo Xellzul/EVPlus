@@ -1,11 +1,8 @@
-/* cefix.h -- the EV Nova Community Edition fixes, built only with -DCEFIX
-   (tools/build.ps1 -Cefix). Declares nothing outside #ifdef CEFIX, so a TU that
-   includes it compiles to the same object without the define.
+/* cefix.h -- the EV Nova Community Edition fixes (sources/cefix/), now part of the game.
    Plan, conventions, site list: Research/cefix-plan.md, Research/cefix-sites.json */
 #ifndef CEFIX_H
 #define CEFIX_H
 
-#ifdef CEFIX
 #include "int32.h"
 #include "burgertypes.h"
 
@@ -132,7 +129,5 @@ void CE_MoveTo(short h, short v);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CEFIX */
 
 #endif /* CEFIX_H */

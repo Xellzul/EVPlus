@@ -1,6 +1,5 @@
 /* ceblit.c -- EV Nova CE: GDI+ bicubic blitters in the CopyBits and CopyMask tables, and the
-   true row stride of a new GWorld (CEFIX only). Notes: Research/cefix-plan.md */
-#ifdef CEFIX
+   true row stride of a new GWorld. Notes: Research/cefix-plan.md */
 
 #include <stdlib.h>
 #include <string.h>
@@ -195,5 +194,3 @@ short CE_NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
     (*out)->pix.rowBytes = bm.bmWidthBytes;
     return err;
 }
-
-#endif /* CEFIX */

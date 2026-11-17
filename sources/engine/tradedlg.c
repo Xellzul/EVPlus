@@ -3607,11 +3607,7 @@ void ShipDescDialogUpdate(void)
         DrawIndString(kGameStrList, 229);
         ForeColor(whiteColor);
         MoveTo((box.left + 45), (box.top + 12));
-#ifdef CEFIX /* F29.01 */
         NumToString(CE_RoundD(shipClass[sel].maxSpeed * 100.0), buf);
-#else
-        NumToString((shipClass[sel].maxSpeed * 100.0), buf);
-#endif
         DrawString(buf);
 
         RGBForeColor(&rgbMedGrey);
@@ -5670,11 +5666,7 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x101);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x2c));
-#ifdef CEFIX /* F29.02 */
         NumToString(CE_TruncF32(ShipTurnRate(shipData) * 30.0f), (StringPtr)buf);
-#else
-        NumToString((ShipTurnRate(shipData) * 30.0f), (StringPtr)buf);
-#endif
         DrawString((const unsigned char *)buf);
         DrawIndString(kGameStrList, 0x102);
 
@@ -5683,11 +5675,7 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x103);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x3c));
-#ifdef CEFIX /* F29.03 */
         NumToString(CE_TruncF32(ShipAccelRate(shipData) * 2500.0), (StringPtr)buf);
-#else
-        NumToString((ShipAccelRate(shipData) * 2500.0), (StringPtr)buf);
-#endif
         DrawString((const unsigned char *)buf);
 
         RGBForeColor(&rgbLightGrey);
@@ -5695,19 +5683,11 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x104);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x4c));
-#ifdef CEFIX /* F29.04-05 */
         if (strictPlay)
             NumToString(CE_TruncF32(ShipMaxSpeed(shipData) * 100.0f), (StringPtr)buf);
         else
             NumToString(CE_TruncF32(ShipMaxSpeed(shipData) * 100.0f *
                                     0.6666666666666666), (StringPtr)buf);
-#else
-        if (strictPlay)
-            NumToString((ShipMaxSpeed(shipData) * 100.0f), (StringPtr)buf);
-        else
-            NumToString((ShipMaxSpeed(shipData) * 100.0f *
-                               0.6666666666666666), (StringPtr)buf);
-#endif
         DrawString((const unsigned char *)buf);
 
         RGBForeColor(&rgbLightGrey);

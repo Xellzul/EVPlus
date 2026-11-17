@@ -1,11 +1,9 @@
 /* cestartup.c -- EV Nova CE: startup, ddraw.ini, video mode, cnc-ddraw windowing, x2 key,
-   window procedure (CEFIX only). Notes: Research/cefix-plan.md */
-#ifdef CEFIX
+   window procedure. Notes: Research/cefix-plan.md */
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <float.h>
 #include "macport.h"
 #include "burger.h"
 #include "player.h"
@@ -102,9 +100,6 @@ int CE_Startup(char *cmdLine, int cmdShow)
     /* CE imports ddraw.dll: cnc-ddraw's DllMain sets DPI awareness before the window exists,
        and this reference keeps it loaded through ReleaseVideo's FreeLibrary. */
     LoadLibraryA("ddraw.dll");
-    /* CE bug: CE's mingw startup runs fninit, so the game runs at 64-bit x87 precision, not
-       Windows' 53, and some results round differently (r4 shows a speed-300 ship as 199). */
-    _controlfp(_PC_64, _MCW_PC);
     GetModuleFileNameA(NULL, exePath, sizeof(exePath));
     if (AddWineDllOverride(exePath)) {
         ShellExecuteA(NULL, "open", exePath, cmdLine, NULL, cmdShow);
@@ -194,5 +189,3 @@ int32_t __stdcall CE_WndProc(void *hwnd, uint32_t msg, uint32_t wParam, int32_t 
         SetCursor(gCustomCursorH != NULL ? gCustomCursorH : LoadCursorA(NULL, kIDCArrow));
     return WinGameWndProc(hwnd, msg, wParam, lParam);
 }
-
-#endif /* CEFIX */

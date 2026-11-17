@@ -1,6 +1,5 @@
 /* cedebug.c -- EV Nova CE: the debug-mode keys and NCB prompts, signed NumToString, the
-   hyperspace flash colour (CEFIX only). Notes: Research/cefix-plan.md */
-#ifdef CEFIX
+   hyperspace flash colour. Notes: Research/cefix-plan.md */
 
 #include "macport.h"
 #include "gametypes.h"
@@ -64,5 +63,3 @@ void CE_SetFlashColor(const RGBColor *color)
     // BUG (CE F22): CE stores the colour without RGBForeColor's NULL-port test; no caller hits it
     CurrentGrafPort->foreColor = settings.noHyperGamma != 0 ? *blackColor : *color;
 }
-
-#endif /* CEFIX */

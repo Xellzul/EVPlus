@@ -237,15 +237,6 @@ typedef struct OPENFILENAMEA {
     const char *lpTemplateName;     /* +0x48 */
 } OPENFILENAMEA;                    /* 0x4c = 76 bytes */
 
-typedef struct OSVERSIONINFOA {
-    uint32_t dwOSVersionInfoSize;   /* +0x00 */
-    uint32_t dwMajorVersion;        /* +0x04 */
-    uint32_t dwMinorVersion;        /* +0x08 */
-    uint32_t dwBuildNumber;         /* +0x0c */
-    uint32_t dwPlatformId;          /* +0x10 */
-    char szCSDVersion[128];              /* +0x14 */
-} OSVERSIONINFOA;
-
 typedef struct PAINTSTRUCT {
     void *hdc;                  /* +0x00 */
     int fErase;                 /* +0x04 */
@@ -515,7 +506,6 @@ __declspec(dllimport) int __stdcall SetConsoleTitleA(const char *title);
 /* user32 */
 __declspec(dllimport) short __stdcall GetKeyState(int nVirtKey);   /* IAT 0x0058f8a8 */
 __declspec(dllimport) int __stdcall IsIconic(void *hwnd);          /* IAT 0x0058f8dc */
-__declspec(dllimport) int __stdcall UnhookWindowsHookEx(void *hook);
 __declspec(dllimport) void __stdcall PostQuitMessage(int code);
 __declspec(dllimport) int __stdcall GetSystemMetrics(int index);
 
@@ -526,10 +516,6 @@ typedef struct POINT {
 
 __declspec(dllimport) int __stdcall ClientToScreen(void *hwnd, POINT *point);
 
-__declspec(dllimport) void * __stdcall SetWindowsHookExA(int idHook, void *proc,
-    void *hmod, uint32_t threadId);
-__declspec(dllimport) int32_t __stdcall CallNextHookEx(void *hook, int code,
-    uint32_t wParam, int32_t lParam);                    /* IAT 0x0058f8cc */
 __declspec(dllimport) int __stdcall FillRect(void *hdc, const WinRect *r,
     void *brush);
 __declspec(dllimport) int __stdcall DrawTextA(void *hdc, const char *text,
@@ -732,7 +718,6 @@ __declspec(dllimport) int __stdcall GetOpenFileNameA(OPENFILENAMEA *ofn); /* IAT
 __declspec(dllimport) int __stdcall MulDiv(int a, int b, int c);
 __declspec(dllimport) void __stdcall SetLastError(uint32_t err); /* IAT 0x0058f720 */
 __declspec(dllimport) void __stdcall GlobalMemoryStatus(MemoryStatus *ms); /* IAT 0x0058f71c */
-__declspec(dllimport) int __stdcall GetVersionExA(OSVERSIONINFOA *info);
 __declspec(dllimport) int __stdcall LoadStringA(void *hInstance, unsigned int id,
                                                 char *buf, int bufMax); /* IAT 0x0058f90c */
 

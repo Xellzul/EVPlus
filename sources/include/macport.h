@@ -853,7 +853,6 @@ extern void LUpdate(void *list);
 #else
 #define ListUpdate(rgn, list) LUpdate(rgn, list)
 #endif
-extern int32_t __stdcall KeyboardHookProc(int code, uint32_t wParam, int32_t lParam);
 extern int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
                          uint32_t wParam, int32_t lParam);
 extern void ShutdownWinGame(void);
@@ -1055,7 +1054,6 @@ extern uint32_t gClickTime;
 extern int32_t gDialogCount;
 extern DialogPtr gCurDialog;
 extern unsigned char gGammaRamp[32];
-extern void *gKeyboardHook;
 extern int32_t gLastModifiers;
 extern SpriteWorldPtr gSpriteWorld;
 
@@ -1070,7 +1068,6 @@ extern CGrafPort gGamePort;
 #endif
 extern RGBColor blackRGB;
 extern int32_t gRezOpenPending;
-extern int32_t gUseKeyboardHook;
 EXTERN_CPP_END
 extern void nv_BlitImageOr(Rect *dstRect, Image_t *icon);
 extern int gDisableUpdatesMode;

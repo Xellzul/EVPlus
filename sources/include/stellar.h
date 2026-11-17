@@ -5,9 +5,7 @@
 #include "macport.h"
 #include "shipobj.h"
 #include "spriteworld.h"
-#ifdef CEFIX
 #include "cefix.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,7 +1,6 @@
 /* ceppat.c -- EV Nova CE: the 'ppat' decoder behind the radar interference, 1, 2, 4 and
-   8 bits per pixel, in place of BurgerLib's 8-bit-only ImageParsePPat (CEFIX only).
+   8 bits per pixel, in place of BurgerLib's 8-bit-only ImageParsePPat.
    Notes: Research/cefix-plan.md */
-#ifdef CEFIX
 
 #include <string.h>
 #include "burgertypes.h"
@@ -107,5 +106,3 @@ int CE_ImageParsePPat(Image_t *image, const void *ppat)
     ImageDestroy(image);
     return 1;
 }
-
-#endif /* CEFIX */

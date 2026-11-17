@@ -1,11 +1,9 @@
 /* cegdiplus.h -- the part of the GDI+ flat API that the CE blitters call (sources/cefix/ceblit.c),
    declared by hand because the SDK's GdiPlus.h is C++ only. Values from the 418 SDK's
    GdiPlusFlat.h, GdiPlusInit.h, GdiPlusEnums.h and GdiPlusPixelFormats.h; imports from its
-   GdiPlus.lib (tools/link.ps1 -Cefix). Declares nothing outside #ifdef CEFIX. */
+   GdiPlus.lib (linked as gdiplus). */
 #ifndef CEGDIPLUS_H
 #define CEGDIPLUS_H
-
-#ifdef CEFIX
 
 typedef struct GpImage GpImage;
 typedef GpImage GpBitmap;
@@ -46,7 +44,5 @@ __declspec(dllimport) int __stdcall GdipDrawImageRectRectI(GpGraphics *graphics,
     void *callbackData);
 __declspec(dllimport) int __stdcall GdipDeleteGraphics(GpGraphics *graphics);
 __declspec(dllimport) int __stdcall GdipDisposeImage(GpImage *image);
-
-#endif /* CEFIX */
 
 #endif /* CEGDIPLUS_H */

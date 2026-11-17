@@ -1,6 +1,5 @@
-/* cehud.c -- EV Nova CE: the scaled status bar items and the scaled pen (CEFIX only).
+/* cehud.c -- EV Nova CE: the scaled status bar items and the scaled pen.
    Notes: Research/cefix-plan.md */
-#ifdef CEFIX
 
 #include <stddef.h>
 #include "macport.h"
@@ -86,5 +85,3 @@ void CE_MoveTo(short h, short v)
     }
     CE_SetPen(h, v);
 }
-
-#endif /* CEFIX */

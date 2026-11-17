@@ -1,4 +1,4 @@
-# EV Nova CE (the -DCEFIX build) with llvm-mingw -- no Docker, Wine or Metrowerks.
+# EV Nova CE with llvm-mingw -- no Docker, Wine or Metrowerks.
 #
 #   cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake
 #   cmake --build build                      -> build/EV Nova CE.exe
@@ -57,7 +57,6 @@ endif()
 file(GLOB_RECURSE ALL_C CONFIGURE_DEPENDS ${SRC}/*.c)
 set(GAME_SRC "")
 set(RT_SRC "")
-set(CE_SRC "")
 foreach(f ${ALL_C})
   file(RELATIVE_PATH rel ${SRC} ${f})
   if(rel MATCHES "^(include|mac|v111)/")
@@ -67,9 +66,7 @@ foreach(f ${ALL_C})
   if(marker)
     set_source_files_properties(${f} PROPERTIES LANGUAGE CXX)
   endif()
-  if(rel MATCHES "^cefix/")
-    list(APPEND CE_SRC ${f})
-  elseif(rel MATCHES "^runtime/")
+  if(rel MATCHES "^runtime/")
     list(APPEND RT_SRC ${f})
   else()
     list(APPEND GAME_SRC ${f})
@@ -85,31 +82,20 @@ set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-e
 set(WIN_LIBS kernel32 user32 gdi32 winmm wsock32 advapi32 comctl32 shell32 version comdlg32 iphlpapi ole32
     oleaut32 opengl32)
 
-function(evnova_exe target outname cefix)
-  set(defs "")
-  set(extra "")
-  if(cefix)
-    set(defs CEFIX)
-    set(extra ${CE_SRC})
-  endif()
-  # the runtime as an archive: members are pulled only when referenced, as with MW's rt.lib
-  add_library(${target}_rt STATIC ${RT_SRC})
-  add_executable(${target} WIN32 ${GAME_SRC} ${extra} ${SRC}/rsrc/evnova.rc)
-  foreach(t ${target} ${target}_rt)
-    target_include_directories(${t} PRIVATE ${SRC}/include)
-    target_compile_options(${t} PRIVATE ${EVNOVA_FLAGS})
-    target_compile_definitions(${t} PRIVATE ${defs})
-  endforeach()
-  set_target_properties(${target} PROPERTIES OUTPUT_NAME "${outname}" LINKER_LANGUAGE CXX)
-  target_link_libraries(${target} PRIVATE ${target}_rt ${QT_RENAMED} ${QTML_CLIENT_LIB}
-                        ${WIN_LIBS} $<$<BOOL:${cefix}>:gdiplus>)
-  target_link_options(${target} PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/${target}.map"
-    # qtmlClient.lib was built with MSVC and asks for its C runtime; mingw's is linked instead
-    -Wl,-Xlink=-nodefaultlib:LIBCMT -Wl,-Xlink=-nodefaultlib:OLDNAMES
-    # it also carries QuickDraw stand-ins the port defines itself (CopyBits, NewGWorld, ...): the port's
-    # objects come first on the line, so its definitions win, as they did under MW
-    -Wl,--allow-multiple-definition
-    $<$<BOOL:${cefix}>:-Wl,--large-address-aware>)
-endfunction()
-
-evnova_exe(evnova_ce "EV Nova CE" ON)
+# the runtime as an archive: members are pulled only when referenced, as with MW's rt.lib
+add_library(evnova_ce_rt STATIC ${RT_SRC})
+add_executable(evnova_ce WIN32 ${GAME_SRC} ${SRC}/rsrc/evnova.rc)
+foreach(t evnova_ce evnova_ce_rt)
+  target_include_directories(${t} PRIVATE ${SRC}/include)
+  target_compile_options(${t} PRIVATE ${EVNOVA_FLAGS})
+endforeach()
+set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "EV Nova CE" LINKER_LANGUAGE CXX)
+target_link_libraries(evnova_ce PRIVATE evnova_ce_rt ${QT_RENAMED} ${QTML_CLIENT_LIB} ${WIN_LIBS} gdiplus)
+target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map"
+  # qtmlClient.lib was built with MSVC and asks for its C runtime; mingw's is linked instead
+  -Wl,-Xlink=-nodefaultlib:LIBCMT -Wl,-Xlink=-nodefaultlib:OLDNAMES
+  # it also carries QuickDraw stand-ins the port defines itself (CopyBits, NewGWorld, ...): the port's
+  # objects come first on the line, so its definitions win, as they did under MW
+  -Wl,--allow-multiple-definition
+  # CE's 2 GB memory pool needs the large-address-aware bit
+  -Wl,--large-address-aware)

@@ -317,9 +317,7 @@ void SetupInterfaceBackground(void)
         ForeColor(blackColor);
         PaintRect(&loadPort.bounds);
         DrawPicHandle((PicHandle)pic, &interfacePicRect);
-#ifdef CEFIX /* F28.01 */
         CE_DrawVersion();
-#endif
         QDReleaseResource((PicHandle)pic);
     }
     SWSetPortToWindow(gSpriteWorld);

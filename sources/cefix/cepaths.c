@@ -1,6 +1,5 @@
 /* cepaths.c -- EV Nova CE: data, plug-in, movie and music paths relative to the current
-   directory, and unencrypted pilot files (CEFIX only). Notes: Research/cefix-plan.md */
-#ifdef CEFIX
+   directory, and unencrypted pilot files. Notes: Research/cefix-plan.md */
 
 #include <stddef.h>
 #include "macport.h"
@@ -65,5 +64,3 @@ void CE_ExpandPlugInsPath(char *dst, const char *path)
         path += sizeof(kExeFolder) - 1;
     ExpandAPathToBufferNative(dst, path);
 }
-
-#endif /* CEFIX */

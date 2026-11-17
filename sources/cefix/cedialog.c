@@ -1,6 +1,5 @@
 /* cedialog.c -- EV Nova CE: the rounding helpers of the shipyard and player-info stat
-   displays, also used by the map borders (CEFIX only). Notes: Research/cefix-plan.md */
-#ifdef CEFIX
+   displays, also used by the map borders. Notes: Research/cefix-plan.md */
 
 #include "cefix.h"
 
@@ -26,5 +25,3 @@ int32_t CE_RoundD(double value)
         whole--;
     return whole;
 }
-
-#endif /* CEFIX */
