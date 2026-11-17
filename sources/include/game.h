@@ -259,15 +259,10 @@ extern void MainScreenMouse(EventRecord *event);
 extern void DoMenuClick(int32_t menuChoice);
 extern void MainScreenActivate(Boolean activate);
 extern void AdjustMenus(void);
-extern void MainScreenClose(void);
-extern void MainScreenClobber(void);
-extern void CERunPrefsDialog(void);
 extern void GetWindowDragBounds(Rect *bounds, Point where);
 extern void ForceWindowOnscreen(void);
 extern void FlushKeys(void);
 extern short ScanForKeys(void);
-extern OSStatus MoreAECreateAppleEventSelfTarget(AEEventClass eventClass, AEEventID eventID,
-                                                 AppleEvent *event);
 #endif
 EXTERN_CPP_BEGIN
 extern short introTextID;

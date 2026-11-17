@@ -112,12 +112,10 @@ extern void *SaveBuffer(void);
 struct _FILE;
 #ifdef MACBUILD
 /* the plug-in scan's file type: any */
-#define kAnyPluginType '????'
 /* a plug-in file's type, 'Np' 0x95 'f' (MacRoman) */
 #define kPlugInFileType 0x4e709566
 #ifdef MAC1010
 extern short CountEVPlugins(short refNum, ConstStr255Param folderName, OSType type, evn_FILE *log);
-extern OSErr GetSubfolderOfFile(short refNum, ConstStr255Param name, int32_t *dirID, short *vRefNum);
 extern OSErr GetPluginSubfolder(short refNum, ConstStr255Param name, int32_t *dirID, short *vRefNum);
 extern short gARef;
 #else

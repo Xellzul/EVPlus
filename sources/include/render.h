@@ -84,9 +84,6 @@ extern void PostAnimateHandler(void);
 #ifdef V111
 extern unsigned char useLegacyRenderingPipeline;
 #endif
-#ifdef MACBUILD
-extern RgnHandle tempRgn;
-#endif
 extern Boolean GetSpriteInfo(short id, short *spriteID, short *maskID, short *xSize,
                           short *ySize, short *xTiles, short *yTiles);
 extern short GetStellarSpriteXSize(short id);
@@ -160,7 +157,6 @@ extern Rect gLoadBarBase;
 extern short logoFrameCount;
 extern short logoIndex;
 #ifdef MACBUILD
-extern AnimDelta logoFrameSize;
 #else
 extern short gMainPicHeightDelta;
 extern short gMainPicWidthDelta;

@@ -617,11 +617,6 @@ extern char *StringDuplicate(const char *s);
 extern char *String2Upper(char *s);
 extern char *String2Lower(char *s);
 extern char *StringFindString(const char *s, const char *sub);
-#ifdef MAC1010
-extern unsigned char *StringC2PCopy(unsigned char *dst, const char *src);
-extern unsigned char *StringP2C(unsigned char *s);
-extern char *StringC2P(char *s);
-#endif
 extern unsigned char IndirectGetLock(void **handle);
 struct ITElement;
 extern int32_t IT_ItemHandlerInstall(struct WindowNode *owner, const char *name,

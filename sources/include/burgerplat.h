@@ -612,7 +612,6 @@ typedef struct WindowNode {
 #endif
 } WindowNode;
 #if defined(MAC1010) && TARGET_API_MAC_CARBON
-void IT_ViewCheckWindows(WindowNode *window);
 #define CHECK_WINDOWS(w) IT_ViewCheckWindows(w)
 #else
 #define CHECK_WINDOWS(w)

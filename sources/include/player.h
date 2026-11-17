@@ -163,12 +163,6 @@ extern short newbieFlag;
 extern Boolean noSavePilotFiles;
 extern Boolean noUpdatePilotData;
 extern Boolean oldPlayerThreatened;
-#ifdef MAC1010
-extern short pilotsVRefNum;
-extern int32_t pilotsDirID;
-extern short prefsVRefNum;
-extern int32_t prefsDirID;
-#endif
 #ifdef MACBUILD
 extern FSRef pilotsFolder;
 #else

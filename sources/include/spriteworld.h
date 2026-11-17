@@ -15,7 +15,6 @@ typedef enum MaskType {
     kNoMask = 0,
     kPixelMask = 1,
     kRegionMask = 2,
-    kFatMask = (kPixelMask + kRegionMask),
     kSolidMask = 4
 } MaskType;
 #else
@@ -449,26 +448,13 @@ extern short SWFastWhitenGWorld(CGrafPtr pictureGWorld);
 #define kAlphaMask32    0x00FFFFFFL
 
 /* SpriteWorld's error codes the win port never names */
-#define kSystemTooOldErr            100
 #define kMaxFramesErr               101
-#define kInvalidFramesIndexErr      102
-#define kNotCWindowErr              103
 #define kNilParameterErr            104
 #define kOutOfRangeErr              107
-#define kTilingNotInitialized       108
-#define kTilingAlreadyInitialized   109
-#define kNullTileMapErr             110
-#define kTileMapNotLockedErr        111
-#define kAlreadyCalledErr           112
 #define kSpriteNotCompiledErr       113
-#define kBadParameterErr            114
 #define kSpriteAlreadyInLayer       115
-#define kNilFrameErr                116
-#define kNotLockedErr               117
-#define k68kOnlyErr                 118
 
 /* BlitPixieInterface.c's draw procs the win port dropped */
-#define SW_68K 0
 typedef struct BlitPixieOffsetInfo {
     int32_t srcOffsetAtoB;
     int32_t srcOffsetBtoA;
@@ -477,11 +463,6 @@ typedef struct BlitPixieOffsetInfo {
 } BlitPixieOffsetInfo, *BlitPixieOffsetInfoPtr;
 typedef void (*BlitFuncPtr)(int32_t srcRowBytes, int32_t dstRowBytes, char *srcBaseAddr,
         char *dstBaseAddr);
-#define BP_EQUAL_RECT(srcRect, dstRect) \
-    (srcRect.top == dstRect.top && \
-     srcRect.bottom == dstRect.bottom && \
-     srcRect.left == dstRect.left && \
-     srcRect.right == dstRect.right)
 extern void BlitPixieClear(unsigned char *dstPixel, uint32_t dstRowBytes,
         unsigned short bytes, unsigned short rows, uint32_t color);
 typedef struct StarArray {
@@ -496,14 +477,7 @@ typedef struct StarArray {
     Boolean needsToBeErased;
     short userData;
 } StarArray, *StarArrayPtr;
-#define SW_BITSET(p,n)  (p)[n >> 3] |= 0x80U >> (n & 7)
-#define SW_BITCLR(p,n)  (p)[n >> 3] &= ~(0x80U >> (n & 7))
-#define SW_BITTST(p,n)  ((p)[n >> 3] & (0x80U >> (n & 7))) != 0
-#define SW_NIBBLEGET(p,n) (((p)[n >> 1] & ~(0x0F << ((n & 1) << 2))) >> (((~n) & 1) << 2))
-#define SW_NIBBLESET(p,n,c) (p)[n >> 1] = (((c) & 0x0F) << (((~n) & 1) << 2)) | \
-        ((p)[n >> 1] & (0x0F << ((n & 1) << 2)))
 extern void SWGetColorFromValue(FramePtr dstFrameP, RGBColor *color, uint32_t pixelValue);
-extern void SWCopyBitsDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
 extern short SWFlagRectAsChanged(SpriteWorldPtr spriteWorldP, Rect *theChangedRect);
 
 /* SpriteLayer.c's functions the win port never had */
@@ -513,13 +487,6 @@ typedef struct RectArray {
     short numFrames;
     Rect frameRects[];
 } RectArray, *RectArrayPtr, **RectArrayHdl;
-
-typedef enum {
-    kSWFlipNone = 0,
-    kSWFlipHorizontal = 1,
-    kSWFlipVertical = 2,
-    kSWFlipBoth = 3
-} FlipType;
 
 #define SW_COLLISION_RECT_TOP(spriteP) \
     (spriteP->destFrameRect.top + spriteP->curFrameP->collisionInset.top)
@@ -540,23 +507,10 @@ typedef void (*DoubleDrawProcPtr)(FramePtr srcFrameP, FramePtr dstFrameP, Rect *
 
 /* SpriteWorld.c's functions the win port never had */
 typedef void (*CleanUpCallBackPtr)(void);
-#define SW_RECT_WIDTH(theRect)  (theRect.right - theRect.left)
-#define SW_RECT_HEIGHT(theRect) (theRect.bottom - theRect.top)
 extern CleanUpCallBackPtr gSWCleanUpCallBackP;
 extern Rect mainDeviceInitBounds;
 
 /* Tiling.c (mac only) */
-#define kNumTileLayers      10
-#define kMaskIsPartialMask      true
-#define kMaskIsNotPartialMask   false
-
-typedef enum {
-    kSWEntireSprite = 0,
-    kSWTopSide,
-    kSWRightSide,
-    kSWBottomSide,
-    kSWLeftSide
-} SWTileSearchType;
 
 typedef short **TileMapPtr;
 
@@ -573,7 +527,6 @@ typedef void (*TileChangeProcPtr)(SpriteWorldPtr spriteWorldP);
 typedef void (*TileRectDrawProcPtr)(SpriteWorldPtr spriteWorldP, Rect *updateRectP,
                                     Boolean optimizingOn);
 
-#define topLeft(r)  (((Point *)&(r))[0])
 #define botRight(r) (((Point *)&(r))[1])
 #endif
 

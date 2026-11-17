@@ -731,32 +731,16 @@ extern unsigned char *CtoPstr(char *str);
 #define kAKeyCode         0x00
 #define kLKeyCode         0x25
 #define kReturnKeyCode    0x24
-#define kTabKeyCode       0x30
 #define kEscapeKeyCode    0x35
 #define kEnterKeyCode     0x4c
 #define kDownArrowKeyCode 0x7d
 #define kUpArrowKeyCode   0x7e
 #define kHKeyCode         0x04
-#define kGKeyCode         0x05
-#define kWKeyCode         0x0d
-#define kEKeyCode         0x0e
-#define kRKeyCode         0x0f
-#define kNKeyCode         0x2d
 #define kSKeyCode         0x01
 #define kCKeyCode         0x08
-#define kUKeyCode         0x20
-#define kDKeyCode         0x02
 #define kBKeyCode         0x0b
-#define kTKeyCode         0x11
-#define kOKeyCode         0x1f
-#define kMKeyCode         0x2e
 #define kFKeyCode         0x03
 #define kSpaceKeyCode     0x31
-#define kHomeKeyCode      0x73
-#define kPageUpKeyCode    0x74
-#define kEndKeyCode       0x77
-#define kPageDownKeyCode  0x79
-#define kBackslashKeyCode 0x2a
 #define kMinusKeyCode     0x1b
 #define kEqualKeyCode     0x18
 #define kPadMinusKeyCode  0x4e
@@ -1267,9 +1251,6 @@ extern short GetPixDepth(PixMapPtr pm);
    are these wrappers; the parenthesised name, (PtInRect)(pt, r), is the Carbon form. PtInRect
    builds the Point in place: an inline function would widen h and v to int on the way. */
 #ifdef MAC1010
-static inline Boolean EV_PtInRect(short h, short v, const Rect *r)
-{
-    Point pt_;
 
     pt_.h = h;
     pt_.v = v;
@@ -1279,9 +1260,6 @@ static inline Boolean EV_PtInRect(short h, short v, const Rect *r)
 #else
 #define PtInRect(ph_, pv_, pr_) ({ Point pt_; pt_.h = (ph_); pt_.v = (pv_); (PtInRect)(pt_, pr_); })
 #endif
-static inline short EV_NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
-{
-    return NewGWorld(out, depth, bounds, 0, theGDH, 0);
 }
 #define NewGWorld(out, depth, bounds, gdh) EV_NewGWorld(out, depth, bounds, gdh)
 #define FrontWindow(dlg) GetDialogWindow(dlg)
@@ -1296,11 +1274,6 @@ union FinderInfo { FileInfo file; FolderInfo folder; };
 typedef union FinderInfo FinderInfo;
 union ExtendedFinderInfo { ExtendedFileInfo file; ExtendedFolderInfo folder; };
 typedef union ExtendedFinderInfo ExtendedFinderInfo;
-extern OSErr FSGetFinderInfo(const FSRef *ref, FinderInfo *info, ExtendedFinderInfo *extendedInfo,
-                             Boolean *isDirectory);
-extern OSErr FSSetFinderInfo(const FSRef *ref, const FinderInfo *info,
-                             const ExtendedFinderInfo *extendedInfo);
-extern OSErr FSChangeCreatorType(const FSRef *ref, OSType fileCreator, OSType fileType);
 extern GDHandle mainScreenDevice;
 extern CGrafPtr GetWindowGrafPort(WindowPtr window);
 extern OSErr HFSNameGetUnicodeName(ConstStr31Param hfsName, TextEncoding textEncodingHint,
