@@ -2781,17 +2781,6 @@ void HandleTimeAdjustment(void)
     uint32_t ms;
     float rate;
 
-#ifdef V111    /* POTENTIAL BUG (win V111): 1.1.1 drops the 21 ms frame wait; win may run uncapped */
-    Microseconds(&now);
-    if (now.hi > lastFrameMicroseconds.hi)
-        ms = (0xffffffff - (lastFrameMicroseconds.lo - now.lo)) / 1000;
-    else
-        ms = (now.lo - lastFrameMicroseconds.lo) / 1000;
-    if (ms < 10 && (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0)) {
-        IterateInGameEventLoop(1);
-        lastEventLoopTime = ReadTick();
-    }
-#else
     do {
         Microseconds(&now);
         if (now.hi > lastFrameMicroseconds.hi)
@@ -2799,16 +2788,13 @@ void HandleTimeAdjustment(void)
         else
             ms = (now.lo - lastFrameMicroseconds.lo) / 1000;
         if (ms < 10 && (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0)) {
-#if !TARGET_API_MAC_CARBON
             if (settings.yieldEvents != 0)
-#endif
             {
                 IterateInGameEventLoop(1);
                 lastEventLoopTime = ReadTick();
             }
         }
     } while (ms <= 20);
-#endif
 
     if (lastFrameTime == 0)
         rate = 1.0;
@@ -4291,157 +4277,6 @@ void BeamDrawCallback(SpriteWorldPtr world)
     short density;
     Point p1, p2;
 
-#ifdef V111
-    if (world->fastBlit != 0) {
-        count = 0;
-        do {
-            if (beamData[count].state >= -1 &&
-                beamData[count].owner != -1) {
-                p1.h = beamData[count].lastHead.h;
-                p1.v = beamData[count].lastHead.v;
-                p2.h = beamData[count].lastTail.h;
-                p2.v = beamData[count].lastTail.v;
-                density = weaponStats[beamData[count].weapType].lightningDensity;
-                if (density > 0) {
-                    if (useLegacyRenderingPipeline)
-                        EraseLightningBeam(gSpriteWorld->workFrameP,
-                                     gSpriteWorld->windowFrameP,
-                                     p1, p2,
-                                     weaponStats[beamData[count].weapType].beamWidth, density,
-                                     weaponStats[beamData[count].weapType].lightningAmplitude);
-                    else
-                        EraseLightningBeam(gSpriteWorld->workFrameP,
-                                     gSpriteWorld->workFrameP,
-                                     p1, p2,
-                                     weaponStats[beamData[count].weapType].beamWidth, density,
-                                     weaponStats[beamData[count].weapType].lightningAmplitude);
-                } else {
-                    if (useLegacyRenderingPipeline)
-                        EraseBeam(gSpriteWorld->workFrameP,
-                                     gSpriteWorld->windowFrameP,
-                                     p1, p2, 0x20, 0x10);
-                    else
-                        EraseBeam(gSpriteWorld->workFrameP,
-                                     gSpriteWorld->workFrameP,
-                                     p1, p2, 0x20, 0x10);
-                }
-            }
-            count++;
-        } while (count < kMaxBeams);
-    }
-
-    count = 0;
-    do {
-        if (beamData[count].state >= 0 &&
-            beamData[count].owner != -1) {
-            if ((weaponStats[beamData[count].weapType].flags2 & kWeapBeamUnderShip) != 0) {
-                if (world->fastBlit != 0) {
-                    p1.h = beamData[count].head.h;
-                    p1.v = beamData[count].head.v;
-                    p2.h = beamData[count].tail.h;
-                    p2.v = beamData[count].tail.v;
-                    density = weaponStats[beamData[count].weapType].lightningDensity;
-                    if (density > 0) {
-                        if (useLegacyRenderingPipeline)
-                            EraseLightningBeam(gSpriteWorld->workFrameP,
-                                         gSpriteWorld->windowFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamWidth, density,
-                                         weaponStats[beamData[count].weapType].lightningAmplitude);
-                        else
-                            EraseLightningBeam(gSpriteWorld->workFrameP,
-                                         gSpriteWorld->workFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamWidth, density,
-                                         weaponStats[beamData[count].weapType].lightningAmplitude);
-                    } else {
-                        if (useLegacyRenderingPipeline)
-                            EraseBeam(gSpriteWorld->workFrameP,
-                                         gSpriteWorld->windowFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamWidth,
-                                         weaponStats[beamData[count].weapType].coronaFalloff);
-                        else
-                            EraseBeam(gSpriteWorld->workFrameP,
-                                         gSpriteWorld->workFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamWidth,
-                                         weaponStats[beamData[count].weapType].coronaFalloff);
-                    }
-                }
-            } else {
-                p1.h = beamData[count].head.h;
-                p1.v = beamData[count].head.v;
-                p2.h = beamData[count].tail.h;
-                p2.v = beamData[count].tail.v;
-                density = weaponStats[beamData[count].weapType].lightningDensity;
-                if (density > 0) {
-                    if (world->fastBlit != 0) {
-                        if (useLegacyRenderingPipeline)
-                            DrawLightningBeam(gSpriteWorld->workFrameP,
-                                         gSpriteWorld->windowFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamColor,
-                                         weaponStats[beamData[count].weapType].beamWidth, density,
-                                         weaponStats[beamData[count].weapType].lightningAmplitude,
-                                         0x20 - beamData[count].frame);
-                        else
-                            DrawLightningBeam(gSpriteWorld->workFrameP,
-                                         gSpriteWorld->workFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamColor,
-                                         weaponStats[beamData[count].weapType].beamWidth, density,
-                                         weaponStats[beamData[count].weapType].lightningAmplitude,
-                                         0x20 - beamData[count].frame);
-                    } else {
-                        if (useLegacyRenderingPipeline)
-                            DrawLightningBeam(gSpriteWorld->workFrameP,
-                                         0,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamColor,
-                                         weaponStats[beamData[count].weapType].beamWidth, density,
-                                         weaponStats[beamData[count].weapType].lightningAmplitude,
-                                         0x20 - beamData[count].frame);
-                        else
-                            DrawLightningBeam(gSpriteWorld->workFrameP,
-                                         gSpriteWorld->workFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamColor,
-                                         weaponStats[beamData[count].weapType].beamWidth, density,
-                                         weaponStats[beamData[count].weapType].lightningAmplitude,
-                                         0x20 - beamData[count].frame);
-                    }
-                } else {
-                    DrawBeam(gSpriteWorld->workFrameP, p1, p2,
-                                 weaponStats[beamData[count].weapType].beamColor,
-                                 weaponStats[beamData[count].weapType].beamWidth,
-                                 weaponStats[beamData[count].weapType].coronaColor,
-                                 weaponStats[beamData[count].weapType].coronaFalloff +
-                                     beamData[count].frame);
-                    if (world->fastBlit != 0) {
-                        if (useLegacyRenderingPipeline)
-                            DrawBeam(gSpriteWorld->windowFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamColor,
-                                         weaponStats[beamData[count].weapType].beamWidth,
-                                         weaponStats[beamData[count].weapType].coronaColor,
-                                         weaponStats[beamData[count].weapType].coronaFalloff +
-                                             beamData[count].frame);
-                        else
-                            DrawBeam(gSpriteWorld->workFrameP,
-                                         p1, p2,
-                                         weaponStats[beamData[count].weapType].beamColor,
-                                         weaponStats[beamData[count].weapType].beamWidth,
-                                         weaponStats[beamData[count].weapType].coronaColor,
-                                         weaponStats[beamData[count].weapType].coronaFalloff +
-                                             beamData[count].frame);
-                    }
-                }
-            }
-        }
-        count++;
-    } while (count < kMaxBeams);
-#else
     if (world->fastBlit != 0) {
         count = 0;
         while (count < kMaxBeams) {
@@ -4526,7 +4361,6 @@ void BeamDrawCallback(SpriteWorldPtr world)
         }
         count++;
     }
-#endif
 }
 
 /*
@@ -5017,120 +4851,6 @@ void PostAnimateHandler(void)
     int i;
     int passes;
 
-#ifdef MAC1010
-    if (commCount >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-            AreWeFrontProcess() == 0) {
-            SWSetPortToWindow(gSpriteWorld);
-            CopyBits(GetPortPixMapBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     GetPortPixMapBits(
-                         *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                     &commRect, &commRect, 0, NULL);
-        } else {
-            BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                         &commRect, &commRect);
-        }
-    }
-    if (showFloatingMap >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-            AreWeFrontProcess() == 0) {
-            CopyBits(GetPortPixMapBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     GetPortPixMapBits(
-                         *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                     &floatingMapRect, &floatingMapRect, 0, NULL);
-        } else {
-            BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                         &floatingMapRect, &floatingMapRect);
-        }
-        if (showFloatingMap == 0)
-            showFloatingMap = -1;
-    }
-    if (escortMenuOnscreen >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-            AreWeFrontProcess() == 0) {
-            CopyBits(GetPortPixMapBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     GetPortPixMapBits(
-                         *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                     &escortMenuRect, &escortMenuRect, 0, NULL);
-        } else {
-            BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                         &escortMenuRect, &escortMenuRect);
-        }
-        if (escortMenuOnscreen == 0)
-            escortMenuOnscreen = -1;
-    }
-    UpdateParticlesInWindow(gSpriteWorld);
-    for (i = 0; (short)i < (doubleTime ? 2 : 1); i++)
-        SetParticleScrollOffset((short)(shipData->pos.x - screenCenter.h),
-                     (short)(shipData->pos.y - screenCenter.v));
-#elif defined(V111)
-    if (useLegacyRenderingPipeline) {
-        if (commCount >= 0) {
-            if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-                AreWeFrontProcess() == 0) {
-                CopyBits(GetPortPixMapBits(
-                             gSpriteWorld->workFrameP->framePort),
-                         GetPortPixMapBits(
-                             *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                         &commRect, &commRect, 0, NULL);
-            } else {
-                BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                             &commRect, &commRect);
-            }
-        }
-        if (showFloatingMap >= 0) {
-            if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-                AreWeFrontProcess() == 0) {
-                CopyBits(GetPortPixMapBits(
-                             gSpriteWorld->workFrameP->framePort),
-                         GetPortPixMapBits(
-                             *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                         &floatingMapRect, &floatingMapRect, 0, NULL);
-            } else {
-                BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                             &floatingMapRect, &floatingMapRect);
-            }
-            if (showFloatingMap == 0)
-                showFloatingMap = -1;
-        }
-        if (escortMenuOnscreen >= 0) {
-            if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-                AreWeFrontProcess() == 0) {
-                CopyBits(GetPortPixMapBits(
-                             gSpriteWorld->workFrameP->framePort),
-                         GetPortPixMapBits(
-                             *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                         &escortMenuRect, &escortMenuRect, 0, NULL);
-            } else {
-                BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                             &escortMenuRect, &escortMenuRect);
-            }
-            if (escortMenuOnscreen == 0)
-                escortMenuOnscreen = -1;
-        }
-        UpdateParticlesInWindow(gSpriteWorld);
-        i = 0;
-        while ((short)i++ < (doubleTime ? 2 : 1))
-            SetParticleScrollOffset((short)(shipData->pos.x - screenCenter.h),
-                         (short)(shipData->pos.y - screenCenter.v));
-    } else {
-        SWSetPortToWindow(gSpriteWorld);
-        UpdateParticlesInWindow(gSpriteWorld);
-        i = 0;
-        while ((short)i++ < (doubleTime ? 2 : 1))
-            SetParticleScrollOffset((short)(shipData->pos.x - screenCenter.h),
-                         (short)(shipData->pos.y - screenCenter.v));
-        CopyBits(GetPortPixMapBits(
-                     gSpriteWorld->workFrameP->framePort),
-                 GetPortPixMapBits(
-                     *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                 &gSpriteWorld->workFrameP->frameRect,
-                 &gSpriteWorld->windowFrameP->frameRect, 0, NULL);
-    }
-#else
     if (commCount >= 0) {
         if (inBackground == 0 && gSpriteWorld->fastBlit != 0 &&
             AreWeFrontProcess() != 0) {
@@ -5188,7 +4908,6 @@ void PostAnimateHandler(void)
                      (short)(shipData->pos.y - screenCenter.v));
         i = i + 1;
     }
-#endif
 }
 
 #define kReinforceIndexA    0x132
