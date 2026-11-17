@@ -252,15 +252,10 @@ void MainScreenIdle(void)
     HandleIntroMusic(0);
 #endif
     MainScreenAnimIdle();
-#if !defined(MACBUILD) || TARGET_API_MAC_OS8
     strip = *GetCWindowPortRect((WindowRef)gWind);
     strip.bottom = strip.top + kHotStripHeight;
     GetGlobalMouse(&mouse);
     if (PtInRectPoint(mouse, &strip)) {
-#else
-    GetMouse(&mouse);
-    if (!PtInRectPoint(mouse, &screenMinusDockRect)) {
-#endif
         if (mBarHidden != 0) {
             ShowTheMenuBar();
             InvalWindowPortRect((WindowRef)gWind);

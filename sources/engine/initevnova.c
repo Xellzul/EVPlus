@@ -43,7 +43,6 @@ extern CFStringRef relative2absolute(CFStringRef path);
 extern FSRef *novaSupportFolder;
 extern int32_t startupMemoryFree;
 #endif
-extern void InitAEVTHandlers(void);
 extern int32_t PreflightMemoryUsageTotal(void);
 extern void HideControlStrip(void);
 extern void CarbonHackCleanup(void);

@@ -248,11 +248,6 @@ extern void ExploreNebulaeFromSystem(short sys);
 #ifdef MACBUILD
 extern EventRecord gEvent;
 extern void MainScreenMouse(EventRecord *event);
-extern void DoMenuClick(int32_t menuChoice);
-extern void MainScreenActivate(Boolean activate);
-extern void AdjustMenus(void);
-extern void GetWindowDragBounds(Rect *bounds, Point where);
-extern void ForceWindowOnscreen(void);
 extern void FlushKeys(void);
 extern short ScanForKeys(void);
 #endif
