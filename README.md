@@ -1,46 +1,21 @@
 # EvNovaDecompile
 
-A matching decompilation of 
-
 **EV Nova 1.0.10 for Windows x86**
 
 **EV Nova 1.0.10 for Windows x86 Community Edition** (Not complete, not tested)
 
 
-You need:
-Provide files from input-files/README.md
-Docker
+## Build (clang)
 
-Prepare build enviroment (takes ages):
+You need: llvm-mingw (default `/opt/llvm-mingw`), CMake, Ninja, and `unar` (package `unarchiver`) to unpack
+`input-files/QT6SDK_Win.hqx` (see input-files/README.md) for QuickTime's `qtmlClient.lib` on the first configure.
 
-`docker build --platform linux/amd64 --build-context inputs=input-files -t evnova-buildkit buildkit`
+`cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake`
 
-Run build:
+`cmake --build build`
 
-`docker run --rm --platform linux/amd64 --security-opt seccomp=unconfined -v "$PWD":/repo evnova-buildkit   # = build.py all`
-
-Outputs file to: buildkit/out/
-
-Or targeted runs:
-
-`docker run --rm --platform linux/amd64 --security-opt seccomp=unconfined -v "$PWD":/repo evnova-buildkit python3 /repo/buildkit/build.py {TARGET} {{--OPTIONS}}`
-
-Target can be: all, win, ce, check
-
-Options can be: --config FILE
+Outputs `build/EV Nova.exe` and `build/EV Nova CE.exe`. Options: `-DLLVM_MINGW=/path/to/llvm-mingw`,
+`-DQTML_CLIENT_LIB=/path/to/qtmlClient.lib` (skips unpacking the SDK).
 
 ## Credits:
 andrews05 for CE patches - https://github.com/andrews05/EV-Nova-CE 
-
-## AI Use
-
-Claude
-- Opus 5
-- Opus 5.5
-- Sonnet 5.5
-- Fable 5.2
-- Fable 5.1
-- Fable 5
-- Sonnet 5
-Helped by:
-Claude Haiku 5.5, Claude Haiku 4.5, Alibaba Qwen 3.8 27B, Google Gemini 3.8 Flash, Google Gemini 3.7 Flash, Google Gemini 3.6 Flash and  Google Gemini 3.1 Pro
