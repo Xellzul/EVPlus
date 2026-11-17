@@ -110,20 +110,12 @@ short SWCreateSprite(SpritePtr *newSpriteP, void *spriteStorageP, short maxFrame
 
             *newSpriteP = tempSpriteP;
         } else {
-#ifdef MACBUILD
-            err = MemError();
-#else
             err = memFullErr;
-#endif
 
             DeallocAPointer(tempSpriteP);
         }
     } else {
-#ifdef MACBUILD
-        err = MemError();
-#else
         err = memFullErr;
-#endif
     }
 
     SWSetStickyIfError(err);

@@ -12,11 +12,7 @@
 // MAC: _SWInvertGWorld i386 0x000a703a ppc 0x000b1c60
 void SWInvertGWorld(CGrafPtr gWorldP)
 {
-#ifdef MACBUILD
-    SWInvertRect(gWorldP, GetCPortPortRect(gWorldP));
-#else
     SWInvertRect(gWorldP, GetWindowPortRect(gWorldP));
-#endif
 }
 
 /* SWInvertRect (mac _SWInvertRect). STATE: MATCH, byte-identical. OPEN: none */
@@ -24,38 +20,16 @@ void SWInvertGWorld(CGrafPtr gWorldP)
 // MAC: _SWInvertRect i386 0x000a6fa2 ppc 0x000b1bc4
 void SWInvertRect(CGrafPtr gWorldP, Rect *rectP)
 {
-#ifdef MACBUILD
-    PixMapHandle pixMapH;
-    GWorldFlags pixelsState;
-    GWorldPtr saveGWorld;
-    GDHandle saveDevice;
-
-    pixMapH = GetGWorldPixMap(gWorldP);
-    pixelsState = GetPixelsState(pixMapH);
-    LockPixels(pixMapH);
-
-    GetGWorld(&saveGWorld, &saveDevice);
-    SetGWorld(gWorldP, NULL);
-#else
     CGrafPtr saveGWorld;
     void *saveDevice;
 
     GetPort(&saveGWorld);
     saveDevice = GetGWorldDevice(saveGWorld);
     SetPort(gWorldP);
-#endif
 
     InvertRect(rectP);
 
-#ifdef MACBUILD
-    if (useLegacyRenderingPipeline)
-        SetGWorld(saveGWorld, saveDevice);
-    else
-        SetGWorld(saveGWorld, NULL);
-    SetPixelsState(pixMapH, pixelsState);
-#else
     SetPort(saveGWorld);
-#endif
 }
 
 #ifdef MACBUILD

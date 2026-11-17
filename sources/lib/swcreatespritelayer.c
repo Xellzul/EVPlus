@@ -30,11 +30,7 @@ short SWCreateSpriteLayer(SpriteLayerRec **spriteLayerP)
 
         *spriteLayerP = tempSpriteLayerP;
     } else {
-#ifdef MACBUILD
-        err = MemError();
-#else
         err = memFullErr;
-#endif
     }
 
     SWSetStickyIfError(err);

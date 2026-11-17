@@ -321,77 +321,6 @@ void CopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstP
    OPEN: none; notes in Research/notes/blitcopyline.md */
 // FUNCTION: EVNOVA 0x00479cf0
 // MAC: _BlitCopyLine i386 0x000c3483 ppc 0x000cf7f4
-#ifdef MACBUILD
-void BlitCopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstPoint)
-{
-    short   x1, y1, x2, y2;
-    short   curX, curY;
-    short   dx, dy, sx, sy;
-    short   accum;
-    short   depth;
-
-    x1 = srcPoint.h;
-    y1 = srcPoint.v;
-    x2 = dstPoint.h;
-    y2 = dstPoint.v;
-
-    if (srcPoint.h == dstPoint.h && srcPoint.v == dstPoint.v)
-        return;
-
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    depth = (*dstFrameP->framePort->portPixMap)->pixelSize;
-#else
-    depth = (*GetPortPixMap(dstFrameP->framePort))->pixelSize;
-#endif
-
-    dx = x2 - x1;
-    dy = y2 - y1;
-
-    sx = SIGN(dx);
-    sy = SIGN(dy);
-
-    dx = ABS(dx);
-    dy = ABS(dy);
-
-    curX = x1;
-    curY = srcPoint.v;
-
-    FOREACH_DEPTH_DO(depth, SET_DEPTH_PIXEL(dstFrameP, x1, srcPoint.v, GET_DEPTH_PIXEL(srcFrameP, x1, srcPoint.v)))
-
-    if (dx > dy)
-    {
-        accum = dx >> 1;
-        while (x1 != x2)
-        {
-            accum -= dy;
-            if (accum < 0)
-            {
-                accum += dx;
-                curY += sy;
-            }
-            x1 += sx;
-            curX += sx;
-            FOREACH_DEPTH_DO(depth, SET_DEPTH_PIXEL(dstFrameP, curX, curY, GET_DEPTH_PIXEL(srcFrameP, curX, curY)))
-        }
-    }
-    else
-    {
-        accum = dy >> 1;
-        while (y1 != y2)
-        {
-            accum -= dx;
-            if (accum < 0)
-            {
-                accum += dy;
-                curX += sx;
-            }
-            y1 += sy;
-            curY += sy;
-            FOREACH_DEPTH_DO(depth, SET_DEPTH_PIXEL(dstFrameP, curX, curY, GET_DEPTH_PIXEL(srcFrameP, curX, curY)))
-        }
-    }
-}
-#else
 void BlitCopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstPoint)
 {
     short   x1, y1, x2, y2;
@@ -457,65 +386,7 @@ void BlitCopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point 
         }
     }
 }
-#endif
 
-#ifdef MACBUILD
-/* BresenhamWalk (mac _BresenhamWalk, mac-only). STATE: see the mac gate. */
-// MAC: _BresenhamWalk i386 0x000c3a19 ppc 0x000cfd28
-Point BresenhamWalk(Point srcPoint, Point dstPoint, short steps)
-{
-    Point   curPoint;
-    short   x1, y1;
-    short   dx, dy, sx, sy;
-    short   accum;
-    short   i;
-
-    dx = dstPoint.h - srcPoint.h;
-    dy = dstPoint.v - srcPoint.v;
-
-    sx = SIGN(dx);
-    sy = SIGN(dy);
-
-    dx = ABS(dx);
-    dy = ABS(dy);
-
-    x1 = srcPoint.h;
-    y1 = srcPoint.v;
-
-    if (dx > dy)
-    {
-        accum = dx >> 1;
-        for (i = 0; i < steps; i++)
-        {
-            accum -= dy;
-            if (accum < 0)
-            {
-                accum += dx;
-                y1 += sy;
-            }
-            x1 += sx;
-        }
-    }
-    else
-    {
-        accum = dy >> 1;
-        for (i = 0; i < steps; i++)
-        {
-            accum -= dx;
-            if (accum < 0)
-            {
-                accum += dy;
-                x1 += sx;
-            }
-            y1 += sy;
-        }
-    }
-
-    curPoint.h = x1;
-    curPoint.v = y1;
-    return curPoint;
-}
-#endif
 
 /* DrawBeam (mac _DrawBeam). STATE: MATCH, byte-identical (exe 304 / obj 304); it matches
    only compiled after BlitCopyLine, its exe predecessor (88.5 alone). OPEN: none. see notes */

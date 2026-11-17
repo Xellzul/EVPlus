@@ -107,11 +107,7 @@ short SWCreateEmptySprite(SpritePtr *newSpriteP, void *spriteStorageP)
 
         *newSpriteP = tempSpriteP;
     } else {
-#ifdef MACBUILD
-        err = MemError();
-#else
         err = memFullErr;
-#endif
     }
 
     SWSetStickyIfError(err);

@@ -201,6 +201,8 @@ void BlitPixieRLETranslucentClipped(unsigned char *rleTokens, unsigned char *dst
     overR = overG =
             overB = 0;
 
+    // BUG (all versions): `x != 0 ? x : 0' is no clamp -- when alpha > scale + 32 the value goes negative,
+    // passes the unsigned `> 32' test below and gives garbage over/alpha values instead of 0
     alphaR = redScale =
             (scaleR + 32 - alpha != 0)
             ? scaleR + 32 - alpha : 0;

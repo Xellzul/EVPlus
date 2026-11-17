@@ -6,11 +6,7 @@
 
 EXTERN_C_BEGIN
 
-#if defined(MACBUILD) && !defined(MAC1010)
-#define kAlphaTableType     0x74c3a462      /* 'Tt\xe4b' saved as UTF-8: gcc keeps the last four bytes */
-#else
 #define kAlphaTableType     0x54748a62      /* 'Tt\xe4b' */
-#endif
 #define kAlphaTableID       128
 
 

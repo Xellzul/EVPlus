@@ -9,21 +9,6 @@
 
 /* 0x00472510 -- the donor's seven-argument BlitPixieRLEParsePixels. */
 
-#ifdef MACBUILD
-/* SWCompileSprite (mac _SWCompileSprite, mac-only). STATE: see the mac gate. */
-// MAC: _SWCompileSprite i386 0x000aec7b ppc 0x000ba1ec
-short SWCompileSprite(SpritePtr srcSpriteP)
-{
-    return noErr;
-}
-
-/* SWCompileFrame (mac _SWCompileFrame, mac-only). STATE: see the mac gate. */
-// MAC: _SWCompileFrame i386 0x000aec82 ppc 0x000ba1f4
-short SWCompileFrame(FramePtr srcFrameP)
-{
-    return noErr;
-}
-#endif
 
 /* SWCreateRLEData (mac _SWCreateRLEData). STATE: MATCH 100.0%, exe 242 / obj 242 instrs.
    OPEN: none */

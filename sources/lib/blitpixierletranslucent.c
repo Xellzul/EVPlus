@@ -23,12 +23,8 @@ void BlitPixieRLETranslucent(unsigned char *rleTokens, unsigned char *dstPixel,
     scaleB = gSWCurrentSpriteBeingDrawn->tintBlue;
 
     biasColor = gSWCurrentSpriteBeingDrawn->tintColor;
-#ifdef MACBUILD
-    biasColor = (biasColor & 0xffff) | (biasColor << 16);
-#else
     biasColor = ((biasColor << 16) & 0xffff0000) |
             (biasColor & 0xffff);
-#endif
 
     overBias = 32 - gSWCurrentSpriteBeingDrawn->tintMode;
 

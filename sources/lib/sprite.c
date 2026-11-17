@@ -3,9 +3,6 @@
 #include "macport.h"
 #include "burger.h"
 #include "spriteworld.h"
-#ifdef MACBUILD
-#include "render.h"
-#endif
 
 /* SWCreateSpriteFromCicnResource (mac _SWCreateSpriteFromCicnResource). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00474970
@@ -67,151 +64,6 @@ short SWCreateSpriteFromCicnResource(SpriteWorldPtr destSpriteWorldP, SpritePtr 
    OPEN: none. see notes */
 // FUNCTION: EVNOVA 0x00474ab0
 // MAC: _SWCreateSpriteFromSinglePictXY i386 0x000a9bee ppc 0x000b4adc
-#ifdef MACBUILD
-short SWCreateSpriteFromSinglePictXY(
-        SpriteWorldRec *destSpriteWorldP,
-        SpritePtr *newSpriteP,
-        void *spriteStorageP,
-        short pictResID,
-        short maskResID,
-        short frameWidth,
-        short frameHeight,
-        short borderWidth,
-        short borderHeight,
-        short maxFrames,
-        MaskType maskType)
-{
-    short err;
-    void *tempPic;
-    CGrafPtr tempPictGWorldP;
-    CGrafPtr tempMaskGWorldP;
-    CGrafPtr tempTempMaskGWorldP;
-    Rect frameRect;
-    SpritePtr tempSpriteP;
-    FramePtr newFrameP;
-    short frame;
-    Boolean needToInvertMask;
-
-    err = 0;
-
-    if (destSpriteWorldP == 0)
-        SW_ASSERT_FAIL("Sprite.c", 719, 699);
-
-    tempPictGWorldP = 0;
-    tempMaskGWorldP = 0;
-    *newSpriteP = 0;
-    needToInvertMask = 1;
-
-    tempPic = GetPicture(pictResID);
-    if (tempPic == 0) {
-        err = MemError();
-        if (err == noErr)
-            err = resNotFound;
-    } else {
-        QDReleaseResource(tempPic);
-    }
-
-    if (err == noErr) {
-        err = SWCreateGWorldFromPictResource(destSpriteWorldP, &tempPictGWorldP, pictResID);
-
-        if (err == noErr && maskType != kNoMask)
-            err = SWCreateGWorldFromPictResource(destSpriteWorldP, &tempMaskGWorldP, maskResID);
-
-        SWInvertGWorld(tempMaskGWorldP);
-
-        if (err == noErr) {
-            if (pictResID == maskResID && tempMaskGWorldP != 0) {
-                err = SWCreatePixelMaskFromGWorld(tempPictGWorldP, tempMaskGWorldP, 0);
-                needToInvertMask = 0;
-
-                if (destSpriteWorldP->pixelDepth <= 8 && (maskType & kRegionMask) != 0) {
-                    SWInvertGWorld(tempMaskGWorldP);
-                    needToInvertMask = 1;
-                }
-            }
-        }
-
-        if (maxFrames == 0) {
-            maxFrames = (GetCPortPortRect(tempPictGWorldP)->right / frameWidth) *
-                        (GetCPortPortRect(tempPictGWorldP)->bottom / frameHeight);
-        }
-
-        if (err == noErr) {
-            err = SWCreateSprite(&tempSpriteP, spriteStorageP, maxFrames);
-        }
-
-        if (err == noErr) {
-            err = SWCreateFrameFromGWorldAndRectStart(&tempTempMaskGWorldP, frameWidth,
-                    frameHeight, maskType);
-        }
-
-        if (err == noErr) {
-            frameRect.left = 0;
-            frameRect.top = 0;
-            frameRect.right = frameWidth;
-            frameRect.bottom = frameHeight;
-
-            for (frame = 0; frame < maxFrames; frame++) {
-                err = SWCreateFrameFromGWorldAndRectPartial(&newFrameP, tempPictGWorldP,
-                        tempMaskGWorldP, tempTempMaskGWorldP, &frameRect, maskType);
-
-                if (err == noErr) {
-                    newFrameP->rleDataH = 0;
-
-                    err = SWAddFrame(tempSpriteP, newFrameP);
-                    if (frame < maxFrames - 1) {
-                        frameRect.left += frameWidth + borderWidth;
-                        frameRect.right = frameRect.left + frameWidth;
-                        if (frameRect.right >
-                                GetCPortPortRect(tempPictGWorldP)->right) {
-                            frameRect.left = 0;
-                            frameRect.right = frameWidth;
-                            frameRect.top += frameHeight + borderHeight;
-                            frameRect.bottom = frameRect.top + frameHeight;
-
-                            if (frameRect.bottom >
-                                    GetCPortPortRect(tempPictGWorldP)->bottom) {
-                                err = kOutOfRangeErr;
-                            }
-                        }
-                    }
-                }
-
-                if (err != noErr) {
-                    SWDisposeFrame(&newFrameP);
-                    SWDisposeSprite(&tempSpriteP);
-                    break;
-                }
-            }
-
-            SWCreateFrameFromGWorldAndRectFinish(tempTempMaskGWorldP);
-        }
-
-        if (err == noErr) {
-            if ((maskType & kPixelMask) != 0) {
-                if (destSpriteWorldP->pixelDepth <= 8 && needToInvertMask) {
-                    SWInvertGWorld(tempMaskGWorldP);
-                }
-            } else {
-                if (tempMaskGWorldP != 0) {
-                    DisposeGWorld(tempMaskGWorldP);
-                    tempMaskGWorldP = 0;
-                }
-            }
-
-            SWSetSpriteFrameRange(tempSpriteP, 0, maxFrames - 1);
-            SWSetCurrentFrameIndex(tempSpriteP, 0);
-            tempSpriteP->sharedPictGWorld = tempPictGWorldP;
-            tempSpriteP->sharedMaskGWorld = tempMaskGWorldP;
-
-            *newSpriteP = tempSpriteP;
-        }
-    }
-
-    SWSetStickyIfError(err);
-    return err;
-}
-#else
 short SWCreateSpriteFromSinglePictXY(
         SpriteWorldRec *destSpriteWorldP,
         SpritePtr *newSpriteP,
@@ -315,6 +167,8 @@ short SWCreateSpriteFromSinglePictXY(
                 }
 
                 if ((int)err != noErr) {
+                    // BUG (likely, all versions): on kOutOfRangeErr the frame was already added to the sprite,
+                    // so it is disposed here and again by SWDisposeSprite (double free); also leaks the temp GWorlds
                     SWDisposeFrame(&newFrameP);
                     SWDisposeSprite(&tempSpriteP);
                     break;
@@ -348,7 +202,6 @@ short SWCreateSpriteFromSinglePictXY(
     SWSetStickyIfError(err);
     return err;
 }
-#endif
 
 #define kSolidMask      4
 
@@ -435,61 +288,6 @@ short SWCreateSpriteFromRLEResource(SpritePtr *srcSpriteP, void *spriteStorageP,
 /* SWCloneSprite (mac _SWCloneSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475050
 // MAC: _SWCloneSprite i386 0x000a9419 ppc 0x000b430c
-#ifdef MACBUILD
-short SWCloneSprite(SpritePtr cloneSpriteP, SpritePtr *newSpriteP, void *spriteStorageP)
-{
-    SpritePtr tempSpriteP;
-    short index;
-    int32_t frameArraySize;
-    short err = 0;
-
-    if (cloneSpriteP == 0)
-        return kNilParameterErr;
-
-    tempSpriteP = (spriteStorageP == 0) ? (SpritePtr)AllocAPointer(sizeof(SpriteRec))
-                                        : (SpritePtr)spriteStorageP;
-    if (tempSpriteP == 0)
-        err = MemError();
-
-    if (err == noErr) {
-        if (GetPtrSize((Ptr)tempSpriteP) < sizeof(SpriteRec))
-            SW_ASSERT_FAIL("Sprite.c", 1400, 1361);
-
-        *tempSpriteP = *cloneSpriteP;
-
-        tempSpriteP->parentSpriteLayerP = 0;
-        tempSpriteP->nextSpriteP = 0;
-        tempSpriteP->prevSpriteP = 0;
-
-        tempSpriteP->spriteMoveProc = SWTempSpriteMoveProc;
-        tempSpriteP->realSpriteMoveProc = cloneSpriteP->realSpriteMoveProc;
-        tempSpriteP->ownsRLEData = 0;
-    }
-
-    if (err == noErr) {
-        frameArraySize = cloneSpriteP->maxFrames * sizeof(FramePtr);
-        tempSpriteP->frameArray = (FramePtr *)AllocAPointerClear(frameArraySize);
-
-        if (tempSpriteP->frameArray != 0) {
-            for (index = 0; index < cloneSpriteP->maxFrames; index++) {
-                tempSpriteP->frameArray[index] = cloneSpriteP->frameArray[index];
-                if (tempSpriteP->frameArray[index] == 0)
-                    SW_ASSERT_FAIL("Sprite.c", 1430, 1391);
-                tempSpriteP->frameArray[index]->useCount++;
-            }
-        } else {
-            err = MemError();
-            DeallocAPointer(tempSpriteP);
-        }
-    }
-
-    if (err == noErr)
-        *newSpriteP = tempSpriteP;
-
-    SWSetStickyIfError(err);
-    return err;
-}
-#else
 short SWCloneSprite(SpritePtr cloneSpriteP, SpritePtr *newSpriteP, void *spriteStorageP)
 {
     SpritePtr tempSpriteP;
@@ -543,81 +341,7 @@ short SWCloneSprite(SpritePtr cloneSpriteP, SpritePtr *newSpriteP, void *spriteS
     SWSetStickyIfError(err);
     return err;
 }
-#endif
 
-#ifdef MACBUILD
-/* SWCloneSpriteFromTile (mac _SWCloneSpriteFromTile, mac-only). STATE: see the mac gate. */
-// MAC: _SWCloneSpriteFromTile i386 0x000a979a ppc 0x000b46f4
-OSErr SWCloneSpriteFromTile(
-    SpriteWorldPtr spriteWorldP,
-    SpritePtr* newSpriteP,
-    void* spriteStorageP,
-    short firstTileID,
-    short lastTileID)
-{
-    OSErr err;
-    SpritePtr tempSpriteP;
-    FramePtr tileFrameP;
-    short curTileID, curIndex, numFrames;
-
-    SW_ASSERT(firstTileID <= lastTileID, 1427);
-    SW_ASSERT(spriteWorldP->tileFrameArray != NULL, 1428);
-    SW_ASSERT(firstTileID >= 0 && lastTileID < spriteWorldP->maxNumTiles, 1429);
-
-    *newSpriteP = NULL;
-    numFrames = (lastTileID - firstTileID) + 1;
-    err = SWCreateSprite(&tempSpriteP, spriteStorageP, numFrames);
-
-    if (err == noErr) {
-        for (curTileID = firstTileID; curTileID <= lastTileID; curTileID++) {
-            tileFrameP = spriteWorldP->tileFrameArray[curTileID];
-            SW_ASSERT(tileFrameP != NULL, 1440);
-            err = SWAddFrame(tempSpriteP, tileFrameP);
-
-            if (err != noErr) {
-                SWDisposeSprite(&tempSpriteP);
-                break;
-            }
-        }
-
-        if (err == noErr) {
-            SWSetSpriteFrameRange(tempSpriteP, 0, numFrames - 1);
-
-            curIndex = spriteWorldP->curTileImage[firstTileID];
-            if (curIndex >= firstTileID && curIndex <= lastTileID)
-                curIndex = spriteWorldP->curTileImage[firstTileID] - firstTileID;
-            else
-                curIndex = 0;
-
-            SWSetCurrentFrameIndex(tempSpriteP, curIndex);
-            *newSpriteP = tempSpriteP;
-        }
-    }
-
-    SWSetStickyIfError(err);
-    return err;
-}
-
-/* SWRemoveSpriteFromAnimation (mac _SWRemoveSpriteFromAnimation, mac-only). STATE: see the mac gate. */
-// MAC: _SWRemoveSpriteFromAnimation i386 0x000a95dc ppc 0x000b450c
-void SWRemoveSpriteFromAnimation(
-    SpriteWorldPtr spriteWorldP,
-    SpritePtr spriteP,
-    Boolean disposeOfSprite)
-{
-    SW_ASSERT(spriteWorldP != NULL && spriteP != NULL, 1481);
-
-    SWSetSpriteVisible(spriteP, false);
-    SWRemoveSprite(spriteP);
-    SWAddSprite(spriteWorldP->deadSpriteLayerP, spriteP);
-
-    if (disposeOfSprite) {
-        spriteP->spriteRemoval = kSWRemoveAndDisposeSprite;
-    } else {
-        spriteP->spriteRemoval = kSWRemoveSprite;
-    }
-}
-#endif
 
 /* +0xd2 marks a sprite that owns none of the things SWCloseSprite frees; +0xd1 is
    RLE-handle OWNERSHIP, since SWCloneSprite copies the handle and clears it. */
@@ -714,15 +438,7 @@ void SWLockSprite(SpritePtr srcSpriteP)
             SW_ASSERT_FAIL("Sprite.c", 1642, 1604);
 
         offset = 0;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        tokens = (TokenDataType *)(*spriteData + kRLEResourceHeaderSize
-                                   - ((int32_t)(*spriteData + kRLEResourceHeaderSize) & 3));
-#else
         tokens = (TokenDataType *)(*spriteData + kRLEResourceHeaderSize);
-#if defined(MACBUILD) && V111
-        (int32_t)tokens &= ~3;
-#endif
-#endif
 
         for (curFrame = 0; curFrame < srcSpriteP->numFrames; curFrame++) {
             srcFrameP = srcSpriteP->frameArray[curFrame];
@@ -752,32 +468,6 @@ void SWLockSprite(SpritePtr srcSpriteP)
 /* SWUnlockSprite (mac _SWUnlockSprite). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004756c0
 // MAC: _SWUnlockSprite i386 0x000aad04 ppc 0x000b5aa8
-#ifdef MACBUILD
-void SWUnlockSprite(SpritePtr srcSpriteP)
-{
-    register int32_t curFrame;
-    Handle spriteData;
-    FramePtr srcFrameP;
-
-    if (srcSpriteP == 0)
-        SW_ASSERT_FAIL("Sprite.c", 1693, 1655);
-
-    for (curFrame = 0; curFrame < srcSpriteP->numFrames; curFrame++) {
-        SWUnlockFrame(srcSpriteP->frameArray[curFrame]);
-    }
-
-    spriteData = srcSpriteP->frameArray[0]->rleDataH;
-    if (spriteData != 0) {
-        for (curFrame = 0; curFrame < srcSpriteP->numFrames; curFrame++) {
-            srcFrameP = srcSpriteP->frameArray[curFrame];
-
-            srcFrameP->rleTokenStart = 0;
-        }
-
-        UnlockAHandle(spriteData);
-    }
-}
-#else
 void SWUnlockSprite(SpritePtr srcSpriteP)
 {
     register int32_t curFrame;
@@ -804,46 +494,7 @@ void SWUnlockSprite(SpritePtr srcSpriteP)
         UnlockAHandle(spriteData);
     }
 }
-#endif
 
-#ifdef MACBUILD
-/* SWFlipSprite (mac _SWFlipSprite, mac-only). STATE: see the mac gate. */
-// MAC: _SWFlipSprite i386 0x000aadc0 ppc 0x000b5b84
-void SWFlipSprite(SpritePtr srcSpriteP, FlipType direction)
-{
-    int32_t curFrame;
-    FramePtr srcFrameP;
-
-    for (curFrame = 0; curFrame < srcSpriteP->numFrames; curFrame++) {
-        srcFrameP = srcSpriteP->frameArray[curFrame];
-
-        if (srcFrameP->framePort != NULL) {
-            if (direction & kSWFlipHorizontal)
-                SWFlipPixelsHorizontally(srcFrameP->framePort, &srcFrameP->frameRect);
-
-            if (direction & kSWFlipVertical)
-                SWFlipPixelsVertically(srcFrameP->framePort, &srcFrameP->frameRect);
-
-            if (srcFrameP->maskRgn == NULL
-
-#if SW_68K
-                && srcFrameP->pixCodeH == NULL
-#endif
-                ) {
-                if (srcFrameP->maskPort != NULL) {
-                    if (direction & kSWFlipHorizontal)
-                        SWFlipPixelsHorizontally(srcFrameP->maskPort, &srcFrameP->frameRect);
-
-                    if (direction & kSWFlipVertical)
-                        SWFlipPixelsVertically(srcFrameP->maskPort, &srcFrameP->frameRect);
-                }
-            } else {
-                SWUpdateFrameMasks(srcFrameP);
-            }
-        }
-    }
-}
-#endif
 
 /* kMaxFramesErr = 101, read straight off the exe's `mov ebx, 0x65'.
    SpriteRec layout: macport.h; its evidence: Research/notes/swsetcurrentframeindex.md. */
@@ -873,63 +524,6 @@ short SWAddFrame(SpritePtr srcSpriteP, FramePtr newFrameP)
     return err;
 }
 
-#ifdef MACBUILD
-/* SWInsertFrame (mac _SWInsertFrame, mac-only). STATE: see the mac gate. */
-// MAC: _SWInsertFrame i386 0x000aaea5 ppc 0x000b5c88
-OSErr SWInsertFrame(SpritePtr srcSpriteP, FramePtr newFrameP, int32_t frameIndex)
-{
-    register int32_t index;
-    register FramePtr *frameArray;
-    OSErr err = noErr;
-
-    SW_ASSERT(srcSpriteP != NULL && newFrameP != NULL, 1776);
-
-    frameArray = srcSpriteP->frameArray;
-
-    if (frameIndex < srcSpriteP->maxFrames && frameIndex >= 0 &&
-        srcSpriteP->numFrames < srcSpriteP->maxFrames) {
-        for (index = srcSpriteP->numFrames; index > frameIndex; index--)
-            frameArray[index] = frameArray[index - 1];
-
-        frameArray[frameIndex] = newFrameP;
-
-        srcSpriteP->numFrames++;
-        newFrameP->useCount++;
-    } else {
-        err = kMaxFramesErr;
-    }
-
-    SWSetStickyIfError(err);
-    return err;
-}
-
-/* SWRemoveFrame (mac _SWRemoveFrame, mac-only). STATE: see the mac gate. */
-// MAC: _SWRemoveFrame i386 0x000aaf72 ppc 0x000b5d6c
-void SWRemoveFrame(SpritePtr srcSpriteP, FramePtr oldFrameP)
-{
-    register int32_t curFrame;
-    register FramePtr *frameArray;
-
-    SW_ASSERT(srcSpriteP != NULL && oldFrameP != NULL, 1815);
-
-    curFrame = srcSpriteP->numFrames;
-    frameArray = srcSpriteP->frameArray;
-
-    while (curFrame--) {
-        if (frameArray[curFrame] == oldFrameP) {
-            srcSpriteP->numFrames--;
-            oldFrameP->useCount--;
-
-            while (curFrame <= (srcSpriteP->numFrames - 1L)) {
-                frameArray[curFrame] = frameArray[curFrame + 1L];
-                curFrame++;
-            }
-
-            break;
-        }
-    }
-}
-#endif
 
 /* maskRgn is never dereferenced -- this port has no Region Manager, so the donor's
    OffsetRgn block is gone -- but the handle is still PASSED to CopyBits as the mask,
@@ -938,31 +532,6 @@ void SWRemoveFrame(SpritePtr srcSpriteP, FramePtr oldFrameP)
 /* SWStdSpriteDrawProc (mac _SWStdSpriteDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004757a0
 // MAC: _SWStdSpriteDrawProc i386 0x000ab015 ppc 0x000b5e34
-#ifdef MACBUILD
-void SWStdSpriteDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect, Rect *dstRect)
-{
-    SW_ASSERT(srcFrameP->isFrameLocked && dstFrameP->isFrameLocked, 1851);
-
-    if (srcFrameP->maskRgn != NULL) {
-        Rect rgnRect;
-
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-        rgnRect = (**(RgnHandle)srcFrameP->maskRgn).rgnBBox;
-#else
-        GetRegionBounds(srcFrameP->maskRgn, &rgnRect);
-#endif
-
-        OffsetRgn(srcFrameP->maskRgn,
-            (dstRect->left - (srcRect->left - srcFrameP->frameRect.left) - rgnRect.left)
-            + srcFrameP->offsetPoint.h,
-            (dstRect->top - (srcRect->top - srcFrameP->frameRect.top) - rgnRect.top)
-            + srcFrameP->offsetPoint.v);
-    }
-
-    CopyBits((BitMapPtr)srcFrameP->framePix, (BitMapPtr)dstFrameP->framePix,
-             srcRect, dstRect, srcCopy, srcFrameP->maskRgn);
-}
-#else
 void SWStdSpriteDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect, Rect *dstRect)
 {
     if (!srcFrameP->isFrameLocked || !dstFrameP->isFrameLocked)
@@ -972,32 +541,7 @@ void SWStdSpriteDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect, 
              GetPortBitMapForCopyBits(dstFrameP->framePort),
              srcRect, dstRect, srcCopy, srcFrameP->maskRgn);
 }
-#endif
 
-#ifdef MACBUILD
-/* SWStdSpriteColorDrawProc (mac _SWStdSpriteColorDrawProc, mac-only). STATE: see the mac gate. */
-// MAC: _SWStdSpriteColorDrawProc i386 0x000ab0e9 ppc 0x000b5f24
-void SWStdSpriteColorDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect* srcRect, Rect* dstRect)
-{
-    SW_ASSERT(srcFrameP->isFrameLocked && dstFrameP->isFrameLocked, 1887);
-
-    if (srcFrameP->maskRgn != NULL) {
-        Rect rgnRect;
-
-        GetRegionBounds(srcFrameP->maskRgn, &rgnRect);
-
-        OffsetRgn(srcFrameP->maskRgn,
-            (dstRect->left - (srcRect->left - srcFrameP->frameRect.left) - rgnRect.left)
-            + srcFrameP->offsetPoint.h,
-            (dstRect->top - (srcRect->top - srcFrameP->frameRect.top) - rgnRect.top)
-            + srcFrameP->offsetPoint.v);
-    }
-
-    RGBBackColor(&gSWCurrentSpriteBeingDrawn->colorRGB);
-    EraseRgn(srcFrameP->maskRgn);
-    BackColor(whiteColor);
-}
-#endif
 
 /* `[s+0x8c] = [s+0x90]', then a call through +0x90 guarded on the byte +0x15: that is
    what pins spriteMoveProc/realSpriteMoveProc to +0x8c/+0x90 and needsToBeDrawn to +0x15
@@ -1016,32 +560,6 @@ void SWTempSpriteMoveProc(SpritePtr srcSpriteP)
     }
 }
 
-#ifdef MACBUILD
-/* SWSetCurrentFrame (mac _SWSetCurrentFrame, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetCurrentFrame i386 0x000ab1f2 ppc 0x000b6034
-OSErr SWSetCurrentFrame(SpritePtr srcSpriteP, FramePtr newFrameP)
-{
-    short frameIndex = 0;
-    Boolean foundFrame = false;
-    OSErr err = noErr;
-
-    SW_ASSERT(srcSpriteP != NULL && newFrameP != NULL, 1949);
-
-    for (frameIndex = 0; frameIndex < srcSpriteP->numFrames; frameIndex++) {
-        if (srcSpriteP->frameArray[frameIndex] == newFrameP) {
-            SWSetCurrentFrameIndex(srcSpriteP, frameIndex);
-            foundFrame = true;
-            break;
-        }
-    }
-
-    if (foundFrame == false)
-        err = kBadParameterErr;
-
-    SWSetStickyIfError(err);
-    return err;
-}
-#endif
 
 /* SWSetCurrentFrameIndex (mac _SWSetCurrentFrameIndex). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475830
@@ -1106,19 +624,6 @@ void SWSetSpriteCollideProc(SpritePtr srcSpriteP, CollideProcPtr collideProc)
     srcSpriteP->spriteCollideProc = collideProc;
 }
 
-#ifdef MACBUILD
-/* SWSetSpriteColor (mac _SWSetSpriteColor, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteColor i386 0x000ab2d3 ppc 0x000b614c
-void SWSetSpriteColor(SpritePtr srcSpriteP, RGBColor *color)
-{
-    FramePtr frameP;
-
-    frameP = srcSpriteP->curFrameP != NULL ? srcSpriteP->curFrameP : srcSpriteP->frameArray[0];
-
-    srcSpriteP->colorRGB = *color;
-    srcSpriteP->colorValue = SWGetValueFromColor(frameP, color);
-}
-#endif
 
 /* The framePort list repeats Mask and PartialMask, and that duplication is the donor's
    verbatim: where the exe writes a sequence out twice, write it out twice. */
@@ -1129,73 +634,6 @@ void SWSetSpriteColor(SpritePtr srcSpriteP, RGBColor *color)
 /* SWSetSpriteDrawProc (mac _SWSetSpriteDrawProc). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475970
 // MAC: _SWSetSpriteDrawProc i386 0x000ab327 ppc 0x000b61ac
-#ifdef MACBUILD
-OSErr SWSetSpriteDrawProc(SpritePtr srcSpriteP, DrawProcPtr drawProc)
-{
-    OSErr err = noErr;
-    FramePtr headFrameP = NULL;
-
-    SW_ASSERT(srcSpriteP != NULL && drawProc != NULL, 2067);
-
-    if (drawProc == BlitPixieCompiledSpriteDrawProc)
-        drawProc = BlitPixieMaskDrawProc;
-
-    if (drawProc == BlitPixieAllBitRectDrawProc ||
-        drawProc == BlitPixieAllBitMaskDrawProc ||
-        drawProc == BlitPixieAllBitPartialMaskDrawProc) {
-        err = k68kOnlyErr;
-    }
-
-    headFrameP = srcSpriteP->frameArray[0];
-    if (headFrameP != NULL) {
-        if (headFrameP->frameDepth < 8) {
-            if ((drawProc == BlitPixieRectDrawProc) ||
-                 (drawProc == BlitPixieMaskDrawProc) ||
-                 (drawProc == BlitPixiePartialMaskDrawProc) ||
-                 (drawProc == BlitPixieRLEDrawProc) ||
-                 (drawProc == BlitPixieCompiledSpriteDrawProc)) {
-                err = kWrongDepthErr;
-            }
-        }
-    }
-
-    if (headFrameP->framePort == NULL) {
-        if ((drawProc == BlitPixieAllBitRectDrawProc) ||
-                (drawProc == BlitPixieAllBitMaskDrawProc) ||
-                (drawProc == BlitPixieAllBitPartialMaskDrawProc) ||
-                (drawProc == BlitPixieRectDrawProc) ||
-                (drawProc == BlitPixieMaskDrawProc) ||
-                (drawProc == BlitPixiePartialMaskDrawProc) ||
-                (drawProc == BlitPixieMaskDrawProc) ||
-                (drawProc == BlitPixiePartialMaskDrawProc) ||
-                (drawProc == BlitPixieCompiledSpriteDrawProc)
-            ) {
-            err = kWrongMaskErr;
-        }
-    }
-
-    if (headFrameP->maskPort == NULL) {
-        if ((drawProc == BlitPixieAllBitMaskDrawProc) ||
-                (drawProc == BlitPixieAllBitPartialMaskDrawProc) ||
-                (drawProc == BlitPixieMaskDrawProc) ||
-                (drawProc == BlitPixiePartialMaskDrawProc) ||
-                (drawProc == BlitPixieCompiledSpriteDrawProc)
-            ) {
-            err = kWrongMaskErr;
-        }
-    }
-
-    if (drawProc == BlitPixieRLEDrawProc && headFrameP->rleDataH == NULL) {
-        err = kSpriteNotCompiledErr;
-    }
-
-    if (err == noErr)
-        srcSpriteP->frameDrawProc = drawProc;
-
-    SWSetStickyIfError(err);
-    return err;
-}
-#else
 short SWSetSpriteDrawProc(SpritePtr srcSpriteP, DrawProcPtr drawProc)
 {
     short err = 0;
@@ -1243,36 +681,7 @@ short SWSetSpriteDrawProc(SpritePtr srcSpriteP, DrawProcPtr drawProc)
     SWSetStickyIfError(err);
     return err;
 }
-#endif
 
-#ifdef MACBUILD
-/* SWSetSpriteFlippedMode (mac _SWSetSpriteFlippedMode, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteFlippedMode i386 0x000ab520 ppc 0x000b6420
-void SWSetSpriteFlippedMode(
-    SpritePtr srcSpriteP,
-    Boolean flippedHorizontal,
-    Boolean flippedVertical)
-{
-    srcSpriteP->flippedHorizontal = flippedHorizontal;
-    srcSpriteP->flippedVertical = flippedVertical;
-}
-
-/* SWSetSpriteFrameAdvance (mac _SWSetSpriteFrameAdvance, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteFrameAdvance i386 0x000ab53a ppc 0x000b642c
-void SWSetSpriteFrameAdvance(SpritePtr srcSpriteP, short frameAdvance)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2168);
-    srcSpriteP->frameAdvance = frameAdvance;
-}
-
-/* SWSetSpriteFrameAdvanceMode (mac _SWSetSpriteFrameAdvanceMode, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteFrameAdvanceMode i386 0x000ab582 ppc 0x000b647c
-void SWSetSpriteFrameAdvanceMode(SpritePtr srcSpriteP, AdvanceType advanceMode)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2181);
-    srcSpriteP->frameAdvanceMode = advanceMode;
-}
-#endif
 
 /* SWSetSpriteFrameRange (mac _SWSetSpriteFrameRange). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475a60
@@ -1297,23 +706,6 @@ void SWSetSpriteFrameRange(SpritePtr srcSpriteP, short firstFrameIndex, short la
         SWSetCurrentFrameIndex(srcSpriteP, lastFrameIndex);
 }
 
-#ifdef MACBUILD
-/* SWSetSpriteFrameTime (mac _SWSetSpriteFrameTime, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteFrameTime i386 0x000ab5c3 ppc 0x000b64cc
-void SWSetSpriteFrameTime(SpritePtr srcSpriteP, int32_t timeInterval)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2223);
-    srcSpriteP->frameTimeInterval = timeInterval;
-}
-
-/* SWSetSpriteFrameProc (mac _SWSetSpriteFrameProc, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteFrameProc i386 0x000ab600 ppc 0x000b651c
-void SWSetSpriteFrameProc(SpritePtr srcSpriteP, FrameProcPtr frameProc)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2236);
-    srcSpriteP->frameChangeProc = frameProc;
-}
-#endif
 
 /* SWSetSpriteLocation (mac _SWSetSpriteLocation). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475af0
@@ -1338,45 +730,6 @@ void SWSetSpriteLocation(SpritePtr srcSpriteP, short horizLoc, short vertLoc)
     srcSpriteP->needsToBeDrawn = 1;
 }
 
-#ifdef MACBUILD
-/* SWSetSpriteMoveBounds (mac _SWSetSpriteMoveBounds, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteMoveBounds i386 0x000ab6c6 ppc 0x000b661c
-void SWSetSpriteMoveBounds(SpritePtr srcSpriteP, Rect* moveBoundsRect)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2276);
-    srcSpriteP->moveBoundsRect = *moveBoundsRect;
-}
-
-/* SWSetSpriteMoveDelta (mac _SWSetSpriteMoveDelta, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteMoveDelta i386 0x000ab71e ppc 0x000b667c
-void SWSetSpriteMoveDelta(SpritePtr srcSpriteP, short horizDelta, short vertDelta)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2290);
-
-    srcSpriteP->horizMoveDelta = horizDelta;
-    srcSpriteP->vertMoveDelta = vertDelta;
-}
-
-/* SWSetSpriteMoveTime (mac _SWSetSpriteMoveTime, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteMoveTime i386 0x000ab78d ppc 0x000b66d0
-void SWSetSpriteMoveTime(SpritePtr srcSpriteP, int32_t timeInterval)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2306);
-    srcSpriteP->moveTimeInterval = timeInterval;
-}
-
-/* SWSetSpriteMoveProc (mac _SWSetSpriteMoveProc, mac-only). STATE: see the mac gate. */
-// MAC: _SWSetSpriteMoveProc i386 0x000ab7d0 ppc 0x000b671c
-void SWSetSpriteMoveProc(SpritePtr srcSpriteP, MoveProcPtr moveProc)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2319);
-
-    srcSpriteP->realSpriteMoveProc = moveProc;
-
-    if (srcSpriteP->spriteMoveProc != SWTempSpriteMoveProc)
-        srcSpriteP->spriteMoveProc = moveProc;
-}
-#endif
 
 /* SWSetSpriteVisible (mac _SWSetSpriteVisible). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x00475b80
@@ -1399,172 +752,6 @@ void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible)
     }
 }
 
-#ifdef MACBUILD
-/* SWGetSpriteVertLoc (mac _SWGetSpriteVertLoc, mac-only). STATE: see the mac gate. */
-// MAC: _SWGetSpriteVertLoc i386 0x000ab81c ppc 0x000b6780
-short SWGetSpriteVertLoc(SpritePtr srcSpriteP)
-{
-    return srcSpriteP->destFrameRect.top + srcSpriteP->curFrameP->hotSpotV;
-}
-
-/* SWGetSpriteHorizLoc (mac _SWGetSpriteHorizLoc, mac-only). STATE: see the mac gate. */
-// MAC: _SWGetSpriteHorizLoc i386 0x000ab830 ppc 0x000b6798
-short SWGetSpriteHorizLoc(SpritePtr srcSpriteP)
-{
-    return srcSpriteP->destFrameRect.left + srcSpriteP->curFrameP->hotSpotH;
-}
-
-/* SWMoveSprite (mac _SWMoveSprite, mac-only). STATE: see the mac gate. */
-// MAC: _SWMoveSprite i386 0x000ab844 ppc 0x000b67b0
-void SWMoveSprite(SpritePtr srcSpriteP, short horizLoc, short vertLoc)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2385);
-
-    horizLoc -= srcSpriteP->curFrameP->hotSpotH;
-    vertLoc -= srcSpriteP->curFrameP->hotSpotV;
-
-    if ((horizLoc != srcSpriteP->destFrameRect.left) ||
-        (vertLoc != srcSpriteP->destFrameRect.top)) {
-        srcSpriteP->destFrameRect.bottom = vertLoc + (srcSpriteP->destFrameRect.bottom -
-                                                    srcSpriteP->destFrameRect.top);
-        srcSpriteP->destFrameRect.right = horizLoc + (srcSpriteP->destFrameRect.right -
-                                                    srcSpriteP->destFrameRect.left);
-        srcSpriteP->destFrameRect.top = vertLoc;
-        srcSpriteP->destFrameRect.left = horizLoc;
-
-        srcSpriteP->needsToBeDrawn = true;
-    }
-}
-
-/* SWOffsetSprite (mac _SWOffsetSprite, mac-only). STATE: see the mac gate. */
-// MAC: _SWOffsetSprite i386 0x000ab8ce ppc 0x000b6868
-void SWOffsetSprite(SpritePtr srcSpriteP, short horizOffset, short vertOffset)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2414);
-
-    if ((horizOffset != 0) || (vertOffset != 0)) {
-        srcSpriteP->destFrameRect.right += horizOffset;
-        srcSpriteP->destFrameRect.bottom += vertOffset;
-        srcSpriteP->destFrameRect.left += horizOffset;
-        srcSpriteP->destFrameRect.top += vertOffset;
-
-        srcSpriteP->needsToBeDrawn = true;
-    }
-}
-
-/* SWBounceSprite (mac _SWBounceSprite, mac-only). STATE: see the mac gate. */
-// MAC: _SWBounceSprite i386 0x000ab928 ppc 0x000b68fc
-Boolean SWBounceSprite(SpritePtr srcSpriteP)
-{
-    short horizOffset, vertOffset;
-
-    SW_ASSERT(srcSpriteP != NULL, 2437);
-
-    if (srcSpriteP->destFrameRect.left < srcSpriteP->moveBoundsRect.left) {
-        srcSpriteP->horizMoveDelta = -srcSpriteP->horizMoveDelta;
-        horizOffset = (srcSpriteP->moveBoundsRect.left - srcSpriteP->destFrameRect.left) * 2;
-    } else if (srcSpriteP->destFrameRect.right > srcSpriteP->moveBoundsRect.right) {
-        srcSpriteP->horizMoveDelta = -srcSpriteP->horizMoveDelta;
-        horizOffset = (srcSpriteP->moveBoundsRect.right - srcSpriteP->destFrameRect.right) * 2;
-    } else
-        horizOffset = 0;
-
-    if (srcSpriteP->destFrameRect.top < srcSpriteP->moveBoundsRect.top) {
-        srcSpriteP->vertMoveDelta = -srcSpriteP->vertMoveDelta;
-        vertOffset = (srcSpriteP->moveBoundsRect.top - srcSpriteP->destFrameRect.top) * 2;
-    } else if (srcSpriteP->destFrameRect.bottom > srcSpriteP->moveBoundsRect.bottom) {
-        srcSpriteP->vertMoveDelta = -srcSpriteP->vertMoveDelta;
-        vertOffset = (srcSpriteP->moveBoundsRect.bottom - srcSpriteP->destFrameRect.bottom) * 2;
-    } else
-        vertOffset = 0;
-
-    if ((horizOffset != 0) || (vertOffset != 0)) {
-        SWOffsetSprite(srcSpriteP, horizOffset, vertOffset);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-/* SWWrapSprite (mac _SWWrapSprite, mac-only). STATE: see the mac gate. */
-// MAC: _SWWrapSprite i386 0x000aba0b ppc 0x000b6a20
-Boolean SWWrapSprite(SpritePtr srcSpriteP)
-{
-    short horizOffset, vertOffset;
-
-    SW_ASSERT(srcSpriteP != NULL, 2491);
-
-    if (srcSpriteP->oldFrameRect.left > srcSpriteP->moveBoundsRect.right) {
-        horizOffset = - ((srcSpriteP->moveBoundsRect.right -
-                        srcSpriteP->moveBoundsRect.left) +
-                        (srcSpriteP->destFrameRect.right -
-                        srcSpriteP->destFrameRect.left) + srcSpriteP->horizMoveDelta);
-    } else if (srcSpriteP->oldFrameRect.right < srcSpriteP->moveBoundsRect.left) {
-        horizOffset = (srcSpriteP->moveBoundsRect.right -
-                        srcSpriteP->moveBoundsRect.left) +
-                        (srcSpriteP->destFrameRect.right -
-                        srcSpriteP->destFrameRect.left) - srcSpriteP->horizMoveDelta;
-    } else
-        horizOffset = 0;
-
-    if (srcSpriteP->oldFrameRect.top > srcSpriteP->moveBoundsRect.bottom) {
-        vertOffset = -((srcSpriteP->moveBoundsRect.bottom -
-                            srcSpriteP->moveBoundsRect.top) +
-                            (srcSpriteP->destFrameRect.bottom -
-                            srcSpriteP->destFrameRect.top) + srcSpriteP->vertMoveDelta);
-    } else if (srcSpriteP->oldFrameRect.bottom < srcSpriteP->moveBoundsRect.top) {
-        vertOffset = (srcSpriteP->moveBoundsRect.bottom -
-                            srcSpriteP->moveBoundsRect.top) +
-                            (srcSpriteP->destFrameRect.bottom -
-                            srcSpriteP->destFrameRect.top) - srcSpriteP->vertMoveDelta;
-    } else
-        vertOffset = 0;
-
-    if ((horizOffset != 0) || (vertOffset != 0)) {
-        SWOffsetSprite(srcSpriteP, horizOffset, vertOffset);
-
-        srcSpriteP->deltaFrameRect = srcSpriteP->destFrameRect;
-        srcSpriteP->oldFrameRect = srcSpriteP->destFrameRect;
-
-        return true;
-    } else {
-        return false;
-    }
-}
-
-/* SWRegionCollision (mac _SWRegionCollision, mac-only). STATE: see the mac gate. */
-// MAC: _SWRegionCollision i386 0x000abb0f ppc 0x000b6b70
-Boolean SWRegionCollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
-{
-    Rect rgnRect;
-
-    SW_ASSERT(srcSpriteP != NULL && dstSpriteP != NULL, 2558);
-    SW_ASSERT(srcSpriteP->curFrameP->maskRgn != NULL, 2559);
-    SW_ASSERT(dstSpriteP->curFrameP->maskRgn != NULL, 2560);
-
-    CopyRgn(dstSpriteP->curFrameP->maskRgn, gSWCollisionSpareRgn);
-
-    GetRegionBounds(srcSpriteP->curFrameP->maskRgn, &rgnRect);
-
-    OffsetRgn(srcSpriteP->curFrameP->maskRgn,
-                (srcSpriteP->destFrameRect.left - rgnRect.left) +
-                srcSpriteP->curFrameP->offsetPoint.h,
-                (srcSpriteP->destFrameRect.top - rgnRect.top) +
-                srcSpriteP->curFrameP->offsetPoint.v);
-
-    GetRegionBounds(gSWCollisionSpareRgn, &rgnRect);
-
-    OffsetRgn(gSWCollisionSpareRgn,
-                (dstSpriteP->destFrameRect.left - rgnRect.left) +
-                dstSpriteP->curFrameP->offsetPoint.h,
-                (dstSpriteP->destFrameRect.top - rgnRect.top) +
-                dstSpriteP->curFrameP->offsetPoint.v);
-
-    SectRgn(srcSpriteP->curFrameP->maskRgn, gSWCollisionSpareRgn, gSWCollisionSectRgn);
-
-    return (!EmptyRgn(gSWCollisionSectRgn));
-}
-#endif
 
 /* `/2' on a signed int is the `cmp 0x80000000 / sbb -1 / sar 1' triple, which is what
    pins the radii SIGNED and not the donor's unsigned-looking widths. */
@@ -1596,53 +783,6 @@ Boolean SWRadiusCollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
         ((radiusOne + radiusTwo) * (radiusOne + radiusTwo)));
 }
 
-#ifdef MACBUILD
-/* SWPixelCollision (mac _SWPixelCollision, mac-only). STATE: see the mac gate. */
-// MAC: _SWPixelCollision i386 0x000abd27 ppc 0x000b6da4
-Boolean SWPixelCollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
-{
-    Boolean collision;
-    Rect sectRect;
-    Rect srcSectRect;
-    Rect dstSectRect;
-    FramePtr srcFrameP,
-                    dstFrameP;
-
-    SW_ASSERT(srcSpriteP != NULL, 2645);
-    SW_ASSERT(dstSpriteP != NULL, 2646);
-    SW_ASSERT(srcSpriteP->curFrameP->maskPort != NULL, 2647);
-    SW_ASSERT(dstSpriteP->curFrameP->maskPort != NULL, 2648);
-    SW_ASSERT(srcSpriteP->curFrameP->isFrameLocked, 2649);
-    SW_ASSERT(dstSpriteP->curFrameP->isFrameLocked, 2650);
-    SW_ASSERT(dstSpriteP->curFrameP->frameDepth >= 8, 2651);
-    SW_ASSERT(srcSpriteP->curFrameP->frameDepth == dstSpriteP->curFrameP->frameDepth, 2652);
-
-    sectRect.left = SW_MAX(srcSpriteP->destFrameRect.left, dstSpriteP->destFrameRect.left);
-    sectRect.top = SW_MAX(srcSpriteP->destFrameRect.top, dstSpriteP->destFrameRect.top);
-    sectRect.right = SW_MIN(srcSpriteP->destFrameRect.right, dstSpriteP->destFrameRect.right);
-    sectRect.bottom = SW_MIN(srcSpriteP->destFrameRect.bottom, dstSpriteP->destFrameRect.bottom);
-
-    if (sectRect.right > sectRect.left && sectRect.bottom > sectRect.top) {
-        srcFrameP = srcSpriteP->curFrameP;
-        dstFrameP = dstSpriteP->curFrameP;
-
-        srcSectRect.left = srcFrameP->frameRect.left + (sectRect.left-srcSpriteP->destFrameRect.left);
-        srcSectRect.top = srcFrameP->frameRect.top + (sectRect.top-srcSpriteP->destFrameRect.top);
-        srcSectRect.right = srcFrameP->frameRect.left + (sectRect.right-srcSpriteP->destFrameRect.left);
-        srcSectRect.bottom = srcFrameP->frameRect.top +(sectRect.bottom-srcSpriteP->destFrameRect.top);
-
-        dstSectRect.left = dstFrameP->frameRect.left + (sectRect.left-dstSpriteP->destFrameRect.left);
-        dstSectRect.top = dstFrameP->frameRect.top +(sectRect.top-dstSpriteP->destFrameRect.top);
-        dstSectRect.right = dstFrameP->frameRect.left + (sectRect.right-dstSpriteP->destFrameRect.left);
-        dstSectRect.bottom = dstFrameP->frameRect.top +(sectRect.bottom-dstSpriteP->destFrameRect.top);
-
-        collision = BlitPixieMaskCollisionProc(srcSpriteP, dstSpriteP, &srcSectRect, &dstSectRect);
-    } else
-        collision = false;
-
-    return collision;
-}
-#endif
 
 /* sectRect never reaches the stack -- mwcc keeps all four members in registers because
    nothing takes its address; only srcSectRect and dstSectRect, which are passed by
@@ -1747,28 +887,3 @@ Boolean SWIsSpriteInRect(SpritePtr srcSpriteP, Rect *testRect)
                 > testRect->left);
 }
 
-#ifdef MACBUILD
-/* SWIsSpriteFullyInRect (mac _SWIsSpriteFullyInRect, mac-only). STATE: see the mac gate. */
-// MAC: _SWIsSpriteFullyInRect i386 0x000ac312 ppc 0x000b7348
-Boolean SWIsSpriteFullyInRect(SpritePtr srcSpriteP, Rect* testRect)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2793);
-
-    return ((SW_COLLISION_RECT_TOP(srcSpriteP) >= testRect->top) &&
-            (SW_COLLISION_RECT_BOTTOM(srcSpriteP) <= testRect->bottom) &&
-            (SW_COLLISION_RECT_LEFT(srcSpriteP) >= testRect->left) &&
-            (SW_COLLISION_RECT_RIGHT(srcSpriteP) <= testRect->right));
-}
-
-/* SWIsPointInSprite (mac _SWIsPointInSprite, mac-only). STATE: see the mac gate. */
-// MAC: _SWIsPointInSprite i386 0x000ac3a2 ppc 0x000b7408
-Boolean SWIsPointInSprite(SpritePtr srcSpriteP, Point testPoint)
-{
-    SW_ASSERT(srcSpriteP != NULL, 2810);
-
-    return (testPoint.h >= SW_COLLISION_RECT_LEFT(srcSpriteP)) &&
-            (testPoint.h < SW_COLLISION_RECT_RIGHT(srcSpriteP)) &&
-            (testPoint.v >= SW_COLLISION_RECT_TOP(srcSpriteP)) &&
-            (testPoint.v < SW_COLLISION_RECT_BOTTOM(srcSpriteP));
-}
-#endif

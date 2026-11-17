@@ -348,7 +348,6 @@ extern Boolean SWClipLineWithRect(Point *srcPoint, Point *dstPoint,
 #define SWGetPixRowBytes(pm) GetPixRowBytes(pm)
 #define SWGetPixBitDepth(pm) GetPixDepth(pm)
 #endif
-extern Rect *GetRgnBBox(RgnHandle rgn);
 /* the mac bodies' SW_ASSERT, with the line of the mac file named by the umbrella's SW_FILE */
 #define SW_ASSERT(condition, macLine) if (!(condition)) SWAssertFail(kSWSourceDir SW_FILE, SW_LINE(macLine))
 /* an engine assert site: the 1.1.1 build machine's engine path and line */
@@ -433,16 +432,9 @@ extern void SWCheckIdleSpriteOverlap(SpriteWorldRec *spriteWorldP,
 
 #ifdef MACBUILD
 /* the mac 1.1.1 SpriteWorld's functions the win port never had */
-extern void SWSetFrameMaskRgn(SWFrameRec *srcFrameP, RgnHandle maskRgn);
-extern short SWCreateRegionFromCIconMask(RgnHandle *maskRgn, CIconHandle cIconH);
-extern short SWCreateRegionFromGWorldAndRect(RgnHandle *maskRgn, CGrafPtr maskGWorld, Rect *frameRect);
-extern short SWCreateRegionFromGWorldAndRectStart(CGrafPtr *tempMaskGWorld, short maxWidth, short maxHeight);
-extern short SWCreateRegionFromGWorldAndRectPartial(RgnHandle *maskRgn, CGrafPtr maskGWorld,
-        CGrafPtr tempMaskGWorld, Rect *frameRect);
 extern short SWCreateRegionMaskFromGWorld(CGrafPtr gWorld, Rect *rectP, RgnHandle maskRgn);
 extern void SWSetTransparentColor(RGBColor *color);
 extern RGBColor gSWTransparentColor;
-extern Boolean SWAlignFrameToWindow(SWFrameRec *dstFrameP, SWFrameRec *windowFrameP);
 extern Rect *GetCPortPortRect(CGrafPtr port);
 extern short SWCreateMaskAndFixImage(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP);
 extern void SWCopyGWorlds(CGrafPtr srcGWorldP, CGrafPtr dstGWorldP);
@@ -492,42 +484,6 @@ typedef void (*BlitFuncPtr)(int32_t srcRowBytes, int32_t dstRowBytes, char *srcB
      srcRect.right == dstRect.right)
 extern void BlitPixieClear(unsigned char *dstPixel, uint32_t dstRowBytes,
         unsigned short bytes, unsigned short rows, uint32_t color);
-extern void BlitPixieDoubleRects(unsigned char *src, unsigned char *dst, unsigned short bytesA,
-        unsigned short bytesB, unsigned short rows, BlitPixieOffsetInfo *info);
-extern void BlitPixieMaskColor(uint32_t srcColor, unsigned char *dstPixel,
-        unsigned char *maskPixel, uint32_t srcRowBytes, uint32_t dstRowBytes,
-        unsigned short bytes, unsigned short rows);
-extern Boolean BlitPixieMaskCollision(unsigned char *maskPtr1, unsigned char *maskPtr2,
-        uint32_t rowBytes1, uint32_t rowBytes2, unsigned short bytes,
-        unsigned short rows);
-extern void BlitPixieFlip8Bit(unsigned char *srcPixel, unsigned char *dstPixel,
-        uint32_t srcRowBytes, uint32_t dstRowBytes, unsigned short width,
-        unsigned short height);
-extern void BlitPixieFlip16Bit(unsigned short *srcPixel, unsigned short *dstPixel,
-        uint32_t srcRowBytes, uint32_t dstRowBytes, unsigned short width,
-        unsigned short height);
-extern void BlitPixieFlip32Bit(uint32_t *srcPixel, uint32_t *dstPixel,
-        uint32_t srcRowBytes, uint32_t dstRowBytes, unsigned short width,
-        unsigned short height);
-extern void BlitPixieFlipMask8Bit(unsigned char *srcPixel, unsigned char *dstPixel,
-        unsigned char *maskPixel, uint32_t srcRowBytes, uint32_t dstRowBytes,
-        unsigned short width, unsigned short height);
-extern void BlitPixieFlipMask16Bit(unsigned short *srcPixel, unsigned short *dstPixel,
-        unsigned short *maskPixel, uint32_t srcRowBytes, uint32_t dstRowBytes,
-        unsigned short width, unsigned short height);
-extern void BlitPixieFlipMask32Bit(uint32_t *srcPixel, uint32_t *dstPixel,
-        uint32_t *maskPixel, uint32_t srcRowBytes, uint32_t dstRowBytes,
-        unsigned short width, unsigned short height);
-extern Boolean BlitPixieFlipMaskCollision(unsigned char *maskPtr1, unsigned char *maskPtr2,
-        uint32_t rowBytes1, uint32_t rowBytes2, unsigned short bytes,
-        unsigned short rows);
-extern void BlitPixieFlipMaskColor(uint32_t srcColor, unsigned char *dstPixel,
-        unsigned char *maskPixel, uint32_t srcRowBytes, uint32_t dstRowBytes,
-        unsigned short bytes, unsigned short rows);
-extern void BlitPixieRLEColor(unsigned char *srcTokens, uint32_t srcColor,
-        unsigned char *dstPixel, uint32_t dstRowBytes);
-extern void BlitPixieRLEColorClipped(unsigned char *srcTokens, uint32_t srcColor,
-        unsigned char *dstPixel, uint32_t dstRowBytes, Rect *dstClipRect);
 typedef struct StarArray {
     short horizLoc;
     short vertLoc;
@@ -547,41 +503,10 @@ typedef struct StarArray {
 #define SW_NIBBLESET(p,n,c) (p)[n >> 1] = (((c) & 0x0F) << (((~n) & 1) << 2)) | \
         ((p)[n >> 1] & (0x0F << ((n & 1) << 2)))
 extern void SWGetColorFromValue(FramePtr dstFrameP, RGBColor *color, uint32_t pixelValue);
-extern void SWSetPixel(FramePtr dstFrameP, short x, short y, uint32_t color);
-extern uint32_t SWGetPixel(FramePtr srcFrameP, short x, short y);
-extern void SWAnimateStarField(SpriteWorldPtr spriteWorldP, StarArray *starArray, short numStars,
-        uint32_t backColor);
 extern void SWCopyBitsDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieClearDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieMaskColorDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieRLEColorDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieFlipRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieFlipMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieFlipMaskColorDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieCompiledSpriteDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieAllBitRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieAllBitMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern void BlitPixieAllBitPartialMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, Rect *srcRect, Rect *dstRect);
-extern Boolean BlitPixieMaskCollisionProc(SpritePtr srcSpriteP, SpritePtr dstSpriteP, Rect *srcRect, Rect *dstRect);
-extern Boolean BlitPixieFlipMaskCollisionProc(SpritePtr srcSpriteP, SpritePtr dstSpriteP, Rect *srcRect, Rect *dstRect);
 extern short SWFlagRectAsChanged(SpriteWorldPtr spriteWorldP, Rect *theChangedRect);
 
 /* SpriteLayer.c's functions the win port never had */
-extern void SWRemoveAllSpritesFromLayer(SpriteLayerPtr srcSpriteLayerP);
-extern void SWDisposeAllSpritesInLayer(SpriteLayerPtr spriteLayerP);
-extern short SWCountNumSpritesInLayer(SpriteLayerPtr spriteLayerP);
-extern OSErr SWSwapSprite(SpritePtr srcSpriteP, SpritePtr dstSpriteP);
-extern OSErr SWInsertSpriteAfterSprite(SpritePtr newSpriteP, SpritePtr dstSpriteP);
-extern OSErr SWInsertSpriteBeforeSprite(SpritePtr newSpriteP, SpritePtr dstSpriteP);
-extern SpritePtr SWGetNextSprite(SpriteLayerPtr spriteLayerP, SpritePtr curSpriteP);
-extern SpritePtr SWGetPreviousSprite(SpriteLayerPtr spriteLayerP, SpritePtr curSpriteP);
-extern void SWSortSpriteLayer(SpriteLayerPtr theLayer);
-extern void SWPauseSpriteLayer(SpriteLayerPtr spriteLayerP);
-extern void SWUnpauseSpriteLayer(SpriteLayerPtr spriteLayerP);
-extern void SWSetLayerAsNonScrolling(SpriteLayerPtr spriteLayerP, Boolean layerIsNonScrolling);
-extern SpritePtr SWFindSpriteByPoint(SpriteLayerPtr spriteLayerP, SpritePtr startSpriteP,
-                                     Point testPoint);
-extern Boolean SWIsPointInSprite(SpritePtr srcSpriteP, Point testPoint);
 
 /* Sprite.c's types and functions the win port never had */
 typedef struct RectArray {
@@ -606,115 +531,19 @@ typedef enum {
     (spriteP->destFrameRect.right - spriteP->curFrameP->collisionInset.right)
 
 extern RgnHandle gSWCollisionSpareRgn;
-extern RgnHandle gSWCollisionSectRgn;
 
-extern OSErr SWCloneSpriteFromTile(SpriteWorldPtr spriteWorldP, SpritePtr *newSpriteP,
-        void *spriteStorageP, short firstTileID, short lastTileID);
-extern void SWRemoveSpriteFromAnimation(SpriteWorldPtr spriteWorldP, SpritePtr spriteP,
-        Boolean disposeOfSprite);
-extern void SWFlipSprite(SpritePtr srcSpriteP, FlipType direction);
-extern OSErr SWInsertFrame(SpritePtr srcSpriteP, FramePtr newFrameP, int32_t frameIndex);
-extern void SWRemoveFrame(SpritePtr srcSpriteP, FramePtr oldFrameP);
-extern void SWStdSpriteColorDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect,
-        Rect *dstRect);
-extern OSErr SWSetCurrentFrame(SpritePtr srcSpriteP, FramePtr newFrameP);
-extern void SWSetSpriteColor(SpritePtr srcSpriteP, RGBColor *color);
-extern void SWSetSpriteFlippedMode(SpritePtr srcSpriteP, Boolean flippedHorizontal,
-        Boolean flippedVertical);
-extern void SWSetSpriteFrameAdvance(SpritePtr srcSpriteP, short frameAdvance);
-extern void SWSetSpriteFrameAdvanceMode(SpritePtr srcSpriteP, AdvanceType advanceMode);
-extern void SWSetSpriteFrameTime(SpritePtr srcSpriteP, int32_t timeInterval);
-extern void SWSetSpriteFrameProc(SpritePtr srcSpriteP, FrameProcPtr frameProc);
-extern void SWSetSpriteMoveBounds(SpritePtr srcSpriteP, Rect *moveBoundsRect);
-extern void SWSetSpriteMoveDelta(SpritePtr srcSpriteP, short horizDelta, short vertDelta);
-extern void SWSetSpriteMoveTime(SpritePtr srcSpriteP, int32_t timeInterval);
-extern void SWSetSpriteMoveProc(SpritePtr srcSpriteP, MoveProcPtr moveProc);
-extern short SWGetSpriteVertLoc(SpritePtr srcSpriteP);
-extern short SWGetSpriteHorizLoc(SpritePtr srcSpriteP);
-extern void SWMoveSprite(SpritePtr srcSpriteP, short horizLoc, short vertLoc);
-extern void SWOffsetSprite(SpritePtr srcSpriteP, short horizOffset, short vertOffset);
-extern Boolean SWBounceSprite(SpritePtr srcSpriteP);
-extern Boolean SWWrapSprite(SpritePtr srcSpriteP);
-extern Boolean SWRegionCollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP);
-extern Boolean SWPixelCollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP);
-extern Boolean SWIsSpriteFullyInRect(SpritePtr srcSpriteP, Rect *testRect);
-extern short SWCreateFrameFromPictResource(SpriteWorldPtr destSpriteWorldP, FramePtr *newFrameP,
-        short pictResID, short maskResID, MaskType maskType);
-extern OSErr SWUpdateFrameMasks(FramePtr srcFrameP);
 
 /* Scrolling.c (mac only) */
 typedef void (*WorldMoveProcPtr)(SpriteWorldPtr spriteWorldP, SpritePtr followSpriteP);
 typedef void (*DoubleDrawProcPtr)(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRectA,
                                   Rect *dstRectA, Rect *srcRectB, Rect *dstRectB);
-extern void BlitPixieDoubleRectDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRectA,
-        Rect *dstRectA, Rect *srcRectB, Rect *dstRectB);
-extern void SWUpdateScrollingWindow(SpriteWorldPtr spriteWorldP);
-extern void SWUpdateScrollingSpriteWorld(SpriteWorldPtr spriteWorldP, Boolean updateWindow);
-extern void SWProcessScrollingSpriteWorld(SpriteWorldPtr spriteWorldP);
-extern void SWAnimateScrollingSpriteWorld(SpriteWorldPtr spriteWorldP);
-extern void SWFastAnimateScrollingSpriteWorld(SpriteWorldPtr spriteWorldP);
-extern void SWUnwrapWorkAreaToBackground(SpriteWorldPtr spriteWorldP);
-extern void SWDrawWrappedSprite(SpritePtr srcSpriteP, FramePtr dstFrameP, Rect *srcRect,
-                                Rect *dstRect);
-extern void SWEraseWrappedSprite(SpriteWorldPtr spriteWorldP, Rect *dstRect);
-extern void SWWrapWorkAreaToFrame(SpriteWorldPtr spriteWorldP, FramePtr dstFrameP, Rect *dstRectP);
-extern void SWWrapRectToScreen(SpriteWorldPtr spriteWorldP, Rect *srcRectP);
-extern void SWCheckWrappedIdleSpriteOverlap(SpriteWorldPtr spriteWorldP, SpritePtr idleSpriteP,
-                                            SpritePtr headActiveSpriteP);
-extern void SWCheckWrappedIdleSpritesWithTiles(SpriteWorldPtr spriteWorldP,
-                                               SpritePtr headIdleSpriteP);
-extern void SWCheckWrappedIdleSpritesWithRects(SpriteWorldPtr spriteWorldP,
-                                               SpritePtr headIdleSpriteP);
-extern void SWSetScrollingWorldMoveBounds(SpriteWorldPtr spriteWorldP, Rect *scrollRectMoveBounds);
-extern void SWSetScrollingWorldMoveProc(SpriteWorldPtr spriteWorldP,
-                                        WorldMoveProcPtr worldMoveProcP, SpritePtr followSpriteP);
-extern void SWSetDoubleRectDrawProc(SpriteWorldPtr spriteWorldP,
-                                    DoubleDrawProcPtr doubleRectDrawProc);
-extern void SWSetSpriteWorldScrollDelta(SpriteWorldPtr spriteWorldP, short horizDelta,
-                                        short vertDelta);
-extern void SWMoveVisScrollRect(SpriteWorldPtr spriteWorldP, short horizPos, short vertPos);
-extern void SWOffsetVisScrollRect(SpriteWorldPtr spriteWorldP, short horizOffset,
-                                  short vertOffset);
-extern void SWResizeVisScrollRect(SpriteWorldPtr spriteWorldP, short horizSize, short vertSize);
-extern void SWCalculateOffscreenScrollRect(SpriteWorldPtr spriteWorldP);
 
 /* SpriteWorld.c's functions the win port never had */
 typedef void (*CleanUpCallBackPtr)(void);
 #define SW_RECT_WIDTH(theRect)  (theRect.right - theRect.left)
 #define SW_RECT_HEIGHT(theRect) (theRect.bottom - theRect.top)
-extern SpriteWorldPtr gSWCleanUpSpriteWorldP;
 extern CleanUpCallBackPtr gSWCleanUpCallBackP;
-extern Boolean gSWmmuMode;
 extern Rect mainDeviceInitBounds;
-#ifdef MACBUILD
-extern void BlitPixieGetProcessorType(void);
-#else
-extern short BlitPixieGetProcessorType(void);
-#endif
-extern void SWDisposeSpriteWorld(SpriteWorldPtr *spriteWorldPP);
-extern void SWSwapSpriteLayer(SpriteWorldPtr spriteWorldP, SpriteLayerPtr srcSpriteLayerP,
-        SpriteLayerPtr dstSpriteLayerP);
-extern SpriteLayerPtr SWGetNextSpriteLayer(SpriteWorldPtr spriteWorldP,
-        SpriteLayerPtr curSpriteLayerP);
-extern void SWUnlockSpriteWorld(SpriteWorldPtr spriteWorldP);
-extern OSErr SWSetSpriteWorldOffscreenDrawProc(SpriteWorldPtr spriteWorldP, DrawProcPtr drawProc);
-extern void SWStdWorldClearDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect,
-        Rect *dstRect);
-extern void SWInterlacedCopyBitsDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect,
-        Rect *dstRect);
-extern void SWCopyBackgroundToWorkArea(SpriteWorldPtr spriteWorldP);
-extern OSErr SWChangeWorldRect(SpriteWorldPtr spriteWorldP, Rect *worldRect,
-        Boolean changeOffscreenAreas);
-extern void SWRestoreWorldRect(SpriteWorldPtr spriteWorldP);
-extern void SWUpdateWindow(SpriteWorldPtr spriteWorldP);
-extern void SWSetCleanUpSpriteWorld(SpriteWorldPtr spriteWorldP);
-extern void SWSetCleanUpFunction(CleanUpCallBackPtr callBackP);
-extern uint32_t SWGetSpriteWorldVersion(void);
-extern void SWProcessNonScrollingLayers(SpriteWorldPtr spriteWorldP);
-extern void SWProcessSpriteLayer(SpriteWorldPtr spriteWorldP, SpriteLayerPtr curSpriteLayerP);
-extern void SWCheckIdleSpritesWithTiles(SpriteWorldPtr spriteWorldP, SpritePtr headIdleSpriteP);
-extern void SWCheckIdleSpritesWithRects(SpriteWorldPtr spriteWorldP, SpritePtr headIdleSpriteP);
-extern short SWFlagScrollingRectAsChanged(SpriteWorldPtr spriteWorldP, Rect *theChangedRect);
 
 /* Tiling.c (mac only) */
 #define kNumTileLayers      10
@@ -744,59 +573,6 @@ typedef void (*TileChangeProcPtr)(SpriteWorldPtr spriteWorldP);
 typedef void (*TileRectDrawProcPtr)(SpriteWorldPtr spriteWorldP, Rect *updateRectP,
                                     Boolean optimizingOn);
 
-extern OSErr SWInitTiling(SpriteWorldPtr spriteWorldP, short tileHeight, short tileWidth,
-                          short maxNumTiles);
-extern void SWExitTiling(SpriteWorldPtr spriteWorldP);
-extern OSErr SWInitTilingCache(SpriteWorldPtr spriteWorldP);
-extern OSErr SWCreateTileMap(TileMapStructPtr *tileMapStructPP, short numTileMapRows,
-                             short numTileMapCols);
-extern void SWDisposeTileMap(TileMapStructPtr *tileMapStructPP);
-extern void SWLockTileMap(TileMapStructPtr tileMapStructP);
-extern void SWUnlockTileMap(TileMapStructPtr tileMapStructP);
-extern void SWInstallTileMap(SpriteWorldPtr spriteWorldP, TileMapStructPtr tileMapStructP,
-                             short tileLayer);
-extern OSErr SWLoadTileMap(ResType resType, TileMapStructPtr *tileMapStructPP, short resourceID);
-extern OSErr SWSaveTileMap(ResType resType, TileMapStructPtr tileMapStructP, short destResID);
-extern OSErr SWResizeTileMap(TileMapStructPtr tileMapStructP, short numNewTileMapRows,
-                             short numNewTileMapCols);
-extern OSErr SWLoadTileFromCicnResource(SpriteWorldPtr spriteWorldP, short tileID, short cicnID,
-                                        MaskType maskType, Boolean maskIsPartialMask);
-extern OSErr SWLoadTilesFromPictResource(SpriteWorldPtr spriteWorldP, short startTileID,
-        short endTileID, short pictResID, short maskResID, MaskType maskType,
-        Boolean maskIsPartialMask, short horizBorderWidth, short vertBorderHeight);
-extern void SWDisposeTile(SpriteWorldPtr spriteWorldP, short tileID);
-extern void SWLockTiles(SpriteWorldPtr spriteWorldP);
-extern void SWUnlockTiles(SpriteWorldPtr spriteWorldP);
-extern OSErr SWCreateExtraBackFrame(SpriteWorldPtr spriteWorldP, Rect *frameRect);
-extern void SWDisposeExtraBackFrame(SpriteWorldPtr spriteWorldP);
-extern OSErr SWSetPortToExtraBackFrame(SpriteWorldPtr spriteWorldP);
-extern void SWSetTilingOn(SpriteWorldPtr spriteWorldP, Boolean tilingIsOn);
-extern OSErr SWChangeTileSize(SpriteWorldPtr spriteWorldP, short tileHeight, short tileWidth);
-extern void SWSetSpriteLayerUnderTileLayer(SpriteLayerPtr spriteLayerP, short tileLayer);
-extern OSErr SWSetTileMaskDrawProc(SpriteWorldPtr spriteWorldP, DrawProcPtr drawProc);
-extern OSErr SWSetPartialMaskDrawProc(SpriteWorldPtr spriteWorldP, DrawProcPtr drawProc);
-extern void SWSetTileChangeProc(SpriteWorldPtr spriteWorldP, TileChangeProcPtr tileChangeProc);
-extern void SWSetTileMaskSolidMode(SpriteWorldPtr spriteWorldP, short tileID, Boolean isSolid);
-extern OSErr SWDrawTilesInBackground(SpriteWorldPtr spriteWorldP);
-extern void SWDrawTile(SpriteWorldPtr spriteWorldP, short dstTileLayer, short tileRow,
-                       short tileCol, short tileID);
-extern void SWDrawTilesInRect(SpriteWorldPtr spriteWorldP, Rect *updateRectP, Boolean faster);
-extern void SWDrawTileLayersInRect(SpriteWorldPtr spriteWorldP, Rect *updateRectP,
-                                   Boolean optimizingOn);
-extern void SWDrawTilesAboveSprite(SpriteWorldPtr spriteWorldP, Rect *updateRectP,
-                                   short startLayer);
-extern void SWResetTilingCache(SpriteWorldPtr spriteWorldP);
-extern void SWAddChangedRect(SpriteWorldPtr spriteWorldP, Rect *changedRectP);
-extern void SWChangeTileImage(SpriteWorldPtr spriteWorldP, short tileID, short currentFrame);
-extern void SWUpdateTileOnScreen(SpriteWorldPtr spriteWorldP, short tileID);
-extern void SWResetCurrentTileImages(SpriteWorldPtr spriteWorldP);
-extern short SWReturnTileUnderPixel(SpriteWorldPtr spriteWorldP, short tileLayer,
-                                    short pixelCol, short pixelRow);
-extern Boolean SWCheckSpriteWithTiles(SpriteWorldPtr spriteWorldP, SpritePtr srcSpriteP,
-        SWTileSearchType searchType, Rect *insetRectP, short startTileLayer, short endTileLayer,
-        short firstTileID, short lastTileID, Boolean fixPosition);
-extern void SWWrapRectToWorkArea(SpriteWorldPtr spriteWorldP, Rect *dstRectP);
-extern void SWWrapRectFromExtraBackFrame(SpriteWorldPtr spriteWorldP, Rect *dstRectP);
 #define topLeft(r)  (((Point *)&(r))[0])
 #define botRight(r) (((Point *)&(r))[1])
 #endif

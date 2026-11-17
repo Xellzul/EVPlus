@@ -38,25 +38,8 @@ static int32_t scrollOffsetVert;
 // MAC: _RestoreControlStrip i386 0x000c95d6 ppc 0x000d55dc
 void RestoreControlStrip(void)
 {
-#if TARGET_API_MAC_OS8
-    if (gControlStripWasVisible) {
-        gControlStripWasVisible = false;
-        SBShowHideControlStrip(true);
-    }
-#endif
 }
 
-#if TARGET_API_MAC_OS8
-Boolean SBIsControlStripVisible(void)
-{
-    return CallUniversalProc(GetToolTrapAddress(_ControlStripDispatch), 0xd8, 0);
-}
-
-void SBShowHideControlStrip(Boolean showIt)
-{
-    CallUniversalProc(GetToolTrapAddress(_ControlStripDispatch), 0x1c8, 1, showIt);
-}
-#endif
 #endif
 
 #ifndef MAC_GAMEUTILS_ONLY
@@ -223,63 +206,6 @@ void EraseParticlesOffscreen(SpriteWorldPtr spriteWorldP)
     else                                                                        \
         *SW_PIXELPTR32(frame, x, y) = c;
 
-#if V111
-#ifdef MACBUILD
-/* EraseParticlesScrollingOffscreen (mac _EraseParticlesScrollingOffscreen, mac-only). STATE: see the mac gate. */
-// MAC: _EraseParticlesScrollingOffscreen i386 0x000c5403 ppc 0x000d16b4
-void	EraseParticlesScrollingOffscreen( SpriteWorldPtr spriteWorldP )
-{
-	Particle	*particlePtr;
-	FramePtr	workFrameP = spriteWorldP->workFrameP,
-				backFrameP = spriteWorldP->backFrameP;
-	int			visBoundsLeft, visBoundsRight, visBoundsTop, visBoundsBottom;
-	int			horizLoc, vertLoc;
-	int32_t		index, count = gLastElementInUse;
-
-	SW_ASSERT(spriteWorldP != NULL, 234);
-	SW_ASSERT(spriteWorldP->workFrameP != NULL && workFrameP->isFrameLocked, 235);
-	SW_ASSERT(workFrameP->frameDepth >= 8, 236);
-	SW_ASSERT(gParticlesInitialized == true, 237);
-
-	visBoundsLeft = spriteWorldP->oldVisScrollRect.left;
-	visBoundsRight = spriteWorldP->oldVisScrollRect.right;
-	visBoundsTop = spriteWorldP->oldVisScrollRect.top;
-	visBoundsBottom = spriteWorldP->oldVisScrollRect.bottom;
-	FOREACH_DEPTH_DO
-	(
-		spriteWorldP->pixelDepth,
-		for (index = 0, particlePtr = gParticleArray; index <= count; index++, particlePtr++)
-		{
-			if (particlePtr->lifeRemaining>0)
-			{
-				horizLoc = (particlePtr->oldHorizLoc >> 8);
-				vertLoc = (particlePtr->oldVertLoc >> 8);
-
-				if ((horizLoc<visBoundsRight)&&(horizLoc>visBoundsLeft)&&
-					(vertLoc<visBoundsBottom)&&(vertLoc>visBoundsTop))
-				{
-					horizLoc -= spriteWorldP->backRect.right * (spriteWorldP->oldVisScrollRect.left / spriteWorldP->backRect.right);
-					vertLoc -= spriteWorldP->backRect.bottom * (spriteWorldP->oldVisScrollRect.top / spriteWorldP->backRect.bottom);
-
-					if (horizLoc >=  workFrameP->frameRect.right)
-						horizLoc -= workFrameP->frameRect.right;
-					else if (horizLoc < workFrameP->frameRect.left)
-						horizLoc += workFrameP->frameRect.right;
-
-					if (vertLoc >= workFrameP->frameRect.bottom)
-						vertLoc -= workFrameP->frameRect.bottom;
-					else if (vertLoc < workFrameP->frameRect.top)
-						vertLoc += workFrameP->frameRect.bottom;
-
-					SET_DEPTH_PIXEL( workFrameP, horizLoc, vertLoc ,
-						GET_DEPTH_PIXEL( backFrameP, horizLoc, vertLoc ) )
-				}
-			}
-		}
-	)
-}
-#endif
-#endif
 
 /* DrawParticlesOffscreen (mac _DrawParticlesOffscreen). STATE: MATCH, byte-identical.
    OPEN: none */
@@ -344,59 +270,6 @@ void DrawParticlesOffscreen(SpriteWorldPtr spriteWorldP)
     )
 }
 
-#ifdef MACBUILD
-/* DrawParticlesScrollingOffscreen (mac _DrawParticlesScrollingOffscreen, mac-only). STATE: see the mac gate. */
-// MAC: _DrawParticlesScrollingOffscreen i386 0x000c5cf9 ppc 0x000d1f34
-void	DrawParticlesScrollingOffscreen( SpriteWorldPtr spriteWorldP )
-{
-	Particle	*particlePtr;
-	FramePtr	workFrameP = spriteWorldP->workFrameP;
-	int			visBoundsLeft, visBoundsRight, visBoundsTop, visBoundsBottom;
-	int			horizLoc, vertLoc;
-	int32_t		index, count = gLastElementInUse;
-
-	SW_ASSERT(spriteWorldP != NULL, 372);
-	SW_ASSERT(workFrameP != NULL && workFrameP->isFrameLocked, 373);
-	SW_ASSERT(workFrameP->frameDepth >= 8, 374);
-	SW_ASSERT(gParticlesInitialized == true, 375);
-
-	visBoundsLeft = spriteWorldP->visScrollRect.left;
-	visBoundsRight = spriteWorldP->visScrollRect.right;
-	visBoundsTop = spriteWorldP->visScrollRect.top;
-	visBoundsBottom = spriteWorldP->visScrollRect.bottom;
-	FOREACH_DEPTH_DO
-	(
-		spriteWorldP->pixelDepth,
-		for (index = 0, particlePtr = gParticleArray; index <= count; index++, particlePtr++)
-		{
-			if (particlePtr->lifeRemaining>1)
-			{
-				horizLoc = (particlePtr->horizLoc >> 8);
-				vertLoc = (particlePtr->vertLoc >> 8);
-
-				if ((horizLoc<visBoundsRight)&&(horizLoc>visBoundsLeft)&&
-					(vertLoc<visBoundsBottom)&&(vertLoc>visBoundsTop))
-				{
-					horizLoc -= spriteWorldP->horizScrollRectOffset;
-					vertLoc -= spriteWorldP->vertScrollRectOffset;
-
-					if (horizLoc >=  workFrameP->frameRect.right)
-						horizLoc -= workFrameP->frameRect.right;
-					else if (horizLoc < workFrameP->frameRect.left)
-						horizLoc += workFrameP->frameRect.right;
-
-					if (vertLoc >= workFrameP->frameRect.bottom)
-						vertLoc -= workFrameP->frameRect.bottom;
-					else if (vertLoc < workFrameP->frameRect.top)
-						vertLoc += workFrameP->frameRect.bottom;
-
-					SET_DEPTH_PIXEL( workFrameP, horizLoc, vertLoc, particlePtr->color );
-				}
-			}
-		}
-	)
-}
-#endif
 
 /* UpdateParticlesInWindow (mac _UpdateParticlesInWindow). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x0047c3a0
