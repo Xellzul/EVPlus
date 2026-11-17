@@ -7,13 +7,10 @@
 #ifndef BURGERTYPES_H
 #define BURGERTYPES_H
 #include "int32.h"
-/* MSL's stdio.h pulls these in behind the scenes; other C libraries (mingw/clang) do not. Kept off for MW so
-   its output stays identical (real prototypes change MW's inlining and register choice in ~17 files) */
-#ifndef __MWERKS__
+/* the original MSL's stdio.h pulled these in behind the scenes; mingw's does not */
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#endif
 
 #ifdef MAC1010
 #define AT_STATIC static    /* the Mac's AmbrosiaTools keeps these private; win's object names them */

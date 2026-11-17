@@ -342,9 +342,6 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
             for (n = 0; n < kNameFieldCount; n++) {
                 /* SHORT here: the exe compares the length as 16-bit signed (cmp ax / jle);
                    burger.h's strlen macro turns this into a block-scope FastStrLen */
-#if !defined(MACBUILD) && defined(__MWERKS__)
-                extern short strlen(const char *s);      /* 0x004eedb0 */
-#endif
 
                 GetDialogItem(dlg, n + kItemFirstNameField, &type, (Handle *)&h, &box);
                 GetDialogItemText((Handle)h, savedName);

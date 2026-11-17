@@ -170,14 +170,12 @@ extern short GetGDeviceDepth(void *theGDH);                            /* 0x0047
 extern void MoveParticles(void);                                       /* 0x0047c800 */
 extern SpriteRec *gSWCurrentSpriteBeingDrawn;            /* 0x00870da8 */
 extern SpriteWorldRec *gSWCurrentSpriteWorld;            /* 0x008706f0 */
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 #ifndef MACBUILD
 extern unsigned short SWMaskedRGBValue;                  /* 0x007d0500 */
 extern short gSWStickyError;                             /* 0x007d0504 */
 #endif
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 /* --- the rect blitters: whole-rect copies, src first --- */
 extern void BlitPixieRect(unsigned char *srcPixels, unsigned char *dstPixels,
@@ -256,7 +254,6 @@ extern int32_t GetMainDevice(void);                         /* 0x004f2a50 */
 #endif
 
 /* --- the blitters' shared state --- */
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern uint32_t alpha;                              /* 0x007ceac8 */
 extern uint32_t alphaR;                             /* 0x007ceacc */
@@ -272,7 +269,6 @@ extern short scaleB;                                     /* 0x007ceaec */
 extern uint32_t biasColor;                          /* 0x007ceaf0 */
 extern unsigned char *alphaTable[5][256];                /* 0x007ceaf4 */
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 /* --- translucent blends (mac _Trans8Bit/_Trans16Bit, inlined in the win build) --- */
 #if defined(MACBUILD) && (!defined(MAC1010) || defined(SW_DEFINES_TRANS))
@@ -299,14 +295,11 @@ static inline unsigned short Trans16Bit(uint32_t src, uint32_t dst, uint32_t alp
     return ((blended >> 5) & 0x7c1f) | ((blended >> 20) & 0x3e0);
 }
 #endif
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 #ifndef MACBUILD
 extern unsigned short SWTransparentRGBValue;             /* 0x007d0502 */
 #endif
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 /* --- lines --- */
 extern void DrawTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,

@@ -14,11 +14,9 @@ extern "C" {
 #endif
 
 /* the stellar the player is docked at, or landed on */
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern SpobRecord *dockedPort;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern Boolean AddSystemInfluenceToMap(short sys, Rect *r);
 extern void CompactHyperRoute(void);
@@ -30,12 +28,10 @@ extern void DrawMapInFloatingFrame(void);
 extern void ColorCodeShip(ShipObj *ship, RGBColor *color);
 extern void ColorCodeStellar(SpobRecord *spob, RGBColor *color);
 extern void ColorCodeSystem(short sys, RGBColor *color);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short nagCount;
 extern void *mapCursorSwitchRgn;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void DisplayMessage(short id);
 extern void DisposeDialogs(void);
 extern void DoSystemMap(void);
@@ -79,16 +75,13 @@ extern Boolean SystemHasService(short sysID, short kind);
 extern Boolean SystemIsInhabited(short sys);
 extern Boolean SystemTradesGoods(short sysID, short commodity);
 extern Boolean ValidAuxShipSystem(short sys, short mission);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean canZoomIn;
 extern Boolean canZoomOut;
 #ifndef MACBUILD
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern RGBColor *cyanColor;
 #endif
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean didUpdateMap;
 extern short maxAutoExploreJumps;
@@ -112,9 +105,7 @@ extern PicHandle mapBackgroundPic;
 extern PicHandle nebulaPic[32][7];
 extern Boolean doneFlag[];
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern double mapZoom;
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short missionSyst[];
 extern short nextInfluenceSyst;
@@ -122,14 +113,10 @@ extern PictCacheSlot iconCache[128];
 extern short selSystem;
 extern Boolean showClearRouteButton;
 EXTERN_CPP_END
-#pragma cplusplus reset
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern DialogPtr shipDescDialog;
 extern DialogPtr newsDialog;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern Boolean GovtAllies(short a, short b);
 extern Boolean GovtEnemies(short a, short b);

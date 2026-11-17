@@ -13,7 +13,6 @@ extern "C" {
 #endif
 
 extern void CheckForPiratedCodes(void);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Settings settings;
 extern short recentActivatedRank;
@@ -53,7 +52,6 @@ extern Boolean escortMenuFlag;
 extern Boolean escortCommandFlag[];
 extern short lastEscortCount;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void DrawCombatRatingString(void);
 extern void DrawLegalStatusString(short curSystem);
 extern void DumpPilotLog(void);
@@ -121,7 +119,6 @@ extern void ShowAlert(const char *title, const char *message);
 extern void SlapWithPenalty(short sys, short govt, short kind,
                             short mission);
 extern short WritePilotData(short stellar);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short adviceRandom;
 extern short alertSpritePending;
@@ -186,10 +183,8 @@ extern float weapTargetExpand;
 extern Boolean escortGroupFlag[5];
 extern short newKeyPrefs[40];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern Boolean ShipIsInertialess(ShipObj *ship);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern double gSpeedMult;
 extern unsigned char shipName[256];
@@ -197,7 +192,6 @@ extern PilotRec2 **altPlayerFileHand;
 extern PrefsRecord **gPrefsHandle;
 extern PilotRec **playerFileHand;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern short SavePilotFile(short stellar);
 extern void HandlePlayerCommunication(void);
@@ -209,11 +203,9 @@ extern void DeletePilotFile(const char *name);
 #endif
 extern void ActivateRank(char *rank);
 extern void DeactivateRank(char *rank);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short playerRecord[0x800];
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void ResetPlayer(Boolean newPilot);
 extern void ResetPlayerRecord(Boolean newPilot);
 

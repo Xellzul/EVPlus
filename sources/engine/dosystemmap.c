@@ -31,13 +31,9 @@ EXTERN_C_BEGIN
 
 /* mapZoom and floatingMapZoom: one .data run, in address order. */
 double mapZoom = 0.5625;                         /* 0x005759d8 (mac name) */
-#ifdef __MWERKS__
-double floatingMapZoom = 0.5625;                 /* 0x005759e0 (see mapZoom above) */
-#else
-EXTERN_C_END   /* stellar.h declares it with C++ linkage, which MW lets a C block define */
+EXTERN_C_END   /* stellar.h declares it with C++ linkage */
 double floatingMapZoom = 0.5625;                 /* 0x005759e0 (see mapZoom above) */
 EXTERN_C_BEGIN
-#endif
 
 
 #define kMapDlogID     2000

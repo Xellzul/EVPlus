@@ -912,10 +912,6 @@ extern void KillSoundPlayer(void);
 extern void JoystickDestroy(void);
 extern void Fatal(const char *fmt, ...);
 extern void NonFatal(const char *fmt, ...);
-#if defined(__MWERKS__) && !defined(MACBUILD) && (!defined(__cplusplus) || !defined(_MSL_CSTRING))
-extern void *memmove(void *dst, const void *src, unsigned int n);
-extern void *memcpy(void *dst, const void *src, unsigned int n);
-#endif
 
 /* Burger.h maps strlen onto the library's word-at-a-time FastStrLen (burgerpow2.c) */
 extern Word FastStrLen(const char *Input);
@@ -941,16 +937,6 @@ extern short OpenEVPlugins(FSRef folder, OSType type);
 #else
 extern short OpenEVPlugins(const char *path, const char *ext,
                            FILE *log);
-#endif
-#if defined(__MWERKS__) && !defined(MACBUILD) && !defined(__cplusplus)
-extern int fclose(FILE *file);
-extern unsigned int fread(void *ptr, unsigned int size, unsigned int count,
-                          FILE *stream);
-extern unsigned int fwrite(const void *ptr, unsigned int size, unsigned int count,
-                           FILE *stream);
-#endif
-#if defined(__MWERKS__) && !defined(MACBUILD) && (!defined(__cplusplus) || !defined(_MSL_CSTDLIB))
-extern int atexit(void (*fn)(void));
 #endif
 extern void ImageDestroy(struct Image_t *ImagePtr);
 extern void ImageDelete(struct Image_t *ImagePtr);

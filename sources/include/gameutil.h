@@ -15,17 +15,13 @@ extern void DateToLongString(DateTimeRec date, char *out);
 extern void DateToMedString(DateTimeRec date, char *out);
 extern void DrawCommaNumber(int32_t value);
 extern void StrcatCommaNumber(int32_t value, char *dst);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 EXTERN_CPP_END
-#pragma cplusplus reset
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern unsigned char shieldString[6][0x100];
 extern unsigned char armorString[3][0x100];
 extern unsigned char newbieString[10][0x100];
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern Boolean LoadPluginString(short id, void *dst);
 extern void AdjustHandleSize(Handle h, int32_t newSize);
 extern void PutSpriteInLayer(struct SpriteRec *sprite,
@@ -67,7 +63,6 @@ extern ResRecord *nv_FindResourceRecord(uint32_t type, short id);
 extern Boolean ShipIsDerelict(ShipObj *ship);
 extern short StellarNumHyperLinks(SpobRecord *spob);
 extern void TrimResourceName(unsigned char *name);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Handle colorFileHand;
 extern RGBColor escortMenuColor;
@@ -99,7 +94,6 @@ extern Handle systemFileHand;
 extern Handle weaponFileHand;
 extern short jumpSoundLength[2];
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern short pstrcmp(const unsigned char *a, const unsigned char *b);
 
 extern void pstrcpy(unsigned char *dst, const unsigned char *src);

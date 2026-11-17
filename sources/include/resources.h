@@ -181,11 +181,7 @@ typedef struct ShipRec {
 #define kResUnloaded        9999
 
 /* the resource records as stored (Nova Bible layouts) */
-#ifdef __MWERKS__
-#pragma options align=mac68k
-#else
 #pragma pack(push, 2)
-#endif
 
 typedef struct SpinRec {
     short spriteID;
@@ -728,11 +724,7 @@ typedef struct DescRes {
     unsigned char text[1];
 } DescRes;
 
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 
 /* WeapRecord.guidance, the Nova Bible's wëap Guidance values */
 #define kGuidanceUnguided   (-1)
@@ -864,12 +856,9 @@ typedef struct NebuRecord {
     char activeOn[255];
     char onExplore[255];
 } NebuRecord;
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern NebuRecord *nebulaData;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 typedef struct DudeRecord {
     short aiType;
@@ -881,12 +870,9 @@ typedef struct DudeRecord {
     Boolean loaded;
     Boolean pad49;
 } DudeRecord;
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern DudeRecord *dudeData;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 typedef struct JunkRecord {
     short soldAt[8];
@@ -901,13 +887,10 @@ typedef struct JunkRecord {
     char buyOn[255];
     char sellOn[255];
 } JunkRecord;
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern JunkRecord *junkData;
 extern BoomRecord *explodType;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 /* rank runtime record, stride 0x120 in the rankData array. */
 typedef struct RankRecord {
@@ -926,12 +909,9 @@ typedef struct RankRecord {
     char convName[64];
     char shortName[66];
 } RankRecord;
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern RankRecord *rankData;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 typedef struct OopsRecord {
     short stellar;
@@ -947,12 +927,9 @@ typedef struct OopsRecord {
     Boolean loaded;
     Boolean pad20F;
 } OopsRecord;
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern OopsRecord *disasterData;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 typedef struct FletRecord {
     short leadShipType;
@@ -968,19 +945,12 @@ typedef struct FletRecord {
     Boolean usable;
     Boolean pad123;
 } FletRecord;
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern FletRecord *fleetData;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 /* chär resource, 0x16a bytes, read in place through charFileHand. */
-#ifdef __MWERKS__
-#pragma options align=mac68k
-#else
 #pragma pack(push, 2)
-#endif
 typedef struct CharRecord {
     int32_t cash;
     short shipType;
@@ -1000,11 +970,7 @@ typedef struct CharRecord {
     char suffix[0x10];
     short unk15a[8];
 } CharRecord;
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 
 /* Resource flag bits, one name per bit, named for the Nova Bible's meaning.
    Table and the uses that read a bit differently: Research/flag-names.md */
@@ -1265,8 +1231,6 @@ extern Boolean StellarIsDestroyed(SpobRecord *spob);
 extern Boolean StellarIsLandable(SpobRecord *spob);
 extern Boolean StellarIsNormalLandable(SpobRecord *spob);
 extern unsigned char PlayerBlessedByGovt(short govt, short which);
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern SpobRecord *stellarData;
 extern SystRecord *systemData;
@@ -1277,7 +1241,6 @@ extern PersRecord *personData;
 extern WeapRecord *weaponStats;
 extern CronRecord *cronEvent;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 #define SpobHasShipyard(s)  ((s)->flags & kSpobHasShipyard)
 #define kGameStrList        2002

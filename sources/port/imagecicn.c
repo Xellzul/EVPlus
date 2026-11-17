@@ -14,18 +14,10 @@
    spelling that inlines an asm block in C */
 static __inline unsigned short SwapUShort(const unsigned short *p)
 {
-#ifdef __MWERKS__
-    register unsigned short t;
-#else
     unsigned short t;
-#endif
 
     t = *p;
-#ifdef __MWERKS__
-    asm { ror t, 8 }
-#else
     t = __builtin_bswap16(t);
-#endif
     return t;
 }
 

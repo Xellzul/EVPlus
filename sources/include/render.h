@@ -32,7 +32,6 @@ extern void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, GDHandle
 extern void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
                           short depth, short picID);
 #endif
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern SpriteRec *weapTargetSprite[4];
 extern SpriteRec *navTargetSprite[4];
@@ -46,7 +45,6 @@ extern unsigned char lastDebugTargInfoState;
 extern Boolean gUpdateFlag;
 extern Boolean regNoticeShown;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void DisposeMainScreenAnim(void);
 #ifdef MACBUILD
 extern void CreateGWorldContainer(GWorldContainer *gwc, GDHandle device, short depth,
@@ -125,7 +123,6 @@ extern void MainScreenAnimIdle(void);
 extern void MainScreenRolloverIdle(void);
 extern void TradeDialogTabKey(Boolean up);
 extern void UnsetGWorldContainer(GWorldContainer *gwc);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern RGBColor *armorStatusColor;
 extern Rect commRect;
@@ -144,12 +141,10 @@ extern Handle intfFileHand;
 extern void *gIntroMovieData;
 #ifndef MACBUILD
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void QTNewGWorldFromPtr(void **gw, int32_t pixelFormat, Rect *boundsRect,
                                int32_t cTable, int32_t aGDevice, int32_t flags, int32_t baseAddr,
                                int32_t rowBytes);
 #endif
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern uint32_t lastLogoAnimTime;
 extern uint32_t lastSlideAnimTime;
@@ -210,28 +205,23 @@ extern Rect slideDestRect[3];
 extern void *staticPat[10];
 extern void *targetInfoPic[768];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern void RefreshSAT(void);
 extern void RedrawStatus(Boolean legacyPipeline);
 extern void ShowTheCursor(void);
 extern short GetMasterShipSpriteXSize(short id);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short gSoundVolume;
 
 extern short statusFontSize[2];
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void DoPlayGameWork(unsigned char advance);
 extern void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite);
 extern void FloaterDrawCallback(SpriteWorldPtr world);
 extern void BeamEraseCallback(SpriteWorldPtr world);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Rect gMovieBox;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void StartLoopingMovie(const unsigned char *name, void *window,
                               Rect *box);
 extern void PreloadPortDialog(SpobRecord *spob, short stellar);

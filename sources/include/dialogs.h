@@ -17,12 +17,9 @@ extern "C" {
 void CommDialogUpdate(void);
 extern void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t lCell,
                          short lDataOffset, short lDataLen, ScrollRec **lHandle);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern int32_t DAT_007355d0;
 EXTERN_CPP_END
-#pragma cplusplus reset
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean reenterMissionDialog;
 extern short adviceDisasterRandom;
@@ -32,7 +29,6 @@ extern Boolean commShipXeno;
 extern short commDialogMode;
 extern Boolean shipyardEgg;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void DisposeButtons(void);
 extern void CenterWindow(void *front, void *window);
 extern void DoBarDialog(void);
@@ -137,7 +133,6 @@ extern void DoPlanetCommDialog(short stellar);
 extern void PortDialogUpdate(void);
 extern void TextDialogUpdate(void);
 void TradeDialogUpdate(void);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern unsigned char adviceString[];
 extern PicHandle barBackgroundPic;
@@ -246,11 +241,9 @@ extern short racePick;
 extern short raceWinner;
 #ifndef MACBUILD
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern RGBColor *redColor;
 #endif
 extern RGBColor redRGB;
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean releaseCommEscort;
 extern short responseRandom;
@@ -262,8 +255,6 @@ extern short salvageQty;
 extern short salvageType;
 extern short selMissionListItem;
 EXTERN_CPP_END
-#pragma cplusplus reset
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short selTradeItem;
 extern short shipBuyMode;
@@ -276,9 +267,6 @@ extern short singleMissionButtonTable[4];
 extern PicHandle textDialogBackgroundPic[3];
 extern PicHandle tradeBackgroundPic;
 EXTERN_CPP_END
-#pragma cplusplus reset
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern DialogPtr barDialog;
 extern DialogPtr captureDialog;
@@ -297,31 +285,24 @@ extern DialogPtr depthDialog;
 extern DialogPtr loadingDialog;
 extern DialogPtr outfitDescDialog;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern void EVNoteAlert(const unsigned char *text);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern PicHandle raceButtonPic[4][4];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern Boolean EVYesNoDialog(unsigned char *prompt);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean gQuit;
 extern uint32_t lastClickTime;
 extern Boolean screenFaded;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean NewsDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern ShortPoint menuTopCorner;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
@@ -343,35 +324,25 @@ Boolean PlunderFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern TEHandle offerTextHandle;
 EXTERN_CPP_END
-#pragma cplusplus reset
 #define kMissionButtonLabelCount 2
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern unsigned char missionButtonLabel[kMissionButtonLabelCount][256];
 EXTERN_CPP_END
-#pragma cplusplus reset
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern TEHandle textDialogTextHandle;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern short DoHaggleDialog(Boolean raise, short chance);
 extern void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE,
                              short dv, Boolean force);
 extern void PlayQTMovie(unsigned char *name, unsigned char doubled,
                         unsigned char fade);
 extern int32_t DoQuantityDialog(int32_t maxCount, short mode);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern ScrollRec **missionList;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 #ifdef __cplusplus
 }

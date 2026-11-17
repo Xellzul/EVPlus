@@ -2726,8 +2726,6 @@ void SetDefaultKeys(void)
 }
 #endif
 
-#pragma opt_repositioncode off
-
 
 /* 0x0058f8b4 is the IAT slot, not a variable: the exe reaches
    GetSystemMetrics through it because the declaration is dllimport. */
@@ -3065,8 +3063,6 @@ done:
 #endif
 }
 
-#pragma opt_repositioncode reset
-
 /* ResetGameData. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4690
 // MAC: _ResetGameData i386 0x0001de0c ppc 0x00022640
@@ -3122,8 +3118,6 @@ void ResetGameData(void)
     seenIntroScreen = 0;
 }
 
-#pragma opt_repositioncode off
-
 /* ConvertSpriteToRLE (mac _ConvertSpriteToRLE). STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004b4cf0
 // MAC: _ConvertSpriteToRLE i386 0x0001e489 ppc 0x00022d98
@@ -3176,8 +3170,6 @@ clearCaches:
     set->sharedMaskGWorld = NULL;
     goto finish;
 }
-
-#pragma opt_repositioncode reset
 
 /* Every out-parameter is optional, so a caller that wants only the tile counts
    passes NULL for the rest. */

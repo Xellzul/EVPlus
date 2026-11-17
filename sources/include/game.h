@@ -23,7 +23,6 @@ extern void Bye(void);
 extern void ClearParticles(Boolean on);
 extern short Construct8BitAlphaTable(void);
 extern void TableCos(short angle);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short commCount;
 extern uint32_t floatingMapStartTime;
@@ -31,16 +30,12 @@ extern short oldVolume;
 extern SpriteRec *masterStellarSprite[kMasterStellarSprites];
 extern SpriteRec *masterShotSprite[256];
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void CreateExplosion(FloatPoint pt, short type, short size, Boolean sound);
 extern void SpawnExplod(FloatPoint pos, short unused, short type, short delay);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Handle stringHandle;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern short ConvertSpriteToRLE(SpriteRec *set);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern SpriteRec *masterNavTargetSprite;
 extern SpriteRec *masterWeapTargetSprite;
@@ -58,7 +53,6 @@ extern void *klaxxonSnd;
 extern void *clickSnd;
 extern short lastShipAIDispatched;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern unsigned int DeleteAFile(const char *path);
 extern void DisplayComm(PStrChar *msg, short count, short font, short size,
                         RGBColor *color, Boolean bold, unsigned char noBlit);
@@ -159,7 +153,6 @@ extern short TrackMainScreenButtons(Point where);
 extern void UpdateAllPortDialogs(); /* unprototyped: the 1.1.1 DoShipyardDialog passes it the port dialog */
 extern short WeaponBurstInterval(short weap, short count);
 extern Boolean WeaponDisableOnly(short weap);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern char absquatulateStr[];
 extern SpriteLayerRec *asteroidLayer;
@@ -235,7 +228,6 @@ extern Movie introMusicMovie;
 
 extern unsigned char lastPlayerName[256];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern void IterateInGameEventLoop(short tickCount);
 extern short CalcInterceptAngle(FloatPoint *from, FloatPoint *to);
@@ -252,7 +244,6 @@ extern Boolean CanSellGoods(short item);
 extern void PropagateMissionBitEffects(void);
 extern void OnTheFlyWhiteFade(short pct);
 extern void ExploreNebulaeFromSystem(short sys);
-#pragma cplusplus on
 #ifdef MACBUILD
 extern EventRecord gEvent;
 extern void MainScreenMouse(EventRecord *event);
@@ -269,23 +260,18 @@ extern short introTextID;
 extern short introPictID[4];
 extern short introPictDelay[4];
 EXTERN_CPP_END
-#pragma cplusplus reset
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short menuTextSize;
 extern uint32_t lastCursorAnimTime;
 extern uint32_t lastFrameTime;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern short TotalFleetHolds(void);
 extern void DeleteAllComputerShips(Boolean force, Boolean keepPlayer);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern void *beepSnd[5];
 
 extern SpriteRec *stellarSprite[kStellarSprites];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 #ifdef __cplusplus
 }

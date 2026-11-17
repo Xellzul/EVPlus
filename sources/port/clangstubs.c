@@ -1,14 +1,11 @@
-/* clangstubs.c -- what the Metrowerks toolchain supplied implicitly, for other compilers (llvm-mingw).
+/* clangstubs.c -- what the original Metrowerks toolchain supplied implicitly.
  *
  * 1. MW's linker drops every function nothing live calls before it checks for missing symbols. The tree keeps
  *    a few such dead functions (the Vorbis encoder's envelope and bitrate code, vorbis_comment_add_tag, zlib's
  *    deflateBound) whose callees were never in the exe, so they are not in the tree. lld wants them defined:
  *    these bodies abort, so a call that ever became live fails loudly instead of jumping to address 0.
  * 2. MSL's float limits, which BurgerLib's AsciiToFloat/AsciiToDouble read.
- *
- * MW builds compile this file empty.
  */
-#ifndef __MWERKS__
 #include <stdlib.h>
 #include <float.h>
 #include "int32.h"
@@ -36,4 +33,3 @@ const double XDouble_Inf = __builtin_inf();
 const double XDouble_Nan = __builtin_nan("");
 const double XDouble_Min = DBL_MIN;
 const double XDouble_Max = DBL_MAX;
-#endif

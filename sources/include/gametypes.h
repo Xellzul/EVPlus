@@ -3,9 +3,8 @@
 #define GAMETYPES_H
 #include "int32.h"
 
-/* the C++-linkage declarations of the win build's C++ TUs; the mac build is C only. MW takes these in C files
-   too; other compilers only in C++ (a C file cannot say extern "C++") */
-#if !defined(MACBUILD) && (defined(__MWERKS__) || defined(__cplusplus))
+/* the C++-linkage declarations of the win build's C++ TUs (a C file cannot say extern "C++"); the mac build is C only */
+#if !defined(MACBUILD) && defined(__cplusplus)
 #define EXTERN_CPP_BEGIN extern "C++" {
 #define EXTERN_CPP_END }
 #define EXTERN_C_BEGIN extern "C" {
@@ -49,11 +48,9 @@ typedef struct MapScroll {
 #define ShipClassID unsigned short
 #define PStrChar unsigned char
 #endif
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern MapScroll mapScroll;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 typedef struct StringListRec {
     unsigned short         count;
@@ -156,11 +153,9 @@ typedef struct DebrisSlot {
     float                  timer;
     float                  angle;
 } DebrisSlot;
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern DebrisSlot *smokeData;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 /* one escape pod, stride 0x18, 32 entries */
 typedef struct PodObj {
@@ -169,11 +164,9 @@ typedef struct PodObj {
     FloatPoint             vel;
     float                  life;
 } PodObj;
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern PodObj *podData;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 #ifndef MACBUILD
 typedef struct UnsignedWide {
@@ -191,11 +184,7 @@ typedef struct DateTimeRec {
     short                  dayOfWeek;
 } DateTimeRec;
 
-#ifdef __MWERKS__
-#pragma options align=packed
-#else
 #pragma pack(push, 1)
-#endif
 typedef struct RGBColor {
     unsigned short         red;
     unsigned short         green;
@@ -208,11 +197,7 @@ typedef struct Rect {
     short                  bottom;
     short                  right;
 } Rect;
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 #endif
 
 #ifndef MACBUILD
@@ -221,11 +206,9 @@ typedef struct ShortPoint {
     short                  v;
 } ShortPoint;
 #endif
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern ShortPoint menuButtonPos[];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 /* one beam in beamData, stride 0x22, 64 entries */
 typedef struct BeamRecord {
@@ -393,11 +376,7 @@ typedef struct Settings {
 #endif
 } Settings;
 
-#ifdef __MWERKS__
-#pragma options align=packed
-#else
 #pragma pack(push, 1)
-#endif
 typedef struct PrefsRecord {
     short sig;
     short musicEnabled;
@@ -432,11 +411,7 @@ typedef struct PrefsRecord {
 #endif
     short unk88;
 } PrefsRecord;
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 
 /* one offerable mission in missionAvailData, stride 0x12c */
 typedef struct MissionAvailRec {
@@ -476,11 +451,7 @@ typedef struct BriefMissionRec {
 
 /* one entry of the mission table, stride 0x8e6; the pilot file holds sixteen */
 #ifndef MACBUILD
-#ifdef __MWERKS__
-#pragma options align=packed
-#else
 #pragma pack(push, 1)
-#endif
 #endif
 typedef struct MissionRecord {
     short                  travelStellar;
@@ -547,11 +518,7 @@ typedef struct MissionRecord {
     char                   name[0x100];
 } MissionRecord;
 #ifndef MACBUILD
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 #endif
 
 typedef struct MissionState {
@@ -562,12 +529,9 @@ typedef struct MissionState {
     unsigned short         flags;
     DateTimeRec            dueDate;
 } MissionState;
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern MissionState *currentMissionObjectives;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 /* one type: weaponStats[] and each ship's weap[], whose copy keeps count, ammo and reload countdown here */
 typedef struct WeapRecord {
@@ -648,7 +612,6 @@ typedef struct PrefsFileRec {
 } PrefsFileRec;
 
 /* the four shot sprite layers, in address order */
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern struct SpriteLayerRec *shotLayer;
 extern struct SpriteLayerRec *guidedShotLayer;
@@ -759,7 +722,6 @@ typedef struct Image_t *PicHandle;
 extern PicHandle missionBackgroundPic[3];
 extern DialogPtr alertDialog;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 typedef struct KeyPrefs {
     short                  selectSecondary;

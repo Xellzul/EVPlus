@@ -47,11 +47,9 @@ extern Boolean AIVerifySwarmLeader(ShipObj *ship);
 extern void BraveTraderAI(ShipObj *ship);
 extern Boolean CanHireEscorts(void);
 extern void AIShipBoardedByPlayer(ShipObj *ship);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern void *hardDockSnd;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void DeathStarAI(ShipObj *ship);
 extern void DefenseShipAI(ShipObj *ship);
 extern void DoEscortLand(void);
@@ -107,7 +105,6 @@ extern short SelectFleetFromSystem(SystRecord *syst);
 extern void SelectWarshipTarget(ShipObj *ship);
 extern void WarshipAI(ShipObj *ship);
 extern void WimpyTraderAI(ShipObj *ship);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean boardTryFlag;
 extern char creditCString[0x20];
@@ -116,14 +113,10 @@ extern float hyperGamma;
 extern Boolean miningBoxesActive;
 extern Boolean miningShipsActive;
 EXTERN_CPP_END
-#pragma cplusplus reset
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean scanActive;
 extern short aiComplexity;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern void AIMakeShipAttackPlayer(ShipObj *ship);
 extern void AIFightThreatToPlayer(ShipObj *ship);

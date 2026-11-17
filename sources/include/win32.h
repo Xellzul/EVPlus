@@ -770,11 +770,7 @@ __declspec(dllimport) uint32_t libiconv(void *cd, char **inbuf, uint32_t *inbyte
 __declspec(dllimport) uint32_t __stdcall timeGetTime(void);
 
 /* WAVEFORMATEX: 18 bytes, packed as the SDK packs it */
-#ifdef __MWERKS__
-#pragma options align=packed
-#else
 #pragma pack(push, 1)
-#endif
 typedef struct WaveFormat {
     unsigned short formatTag;
     unsigned short channels;
@@ -784,11 +780,7 @@ typedef struct WaveFormat {
     unsigned short bitsPerSample;
     unsigned short cbSize;
 } WaveFormat;
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 
 /* WAVEHDR */
 typedef struct WaveHdr {

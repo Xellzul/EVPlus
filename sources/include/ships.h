@@ -12,11 +12,9 @@ extern "C" {
 extern void AICalculateOddsAgainst(ShipObj *ship);
 extern void CalcShipCanBuy(void);
 extern void CalculateTargetedDamage(void);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean abOn;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
                        short shieldDmg, short attacker, Boolean fromAttack, Boolean deliberate,
                        unsigned char disableOnly, Boolean clampArmor,
@@ -67,7 +65,6 @@ extern void SystemInfoToShipStats(void);
 extern short TotalMissionCargoSpace(void);
 extern Boolean WeaponHasAmmo(ShipObj *ship, short weaponIndex);
 extern short WeaponMaxSimultShots(ShipObj *ship, short w);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean allReinforcementsInhibited;
 extern Handle charFileHand;
@@ -83,13 +80,9 @@ extern DateTimeRec scenarioStartDate;
 extern short tradePrice[];
 extern short portDemand[6];
 EXTERN_CPP_END
-#pragma cplusplus reset
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short junkType[2];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern unsigned char IsDying(ShipObj *ship);
 extern Boolean IsDisabled(ShipObj *ship);
@@ -114,11 +107,9 @@ extern unsigned char TurretBlindSpot(ShipObj *ship, short heading, short weap);
 #define kRedrawRadar        5
 #define kRedrawTarg         6
 #define kStatusRedrawCount  7
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean statusRedraw[kStatusRedrawCount];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 #ifdef __cplusplus
 }

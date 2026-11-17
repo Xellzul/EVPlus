@@ -24,11 +24,7 @@ typedef struct Point {
 #endif
 
 #ifndef MACBUILD
-#ifdef __MWERKS__
-#pragma options align=packed
-#else
 #pragma pack(push, 1)
-#endif
 typedef struct EventRecord {
     unsigned short what;
     int32_t message;
@@ -36,11 +32,7 @@ typedef struct EventRecord {
     Point where;
     short modifiers;
 } EventRecord;
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 #endif
 
 #ifndef MACBUILD
@@ -134,12 +126,10 @@ extern void GetIniIndString(char *out, int32_t listID, int32_t index);
 #else
 extern void nv_UpdateDialogWindow(int all);
 #endif
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern GWorldContainer iconsPort;
 #ifndef MACBUILD
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t end);
 extern void FrameRect(const Rect *r);
 extern void GetFNum(const unsigned char *name, short *familyID);
@@ -248,11 +238,7 @@ extern PixMapPtr GetGWCPixMap(GWorldContainer *gwc);
 #endif
 
 #if defined(MAC1010) && !TARGET_API_MAC_CARBON /* SpriteWorld's records: 68k alignment on 1.0.10 Classic */
-#ifdef __MWERKS__
-#pragma options align=mac68k
-#else
 #pragma pack(push, 2)
-#endif
 #endif
 typedef struct SWFrameRec {
     CGrafPtr framePort;
@@ -574,11 +560,7 @@ struct SpriteRec {
     Boolean srD3;
 };
 #if defined(MAC1010) && !TARGET_API_MAC_CARBON
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 #endif
 
 #ifndef MACBUILD
@@ -649,11 +631,7 @@ typedef struct DialogRecord {
 } DialogRecord;
 
 #if defined(MAC1010) && !TARGET_API_MAC_CARBON /* as SpriteWorld's records */
-#ifdef __MWERKS__
-#pragma options align=mac68k
-#else
 #pragma pack(push, 2)
-#endif
 #endif
 typedef struct Particle {
     short lifeRemaining;
@@ -669,11 +647,7 @@ typedef struct Particle {
     uint32_t color;
 } Particle, *ParticlePtr;
 #if defined(MAC1010) && !TARGET_API_MAC_CARBON
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 #endif
 
 /* Toolbox GetTime shim — port implementation at 0x004bbb10 */
@@ -794,11 +768,7 @@ extern unsigned char *CtoPstr(char *str);
 #endif
 
 /* a byte pointer stepped through a cast lvalue: gcc then keeps the pointer in its stack slot, which 1.1.1's bytes witness */
-#ifdef __MWERKS__
-#define PtrAddBytes(p, n) ((char *)(p) += (n))   /* MW's lvalue-cast extension */
-#else
 #define PtrAddBytes(p, n) (*(char **)&(p) += (n))
-#endif
 
 /* a mac virtual key code in the engine's numbering of the KeyMap: 1.0.10 tests it 16 bits at a time, 1.1.1 a byte at a time */
 #ifdef MAC1010
@@ -846,12 +816,10 @@ extern void BackColor(const RGBColor *color);
 extern Boolean Button(void);
 #endif
 extern void ClosePrefs(void);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Rect screenMinusDockRect;
 extern int32_t paintBlackFlag;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void BusyIdle(void);
 #ifndef MACBUILD
 extern void Delay(uint32_t numTicks, uint32_t *finalTicks);
@@ -965,30 +933,6 @@ extern void PaletteSetPtr(unsigned int start, unsigned int count, const unsigned
 extern void PenSize(short width, short height);
 extern void CloseMovieFile(short resRefNum);
 #endif
-#if defined(__MWERKS__) && !defined(MACBUILD) && (!defined(__cplusplus) || !defined(_MSL_CSTDLIB))
-#if __MWERKS__ >= 0x3000
-__declspec(noreturn) extern void exit(int status);
-#else
-extern void exit(int status);   /* mwcc 2.4, AmbrosiaTools' compiler, has no noreturn */
-#endif
-#endif
-#if defined(__MWERKS__) && !defined(MACBUILD) && (!defined(__cplusplus) || !defined(_MSL_CSTRING))
-extern char *strrchr(const char *s, int c);
-extern char *strcpy(char *dst, const char *src);
-extern char *strncpy(char *dst, const char *src, unsigned int n);
-extern char *strcat(char *dst, const char *src);
-extern int strcmp(const char *a, const char *b);
-#endif
-#if defined(__MWERKS__) && !defined(MACBUILD) && (!defined(__cplusplus) || !defined(_MSL_CSTDIO))
-extern int sprintf(char *dst, const char *fmt, ...);
-#endif
-#if defined(__MWERKS__) && !defined(MACBUILD) && (!defined(__cplusplus) || !defined(_MSL_CCTYPE))
-extern int isprint(int c);
-extern int isalpha(int c);
-extern int isdigit(int c);
-extern int tolower(int c);
-extern int toupper(int c);
-#endif
 #ifndef MACBUILD
 extern int PtInRect(int h, int v, Rect *r);
 #endif
@@ -1093,14 +1037,12 @@ extern Boolean LClick(Point where, short modifiers, ScrollRec **h);
 extern void ParamText(const unsigned char *p0, const unsigned char *p1,
                       const unsigned char *p2, const unsigned char *p3);
 #endif
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern char gParamText0[];
 extern char gParamText1[];
 extern char gParamText2[];
 extern char gParamText3[];
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void FadeGammaTo(uint32_t percent, uint32_t duration);
 extern unsigned char SplitTwoLineString(const unsigned char *src, unsigned char *line1,
                                         unsigned char *line2);
@@ -1115,7 +1057,6 @@ extern void UpdateAndPageFlip(void);
 extern RGBColor *blackColor;
 #endif
 extern int32_t gCaretPhase;
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern int32_t gBlinkTick;
 extern SWFrameRec *floatingEscortMenuFrame;
@@ -1145,14 +1086,11 @@ extern RGBColor blackRGB;
 extern int32_t gRezOpenPending;
 extern int32_t gUseKeyboardHook;
 EXTERN_CPP_END
-#pragma cplusplus reset
 extern void nv_BlitImageOr(Rect *dstRect, Image_t *icon);
 extern int gDisableUpdatesMode;
 #ifndef MACBUILD
 extern RGBColor *whiteColor;
 #endif
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern RGBColor bkgndGreen;
 extern RGBColor brightGreen;
@@ -1168,7 +1106,6 @@ extern RGBColor rgbRealDarkGrey;
 extern RGBColor rgbRealDarkBlue;
 extern RGBColor rgbBlack;
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern short GetSpriteXSize(SpriteRec *spr);
 extern short GetSpriteYSize(SpriteRec *spr);
@@ -1178,12 +1115,10 @@ extern void SWSetSpriteLocation(SpritePtr srcSpriteP, short horizLoc,
 extern void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible);
 extern void SWSetPortToWorkArea(SpriteWorldPtr sw);
 extern void SWSetSpriteWorldMaxFPS(SpriteWorldPtr world, short fps);
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern PrefsFileRec gPrefs;
 #ifndef MACBUILD
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern void SetDialogItemText(Handle item, const unsigned char *pstr);
 extern void GetDialogItemText(Handle item, unsigned char *pstr);
@@ -1223,8 +1158,6 @@ extern void SetControlTitle(ControlPtr ctl, const unsigned char *text);
 
 extern void PaintRect(Rect *r);
 #endif
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern Boolean gameLoaded;
 extern Boolean gameInProgress;
@@ -1233,7 +1166,6 @@ extern Boolean creatingPilotFile;
 extern Boolean onPlanet;
 extern Boolean closeRequested;
 EXTERN_CPP_END
-#pragma cplusplus reset
 /* invalidate the whole game window: the port only raises its redraw flag */
 #ifdef MACBUILD
 #define InvalWindowPortRect(window) InvalWindowRect(window, GetCWindowPortRect(window))
@@ -1264,14 +1196,11 @@ extern void TEPinScroll(int dh, int dv, TEHandle hTE);
 extern void TEUpdate(Rect *rUpdate, TEHandle hTE);
 extern void TEDispose(TEHandle hTE);
 #endif
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern CWindowPtr gWind;
 extern GWorldContainer loadPort;
 #ifndef MACBUILD
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 extern char *GetPixBaseAddr(PixMapPtr pm);
 extern short GetPixRowBytes(PixMapPtr pm);

@@ -158,11 +158,7 @@ EXTERN_C_BEGIN
 
 /* A CNTL resource, big-endian as it comes off the rez file. Only min, procID
    and the title survive; bounds/value/max are swapped and dropped. */
-#ifdef __MWERKS__
-#pragma options align=packed
-#else
 #pragma pack(push, 1)
-#endif
 typedef struct CntlTemplate {
     Rect bounds;                     /* +0x00, discarded */
     short value;                     /* +0x08, discarded */
@@ -174,11 +170,7 @@ typedef struct CntlTemplate {
     int32_t refCon;                     /* +0x12 */
     unsigned char title[1];          /* +0x16, Str255 */
 } CntlTemplate;
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 
 #define kCNTLType 0x434e544c
 
@@ -1055,8 +1047,6 @@ void InvalDialogRect(DialogPtr dlg, Rect *box)
 {
     dlg->needsUpdate = 1;
 }
-
-#pragma opt_lifetimes off
 /* ModalDialog. STATE: MATCH 100.0%, exe 546 / obj 546, byte-identical yes.
    OPEN: none; the two-role `saved'/`list', the round trips and the pun are the only
    spellings measured to match (notes, lanes RC and CL3). */
@@ -1413,8 +1403,6 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
         ScreenEndScene();
     }
 }
-
-#pragma opt_lifetimes reset
 
 /* SetControlTextKeepSelection. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004d0610

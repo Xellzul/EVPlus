@@ -137,13 +137,10 @@ typedef struct ShotObj {
     unsigned char          disableOnly;
     char pad45[3];
 } ShotObj;
-
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern ShipObj *shipData;
 extern short shipSystems[512];
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 
 #ifdef __cplusplus

@@ -54,7 +54,6 @@ extern void SpawnBeam(short ship, short target, short weapType, short angle, sho
                       short flag);                           /* 0x00427a90 */
 extern short TableArcTan(float dx, float dy);    /* 0x004619b0 */
 extern void WrapPlayerPosition(void);                       /* 0x0045baa0 */
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern short tableArcTan[0x400];    /* 0x007cbc8c */
 extern float tableTan[360];         /* 0x007cb6e8 */
@@ -63,7 +62,6 @@ extern void *shotSnd[];                             /* 0x00591574 (mac name) */
 extern Boolean updateSmokeThisFrame;                /* 0x00596d3d (mac name) */
 extern FloatPoint wrapDelta;                    /* 0x007cab2c (mac name) */
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 
 extern void Accel(short angle, float mag, FloatPoint *out); /* 0x0043b4a0 */
@@ -72,14 +70,12 @@ extern short CalcLeadAngle(ShipObj *self, ShipObj *target, short weaponType,
                            FloatPoint *overridePos);                    /* 0x0043b740 mac _CalcLeadAngle */
 extern short CalcObjectLeadAngle(ShipObj *self, FloatPoint *targetPos, FloatPoint *targetVel,
                           short weaponType, FloatPoint *overridePos);   /* 0x0043b8c0 mac _CalcObjectLeadAngle */
-#pragma cplusplus on
 EXTERN_CPP_BEGIN
 extern BeamRecord *beamData;                         /* 0x005912c4 */
 extern AsteroidObj *asteroidData;                    /* 0x005912d8 */
 extern ShotObj *shotData;                           /* 0x005914b0 */
 extern StarSlot *starData;                           /* 0x005914c8 */
 EXTERN_CPP_END
-#pragma cplusplus reset
 
 
 /* --- one declaration per name --- */

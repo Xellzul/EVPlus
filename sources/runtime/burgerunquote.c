@@ -12,11 +12,7 @@ public:
 };
 }
 
-#ifdef __MWERKS__
-const char Burger::Str::Empty[1];
-#else
 const char Burger::Str::Empty[1] = "";
-#endif
 
 #ifdef __cplusplus
 extern "C" {

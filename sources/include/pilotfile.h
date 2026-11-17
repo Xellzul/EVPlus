@@ -5,17 +5,9 @@
 #define PILOTFILE_H
 
 #ifdef MACBUILD
-#ifdef __MWERKS__
-#pragma options align=mac68k
-#else
 #pragma pack(push, 2)
-#endif
-#else
-#ifdef __MWERKS__
-#pragma options align=packed
 #else
 #pragma pack(push, 1)
-#endif
 #endif
 
 /* first resource: the player record, 0xe952 bytes */
@@ -76,10 +68,6 @@ typedef struct PilotRec2 {
 } PilotRec2;
 
 
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 
 #endif

@@ -182,8 +182,6 @@ void CopyBitsScale16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
     }
 }
 
-#pragma opt_repositioncode off
-
 /* CopyBitsScale16Average. STATE: MATCH, exe 350 / obj 350, byte-identical yes. The 16bpp area-averaging
    scaler, cell [1][1] of the mode-1 table. OPEN: none */
 // FUNCTION: EVNOVA 0x004b7cb0
@@ -359,8 +357,6 @@ scaled:
 done:
     ;
 }
-
-#pragma opt_repositioncode reset
 
 /* CopyBitsScale24. STATE: MATCH 88/88 (2026-09-25). OPEN: none */
 // FUNCTION: EVNOVA 0x004b81e0
@@ -2833,12 +2829,7 @@ void SysBeep(short duration)
 
 /* BuildGammaRamp. STATE: MATCH, byte-identical. OPEN: none */
 // FUNCTION: EVNOVA 0x004bc310
-/* MW keeps `register' parameters in an FPU register (it changes this function's code); C++17 dropped it */
-#ifdef __MWERKS__
-void BuildGammaRamp(register float gamma)
-#else
 void BuildGammaRamp(float gamma)
-#endif
 {
     int i;
     double e;

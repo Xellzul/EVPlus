@@ -18,22 +18,14 @@ typedef struct RawTypeEntry {
     uint32_t count;      /* +0x08 */
 } RawTypeEntry;
 
-#ifdef __MWERKS__
-#pragma options align=mac68k
-#else
 #pragma pack(push, 2)
-#endif
 typedef struct RawResRecord {
     uint32_t index;    /* +0x00 */
     uint32_t type;      /* +0x04 */
     unsigned short id;        /* +0x08 */
     char name[256];             /* +0x0a */
 } RawResRecord;
-#ifdef __MWERKS__
-#pragma options align=reset
-#else
 #pragma pack(pop)
-#endif
 
 typedef struct RawRezMap {
     uint32_t typeListOffset; /* +0x00 from this record's own base */
@@ -43,9 +35,7 @@ typedef struct RawRezMap {
 /* endianswap.c's helpers by value: the exe swaps the register it has just tested */
 static __inline short SwapEndianShort(unsigned short t)
 {
-#if !defined(MACBUILD) && defined(__MWERKS__)
-    asm { ror t, 8 }
-#elif !defined(MACBUILD)
+#if !defined(MACBUILD)
     t = __builtin_bswap16(t);
 #endif
     return t;
@@ -53,9 +43,7 @@ static __inline short SwapEndianShort(unsigned short t)
 
 static __inline int32_t SwapEndianLong(uint32_t t)
 {
-#if !defined(MACBUILD) && defined(__MWERKS__)
-    asm { bswap t }
-#elif !defined(MACBUILD)
+#if !defined(MACBUILD)
     t = __builtin_bswap32(t);
 #endif
     return t;

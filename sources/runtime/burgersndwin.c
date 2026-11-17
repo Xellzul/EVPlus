@@ -151,35 +151,19 @@ int32_t SoundIterator(SoundProc proc, void *data, int32_t cookie, int32_t firstO
    key as well as a load. */
 static __inline ULong SwapLong(ULong v)
 {
-#ifdef __MWERKS__
-    register ULong t;
-#else
     ULong t;
-#endif
 
     t = v;
-#ifdef __MWERKS__
-    asm { bswap t }
-#else
     t = __builtin_bswap32(t);
-#endif
     return t;
 }
 
 static __inline unsigned short SwapShort(unsigned short v)
 {
-#ifdef __MWERKS__
-    register unsigned short t;
-#else
     unsigned short t;
-#endif
 
     t = v;
-#ifdef __MWERKS__
-    asm { ror t, 8 }
-#else
     t = __builtin_bswap16(t);
-#endif
     return t;
 }
 
