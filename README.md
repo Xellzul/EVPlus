@@ -1,7 +1,5 @@
 # EvNovaDecompile
 
-**EV Nova 1.0.10 for Windows x86**
-
 **EV Nova 1.0.10 for Windows x86 Community Edition** (Not complete, not tested)
 
 
@@ -14,7 +12,7 @@ You need: llvm-mingw (default `/opt/llvm-mingw`), CMake, Ninja, and `unar` (pack
 
 `cmake --build build`
 
-Outputs `build/EV Nova.exe` and `build/EV Nova CE.exe`. Options: `-DLLVM_MINGW=/path/to/llvm-mingw`,
+Outputs `build/EV Nova CE.exe`. Options: `-DLLVM_MINGW=/path/to/llvm-mingw`,
 `-DQTML_CLIENT_LIB=/path/to/qtmlClient.lib` (skips unpacking the SDK).
 
 ## Credits:

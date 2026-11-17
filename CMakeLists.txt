@@ -1,7 +1,7 @@
-# EV Nova (and the CE build, -DCEFIX) with llvm-mingw -- no Docker, Wine or Metrowerks.
+# EV Nova CE (the -DCEFIX build) with llvm-mingw -- no Docker, Wine or Metrowerks.
 #
 #   cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake
-#   cmake --build build                      -> build/EV Nova.exe, build/EV Nova CE.exe
+#   cmake --build build                      -> build/EV Nova CE.exe
 #
 # Needs: llvm-mingw (default /opt/llvm-mingw), and `unar` (package unarchiver) once, to unpack
 # input-files/QT6SDK_Win.hqx for QuickTime's qtmlClient.lib -- or pass -DQTML_CLIENT_LIB=/path/qtmlClient.lib.
@@ -119,5 +119,4 @@ function(evnova_exe target outname cefix)
     $<$<BOOL:${cefix}>:-Wl,--large-address-aware>)
 endfunction()
 
-evnova_exe(evnova "EV Nova" OFF)
 evnova_exe(evnova_ce "EV Nova CE" ON)
