@@ -3,8 +3,9 @@
 #define GAMETYPES_H
 #include "int32.h"
 
-/* the C++-linkage declarations of the win build's C++ TUs; the mac build is C only */
-#if defined(__MWERKS__) && !defined(MACBUILD)
+/* the C++-linkage declarations of the win build's C++ TUs; the mac build is C only. MW takes these in C files
+   too; other compilers only in C++ (a C file cannot say extern "C++") */
+#if !defined(MACBUILD) && (defined(__MWERKS__) || defined(__cplusplus))
 #define EXTERN_CPP_BEGIN extern "C++" {
 #define EXTERN_CPP_END }
 #define EXTERN_C_BEGIN extern "C" {

@@ -43,16 +43,20 @@ typedef struct RawRezMap {
 /* endianswap.c's helpers by value: the exe swaps the register it has just tested */
 static __inline short SwapEndianShort(unsigned short t)
 {
-#ifndef MACBUILD
+#if !defined(MACBUILD) && defined(__MWERKS__)
     asm { ror t, 8 }
+#elif !defined(MACBUILD)
+    t = __builtin_bswap16(t);
 #endif
     return t;
 }
 
 static __inline int32_t SwapEndianLong(uint32_t t)
 {
-#ifndef MACBUILD
+#if !defined(MACBUILD) && defined(__MWERKS__)
     asm { bswap t }
+#elif !defined(MACBUILD)
+    t = __builtin_bswap32(t);
 #endif
     return t;
 }
