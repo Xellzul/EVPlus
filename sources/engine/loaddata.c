@@ -23,6 +23,7 @@
 #include "gameutil.h"
 #include "stellar.h"
 #include "burger.h"
+#include "platform.h"
 #include "macport.h"
 #include "resources.h"
 #include "cefix.h"
@@ -2904,7 +2905,7 @@ Boolean OpenPilotFile(char *missingResource)
     gotFile = GetOpenFileNameA(&ofn);
 
     while (Win95ApplsActive == 0) {
-        Sleep(0);
+        PlatSleep(0);
         KeyboardKbhit();
     }
 

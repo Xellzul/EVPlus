@@ -18,7 +18,8 @@ typedef struct ListRec {
     ULong count;                                 /* +0x08 */
 } ListRec;
 
-/* the singly-linked mutex list; each node points back at its list */
+/* the singly-linked mutex list, each node pointing back at its list: fields of the records below (its
+   functions, atmutexlist.c, had the thread table as their one user) */
 typedef struct MutexNode {
     struct MutexNode *next;                      /* +0x00 */
     struct MutexList *owner;                     /* +0x04 */
@@ -30,28 +31,6 @@ typedef struct MutexList {
     ULong count;                                 /* +0x08 */
     void *mutex;                                 /* +0x0c */
 } MutexList;
-
-typedef struct PlatformTimer PlatformTimer;
-typedef void (*TimerProc)(PlatformTimer *timer, void *arg);
-
-typedef struct TimerThread {
-    void *mutex;                                 /* +0x00 */
-    void *event;                                 /* +0x04 */
-    void *thread;                                /* +0x08 */
-    ULong threadId;                              /* +0x0c */
-    int32_t period;                                 /* +0x10 */
-    ULong armedAt;                               /* +0x14 */
-    int32_t request;                                /* +0x18 */
-    unsigned char armed;                         /* +0x1c */
-    unsigned char quit;                          /* +0x1d */
-} TimerThread;
-
-struct PlatformTimer {
-    TimerThread *thread;                         /* +0x00 */
-    TimerProc proc;                              /* +0x04 */
-    void *arg;                                   /* +0x08 */
-    int32_t reserved;                               /* +0x0c */
-};
 
 /* a file's local time stamp, 12 bytes */
 typedef struct TimeDate_t {

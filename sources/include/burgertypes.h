@@ -34,7 +34,6 @@ typedef unsigned long long ULongLong;
 
 #define kStirPointerBackoff 3
 #define kNoLength           0xffffffff
-#define kClockPeriodMs      4000
 
 /* UTF-16 surrogate decoding */
 #define kSurrogateMask      0xfffffc00

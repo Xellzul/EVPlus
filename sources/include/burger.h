@@ -25,21 +25,12 @@ extern void MemoryDeallocate(void *p);
 extern void MemoryCopy(void *dst, const void *src, uint32_t n);
 extern void MemoryFill(void *p, int c, uint32_t n);
 extern void SystemSetQuitProc(void (*fn)(void));
-extern void SystemSetIdleProc(void (*fn)(void));
-extern void _SystemQuitCallback(void);
 extern int32_t PlatformOpen(void);
 extern int32_t FT_Open(void);
 extern int32_t SetDisplayToSize(uint32_t w, uint32_t h, uint32_t depth, uint32_t flags);
-extern unsigned char SystemCheckCallback(void);
-extern void SystemWait(ULong ms);
-extern ULong TimerGetLocalSeconds(void);
-extern int32_t TimerPrime(void *ref, int32_t period);
 extern ULong TimerGetTicks(void);                 /* atticks.c: milliseconds since boot */
 extern ULong TimerGetTickRate(void);                 /* atticks.c: the tick rate that goes with it */
-extern void *_PlatformGetWindow(void);                 /* atplatopen.c */
 extern int32_t _IndirectValidate(void **handle);         /* atplatheap.c: the heap check */
-extern unsigned char _AtomicCheckCritical(void);
-extern unsigned char _ThreadCheckCritical(void);
 extern void * MemoryAllocateClear(uint32_t size);
 extern void FastMemSet(void *DestPtr, Word Fill, Word32 Length);
 extern void DebugXString(const char *string);
@@ -103,27 +94,9 @@ extern char *StringTokenize(char *s, int delim, char **next);
 extern ULong StringToNumber(const char *s);
 extern char *StringFindDelimiter(const char *s, const char *set);
 
-/* the mutex-guarded list (atmutexlist.c) and the atomic bit set (atplatlock2.c) */
-struct MutexList;
-struct MutexNode;
-extern int32_t QueueCreate(void *ref);
-extern void QueueDispose(struct MutexList *list);
-extern void QueueInsert(void *ref, void *element);
-extern struct MutexNode *QueueRemove(struct MutexList *list);
-extern struct MutexNode *QueueExtract(void *ref, void *element);
-extern void QueueTransfer(void *dstRef, void *srcRef);
-extern void QueueEmpty(struct MutexList *list);
-extern ULong QueueGetCount(void *ref);
-extern unsigned char QueueIsEmpty(void *ref);
-extern unsigned char AtomicMaskApply(ULong *word, ULong bit);
-extern unsigned char AtomicMaskClear(ULong *word, ULong bit);
-
-/* critical sections, threads and atomics (atplat) */
+/* the lock (atthreadtbl.c) */
 extern int32_t CriticalDispose(void *lock);
-extern ULong _PlatformResumeThread(void *thread);
-extern ULong _PlatformSuspendThread(void *thread);
 extern int32_t CriticalCreate(void *lock);
-extern int32_t AtomicIncrement(int32_t *value, int32_t delta);
 
 /* UTF-16 / UTF-8 (atcharset.c, atutf162.c, convertutf.c) */
 extern int32_t UnicodeCompare(const unsigned short *a, const unsigned short *b);
@@ -210,11 +183,9 @@ extern int stricmp(const char *s1, const char *s2);   /* MSL Extras */
 extern int32_t WritePrefsFile(struct PrefsNode *file, const char *path);
 
 /* runtime-block globals */
-extern void *gPlatWindow;
 extern uint32_t gSaveLeftVolume;
 extern uint32_t gSaveMaxVolume;
 extern int32_t MouseClicked;
-extern char gPlatCritSec[24];
 extern char gCriticalSection[16];
 extern unsigned char gSoundToolOpen;
 extern struct FileTypeMap **gFT_FileTypes;       /* atftopen.c: the file-type map */
@@ -283,7 +254,6 @@ extern void WaitTicks(Word tickCount);
 #define ResetLastTick() LastTick=ReadTick()
 
 /* BurgerLib's own constants */
-#define kNoTlsIndex     0xffffffff
 #define kOSFailure      -7000
 #define kTableFull      -7001
 #define kBadArgument    -7002
@@ -397,10 +367,6 @@ struct TextBuilder;
 struct WindowNode;
 struct FTFile;
 
-extern void AtomicEnterCritical(void *token);
-extern void AtomicLeaveCritical(void *token);
-extern ULongLong TimerGetMilliseconds(void);
-extern void SystemIdle(void);
 extern int32_t ST_Open(unsigned short channels, ULong device);
 extern int32_t fgetstr(char *buf, int32_t size, FILE *stream);
 extern void fwritelong(int32_t value, FILE *stream);
@@ -489,7 +455,6 @@ extern unsigned char ADPCM_Mixer(ULong *data, short **out, ULong frames, ULong s
                                   unsigned short right);
 
 extern unsigned char gPlatformOpen;
-extern unsigned char gClockReadyFlag;
 extern int32_t gNumVoices;
 extern ULong gSaveRightVolume;
 extern ULong gSampleRate;
@@ -531,8 +496,6 @@ static inline char *CopyString(char *dst, const char *src)
 }
 
 extern void **IndirectDuplicate(void **handle);
-extern ULong TimerGetUTCSeconds(void);
-extern uint32_t TimerGetElapsedSeconds(void);
 struct FTFileInfo;
 /* 1.0.10 passes the get-flags and save flag in a byte */
 #define FTFlagArg int32_t
@@ -546,7 +509,6 @@ struct FileTypeMap;
 extern void _FT_FileTypesLookup(const char *name, ULong type, struct FileTypeMap *entry);
 extern unsigned char AtomicMaskTest(ULong *word, ULong bit);
 extern void **IndirectAllocateTempMem(ULong size);
-extern unsigned char IsPlatformOpen(void);
 extern unsigned char _FT_IsIndirectBusy(void *p);
 extern void **IndirectAllocate(ULong size);
 extern void GetDateTime(uint32_t *seed);
@@ -554,7 +516,6 @@ extern void ResourceDestroy(struct RezFile *rez);
 extern char *ConvertNativePathToPath(const char *path);
 extern void *LoadAFileHandle(const char *path);
 extern void **AllocAHandleClear(ULong size);
-extern void _PlatformSetWindow(void *window);
 extern void VideoGetCurrentMode(int32_t *out);
 extern int32_t VideoSetMode(int32_t *rec);
 extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);
@@ -602,7 +563,6 @@ extern const short UnpackALawTable[256];
 struct ReadFileStream_t;
 extern unsigned int OSCursorIsVisible(void);
 extern void CStr2PStr(char *dst, const char *src);
-extern int32_t TimerGetSeconds(void);
 extern int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level);
 extern ULong ST_PlaySoundParam(SoundRequest *req);
 

@@ -850,11 +850,38 @@ void PlatAudioClose(PlatAudio *s)
     SDL_free(s);
 }
 
-/* -- clocks, log ---------------------------------------------------------------------------------- */
+/* -- locks ----------------------------------------------------------------------------------------- */
+
+PlatMutex *PlatMutexCreate(void)
+{
+    return (PlatMutex *)SDL_CreateMutex();
+}
+
+void PlatMutexLock(PlatMutex *m)
+{
+    SDL_LockMutex((SDL_Mutex *)m);
+}
+
+void PlatMutexUnlock(PlatMutex *m)
+{
+    SDL_UnlockMutex((SDL_Mutex *)m);
+}
+
+void PlatMutexDestroy(PlatMutex *m)
+{
+    SDL_DestroyMutex((SDL_Mutex *)m);
+}
+
+/* -- clocks, log ----------------------------------------------------------------------------------- */
 
 uint64_t PlatMicroseconds(void)
 {
     return SDL_GetTicksNS() / SDL_NS_PER_US;
+}
+
+void PlatSleep(int ms)
+{
+    SDL_Delay((Uint32)ms);
 }
 
 uint32_t PlatLocalSeconds1904(void)

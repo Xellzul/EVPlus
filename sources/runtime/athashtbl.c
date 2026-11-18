@@ -450,7 +450,6 @@ HashTable *HashCreate(ULong flags)
     err = 0;
     t = 0;
     n = 0;
-    SystemCheckCallback();
     if ((flags & kKeyWide) != 0)
         flags |= kKeyFold;
     if ((flags & kLargeTable) != 0)
@@ -506,7 +505,6 @@ HashTable *HashInitialize(ULong flags, const char *text)
     err = 0;
     copy = 0;
     t = 0;
-    SystemCheckCallback();
     HashIsValidRef((HashTable *)text);
     if (HashIsWide(flags) != 0) {
         err = kBadArgument;
@@ -539,7 +537,6 @@ HashTable *HashInitializeUnicode(ULong flags, const unsigned short *text)
     err = 0;
     copy = 0;
     t = 0;
-    SystemCheckCallback();
     HashIsValidRef((HashTable *)text);
     if ((flags & kKindBinary) != 0) {
         err = kBadArgument;
@@ -1304,7 +1301,6 @@ HashTable *HashClone(void *ref)
     err = 0;
     t = 0;
     e = 0;
-    SystemCheckCallback();
     HashIsValidRef(ref);
     t = MemoryAllocateClear(sizeof(HashTable) + (from->nBuckets - 1) * sizeof(HashEntry *));
     if (t == 0) {
@@ -1345,7 +1341,6 @@ void HashDispose(void *ref)
 
     t = ref;
     err = 0;
-    SystemCheckCallback();
     HashIsValidRef(ref);
     link = &gHashList;
     while ((p = *link) != 0 && p != t)
@@ -1373,7 +1368,6 @@ unsigned char HashIsEmpty(void *ref)
 
     t = ref;
     err = 0;
-    SystemCheckCallback();
     HashIsValidRef(ref);
     if (t->first != 0)
         return 0;
@@ -1389,7 +1383,6 @@ unsigned char HashIsValidRef(void *ref)
 
     t = ref;
     err = 0;
-    SystemCheckCallback();
     p = gHashList;
     while (p != 0 && p != t)
         p = p->next;
@@ -1405,7 +1398,6 @@ ULong HashGetFlags(void *ref)
 
     t = ref;
     err = 0;
-    SystemCheckCallback();
     return t->flags;
 }
 
@@ -1437,7 +1429,6 @@ int32_t _HashInsertAppend(void *ref, const void *key, ULong keyLen,
         charSize = 2;
     else
         charSize = 1;
-    SystemCheckCallback();
     HashIsValidRef(ref);
 
     if ((t->flags & kKindMask) == kKindBinary &&
@@ -1656,7 +1647,6 @@ unsigned char _HashRemove(void *ref, const void *key, ULong keyLen, ULong kind)
     t = ref;
     err = 0;
     removed = 0;
-    SystemCheckCallback();
     HashIsValidRef(ref);
     if ((t->flags & kKindMask) == kKindBinary &&
         (kind & kKindMask) != kKindBinary) {
@@ -1713,7 +1703,6 @@ HashEntry *_HashLookup(void *ref, const void *key, ULong keyLen, void *after, UL
     t = ref;
     err = 0;
     e = 0;
-    SystemCheckCallback();
     HashIsValidRef(ref);
 
     if ((t->flags & kKindMask) == kKindBinary &&
@@ -1777,7 +1766,6 @@ char *_HashIndex(void *ref, ULong index, char **key, ULong *keyLen, char **value
     t = ref;
     err = 0;
     e = 0;
-    SystemCheckCallback();
     HashIsValidRef(ref);
     if ((t->flags & kKindMask) == kKindBinary && (kind & kKindMask) != kKindBinary) {
         if ((kind & kKindMask) == 0)

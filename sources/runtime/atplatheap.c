@@ -21,9 +21,6 @@ void *MemoryAllocate(ULong size)
 
     err = 0;
     p = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     p = HeapAlloc(gProcessHeap, 0, size);
     if (p == 0)
         err = kOutOfMemory;
@@ -38,9 +35,6 @@ void *MemoryAllocateClear(ULong size)
 
     err = 0;
     p = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     p = HeapAlloc(gProcessHeap, kHeapZeroMemory, size);
     if (p == 0)
         err = kOutOfMemory;
@@ -53,9 +47,6 @@ void MemoryDeallocate(void *p)
     int32_t err;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     HeapFree(gProcessHeap, 0, p);
 }
 
@@ -132,9 +123,6 @@ int32_t IndirectPreflight(ULong count)
     ULong i;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     if (count == 0)
         count = kRecordsPerBlock;
     block = 0;
@@ -167,9 +155,6 @@ void **IndirectAllocate(ULong size)
 
     err = 0;
     found = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     block = 0;
     rec = 0;
     e = _IndirectValidate(0);
@@ -221,9 +206,6 @@ void **IndirectAllocateTempMem(ULong size)
 
     err = 0;
     result = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     result = IndirectAllocate(size);
     return result;
 }
@@ -238,9 +220,6 @@ void **IndirectDuplicate(void **handle)
     MemRecord *rec;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     rec = (MemRecord *)handle;
     size = IndirectGetSize(handle);
     copy = IndirectAllocate(size);
@@ -262,9 +241,6 @@ void *IndirectInitialize(const void *src, ULong size)
 
     err = 0;
     p = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     p = IndirectAllocate(size);
     if (p == 0)
         err = kOutOfMemory;
@@ -280,9 +256,6 @@ int32_t IndirectDeallocate(void **p)
     int32_t e;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
 
     if (gIndirectBusy != 0)
         gIndirectBusy(p);
@@ -328,9 +301,6 @@ int32_t IndirectSetSize(void **handle, ULong size)
     void *p;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     if (IndirectGetLock(handle) != 0) {
         err = kBadArgument;
     } else {
@@ -375,9 +345,6 @@ LockResult IndirectSetLock(void **handle, unsigned char lock)
 
     err = 0;
     old = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
 
     rec = (MemRecord *)handle;
     block = rec->block;
@@ -395,9 +362,6 @@ int32_t IndirectAppend(void **handle, void **from)
     ULong length;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     if ((unsigned char)IndirectGetLock(handle) != 0) {
         err = kBadArgument;
     } else {
@@ -422,9 +386,6 @@ int32_t IndirectReplace(void **handle, void **from)
     ULong length;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     if ((unsigned char)IndirectGetLock(handle) != 0) {
         err = kBadArgument;
     } else {
@@ -446,9 +407,6 @@ int32_t IndirectInsertData(void **handle, const void *data, ULong length)
     ULong old;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     if ((unsigned char)IndirectGetLock(handle) != 0) {
         err = kBadArgument;
     } else {
@@ -474,9 +432,6 @@ int32_t IndirectAppendData(void **handle, const void *data, ULong length)
     ULong old;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     if ((unsigned char)IndirectGetLock(handle) != 0) {
         err = kBadArgument;
     } else {
@@ -499,9 +454,6 @@ int32_t IndirectReplaceData(void **handle, const void *data, ULong length)
     int32_t err, e;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     if ((unsigned char)IndirectGetLock(handle) != 0) {
         err = kBadArgument;
     } else {
@@ -524,9 +476,6 @@ int32_t IndirectSpliceData(void **handle, ULong offset, ULong oldLength, const v
     ULong len;
 
     err = 0;
-    SystemCheckCallback();
-    _AtomicCheckCritical();
-    _ThreadCheckCritical();
     if ((unsigned char)IndirectGetLock(handle) != 0) {
         err = kBadArgument;
         goto done;

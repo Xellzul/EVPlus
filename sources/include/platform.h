@@ -115,8 +115,16 @@ extern void PlatAudioUnlock(PlatAudio *s);
 extern int PlatAudioDrained(PlatAudio *s);                 /* the pull ended and what it gave was played */
 extern void PlatAudioClose(PlatAudio *s);                  /* synchronous: the pull is never called after */
 
+/* -- locks: one thread at a time; the thread that holds one may take it again ----------------------- */
+typedef struct PlatMutex PlatMutex;
+extern PlatMutex *PlatMutexCreate(void);                   /* NULL when it cannot be made */
+extern void PlatMutexLock(PlatMutex *m);
+extern void PlatMutexUnlock(PlatMutex *m);
+extern void PlatMutexDestroy(PlatMutex *m);
+
 /* -- clocks, log, paths ----------------------------------------------------------------------------- */
-extern uint64_t PlatMicroseconds(void);                   /* monotonic */
+extern uint64_t PlatMicroseconds(void);                   /* monotonic, from any thread */
+extern void PlatSleep(int ms);                            /* 0 = only lets other threads run */
 extern uint32_t PlatLocalSeconds1904(void);               /* Mac clock: seconds since 1904-01-01, local time */
 extern void PlatDebugLog(const char *msg);
 /* a path in the ANSI code page (the game's) as UTF-8 (FFmpeg's file names on Windows) */

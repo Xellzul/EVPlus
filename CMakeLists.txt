@@ -138,7 +138,7 @@ set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-e
     -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double -w
     $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
 
-set(WIN_LIBS kernel32 user32 gdi32 winmm advapi32 shell32 comdlg32)
+set(WIN_LIBS kernel32 user32 gdi32 advapi32 shell32 comdlg32)
 
 add_executable(evnova_ce WIN32 ${GAME_SRC} ${SRC}/rsrc/evnova.rc)
 target_include_directories(evnova_ce PRIVATE ${SRC}/include)
