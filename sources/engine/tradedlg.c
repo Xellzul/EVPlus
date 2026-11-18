@@ -99,10 +99,8 @@ char playerInfoText[3][4096];
 short nagCount;
 short previewPicID;
 RGBColor shopGridColor[2];
-#ifndef MACBUILD
 void *gIntroMovieData;
 Rect gMovieBox;
-#endif
 /* the menu icon cache draws into a port on mac, into the port's container on win */
 #define MenuIconPort(gwc) (gwc)
 
@@ -1028,12 +1026,10 @@ void DoOutfitDialog(void)
             if (canBuy && selOutfitItem != -1) {
                 count = 1;
                 if ((filterKey & optionKey) != 0) {
-#ifndef V111
                     cost = ApplyPriceAndTechnologyFlux(
                         outfitSystem[selOutfitItem].cost, priceFluxMult[0],
                         outfitSystem[selOutfitItem].techLevel,
                         stellarData[shipData->targetStellar].techLevel);
-#endif
                     cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
                                             &shipClass[shipData->type]);
                     if (cost <= 0)
@@ -1064,12 +1060,10 @@ void DoOutfitDialog(void)
                 }
                 for (m = 0; m < count; m++) {
                     if (canBuy) {
-#ifndef V111
                         cost = ApplyPriceAndTechnologyFlux(
                             outfitSystem[selOutfitItem].cost, priceFluxMult[0],
                             outfitSystem[selOutfitItem].techLevel,
                             stellarData[shipData->targetStellar].techLevel);
-#endif
                         cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
                                                 &shipClass[shipData->type]);
                         GrantOutfitItem(selOutfitItem);
@@ -1281,12 +1275,10 @@ void DoOutfitDialog(void)
                     }
                 }
                 if (canSell) {
-#ifndef V111
                     cost = ApplyPriceAndTechnologyFlux(
                         outfitSystem[selOutfitItem].cost, priceFluxMult[0],
                         outfitSystem[selOutfitItem].techLevel,
                         stellarData[shipData->targetStellar].techLevel);
-#endif
                     cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
                                             &shipClass[shipData->type]);
                     if (shipSystems[selOutfitItem]
@@ -1429,9 +1421,7 @@ void DoOutfitDialog(void)
     SetSystemBackgroundColor();
     PaintRect(&gSpriteWorld->backFrameP->frameRect);
     ForeColor(blackColor);
-#ifndef V111
     RedrawStatus(0);
-#endif
     SWSetPortToWindow(gSpriteWorld);
     shipData->targetStellar = savedUnk6C;
     shipData->navTargetKind = savedUnk6A;
@@ -1920,9 +1910,7 @@ Boolean CanBuyOutfitItem(short outfit)
 {
     Boolean isCargo;
     Boolean isMap;
-#ifndef MAC1010
     short cargoDelta;
-#endif
     int32_t freeMass;
     int32_t mass;
     Boolean can;
@@ -2254,9 +2242,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
                 DoShipyardDialog();
                 statusRedraw[kRedrawCargo] = 1;
                 SetDialogGWorld(portDialog);
-#ifndef MACBUILD
                 RedrawDialog(portDialog);
-#endif
             }
         } else if (itemHit == 10) {
             if (canDoMissions != 0) {
@@ -3516,9 +3502,7 @@ Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (PtInRectPoint(where, &box)) {
             GetIndString(label, kLabelStrList, kLabelStrIdx);
             DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 1, 0);
-#ifndef MACBUILD
             nv_UpdateDialogWindow(0);
-#endif
             lastHit = 1;
             while (StillDown()) {
                 BusyIdle();
@@ -3532,9 +3516,7 @@ Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                         DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 1, 0);
                     else
                         DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 0, 0);
-#ifndef MACBUILD
                     nv_UpdateDialogWindow(0);
-#endif
                 }
                 lastHit = hit;
             }
@@ -3978,11 +3960,9 @@ void UpdateAllPortDialogs(void)
         else if (portDialog != NULL)
             MissionDialogUpdate();
     }
-#ifndef MACBUILD
     if (portDialog != NULL || shipyardDialog != NULL || outfitDialog != NULL
             || missionDialog != NULL)
         nv_UpdateDialogWindow(1);
-#endif
 }
 
 // FUNCTION: EVNOVA 0x00497500
@@ -4508,9 +4488,7 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
                 }
             } else {
                 UpdateAllPortDialogs();
-#ifdef MACBUILD
                 RefreshSAT();
-#endif
                 RedrawStatus(1);
             }
             if (showingIntroText == 0)
@@ -4632,9 +4610,7 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
                 MainScreenUpdate(1);
             }
         } else {
-#ifdef MACBUILD
             RefreshSAT();
-#endif
             RedrawStatus(1);
         }
         FadeScreenIn();
@@ -4731,9 +4707,7 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
                 }
             } else {
                 UpdateAllPortDialogs();
-#ifdef MACBUILD
                 RefreshSAT();
-#endif
                 RedrawStatus(1);
             }
             FadeScreenIn();
@@ -5242,9 +5216,7 @@ void DoPlayerInfoDialog(void)
         }
     }
     SWSetPortToWindow(gSpriteWorld);
-#ifdef MACBUILD
     RefreshSAT();
-#endif
     FlushEvents(7, 0);
 }
 
@@ -6310,22 +6282,18 @@ void EndLoopingMovie(void)
     if (loopingMovie != NULL) {
         DisposeMovie(loopingMovie);
         loopingMovie = NULL;
-#ifndef MACBUILD
         FUN_004fc310(gIntroMovieData);
         gIntroMovieData = NULL;
-#endif
     }
 }
 
 /* the movie's idle callback; taken by address at 0x0049deb1 */
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x0049daf0
 short IntroMovieIdleProc(void)
 {
     ScreenEndScene();
     return 0;
 }
-#endif
 
 #pragma pack(push, 1)
 typedef struct FileSpec {
@@ -6343,176 +6311,6 @@ typedef struct FileSpec {
 // FUNCTION: EVNOVA 0x0049db00
 // MAC: _PlayQTMovie i386 0x00055957 ppc 0x0005dbc4
 void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
-#ifdef MACBUILD
-{
-#ifdef MAC1010
-    FSSpec spec;
-    Rect box;
-    Rect r;
-    Rect scaled;
-    Movie movie;
-    int32_t dirID;
-    short fileRef;
-    short movieResId;
-    short vRefNum;
-    int32_t savedPaintWhite;
-#else
-    HFSUniStr255 uniName;
-    FSRef ref;
-    Handle dataRef;
-    OSType dataRefType;
-    Movie movie;
-    short movieResId = -1;
-    Rect scaled;
-    Rect r;
-    Rect box;
-#endif
-    WindowRef win;
-    short dw, dh, w, h;
-    float ratio;
-    uint32_t last;
-    EventRecord ev;
-    OSErr err;
-
-    if (settings.noMovies != 0)
-        return;
-#ifdef MAC1010
-    if (GetPluginSubfolder(gARef, "\pNova Plug-Ins", &dirID, &vRefNum) != noErr)
-        return;
-    FSMakeFSSpec(vRefNum, dirID, name, &spec);
-    err = OpenMovieFile(&spec, &fileRef, fsRdPerm);
-    if (err != noErr) {
-        if (GetPluginSubfolder(gARef, "\pNova Files", &dirID, &vRefNum) != noErr)
-            return;
-        FSMakeFSSpec(vRefNum, dirID, name, &spec);
-        err = OpenMovieFile(&spec, &fileRef, fsRdPerm);
-        if (err != noErr)
-            return;
-    }
-    movieResId = 0;
-    NewMovieFromFile(&movie, fileRef, &movieResId, NULL, newMovieActive, NULL);
-    CloseMovieFile(fileRef);
-    if (err != noErr)
-        return;
-#else
-    HFSNameGetUnicodeName(name, kTextEncodingUnknown, &uniName);
-    if (FSMakeFSRefUnicode(&pluginsFolder, uniName.length, uniName.unicode,
-                           kTextEncodingUnknown, &ref) != noErr
-        && FSMakeFSRefUnicode(&novaFilesFolder, uniName.length, uniName.unicode,
-                              kTextEncodingUnknown, &ref) != noErr)
-        return;
-    if (QTNewDataReferenceFromFSRef(&ref, 0, &dataRef, &dataRefType) != noErr)
-        return;
-    if (NewMovieFromDataRef(&movie, newMovieActive, &movieResId, dataRef,
-                            dataRefType) != noErr)
-        return;
-#endif
-    if (fade != 0) {
-        FadeScreenOut();
-        HideTheCursor();
-    }
-    GetMovieBox(movie, &box);
-    OffsetRect(&box, -box.left, -box.top);
-    if (doubled != 0) {
-        scaled.left = 0;
-        scaled.top = 0;
-        scaled.right = (box.right - box.left) * 2;
-        scaled.bottom = (box.bottom - box.top) * 2;
-        scaled.right++;
-        scaled.bottom++;
-        OffsetRect(&scaled, -scaled.left, -scaled.top);
-        box = scaled;
-    }
-    SetMovieBox(movie, &box);
-    if (fade != 0)
-        r = *GetCWindowPortRect((WindowRef)gWind);
-    else
-        r = box;
-    win = NewCWindow(NULL, &r, "\p", false, plainDBox, NULL, true, -1);
-    CenterWindow(win, gWind);
-    ShowWindowNoFlash(win);
-    SetPort((GrafPtr)GetWindowPort(win));
-    ForeColor(blackColor);
-    PaintRect(GetWindowPortRect(win));
-#ifndef MAC1010
-    QDFlushPortBuffer(GetWindowPort(win), NULL);
-#endif
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    savedPaintWhite = LMGetPaintWhite();
-    LMSetPaintWhite(0);
-#endif
-    SelectWindow(win);
-    BringToFront(win);
-    ForeColor(blackColor);
-    PaintRect(GetWindowPortRect(win));
-#ifndef MAC1010
-    QDFlushPortBuffer(GetWindowPort(win), NULL);
-#endif
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    SetMovieGWorld(movie, GetWindowPort(win), 0);
-#else
-    SetMovieGWorld(movie, GetCWindowGrafPort(win), 0);
-#endif
-    w = GetWindowPortRect(win)->right - GetWindowPortRect(win)->left;
-    h = GetWindowPortRect(win)->bottom - GetWindowPortRect(win)->top;
-    dw = box.right - box.left;
-    dh = box.bottom - box.top;
-    /* BUG: both letterbox fits compute the new bottom from box.left, not box.top */
-    if (dw > w) {
-        ratio = (float)w / dw;
-        box.right = box.left + dw * ratio;
-        box.bottom = box.left + dh * ratio;
-    }
-    dw = box.right - box.left;
-    dh = box.bottom - box.top;
-    if (dh > h) {
-        ratio = (float)h / dh;
-        box.right = box.left + dw * ratio;
-        box.bottom = box.left + dh * ratio;
-    }
-    CenterRect(&box, GetWindowPortRect(win));
-    SetMovieBox(movie, &box);
-    GoToBeginningOfMovie(movie);
-    LoadMovieIntoRam(movie, 0, GetMovieDuration(movie), 0);
-    if (fade != 0)
-        FadeScreenIn();
-    last = 0;
-    StartMovie(movie);
-    while (!IsMovieDone(movie)) {
-        if (TickCount() > last + 6) {
-            last = TickCount();
-            MoviesTask(movie, 0);
-#ifdef MAC1010
-            BusyIdle();
-#else
-            WaitNextEvent(0, &ev, (gameLoaded != 0 && inBackground != 0) ? 30 : 0, NULL);
-#endif
-        }
-        if (Button() || KeyCheck(MacKey(0x31)) || KeyCheck(MacKey(0x24)) || KeyCheck(MacKey(0x4c))) {
-            FlushEvents(0xf, 0);
-            break;
-        }
-    }
-    StopMovie(movie);
-    if (fade != 0) {
-        FadeScreenOut();
-        ShowTheCursor();
-    }
-    HideWindow(win);
-    DisposeWindow(win);
-#ifdef MAC1010
-#if !TARGET_API_MAC_CARBON
-    LMSetPaintWhite(savedPaintWhite);
-#endif
-#else
-    if (fade != 0)
-        FadeScreenIn();
-#endif
-    DisposeMovie(movie);
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-}
-#else
 {
     char nameBuf[256];
     FileSpec spec;
@@ -6659,7 +6457,6 @@ found:
         return;
     }
 }
-#endif
 
 // FUNCTION: EVNOVA 0x0049e3c0
 // MAC: _PlayQTMovieFromDesc i386 0x00055f11 ppc 0x0005e194
@@ -6675,12 +6472,10 @@ void PlayQTMovieFromDesc(short id)
 
 
 
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x0049e420
 void FUN_0049e420(void)
 {
 }
-#endif
 
 // FUNCTION: EVNOVA 0x0049e430
 // MAC: _DrawEscortMenuInFrame i386 0x00056268 ppc 0x0005e590
@@ -6892,9 +6687,7 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
             } else {
                 SysBeep(0);
                 SetDialogItemText((Handle)item,(const unsigned char *)"\p");
-#if !defined(MACBUILD) && !V111
                 SelectDialogItemText(qtyDialog, kQtyTextItem, 0, 0x7fff);
-#endif
             }
         }
     } while (!done);
