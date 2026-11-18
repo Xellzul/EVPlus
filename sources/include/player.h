@@ -78,21 +78,11 @@ extern void HandlePlayerDockRequest(void);
 extern Boolean HasAfterburner(ShipObj *ship);
 extern Boolean HasDensityScanner(ShipObj *ship);
 extern Boolean HasIFF(ShipObj *ship);
-#if defined(MACBUILD) && V111 /* the 1.1.1 preferences layer (EVPrefsDialogWrapper.o) takes a flag */
-extern void LoadPrefs(Boolean loadWindowed);
-#else
 extern void LoadPrefs(void);
-#endif
 extern void LoadResponse(short which);
 extern int32_t DoEncryption(void *buf, uint32_t len, uint32_t key);
 extern int32_t SaveAFile(const char *path, const void *data, uint32_t length);
-#ifdef MAC1010
-extern short LoadPilotData(FSSpec *spec);
-#elif defined(MACBUILD)
-extern short LoadPilotData(const FSRef *ref);
-#else
 extern short LoadPilotData(char *path);
-#endif
 extern void OpenLastPilotFile(void);
 extern Boolean OpenPilotFile(char *missingResource);
 extern unsigned char QuickKeyCheck(short scanCode);
@@ -160,11 +150,7 @@ extern short newbieFlag;
 extern Boolean noSavePilotFiles;
 extern Boolean noUpdatePilotData;
 extern Boolean oldPlayerThreatened;
-#ifdef MACBUILD
-extern FSRef pilotsFolder;
-#else
 extern char pilotsFolder[];
-#endif
 extern short playerGender;
 extern short playerHasAfterburner;
 extern Boolean playerIsLanded;
@@ -196,11 +182,7 @@ EXTERN_CPP_END
 extern short SavePilotFile(short stellar);
 extern void HandlePlayerCommunication(void);
 extern void ActivateCharResource(const unsigned char *name, Boolean applyStats);
-#ifdef MACBUILD
-extern void DeletePilotFile(ConstStr255Param name);
-#else
 extern void DeletePilotFile(const char *name);
-#endif
 extern void ActivateRank(char *rank);
 extern void DeactivateRank(char *rank);
 EXTERN_CPP_BEGIN

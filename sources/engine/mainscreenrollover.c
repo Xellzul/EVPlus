@@ -35,9 +35,7 @@ Rect rolloverDestRect;
 Rect slideDestRect[3];
 Boolean didSpeak;
 Boolean doMainScreenAnim;
-#if !defined(MACBUILD) || defined(MAC1010)
 Boolean majorPrefsChange;
-#endif
 Boolean creatingPilotFile;
 Boolean gUpdateFlag;
 Boolean regNoticeShown;

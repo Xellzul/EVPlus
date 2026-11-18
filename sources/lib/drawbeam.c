@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include "macport.h"
 #include "spriteworld.h"
-#ifdef MACBUILD
-#include "render.h"
-#endif
 
 // FUNCTION: EVNOVA 0x00479590
 // MAC: _DrawTranslucentLine i386 0x000c3259 ppc 0x000cf604
@@ -73,118 +70,6 @@ void DrawTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
 
 // FUNCTION: EVNOVA 0x004797b0
 // MAC: _BlitTranslucentLine i386 0x000c2c90 ppc 0x000cf0a0
-#ifdef MACBUILD
-#define TRANS_PIXEL(x, y)     switch (depth)     {         case 8:             *SW_PIXELPTR8(dstFrameP, x, y) =                 Trans8Bit(color, *SW_PIXELPTR8(dstFrameP, x, y), alpha);             break;         case 16:             *SW_PIXELPTR16(dstFrameP, x, y) =                 Trans16Bit(color, *SW_PIXELPTR16(dstFrameP, x, y), alpha);             break;         case 32:             *SW_PIXELPTR32(dstFrameP, x, y) = color;             break;     }
-
-void BlitTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
-                         uint32_t color, uint32_t alpha, uint32_t dstShade,
-                         uint32_t srcRamp, uint32_t dstRamp)
-{
-    short           x1, y1, x2, y2;
-    short           curX, curY;
-    short           dx, dy, sx, sy;
-    short           accum;
-    short           shade;
-    short           depth;
-
-    x1 = srcPoint.h;
-    y1 = srcPoint.v;
-    x2 = dstPoint.h;
-    y2 = dstPoint.v;
-
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-    depth = (**(dstFrameP->framePort)->portPixMap).pixelSize;
-#else
-    depth = (*GetPortPixMap(dstFrameP->framePort))->pixelSize;
-#endif
-
-    dx = x2 - x1;
-    dy = y2 - y1;
-
-    sx = SIGN(dx);
-    sy = SIGN(dy);
-
-    dx = ABS(dx);
-    dy = ABS(dy);
-
-    curX = x1;
-    curY = srcPoint.v;
-
-    shade = alpha;
-    if (srcRamp != 0)
-        alpha = dstShade;
-
-    if (alpha != 0)
-        TRANS_PIXEL(curX, curY)
-
-    if (dx > dy)
-    {
-        accum = dx >> 1;
-        while (x1 != x2)
-        {
-            accum -= dy;
-            if (accum < 0)
-            {
-                accum += dx;
-                curY += sy;
-            }
-            x1 += sx;
-            curX += sx;
-
-            if (ABS(x1 - srcPoint.h) < srcRamp)
-            {
-                if (alpha < shade)
-                    alpha++;
-            }
-            else if (ABS(x1 - dstPoint.h) < dstRamp)
-            {
-                if (alpha != 0)
-                    alpha--;
-                else
-                    return;
-            }
-            else if (alpha != shade)
-                alpha = shade;
-
-            if (alpha != 0)
-                TRANS_PIXEL(curX, curY)
-        }
-    }
-    else
-    {
-        accum = dy >> 1;
-        while (y1 != y2)
-        {
-            accum -= dx;
-            if (accum < 0)
-            {
-                accum += dy;
-                curX += sx;
-            }
-            y1 += sy;
-            curY += sy;
-
-            if (ABS(y1 - srcPoint.v) < srcRamp)
-            {
-                if (alpha < shade)
-                    alpha++;
-            }
-            else if (ABS(y1 - dstPoint.v) < dstRamp)
-            {
-                if (alpha != 0)
-                    alpha--;
-                else
-                    return;
-            }
-            else if (alpha != shade)
-                alpha = shade;
-
-            if (alpha != 0)
-                TRANS_PIXEL(curX, curY)
-        }
-    }
-}
-#else
 void BlitTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
                          uint32_t color, int32_t srcShade, int32_t dstShade,
                          uint32_t srcRamp, uint32_t dstRamp)
@@ -289,7 +174,6 @@ void BlitTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
         }
     }
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00479c50
 // MAC: _CopyLine i386 0x000c3936 ppc 0x000cfc64
@@ -492,184 +376,6 @@ void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color
 
 // FUNCTION: EVNOVA 0x0047a410
 // MAC: _DrawLightningBeam i386 0x000c3f9d ppc 0x000d01fc
-#ifdef MACBUILD
-void DrawLightningBeam(FramePtr frameA, FramePtr frameB, Point srcPoint, Point dstPoint,
-                       uint32_t color, short width, short segPercent, short jitter,
-                       short shade)
-{
-    Rect    clipRect;
-    Rect    bounds;
-    Point   tempPt, curPt, lastPt, newPt;
-    Point   ptA, ptB;
-    short   segs, seg, i;
-    short   range, shadeStep, curShade;
-    short   rampEnd;
-    Boolean longerHoriz;
-    float   stepH, stepV, curH, curV;
-
-    clipRect = frameA->frameRect;
-    InsetRect(&clipRect, -32, -32);
-
-    if (srcPoint.h < clipRect.left && dstPoint.h < clipRect.left)
-        return;
-    if (srcPoint.h > clipRect.right && dstPoint.h > clipRect.right)
-        return;
-    if (srcPoint.v < clipRect.top && dstPoint.v < clipRect.top)
-        return;
-    if (srcPoint.v > clipRect.bottom && dstPoint.v > clipRect.bottom)
-        return;
-
-    tempPt.h = abs(srcPoint.h - dstPoint.h);
-    tempPt.v = abs(srcPoint.v - dstPoint.v);
-
-    if (tempPt.h > tempPt.v)
-        segs = segPercent * tempPt.h * 0.01;
-    else
-        segs = segPercent * tempPt.v * 0.01;
-
-    if (segs < 1)
-        segs = 1;
-
-    stepH = (float)(dstPoint.h - srcPoint.h) / segs;
-    stepV = (float)(dstPoint.v - srcPoint.v) / segs;
-    curH = srcPoint.h;
-    curV = srcPoint.v;
-
-    tempPt.h = (float)srcPoint.h;
-    tempPt.v = (float)srcPoint.v;
-
-    if (ABS(srcPoint.h - dstPoint.h) > ABS(srcPoint.v - dstPoint.v))
-        longerHoriz = true;
-    else
-        longerHoriz = false;
-
-    if (dstPoint.h > srcPoint.h)
-    {
-        bounds.left = srcPoint.h;
-        bounds.right = dstPoint.h;
-    }
-    else
-    {
-        bounds.left = dstPoint.h;
-        bounds.right = srcPoint.h;
-    }
-
-    if (dstPoint.v > srcPoint.v)
-    {
-        bounds.top = srcPoint.v;
-        bounds.bottom = dstPoint.v;
-    }
-    else
-    {
-        bounds.top = dstPoint.v;
-        bounds.bottom = srcPoint.v;
-    }
-
-    if (longerHoriz)
-        InsetRect(&bounds, 0, -(jitter + width));
-    else
-        InsetRect(&bounds, -(jitter + width), 0);
-
-    shadeStep = 32 / (width + 1);
-    range = jitter * 2 + 1;
-    lastPt = tempPt;
-
-    for (seg = 0; seg < segs - 1; seg++)
-    {
-        curH += stepH;
-        curV += stepV;
-
-        curPt.h = curH;
-        curPt.v = curV;
-        tempPt = curPt;
-
-        if (seg < segs - 2)
-        {
-            newPt.h = curPt.h + Random() % range - jitter;
-            newPt.v = curPt.v + Random() % range - jitter;
-        }
-        else
-            newPt = dstPoint;
-
-        if (newPt.h < bounds.left)
-            newPt.h = bounds.left;
-        if (newPt.h > bounds.right)
-            newPt.h = bounds.right;
-        if (newPt.v < bounds.top)
-            newPt.v = bounds.top;
-        if (newPt.v > bounds.bottom)
-            newPt.v = bounds.bottom;
-
-        for (i = 0; i < width; i++)
-        {
-            ptA = lastPt;
-            ptB = newPt;
-
-            if (seg == segs - 2)
-                rampEnd = 32;
-            else
-                rampEnd = 0;
-
-            curShade = shade - i * shadeStep;
-            if (curShade < 1)
-                curShade = 1;
-
-            if (longerHoriz)
-            {
-                ptA.v += i;
-                ptB.v += i;
-                if (useLegacyRenderingPipeline)
-                {
-                    DrawTranslucentLine(frameA, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                    DrawTranslucentLine(frameB, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                }
-                else
-                    DrawTranslucentLine(frameA, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-
-                if (i > 0)
-                {
-                    ptA.v = lastPt.v - i;
-                    ptB.v = newPt.v - i;
-                    if (useLegacyRenderingPipeline)
-                    {
-                        DrawTranslucentLine(frameA, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                        DrawTranslucentLine(frameB, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                    }
-                    else
-                        DrawTranslucentLine(frameA, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                }
-            }
-            else
-            {
-                ptA.h += i;
-                ptB.h += i;
-                if (useLegacyRenderingPipeline)
-                {
-                    DrawTranslucentLine(frameA, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                    DrawTranslucentLine(frameB, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                }
-                else
-                    DrawTranslucentLine(frameA, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-
-                if (i > 0)
-                {
-                    ptA.h = lastPt.h - i;
-                    ptB.h = newPt.h - i;
-                    if (useLegacyRenderingPipeline)
-                    {
-                        DrawTranslucentLine(frameA, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                        DrawTranslucentLine(frameB, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                    }
-                    else
-                        DrawTranslucentLine(frameA, ptA, ptB, color, curShade, curShade, 0, rampEnd);
-                }
-            }
-        }
-
-        lastPt = newPt;
-    }
-}
-#else
 void DrawLightningBeam(FramePtr frameA, FramePtr frameB, Point srcPoint, Point dstPoint,
                        uint32_t color, short width, short segPercent, short jitter,
                        short shade)
@@ -872,7 +578,6 @@ void DrawLightningBeam(FramePtr frameA, FramePtr frameB, Point srcPoint, Point d
         lastH = newH;
     }
 }
-#endif
 
 // FUNCTION: EVNOVA 0x0047ac50
 // MAC: _EraseBeam i386 0x000c48b5 ppc 0x000d08c0

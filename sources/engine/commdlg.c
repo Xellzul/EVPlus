@@ -2004,6 +2004,8 @@ void DoPlunderDialog(void)
 }
 
 #ifdef MACBUILD
+// KEPT: a cut feature (nothing calls it, even on mac) -- rates the hailed ship's view of the player
+// (legal record in its system, kill count) into playerStudliness 0..6; possible future use, not enabled on win
 short playerStudliness;
 
 /* EvalPlayerStudliness (mac-only, no caller in 1.1.1) */

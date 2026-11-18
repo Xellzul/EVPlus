@@ -1,9 +1,7 @@
 // COMPILE: -lang c++ -bool off
 /* dialogmgr.c -- the port's Dialog, Control and List Manager (win 0x004cea90..0x004d2950, in exe order). Notes: Research/notes/dialogmgr.md */
 #include "burgerplat.h"
-#ifndef MACBUILD
 #include "win32.h"
-#endif
 #include <stddef.h>
 #include <string.h>   /* strcpy 0x004d6010, strlen 0x004eedb0 */
 #include <stdio.h>
@@ -19,7 +17,6 @@
 #include "cefix.h"
 #include "endianswap.h"
 
-#ifndef MACBUILD
 /* A control points back at the dialog that owns it so that changing a value
    can mark the dialog dirty. */
 
@@ -936,7 +933,6 @@ void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t en
     }
 }
 
-#endif
 
 // FUNCTION: EVNOVA 0x004cfd30
 Rect *GetDialogPortRect(DialogPtr dlg)
@@ -944,7 +940,6 @@ Rect *GetDialogPortRect(DialogPtr dlg)
     return &dlg->portRect;
 }
 
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x004cfd40
 void SetControlValue(ControlPtr ctl, int32_t value)
 {
@@ -998,9 +993,7 @@ void InvalDialogRect(DialogPtr dlg, Rect *box)
 // FUNCTION: EVNOVA 0x004cfdd0
 void ModalDialog(void *filterProc, short *itemHitPtr)
 {
-#ifndef MACBUILD
     extern int PtInRect(int32_t h, int32_t v, Rect *r);
-#endif
     char handled;
     int32_t mods;
     uint32_t saved;    /* the tick rate, then the eventProc's itemHit save: one register */
@@ -2388,4 +2381,3 @@ void CreateGameWindow(void *hInstance, int32_t nCmdShow)
 }
 
 EXTERN_C_END
-#endif

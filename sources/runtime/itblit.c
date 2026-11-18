@@ -4,9 +4,7 @@
 #include "burgertypes.h"
 #include "burgerplat.h"
 #include "burger.h"
-#ifndef MAC1010
 #include "win32.h"
-#endif
 #include "ambrosia.h"
 
 
@@ -112,21 +110,14 @@ int32_t DT_Open(void)
     gDT_AlphaPalette.count = kPaletteEntries;
     for (i = 0; i < kPaletteEntries; i = i + 1) {
         gDT_AlphaPalette.entry[i].alpha = kOpaque;
-#ifdef MAC1010 /* 1.0.10 real: the ramp is inverted, 0x100c8238 stores ~i */
-        gDT_AlphaPalette.entry[i].red = gDT_AlphaPalette.entry[i].green =
-            gDT_AlphaPalette.entry[i].blue = ~i;
-#else
         gDT_AlphaPalette.entry[i].red = gDT_AlphaPalette.entry[i].green =
             gDT_AlphaPalette.entry[i].blue = i;
-#endif
     }
 
-#ifndef MAC1010
     gMsimgTransparentBlit = GetProcAddress(GetModuleHandleA("MSIMG32.DLL"),
                                   "TransparentBlt");
     gGDIDIBSectionFunc = (int32_t)GetProcAddress(GetModuleHandleA("GDI32.DLL"),
                                         "CreateDIBSection");
-#endif
     gDT_Open = 1;
 done:
     return err;
@@ -138,9 +129,7 @@ void DT_Close(void)
     int32_t err;
 
     err = 0;
-#ifndef MAC1010
     gGDIDIBSectionFunc = 0;
-#endif
     gDT_Open = 0;
 }
 
@@ -399,15 +388,6 @@ ULong DT_ImageFileFormat(void **handle)
         if (PICT_CheckFileType(pict, kSniffPict) != 0)
             return 'PICT';
     }
-#ifdef MAC1010
-    else if (IndirectGetSize(handle) >= kSniffHead) {
-        void *data = *handle;
-        void *copy = data;
-        memmove(head, data, kSniffHead);
-        if (PICT_CheckFileType(head, kSniffHead) != 0)
-            return 'PICT';
-    }
-#endif
     if (IndirectGetSize(handle) >= kSniffPpat) {
         void *data = *handle;
         void *copy = data;
@@ -665,13 +645,11 @@ void *DT_PeekAtSysContext(ITImage *image)
     if (port->link.owner2->pixelsSelf != 0) {
         pixels = _DT_SurfaceGetImage(port->link.owner2);
         if (pixels->locks != 0 || (pixels->flags & kPixelsBitsChanged) != 0) {
-#ifndef MAC1010
             e = DT_SyncDib(pixels->dib, 1, 0);
             if (e != 0) {
                 err = e;
                 goto done;
             }
-#endif
             pixels->flags &= ~kPixelsBitsChanged;
         }
         pixels->flags |= kPixelsInBitmap;
@@ -1338,24 +1316,14 @@ TILED_BODY(PIXEL_KEY_SET, ANY_DST, ANY_SRC, NO_ALPHA, KEY_SETUP)
 /* ---- the dispatch tables ---- */
 
 /* 0x00576de8: a depth's same-format column (0 none; 1 is the Set column) */
-#ifdef MAC1010
-static ULong gSpanColumn[40] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 3,
-    3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0,
-    6
-};
-#else
 static const ULong gSpanColumn[33] = {
     0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 3,
     4, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0,
     6
 };
-#endif
 
 /* 0x00576e6c: seven zero words the exe keeps between the column table and the tables below */
-#ifndef MAC1010
 static const ULong gSpanSpare[7] = { 0 };
-#endif
 
 #define SAME_FORMAT_COLUMNS(none, copy)                                       \
     none, copy, none##_8, none##_15, none##_16, none##_24, none##_32
@@ -1942,80 +1910,6 @@ int32_t _DT_ImageCalcFormat(ULong format, unsigned char *flag, unsigned char *bi
         g = (format >> 4) & 0xf;
         b = format & 0xf;
     }
-#ifdef MAC1010
-    switch (format) {
-    case 8:
-        bytes = 1;
-        bits[0] = 8;
-        bits[1] = 8;
-        bits[2] = 8;
-        bits[3] = 8;
-        shift[0] = 24;
-        shift[1] = 16;
-        shift[2] = 8;
-        shift[3] = 0;
-        break;
-    case 15:
-    case 16:
-        a = format - 15;
-        r = g = b = 5;
-    case kFormatRgb555:
-    case kFormatArgb1555:
-    case kFormatArgb4444:
-        bytes = 2;
-        aShift = r + (rShift = g + (gShift = b + (bShift = 0)));
-        bits[0] = a;
-        bits[1] = r;
-        bits[2] = g;
-        bits[3] = b;
-        shift[0] = aShift;
-        shift[1] = rShift;
-        shift[2] = gShift;
-        shift[3] = bShift;
-        break;
-    case kFormatRgba4444:
-        bytes = 2;
-        rShift = g + (gShift = b + (bShift = a + (aShift = 0)));
-        bits[0] = a;
-        bits[1] = r;
-        bits[2] = g;
-        bits[3] = b;
-        shift[0] = aShift;
-        shift[1] = rShift;
-        shift[2] = gShift;
-        shift[3] = bShift;
-        break;
-    case 24:
-    case 32:
-        a = format - 24;
-        r = g = b = 8;
-    case kFormatRgb888:
-    case kFormatArgb8888:
-        bytes = 4;
-        aShift = r + (rShift = g + (gShift = b + (bShift = 0)));
-        bits[0] = a;
-        bits[1] = r;
-        bits[2] = g;
-        bits[3] = b;
-        shift[0] = aShift;
-        shift[1] = rShift;
-        shift[2] = gShift;
-        shift[3] = bShift;
-        break;
-    case kFormatRgba8888:
-        bytes = 4;
-        rShift = g + (gShift = b + (bShift = a + (aShift = 0)));
-        bits[0] = a;
-        bits[1] = r;
-        bits[2] = g;
-        bits[3] = b;
-        shift[0] = aShift;
-        shift[1] = rShift;
-        shift[2] = gShift;
-        shift[3] = bShift;
-        break;
-    }
-#else
     switch (format) {
     case 8:
         bytes = 1;
@@ -2104,7 +1998,6 @@ int32_t _DT_ImageCalcFormat(ULong format, unsigned char *flag, unsigned char *bi
         shift[3] = bShift;
         break;
     }
-#endif
     /* BUG: an unknown key leaves bits[] unwritten, so its masks and scales come from
        whatever the caller's buffer held */
     for (i = 0; i < 4; i++) {
@@ -2127,13 +2020,8 @@ ULong _DT_ImageCalcStamp(const ITPixels *info)
     } else {
         key = info->bits[0] << 12 | info->bits[1] << 8 |
               info->bits[2] << 4 | info->bits[3];
-#ifdef MAC1010 /* 1.0.10 real: 0x100d6298 compares shifts 0x26 > 0x27 > 0x28 > 0x25, big-endian */
-        if (info->shift[1] > info->shift[2] && info->shift[2] > info->shift[3] &&
-            info->shift[3] > info->shift[0])
-#else
         if (info->shift[0] > info->shift[3] && info->shift[3] > info->shift[2] &&
             info->shift[2] > info->shift[1])
-#endif
             key |= kFormatReversed;
     }
     return key;

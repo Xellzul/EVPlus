@@ -2,9 +2,6 @@
 #ifndef BURGER_H
 #define BURGER_H
 
-#ifdef MACBUILD
-typedef char **Handle;
-#endif
 #include "burgertypes.h"
 
 #include <stdio.h>
@@ -14,24 +11,10 @@ extern "C" {
 #endif
 
 /* memory manager (MMMemoryManager) */
-#ifdef MACBUILD
-/* the mac engine allocates with the Memory Manager */
-#define AllocAPointer(size) NewPtr(size)
-#else
 extern void * AllocAPointer(Word32 MemSize);
-#endif
-#ifdef MACBUILD
-/* the mac engine frees with the Memory Manager */
-#define DeallocAPointer(p) DisposePtr((Ptr)(p))
-#else
 extern void DeallocAPointer(void *MemPtr);
-#endif
 extern FILE *FOpenExpandedPath(const char *path, const char *mode);
-#ifdef MACBUILD
-#define AllocAPointerClear(size) NewPtrClear(size)
-#else
 extern void * AllocAPointerClear(uint32_t size);
-#endif
 extern void * ResizeAPointer(void *mem, uint32_t size);
 extern int32_t IndirectDeallocate(void **p);               /* atplatheap.c */
 
@@ -44,9 +27,7 @@ extern void MemoryFill(void *p, int c, uint32_t n);
 extern void SystemSetQuitProc(void (*fn)(void));
 extern void SystemSetIdleProc(void (*fn)(void));
 extern void _SystemQuitCallback(void);
-#ifndef MACBUILD /* the mac's Escape Velocity.c calls it undeclared */
 extern int32_t PlatformOpen(void);
-#endif
 extern int32_t FT_Open(void);
 extern int32_t SetDisplayToSize(uint32_t w, uint32_t h, uint32_t depth, uint32_t flags);
 extern unsigned char SystemCheckCallback(void);
@@ -113,11 +94,7 @@ extern void _DT_PaletteToInverse(unsigned char *table, const struct ITPalette *p
 extern int32_t _DT_ImageCalcFormat(ULong format, unsigned char *flag, unsigned char *bits,
                          unsigned char *shift, unsigned char *mask, unsigned short *scale);
 extern ULong _DT_ImageCalcStamp(const struct ITPixels *info);
-#ifdef MAC1010
-extern struct Rect *CopyDT_2SysRect(struct Rect *dst, const struct ITRect *src);
-#else
 extern struct ITRect *CopyDT_2SysRect(struct ITRect *dst, const struct ITRect *src);
-#endif
 extern int32_t _DT_ImageLock(struct ITImage *image, struct ITImage *other,
                          unsigned char *rebuilt);
 struct ITPixelInfo;
@@ -233,13 +210,8 @@ extern unsigned short *convert_UTF8_to_UTF16(unsigned short *dst, const unsigned
 extern unsigned char *convert_UTF16_to_UTF8(unsigned char *dst, const unsigned short *src,
                                    ULong dstBytes, int32_t budget, int32_t terminate);
 /* the converters' character budget and NUL-stop flag: 1.0.10 counts the budget unsigned and takes a signed flag */
-#ifdef MAC1010
-#define UTFBudget ULong
-#define UTFFlags int32_t
-#else
 #define UTFBudget int32_t
 #define UTFFlags ULong
-#endif
 extern int32_t ConvertUTF32toUTF16(const ULong **sourceStart, const ULong *sourceEnd,
                          unsigned short **targetStart, unsigned short *targetEnd,
                          UTFBudget *budget, UTFFlags flags);
@@ -260,9 +232,7 @@ struct PrefsNode;
 struct RezFile;
 struct SessionContext;
 extern uint32_t GetAPointerSize(void *mem);
-#ifndef MAC1010
 extern void DetachResource(Handle h);
-#endif
 extern void LinkedListInit(struct ListRec *list);
 extern void LinkedListAddNewEntryEnd(struct ListRec *list, void *data);
 extern void *LinkedListGetEntryData(struct ListRec *list, ULong index);
@@ -323,30 +293,12 @@ extern struct FileTypeMap **gFT_FileTypes;       /* atftopen.c: the file-type ma
 extern Word8 ResourceJustLoaded;                 /* 0x00870e11, set by ResourceLoadHandle */
 extern Word32 MaxMemSize;                        /* 0x00576c50, read by InitMemory */
 /* handles */
-#ifdef MACBUILD
-#define AllocAHandle2(size, flag) NewHandle(size)
-#else
 extern void **AllocAHandle2(Word32 MemSize, Word Flag);
-#endif
-#ifdef MACBUILD
-#define DeallocAHandle(h) DisposeHandle((Handle)(h))
-#else
 extern void DeallocAHandle(void *MemHandle);
-#endif
-#ifdef MACBUILD
-#define GetAHandleSize(h) GetHandleSize((Handle)(h))
-#else
 extern uint32_t GetAHandleSize(Handle h);
-#endif
 extern Handle ResizeAHandle(Handle h, uint32_t size);
-#ifdef MACBUILD
-/* the mac engine locks with the Memory Manager */
-#define LockAHandle(h) HLock((Handle)(h))
-#define UnlockAHandle(h) HUnlock((Handle)(h))
-#else
 extern char * LockAHandle(Handle h);
 extern void UnlockAHandle(Handle h);
-#endif
 typedef void (*MemPurgeProcPtr)(Word Stage);
 extern Word PurgeHandles(Word32 MemSize);
 extern void CompactHandles(void);
@@ -354,25 +306,17 @@ extern void DumpHandles(void);
 extern void SetHandlePurgeFlag(void **handle, Word flag);
 
 /* QuickTime calls, linked from qtmlClient.lib */
-#ifndef MAC1010
 extern void HLock(Handle h);                                         /* 0x004f1470 */
 extern void HUnlock(Handle h);
 extern void HPurge(Handle h);
-#endif
-#ifndef MACBUILD
 extern void Gestalt(int32_t selector, int32_t *result);
-#endif
-#ifndef MAC1010
 extern short EnterMovies(void);
 extern void ExitMovies(void);
-#endif
 extern void FUN_004fc310(void *gworld);
-#ifndef MACBUILD
 extern void SetTrackGWorld(void *track, void *movieData, int32_t a3,
                            short (*proc)(void), int32_t a5);
 extern int32_t GetTimeBaseFlags(void *timeBase);
 extern void SetTimeBaseFlags(void *timeBase, int32_t flags);
-#endif
 
 extern void KeyboardInit(void);
 extern void KeyboardDestroy(void);
@@ -387,18 +331,12 @@ extern int32_t IT_Open(void);
 extern int32_t IT_OpenBrowser(const char *command);
 
 /* the resource manager (engine/resmgr.c) */
-#ifndef MAC1010
 extern Handle GetResource(uint32_t type, short id);
-#endif
-#ifndef MACBUILD
 extern int32_t CountResources(uint32_t type);
-#endif
-#ifndef MAC1010
 extern Handle GetIndResource(uint32_t type, short index);
 extern void ReleaseResource(Handle h);
 extern void GetResInfo(Handle h, short *id, uint32_t *type,
                        unsigned char *name);
-#endif
 
 extern unsigned long long TimerGetMicroseconds(void);
 extern void LockVideoPage(void);
@@ -415,12 +353,7 @@ extern unsigned int DoesFileExist(const char *path);
 extern char *NumberToAscii(char *dst, ULong value, ULong flags);
 extern void OSCursorShow(void);
 extern void OSCursorHide(void);
-#ifdef MACBUILD
-/* the mac engine resets the cursor through the Toolbox */
-#define OSCursorReset() InitCursor()
-#else
 extern void OSCursorReset(void);
-#endif
 extern unsigned char OSCursorVisibleFlag;        /* burgermisc2.c */
 extern void ReleaseVideo(void);
 /* a display gamma ramp, each entry 0.0 (black) to 1.0 (full) */
@@ -434,29 +367,10 @@ extern void VideoOSGammaDestroy(void);
 extern void VideoOSGammaSet(const GammaTable_t *);
 extern void VideoOSGammaGet(GammaTable_t *);
 extern void Video555To565(void);
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-/* the Monitor Tool's display-mode request (atvideomac.c) */
-typedef struct VTRequest {
-    ULong sizeRule;
-    ULong width;
-    ULong height;
-    ULong depthRule;
-    ULong depth;
-    ULong colorRule;
-    unsigned char color;
-    ULong rateRule;
-    ULong rate;
-} VTRequest;
-extern int32_t MT_Open(void);
-extern int32_t MT_GetMode(ULong id, VTRequest *info);
-extern int32_t MT_SetMode(ULong id, VTRequest *req);
-#endif
 extern void DrawShapeLowLevel(Word x, Word y, Word width, Word height, Word skip,
                               void *shape);
 extern Word32 LastTick;
-#ifndef MAC1010
 extern Word32 ReadTick(void);
-#endif
 extern void WaitTicks(Word tickCount);
 #define ResetLastTick() LastTick=ReadTick()
 
@@ -485,11 +399,7 @@ extern void WaitTicks(Word tickCount);
 
 #define Swap32(v)  ((((v) >> 24) & 0xffUL) | (((v) >> 8) & 0xff00UL) \
                     | (((v) & 0xff00UL) << 8) | (((v) & 0xffUL) << 24))
-#ifdef MAC1010
-#define Swap16(v)  (v)
-#else
 #define Swap16(v)  ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
-#endif
 
 /* BurgerLib's file manager: the prefix table, the drive letters */
 #define PREFIXMAX           35
@@ -634,11 +544,7 @@ extern int32_t IT_ItemCallbackGetNumber(const char *s);
 extern struct ITColor IT_ItemCallbackGetColor(const char *s);
 extern unsigned char IT_ItemCallbackGetFlag(const char *s);
 extern unsigned char IT_ItemCallbackGetAlign(int32_t *align);
-#ifdef MAC1010
-extern struct Point *CopyDT_2SysPoint(struct Point *dst, const struct ITPoint *src);
-#else
 extern struct ITPoint *CopyDT_2SysPoint(struct ITPoint *dst, const struct ITPoint *src);
-#endif
 extern int32_t _IT_ViewHandleIdle(struct WindowNode *window);
 extern int32_t _IT_ViewHandleKey(struct WindowNode *window, const struct ITKeyEvent *key,
                          struct ITClick *click);
@@ -680,16 +586,9 @@ extern void *DT_GetClipRegion(struct ITImage *image);
 extern int32_t DT_SetClipRegion(struct ITImage *image, void *region);
 extern int32_t DT_SetClipRect(struct ITImage *image, const struct ITRect *r);
 extern int32_t DT_AddInvalidRect(struct ITImage *image, const struct ITRect *r);
-#ifdef MAC1010
-extern int32_t DT_DrawImageTile(struct ITImage *image, const struct ITRect *clip,
-                         const struct ITPoint *origin, struct ITImage *src,
-                         struct ITImage *mask, const struct ITTransparent *trans,
-                         const struct ITRect *srcRect);
-#else
 extern int32_t DT_DrawImageTile(struct ITImage *image, const struct ITRect *clip,
                          const struct ITPoint *origin, struct ITImage *src,
                          struct ITImage *mask, int32_t unused, const struct ITRect *srcRect);
-#endif
 extern int32_t DT_EraseRect(struct ITImage *image, const struct ITRect *r);
 extern unsigned char DT_IsPointInRect(const struct ITPoint *pt, const struct ITRect *r);
 extern unsigned char DT_IsRectEmpty(const struct ITRect *r);
@@ -697,19 +596,11 @@ extern struct ITRect *DT_RectInset(struct ITRect *r, int32_t dh, int32_t dv);
 extern struct ITRect *DT_RectIntersect(struct ITRect *r, const struct ITRect *a,
                                    const struct ITRect *b);
 extern void DT_RegionDispose(void *region);
-#ifdef MAC1010
-#define DTSysRect struct Rect      /* what CopySys2DT_Rect reads */
-extern struct RGBColor DT_2SysColor(const struct ITColor *color);
-extern struct ITPoint *CopySys2DT_Point(struct ITPoint *dst, const struct Point *src);
-extern struct ITRect *CopySys2DT_Rect(struct ITRect *dst, const struct Rect *src);
-extern struct ITColor *CopySys2DT_Color(struct ITColor *color, const struct RGBColor *ref);
-#else
 #define DTSysRect struct ITRect
 extern ULong DT_2SysColor(const struct ITColor *color);
 extern struct ITPoint *CopySys2DT_Point(struct ITPoint *dst, const struct ITPoint *src);
 extern struct ITRect *CopySys2DT_Rect(struct ITRect *dst, const struct ITRect *src);
 extern struct ITColor *CopySys2DT_Color(struct ITColor *color, const ULong *ref);
-#endif
 extern int32_t IT_ViewChange(struct WindowNode *window, struct FolderSpec **folder, const char *file,
                          const char *path, const char *anchor);
 extern int32_t IT_ViewDispose(struct WindowNode *window);
@@ -743,16 +634,8 @@ extern char *_IT_ParseTreeFindAttribute(struct ITElement *root, struct ITElement
 extern char *_IT_SimpleFindAttribute(struct ITElement *element, const char *key);
 extern int32_t _IT_ParseAttributeGetNumber(unsigned char wide, const char *s);
 extern struct ITColor _IT_ParseAttributeGetColor(unsigned char wide, const char *s);
-#ifdef MAC1010
-extern void _IT_ParseAttributeGetRect(void *rect, unsigned char wide, char *s);
-#else
 extern struct ITRect *_IT_ParseAttributeGetRect(void *rect, unsigned char wide, const char *s);
-#endif
-#ifdef MAC1010
-extern void _IT_PageListDispose(void *tableRef);
-#else
 extern int32_t _IT_PageListDispose(void *tableRef);
-#endif
 extern unsigned char IndirectIsUnicode(void **handle, char *nameOut);
 extern int32_t FT_PathDispose(struct FolderSpec **spec);
 
@@ -876,11 +759,7 @@ typedef struct PackInfo {       /* filled by the handle packers when not NULL */
 extern int32_t IndirectDecompress(void **handle, ULong tag, PackInfo *info);
 extern int32_t IndirectCompress(void **handle, ULong tag, PackInfo *info);
 /* 1.0.10 passes the get-flags and save flag in a byte */
-#ifdef MAC1010
-#define FTFlagArg unsigned char
-#else
 #define FTFlagArg int32_t
-#endif
 extern int32_t FT_FileGetFlags(int32_t folder, const char *name, struct FTFileInfo *info, FTFlagArg flags);
 extern int32_t FT_FileLoad(int32_t folder, const char *name, ULong maxSize, int32_t flags,
                          void ***handle);
@@ -896,9 +775,7 @@ extern int32_t PT_ParseEncode(void **h, unsigned char wide, unsigned char url,
 extern unsigned char IsPlatformOpen(void);
 extern unsigned char _FT_IsIndirectBusy(void *p);
 extern void **IndirectAllocate(ULong size);
-#ifndef MAC1010
 extern void GetDateTime(uint32_t *seed);
-#endif
 extern void ResourceDestroy(struct RezFile *rez);
 extern float FUN_004eed20(float lenSquared);
 extern int32_t MemoryChecksum(void *data, uint32_t size);
@@ -919,29 +796,17 @@ extern void NonFatal(const char *fmt, ...);
 
 /* Burger.h maps strlen onto the library's word-at-a-time FastStrLen (burgerpow2.c) */
 extern Word FastStrLen(const char *Input);
-#ifndef MACBUILD
 #undef strlen
 #define strlen(x) FastStrLen(x)
-#endif
 
-#ifndef MACBUILD
 /* the guarded copy the file and sound tools inline (atfilespec.c, atsndmem.c) */
 static inline void BlockMoveData(const void *src, void *dst, ULong size)
 {
     if (size != 0)
         memmove(dst, src, size);
 }
-#endif
-#ifdef MACBUILD
-#ifdef MAC1010
-extern short OpenEVPlugins(short refNum, ConstStr255Param folderName, OSType type, FILE *log);
-#else
-extern short OpenEVPlugins(FSRef folder, OSType type);
-#endif
-#else
 extern short OpenEVPlugins(const char *path, const char *ext,
                            FILE *log);
-#endif
 extern void ImageDestroy(struct Image_t *ImagePtr);
 extern void ImageDelete(struct Image_t *ImagePtr);
 extern unsigned int KeyboardKbhit(void);

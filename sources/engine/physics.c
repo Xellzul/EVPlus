@@ -105,9 +105,7 @@ short CalcLeadAngle(ShipObj *self, ShipObj *target, short weaponType,
 
     angle = CalcInterceptAngle(overridePos, &target->pos);
     if (weaponType != -1) {
-#ifndef MAC1010
         short guidance = weaponStats[weaponType].guidance;
-#endif
         if (weaponStats[weaponType].guidance == kGuidanceUnguided ||
             weaponStats[weaponType].guidance == kGuidanceTurret ||
             weaponStats[weaponType].guidance == kGuidanceRocket ||
@@ -158,9 +156,7 @@ short CalcObjectLeadAngle(ShipObj *self, FloatPoint *targetPos, FloatPoint *targ
 
     angle = CalcInterceptAngle(overridePos, targetPos);
     if (weaponType != -1) {
-#ifndef MAC1010
         short guidance = weaponStats[weaponType].guidance;
-#endif
         // BUG (all versions): kGuidanceRocket is not in this filter, so the rocket lead-time branch below never
         // runs -- rockets get no lead against asteroids/objects
         if (weaponStats[weaponType].guidance == kGuidanceUnguided ||

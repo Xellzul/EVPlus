@@ -33,11 +33,7 @@ EXTERN_CPP_END
 extern void DisplayMessage(short id);
 extern void DisposeDialogs(void);
 extern void DoSystemMap(void);
-#ifdef MACBUILD
-extern void DrawEscortMenuInFrame();
-#else
 extern void DrawEscortMenuInFrame(void);
-#endif
 extern void DrawMap(Rect r);
 extern void DrawMapInfluence(Rect r);
 extern short EscapeStellarSearch(short system);
@@ -76,10 +72,8 @@ extern Boolean ValidAuxShipSystem(short sys, short mission);
 EXTERN_CPP_BEGIN
 extern Boolean canZoomIn;
 extern Boolean canZoomOut;
-#ifndef MACBUILD
 EXTERN_CPP_END
 extern RGBColor *cyanColor;
-#endif
 EXTERN_CPP_BEGIN
 extern Boolean didUpdateMap;
 extern short maxAutoExploreJumps;

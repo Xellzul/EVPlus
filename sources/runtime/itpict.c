@@ -7,19 +7,11 @@
 #include "ambrosia.h"
 #include "macport.h"
 
-#ifdef MAC1010
-#define FromBE16(x) (x)
-#define WideBE16(x) (x)
-#define IMAGE_RECT imageBounds
-#define FromBE32(x) (x)
-#define PictLocal static            /* local symbols in the 1.1.1 framework */
-#else
 #define FromBE16(x) Swap16(x)
 #define WideBE16(x) ((long long)Swap16(x))
 #define IMAGE_RECT bounds
 #define FromBE32(x) Swap32(x)
 #define PictLocal
-#endif
 
 typedef struct PictFrame {
     short top;                                   /* +0 big-endian */
@@ -119,9 +111,6 @@ typedef struct PictPixMap {
 typedef struct PictState {
     ITRect bounds;
     short version;
-#ifdef MAC1010
-    ITRect imageBounds;
-#endif
     ITImage *image;
     ITImage *mask;
     ITTransparent *trans;
@@ -138,19 +127,11 @@ typedef int32_t (*PictHandler)(ITStream *stream, PictState *s, const struct Pict
 typedef struct PictOpcode {
     ULong length;
     PictHandler handler;
-#ifdef MAC1010
-    unsigned char unsupported;  /* the ops that draw: the decoder refuses a picture holding one */
-#endif
     const char *name;
 } PictOpcode;
 
-#ifdef MAC1010
-#define PICT_OP(length, handler)    { length, handler, 0, "" }
-#define PICT_DRAW_OP(length)        { length, NULL, 1, "" }
-#else
 #define PICT_OP(length, handler)    { length, handler, "" }
 #define PICT_DRAW_OP(length)        { length, NULL, "" }
-#endif
 
 /* _DeferredImageCreate (create the picture's image in a format and palette, lock it, and when asked
    paint it white). */
@@ -202,9 +183,6 @@ void _DeferredImageDispose(PictState *s)
     int32_t err;
 
     err = 0;
-#ifdef MAC1010
-    s->imageBounds = s->bounds;
-#endif
     DT_ImageDispose(s->image);
     s->image = NULL;
     if (s->mask != NULL) {
@@ -292,144 +270,6 @@ int32_t _PICT_ReadRect(ITStream *stream, short *rect)
     }                                                   \
     (f) = FromBE32(f)
 
-#ifdef MAC1010
-#define kPictPixMapFlag     0x8000          /* rowBytes: a PixMap, not a BitMap */
-#define kPict72Dpi          0x00480000      /* Fixed */
-
-int32_t _PICT_ReadPixMapTable(ITStream *stream, PictPixMap *map, PictColorTable *table)
-{
-    int32_t err;
-    int32_t e;
-    ULong last;
-    ULong i;
-
-    err = 0;
-    e = DT_BufferRead(stream, &map->rowBytes, 2);
-    if (e != 0) {
-        err = e;
-        goto done;
-    }
-    e = _PICT_ReadRect(stream, (short *)&map->bounds);
-    if (e != 0) {
-        err = e;
-        goto done;
-    }
-    if (map->rowBytes & kPictPixMapFlag) {
-        e = DT_BufferRead(stream, &map->pmVersion, 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->packType, 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->packSize, 4);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->hRes, 4);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->vRes, 4);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->pixelType, 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->pixelSize, 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->cmpCount, 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->cmpSize, 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->planeBytes, 4);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->pmTable, 4);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &map->pmReserved, 4);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &table->seed, 4);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &table->flags, 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = DT_BufferRead(stream, &table->size, 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        if ((last = table->size) > kColorTableMax) {
-            err = kStreamOverrun;
-            goto done;
-        }
-        for (i = 0; i <= last; i++) {
-            e = DT_BufferRead(stream, &table->entry[i], sizeof(PictColorSpec));
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        }
-    } else {
-        map->pmVersion = 0;
-        map->packType = 0;
-        map->packSize = 0;
-        map->hRes = kPict72Dpi;
-        map->vRes = kPict72Dpi;
-        map->pixelType = 0;
-        map->pixelSize = 1;
-        map->cmpCount = 1;
-        map->cmpSize = 1;
-        map->planeBytes = 0;
-        map->pmTable = 0;
-        map->pmReserved = 0;
-        table->seed = 0;
-        table->size = 1;
-        table->flags = 0;
-        table->entry[0].value = 0;
-        table->entry[0].red = 0xffff;
-        table->entry[0].green = 0xffff;
-        table->entry[0].blue = 0xffff;
-        table->entry[1].value = 1;
-        table->entry[1].red = 0;
-        table->entry[1].green = 0;
-        table->entry[1].blue = 0;
-    }
-done:
-    return err;
-}
-#endif
 
 /* _PICT_ReadPixMap (a PixMap record after its baseAddr, big-endian). */
 // FUNCTION: EVNOVA 0x00515b5f
@@ -597,9 +437,6 @@ PictLocal int32_t _PICT_HandleBits(ITStream *stream, PictState *s, const PictOpc
    DirectBitsRgn: rows into the picture's image when they cover its frame, else skipped). */
 // FUNCTION: EVNOVA 0x00516201
 PictLocal int32_t _PICT_HandleBits(ITStream *stream, PictState *s, const PictOpcode *op, ULong opcode)
-#ifdef MAC1010
-#include "../runtime/picthandlebits1010.inc"
-#else
 {
     void **packed;
     int32_t err;
@@ -898,7 +735,6 @@ done:
         IndirectDeallocate(region);
     return err;
 }
-#endif
 
 /* _PICT_CheckFileType (a PICT: a non-empty frame, then zero padding up to a version opcode 0x1101 or
    0x0011 0x02ff). */
@@ -949,9 +785,6 @@ unsigned char PICT_CheckFileType(const unsigned char *data, ULong size)
 // FUNCTION: EVNOVA 0x00516dac
 int32_t PICT_Decode(ITStream *stream, ITImage **imageOut, ITImage **maskOut, ITTransparent *trans,
                   ITBackground *bg)
-#ifdef MAC1010
-#include "../runtime/pictdecode1010.inc"
-#else
 {
     int32_t err;
     int32_t e;
@@ -1252,4 +1085,3 @@ done:
     }
     return err;
 }
-#endif

@@ -4,9 +4,7 @@
 #include "burgerplat.h"
 #include "burger.h"
 #include "ambrosia.h"
-#ifndef MAC1010
 #include "win32.h"
-#endif
 #include "ittoolkit.h"
 
 
@@ -17,11 +15,7 @@ extern ITElement *PT_ParseTreeRemove(ITElement *root, ITElement *node, unsigned 
 int32_t _IT_ItemCreate(WindowNode *window, ITControlList *list, ITElement *element,
                   unsigned char front, unsigned char owns);
 int32_t _IT_ParamCreate(WindowNode *window, ITControlList *list, ITElement *element);
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-#define ParamWideArg unsigned char
-#else
 #define ParamWideArg int32_t
-#endif
 int32_t _IT_ParamModify(WindowNode *window, ULong index, const char *value, ParamWideArg unused);
 extern ITControlProc IT_ItemHandlerLookup(WindowNode *owner, const char *name);  /* interfacetool.c */
 void _IT_ItemDispose(WindowNode *window, ITControlList *list, ITControl *control);
@@ -34,15 +28,7 @@ void _IT_ParamDispose(WindowNode *window, ITControlList *list, ITInsert *insert)
 #define kMsg13              0x13
 #define kEventFollow        9
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-#define kNameW L"NAME"
-#endif
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-#define kParameterW L"PARAMETER"
-#define kParamW L"PARAM"
-extern ULong C2UGetByteCount(const char *s);
-#endif
 
 /* _IT_ItemListCreate (build a window's controls from a page's elements: PARAMETER / PARAM elements
    recorded, each one's NAME looked up in the window's then the global text variables and a value
@@ -54,25 +40,12 @@ ITControlList *_IT_ItemListCreate(WindowNode *window, ITElement *first)
 {
     int32_t err = 0;
     int32_t e;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    ITInsert *ins;
     int32_t index;
-#else
-    int32_t index;
-#endif
     ITControlList *list;
     ITElement *el;
     ITElement *next;
-#if !(defined(MAC1010) && TARGET_API_MAC_CARBON)
     ITInsert *ins;
-#endif
     WindowNode *root;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    char *buffer;
-    char tagName[256];
-
-    buffer = 0;
-#endif
 
     e = 0;
     ins = 0;
@@ -88,19 +61,8 @@ ITControlList *_IT_ItemListCreate(WindowNode *window, ITElement *first)
     list->root = first;
     window->controls = list;
     for (el = first; el != 0; el = PT_ParseTreeGetNext(first, el)) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (el->name != 0 && el->tag > 0) {
-            if (el->wide) {
-                if (UnicodeCompare(kParameterW, (unsigned short *)el->name) != 0 && UnicodeCompare(kParamW, (unsigned short *)el->name) != 0)
-                    continue;
-            } else {
-                if (StringCompare("PARAMETER", el->name) != 0 && StringCompare("PARAM", el->name) != 0)
-                    continue;
-            }
-#else
         if (el->name != 0 && AsByte(el->tag > 0)
             && (StringCompare("PARAMETER", el->name) == 0 || StringCompare("PARAM", el->name) == 0)) {
-#endif
             e = _IT_ParamCreate(window, list, el);
             if (e != 0) {
                 err = e;
@@ -115,29 +77,6 @@ ITControlList *_IT_ItemListCreate(WindowNode *window, ITElement *first)
 
         name = 0;
         value = 0;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (ins->element->wide) {
-            name = HashLookupUnicode(ins->element->attributes, kNameW, 0);
-        } else {
-            name = HashLookup(ins->element->attributes, "NAME", 0);
-            buffer = MemoryAllocate(C2UGetByteCount(name) + 2);
-            if (buffer == 0) {
-                err = kOutOfMemory;
-                goto done;
-            }
-            name = (char *)C2UStringCopySafe((unsigned short *)buffer, (unsigned char *)name, (ULong)-1, (ULong)-1);
-        }
-        if (name != 0 && window->variables != 0)
-            value = HashLookupUnicode(window->variables, (unsigned short *)name, 0);
-        if (name != 0 && value == 0 && gIT_DefaultHash != 0)
-            value = HashLookupUnicode(gIT_DefaultHash, (unsigned short *)name, 0);
-        if (buffer != 0) {
-            MemoryDeallocate(buffer);
-            buffer = 0;
-        }
-        if (value != 0) {
-            e = _IT_ParamModify(window, index, value, 1);
-#else
         name = HashLookup(ins->element->attributes, "NAME", 0);
         if (name != 0 && window->variables != 0)
             value = HashLookup(window->variables, name, 0);
@@ -145,7 +84,6 @@ ITControlList *_IT_ItemListCreate(WindowNode *window, ITElement *first)
             value = HashLookup(gIT_DefaultHash, name, 0);
         if (value != 0) {
             e = _IT_ParamModify(window, index, value, 0);
-#endif
             if (e != 0) {
                 err = e;
                 goto done;
@@ -153,18 +91,7 @@ ITControlList *_IT_ItemListCreate(WindowNode *window, ITElement *first)
         }
     }
     for (el = first; el != 0; el = PT_ParseTreeGetNext(first, el)) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (el->name != 0 && el->tag > 0) {
-            if (el->wide) {
-                U2CStringCopySafe((unsigned char *)tagName, (unsigned short *)el->name, sizeof(tagName), (ULong)-1);
-                if (IT_ItemHandlerLookup(window, tagName) == 0)
-                    continue;
-            } else if (IT_ItemHandlerLookup(window, el->name) == 0) {
-                continue;
-            }
-#else
         if (el->name != 0 && AsByte(el->tag > 0) && IT_ItemHandlerLookup(window, el->name) != 0) {
-#endif
             e = _IT_ItemCreate(window, list, el, 0, 0);
             if (e != 0) {
                 err = e;
@@ -180,10 +107,6 @@ ITControlList *_IT_ItemListCreate(WindowNode *window, ITElement *first)
     if (e != 0)
         err = e;
 done:
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (buffer != 0)
-        MemoryDeallocate(buffer);
-#endif
     if (err != 0 && list != 0) {
         _IT_ItemListDispose(window, list);
         list = 0;
@@ -206,7 +129,6 @@ void _IT_ItemListDispose(WindowNode *window, ITControlList *list)
     e = _IT_ViewMoveFocus(window, 1, window, 0, 0);
     if (e != 0)
         err = e;
-#ifndef MAC1010
     root = 0;
     hit = 0;
     for (root = window; root->parent != 0; root = root->parent)
@@ -216,7 +138,6 @@ void _IT_ItemListDispose(WindowNode *window, ITControlList *list)
         if (hit)
             root->tracking = 0;
     }
-#endif
     while (list->first != 0)
         _IT_ItemDispose(window, list, list->first);
     while (list->inserts != 0)
@@ -639,10 +560,6 @@ int32_t _IT_ItemListHandleCursor(WindowNode *window, ITControlList *list, ITInpu
     return err;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-static unsigned short kEmptyW[] = { 0 };
-extern int32_t IndirectAddUnicodeTag(void **handle);
-#endif
 
 /* _IT_ItemCreate (a control for an element: KEYS upper-cased in place, RECT parsed and moved by the
    window's origin, its handles, its type's procedure, linked at the end of the list or at the
@@ -660,12 +577,6 @@ int32_t _IT_ItemCreate(WindowNode *window, ITControlList *list, ITElement *eleme
     char *value;
     void *title;
     ITRect r;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    unsigned char wide;
-    char tagName[256];
-
-    wide = element->wide;
-#endif
 
     err = 0;
     ok = 0;
@@ -681,24 +592,11 @@ int32_t _IT_ItemCreate(WindowNode *window, ITControlList *list, ITElement *eleme
     c->ownsElement = owns;
     c->active = 1;
     value = _IT_SimpleFindAttribute(c->element, "KEYS");
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (value != 0) {
-        if (wide)
-            Unicode2UpperCopySafe((unsigned short *)value, (unsigned short *)value, (ULong)-1, (ULong)-1);
-        else
-            String2Upper(value);
-    }
-#else
     if (value != 0)
         String2Upper(value);
-#endif
     value = _IT_SimpleFindAttribute(c->element, "RECT");
     if (value != 0) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        _IT_ParseAttributeGetRect(&r, wide, value);
-#else
         _IT_ParseAttributeGetRect(&r, 0, value);
-#endif
         c->bounds = r;
         DT_RectOffset(&c->bounds, window->bounds.left, window->bounds.top);
     }
@@ -710,13 +608,6 @@ int32_t _IT_ItemCreate(WindowNode *window, ITControlList *list, ITElement *eleme
         err = kOutOfMemory;
         goto done;
     }
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (wide) {
-        U2CStringCopySafe((unsigned char *)tagName, (unsigned short *)c->element->name, sizeof(tagName), (ULong)-1);
-        if ((c->proc = IT_ItemHandlerLookup(window, tagName)) == 0)
-            err = 0;
-    } else
-#endif
     if ((c->proc = IT_ItemHandlerLookup(window, c->element->name)) == 0)
         err = 0;
     if (front) {
@@ -729,22 +620,6 @@ int32_t _IT_ItemCreate(WindowNode *window, ITControlList *list, ITElement *eleme
     c->list = list;
     *link = c;
     value = _IT_SimpleFindAttribute(c->element, "TITLE");
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (wide) {
-        if (value == 0)
-            value = (char *)kEmptyW;
-        title = IndirectInitialize(value, UnicodeGetByteCount((unsigned short *)value));
-        if (title == 0) {
-            err = kOutOfMemory;
-            goto done;
-        }
-        e = IndirectAddUnicodeTag(title);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-    } else
-#endif
     {
     if (value == 0)
         value = "";
@@ -871,11 +746,6 @@ int32_t _IT_ItemExecute(WindowNode *window, ITControl *control, const char *link
     if (link == 0) {
         text = _IT_SimpleFindAttribute(control->element, "SCRIPT");
         if (text != 0) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-            if (control->element->wide) {
-                String2Upper((char *)U2CStringCopySafe((unsigned char *)command, (unsigned short *)text, sizeof(command), (ULong)-1));
-            } else
-#endif
             String2UpperCopySafe(command, text, sizeof(command));
             text = StringFindDelimiter(command, " ()");
             if (text != 0)
@@ -883,18 +753,11 @@ int32_t _IT_ItemExecute(WindowNode *window, ITControl *control, const char *link
             if (StringCompare(command, "QUIT") == 0) {
                 while (window->parent != 0)
                     window = window->parent;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-                if (window->result != 0 && control->element->wide && (text = HashLookupUnicode(control->element->attributes, kNameW, 0)) != 0)
-                    U2CStringCopySafe((unsigned char *)window->result, (unsigned short *)text, 0x100, (ULong)-1);
-                else if (window->result != 0 && !control->element->wide && (text = HashLookup(control->element->attributes, "NAME", 0)) != 0)
-                    StringCopySafe(window->result, text, 0x100);
-#else
                 if (window->result != 0 && !control->element->wide) {
                     text = HashLookup(control->element->attributes, "NAME", 0);
                     if (text != 0)
                         StringCopySafe(window->result, text, 0x100);
                 }
-#endif
                 IT_ViewDispose(window);
             } else if (StringCompare(command, "BEEP") == 0) {
                 MessageBeep(0);
@@ -907,10 +770,6 @@ int32_t _IT_ItemExecute(WindowNode *window, ITControl *control, const char *link
         if (text == 0)
             goto done;
     }
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (text != link && control->element->wide)
-        text = (char *)U2CStringCopySafe((unsigned char *)command, (unsigned short *)text, sizeof(command), (ULong)-1);
-#endif
     target = window;
     if (StringFindString(text, "://") != 0 || StringFindString(text, "mailto:") != 0) {
         e = IT_OpenBrowser(text);
@@ -1000,12 +859,10 @@ int32_t _IT_ItemCallback(WindowNode *window, ITControl *control, ULong msg, ULon
     if (err != 0)
         err = e;
 done:
-#ifndef MAC1010
     if (saved != 0)
         RestoreDC(dc, saved);
     if (dc != 0)
         ReleaseDC(hwnd, dc);
-#endif
     return err;
 }
 
@@ -1190,35 +1047,6 @@ int32_t _IT_ParamModify(WindowNode *window, ULong index, const char *value, Para
     while (insert->element->child != 0)
         PT_ParseTreeRemove(window->source.root, insert->element->child, 1, 1);
     if (value != 0) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (unused && window->source.root->wide) {
-            text = IndirectInitialize(value, UnicodeGetByteCount((unsigned short *)value));
-            if (text == 0) {
-                err = kOutOfMemory;
-                goto done;
-            }
-            e = IndirectAddUnicodeTag(text);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        } else if (unused) {
-            ULong length;
-
-            length = UnicodeGetCharCount(value) + 1;
-            text = IndirectAllocate(length);
-            if (text == 0) {
-                err = kOutOfMemory;
-                goto done;
-            }
-            U2CStringCopySafe(*text, (unsigned short *)value, length, (ULong)-1);
-            e = IndirectSetSize(text, length - 1);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        } else
-#endif
         {
         text = IndirectInitialize(value, StringGetLength((unsigned char *)value));
         if (text == 0) {
@@ -1232,20 +1060,9 @@ int32_t _IT_ParamModify(WindowNode *window, ULong index, const char *value, Para
             goto done;
         }
         for (element = tree->child; element != 0; element = PT_ParseTreeGetNext(tree, element)) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-            if (element->name != 0 && element->tag > 0) {
-                if (element->wide) {
-                    if (UnicodeCompare(kParameterW, (unsigned short *)element->name) != 0 && UnicodeCompare(kParamW, (unsigned short *)element->name) != 0)
-                        continue;
-                } else {
-                    if (StringCompare("PARAMETER", element->name) != 0 && StringCompare("PARAM", element->name) != 0)
-                        continue;
-                }
-#else
             if (element->name != 0 && IsElement(element)
                 && (StringCompare("PARAMETER", element->name) == 0
                     || StringCompare("PARAM", element->name) == 0)) {
-#endif
                 e = _IT_ParamCreate(window, window->controls, element);
                 if (e != 0) {
                     err = e;
@@ -1305,11 +1122,6 @@ int32_t IT_ViewGetNamedItem(WindowNode *window, const char *name)
     ITControl *c;
     int32_t index;
     char *value;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    unsigned short *wideValue;
-    unsigned short wideWanted[256];
-    unsigned short wideHave[256];
-#endif
     char wanted[256];
     char have[256];
     WindowNode *w;
@@ -1322,27 +1134,7 @@ int32_t IT_ViewGetNamedItem(WindowNode *window, const char *name)
     index = 0;
     value = 0;
     String2UpperCopySafe(wanted, name, sizeof(wanted));
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    C2UStringCopySafe(wideWanted, (const unsigned char *)wanted, sizeof(wideWanted), (ULong)-1);
-#endif
     for (c = window->controls->first; c != 0; c = c->next) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (c->element->wide) {
-            wideValue = (unsigned short *)HashLookupUnicode(c->element->attributes, kNameW, 0);
-            if (wideValue != 0 && *wideValue != 0) {
-                Unicode2UpperCopySafe(wideHave, wideValue, sizeof(wideHave), -1);
-                if (UnicodeCompare(wideWanted, wideHave) == 0)
-                    break;
-            }
-        } else {
-            value = HashLookup(c->element->attributes, "NAME", 0);
-            if (value != 0 && *value != 0) {
-                String2UpperCopySafe(have, value, sizeof(have));
-                if (StringCompare(wanted, have) == 0)
-                    break;
-            }
-        }
-#else
         if (c->element->tag > 0)
             isTag = true;
         else
@@ -1353,7 +1145,6 @@ int32_t IT_ViewGetNamedItem(WindowNode *window, const char *name)
             if (StringCompare(wanted, have) == 0)
                 break;
         }
-#endif
         index++;
     }
     if (c == 0)

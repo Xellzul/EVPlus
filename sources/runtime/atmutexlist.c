@@ -2,9 +2,7 @@
 
 #include "burgertypes.h"
 #include "burger.h"
-#ifndef MAC1010
 #include "win32.h"
-#endif
 
 #include "burgerplat.h"
 

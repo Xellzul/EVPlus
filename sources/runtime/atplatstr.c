@@ -36,9 +36,7 @@ char *StringDuplicate(const char *s)
     int32_t err;
 
     err = 0;
-#ifndef MAC1010
     copy = 0;
-#endif
     copy = MemoryAllocate(StringGetLength((const unsigned char *)s) + 1);
     if (copy == 0) {
         err = kOutOfMemory;

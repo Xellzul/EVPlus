@@ -169,11 +169,8 @@ void MainScreenAppearStart(void)
 {
     MainScreenAnimDraw();
     MainScreenUpdate(1);
-#if V111
-#else
     HandleIntroMusic(1);
     FadeScreenIn();
-#endif
 }
 
 // FUNCTION: EVNOVA 0x0048b250

@@ -181,7 +181,5 @@ void MainScreenAnimIdle(void)
         }
     }
 
-#ifndef MACBUILD
     ScreenEndScene();
-#endif
 }

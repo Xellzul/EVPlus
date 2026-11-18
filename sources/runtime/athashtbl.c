@@ -1628,29 +1628,6 @@ int32_t HashInsertData(HashTable *t, const char *key, const void *value,
                         valueLen, tag, 1, 0);
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-extern ULong UnicodeGetCharCount(const unsigned short *s);
-
-int32_t HashAppendUnicode(HashTable *t, const unsigned short *key, const unsigned short *value)
-{
-    int hasValue;
-    int tag;
-    ULong valueLen;
-
-    hasValue = 0;
-    if (value != 0 && UnicodeGetCharCount(value) != 0)
-        hasValue = 1;
-    if (hasValue)
-        tag = kValueTag;
-    else
-        tag = 0;
-    if (value != 0)
-        valueLen = UnicodeGetByteCount(value);
-    else
-        valueLen = 0;
-    return _HashInsertAppend(t, key, UnicodeGetByteCount(key), value, valueLen, tag, 0, kKindUTF16);
-}
-#endif
 
 /* HashAppendUnicodeData (set a UTF-16 key to a counted value at the back of the insertion order). */
 // FUNCTION: EVNOVA 0x004fbaf8
@@ -1725,12 +1702,6 @@ unsigned char HashRemove(HashTable *t, const char *key)
     return _HashRemove(t, key, kNoLength, 0);
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-unsigned char HashRemoveUnicode(HashTable *t, const unsigned short *key)
-{
-    return _HashRemove(t, key, kNoLength, kKindUTF16);
-}
-#endif
 
 // FUNCTION: EVNOVA 0x004fbc5c
 HashEntry *_HashLookup(void *ref, const void *key, ULong keyLen, void *after, ULong kind)

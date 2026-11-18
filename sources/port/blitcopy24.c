@@ -19,7 +19,6 @@
 #include "player.h"
 #include "endianswap.h"
 
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x004b7b90
 void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
                     int32_t xStep, int32_t yStep, int32_t xStart, int32_t yStart)
@@ -702,7 +701,6 @@ void QDGetPictureBounds(PicHandle pic, Rect *r)
     SetRect(r, 0, 0, pic->Width, pic->Height);
 }
 
-#endif
 
 /* two more of the port's compiled-away QuickDraw calls */
 // FUNCTION: EVNOVA 0x004b9160
@@ -717,7 +715,6 @@ void *GetCWindowVisRgn(void *window)
     return 0;
 }
 
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x004b92d0
 void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
                 Rect *srcRect, Rect *maskRect, Rect *dstRect)
@@ -1944,7 +1941,6 @@ PixMapPtr GetGWorldPixMap(CGrafPtr world)
     return (PixMapPtr)world;
 }
 
-#endif
 
 // FUNCTION: EVNOVA 0x004bba80
 Rect *GetWindowPortRect(CWindowPtr window)
@@ -1964,7 +1960,6 @@ CGrafPtr GetCWindowGrafPort(CWindowPtr window)
     return window;
 }
 
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x004bbab0
 void SetPortWindowPort(CWindowPtr window)
 {
@@ -1976,7 +1971,6 @@ void *GetGWorldDevice(CGrafPtr port)
 {
     return NULL;
 }
-#endif
 
 // FUNCTION: EVNOVA 0x004bbae0
 PixMapPtr GetCWindowPixMap(CWindowPtr window)
@@ -1990,7 +1984,6 @@ PixMapPtr GetWindowPixMap(CWindowPtr window)
     return GetCWindowPixMap(GetCWindowGrafPort(window));
 }
 
-#ifndef MACBUILD
 /* GetTime (mac (Toolbox GetTime shim)). */
 // FUNCTION: EVNOVA 0x004bbb10
 void GetTime(DateTimeRec *dtr)
@@ -2326,4 +2319,3 @@ void BuildGammaRamp(float gamma)
             gGammaRamp[i] = kGammaRampMax;
     }
 }
-#endif

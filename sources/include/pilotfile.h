@@ -4,11 +4,7 @@
 #ifndef PILOTFILE_H
 #define PILOTFILE_H
 
-#ifdef MACBUILD
-#pragma pack(push, 2)
-#else
 #pragma pack(push, 1)
-#endif
 
 /* first resource: the player record, 0xe952 bytes */
 typedef struct PilotRec {

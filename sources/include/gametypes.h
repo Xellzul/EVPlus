@@ -4,7 +4,7 @@
 #include "int32.h"
 
 /* the C++-linkage declarations of the win build's C++ TUs (a C file cannot say extern "C++"); the mac build is C only */
-#if !defined(MACBUILD) && defined(__cplusplus)
+#if defined(__cplusplus)
 #define EXTERN_CPP_BEGIN extern "C++" {
 #define EXTERN_CPP_END }
 #define EXTERN_C_BEGIN extern "C" {
@@ -17,9 +17,7 @@
 #endif
 
 /* the Toolbox flag type: the port's is signed, Carbon's unsigned char */
-#ifndef MACBUILD
 typedef char Boolean;
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,16 +28,6 @@ typedef struct FloatPoint {
     float                  y;
 } FloatPoint;
 
-#ifdef MACBUILD
-typedef struct ShortPoint {
-    short                  h;
-    short                  v;
-} ShortPoint;
-typedef ShortPoint MapScroll;
-#define SalvageAmmo short
-#define ShipClassID short
-#define PStrChar char
-#else
 typedef struct MapScroll {
     short                  h;
     short                  v;
@@ -47,7 +35,6 @@ typedef struct MapScroll {
 #define SalvageAmmo unsigned short
 #define ShipClassID unsigned short
 #define PStrChar unsigned char
-#endif
 EXTERN_CPP_BEGIN
 extern MapScroll mapScroll;
 EXTERN_CPP_END
@@ -85,11 +72,9 @@ typedef struct MStr64 {
     char                   c[0x40];
 } MStr64;
 
-#ifndef MACBUILD
 typedef unsigned char Str255[256];
 
 typedef struct DialogRecord *DialogPtr;
-#endif
 
 typedef struct PictCacheSlot {
     short                  picID;
@@ -168,7 +153,6 @@ EXTERN_CPP_BEGIN
 extern PodObj *podData;
 EXTERN_CPP_END
 
-#ifndef MACBUILD
 typedef struct UnsignedWide {
     uint32_t          lo;
     uint32_t          hi;
@@ -198,14 +182,11 @@ typedef struct Rect {
     short                  right;
 } Rect;
 #pragma pack(pop)
-#endif
 
-#ifndef MACBUILD
 typedef struct ShortPoint {
     short                  h;
     short                  v;
 } ShortPoint;
-#endif
 EXTERN_CPP_BEGIN
 extern ShortPoint menuButtonPos[];
 EXTERN_CPP_END
@@ -349,9 +330,6 @@ typedef struct BoxObj {
 
 /* the live preferences; PrefsRecord is their file image */
 typedef struct Settings {
-#if V111
-    int32_t reserved;
-#endif
     Boolean introMusic;
     Boolean voicesOn;
     Boolean clipping;
@@ -371,9 +349,7 @@ typedef struct Settings {
     Boolean noHyperGamma;
     Boolean noVersionCheck;
     short volume;
-#ifndef MAC1010
     short gamma;
-#endif
 } Settings;
 
 #pragma pack(push, 1)
@@ -399,16 +375,12 @@ typedef struct PrefsRecord {
     short showInfluence;
     short noHyperGamma;
     short noVersionCheck;
-#ifdef MAC1010
-    short reserved[6];
-#else
     short gamma;
     short unk7E;
     short unk80;
     short unk82;
     short unk84;
     short unk86;
-#endif
     short unk88;
 } PrefsRecord;
 #pragma pack(pop)
@@ -450,9 +422,7 @@ typedef struct BriefMissionRec {
 } BriefMissionRec;
 
 /* one entry of the mission table, stride 0x8e6; the pilot file holds sixteen */
-#ifndef MACBUILD
 #pragma pack(push, 1)
-#endif
 typedef struct MissionRecord {
     short                  travelStellar;
     short                  unk2;
@@ -517,9 +487,7 @@ typedef struct MissionRecord {
     char                   shipDoneSetString[0xff];
     char                   name[0x100];
 } MissionRecord;
-#ifndef MACBUILD
 #pragma pack(pop)
-#endif
 
 typedef struct MissionState {
     Boolean                active;
@@ -716,9 +684,7 @@ extern unsigned char statusCargoName[6][0x100];
 extern unsigned char playerNickname[256];
 extern short missionRandom[1000];
 extern short prevParent[64];
-#ifndef MACBUILD
 typedef struct Image_t *PicHandle;
-#endif
 extern PicHandle missionBackgroundPic[3];
 extern DialogPtr alertDialog;
 EXTERN_CPP_END

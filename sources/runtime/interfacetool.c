@@ -25,12 +25,6 @@ static ITRect gIT_ShowControlZeroRect;                      /* 0x0086bb90 IT_Vie
 #define INDEX_LEFT(i) (i--)
 
 #define ParamWideArg int32_t
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-#define kHashWide 0x01000001
-extern ULong C2UGetByteCount(const char *s);
-extern unsigned char HashRemoveUnicode(struct HashTable *t, const unsigned short *key);
-extern int32_t HashAppendUnicode(struct HashTable *t, const unsigned short *key, const unsigned short *value);
-#endif
 
 /* _IT_ViewParamText (set a text variable, replacing any old value, in a window's table or, for no
    window, the global one, created on first use). */
@@ -40,15 +34,8 @@ int32_t _IT_ViewParamText(WindowNode *window, const char *key, const char *value
     struct HashTable **table;
     struct HashTable **alias;
     int32_t err, e;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    unsigned short *buffer;
-    unsigned short wideKey[256];
-#endif
 
     err = 0;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    buffer = 0;
-#endif
     table = 0;
     alias = 0;
     table = (struct HashTable **)window;
@@ -56,39 +43,6 @@ int32_t _IT_ViewParamText(WindowNode *window, const char *key, const char *value
         table = (struct HashTable **)((char *)table + kVariablesOffset);
     else
         table = (struct HashTable **)&gIT_DefaultHash;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (*table == 0) {
-        if ((*table = HashCreate(kHashWide)) == 0) {
-            err = kOutOfMemory;
-            goto done;
-        }
-    }
-    if (unused) {
-        C2UStringCopySafe(wideKey, (unsigned char *)key, sizeof(wideKey), (ULong)-1);
-        while (HashRemoveUnicode(*table, wideKey))
-            ;
-        e = HashAppendUnicode(*table, wideKey, (unsigned short *)value);
-        if (e != 0)
-            err = e;
-    } else {
-        buffer = MemoryAllocate(C2UGetByteCount(value) + 2);
-        if (buffer == 0) {
-            err = kOutOfMemory;
-            goto done;
-        }
-        C2UStringCopySafe(buffer, (unsigned char *)value, (ULong)-1, (ULong)-1);
-        C2UStringCopySafe(wideKey, (unsigned char *)key, sizeof(wideKey), (ULong)-1);
-        while (HashRemoveUnicode(*table, wideKey))
-            ;
-        e = HashAppendUnicode(*table, wideKey, buffer);
-        if (e != 0)
-            err = e;
-    }
-done:
-    if (buffer != 0)
-        MemoryDeallocate(buffer);
-    return err;
-#else
     alias = table;
     if (*table == 0) {
         e = 1;
@@ -104,7 +58,6 @@ done:
         err = e;
 done:
     return err;
-#endif
 }
 
 /* IT_ViewParamText (set a text variable). */
@@ -114,12 +67,6 @@ int32_t IT_ViewParamText(WindowNode *window, const char *key, const char *value)
     return _IT_ViewParamText(window, key, value, 0);
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-int32_t IT_ViewParamTextWide(WindowNode *window, const char *key, const unsigned short *value)
-{
-    return _IT_ViewParamText(window, key, (const char *)value, 1);
-}
-#endif
 
 /* IT_ViewGetItemRect (the bounds of the control at `index'; -7001 for a negative index, -7005 past the
    end). */
@@ -276,9 +223,7 @@ int32_t IT_ViewSetItemVisible(void *windowRef, int32_t index, unsigned char show
 
     window = windowRef;
     err = 0;
-#ifndef MAC1010
     clip = gIT_ShowControlZeroRect;
-#endif
     saved = 0;
     root = 0;
     control = 0;
@@ -382,9 +327,7 @@ int32_t IT_ViewSetItemEnabled(void *windowRef, int32_t index, unsigned char enab
 
     window = windowRef;
     err = 0;
-#ifndef MAC1010
     clip = gIT_EnableControlZeroRect;
-#endif
     saved = 0;
     root = 0;
     control = 0;
@@ -711,12 +654,8 @@ int32_t IT_ItemCallbackGetNumber(const char *s)
 {
     unsigned char ok;
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    return _IT_ParseAttributeGetNumber(gIT_CurrentItem->element->wide, s);
-#else
     ok = 0;
     return _IT_ParseAttributeGetNumber(0, s);
-#endif
 }
 
 /* IT_ItemCallbackGetColor (a colour attribute's value). */
@@ -725,12 +664,8 @@ ITColor IT_ItemCallbackGetColor(const char *s)
 {
     unsigned char ok;
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    return _IT_ParseAttributeGetColor(gIT_CurrentItem->element->wide, s);
-#else
     ok = 0;
     return _IT_ParseAttributeGetColor(0, s);
-#endif
 }
 
 /* IT_ItemCallbackGetFlag (a boolean attribute's value). */
@@ -739,12 +674,8 @@ unsigned char IT_ItemCallbackGetFlag(const char *s)
 {
     unsigned char ok;
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    return _IT_ParseAttributeGetFlag(gIT_CurrentItem->element->wide, s);
-#else
     ok = 0;
     return _IT_ParseAttributeGetFlag(0, s);
-#endif
 }
 
 /* IT_ItemCallbackGetAlign (the served control's ALIGN, inherited up to its nearest CENTER element or the
@@ -752,9 +683,6 @@ unsigned char IT_ItemCallbackGetFlag(const char *s)
 // FUNCTION: EVNOVA 0x0051fb70
 unsigned char IT_ItemCallbackGetAlign(int32_t *align)
 {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    unsigned char wide;
-#endif
     char *value;
     ITElement *root;
     ITElement *center;
@@ -775,16 +703,9 @@ unsigned char IT_ItemCallbackGetAlign(int32_t *align)
     if (center != 0)
         root = center;
     value = _IT_ParseTreeFindAttribute(root, element, 0, "ALIGN", 1);
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    wide = gIT_CurrentItem->element->wide;
-    if (value != 0)
-        *align = _IT_ParseAttributeGetAlign(wide, value);
-    return value != 0;
-#else
     if (value != 0)
         *align = _IT_ParseAttributeGetAlign(0, value);
     return value != 0 ? true : false;
-#endif
 }
 
 /* IT_ItemCallbackGetFont (the text style in force at the served control, 0x00540814). */

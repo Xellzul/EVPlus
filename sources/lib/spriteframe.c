@@ -5,106 +5,9 @@
 #include "burger.h"
 #include "spriteworld.h"
 #include "cefix.h"
-#ifdef MACBUILD
-#include "render.h"
-#endif
 
 // FUNCTION: EVNOVA 0x00476400
 // MAC: _SWCreateFrame i386 0x000ad556 ppc 0x000b8a00
-#ifdef MACBUILD
-short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
-                    short depth, unsigned char createGWorld)
-{
-    OSErr err = noErr;
-    GWorldPtr frameGWorld;
-    FramePtr tempFrameP;
-    int32_t numScanLines;
-
-    SW_ASSERT(theGDH != NULL, 64);
-    SW_ASSERT(frameRect->top >= 0 && frameRect->left >= 0 &&
-              frameRect->right > frameRect->left && frameRect->bottom > frameRect->top, 66);
-
-    *newFrameP = NULL;
-
-    numScanLines = frameRect->bottom - frameRect->top;
-
-#ifdef MAC1010
-    tempFrameP = (FramePtr)NewPtrClear(sizeof(SWFrameRec) +
-            (sizeof(uint32_t) * (numScanLines + 1)));
-#else
-    tempFrameP = (FramePtr)NewPtrClear(sizeof(SWFrameRec) +
-            (sizeof(uint32_t) * numScanLines));
-#endif
-
-    if (tempFrameP != NULL) {
-        tempFrameP->frameRect = *frameRect;
-        tempFrameP->frameDepth = depth;
-        tempFrameP->pixelShift = depth >> 4;
-        tempFrameP->numScanLines = numScanLines;
-        tempFrameP->collisionInset.left = 0;
-        tempFrameP->collisionInset.top = 0;
-        tempFrameP->collisionInset.right = 0;
-        tempFrameP->collisionInset.bottom = 0;
-        tempFrameP->usesCollisionInset = false;
-        tempFrameP->rleDataH = NULL;
-
-        if (createGWorld) {
-            if (useLegacyRenderingPipeline) {
-                if (SWGetPixBitDepth((**(GDHandle)theGDH).gdPMap) == depth)
-                    err = (NewGWorld)(&frameGWorld, depth, frameRect, NULL, theGDH, noNewDevice);
-                else
-                    err = (NewGWorld)(&frameGWorld, depth, frameRect, NULL, NULL, 0);
-            } else {
-                err = (NewGWorld)(&frameGWorld, 16, frameRect, NULL, NULL, kNativeEndianPixMap);
-            }
-
-            if (err == noErr) {
-                tempFrameP->framePort = frameGWorld;
-                tempFrameP->frameDevice = GetGWorldDevice(frameGWorld);
-                tempFrameP->framePixHndl = GetGWorldPixMap(frameGWorld);
-
-                SWInitializeFrame(tempFrameP);
-            }
-        } else {
-            tempFrameP->framePort = NULL;
-            tempFrameP->frameDevice = NULL;
-            tempFrameP->framePixHndl = NULL;
-            err = noErr;
-        }
-
-        if (err == noErr) {
-            tempFrameP->hotSpotH = 0;
-            tempFrameP->hotSpotV = 0;
-            tempFrameP->tileMaskIsSolid = false;
-            tempFrameP->sharesGWorld = false;
-            tempFrameP->isFrameLocked = false;
-            tempFrameP->isWindowFrame = false;
-            tempFrameP->interlacingIsOn = false;
-            tempFrameP->skipOddLines = true;
-
-            tempFrameP->rleDataH = NULL;
-            tempFrameP->rleTokenStart = NULL;
-
-            tempFrameP->useCount = 0;
-
-            *newFrameP = tempFrameP;
-        }
-    } else {
-        err = MemError();
-    }
-
-    if (err != noErr) {
-        if (tempFrameP != NULL) {
-            if (tempFrameP->framePort != NULL)
-                DisposeGWorld(tempFrameP->framePort);
-            DisposePtr((Ptr)tempFrameP);
-        }
-    }
-
-    SWSetStickyIfError(err);
-    return err;
-}
-#else
 short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
                     short depth, unsigned char createGWorld)
 {
@@ -188,7 +91,6 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
     SWSetStickyIfError(err);
     return err;
 }
-#endif
 
 /* SW_MIN/SW_MAX are the donor's double-evaluating macros over a non-inlinable accessor,
    so each clip mentions its window bound twice and the exe parks the second call out of
@@ -197,72 +99,6 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
 
 // FUNCTION: EVNOVA 0x004765d0
 // MAC: _SWCreateWindowFrame i386 0x000ad32f ppc 0x000b877c
-#ifdef MACBUILD
-short SWCreateWindowFrame(CWindowPtr srcWindowP, SWFrameRec **newFrameP,
-                          Rect *frameRect, short maxHeight)
-{
-    OSErr err = noErr;
-    FramePtr tempFrameP = NULL;
-    int32_t numScanLines;
-
-    SW_ASSERT(frameRect->top >= 0 && frameRect->left >= 0, 183);
-    SW_ASSERT(frameRect->right > frameRect->left && frameRect->bottom > frameRect->top, 184);
-
-    *newFrameP = NULL;
-
-    numScanLines = (GetCWindowPortRect((WindowRef)srcWindowP)->bottom -
-                    GetCWindowPortRect((WindowRef)srcWindowP)->top);
-    numScanLines = SW_MAX(numScanLines, maxHeight);
-
-    frameRect->top = SW_MAX(frameRect->top, GetCWindowPortRect((WindowRef)srcWindowP)->top);
-    frameRect->left = SW_MAX(frameRect->left, GetCWindowPortRect((WindowRef)srcWindowP)->left);
-    frameRect->bottom = SW_MIN(frameRect->bottom, GetCWindowPortRect((WindowRef)srcWindowP)->bottom);
-    frameRect->right = SW_MIN(frameRect->right, GetCWindowPortRect((WindowRef)srcWindowP)->right);
-
-    tempFrameP = (FramePtr)NewPtrClear(sizeof(SWFrameRec) +
-            (sizeof(uint32_t) * numScanLines));
-
-    if (tempFrameP != NULL) {
-        tempFrameP->framePort = GetWindowPort(srcWindowP);
-        tempFrameP->frameDevice = GetMainDevice();
-        tempFrameP->framePixHndl = (PixMapHandle)GetCWindowPixMap((WindowRef)srcWindowP);
-        if (tempFrameP->framePixHndl == NULL)
-            tempFrameP->framePixHndl = GetGWorldPixMap(GetWindowPort(srcWindowP));
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-        tempFrameP->frameDepth = (**srcWindowP->portPixMap).pixelSize;
-        tempFrameP->frameRect = *frameRect;
-#else
-        if (useLegacyRenderingPipeline)
-            tempFrameP->frameDepth = (**GetCWindowPixMap(srcWindowP)).pixelSize;
-        else
-            tempFrameP->frameDepth = 16;
-        tempFrameP->frameRect = *frameRect;
-        OffsetRect(&tempFrameP->frameRect, -tempFrameP->frameRect.left, -tempFrameP->frameRect.top);
-#endif
-        tempFrameP->numScanLines = numScanLines;
-        tempFrameP->sharesGWorld = false;
-        tempFrameP->isWindowFrame = true;
-        tempFrameP->isFrameLocked = false;
-        tempFrameP->interlacingIsOn = false;
-        tempFrameP->skipOddLines = true;
-
-        SWInitializeFrame(tempFrameP);
-
-        *newFrameP = tempFrameP;
-    } else {
-        err = MemError();
-    }
-
-    if (err != noErr) {
-        if (tempFrameP != NULL) {
-            DisposePtr((Ptr)tempFrameP);
-        }
-    }
-
-    SWSetStickyIfError(err);
-    return err;
-}
-#else
 short SWCreateWindowFrame(CWindowPtr srcWindowP, SWFrameRec **newFrameP,
                           Rect *frameRect, short maxHeight)
 {
@@ -324,7 +160,6 @@ short SWCreateWindowFrame(CWindowPtr srcWindowP, SWFrameRec **newFrameP,
     SWSetStickyIfError(err);
     return err;
 }
-#endif
 
 /* `saveGDH = GetGWorldDevice(saveGWorld)' is never read, but the statement has to be
    written: mwcc keeps the call and drops the store. SpriteWorldRec's mainSWGDH is at
@@ -620,68 +455,6 @@ void SWInitializeFrame(SWFrameRec *tempFrameP)
 
 // FUNCTION: EVNOVA 0x00476e10
 // MAC: _SWLockFrame i386 0x000ae467 ppc 0x000b98ec
-#ifdef MACBUILD
-void SWLockFrame(SWFrameRec *srcFrameP)
-{
-    PixMapHandle pixMapH;
-    int32_t offsetX, offsetY;
-
-    if (srcFrameP == NULL)
-        return;
-    SW_ASSERT(srcFrameP != NULL, 1251);
-
-    if (srcFrameP->isWindowFrame)
-        return;
-    SW_ASSERT(!srcFrameP->isWindowFrame, 1256);
-
-    if (!srcFrameP->isFrameLocked) {
-        srcFrameP->isFrameLocked = true;
-
-        if (srcFrameP->framePort != NULL) {
-            SW_ASSERT(srcFrameP->framePixHndl != NULL, 1264);
-
-            pixMapH = srcFrameP->framePixHndl;
-            LockPixels(pixMapH);
-            HLockHi((Handle)pixMapH);
-            srcFrameP->framePix = *pixMapH;
-
-            srcFrameP->frameBaseAddr = SWGetPixBaseAddr(pixMapH);
-            srcFrameP->frameRowBytes = SWGetPixRowBytes(pixMapH);
-            srcFrameP->frameDepth = SWGetPixBitDepth(pixMapH);
-
-            offsetX = -(**pixMapH).bounds.left;
-            offsetY = -(**pixMapH).bounds.top;
-
-            if (offsetX != 0 || offsetY != 0) {
-                srcFrameP->frameBaseAddr += offsetY * srcFrameP->frameRowBytes;
-                srcFrameP->frameBaseAddr += (offsetX * srcFrameP->frameDepth) >> 3;
-            }
-
-            if (srcFrameP->frameDepth < 8) {
-                short pixelStart;
-                short roundOff;
-
-                pixelStart = -(**pixMapH).bounds.left;
-                roundOff = 8 / srcFrameP->frameDepth;
-
-                srcFrameP->worldRectOffset = pixelStart % roundOff;
-            } else
-                srcFrameP->worldRectOffset = 0;
-        }
-
-        if (srcFrameP->maskPort != NULL) {
-            SW_ASSERT(srcFrameP->maskPixHndl != NULL, 1309);
-
-            pixMapH = srcFrameP->maskPixHndl;
-            LockPixels(pixMapH);
-            HLockHi((Handle)pixMapH);
-            srcFrameP->maskPix = *pixMapH;
-
-            srcFrameP->maskBaseAddr = SWGetPixBaseAddr(pixMapH);
-        }
-    }
-}
-#else
 void SWLockFrame(SWFrameRec *srcFrameP)
 {
     PixMapPtr pixMapH;
@@ -724,7 +497,6 @@ void SWLockFrame(SWFrameRec *srcFrameP)
         }
     }
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00476f10
 // MAC: _SWUnlockFrame i386 0x000ae5b1 ppc 0x000b9a6c

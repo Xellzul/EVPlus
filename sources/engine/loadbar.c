@@ -21,9 +21,7 @@ void InitIntroProgressBar(void)
     Rect fill;
     short midH;
     short midV;
-#ifndef MACBUILD
     RGBColor *barColor;
-#endif
 
     progressMax = CountResources(kShipType);
     progressCount = 0;
@@ -118,9 +116,7 @@ void DrawIntroProgressBar(void)
     CopyBits(GWorldContainerBits(&loadPort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
              &progressRect, &progressRect, 0, 0);
-#ifndef MACBUILD
     ScreenEndScene();
-#endif
 }
 
 /* not linked, not verified against the exe (mac _ShowScrollingText) */

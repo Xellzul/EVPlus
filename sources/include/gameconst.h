@@ -129,11 +129,7 @@ enum {
 #define kMaxRanks                   0x80
 #define kMaxShipTypes    0x300 /* shipClass entries */
 #define kMaxShots               0x80  /* shotData stride 0x48, 0x80 slots */
-#ifdef MAC1010
-#define kMaxStars        40
-#else
 #define kMaxStars        20
-#endif
 #define kMaxSystems           0x800
 #define kMaxWeapTypes           256     /* weaponStats entries, and ship->weap[] is indexed the same way */
 #define kMinPilotVersion 0x12c

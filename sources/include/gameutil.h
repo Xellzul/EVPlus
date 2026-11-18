@@ -38,9 +38,7 @@ extern short FindSystemFromStellar(short stellar);
 extern short GetCharResourceShipType(const unsigned char *name);
 extern void GetPlayerContributeBits(uint32_t *lo, uint32_t *hi);
 extern void GetDefaultCharResourceName(unsigned char *name);
-#ifndef MAC1010
 extern Handle GetNamedResource(uint32_t type, const unsigned char *name);
-#endif
 extern void GetRandomIndString(unsigned char *str, short strListID);
 extern void HideCursorSprite(void);
 extern void LoadAdvice(void);
@@ -51,13 +49,7 @@ extern void ParseTextDescription(void);
 extern void PlayQTMovieFromDesc(short id);
 extern short PlayerHasFightersOfOutfitType(short outfitIndex);
 extern short Rand(short range);
-#ifdef MACBUILD
-#ifndef IMPLICIT_RESOURCEEXISTS /* the 1.1.1 Setup.c calls it undeclared (implicit int) */
 extern Boolean ResourceExists(uint32_t type, short id);
-#endif
-#else
-extern Boolean ResourceExists(uint32_t type, short id);
-#endif
 extern Boolean nv_ResourceExists(uint32_t type, short id);
 extern ResRecord *nv_FindResourceRecord(uint32_t type, short id);
 extern Boolean ShipIsDerelict(ShipObj *ship);
@@ -103,20 +95,7 @@ extern short WarpSoundDuration(void);
 extern int32_t ResourceInit(RezFile *rez, const char *path, uint32_t start);
 extern char *ResourceLoadByName(RezFile *rez, const char *name);
 extern void *SaveBuffer(void);
-#ifdef MACBUILD
-/* the plug-in scan's file type: any */
-/* a plug-in file's type, 'Np' 0x95 'f' (MacRoman) */
-#define kPlugInFileType 0x4e709566
-#ifdef MAC1010
-extern short CountEVPlugins(short refNum, ConstStr255Param folderName, OSType type, FILE *log);
-extern OSErr GetPluginSubfolder(short refNum, ConstStr255Param name, int32_t *dirID, short *vRefNum);
-extern short gARef;
-#else
-extern short CountEVPlugins(FSRef folder, OSType type);
-#endif
-#else
 extern short CountEVPlugins(const char *path, const char *ext, FILE *log);
-#endif
 extern void ResourceDetach(RezFile *rez, int32_t index);
 extern Word ResourceGetIDFromHandle(RezFile *rez, Handle h, int32_t *idFound,
                                     char *nameBuf, Word nameBufSize);

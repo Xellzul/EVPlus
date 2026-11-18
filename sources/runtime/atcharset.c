@@ -440,12 +440,10 @@ AT_STATIC int32_t _EncodingPreflightMappings(struct HashTable *table)
             }
         }
     }
-#ifndef MAC1010
     for (i = kHighStart; i < 0x100; i = i + 1) {
         if (gTextMappingsWin[i].mac != 0)
             gTextMappingsFlags[i] |= kWinHasMac;
     }
-#endif
     gTextMappingsValid = 1;
 done:
     return err;
@@ -881,176 +879,6 @@ unsigned char IndirectIsNormalizedUnicode(void **handle)
     return name != 0 && bom == kBomUtf16Little;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-ULong count_UTF32_to_UTF16(const ULong *s, ULong limit);
-unsigned short *convert_UTF32_to_UTF16(unsigned short *dst, const ULong *src, ULong dstBytes,
-                             int32_t budget, int32_t terminate);
-
-#define ATSwap16(v)     ((long long)((((v) >> 8) & 0xff) | (((v) & 0xff) << 8)))
-
-/* IndirectNormalizeUnicode (mac 1.1.1 framework _IndirectNormalizeUnicode; Carbon 0x101337e0). */
-int32_t IndirectNormalizeUnicode(void **handle, const char *charset)
-{
-    int32_t err;
-    int32_t e;
-    ULong tag;
-    ULong kind;
-    ULong bom;
-    CharsetInfo *info;
-    CharEntry *table;
-    ULong size;
-    ULong count;
-    ULong bytes;
-    ULong i;
-    unsigned char *src;
-    unsigned char c;
-    unsigned short *dst;
-    unsigned short *half;
-    ULong *word;
-    void **out;
-
-    err = 0;
-    out = 0;
-    count = 0;
-    if (IndirectGetLock(handle)) {
-        err = kBadArgument;
-        goto done;
-    }
-    if (charset == 0 || *charset == 0) {
-        tag = _IndirectGetEncoding(handle, 0, &kind, &bom);
-        if (tag == kNoLength) {
-            err = kWrongCharset;
-            goto done;
-        }
-    } else {
-        info = _EncodingLookupByName(charset);
-        if (info != 0) {
-            tag = info->tag;
-            kind = info->reserved;
-            if (tag == kNoLength) {
-                err = kWrongCharset;
-                goto done;
-            }
-            if (kind == kKindUnicode)
-                _IndirectGetUnicodeEncoding(handle, 0, &bom);
-        } else {
-            err = kWrongCharset;
-            goto done;
-        }
-    }
-    if (gTextMappingsValid == 0)
-        _EncodingPreflightMappings(0);
-    size = IndirectGetSize(handle);
-    if (kind != kKindUnicode) {
-        table = _EncodingLookupTable(tag);
-        if (table != 0 && tag == kKindMacText) {     /* BUG: a tag tested against a kind, never true */
-            char *p = *handle;
-
-            for (i = 0; i < size; i++, p++) {
-                c = *p;
-                *p = table[c].mac;
-            }
-        } else if (table != 0 && kind == kKindText) {
-            count = (size + 1) * 2;
-            e = IndirectSetSize(handle, count);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-            src = (unsigned char *)*handle + size;
-            dst = (unsigned short *)((char *)*handle + count);
-            for (i = 0; i < size; i++)
-                *--dst = table[*--src].unicode;
-            dst[-1] = 0xfeff;
-        }
-        goto done;
-    }
-    switch (bom) {
-    case kBomUtf8:
-        bytes = count_UTF8_to_UTF16(*handle, IndirectGetSize(handle)) + 2;
-        if ((out = IndirectAllocate(bytes)) == 0) {
-            err = kOutOfMemory;
-            goto done;
-        }
-        convert_UTF8_to_UTF16(*out, *handle, bytes, -1, 1);
-        break;
-    case kBomUtf16Big:
-    case kBomUtf16Fffe:
-        if (bom != kBomUtf16Little) {
-            half = *handle;
-            count = IndirectGetSize(handle) >> 1;
-            for (i = 0; i < count; i++)
-                half[i] = ATSwap16(half[i]);
-        }
-        break;
-    case kBomUtf32Even:
-    case kBomUtf32Odd:
-        half = *handle;
-        count = IndirectGetSize(handle) >> 1;
-        for (i = 0; i < count; i++)
-            half[i] = ATSwap16(half[i]);
-        half = (unsigned short *)&bom;
-        half[0] = ATSwap16(half[0]);
-        half[1] = ATSwap16(half[1]);
-    case kBomUtf32Little:
-    case kBomUtf32Big:
-        if (bom != kBomUtf32Big) {
-            word = *handle;
-            count = IndirectGetSize(handle) >> 2;
-            for (i = 0; i < count; i++)
-                word[i] = ATSwap32(word[i]);
-        }
-        bytes = count_UTF32_to_UTF16(*handle, IndirectGetSize(handle)) + 2;
-        if ((out = IndirectAllocate(bytes)) == 0) {
-            err = kOutOfMemory;
-            goto done;
-        }
-        convert_UTF32_to_UTF16(*out, *handle, bytes, -1, 1);
-        break;
-    default:
-        err = kWrongCharset;
-        goto done;
-    }
-    if (out != 0) {
-        e = IndirectSetSize(out, bytes - 2);
-        if (e != 0) {
-            err = e;
-            goto done;
-        }
-        e = IndirectReplace(handle, out);
-        if (e != 0)
-            err = e;
-    }
-done:
-    if (out != 0)
-        IndirectDeallocate(out);
-    return err;
-}
-
-int32_t IndirectAddUnicodeTag(void **handle)
-{
-    int32_t err;
-    int32_t e;
-    unsigned short tag;
-
-    err = 0;
-    IndirectGetLock(handle);
-    IndirectGetSize(handle);
-    if (IndirectGetSize(handle) >= 2) {
-        MemoryCopy(&tag, *handle, 2);
-        if (tag == 0xfeff) {
-            err = kBadArgument;
-            goto done;
-        }
-    }
-    tag = 0xfeff;
-    e = IndirectInsertData(handle, &tag, 2);
-    if (e != 0)
-        err = e;
-done:
-    return err;
-}
-#endif
 
 /* IndirectRemoveUnicodeTag (drop a UTF-16 byte-order mark from the handle). */
 // FUNCTION: EVNOVA 0x005057fa
@@ -1459,12 +1287,6 @@ unsigned char *U2CStringCopySafe(unsigned char *dst, const unsigned short *src, 
     return dst;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-ULong C2UGetByteCount(const char *s)
-{
-    return StringGetLength((const unsigned char *)s) << 1;
-}
-#endif
 
 /* A Windows-1252 string widened to UTF-16 through the registry's table. */
 // FUNCTION: EVNOVA 0x00505dba

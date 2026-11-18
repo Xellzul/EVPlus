@@ -10,9 +10,6 @@
 extern "C" {
 #endif
 
-#ifdef MACBUILD
-#define CopyRect(d, s) (*(d) = *(s))
-#else
 static __inline void CopyRect(Rect *d, const Rect *s)
 {
     d->top = s->top;
@@ -20,18 +17,12 @@ static __inline void CopyRect(Rect *d, const Rect *s)
     d->bottom = s->bottom;
     d->right = s->right;
 }
-#endif
 
 extern void DeltaIntroProgressBar(double amount);
 extern Boolean AreWeFrontProcess(void);
 extern void CenterRect(Rect *r, Rect *bounds);
-#ifdef MACBUILD
-extern void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, GDHandle device,
-                          short depth, short picID);
-#else
 extern void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
                           short depth, short picID);
-#endif
 EXTERN_CPP_BEGIN
 extern SpriteRec *weapTargetSprite[4];
 extern SpriteRec *navTargetSprite[4];
@@ -46,21 +37,12 @@ extern Boolean gUpdateFlag;
 extern Boolean regNoticeShown;
 EXTERN_CPP_END
 extern void DisposeMainScreenAnim(void);
-#ifdef MACBUILD
-extern void CreateGWorldContainer(GWorldContainer *gwc, GDHandle device, short depth,
-                                  Rect *bounds);
-#else
 extern void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
                                   Rect *bounds);
-#endif
 extern void DisposeGWorldContainer(GWorldContainer *gwc);
 extern void DoMainScreen(void);
-#ifdef MACBUILD
-extern Boolean RetrieveMenuIcon(short picID, CGrafPtr dest, Rect *destRect);
-#else
 extern Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest,
                            Rect *destRect);
-#endif
 extern void DrawIndString(short strListID, short index);
 extern void DrawIntroProgressBar(void);
 extern void DrawStatus(void);
@@ -79,9 +61,6 @@ extern void SetupListRects(Point *where);
 extern void InitOffscreen(void);
 extern void HideAmbrosiaLogo(void);
 extern void PostAnimateHandler(void);
-#ifdef V111
-extern unsigned char useLegacyRenderingPipeline;
-#endif
 extern Boolean GetSpriteInfo(short id, short *spriteID, short *maskID, short *xSize,
                           short *ySize, short *xTiles, short *yTiles);
 extern short GetStellarSpriteXSize(short id);
@@ -102,11 +81,7 @@ extern void LoopingMovieIdle(void);
 extern void MainScreenAnimDraw(void);
 extern void MainScreenChoice(short which);
 extern void MainScreenAppearStart(void);
-#ifdef MACBUILD
-void MainScreenKey(char key, unsigned char code, short modifiers);
-#else
 void MainScreenKey(char key, int32_t a, int32_t b);
-#endif
 extern void MainScreenRolloverDraw(void);
 extern void MainScreenUpdate(short which);
 extern int MouseReadButtons(void);
@@ -139,23 +114,18 @@ extern short rolloverAlpha;
 extern short rolloverIndex;
 extern Handle intfFileHand;
 extern void *gIntroMovieData;
-#ifndef MACBUILD
 EXTERN_CPP_END
 extern void QTNewGWorldFromPtr(void **gw, int32_t pixelFormat, Rect *boundsRect,
                                int32_t cTable, int32_t aGDevice, int32_t flags, int32_t baseAddr,
                                int32_t rowBytes);
-#endif
 EXTERN_CPP_BEGIN
 extern uint32_t lastLogoAnimTime;
 extern uint32_t lastSlideAnimTime;
 extern Rect gLoadBarBase;
 extern short logoFrameCount;
 extern short logoIndex;
-#ifdef MACBUILD
-#else
 extern short gMainPicHeightDelta;
 extern short gMainPicWidthDelta;
-#endif
 extern short loopingMovieResRefNum;
 extern short planetPicId;
 extern unsigned char weapName[256][256];
@@ -165,11 +135,7 @@ extern short lastIntfResourceID;
 extern int32_t lastFPSUpdateTime;
 extern uint32_t lastRadarUpdateTime;
 extern short lastTargetedShipShields;
-#ifdef MACBUILD /* rows of three shorts: Files.o's stores keep their decl, RGBColor's fields lose it */
-extern unsigned short ldefColors[3][3];
-#else
 extern RGBColor ldefColors[3];
-#endif
 extern ShortPoint logoDestPoint;
 extern Rect logoDestRect;
 extern ShortPoint mainMenuCenter;

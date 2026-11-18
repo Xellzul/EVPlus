@@ -7,9 +7,6 @@
 #include "game.h"
 #include "player.h"
 #include "cefix.h"
-#ifdef V111
-#include "render.h"
-#endif
 
 EXTERN_C_BEGIN
 
@@ -21,9 +18,6 @@ int __stdcall WinMain(void *hInstance, void *hPrevInstance, char *lpCmdLine,
     MemoryStatus ms;
     char buf[256];
 
-#ifdef V111 /* V111: the mac main picks the pipeline first; win draws through the window frame */
-    useLegacyRenderingPipeline = 1;
-#endif
     if (CE_Startup(lpCmdLine, nCmdShow) != 0)
         return 0;
     if (Win95Allow1Instance("Lock for EV Nova") == 0) {

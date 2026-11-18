@@ -4,17 +4,12 @@
 #include "burgerplat.h"
 #include "burger.h"
 #include "ambrosia.h"
-#ifndef MAC1010
 #include "win32.h"
-#endif
 #include "ittoolkit.h"
 
 static char kNoText[] = "";
 static char kCloseBoxClass[] = "interface_tool_closebox";
 static char kToolClass[] = "interface_tool";
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-static unsigned short kNameW[] = { 'N', 'A', 'M', 'E', 0 };
-#endif
 
 static ITRect gIT_ShowPageZeroRect;                      /* 0x0086bb00 _IT_ViewGoToPage's empty clip */
 
@@ -36,12 +31,7 @@ int32_t _IT_ParseTupleCreate(WindowNode *window, ITSource *source, int32_t where
                   void *unused);
 extern int32_t FT_PathCurrent(const char *first, const char *second);        /* atfilespec.c */
 extern unsigned char IndirectIsNormalizedEncoding(void **handle);                        /* atcharset.c */
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-extern int32_t IndirectNormalizeUnicode(void **handle, const char *charset);            /* atcharset.c */
-#define IndirectNormalizeEncoding IndirectNormalizeUnicode
-#else
 extern int32_t IndirectNormalizeEncoding(void **handle, const char *charset);            /* atcharset.c */
-#endif
 extern ITPageTable *_IT_PageListCreate(ITElement *root);                       /* itattr.c */
 extern ITPage *_IT_GetPageByIndex(ITPageTable *table, ULong index);            /* itattr.c */
 void _IT_ParseTupleDispose(ITSource *source);
@@ -95,10 +85,8 @@ typedef struct DialogParams {
 #define kDialogHeight       300
 #define kDialogFailed       -8400
 
-#ifndef MAC1010 /* the exe defines both in atcursormac's BSS run */
 WindowNode *gIT_CurrentView;                        /* 0x00870084 the window a control proc serves */
 ITControl *gIT_CurrentItem;                         /* 0x00870028 the control it serves */
-#endif
 
 #define kExternalLink       -8400
 #define kEventCreate        0
@@ -126,7 +114,6 @@ ITControl *gIT_CurrentItem;                         /* 0x00870028 the control it
 
 /* DT_RegionCreate (a new empty region). */
 // FUNCTION: EVNOVA 0x0051a038
-#ifndef MAC1010
 void *DT_RegionCreate(void)
 {
     void *region;
@@ -141,11 +128,9 @@ void *DT_RegionCreate(void)
     }
     return region;
 }
-#endif
 
 /* DT_RegionClone (a copy of a region). */
 // FUNCTION: EVNOVA 0x0051a064
-#ifndef MAC1010
 void *DT_RegionClone(void *region)
 {
     void *copy;
@@ -162,11 +147,9 @@ void *DT_RegionClone(void *region)
     }
     return copy;
 }
-#endif
 
 /* DT_RegionDispose (dispose a region). */
 // FUNCTION: EVNOVA 0x0051a0a1
-#ifndef MAC1010
 void DT_RegionDispose(void *region)
 {
     int32_t err;
@@ -174,11 +157,9 @@ void DT_RegionDispose(void *region)
     err = 0;
     DeleteObject(region);
 }
-#endif
 
 /* DT_GetRegionRect (a region's bounding box). */
 // FUNCTION: EVNOVA 0x0051a0b0
-#ifndef MAC1010
 ITRect *DT_GetRegionRect(ITRect *box, void *region)
 {
     int32_t err;
@@ -187,11 +168,9 @@ ITRect *DT_GetRegionRect(ITRect *box, void *region)
     GetRgnBox(region, (WinRect *)box);
     return box;
 }
-#endif
 
 /* DT_SetRegionRect (set a region to a rectangle, clamped to GDI's reach). */
 // FUNCTION: EVNOVA 0x0051a0c8
-#ifndef MAC1010
 int32_t DT_SetRegionRect(void *region, const ITRect *r)
 {
     int32_t err;
@@ -205,14 +184,12 @@ int32_t DT_SetRegionRect(void *region, const ITRect *r)
     }
     return err;
 }
-#endif
 
 /* DT_RegionScale (a region carried from rectangle `from' to rectangle `to': an offset when the
    sizes agree, else every rectangle of its data scaled, unsigned, by from's extent over to's, and
    rebuilt; -7004 on failure). The rebuild passes the rectangle count where ExtCreateRegion wants
    the data's byte size, as the exe does. */
 // FUNCTION: EVNOVA 0x0051a110
-#ifndef MAC1010
 int32_t DT_RegionScale(void *region, const ITRect *from, const ITRect *to)
 {
     void *rebuilt;
@@ -288,7 +265,6 @@ done:
         MemoryDeallocate(data);
     return err;
 }
-#endif
 
 /* DT_IsRegionEmpty (whether a region is empty). */
 // FUNCTION: EVNOVA 0x0051a2c0
@@ -305,7 +281,6 @@ unsigned char DT_IsRegionEmpty(void *region)
 
 /* Sys2DT_Point (a point by value). */
 // FUNCTION: EVNOVA 0x0051a2e6
-#ifndef MAC1010
 ITPoint Sys2DT_Point(const ITPoint *pt)
 {
     ITPoint copy;
@@ -316,11 +291,9 @@ ITPoint Sys2DT_Point(const ITPoint *pt)
     copy.v = pt->v;
     return copy;
 }
-#endif
 
 /* DT_2SysColor (a colour as a Windows COLORREF). */
 // FUNCTION: EVNOVA 0x0051a307
-#ifndef MAC1010
 ULong DT_2SysColor(const ITColor *color)
 {
     int32_t err;
@@ -328,11 +301,9 @@ ULong DT_2SysColor(const ITColor *color)
     err = 0;
     return RGB(color->red, color->green, color->blue);
 }
-#endif
 
 /* CopySys2DT_Point (copy a point). */
 // FUNCTION: EVNOVA 0x0051a32b
-#ifndef MAC1010
 ITPoint *CopySys2DT_Point(ITPoint *dst, const ITPoint *src)
 {
     int32_t err;
@@ -342,11 +313,9 @@ ITPoint *CopySys2DT_Point(ITPoint *dst, const ITPoint *src)
     dst->v = src->v;
     return dst;
 }
-#endif
 
 /* CopyDT_2SysPoint (copy a point). */
 // FUNCTION: EVNOVA 0x0051a346
-#ifndef MAC1010
 ITPoint *CopyDT_2SysPoint(ITPoint *dst, const ITPoint *src)
 {
     int32_t err;
@@ -356,11 +325,9 @@ ITPoint *CopyDT_2SysPoint(ITPoint *dst, const ITPoint *src)
     dst->v = src->v;
     return dst;
 }
-#endif
 
 /* CopySys2DT_Rect (copy a rectangle). */
 // FUNCTION: EVNOVA 0x0051a361
-#ifndef MAC1010
 ITRect *CopySys2DT_Rect(ITRect *dst, const ITRect *src)
 {
     int32_t err;
@@ -372,13 +339,11 @@ ITRect *CopySys2DT_Rect(ITRect *dst, const ITRect *src)
     dst->bottom = src->bottom;
     return dst;
 }
-#endif
 
 /* CopyDT_2SysRect (copy a rectangle, clamped to GDI's 16-bit reach: an extent over 32000 is cut to
    32000 from whichever edge lies within 8000 of the origin, else centred; each axis has its own
    lo / hi). */
 // FUNCTION: EVNOVA 0x0051a38a
-#ifndef MAC1010
 ITRect *CopyDT_2SysRect(ITRect *dst, const ITRect *src)
 {
     int32_t err;
@@ -418,11 +383,9 @@ ITRect *CopyDT_2SysRect(ITRect *dst, const ITRect *src)
     }
     return dst;
 }
-#endif
 
 /* CopySys2DT_Color (a Windows COLORREF as an opaque colour). */
 // FUNCTION: EVNOVA 0x0051a48e
-#ifndef MAC1010
 ITColor *CopySys2DT_Color(ITColor *color, const ULong *ref)
 {
     int32_t err;
@@ -434,11 +397,9 @@ ITColor *CopySys2DT_Color(ITColor *color, const ULong *ref)
     color->blue = (*ref >> 16) & 0xff;
     return color;
 }
-#endif
 
 /* CopyDT_2SysColor (a colour stored as a COLORREF). */
 // FUNCTION: EVNOVA 0x0051a4c0
-#ifndef MAC1010
 ULong *CopyDT_2SysColor(ULong *ref, const ITColor *color)
 {
     int32_t err;
@@ -447,12 +408,7 @@ ULong *CopyDT_2SysColor(ULong *ref, const ITColor *color)
     *ref = RGB(color->red, color->green, color->blue);
     return ref;
 }
-#endif
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-extern char gIT_DefaultAnchor[0x100];
-int32_t _IT_ViewSetAnchor(WindowNode *window, const char *anchor);
-#endif
 
 /* IT_ViewCreate (a window record for a Windows window, or with hwnd -1 the record in `*out' set up
    again: a child of the window a control proc is serving, its DC, its bounds (the client area
@@ -531,19 +487,8 @@ int32_t IT_ViewCreate(void *hwnd, const ITRect *bounds, ITWindowProc proc, int32
         }
     }
     e = _IT_ViewCallback(window, 0, 0, kEventCreate);
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (e != 0) {
-        err = e;
-        goto done;
-    }
-    if (window->parent != 0 && window->parent->anchor[0] != 0)
-        _IT_ViewSetAnchor(window, window->parent->anchor);
-    else if (gIT_DefaultAnchor != 0)
-        _IT_ViewSetAnchor(window, gIT_DefaultAnchor);
-#else
     if (e != 0)
         err = e;
-#endif
 done:
     if (err != 0 && window != 0 && !window->titled) {
         IT_ViewDispose(window);
@@ -643,9 +588,6 @@ int32_t _IT_ViewChange(void *windowRef, struct FolderSpec **folder, const char *
     char name[256];
     char message[256];
     ITRect frame;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    unsigned short *wide;
-#endif
 
     window = windowRef;
     err = 0;
@@ -676,10 +618,6 @@ int32_t _IT_ViewChange(void *windowRef, struct FolderSpec **folder, const char *
         err = e;
         goto done;
     }
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (unused != 0 && unused == (void *)window->tracking)
-        window->tracking = 0;
-#endif
     _IT_ViewUnload(window);
     window->fore = gDT_ColorBlack;
     window->back = gDT_ColorWhite;
@@ -700,14 +638,6 @@ int32_t _IT_ViewChange(void *windowRef, struct FolderSpec **folder, const char *
             found = 1;
             if (window->path[0] == 0)
                 break;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-            if (element->wide) {
-                wide = (unsigned short *)HashLookupUnicode(element->attributes, kNameW, 0);
-                if (wide == 0 || *wide == 0)
-                    break;
-                U2CStringCopySafe((unsigned char *)upper, wide, sizeof(upper), (ULong)-1);
-            } else
-#endif
             {
                 value = HashLookup(element->attributes, "NAME", 0);
                 if (value == 0 || *value != 0)
@@ -746,17 +676,8 @@ int32_t _IT_ViewChange(void *windowRef, struct FolderSpec **folder, const char *
                                                     value);
         }
         value = _IT_SimpleFindAttribute(window->source.interfaceElement, "TITLE");
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (value != 0) {
-            if (window->source.interfaceElement->wide)
-                UnicodeCopySafe(window->title, value, sizeof(window->title), -1);
-            else
-                C2UStringCopySafe(window->title, (unsigned char *)value, sizeof(window->title), (ULong)-1);
-        }
-#else
         if (value != 0)
             StringCopySafe(window->title, value, sizeof(window->title));
-#endif
         value = _IT_SimpleFindAttribute(window->source.interfaceElement, "FGCOLOR");
         if (value != 0)
             window->fore = _IT_ParseAttributeGetColor(window->source.interfaceElement->wide, value);
@@ -765,11 +686,6 @@ int32_t _IT_ViewChange(void *windowRef, struct FolderSpec **folder, const char *
             window->back = _IT_ParseAttributeGetColor(window->source.interfaceElement->wide, value);
         value = _IT_SimpleFindAttribute(window->source.interfaceElement, "BACKGROUND");
         if (value != 0) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-            if (window->source.interfaceElement->wide)
-                U2CStringCopySafe((unsigned char *)name, (unsigned short *)value, sizeof(name), (ULong)-1);
-            else
-#endif
             StringCopySafe(name, value, sizeof(name));
             err = FT_FileGetFlags((int32_t)window->source.folder, name, 0, 0);
             if (err == 0) {
@@ -998,98 +914,6 @@ WindowNode *IT_WindowFindView(void *hwnd)
     return w;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-#define kCursorWatch 4
-#define kEventAnchor 0x10
-
-extern char gIT_DefaultAnchor[0x100];
-
-unsigned char IT_ViewIsWide(WindowNode *window)
-{
-    ITElement *root = window->source.root;
-    unsigned char wide = 0;
-
-    if (root != 0 && root->wide)
-        wide = 1;
-    return wide;
-}
-
-int32_t _IT_ViewSetAnchor(WindowNode *window, const char *anchor)
-{
-    int32_t err;
-    int32_t e;
-    struct FolderSpec **folder;
-    char *file;
-    char *page;
-    char *path;
-
-    err = 0;
-    file = 0;
-    page = 0;
-    path = 0;
-    folder = 0;
-    if (window != 0) {
-        StringCopySafe(window->anchor, anchor, sizeof(window->anchor));
-        if (window->page != 0) {
-            IT_SetCursor(kCursorWatch);
-            if (window->source.folder != 0) {
-                e = FT_PathCreate(window->source.folder, 0, &folder);
-                if (e != 0) {
-                    err = e;
-                    goto done;
-                }
-            }
-            if (window->source.file != 0) {
-                file = StringDuplicate(window->source.file);
-                if (file == 0) {
-                    err = kOutOfMemory;
-                    goto done;
-                }
-            }
-            if (window->page->name != 0) {
-                page = StringDuplicate(window->page->name);
-                if (page == 0) {
-                    err = kOutOfMemory;
-                    goto done;
-                }
-            }
-            path = StringDuplicate(window->path);
-            if (path == 0) {
-                err = kOutOfMemory;
-                goto done;
-            }
-            e = _IT_ViewCallback(window, 0, 0, kEventAnchor);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-            e = _IT_ViewChange(window, folder, file, path, page, (void *)window->tracking);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        } else {
-            e = _IT_ViewCallback(window, 0, 0, kEventAnchor);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        }
-    } else {
-        StringCopySafe(gIT_DefaultAnchor, anchor, sizeof(gIT_DefaultAnchor));
-    }
-done:
-    if (folder != 0)
-        FT_PathDispose(folder);
-    if (file != 0)
-        MemoryDeallocate(file);
-    if (page != 0)
-        MemoryDeallocate(page);
-    if (path != 0)
-        MemoryDeallocate(path);
-    return err;
-}
-#endif
 
 /* _IT_ViewHandleIdle (a window's idle turn: its callback told (event 4), message 0x13 to its controls,
    and for a root window with images to preload, the next one loaded at most every half second). */
@@ -1154,15 +978,6 @@ int32_t _IT_ViewHandleKey(WindowNode *window, const ITKeyEvent *key, ITClick *cl
     if (isChild)
         goto done;
     if (click->window != 0 && click->control != 0) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (click->hasAnchor) {
-            e = _IT_ViewSetAnchor(click->window, click->anchor);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        } else
-#endif
         {
             e = _IT_ItemExecute(click->window, click->control, click->link);
             if (e != 0) {
@@ -1171,10 +986,6 @@ int32_t _IT_ViewHandleKey(WindowNode *window, const ITKeyEvent *key, ITClick *cl
             }
         }
     }
-#ifdef MAC1010
-    if (!click->followed)
-        SysBeep(7);
-#endif
     if (IT_ViewExists(window) && window->dirty) {
         e = _IT_ViewValidate(window);
         if (e != 0)
@@ -1219,15 +1030,6 @@ int32_t _IT_ViewHandleEdit(WindowNode *window, short event, ITClick *click)
     if (isChild)
         goto done;
     if (click->window != 0 && click->control != 0) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (click->hasAnchor) {
-            e = _IT_ViewSetAnchor(click->window, click->anchor);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        } else
-#endif
         {
             e = _IT_ItemExecute(click->window, click->control, click->link);
             if (e != 0) {
@@ -1272,15 +1074,6 @@ int32_t _IT_ViewHandleClick(WindowNode *window, ITInputEvent *event, ITClick *cl
     if (isChild)
         goto done;
     if (click->window != 0 && click->control != 0) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (click->hasAnchor) {
-            e = _IT_ViewSetAnchor(click->window, click->anchor);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        } else
-#endif
         {
             e = _IT_ItemExecute(click->window, click->control, click->link);
             if (e != 0) {
@@ -1325,15 +1118,6 @@ int32_t _IT_ViewHandleHit(WindowNode *window, int32_t item, ITClick *click)
     if (isChild)
         goto done;
     if (click->window != 0 && click->control != 0) {
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (click->hasAnchor) {
-            e = _IT_ViewSetAnchor(click->window, click->anchor);
-            if (e != 0) {
-                err = e;
-                goto done;
-            }
-        } else
-#endif
         {
             e = _IT_ItemExecute(click->window, click->control, click->link);
             if (e != 0) {
@@ -1857,9 +1641,6 @@ done:
     return err;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-extern void IT_IndexDispose(ITElement *index);
-#endif
 
 /* _IT_ViewUnload (drop a window's content: its pages, its controls, its backdrop and its source
    document). */
@@ -1883,13 +1664,6 @@ void _IT_ViewUnload(WindowNode *window)
         window->backdrop = 0;
     }
     _IT_ParseTupleDispose(&window->source);
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    if (window->tracking != 0) {
-        IT_IndexDispose((ITElement *)window->tracking);
-        window->tracking = 0;
-    }
-    window->path[0] = 0;
-#endif
 }
 
 /* _IT_ViewGoToPage (show a page in a window, drawing clipped to nothing meanwhile: the old page's
@@ -2075,17 +1849,8 @@ int32_t _IT_ViewCallback(WindowNode *window, ITPage *page, ITControl *control, i
         if (control != 0) {
             index = _IT_GetItemIndex(window->controls, control);
             name = _IT_SimpleFindAttribute(control->element, "NAME");
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-            if (name != 0) {
-                if (control->element->wide)
-                    U2CStringCopySafe((unsigned char *)buffer, (unsigned short *)name, sizeof(buffer), (ULong)-1);
-                else
-                    StringCopySafe(buffer, name, sizeof(buffer));
-            }
-#else
             if (name != 0)
                 StringCopySafe(buffer, name, sizeof(buffer));
-#endif
         }
         result = window->proc(window, window->refcon, event, where, index,
                               control != 0 && name != 0 ? buffer : 0);
@@ -2117,23 +1882,9 @@ int32_t _IT_ViewPreload(WindowNode *window, ITElement *root)
         ;
     while ((e = _IT_ParseTreeFindNextTag(root, e, "PRELOAD", 1)) != 0) {
         src = _IT_SimpleFindAttribute(e, "SRC");
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-        if (src == 0)
-            continue;
-        if (e->wide) {
-            if (*(unsigned short *)src == 0)
-                continue;
-            U2CStringCopySafe((unsigned char *)name, (unsigned short *)src, sizeof(name), (ULong)-1);
-        } else {
-            if (*src == 0)
-                continue;
-            StringCopySafe(name, src, sizeof(name));
-        }
-#else
         if (src == 0 || *src == 0)
             continue;
         StringCopySafe(name, src, sizeof(name));
-#endif
         if (_IT_SimpleFindAttribute(e, "IMG") == 0 && _IT_SimpleFindAttribute(e, "IMAGE") == 0)
             continue;
         for (p = top->preloads; p != 0 && StringCompare(name, p->name) != 0; p = p->next)
@@ -2263,11 +2014,6 @@ done:
     return err;
 }
 
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-extern int32_t IT_IndexLoad(int32_t where, const char *file, ITElement **index, ITElement **root);
-extern int32_t IT_IndexLookup(ITElement *index, const char *language, const char *path, char *a, char *b,
-                         char *c, unsigned short *d, int32_t *f);
-#endif
 
 /* _IT_ParseTupleCreate (open a page source: a folder named by `file' gives its index.iml (-8405 when it
    has none), a file is read from its own folder (the current folder swapped in around the lookup
@@ -2283,22 +2029,10 @@ int32_t _IT_ParseTupleCreate(WindowNode *window, ITSource *source, int32_t where
     void **data;
     struct FolderSpec **current;
     FTFileInfo info;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    char found[256];
-#endif
 
     err = 0;
     data = 0;
     current = 0;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    window->tracking = (ULong)unused;
-    if (unused == 0)
-        IT_IndexLoad(where, file, (ITElement **)&window->tracking, &source->root);
-    if (window->tracking != 0 && IT_IndexLookup((ITElement *)window->tracking, window->path, window->anchor, found, 0, 0, 0, 0) == 0)
-        file = found;
-    else if (window->tracking != 0 && window->anchor[0] != 0 && IT_IndexLookup((ITElement *)window->tracking, window->path, "", found, 0, 0, 0, 0) == 0)
-        file = found;
-#endif
     if (source->root != 0) {
         e = FT_PathCreate((struct FolderSpec **)where, 0, &source->folder);
         if (e != 0) {
@@ -2363,12 +2097,10 @@ int32_t _IT_ParseTupleCreate(WindowNode *window, ITSource *source, int32_t where
         goto done;
     }
     if (!IndirectIsNormalizedEncoding(data)) {
-#if !(defined(MAC1010) && TARGET_API_MAC_CARBON)
         if (IndirectIsUnicode(data, 0)) {
             err = kNoConverter;
             goto done;
         }
-#endif
         e = IndirectNormalizeEncoding(data, 0);
         if (e != 0) {
             err = e;
@@ -2420,7 +2152,6 @@ void _IT_ParseTupleDispose(ITSource *source)
 /* IT_WindowProc (the window procedure of the interface tool's window classes: the body 0x004eae3e,
    else Windows' default). */
 // FUNCTION: EVNOVA 0x0051c610
-#ifndef MAC1010
 int32_t __stdcall IT_WindowProc(void *hwnd, unsigned int msg, unsigned int wParam, int32_t lParam)
 {
     int32_t result;
@@ -2432,7 +2163,6 @@ int32_t __stdcall IT_WindowProc(void *hwnd, unsigned int msg, unsigned int wPara
         result = DefWindowProcA(hwnd, msg, wParam, lParam);
     return result;
 }
-#endif
 
 /* IT_ViewCreateParam (the dialog procedure 0x0051a695 runs: WM_INITDIALOG makes the modal root window
    record (0x0051a4ee), loads the page file, sizes the dialog to the INTERFACE frame a sixth of
@@ -2441,7 +2171,6 @@ int32_t __stdcall IT_WindowProc(void *hwnd, unsigned int msg, unsigned int wPara
    handled it). Note: a failed
    WM_INITDIALOG leaves the dialog up with no page, as in the exe */
 // FUNCTION: EVNOVA 0x0051c664
-#ifndef MAC1010
 int32_t __stdcall IT_ViewCreateParam(void *hwnd, unsigned int msg, unsigned int wParam, int32_t lParam)
 {
     int32_t handled;
@@ -2532,5 +2261,4 @@ timer:
 done:
     return handled;
 }
-#endif
 

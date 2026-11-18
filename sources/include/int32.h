@@ -2,12 +2,6 @@
 #ifndef INT32_H
 #define INT32_H
 
-#if defined(MACBUILD) && defined(V111)
-#include <stdint.h>
-#define int32_t  long             /* Apple gcc's own int32_t is int; long keeps the 1.1.1 code */
-#define uint32_t unsigned long
-#else
 #include <stdint.h>               /* any modern compiler: the real fixed-width types */
-#endif
 
 #endif

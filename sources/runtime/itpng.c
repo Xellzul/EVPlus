@@ -10,11 +10,7 @@
 #define kPngSignatureBytes  4
 #define kFormatPng          0x504e4766    /* 'PNGf' */
 #define kScreenGamma        2.2
-#ifdef MAC1010
-#define kDisplayGamma       1.7
-#else
 #define kDisplayGamma       kScreenGamma
-#endif
 #define kFormatDirect       0x8888
 #define kDirectDepth        32
 #define kMaxImageSide       0x1000

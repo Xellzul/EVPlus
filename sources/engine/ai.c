@@ -471,7 +471,6 @@ void AISetup(ShipObj *ship)
     ship->formLeader = -1;
 }
 
-#ifndef MAC1010 /* not in 1.0.10 */
 /* RecentlyVisitedStellarInSystem (mac _RecentlyVisitedStellarInSystem, dead on win: uncalled, the linker strips it). */
 // MAC: _RecentlyVisitedStellarInSystem i386 0x0007f429 ppc 0x00088ee8
 Boolean RecentlyVisitedStellarInSystem(ShipObj *ship, short sys)
@@ -492,7 +491,6 @@ Boolean RecentlyVisitedStellarInSystem(ShipObj *ship, short sys)
     }
     return 0;
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00402860
 // MAC: _WimpyTraderAI i386 0x0008b029 ppc 0x00096590

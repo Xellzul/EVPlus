@@ -6,9 +6,7 @@
 #include "burger.h"
 #define LockResult unsigned char
 #include "burgerplat.h"
-#ifndef MAC1010
 #include "win32.h"
-#endif
 #include "zlib.h"
 
 
@@ -1089,7 +1087,6 @@ done:
     return err;
 }
 
-#ifndef MAC1010
 // FUNCTION: EVNOVA 0x004ff774
 int32_t _IndirectValidate(void **handle)
 {
@@ -1119,4 +1116,3 @@ int32_t _IndirectValidate(void **handle)
     }
     return err;
 }
-#endif

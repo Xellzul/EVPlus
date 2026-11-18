@@ -24,10 +24,8 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
     Rect *rectP;
     Boolean lockedState;
     uint32_t srcBaseOffset;
-#ifndef MACBUILD
     uint32_t spriteDataSize;
     uint32_t frameDataSize;
-#endif
 
     if (requestedDepth > 0) {
         depth = requestedDepth;
@@ -102,15 +100,11 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
                 srcFrameP->rleTokenStart = *spriteData + GetAHandleSize((Handle)spriteData);
 
                 LockAHandle((Handle)frameData);
-#ifdef MACBUILD
-                err = HandAndHand((Handle)frameData, (Handle)spriteData);
-#else
                 frameDataSize = GetAHandleSize((Handle)frameData);
                 spriteDataSize = GetAHandleSize((Handle)spriteData);
                 ResizeAHandle((Handle)spriteData, frameDataSize + spriteDataSize);
                 memmove((char *)*spriteData + spriteDataSize, *frameData,
                         frameDataSize);
-#endif
 
                 DeallocAHandle(frameData);
             }

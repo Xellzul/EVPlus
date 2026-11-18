@@ -22,11 +22,7 @@ extern void ApplyGravity(FloatPoint *a, FloatPoint *b, float force,
                          FloatPoint *out);           /* 0x0046e2f0 (engineutils.c) */
 extern short CalcSpobLeadAngle(SpobRecord *spob, ShipObj *target); /* 0x0043ba30 */
 extern void CheckShotProximities(void);          /* 0x00437e20 */
-#ifdef MACBUILD /* unprototyped: the mac hyper arrival passes an argument (handleplayer.c) */
-extern void CreateAsteroids();
-#else
 extern void CreateAsteroids(void);                      /* 0x004216b0 initevnova.c */
-#endif
 extern void DestroyPartialFleetCargo(short shipIndex);    /* 0x00469810 mac _DestroyPartialFleetCargo (engineutils.c) */
 extern void WrapObject(FloatPoint *pos);           /* 0x0045c6d0 (handleplayer.c) */
 extern void BuildTrigTable(void);                          /* 0x00461830 trig tables */

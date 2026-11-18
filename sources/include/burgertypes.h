@@ -12,13 +12,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#ifdef MAC1010
-#define AT_STATIC static    /* the Mac's AmbrosiaTools keeps these private; win's object names them */
-#define AT_EXTERN extern    /* and defines these in another object */
-#else
 #define AT_STATIC
 #define AT_EXTERN
-#endif
 
 /* MacTypes.h's booleans for the win port's C++ (-bool off), plain ints; C has burger.h's */
 #ifdef __cplusplus
@@ -26,9 +21,7 @@
 #define true 1
 #endif
 
-#ifndef MACBUILD
 typedef char **Handle;
-#endif
 typedef unsigned char Word8;
 typedef unsigned short Word16;
 typedef unsigned int Word;

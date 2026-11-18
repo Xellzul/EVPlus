@@ -5,7 +5,6 @@
 #include "burgertypes.h"
 
 /* the doubly-linked list */
-#ifndef MACBUILD
 typedef struct ListNode {
     struct ListNode *next;                       /* +0x00 */
     struct ListNode *prev;                       /* +0x04 */
@@ -18,7 +17,6 @@ typedef struct ListRec {
     ListNode *tail;                              /* +0x04 */
     ULong count;                                 /* +0x08 */
 } ListRec;
-#endif
 
 /* the singly-linked mutex list; each node points back at its list */
 typedef struct MutexNode {
@@ -286,29 +284,6 @@ typedef struct ITPart {
     struct ITImage *self;
 } ITPart;
 
-#ifdef MAC1010
-typedef struct ITPort {
-    ITPart link;
-    CGrafPtr dc;
-    void *window;
-    unsigned char savedDC;
-    int32_t textAlign;                              /* +0x18 */
-    int32_t ascent;
-    int32_t descent;
-    int32_t leading;
-    int32_t height;
-    int32_t maxWidth;
-    Str255 fontFace;
-    RgnHandle clip;                              /* +0x130 */
-    RGBColor savedFore;
-    RGBColor savedBack;
-    PenState savedPen;
-    short savedFont;
-    short savedSize;
-    short savedFace;
-    short savedMode;
-} ITPort;
-#else
 typedef struct ITPort {
     ITPart link;
     void *dc;
@@ -337,7 +312,6 @@ typedef struct ITPort {
     int32_t unk154;
     ULong unk158;
 } ITPort;
-#endif
 
 typedef struct ITDib {
     void *dc;
@@ -364,20 +338,12 @@ typedef struct ITPixels {
     unsigned char pad36[2];
     ITRect bounds;
     ULong rowBytes;
-#ifdef MAC1010
-    ULong baseAddr;
-#else
     int32_t baseAddr;
-#endif
     ITDib *dib;
     int32_t unk54;
     void *window;
     int32_t drawDC;
-#ifdef MAC1010
-    ULong info[2];
-#else
     ULong info[0x428 / 4];
-#endif
     ITPalette palette;
     unsigned char inverse[0x2000];
 } ITPixels;
@@ -405,19 +371,6 @@ typedef struct ITPixelInfo {
     unsigned char pad59[3];
 } ITPixelInfo;
 
-#ifdef MAC1010
-typedef struct ITDevice {
-    ITPart link;
-    CGrafPtr dc;
-    char unk10[0x20 - 0x10];
-    int32_t status;
-    char unk24[0x28 - 0x24];
-    unsigned char docOpen;
-    unsigned char pageOpen;
-    void *record;                                /* a THPrint; Carbon's a PMPrintSession */
-    void *printPort;
-} ITDevice;
-#else
 typedef struct ITDevice {
     ITPart link;
     void *dc;
@@ -429,7 +382,6 @@ typedef struct ITDevice {
     unsigned char printing;
     char unk71[0x7c - 0x71];
 } ITDevice;
-#endif
 
 typedef struct ITImage {
     struct ITImage *portSelf;
@@ -444,9 +396,6 @@ typedef struct ITImage {
 struct WindowNode;
 struct ITControl;
 
-#ifdef MAC1010
-#pragma pack(push, 2)
-#endif
 typedef struct ITElement {
     struct ITElement *next;
     struct ITElement *child;
@@ -464,11 +413,7 @@ typedef struct ITPage {
     ULong unk08;
     ITElement *element;
     char name[0x100];
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    char title[0x200];
-#else
     char title[0x100];
-#endif
 } ITPage;
 
 typedef struct ITInsert {
@@ -565,34 +510,16 @@ typedef struct WindowNode {
     unsigned char pad27;
     void *dc;
     void *hwnd;
-#ifdef MAC1010
-    void *modal;                    /* the DialogPtr of a modal view */
-#else
     unsigned char modal;
     unsigned char pad31[3];
-#endif
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    short savedKind;
-#else
     ULong tracking;
-#ifdef MAC1010
-    Handle colors;                  /* the window's 'wctb' */
-    short savedKind;                /* its windowKind before the toolkit's */
-#endif
-#endif
     ITImage *image;
     ITImage *buffer;
     ControlType *controlTypes;
     struct ITPreload *preloads;
     ULong preloadTicks;
     char *result;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    ULong tracking;
-    char anchor[0x100];
     char path[0x100];
-#else
-    char path[0x100];
-#endif
     ITSource source;
     struct HashTable *variables;
     ITPageTable *pages;
@@ -605,32 +532,17 @@ typedef struct WindowNode {
     ITColor back;
     ITRect frame;                   /* the INTERFACE's RECT, or WIDTH x HEIGHT */
     ITImage *backdrop;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    unsigned short title[0x100];
-#else
     char title[0x100];
-#endif
 } WindowNode;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-#define CHECK_WINDOWS(w) IT_ViewCheckWindows(w)
-#else
 #define CHECK_WINDOWS(w)
-#endif
 
 /* what an input event resolved to; `followed' doubles as the window proc's "handled" */
 typedef struct ITClick {
     unsigned char followed;
     WindowNode *window;
     struct ITControl *control;
-#if defined(MAC1010) && TARGET_API_MAC_CARBON
-    unsigned char hasAnchor;
-    char anchor[0x100];
-#endif
     char link[0x400];
 } ITClick;
-#ifdef MAC1010
-#pragma pack(pop)
-#endif
 
 /* a condition stored as a byte flag: the exe builds it `mov al,1 / xor al,al`, not setcc */
 #define AsByte(c)           ((c) ? (unsigned char)1 : (unsigned char)0)
@@ -656,11 +568,7 @@ typedef struct FileTypeMap {
 #define kNetFamilyNone  0
 #define kNetFamilyInet  2
 #define kNetFamilyIPX   0x100
-#ifdef MAC1010
-#define kNetFamilyMask  0xfff
-#else
 #define kNetFamilyMask  0xff0fLL
-#endif
 
 #define kListResolver   1
 #define kListDatagram   2
@@ -696,9 +604,6 @@ typedef struct NetSocket {
     ULong lock[4];
     NetProc proc;
     void *ref;
-#ifdef MAC1010
-    ULong flags;
-#endif
     MutexList *sentList;
     MutexList *freeList;
     MutexList *recvList;
@@ -729,9 +634,6 @@ typedef struct NetStream {
     ULong lock[4];
     NetProc proc;
     void *ref;
-#ifdef MAC1010
-    ULong flags;
-#endif
     MutexList *sentList;
     MutexList *freeList;
     MutexList *recvList;
@@ -798,9 +700,6 @@ typedef struct NetResolver {
     ULong lock[4];
     NetProc proc;
     void *ref;
-#ifdef MAC1010
-    ULong flags;
-#endif
     MutexList *freeList;
     MutexList *doneList;
     int32_t wanted;

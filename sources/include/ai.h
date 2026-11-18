@@ -72,10 +72,6 @@ extern Boolean AIInGunRange(ShipObj *me, ShipObj *target,
                          short weapType);
 extern Boolean AIDoSwarming(ShipObj *ship);
 extern Boolean AIShipIsScooping(ShipObj *ship);
-#ifndef MACBUILD /* inline on mac: sources/mac/include/rt3_ev_nova.h */
-#endif
-#ifndef MACBUILD
-#endif
 extern short FindNearestShipToPlayer(void);
 extern short FindNearestThreatToParent(ShipObj *me, short spob);
 extern int32_t IsShipANearbyThreatToParent(ShipObj *ship, ShipObj *me,

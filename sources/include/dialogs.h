@@ -71,8 +71,6 @@ extern void DrawTextButtons(short hilited);
 extern void DrawTradeButtons(short hilited);
 extern Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial,
                               short maxLen);
-#ifndef MACBUILD /* inline on mac: sources/mac/include/rt3_ev_nova.h */
-#endif
 extern Boolean DoNewPilotNameDialog(Boolean *wantStrictPlay);
 void HaggleDialogUpdate(void);
 extern void InitButtons(void);
@@ -86,12 +84,8 @@ extern void ScrollMapDisplay(short dh, short dv);
 extern void CueNextHyperRouteDest(void);
 extern void MyModalDialog(DialogPtr dlg, DialogEventProc eventProc, short *itemHit,
                            short *modifiers);
-#ifndef MACBUILD
 extern void SetDialogGWorld(DialogPtr dlg);
-#endif
-#ifndef MAC1010
 extern void DrawDialog(DialogPtr dlg);
-#endif
 void SetPlunderValues(void);
 void SetupMissionInfoList(void);
 extern void SetupPlayerInfoText(void);
@@ -202,11 +196,7 @@ extern PicHandle portBackgroundPic;
 extern GWorldContainer planetPicContainer;
 extern unsigned char textInputString[];
 extern char textShowString[];
-#ifdef MACBUILD
-#define gTimesFont kFontIDTimes
-#else
 extern short gTimesFont;
-#endif
 extern unsigned char govtShortNames[256][256];
 extern short greenMissionSyst;
 extern PicHandle haggleBackgroundPic;
@@ -239,10 +229,8 @@ extern short raceCount;
 extern PicHandle raceBackgroundPic;
 extern short racePick;
 extern short raceWinner;
-#ifndef MACBUILD
 EXTERN_CPP_END
 extern RGBColor *redColor;
-#endif
 extern RGBColor redRGB;
 EXTERN_CPP_BEGIN
 extern Boolean releaseCommEscort;
@@ -312,11 +300,7 @@ extern Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit);
 Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-#ifdef MACBUILD
-Boolean KeyFilter(DialogPtr dialog, EventRecord *ev, short *itemHit);
-#else
 Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-#endif
 Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit);

@@ -60,11 +60,7 @@ extern void Dispose8BitAlphaTable(void);
 extern void DoNewPilot(void);
 extern void DoShipCloak(ShipObj *ship);
 extern void DoStellarTimePassage(void);
-#ifdef MACBUILD
-extern Boolean DoesPilotExist(ConstStr255Param name);
-#else
 extern Boolean DoesPilotExist(const char *path);
-#endif
 extern void DrawParticlesOffscreen(SpriteWorldPtr spriteWorldP);
 extern void EnterGameFromMainScreen(void);
 extern short EscapeShipWeapType(ShipObj *ship);

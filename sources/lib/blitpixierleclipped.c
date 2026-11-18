@@ -122,7 +122,6 @@ void BlitPixieRLEClipped(unsigned char *rleTokens, unsigned char *dstPixel,
    sources/lib/swcreaterledata.c. */
 
 // FUNCTION: EVNOVA 0x00472000
-#ifndef MACBUILD
 void FixupRLEPixelData(unsigned char *tokens, RLEPixelData *header)
 {
     uint32_t token, opcode, count;
@@ -204,6 +203,5 @@ void FixupRLEPixelData(unsigned char *tokens, RLEPixelData *header)
         }
     } while (opcode != 0 || --frames != 0);
 }
-#endif
 
 EXTERN_C_END

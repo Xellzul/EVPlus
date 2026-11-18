@@ -27,11 +27,7 @@ short FindNextShipInSystem(short cur, short system)
     Boolean canUntarget;
     Boolean canCloaked;
 
-#ifdef MACBUILD
-    if (KeyCheck(kScanOption) != 0)
-#else
     if (KeyCheck(kScanLCtrl) != 0 || KeyCheck(kScanRCtrl) != 0)
-#endif
         wantHostile = 1;
     else
         wantHostile = 0;
