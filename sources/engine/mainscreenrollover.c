@@ -91,12 +91,7 @@ void MainScreenRolloverDraw(void)
         menuRolloverSprite->tintColor = 0;
         gSWCurrentSpriteBeingDrawn = menuRolloverSprite;
 
-        if (gSpriteWorld->pixelDepth == kDepth16) {
-            BlitPixieRLETranslucentDrawProc(menuRolloverSprite->frameArray[idx],
-                gSpriteWorld->workFrameP, &srcRect, &rolloverDestRect);
-        } else {
-            BlitPixieRLEDrawProc(menuRolloverSprite->frameArray[idx],
-                gSpriteWorld->workFrameP, &srcRect, &rolloverDestRect);
-        }
+        BlitPixieRLETranslucentDrawProc(menuRolloverSprite->frameArray[idx],
+            gSpriteWorld->workFrameP, &srcRect, &rolloverDestRect);
     }
 }

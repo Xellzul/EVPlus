@@ -255,7 +255,6 @@ void FixupResourceByType(Handle h, uint32_t type)
     case kRoidType: desc = addr_0057607a; minSize = 0x28;  break;
     case kEBugType: desc = addr_0057608a; minSize = 0x40;  break;
     case kIntfType: desc = addr_00576092; minSize = 0xa6;  break;
-    case kRLE8ResType:
     case kRLEDResType:
         desc = addr_005760cc;
         break;

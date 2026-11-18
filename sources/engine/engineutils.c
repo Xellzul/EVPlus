@@ -6210,12 +6210,7 @@ void IonizeShip(ShipObj *ship, WeapRecord *weap, FloatPoint *pos)
     }
     if (falloff > 0) {
         ship->ionization += falloff;
-        if (gSpriteWorld->pixelDepth == 8) {
-            if (ship->ionColor == 0)
-                ship->ionColor = weap->ionizeColor;
-        } else {
-            ship->ionColor |= weap->ionizeColor;
-        }
+        ship->ionColor |= weap->ionizeColor;
     }
 }
 

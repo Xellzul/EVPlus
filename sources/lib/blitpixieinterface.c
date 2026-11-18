@@ -63,9 +63,8 @@ void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
         numRowsToCopy);
 }
 
-/* The seventh argument differs between the two arms: the 8-bit blitter is handed the
-   sprite world's backgroundValue, a palette INDEX to blend toward, and the direct-colour
-   blitter `32 - level', an alpha weight out of 32. Each arm ignores the other's. */
+/* backgroundValue was the 8-bit blitter's palette index to blend toward; the 16-bit one is
+   handed `32 - level', an alpha weight out of 32. */
 
 // FUNCTION: EVNOVA 0x00470680
 // MAC: _BlitPixieFloatingRectDrawProc i386 0x000ba405 ppc 0x000c63a4
@@ -101,28 +100,14 @@ void BlitPixieFloatingRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
     if (numRowsToCopy <= 0)
         return;
 
-    if (dstFrameP->frameDepth == 8)
-    {
-        BlitPixieFloatingRect8(
-            (unsigned char *)SW_PIXELPTR(srcFrameP, srcBlitRect.left, srcBlitRect.top),
-            (unsigned char *)SW_PIXELPTR(dstFrameP, dstBlitRect.left, dstBlitRect.top),
-            srcRowBytes,
-            dstRowBytes,
-            SW_PIXELBYTES(dstFrameP, numPixelsPerRow),
-            numRowsToCopy,
-            backgroundValue);
-    }
-    else
-    {
-        BlitPixieFloatingRect(
-            (unsigned char *)SW_PIXELPTR(srcFrameP, srcBlitRect.left, srcBlitRect.top),
-            (unsigned char *)SW_PIXELPTR(dstFrameP, dstBlitRect.left, dstBlitRect.top),
-            srcRowBytes,
-            dstRowBytes,
-            SW_PIXELBYTES(dstFrameP, numPixelsPerRow),
-            numRowsToCopy,
-            32 - level);
-    }
+    BlitPixieFloatingRect(
+        (unsigned char *)SW_PIXELPTR(srcFrameP, srcBlitRect.left, srcBlitRect.top),
+        (unsigned char *)SW_PIXELPTR(dstFrameP, dstBlitRect.left, dstBlitRect.top),
+        srcRowBytes,
+        dstRowBytes,
+        SW_PIXELBYTES(dstFrameP, numPixelsPerRow),
+        numRowsToCopy,
+        32 - level);
 }
 
 // FUNCTION: EVNOVA 0x00470960
@@ -328,8 +313,7 @@ void BlitPixieRLEDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
 
 /* Sprite fields, described not recovered: +0xa2 is a translucency out of 64 (compared
    against 0, 32 and 64), +0xa4/+0xa6/+0xa8 three 5-bit tint scales compared against 32,
-   +0xaa only tested against 0. An 8-bit sprite with translucency >= 32 and a
-   non-neutral tint draws NOTHING; that is what the exe does. */
+   +0xaa only tested against 0. */
 
 // FUNCTION: EVNOVA 0x004711e0
 // MAC: _BlitPixieRLETranslucentDrawProc i386 0x000bb3fc ppc 0x000c7234
@@ -382,96 +366,52 @@ void BlitPixieRLETranslucentDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrame
         srcBlitRect.left = SW_PIXELBYTES(dstFrameP, srcBlitRect.left);
         srcBlitRect.right = SW_PIXELBYTES(dstFrameP, srcBlitRect.right);
 
-        if (srcFrameP->frameDepth == 8)
+        if (gSWCurrentSpriteBeingDrawn->translucency > 0 ||
+            gSWCurrentSpriteBeingDrawn->tintMode > 0 ||
+            gSWCurrentSpriteBeingDrawn->tintRed != 32 ||
+            gSWCurrentSpriteBeingDrawn->tintGreen != 32 ||
+            gSWCurrentSpriteBeingDrawn->tintBlue != 32)
         {
-            if (gSWCurrentSpriteBeingDrawn->translucency <= 0 &&
-                gSWCurrentSpriteBeingDrawn->tintMode <= 0)
-            {
-                BlitPixieRLEClipped((unsigned char *)srcFrameP->rleTokenStart,
+            if (gSWCurrentSpriteBeingDrawn->tintRed == 32 &&
+                gSWCurrentSpriteBeingDrawn->tintGreen == 32 &&
+                gSWCurrentSpriteBeingDrawn->tintBlue == 32 &&
+                gSWCurrentSpriteBeingDrawn->translucency == 32 &&
+                gSWCurrentSpriteBeingDrawn->tintMode == 0)
+                BlitPixieRLEAddOverClipped((unsigned char *)srcFrameP->rleTokenStart,
                         dstPixel, dstRowBytes, &srcBlitRect);
-            }
-            else if (gSWCurrentSpriteBeingDrawn->translucency < 32)
-                BlitPixieRLETranslucentClipped8((unsigned char *)srcFrameP->rleTokenStart,
-                        dstPixel, dstRowBytes, &srcBlitRect);
-            else if (gSWCurrentSpriteBeingDrawn->tintRed == 32 &&
-                     gSWCurrentSpriteBeingDrawn->tintGreen == 32 &&
-                     gSWCurrentSpriteBeingDrawn->tintBlue == 32 &&
-                     gSWCurrentSpriteBeingDrawn->translucency == 32 &&
-                     gSWCurrentSpriteBeingDrawn->tintMode == 0)
-                BlitPixieRLEAddOverClipped8((unsigned char *)srcFrameP->rleTokenStart,
+            else if (gSWCurrentSpriteBeingDrawn->translucency < 64)
+                BlitPixieRLETranslucentClipped((unsigned char *)srcFrameP->rleTokenStart,
                         dstPixel, dstRowBytes, &srcBlitRect);
         }
         else
         {
-            if (gSWCurrentSpriteBeingDrawn->translucency > 0 ||
-                gSWCurrentSpriteBeingDrawn->tintMode > 0 ||
-                gSWCurrentSpriteBeingDrawn->tintRed != 32 ||
-                gSWCurrentSpriteBeingDrawn->tintGreen != 32 ||
-                gSWCurrentSpriteBeingDrawn->tintBlue != 32)
-            {
-                if (gSWCurrentSpriteBeingDrawn->tintRed == 32 &&
-                    gSWCurrentSpriteBeingDrawn->tintGreen == 32 &&
-                    gSWCurrentSpriteBeingDrawn->tintBlue == 32 &&
-                    gSWCurrentSpriteBeingDrawn->translucency == 32 &&
-                    gSWCurrentSpriteBeingDrawn->tintMode == 0)
-                    BlitPixieRLEAddOverClipped((unsigned char *)srcFrameP->rleTokenStart,
-                            dstPixel, dstRowBytes, &srcBlitRect);
-                else if (gSWCurrentSpriteBeingDrawn->translucency < 64)
-                    BlitPixieRLETranslucentClipped((unsigned char *)srcFrameP->rleTokenStart,
-                            dstPixel, dstRowBytes, &srcBlitRect);
-            }
-            else
-            {
-                BlitPixieRLEClipped((unsigned char *)srcFrameP->rleTokenStart,
-                        dstPixel, dstRowBytes, &srcBlitRect);
-            }
+            BlitPixieRLEClipped((unsigned char *)srcFrameP->rleTokenStart,
+                    dstPixel, dstRowBytes, &srcBlitRect);
         }
     }
     else
     {
-        if (srcFrameP->frameDepth == 8)
+        if (gSWCurrentSpriteBeingDrawn->translucency > 0 ||
+            gSWCurrentSpriteBeingDrawn->tintMode > 0 ||
+            gSWCurrentSpriteBeingDrawn->tintRed != 32 ||
+            gSWCurrentSpriteBeingDrawn->tintGreen != 32 ||
+            gSWCurrentSpriteBeingDrawn->tintBlue != 32)
         {
-            if (gSWCurrentSpriteBeingDrawn->translucency <= 0 &&
-                gSWCurrentSpriteBeingDrawn->tintMode <= 0)
-            {
-                BlitPixieRLE((unsigned char *)srcFrameP->rleTokenStart,
+            if (gSWCurrentSpriteBeingDrawn->tintRed == 32 &&
+                gSWCurrentSpriteBeingDrawn->tintGreen == 32 &&
+                gSWCurrentSpriteBeingDrawn->tintBlue == 32 &&
+                gSWCurrentSpriteBeingDrawn->translucency == 32 &&
+                gSWCurrentSpriteBeingDrawn->tintMode == 0)
+                BlitPixieRLEAddOver((unsigned char *)srcFrameP->rleTokenStart,
                         dstPixel, dstRowBytes);
-            }
-            else if (gSWCurrentSpriteBeingDrawn->translucency < 32)
-                BlitPixieRLETranslucent8((unsigned char *)srcFrameP->rleTokenStart,
-                        dstPixel, dstRowBytes);
-            else if (gSWCurrentSpriteBeingDrawn->tintRed == 32 &&
-                     gSWCurrentSpriteBeingDrawn->tintGreen == 32 &&
-                     gSWCurrentSpriteBeingDrawn->tintBlue == 32 &&
-                     gSWCurrentSpriteBeingDrawn->translucency == 32 &&
-                     gSWCurrentSpriteBeingDrawn->tintMode == 0)
-                BlitPixieRLEAddOver8((unsigned char *)srcFrameP->rleTokenStart,
+            else if (gSWCurrentSpriteBeingDrawn->translucency < 64)
+                BlitPixieRLETranslucent((unsigned char *)srcFrameP->rleTokenStart,
                         dstPixel, dstRowBytes);
         }
         else
         {
-            if (gSWCurrentSpriteBeingDrawn->translucency > 0 ||
-                gSWCurrentSpriteBeingDrawn->tintMode > 0 ||
-                gSWCurrentSpriteBeingDrawn->tintRed != 32 ||
-                gSWCurrentSpriteBeingDrawn->tintGreen != 32 ||
-                gSWCurrentSpriteBeingDrawn->tintBlue != 32)
-            {
-                if (gSWCurrentSpriteBeingDrawn->tintRed == 32 &&
-                    gSWCurrentSpriteBeingDrawn->tintGreen == 32 &&
-                    gSWCurrentSpriteBeingDrawn->tintBlue == 32 &&
-                    gSWCurrentSpriteBeingDrawn->translucency == 32 &&
-                    gSWCurrentSpriteBeingDrawn->tintMode == 0)
-                    BlitPixieRLEAddOver((unsigned char *)srcFrameP->rleTokenStart,
-                            dstPixel, dstRowBytes);
-                else if (gSWCurrentSpriteBeingDrawn->translucency < 64)
-                    BlitPixieRLETranslucent((unsigned char *)srcFrameP->rleTokenStart,
-                            dstPixel, dstRowBytes);
-            }
-            else
-            {
-                BlitPixieRLE((unsigned char *)srcFrameP->rleTokenStart,
-                        dstPixel, dstRowBytes);
-            }
+            BlitPixieRLE((unsigned char *)srcFrameP->rleTokenStart,
+                    dstPixel, dstRowBytes);
         }
     }
 }
@@ -551,8 +491,6 @@ uint32_t SWGetValueFromColor(FramePtr dstFrameP, RGBColor *color)
 
     pixelValue = Color2Index(color);
 
-    if (dstFrameP->frameDepth < 16)
-        pixelValue |= pixelValue << 8;
     if (dstFrameP->frameDepth < 32)
         pixelValue |= pixelValue << 16;
 

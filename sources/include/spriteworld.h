@@ -176,46 +176,24 @@ extern void BlitPixieRLETranslucent(unsigned char *rleTokens, unsigned char *dst
                             int32_t dstRowBytes);           /* 0x00472900 */
 extern void BlitPixieRLEAddOver(unsigned char *rleTokens, unsigned char *dstPixel,
                             int32_t dstRowBytes);           /* 0x00472b30 */
-extern void BlitPixieRLETranslucent8(unsigned char *rleTokens, unsigned char *dstPixel,
-                            int32_t dstRowBytes);           /* 0x00472bb0 */
-extern void BlitPixieRLEAddOver8(unsigned char *rleTokens, unsigned char *dstPixel,
-                            int32_t dstRowBytes);           /* 0x00472cf0 */
 extern void BlitPixieRLETranslucentClipped(unsigned char *rleTokens, unsigned char *dstPixel,
                             int32_t dstRowBytes, Rect *srcBlitRect);    /* 0x00472d70 */
 extern void BlitPixieRLEAddOverClipped(unsigned char *rleTokens, unsigned char *dstPixel,
                             int32_t dstRowBytes, Rect *srcBlitRect);    /* 0x004730d0 */
-extern void BlitPixieRLETranslucentClipped8(unsigned char *rleTokens, unsigned char *dstPixel,
-                            int32_t dstRowBytes, Rect *srcBlitRect);    /* 0x00473270 */
-extern void BlitPixieRLEAddOverClipped8(unsigned char *rleTokens, unsigned char *dstPixel,
-                            int32_t dstRowBytes, Rect *srcBlitRect);    /* 0x00473500 */
 
 /* --- the pixie blitters: one scanline each, dst first --- */
-extern void BlitPixieTranslucentClearCopy8(unsigned char *dstPixels,
-        unsigned char *srcPixels, int32_t numPixels,
-        unsigned char clearValue);                       /* 0x00473dc0 */
-extern void BlitPixieFloatingRect8(unsigned char *srcPixels,
-        unsigned char *dstPixels, uint32_t srcRowBytes, uint32_t dstRowBytes,
-        unsigned short byteWidth, unsigned short numRows,
-        unsigned short backgroundValue);                 /* 0x00471dc0 */
 extern void BlitPixieMemCopy(unsigned char *dstPixels, unsigned char *srcPixels,
                              int32_t byteWidth);            /* 0x00474350 */
 extern void BlitPixieMemSet(unsigned char *dstPixels, uint32_t value,
                             int32_t byteWidth);             /* 0x00474410 */
 extern void BlitPixieAddOverCopy(unsigned char *dstPixels, unsigned char *srcPixels,
                                  int32_t byteWidth);        /* 0x00473b60 */
-extern void BlitPixieAddOverCopy8(unsigned char *dstPixels, unsigned char *srcPixels,
-                                  int32_t count);           /* 0x00473fa0 */
 extern void BlitPixieTranslucentCopy(unsigned char *dstPixels, unsigned char *srcPixels,
                                      int32_t byteWidth);    /* 0x004736c0 */
-extern void BlitPixieTranslucentCopy8(unsigned char *dstPixels, unsigned char *srcPixels,
-                                      int32_t count);       /* 0x00473c20 */
-extern void BlitPixieTranslucentBiasCopy8(unsigned char *dstPixels, unsigned char *srcPixels,
-                                          int32_t count);   /* 0x00473e00 */
 extern void BlitPixieRLE(unsigned char *rleTokens, unsigned char *dstPixel,
                          int32_t dstRowBytes);              /* 0x00471e10 */
 extern void BlitPixieRLEClipped(unsigned char *rleTokens, unsigned char *dstPixel,
                                 int32_t dstRowBytes, Rect *srcBlitRect); /* 0x00471e90 */
-extern uint32_t fix_power_of_two(uint32_t level);  /* 0x004736a0 */
 extern int32_t GetMainDevice(void);                         /* 0x004f2a50 */
 
 /* --- the blitters' shared state --- */
@@ -232,18 +210,9 @@ extern short scaleR;                                     /* 0x007ceae8 */
 extern short scaleG;                                     /* 0x007ceaea */
 extern short scaleB;                                     /* 0x007ceaec */
 extern uint32_t biasColor;                          /* 0x007ceaf0 */
-extern unsigned char *alphaTable[5][256];                /* 0x007ceaf4 */
 EXTERN_CPP_END
 
-/* --- translucent blends (mac _Trans8Bit/_Trans16Bit, inlined in the win build) --- */
-static inline char Trans8Bit(char src, char dst, uint32_t alpha)
-{
-    /* BUG: any alpha above 3 skips the blend, so (31 - alpha) >> 3 only ever selects row 3 */
-    if (alpha > 3)
-        return src;
-    return alphaTable[(31 - alpha) >> 3][src][dst];
-}
-
+/* --- translucent blend (mac _Trans16Bit, inlined in the win build) --- */
 static inline unsigned short Trans16Bit(uint32_t src, uint32_t dst, uint32_t alpha)
 {
     uint32_t srcSplit, dstSplit, blended;

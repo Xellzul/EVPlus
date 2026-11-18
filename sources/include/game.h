@@ -21,7 +21,6 @@ void ActivateCron(short index);
 extern void AutoAbortMission(short mission);
 extern void Bye(void);
 extern void ClearParticles(Boolean on);
-extern short Construct8BitAlphaTable(void);
 extern void TableCos(short angle);
 EXTERN_CPP_BEGIN
 extern short commCount;
@@ -56,7 +55,6 @@ EXTERN_CPP_END
 extern unsigned int DeleteAFile(const char *path);
 extern void DisplayComm(PStrChar *msg, short count, short font, short size,
                         RGBColor *color, Boolean bold, unsigned char noBlit);
-extern void Dispose8BitAlphaTable(void);
 extern void DoNewPilot(void);
 extern void DoShipCloak(ShipObj *ship);
 extern void DoStellarTimePassage(void);

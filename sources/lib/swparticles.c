@@ -169,9 +169,7 @@ void EraseParticlesOffscreen(SpriteWorldPtr spriteWorldP)
 }
 
 #define SET_TRANS_PIXEL(frame, x, y, c, level)                                  \
-    if (DEPTH == 8)                                                             \
-        *SW_PIXELPTR8(frame, x, y) = Trans8Bit(c, *SW_PIXELPTR8(frame, x, y), level); \
-    else if (DEPTH == 16)                                                       \
+    if (DEPTH == 16)                                                            \
         *SW_PIXELPTR16(frame, x, y) = Trans16Bit(c, *SW_PIXELPTR16(frame, x, y), level); \
     else                                                                        \
         *SW_PIXELPTR32(frame, x, y) = c;

@@ -323,8 +323,6 @@ typedef struct RLEPixelData {
 #define SW_PIXEL16AT(frame, xBytes, y)  \
     (*(unsigned short *)( (frame)->frameBaseAddr + SW_ROWBYTES(frame,y) + (xBytes) ))
 
-#define SW_PIXELPTR8(frame, x, y)   \
-    ((unsigned char  *) ( (frame)->frameBaseAddr + SW_ROWBYTES(frame,y) + (x) ))
 #define SW_PIXELPTR16(frame, x, y)  \
     ((unsigned short *) ( (frame)->frameBaseAddr + SW_ROWBYTES(frame,y) + ((x)+(x)) ))
 #define SW_PIXELPTR32(frame, x, y)  \
@@ -333,17 +331,14 @@ typedef struct RLEPixelData {
 /* DEPTH is the switch variable FOREACH_DEPTH_DO binds. */
 #define FOREACH_DEPTH_DO(depth, instructions)   \
     switch ( depth )    \
-    {   case  8:    { int DEPTH=8;  instructions } break;   \
-        case 16:    { int DEPTH=16; instructions } break;   \
+    {   case 16:    { int DEPTH=16; instructions } break;   \
         case 32:    { int DEPTH=32; instructions } break; }
 
 #define GET_DEPTH_PIXEL(frame, x, y)            \
-    ( DEPTH==8  ?   *SW_PIXELPTR8(frame,x,y) :  \
     ( DEPTH==16 ?   *SW_PIXELPTR16(frame,x,y) : \
-                    *SW_PIXELPTR32(frame,x,y) ))
+                    *SW_PIXELPTR32(frame,x,y) )
 
 #define SET_DEPTH_PIXEL(frame, x, y, c)         \
-      if(DEPTH==8)  *SW_PIXELPTR8(frame,x,y)=c;  else   \
     { if(DEPTH==16) *SW_PIXELPTR16(frame,x,y)=c; else   \
                     *SW_PIXELPTR32(frame,x,y)=c; }
 
@@ -546,7 +541,6 @@ extern unsigned char *CtoPstr(char *str);
 #define kBlue555  0x001f
 #define kCharCodeMask  0xff
 #define kDIBHeaderSize 0x28
-#define kDepth16            0x10
 #define kEscapeChar    0x1b
 #define kGreen555 0x03e0
 #define kKeyDown       3
@@ -605,7 +599,6 @@ typedef int EventChar;
 /* a character held in a local across tolower's calls in the win port and 1.0.10; 1.1.1 reads its source again */
 #define HeldChar(held, src) (held)
 
-#define kRLE8ResType 0x726c9138UL
 #define kRLEDResType 0x726c9144UL
 
 extern void *NewPortPixels(int width, int rows, int bits);

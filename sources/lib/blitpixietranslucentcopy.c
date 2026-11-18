@@ -4,6 +4,20 @@
 #include "shipobj.h"
 #include "spriteworld.h"
 
+/* the blitters' shared blend state (the exe kept it beside the 8-bit alpha table) */
+uint32_t alpha;
+uint32_t alphaR;
+uint32_t alphaG;
+uint32_t alphaB;
+uint32_t overR;
+uint32_t overG;
+uint32_t overB;
+uint32_t overBias;
+short scaleR;
+short scaleG;
+short scaleB;
+uint32_t biasColor;
+
 #define SW_RED(c, k)    ((((c) & 0x7c007c00) >> 5) * (k) & 0x7c007c00)
 #define SW_GREEN(c, k)  (((c) & 0x3e003e0) * (k) >> 5 & 0x3e003e0)
 #define SW_BLUE(c, k)   (((c) & 0x1f001f) * (k) >> 5 & 0x1f001f)

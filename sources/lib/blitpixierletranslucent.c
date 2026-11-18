@@ -1,5 +1,5 @@
 // COMPILE: -lang c++ -bool off
-/* blitpixierletranslucent.c -- BlitPixieRLETranslucent (win 0x00472900), the direct-colour partial-translucency RLE walker and the twin of BlitPixieRLETranslucent8. Notes: Research/notes/blitpixierletranslucent.md */
+/* blitpixierletranslucent.c -- BlitPixieRLETranslucent (win 0x00472900), the direct-colour partial-translucency RLE walker. Notes: Research/notes/blitpixierletranslucent.md */
 #include "macport.h"
 #include "shipobj.h"
 #include "spriteworld.h"

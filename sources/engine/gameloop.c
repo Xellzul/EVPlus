@@ -292,8 +292,6 @@ void HandleShipDisplay(ShipObj *ship)
                     if (w > ship->sprite->tintMode || ship->sprite->tintMode < 8) {
                         ship->sprite->tintMode = w;
                         ship->sprite->tintColor = ship->ionColor;
-                    } else if (gSpriteWorld->pixelDepth == 8) {
-                        ship->sprite->tintColor = ship->ionColor;
                     } else {
                         ship->sprite->tintColor = kFullHilite - ship->sprite->tintMode;
                     }
@@ -309,18 +307,16 @@ void HandleShipDisplay(ShipObj *ship)
                         ship->sprite->translucency = 0;
                     if (ship->sprite->translucency > kFullHilite)
                         ship->sprite->translucency = kFullHilite;
-                    if (gSpriteWorld->pixelDepth == 0x10) {
-                        ship->sprite->tintMode = ship->sprite->translucency * 2;
-                        if (ship->sprite->tintMode > kFullHilite)
-                            ship->sprite->tintMode = kFullHilite;
-                        ship->sprite->tintColor = 0xffff;
-                    }
+                    ship->sprite->tintMode = ship->sprite->translucency * 2;
+                    if (ship->sprite->tintMode > kFullHilite)
+                        ship->sprite->tintMode = kFullHilite;
+                    ship->sprite->tintColor = 0xffff;
                     if (ship->aiTimer < 1.0F) {
                         ship->active = 0;
                         ship->parentShip = -1;
                     }
                 } else if (AIShipIsEmergingFromHypergate(ship) != 0) {
-                    if (ship->aiTimer <= 16.0F && gSpriteWorld->pixelDepth == 0x10) {
+                    if (ship->aiTimer <= 16.0F) {
                         w = (16.0F - ship->aiTimer);
                         if (w < 0)
                             w = 0;
@@ -360,14 +356,10 @@ void HandleShipDisplay(ShipObj *ship)
                         if (w < 0)
                             w = 0;
                     }
-                    if (gSpriteWorld->pixelDepth == 8) {
-                        ship->glowSprite->translucency = kFullHilite - w;
-                    } else {
-                        ship->glowSprite->translucency = kFullHilite;
-                        ship->glowSprite->tintRed = w;
-                        ship->glowSprite->tintGreen = w;
-                        ship->glowSprite->tintBlue = w;
-                    }
+                    ship->glowSprite->translucency = kFullHilite;
+                    ship->glowSprite->tintRed = w;
+                    ship->glowSprite->tintGreen = w;
+                    ship->glowSprite->tintBlue = w;
                 }
             }
 
@@ -446,14 +438,10 @@ void HandleShipDisplay(ShipObj *ship)
                         if (w < 0)
                             w = 0;
                     }
-                    if (gSpriteWorld->pixelDepth == 8) {
-                        ship->lightSprite->translucency = kFullHilite - w;
-                    } else {
-                        ship->lightSprite->translucency = kFullHilite;
-                        ship->lightSprite->tintRed = w;
-                        ship->lightSprite->tintGreen = w;
-                        ship->lightSprite->tintBlue = w;
-                    }
+                    ship->lightSprite->translucency = kFullHilite;
+                    ship->lightSprite->tintRed = w;
+                    ship->lightSprite->tintGreen = w;
+                    ship->lightSprite->tintBlue = w;
                 } else {
                     SWSetSpriteVisible(ship->lightSprite, 0);
                 }
@@ -475,14 +463,10 @@ void HandleShipDisplay(ShipObj *ship)
                         if (w < 0)
                             w = 0;
                     }
-                    if (gSpriteWorld->pixelDepth == 8) {
-                        ship->weapSprite->translucency = kFullHilite - w;
-                    } else {
-                        ship->weapSprite->translucency = kFullHilite;
-                        ship->weapSprite->tintRed = w;
-                        ship->weapSprite->tintGreen = w;
-                        ship->weapSprite->tintBlue = w;
-                    }
+                    ship->weapSprite->translucency = kFullHilite;
+                    ship->weapSprite->tintRed = w;
+                    ship->weapSprite->tintGreen = w;
+                    ship->weapSprite->tintBlue = w;
                     ship->weapGlow -= shipClass[ship->type].weapDecay * gSpeedMult;
                     if (ship->weapGlow < -1.0F)
                         ship->weapGlow = -1.0F;
@@ -701,10 +685,7 @@ void HandleShipDisplay(ShipObj *ship)
                 w = jitter - Rand(jitter * 2 + 1);
                 h = jitter - Rand(jitter * 2 + 1);
                 OffsetRect(&ship->sprite->destFrameRect, w, h);
-                if (gSpriteWorld->pixelDepth == 0x10)
-                    ship->sprite->translucency = kFullHilite;
-                else
-                    ship->sprite->translucency = 0x10;
+                ship->sprite->translucency = kFullHilite;
                 ship->sprite->tintRed = (red - ship->cloak);
                 ship->sprite->tintGreen = (green - ship->cloak);
                 ship->sprite->tintBlue = (blue - ship->cloak);
@@ -749,15 +730,11 @@ void HandleShipDisplay(ShipObj *ship)
                 }
             }
             if (hasWeap != 0 && ship->weapSprite != NULL) {
-                if (gSpriteWorld->pixelDepth == 8) {
-                    SWSetSpriteVisible(ship->weapSprite, 0);
-                } else {
-                    OffsetRect(&ship->weapSprite->destFrameRect, w, h);
-                    ship->weapSprite->translucency = kFullHilite;
-                    ship->weapSprite->tintRed = MIN(ship->weapSprite->tintRed, 40.0F - ship->cloak);
-                    ship->weapSprite->tintGreen = MIN(ship->weapSprite->tintGreen, 40.0F - ship->cloak);
-                    ship->weapSprite->tintBlue = MIN(ship->weapSprite->tintBlue, 40.0F - ship->cloak);
-                }
+                OffsetRect(&ship->weapSprite->destFrameRect, w, h);
+                ship->weapSprite->translucency = kFullHilite;
+                ship->weapSprite->tintRed = MIN(ship->weapSprite->tintRed, 40.0F - ship->cloak);
+                ship->weapSprite->tintGreen = MIN(ship->weapSprite->tintGreen, 40.0F - ship->cloak);
+                ship->weapSprite->tintBlue = MIN(ship->weapSprite->tintBlue, 40.0F - ship->cloak);
             }
         }
 
@@ -1543,22 +1520,11 @@ void HandleStars(void)
             SWSetCurrentFrameIndex(starData[i].sprite, starData[i].frame);
             SWSetSpriteDrawProc(starData[i].sprite,
                                 BlitPixieRLETranslucentDrawProc);
-            if (gSpriteWorld->pixelDepth == kDepth16) {
-                starData[i].sprite->translucency = kTranslucencyOpaque;
-                starData[i].sprite->tintMode = 0;
-                starData[i].sprite->tintRed = alpha;
-                starData[i].sprite->tintGreen = alpha;
-                starData[i].sprite->tintBlue = alpha;
-            } else {
-                if (alpha == kTranslucencyOpaque)
-                    starData[i].sprite->translucency = 0;
-                else
-                    starData[i].sprite->translucency = alpha;
-                starData[i].sprite->tintMode = 0;
-                starData[i].sprite->tintRed = 0;
-                starData[i].sprite->tintGreen = 0;
-                starData[i].sprite->tintBlue = 0;
-            }
+            starData[i].sprite->translucency = kTranslucencyOpaque;
+            starData[i].sprite->tintMode = 0;
+            starData[i].sprite->tintRed = alpha;
+            starData[i].sprite->tintGreen = alpha;
+            starData[i].sprite->tintBlue = alpha;
             if (doubleTime) {
                 w = GetSpriteXSize(starData[i].sprite);
                 h = GetSpriteYSize(starData[i].sprite);
@@ -3441,7 +3407,6 @@ void HandleShip(ShipObj *ship)
 
 #define kMurkMax                31
 #define kMurkMin                4
-#define kMinHiliteDepth         16      /* hilites only at 16-bit and deeper */
 #define kAngleWrap              360
 #define kShotDeadLife           -2.0f
 #define kShotSpentLife          -1.0f
@@ -3569,8 +3534,7 @@ void HandleShot(ShotObj *shot)
         shot->sprite->tintMode = 0;
 
         if (weaponStats[shot->weapType].decayShots < 0 && shot->murk < 32.0f) {
-            if ((weaponStats[shot->weapType].flags3 & kWeapTranslucent) != 0
-                    && gSpriteWorld->pixelDepth >= kMinHiliteDepth) {
+            if ((weaponStats[shot->weapType].flags3 & kWeapTranslucent) != 0) {
                 shot->sprite->translucency = kMurkFull;
                 shot->sprite->tintRed = shot->sprite->tintGreen =
                     shot->sprite->tintBlue = shot->murk;
@@ -3580,8 +3544,7 @@ void HandleShot(ShotObj *shot)
             }
         }
         if (weaponStats[shot->weapType].decayShots > 0 && shot->life < 32.0f) {
-            if ((weaponStats[shot->weapType].flags3 & kWeapTranslucent) != 0
-                    && gSpriteWorld->pixelDepth >= kMinHiliteDepth) {
+            if ((weaponStats[shot->weapType].flags3 & kWeapTranslucent) != 0) {
                 shot->sprite->translucency = kMurkFull;
                 shot->sprite->tintRed = (32.0f - shot->murk);
                 if (shot->sprite->tintRed < kMurkMin)
@@ -3597,8 +3560,7 @@ void HandleShot(ShotObj *shot)
                 shot->murk += weaponStats[shot->weapType].decayShots * gSpeedMult;
         }
         if ((weaponStats[shot->weapType].flags3 & kWeapTranslucent) != 0
-                && weaponStats[shot->weapType].decayShots == 0
-                && gSpriteWorld->pixelDepth >= kMinHiliteDepth) {
+                && weaponStats[shot->weapType].decayShots == 0) {
             shot->sprite->translucency = kMurkFull;
             shot->sprite->tintRed = kMurkFull;
             shot->sprite->tintGreen = kMurkFull;
@@ -4418,13 +4380,8 @@ void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite)
     dy = f;
     dist = dx * dx + dy * dy;
     sprite->tintMode = dist * playerEffectiveMurk * kSoundVolumeScale;
-    if (gSpriteWorld->pixelDepth == 8) {
-        if (sprite->tintMode > 0x18)
-            sprite->tintMode = 0x18;
-    } else {
-        if (sprite->tintMode > 0x1f)
-            sprite->tintMode = 0x1f;
-    }
+    if (sprite->tintMode > 0x1f)
+        sprite->tintMode = 0x1f;
     if (sprite->tintMode < 0)
         sprite->tintMode = 0;
     sprite->tintColor = systemData[shipData->curSystem].mapPixel;
@@ -4564,20 +4521,13 @@ void HandleMouse(void)
                         (mouse.h - GetSpriteXSize(cursorSprite) / 2),
                         (mouse.v - GetSpriteYSize(cursorSprite) / 2));
 
-    if (gSpriteWorld->pixelDepth == kDepth16) {
-        cursorSprite->translucency = kCursorHiliteFull;
-        cursorSprite->tintRed = (cursorAlpha < cursorSprite->translucency)
-            ? cursorAlpha : cursorSprite->translucency;
-        cursorSprite->tintGreen = (cursorAlpha < cursorSprite->translucency)
-            ? cursorAlpha : cursorSprite->translucency;
-        cursorSprite->tintBlue = (cursorAlpha < cursorSprite->translucency)
-            ? cursorAlpha : cursorSprite->translucency;
-    } else {
-        cursorSprite->translucency = (kCursorFullAlpha - cursorAlpha);
-        cursorSprite->tintRed = 0;
-        cursorSprite->tintGreen = 0;
-        cursorSprite->tintBlue = 0;
-    }
+    cursorSprite->translucency = kCursorHiliteFull;
+    cursorSprite->tintRed = (cursorAlpha < cursorSprite->translucency)
+        ? cursorAlpha : cursorSprite->translucency;
+    cursorSprite->tintGreen = (cursorAlpha < cursorSprite->translucency)
+        ? cursorAlpha : cursorSprite->translucency;
+    cursorSprite->tintBlue = (cursorAlpha < cursorSprite->translucency)
+        ? cursorAlpha : cursorSprite->translucency;
 
     if (ReadTick() > lastMouseMoveTime + kCursorFadeTicks || keyPressedThisFrame != 0)
         cursorAlpha -= 1;

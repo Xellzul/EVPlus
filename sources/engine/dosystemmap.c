@@ -1651,18 +1651,10 @@ void DrawMapInFloatingFrame(void)
     ForeColor(blackColor);
     PaintRect(&floatingMapFrame->frameRect);
 
-    if (gSpriteWorld->pixelDepth == 8) {
-        ForeColor(blackColor);
-        DrawMap(floatingMapFrame->frameRect);
-        RGBForeColor(&floatingBorderColor);
-        FrameRect(&floatingMapFrame->frameRect);
-        ForeColor(blackColor);
-    } else {
-        RGBForeColor(&floatingBorderColor);
-        FrameRect(&floatingMapFrame->frameRect);
-        ForeColor(blackColor);
-        DrawMap(floatingMapFrame->frameRect);
-    }
+    RGBForeColor(&floatingBorderColor);
+    FrameRect(&floatingMapFrame->frameRect);
+    ForeColor(blackColor);
+    DrawMap(floatingMapFrame->frameRect);
 
     mapZoom = savedZoom;
     SWSetPortToWindow(gSpriteWorld);

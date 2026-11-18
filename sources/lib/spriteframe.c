@@ -217,10 +217,6 @@ short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
                 SWFixImageGWorld(tempFrameP->framePort, tempFrameP->maskPort,
                         0);
             }
-
-            if ((int)err == noErr && destSpriteWorld->pixelDepth <= 8) {
-                SWInvertGWorld(tempFrameP->maskPort);
-            }
         }
     }
 

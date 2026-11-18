@@ -1,5 +1,5 @@
 // COMPILE: -lang c++ -bool off
-/* blitpixiefloatingrect.c -- BlitPixieFloatingRect (win 0x00471d30), the direct-colour twin of BlitPixieFloatingRect8. Notes: Research/notes/blitpixiefloatingrect.md */
+/* blitpixiefloatingrect.c -- BlitPixieFloatingRect (win 0x00471d30), the direct-colour translucent rectangle copy. Notes: Research/notes/blitpixiefloatingrect.md */
 #include "macport.h"
 #include "shipobj.h"
 #include "spriteworld.h"

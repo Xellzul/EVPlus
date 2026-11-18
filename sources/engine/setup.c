@@ -56,7 +56,7 @@ void SetupSpriteWorld(void)
         ST_Close();
         ExitToShell();
     }
-    if (gSpriteWorld->pixelDepth != 8 && gSpriteWorld->pixelDepth != 16) {
+    if (gSpriteWorld->pixelDepth != 16) {
         FadeScreenIn();
         GetIndString(str, kAlertStrList, 37);
         EVNoteAlert(str);
@@ -150,16 +150,6 @@ void SetupSpriteWorld(void)
     if ((int32_t)InitParticles(100000, 0) != 0)
         SWAssertFail("Setup.c", SW_LINE(0x133));
     SWSetPortToBackground(gSpriteWorld);
-    if (gSpriteWorld->pixelDepth == 8) {
-        err = Construct8BitAlphaTable();
-        if ((int32_t)err != 0) {
-            crashlog_print("error loading color table, ID ");
-            crashlog_print_num(128);
-            crashlog_print("\n");
-            ReportSpriteLoadError(6, 128, err);
-            ExitToShell();
-        }
-    }
 }
 
 // FUNCTION: EVNOVA 0x004ac380
@@ -510,8 +500,6 @@ void Bye(void)
     SWDisposeFrame(&floatingEscortMenuFrame);
 
     ByeLog("disposing patterns & picts");
-    if (gSpriteWorld->pixelDepth == 8)
-        Dispose8BitAlphaTable();
     for (i = 0; i < 0xa; i++) {
         if (staticPat[i] != NULL)
             DisposePixPat((PixPatHandle)staticPat[i]);
@@ -662,7 +650,7 @@ void LoadSprites(void)
 
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (GetSpriteInfo(i + 3000, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
-            if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+            if (ResourceExists(kRLEDResType, spriteID)) {
                 err = SWCreateSpriteFromRLEResource(&masterShotSprite[i], NULL, spriteID, xTiles * yTiles, 0);
                 if ((int32_t)err != 0) {
                     crashlog_print("error loading sprite from RLE resource, " kSpinTypeName " ID ");
@@ -695,7 +683,7 @@ void LoadSprites(void)
 
     for (i = 0; i < kMaxExplodTypes; i++) {
         if (GetSpriteInfo(i + 400, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
-            if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+            if (ResourceExists(kRLEDResType, spriteID)) {
                 err = SWCreateSpriteFromRLEResource(&masterExplodSprite[i], NULL, spriteID, xTiles * yTiles, 0);
                 if ((int32_t)err != 0) {
                     crashlog_print("error loading sprite from RLE, " kSpinTypeName " ID ");
@@ -729,7 +717,7 @@ void LoadSprites(void)
     for (i = 0; i < 5; i++) {
         if (GetSpriteInfo(i + 500, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
             masterBoxSprite[i] = 0;
-            if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+            if (ResourceExists(kRLEDResType, spriteID)) {
                 err = SWCreateSpriteFromRLEResource(&masterBoxSprite[i], NULL, spriteID, xTiles * yTiles, 0);
                 if ((int32_t)err != 0) {
                     crashlog_print("error loading sprite from RLE, " kSpinTypeName " ID ");
@@ -768,7 +756,7 @@ void LoadSprites(void)
     for (i = 0; i < kMaxRoidTypes; i++) {
         masterAsteroidSprite[i] = 0;
         if (GetSpriteInfo(i + 800, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
-            if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+            if (ResourceExists(kRLEDResType, spriteID)) {
                 err = SWCreateSpriteFromRLEResource(&masterAsteroidSprite[i], NULL, spriteID, xTiles * yTiles, 0);
                 if ((int32_t)err != 0) {
                     crashlog_print("error loading sprite from RLE, " kSpinTypeName " ID ");
@@ -810,7 +798,7 @@ void LoadSprites(void)
     for (i = 0; i < kMainButtons; i++) {
         menuButtonSprite[i] = 0;
         if (GetSpriteInfo(i + 600, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
-            if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+            if (ResourceExists(kRLEDResType, spriteID)) {
                 err = SWCreateSpriteFromRLEResource(&menuButtonSprite[i], NULL, spriteID, xTiles * yTiles, 0);
                 if ((int32_t)err != 0) {
                     crashlog_print("error loading sprite from RLE, " kSpinTypeName " ID ");
@@ -844,7 +832,7 @@ void LoadSprites(void)
     }
 
     if (GetSpriteInfo(700, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
-        if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+        if (ResourceExists(kRLEDResType, spriteID)) {
             err = SWCreateSpriteFromRLEResource(&masterStarSprite, NULL, spriteID, xTiles * yTiles, 0);
             if ((int32_t)err != 0) {
                 crashlog_print("error loading sprite from RLE, " kSpinTypeName " ID ");
@@ -884,7 +872,7 @@ void LoadSprites(void)
     }
 
     if (GetSpriteInfo(607, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
-        if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+        if (ResourceExists(kRLEDResType, spriteID)) {
             err = SWCreateSpriteFromRLEResource(&menuRolloverSprite, NULL, spriteID, xTiles * yTiles, 0);
             if ((int32_t)err != 0) {
                 menuRolloverSprite = NULL;
@@ -924,7 +912,7 @@ void LoadSprites(void)
     }
 
     if (GetSpriteInfo(650, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
-        if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+        if (ResourceExists(kRLEDResType, spriteID)) {
             err = SWCreateSpriteFromRLEResource(&cursorSprite, NULL, spriteID, xTiles * yTiles, 0);
             if ((int32_t)err != 0) {
                 cursorSprite = NULL;
@@ -1644,7 +1632,7 @@ void LoadMasterStellarSprite(short type)
     SpriteRec *entry;
 
     if (GetSpriteInfo(type + kStellarSpinResBase, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
-        if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spriteID)) {
+        if (ResourceExists(kRLEDResType, spriteID)) {
             err = SWCreateSpriteFromRLEResource(&masterStellarSprite[type], NULL, spriteID,
                                 xTiles * yTiles, 0);
             if ((int)err != 0) {
@@ -1684,15 +1672,13 @@ void LoadMasterStellarSprite(short type)
 #define kBasePriceStringID 9300     /* plugin string, else STR# 4004 item i+1 */
 #define kBasePriceListID   4004
 #define kSystemGovtUnset   (-32767)
-#define kRoidGrey          0x8012   /* 8-bit asteroid colour, run through Color2Index */
-#define kRoidPixel         0x1ce7   /* the direct 15-bit pixel otherwise */
+#define kRoidPixel         0x1ce7   /* the default asteroid colour, a direct 15-bit pixel */
 
 // FUNCTION: EVNOVA 0x004b0c20
 // MAC: _InitObjects i386 0x0001c2e5 ppc 0x000204b8
 void InitObjects(void)
 {
     short i, j, k;
-    RGBColor c;
     Str255 buf;
     int32_t value;
 
@@ -1929,12 +1915,7 @@ void InitObjects(void)
         asteroidType[i].fragCount = 0;
         asteroidType[i].partCount = 50;
         asteroidType[i].frameRate = 1.0f;
-        if (gSpriteWorld->pixelDepth == 8) {
-            c.red = c.green = c.blue = kRoidGrey;
-            asteroidType[i].color = Color2Index(&c);
-        } else {
-            asteroidType[i].color = kRoidPixel;
-        }
+        asteroidType[i].color = kRoidPixel;
     }
 
     for (i = 0; i < kMaxNebulae; i++) {
@@ -2325,13 +2306,6 @@ void ResetScreenRect(void)
 // FUNCTION: EVNOVA 0x004b4320
 void SetDefaultPrefs(void)
 {
-    short depth;
-
-    if (gSpriteWorld != NULL)
-        depth = gSpriteWorld->pixelDepth;
-    else
-        depth = 16;
-
     settings.introMusic = 1;
     settings.voicesOn = 1;
     settings.volume = 5;
@@ -2348,13 +2322,8 @@ void SetDefaultPrefs(void)
     settings.noHyperGamma = 0;
     settings.noVersionCheck = 1;
     settings.showMapBorders = 0;
-    if (depth >= 16) {
-        settings.weaponGlows = 1;
-        settings.runningLights = 1;
-    } else {
-        settings.weaponGlows = 0;
-        settings.runningLights = 0;
-    }
+    settings.weaponGlows = 1;
+    settings.runningLights = 1;
     settings.gamma = 3;
     DAT_00735488 = 1;
     pstrcpy(lastPlayerName, "\p");
@@ -2622,7 +2591,7 @@ short LoadExtendedShipSprites(short shipType)
             shipSpriteLoaded[shipType][0] = spinID;
             shipClass[shipType].spriteIndex = i;
         } else {
-            if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spinID)) {
+            if (ResourceExists(kRLEDResType, spinID)) {
                 err = SWCreateSpriteFromRLEResource(&masterShipSprite[shipType], NULL,
                                                     spinID, count, 0);
                 if ((int32_t)err != 0) {
@@ -2680,7 +2649,7 @@ short LoadExtendedShipSprites(short shipType)
                 SWCloneSprite(masterShipAltSprite[i], &masterShipAltSprite[shipType], NULL);
                 SWLockSprite(masterShipAltSprite[shipType]);
             } else {
-                if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spinID)) {
+                if (ResourceExists(kRLEDResType, spinID)) {
                     err = SWCreateSpriteFromRLEResource(&masterShipAltSprite[shipType], NULL,
                                                         spinID,
                                                         shipClass[shipType].altSets *
@@ -2731,7 +2700,7 @@ short LoadExtendedShipSprites(short shipType)
                 SWCloneSprite(masterShipGlowSprite[i], &masterShipGlowSprite[shipType], NULL);
                 SWLockSprite(masterShipGlowSprite[shipType]);
             } else {
-                if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spinID)) {
+                if (ResourceExists(kRLEDResType, spinID)) {
                     err = SWCreateSpriteFromRLEResource(&masterShipGlowSprite[shipType], NULL,
                                                         spinID, count, 0);
                     if ((int32_t)err != 0) {
@@ -2779,7 +2748,7 @@ short LoadExtendedShipSprites(short shipType)
                 SWCloneSprite(masterShipLightSprite[i], &masterShipLightSprite[shipType], NULL);
                 SWLockSprite(masterShipLightSprite[shipType]);
             } else {
-                if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, lightID)) {
+                if (ResourceExists(kRLEDResType, lightID)) {
                     err = SWCreateSpriteFromRLEResource(&masterShipLightSprite[shipType], NULL,
                                                         lightID, count, 0);
                     if ((int32_t)err != 0) {
@@ -2837,7 +2806,7 @@ short LoadExtendedShipSprites(short shipType)
                               &masterShipWeaponSprite[shipType], NULL);
                 SWLockSprite(masterShipWeaponSprite[shipType]);
             } else {
-                if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spinID)) {
+                if (ResourceExists(kRLEDResType, spinID)) {
                     err = SWCreateSpriteFromRLEResource(&masterShipWeaponSprite[shipType], NULL,
                                                         spinID, count, 0);
                     if ((int32_t)err != 0) {
@@ -2886,7 +2855,7 @@ short LoadExtendedShipSprites(short shipType)
                               &masterShipShieldSprite[shipType], NULL);
                 SWLockSprite(masterShipShieldSprite[shipType]);
             } else {
-                if (ResourceExists((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, spinID)) {
+                if (ResourceExists(kRLEDResType, spinID)) {
                     err = SWCreateSpriteFromRLEResource(&masterShipShieldSprite[shipType], NULL,
                                                         spinID, count, 0);
                     if ((int32_t)err != 0) {

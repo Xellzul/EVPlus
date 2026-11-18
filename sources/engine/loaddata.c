@@ -375,16 +375,12 @@ void LoadObjectData(void)
                 systemData[i].rgb.red = ((ResRec(SystRes, systemFileHand)->bkgndColor >> 16) & 0xff) * 256;
                 systemData[i].rgb.green = ((ResRec(SystRes, systemFileHand)->bkgndColor >> 8) & 0xff) * 256;
                 systemData[i].rgb.blue = (ResRec(SystRes, systemFileHand)->bkgndColor & 0xff) * 256;
-                if (gSpriteWorld->pixelDepth == 8) {
-                    systemData[i].mapPixel = Color2Index(&systemData[i].rgb);
-                } else {
-                    systemData[i].rgb.red &= 0xfc00;
-                    systemData[i].rgb.green &= 0xfc00;
-                    systemData[i].rgb.blue &= 0xfc00;
-                    systemData[i].mapPixel = ((((systemData[i].rgb.red + 0x801) >> 11) << 10) & 0x7c00) |
-                                    ((((systemData[i].rgb.green + 0x801) >> 11) << 5) & 0x3e0) |
-                                    (((systemData[i].rgb.blue + 0x801) >> 11) & 0x1f);
-                }
+                systemData[i].rgb.red &= 0xfc00;
+                systemData[i].rgb.green &= 0xfc00;
+                systemData[i].rgb.blue &= 0xfc00;
+                systemData[i].mapPixel = ((((systemData[i].rgb.red + 0x801) >> 11) << 10) & 0x7c00) |
+                                ((((systemData[i].rgb.green + 0x801) >> 11) << 5) & 0x3e0) |
+                                (((systemData[i].rgb.blue + 0x801) >> 11) & 0x1f);
                 systemData[i].murk = ResRec(SystRes, systemFileHand)->murk;
                 if (systemData[i].murk > 100)
                     systemData[i].murk = 100;
@@ -849,22 +845,12 @@ void LoadObjectData(void)
                     weaponStats[i].rgbScratch.red = ((weaponStats[i].beamColor >> 16) & 0xff) * 256;
                     weaponStats[i].rgbScratch.green = ((weaponStats[i].beamColor >> 8) & 0xff) * 256;
                     weaponStats[i].rgbScratch.blue = (weaponStats[i].beamColor & 0xff) * 256;
-                    if (gSpriteWorld->pixelDepth == 16) {
-                        weaponStats[i].beamColor = (weaponStats[i].beamColor >> 9) & 0x7c00 |
-                                          (weaponStats[i].beamColor >> 6) & 0x3e0 |
-                                          (weaponStats[i].beamColor >> 3) & 0x1f;
-                        weaponStats[i].coronaColor = (weaponStats[i].coronaColor >> 9) & 0x7c00 |
-                                            (weaponStats[i].coronaColor >> 6) & 0x3e0 |
-                                            (weaponStats[i].coronaColor >> 3) & 0x1f;
-                    } else {
-                        ClampRGB(weaponStats[i].rgbScratch);
-                        weaponStats[i].beamColor = Color2Index(&weaponStats[i].rgbScratch);
-                        rgb.red = ((weaponStats[i].coronaColor >> 16) & 0xff) << 7;
-                        rgb.green = ((weaponStats[i].coronaColor >> 8) & 0xff) << 7;
-                        rgb.blue = (weaponStats[i].coronaColor & 0xff) << 7;
-                        ClampRGB(rgb);
-                        weaponStats[i].coronaColor = Color2Index(&rgb);
-                    }
+                    weaponStats[i].beamColor = (weaponStats[i].beamColor >> 9) & 0x7c00 |
+                                      (weaponStats[i].beamColor >> 6) & 0x3e0 |
+                                      (weaponStats[i].beamColor >> 3) & 0x1f;
+                    weaponStats[i].coronaColor = (weaponStats[i].coronaColor >> 9) & 0x7c00 |
+                                        (weaponStats[i].coronaColor >> 6) & 0x3e0 |
+                                        (weaponStats[i].coronaColor >> 3) & 0x1f;
                 }
                 weaponStats[i].hitParticles = ResRec(WeapRes, weaponFileHand)->hitParticles;
                 rgb.red = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 16) & 0xff) * 256;
@@ -874,8 +860,6 @@ void LoadObjectData(void)
                 weaponStats[i].hitPartColor = Color2Index(&rgb);
                 weaponStats[i].hitPartLife = ResRec(WeapRes, weaponFileHand)->hitPartLife;
                 weaponStats[i].hitPartVel = ResRec(WeapRes, weaponFileHand)->hitPartVel * 0.01;
-                if (gSpriteWorld->pixelDepth == 8)
-                    weaponStats[i].hitPartLife /= 2;
                 GetResInfo(weaponFileHand, &resID, &resType, name);
                 TrimResourceName(name);
                 pstrcpy(weapName[i], name);
@@ -2147,13 +2131,9 @@ void LoadObjectData(void)
                 rgb.red = ((asteroidType[i].color >> 16) & 0xff) * 256;
                 rgb.green = ((asteroidType[i].color >> 8) & 0xff) * 256;
                 rgb.blue = (asteroidType[i].color & 0xff) * 256;
-                if (gSpriteWorld->pixelDepth == 8) {
-                    asteroidType[i].color = Color2Index(&rgb);
-                } else {
-                    asteroidType[i].color = (((rgb.red >> 11) << 10) & 0x7c00) |
-                                  (((rgb.green >> 11) << 5) & 0x3e0) |
-                                  ((rgb.blue >> 11) & 0x1f);
-                }
+                asteroidType[i].color = (((rgb.red >> 11) << 10) & 0x7c00) |
+                              (((rgb.green >> 11) << 5) & 0x3e0) |
+                              ((rgb.blue >> 11) & 0x1f);
                 asteroidType[i].fragCount = ResRec(RoidRes, asteroidFileHand)->fragCount;
                 if (asteroidType[i].fragCount < 0)
                     asteroidType[i].fragCount = 0;

@@ -52,7 +52,7 @@ void MainScreenRolloverIdle(void)
                 }
             }
             if (newIndex != rolloverIndex) {
-                if (rolloverAlpha > 0 && gSpriteWorld->pixelDepth == kDepth16)
+                if (rolloverAlpha > 0)
                     rolloverAlpha -= kHiliteStep;
                 else
                     rolloverIndex = newIndex;

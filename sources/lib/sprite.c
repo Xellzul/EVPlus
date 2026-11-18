@@ -83,7 +83,6 @@ short SWCreateSpriteFromSinglePictXY(
     SpritePtr tempSpriteP;
     FramePtr newFrameP;
     short frame;
-    Boolean needToInvertMask;
 
     err = 0;
 
@@ -93,7 +92,6 @@ short SWCreateSpriteFromSinglePictXY(
     tempPictGWorldP = 0;
     tempMaskGWorldP = 0;
     *newSpriteP = 0;
-    needToInvertMask = 1;
 
     tempPic = GetPicture(pictResID);
     if (tempPic == 0) {
@@ -113,7 +111,6 @@ short SWCreateSpriteFromSinglePictXY(
         if ((int)err == noErr) {
             if (pictResID == maskResID && tempMaskGWorldP != 0) {
                 err = SWCreatePixelMaskFromGWorld(tempPictGWorldP, tempMaskGWorldP, 0);
-                needToInvertMask = 0;
             }
         }
 
@@ -176,11 +173,7 @@ short SWCreateSpriteFromSinglePictXY(
         }
 
         if ((int)err == noErr) {
-            if ((maskType & kPixelMask) != 0) {
-                if (destSpriteWorldP->pixelDepth <= 8 && needToInvertMask) {
-                    SWInvertGWorld(tempMaskGWorldP);
-                }
-            } else {
+            if ((maskType & kPixelMask) == 0) {
                 if (tempMaskGWorldP != 0) {
                     DisposeGWorld(tempMaskGWorldP);
                     tempMaskGWorldP = 0;
