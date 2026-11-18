@@ -18,10 +18,9 @@ int __stdcall WinMain(void *hInstance, void *hPrevInstance, char *lpCmdLine,
     MemoryStatus ms;
     char buf[256];
 
-    if (CE_Startup(lpCmdLine, nCmdShow) != 0)
-        return 0;
+    CE_Startup();
     if (Win95Allow1Instance("Lock for EV Nova") == 0) {
-        CreateGameWindow(hInstance, nCmdShow);
+        CreateGameWindow();
         ms.dwLength = 0x20;
         GlobalMemoryStatus(&ms);
         MaxMemSize = kCEMemoryPoolSize;

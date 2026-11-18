@@ -6,6 +6,7 @@
 #include "burgertypes.h"
 #include "burger.h"
 #include "win32.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,12 +17,10 @@ static Word32 TimerID;                           /* 0x0086585c */
 static void *ThreadHandle;                       /* 0x00865860 */
 static Word8 Started;                            /* 0x00865864 */
 static Word GotMilk;                             /* 0x00865868 */
-Word TickWakeUpFlag;                             /* 0x00870d84 */
 
 #define kTickFraction   8                        /* milliseconds kept in 24.8 fixed point */
 #define kTickPeriod     0x10aa                   /* 1000/60 ms in 24.8: 16.664 */
 #define kTickSleepMs    16
-#define kWakeUpMessage  0x400                    /* WM_USER */
 #define kTickStackSize  0x400
 #define kTimerPriority  2                        /* THREAD_PRIORITY_HIGHEST */
 
@@ -43,9 +42,6 @@ static Word32 __stdcall MyIrq(void *data)
             mark += kTickPeriod;
             elapsed -= kTickPeriod;
         } while (elapsed >= kTickPeriod);
-        if (TickWakeUpFlag != 0 && Win95MainWindow != 0 &&
-            GetForegroundWindow() == Win95MainWindow)
-            PostMessageA(Win95MainWindow, kWakeUpMessage, 0, TimeCount);
     }
 }
 
@@ -70,20 +66,17 @@ Word32 ReadTick(void)
     return TimeCount;
 }
 
-/* WaitTicks (BurgerLib TkWin95Code). */
+/* WaitTicks (BurgerLib TkWin95Code). The exe sleeps in WaitMessage and has the timer thread post a message
+   at each tick; here the wait ends at an event or after one tick's time. */
 // FUNCTION: EVNOVA 0x004d5e90
 void WaitTicks(Word tickCount)
 {
     Word32 now;
-    Word wakeUp;
 
     KeyboardKbhit();
     now = ReadTick();
     while (now - LastTick < tickCount) {
-        wakeUp = TickWakeUpFlag;
-        TickWakeUpFlag = 1;
-        WaitMessage();
-        TickWakeUpFlag = wakeUp;
+        PlatWaitEvent(kTickSleepMs);
         KeyboardKbhit();
         now = ReadTick();
     }

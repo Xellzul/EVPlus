@@ -1,15 +1,16 @@
 // COMPILE: -lang c++ -bool off
-/* burgerkbwin.c -- BurgerLib InKeyboardWin95: the key queue, and the Win32 message pump that fills it and the mouse state. Notes: Research/notes/burgerkbwin.md */
+/* burgerkbwin.c -- BurgerLib InKeyboardWin95: the key queue, and the event pump (platform.h's events) that fills it and the mouse state. Notes: Research/notes/burgerkbwin.md */
 
 #include "burgertypes.h"
 #include "burger.h"
-#include "win32.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-static ULong RWMMouseWheel;                      /* 0x008658a0 */
+extern void WinGameEvent(const PlatEvent *ev);   /* port/dialogmgr.c: the window's own events */
+
 static int32_t BurgerKeyStart;                      /* 0x008658a4 */
 static int32_t BurgerKeyEnd;                        /* 0x008658a8 */
 static Word32 BurgerKeyBuffer[128];              /* 0x008658ac */
@@ -23,7 +24,7 @@ int32_t Win95LastMouseY;                            /* 0x008700b4 */
 int32_t Win95MouseXDelta;                           /* 0x00870190 */
 int32_t Win95MouseYDelta;                           /* 0x00870180 */
 
-/* Windows scan code (bit 7 = extended) to BurgerLib scan code. */
+/* PC scan code (bit 7 = extended, PlatEvent.scan) to BurgerLib scan code. */
 Word8 NormalScan[256] = {                        /* 0x00576b50 */
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
@@ -48,16 +49,7 @@ Word8 NormalScan[256] = {                        /* 0x00576b50 */
 #define kKeyAsciiMask   0xff
 #define kKeyHeld        1                        /* KeyArray: held now */
 #define kKeyPressed     2                        /* KeyArray: pressed since last read */
-#define kScanMask       0x7f
-#define kScanExtended   0x80
-#define kLParamExtended 0x1000000
-#define kPMRemove       1                        /* PM_REMOVE */
-
-#define VK_F10          0x79
-
-#define kLeftButton     1
-#define kRightButton    2
-#define kMiddleButton   4
+#define kScanCodeMask   0xff
 
 /* Queue one key; a full queue drops it. */
 static void BurgerPostKey(Word32 key)
@@ -74,60 +66,56 @@ static void BurgerPostKey(Word32 key)
     }
 }
 
-/* The Windows scan code of a key message, bit 7 set for the extended keys. */
-static Word ScanOf(const WinMsg *msg)
-{
-    Word32 lParam;
-    Word scan;
+/* The keys that post a code of their own rather than a character, by PLAT_KEY_*. (The exe also has one
+   for VK_PRINT, 0x6d8f, a key PC keyboards do not have.) */
+static const Word16 SpecialKeys[PLAT_KEY_F1 + 12] = {
+    0,
+    0x6091,                                      /* PLAT_KEY_HOME */
+    0x610b,                                      /* PLAT_KEY_UP */
+    0x6292,                                      /* PLAT_KEY_PAGEUP */
+    0x6396,                                      /* PLAT_KEY_LEFT */
+    0x6415,                                      /* PLAT_KEY_RIGHT */
+    0x6593,                                      /* PLAT_KEY_END */
+    0x660a,                                      /* PLAT_KEY_DOWN */
+    0x6794,                                      /* PLAT_KEY_PAGEDOWN */
+    0x6895,                                      /* PLAT_KEY_INSERT */
+    0x6997,                                      /* PLAT_KEY_DELETE */
+    0x6e80,                                      /* PLAT_KEY_PAUSE */
+    0x468d,                                      /* PLAT_KEY_SCROLLLOCK */
+    0x1d00,                                      /* PLAT_KEY_LCTRL */
+    0x6b00,                                      /* PLAT_KEY_RCTRL */
+    0x2a00,                                      /* PLAT_KEY_LSHIFT */
+    0x3600,                                      /* PLAT_KEY_RSHIFT */
+    0x3800,                                      /* PLAT_KEY_LALT */
+    0x6f00,                                      /* PLAT_KEY_RALT */
+    0x3b81, 0x3c82, 0x3d83, 0x3e84, 0x3f85, 0x4086, /* PLAT_KEY_F1.. */
+    0x4187, 0x4288, 0x4389, 0x448a, 0x578b, 0x588c  /* ..F12 */
+};
 
-    lParam = msg->lParam;
-    scan = (lParam >> 16) & kScanMask;
-    if (lParam & kLParamExtended)
-        scan |= kScanExtended;
-    return scan;
+static inline Word32 SpecialKey(int key)
+{
+    if (key <= 0 || key >= (int)(sizeof(SpecialKeys) / sizeof(SpecialKeys[0])))
+        return 0;
+    return SpecialKeys[key];
 }
 
-/* The keys that post a code of their own rather than a character. */
-static inline Word32 SpecialKey(Word32 code, const WinMsg *msg)
+/* code page 1252's 0x80..0x9f, the characters that are not their own Unicode code point */
+static const Word16 Ansi80[32] = {
+    0x20ac, 0, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021, 0x02c6, 0x2030, 0x0160, 0x2039, 0x0152, 0, 0x017d, 0,
+    0, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014, 0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0, 0x017e, 0x0178
+};
+
+/* A typed character as the byte the game's Win32 window received in its WM_CHAR: the Western ANSI code
+   page, 1252. 0 for a character it does not have. */
+static Word AnsiChar(int ch)
 {
-    switch (code) {
-    case 0x24: return 0x6091;                    /* VK_HOME */
-    case 0x26: return 0x610b;                    /* VK_UP */
-    case 0x21: return 0x6292;                    /* VK_PRIOR */
-    case 0x25: return 0x6396;                    /* VK_LEFT */
-    case 0x27: return 0x6415;                    /* VK_RIGHT */
-    case 0x23: return 0x6593;                    /* VK_END */
-    case 0x28: return 0x660a;                    /* VK_DOWN */
-    case 0x22: return 0x6794;                    /* VK_NEXT */
-    case 0x2d: return 0x6895;                    /* VK_INSERT */
-    case 0x2e: return 0x6997;                    /* VK_DELETE */
-    case 0x13: return 0x6e80;                    /* VK_PAUSE */
-    case 0x70: return 0x3b81;                    /* VK_F1 */
-    case 0x71: return 0x3c82;
-    case 0x72: return 0x3d83;
-    case 0x73: return 0x3e84;
-    case 0x74: return 0x3f85;
-    case 0x75: return 0x4086;
-    case 0x76: return 0x4187;
-    case 0x77: return 0x4288;
-    case 0x78: return 0x4389;
-    case 0x79: return 0x448a;
-    case 0x7a: return 0x578b;
-    case 0x7b: return 0x588c;                    /* VK_F12 */
-    case 0x91: return 0x468d;                    /* VK_SCROLL */
-    case 0x2a: return 0x6d8f;                    /* VK_PRINT */
-    case VK_CONTROL:
-        if ((msg->lParam & 0x1ff0000) == 0x1d0000)
-            return 0x1d00;                       /* left control */
-        return 0x6b00;
-    case VK_SHIFT:
-        if ((msg->lParam & 0xff0000) == 0x360000)
-            return 0x3600;                       /* right shift */
-        return 0x2a00;
-    case VK_MENU:
-        if ((msg->lParam & 0x1ff0000) == 0x380000)
-            return 0x3800;                       /* left alt */
-        return 0x6f00;
+    Word i;
+
+    if (ch < 0x80 || (ch >= 0xa0 && ch <= 0xff))
+        return ch;
+    for (i = 0; i < 32; i++) {
+        if (Ansi80[i] == ch)
+            return 0x80 + i;
     }
     return 0;
 }
@@ -190,106 +178,72 @@ int32_t KeyboardGet2(void)
     return 0;
 }
 
-/* Win95ProcessMessage (BurgerLib InKeyboardWin95). */
-// FUNCTION: EVNOVA 0x004d7330
-Word Win95ProcessMessage(WinMsg *msg)
+/* Win95ProcessMessage (BurgerLib InKeyboardWin95, 0x004d7330), on a platform event in place of a Win32
+   message: the key queue, the key-down table and the mouse state. */
+static void Win95ProcessEvent(const PlatEvent *ev)
 {
     Word32 key;
+    Word scan;
 
-    if (msg->message == RWMMouseWheel)
-        Win95MouseWheel += (short)msg->wParam;
-    switch (msg->message) {
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-        key = SpecialKey(msg->wParam, msg);
+    scan = NormalScan[ev->scan & kScanCodeMask];
+    switch (ev->type) {
+    case PLAT_EV_KEY_DOWN:
+        key = SpecialKey(ev->key);
         if (key != 0)
             BurgerPostKey(key);
-        KeyArray[NormalScan[ScanOf(msg)]] |= kKeyHeld | kKeyPressed;
-        if (msg->message == WM_SYSKEYDOWN &&
-            (msg->wParam == VK_MENU || msg->wParam == VK_F10))
-            return 1;
+        KeyArray[scan] |= kKeyHeld | kKeyPressed;
         break;
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-        key = SpecialKey(msg->wParam, msg);
+    case PLAT_EV_KEY_UP:
+        key = SpecialKey(ev->key);
         if (key != 0)
             BurgerPostKey(key | kKeyRelease);
         else
-            BurgerPostKey((NormalScan[ScanOf(msg)] << 8) + (msg->wParam & kKeyAsciiMask) + kKeyRelease);
-        KeyArray[NormalScan[ScanOf(msg)]] &= ~kKeyHeld;
+            BurgerPostKey((scan << 8) + kKeyRelease);
+        KeyArray[scan] &= ~kKeyHeld;
         break;
-    case WM_CHAR:
-    case WM_SYSCHAR:
-        BurgerPostKey((NormalScan[ScanOf(msg)] << 8) + (msg->wParam & kKeyAsciiMask));
+    case PLAT_EV_CHAR:
+        key = AnsiChar(ev->ch);
+        if (key != 0)
+            BurgerPostKey((scan << 8) + key);
         break;
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONDBLCLK:
-        Win95MouseButton |= kRightButton;
-        MouseClicked |= kRightButton;
-        if (msg->hwnd != 0)
-            SetCapture(msg->hwnd);
+    case PLAT_EV_MOUSE_DOWN:
+        Win95MouseButton |= ev->button;
+        MouseClicked |= ev->button;
         break;
-    case WM_MBUTTONDOWN:
-    case WM_MBUTTONDBLCLK:
-        Win95MouseButton |= kMiddleButton;
-        MouseClicked |= kMiddleButton;
-        if (msg->hwnd != 0)
-            SetCapture(msg->hwnd);
+    case PLAT_EV_MOUSE_UP:
+        Win95MouseButton &= ~ev->button;
         break;
-    case WM_LBUTTONDOWN:
-    case WM_LBUTTONDBLCLK:
-        Win95MouseButton |= kLeftButton;
-        MouseClicked |= kLeftButton;
-        if (msg->hwnd != 0)
-            SetCapture(msg->hwnd);
+    case PLAT_EV_MOUSE_WHEEL:
+        Win95MouseWheel += ev->wheel;
         break;
-    case WM_RBUTTONUP:
-        Win95MouseButton &= ~kRightButton;
-        ReleaseCapture();
-        break;
-    case WM_MBUTTONUP:
-        Win95MouseButton &= ~kMiddleButton;
-        ReleaseCapture();
-        break;
-    case WM_LBUTTONUP:
-        Win95MouseButton &= ~kLeftButton;
-        ReleaseCapture();
-        break;
-    case WM_MOUSEWHEEL:
-        Win95MouseWheel += (int32_t)msg->wParam >> 16;
-        break;
-    case WM_MOUSEMOVE:
-        Win95MouseX = (Word16)msg->lParam;
-        Win95MouseY = msg->lParam >> 16;
+    case PLAT_EV_MOUSE_MOVE:
+        Win95MouseX = ev->x;
+        Win95MouseY = ev->y;
         Win95MouseXDelta += Win95MouseX - Win95LastMouseX;
         Win95MouseYDelta += Win95MouseY - Win95LastMouseY;
         Win95LastMouseX = Win95MouseX;
         Win95LastMouseY = Win95MouseY;
         break;
     }
-    return 0;
 }
 
 /* ProcessSystemEvents (BurgerLib InKeyboardWin95). */
 // FUNCTION: EVNOVA 0x004d79a0
 void ProcessSystemEvents(void)
 {
-    WinMsg msg;
+    PlatEvent ev;
 
-    if (Win95NoProcess == 0 && Recurse == 0 && VideoPageLocked == 0) {
+    if (Win95NoProcess == 0 && Recurse == 0) {
         Recurse = 1;
-        while (PeekMessageA(&msg, 0, 0, 0, kPMRemove) != 0) {
-            if (Win95ProcessMessage(&msg) == 0) {
-                TranslateMessage(&msg);
-                DispatchMessageA(&msg);
-            }
+        while (PlatPollEvent(&ev) != 0) {
+            Win95ProcessEvent(&ev);
+            WinGameEvent(&ev);
         }
         Recurse = 0;
     }
 }
 
-/* Reset the input subsystem: forget every key, drop the wheel state and
-   re-register the mouse-wheel message. */
+/* Reset the input subsystem: forget every key and click. */
 /* KeyboardInit (BurgerLib KeyboardInit). */
 // FUNCTION: EVNOVA 0x004d7a80
 void KeyboardInit(void)
@@ -298,7 +252,6 @@ void KeyboardInit(void)
     BurgerKeyStart = 0;
     BurgerKeyEnd = 0;
     MouseClicked = 0;
-    RWMMouseWheel = RegisterWindowMessageA("MSWHEEL_ROLLMSG");
 }
 
 /* KeyboardDestroy (BurgerLib KeyboardDestroy). */

@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <string.h>   /* strcpy 0x004d6010, strlen 0x004eedb0 */
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "macport.h"
 #include "gametypes.h"
@@ -15,6 +16,7 @@
 #include "dialogs.h"
 #include "prototypes.h"
 #include "cefix.h"
+#include "platform.h"
 #include "endianswap.h"
 
 /* A control points back at the dialog that owns it so that changing a value
@@ -32,7 +34,6 @@ uint32_t gClickTime;
 void *gClickDialog;
 void *gClickItem;
 int32_t gRezOpenPending;
-int32_t paintBlackFlag;
 
 /* the port has exactly one window, so there is nothing to search */
 
@@ -2225,22 +2226,14 @@ void LUpdate(void *list)
     }
 }
 
-// FUNCTION: EVNOVA 0x004d2440
-int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
-                            uint32_t wParam, int32_t lParam)
+/* The window procedure (win 0x004d2440, WinGameWndProc) on the platform's events, called for every event
+   after the key queue and the mouse state have had it. Gone with the Win32 window: the fixed window size
+   (WM_GETMINMAXINFO), the palette, and WM_PAINT's redraw -- the platform shows the last frame again. */
+void WinGameEvent(const PlatEvent *ev)
 {
-    PAINTSTRUCT ps;
-    WinRect wr;
-    WinRect br;
-    WinRect lr;
-    WinRect mr;
-    void *dc;
-    int32_t savedSuspend;
-    MINMAXINFO *mmi;
-
-    switch (msg) {
-    case WM_ACTIVATEAPP:
-        Win95ApplsActive = wParam;
+    switch (ev->type) {
+    case PLAT_EV_ACTIVATE:
+        Win95ApplsActive = ev->on;
         KeyboardFlush();
         if (Win95ApplsActive != 0 && gWind != NULL)
             gNeedUpdateFlag = 1;
@@ -2249,97 +2242,17 @@ int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
         else
             SwitchedOut(0);
         break;
-    case WM_GETMINMAXINFO:
-        if (gVideoWidth == 0)
-            break;
-        mr.bottom = gVideoHeight;
-        mr.top = 0;
-        mr.left = 0;
-        mr.right = gVideoWidth;
-        AdjustWindowRectEx(&mr, GetWindowLongA(Win95MainWindow, GWL_STYLE),
-                           GetMenu(Win95MainWindow) != NULL,
-                           GetWindowLongA(Win95MainWindow, GWL_EXSTYLE));
-        mmi = (MINMAXINFO *)lParam;
-        mmi->ptMaxSize.x = gVideoWidth;
-        mmi->ptMaxSize.y = gVideoHeight;
-        mmi->ptMaxTrackSize.x = mr.right - mr.left;
-        mmi->ptMaxTrackSize.y = mr.bottom - mr.top;
-        mmi->ptMinTrackSize.x = mmi->ptMaxTrackSize.x;
-        mmi->ptMinTrackSize.y = mmi->ptMaxTrackSize.y;
-        return 0;
-    case WM_MOVE:
-    case WM_SIZE:
-        if (IsIconic(hwnd) != 0)
-            Win95ApplsActive = 0;
-        if (Win95MainWindow != NULL) {
-            GetWindowRect(Win95MainWindow, &wr);
-            MoveWindow(Win95MainWindow, wr.left, wr.top, wr.right - wr.left,
-                       wr.bottom - wr.top, 1);
-        }
+    case PLAT_EV_MINIMIZED:
+        Win95ApplsActive = 0;
         break;
-    case WM_SETCURSOR:
-        return 1;
-    case WM_QUERYNEWPALETTE:
-        PaletteSetPtr(0, 0x100, gGamePalette);
-        break;
-    case WM_SYSKEYDOWN:
-    case WM_SYSKEYUP:
-        if ((unsigned char)wParam == VK_MENU)
-            return 0;
-        break;
-    case WM_SYSCHAR:
-        return 1;
-    case WM_PAINT:
-        dc = BeginPaint(hwnd, &ps);
-        if (paintBlackFlag != 0) {
-            GetWindowRect(hwnd, &br);
-            FillRect(dc, &br, GetStockObject(BLACK_BRUSH));
-            gNeedUpdateFlag = 1;
-        } else if (gWind != NULL) {
-            SWSetPortToWindow(gSpriteWorld);
-            if (creatingPilotFile == 0) {
-                savedSuspend = gDisableUpdatesMode;
-                gDisableUpdatesMode = 1;
-                if (gameInProgress != 0 && gameLoaded != 0) {
-                    if (onPlanet != 0 || inBackground != 0) {
-                        RedrawStatus(1);
-                        RefreshSAT();
-                        RedrawComm(1);
-                    }
-                } else {
-                    if (loadPort.world != NULL) {
-                        CopyBits((BitMapPtr)GetGWCPixMap(&loadPort),
-                                 GetPortBitMapForCopyBits(
-                                     GetCWindowGrafPort(gWind)),
-                                 GetCWindowPortRect(gWind),
-                                 GetCWindowPortRect(gWind), 0, 0);
-                    } else {
-                        GetWindowRect(hwnd, &lr);
-                        FillRect(dc, &lr, GetStockObject(BLACK_BRUSH));
-                    }
-                }
-                nv_UpdateDialogWindow(1);
-                gDisableUpdatesMode = savedSuspend;
-                ScreenEndScene();
-            }
-            SWSetPortToWindow(gSpriteWorld);
-        }
-        EndPaint(hwnd, &ps);
-        return 1;
-    case WM_CHAR:
-        return 1;
-    case WM_CLOSE:
+    case PLAT_EV_CHAR:
+        return;
+    case PLAT_EV_CLOSE:
         if (gameLoaded != 0 && screenFaded == 0)
             closeRequested = 1;
-        return 1;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    case WM_QUIT:
-        exit(0);
+        return;
     }
     HandleIntroMusic(0);
-    return DefWindowProcA(hwnd, msg, wParam, lParam);
 }
 
 // FUNCTION: EVNOVA 0x004d28b0
@@ -2356,26 +2269,17 @@ void ShutdownWinGame(void)
     }
 }
 
+/* The platform layer comes up and makes the window, hidden until the display mode is set. Win95MainWindow
+   is its HWND, for what is still Win32: the GDI text, the alert box, the file dialog. */
 // FUNCTION: EVNOVA 0x004d2950
-void CreateGameWindow(void *hInstance, int32_t nCmdShow)
+void CreateGameWindow(void)
 {
-    WNDCLASSA wc;
-    int classAtom;
-    FastMemSet(&wc, 0, sizeof(wc));
-    wc.style = CS_OWNDC | CS_DBLCLKS;
-    wc.lpfnWndProc = (void *)CE_WndProc;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = "WinGameClass";
-    classAtom = RegisterClassA(&wc);
-    if (classAtom == 0)
+    if (PlatInit() != 0)
         Fatal("Can't register my game class");
-    Win95MainWindow = CreateWindowExA(WS_EX_APPWINDOW, "WinGameClass", "EV Nova",
-                                  kMainWindowStyle, 0, 0, 0x280, 0x1e0,
-                                  NULL, NULL, hInstance, NULL);
-    if (Win95MainWindow == NULL)
+    atexit(PlatQuit);
+    if (PlatVideoCreateWindow("EV Nova") != 0)
         Fatal("Can't allocate my window");
-    UpdateWindow(Win95MainWindow);
-    SetFocus(Win95MainWindow);
+    Win95MainWindow = PlatNativeWindow();
 }
 
 EXTERN_C_END

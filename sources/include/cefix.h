@@ -30,13 +30,12 @@ extern char ceIniPath[kCEMaxPath];
 extern int ceX2Hotkey;
 extern unsigned char ceRunInAWindow;
 
-int CE_Startup(char *cmdLine, int cmdShow);
+void CE_Startup(void);
 double CE_IniDouble(const char *key, const char *def);
 void CE_ReadX2Hotkey(void);
 void CE_InitializeMonitor(void);
 unsigned char CE_IsWindowed(void);
 void CE_ToggleFullscreen(void);
-int32_t __stdcall CE_WndProc(void *hwnd, uint32_t msg, uint32_t wParam, int32_t lParam);
 
 /* cescale.c */
 extern double ceScaleFactor;

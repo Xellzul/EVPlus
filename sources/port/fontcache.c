@@ -39,6 +39,12 @@ typedef struct FontMap {
 
 #define kFontMapCount 1
 #define OUT_TT_PRECIS 5
+#define NONANTIALIASED_QUALITY 3
+
+/* CE drew its text through cnc-ddraw, which changes every font the game creates by two ddraw.ini settings;
+   these are the values CE ships: */
+#define kMinFontSize            10      /* min_font_size: a smaller font is made this size */
+#define kAntiAliasedMinSize     13      /* anti_aliased_fonts_min_size: a smaller font is not smoothed */
 
 
 static FontEntry *MakeFontEntry(FontFamily *family, int size, int style);
@@ -73,6 +79,7 @@ static FontEntry *MakeFontEntry(FontFamily *family, int size, int style)
     int weight;
     int height;
     int italic;
+    int quality;
     void *hdc;
 
     useDeviceCaps = 0;
@@ -105,6 +112,11 @@ static FontEntry *MakeFontEntry(FontFamily *family, int size, int style)
     } else {
         height = -size;
     }
+    if (height > -kMinFontSize)
+        height = -kMinFontSize;
+    quality = 0;
+    if (-height < kAntiAliasedMinSize)
+        quality = NONANTIALIASED_QUALITY;
     entry = (FontEntry *)AllocAPointerClear(sizeof(FontEntry));
     entry->size = size;
     entry->style = style;
@@ -113,7 +125,7 @@ static FontEntry *MakeFontEntry(FontFamily *family, int size, int style)
     else
         italic = 0;
     entry->hfont = CreateFontA(height, 0, 0, 0, weight, italic, 0, 0, charSet,
-                               OUT_TT_PRECIS, 0, 0, pitchAndFamily, faceName);
+                               OUT_TT_PRECIS, 0, quality, pitchAndFamily, faceName);
     LinkedListAddNewEntryEnd(&family->fonts, entry);
     return entry;
 }

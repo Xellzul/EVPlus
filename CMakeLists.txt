@@ -5,10 +5,35 @@
 #
 # Needs: llvm-mingw (default /opt/llvm-mingw); sh, make and xz once, to build FFmpeg (downloaded, or
 # -DFFMPEG_TARBALL=/path offline; or pass -DFFMPEG_ROOT=/path). The FFmpeg DLLs and its licence are copied next to the exe.
+# SDL3 is built once too, as a static library (downloaded, or -DSDL3_TARBALL=/path offline; or -DSDL3_ROOT=/path).
 cmake_minimum_required(VERSION 3.20)
 project(EVNova C CXX RC)
 
 set(SRC ${CMAKE_SOURCE_DIR}/sources)
+
+# A pinned release tarball: USER_TARBALL when given, else NAME downloaded from URL into build/ (once). Either
+# is checked against SHA256. OUT gets its path; HINT is the way out named when the download fails.
+function(pinned_tarball OUT URL NAME SHA256 USER_TARBALL HINT)
+  set(tar ${USER_TARBALL})
+  if(NOT tar)
+    set(tar ${CMAKE_BINARY_DIR}/${NAME})
+    if(NOT EXISTS ${tar})
+      message(STATUS "downloading ${URL}")
+      file(DOWNLOAD ${URL} ${tar}.part EXPECTED_HASH SHA256=${SHA256} STATUS dl)
+      list(GET dl 0 rc)
+      if(rc)
+        file(REMOVE ${tar}.part)
+        message(FATAL_ERROR "${NAME} download failed (${dl}); ${HINT}")
+      endif()
+      file(RENAME ${tar}.part ${tar})
+    endif()
+  endif()
+  file(SHA256 ${tar} sum)
+  if(NOT sum STREQUAL SHA256)
+    message(FATAL_ERROR "${tar}: SHA256 ${sum}, expected ${SHA256}")
+  endif()
+  set(${OUT} ${tar} PARENT_SCOPE)
+endfunction()
 
 # -- FFmpeg
 # Built once by cmake/build-ffmpeg.sh into build/ffmpeg from the pinned release: downloaded into build/, or
@@ -22,26 +47,8 @@ if(NOT FFMPEG_ROOT)
   set(FFMPEG_ROOT ${CMAKE_BINARY_DIR}/ffmpeg)
   if(NOT EXISTS ${FFMPEG_ROOT}/lib/libavformat.dll.a)
     set(_ff_name ffmpeg-${FFMPEG_VERSION}.tar.xz)
-    set(_ff_tar ${FFMPEG_TARBALL})
-    if(NOT _ff_tar)
-      set(_ff_tar ${CMAKE_BINARY_DIR}/${_ff_name})
-      if(NOT EXISTS ${_ff_tar})
-        message(STATUS "downloading https://ffmpeg.org/releases/${_ff_name}")
-        file(DOWNLOAD https://ffmpeg.org/releases/${_ff_name} ${_ff_tar}.part
-             EXPECTED_HASH SHA256=${FFMPEG_SHA256} STATUS _ff_dl)
-        list(GET _ff_dl 0 _ff_rc)
-        if(_ff_rc)
-          file(REMOVE ${_ff_tar}.part)
-          message(FATAL_ERROR "FFmpeg download failed (${_ff_dl}); pass -DFFMPEG_TARBALL=/path/to/"
-                              "${_ff_name} or -DFFMPEG_ROOT=/path/to/ffmpeg")
-        endif()
-        file(RENAME ${_ff_tar}.part ${_ff_tar})
-      endif()
-    endif()
-    file(SHA256 ${_ff_tar} _ff_sum)
-    if(NOT _ff_sum STREQUAL FFMPEG_SHA256)
-      message(FATAL_ERROR "${_ff_tar}: SHA256 ${_ff_sum}, expected ${FFMPEG_SHA256}")
-    endif()
+    pinned_tarball(_ff_tar https://ffmpeg.org/releases/${_ff_name} ${_ff_name} ${FFMPEG_SHA256} "${FFMPEG_TARBALL}"
+                   "pass -DFFMPEG_TARBALL=/path/to/${_ff_name} or -DFFMPEG_ROOT=/path/to/ffmpeg")
     message(STATUS "building FFmpeg from ${_ff_tar} (once, a few minutes)")
     execute_process(COMMAND sh ${CMAKE_SOURCE_DIR}/cmake/build-ffmpeg.sh ${_ff_tar} ${FFMPEG_ROOT} ${LLVM_MINGW}
                     RESULT_VARIABLE rc OUTPUT_FILE ${CMAKE_BINARY_DIR}/ffmpeg-build.log
@@ -58,6 +65,58 @@ foreach(l ${FFMPEG_LIBS})
 endforeach()
 file(GLOB FFMPEG_DLLS ${FFMPEG_ROOT}/bin/*.dll)
 file(GLOB FFMPEG_LICENSE ${FFMPEG_ROOT}/share/licenses/FFmpeg-COPYING.LGPLv2.1.txt)
+
+# -- SDL3
+# Built once into build/sdl3 from the pinned release, as a static library, with this build's generator and
+# toolchain: downloaded into build/, or -DSDL3_TARBALL=/path/to/SDL3-<ver>.tar.gz (offline); either is checked
+# against the SHA256. Or take an install with -DSDL3_ROOT=/path (one that has the static library).
+set(SDL3_VERSION 3.4.20)
+set(SDL3_SHA256 f3bb06f55bed9557227a700af2ea62e49497ebdf58037732a731a5fb3ef8581f)
+set(SDL3_TARBALL "" CACHE FILEPATH "SDL3-${SDL3_VERSION}.tar.gz for offline builds (empty: download it)")
+set(SDL3_ROOT "" CACHE PATH "SDL3 install (empty: build SDL ${SDL3_VERSION} from its release tarball)")
+if(NOT SDL3_ROOT)
+  set(SDL3_ROOT ${CMAKE_BINARY_DIR}/sdl3)
+  if(NOT EXISTS ${SDL3_ROOT}/lib/cmake/SDL3/SDL3Config.cmake)
+    set(_sdl_name SDL3-${SDL3_VERSION}.tar.gz)
+    pinned_tarball(_sdl_tar
+                   https://github.com/libsdl-org/SDL/releases/download/release-${SDL3_VERSION}/${_sdl_name}
+                   ${_sdl_name} ${SDL3_SHA256} "${SDL3_TARBALL}"
+                   "pass -DSDL3_TARBALL=/path/to/${_sdl_name} or -DSDL3_ROOT=/path/to/sdl3")
+    message(STATUS "building SDL from ${_sdl_tar} (once, a minute or two)")
+    set(_sdl_work ${SDL3_ROOT}.work)
+    set(_sdl_log ${CMAKE_BINARY_DIR}/sdl3-build.log)
+    file(REMOVE_RECURSE ${_sdl_work})
+    file(ARCHIVE_EXTRACT INPUT ${_sdl_tar} DESTINATION ${_sdl_work})
+    file(WRITE ${_sdl_log} "")
+    macro(_sdl_run)
+      execute_process(COMMAND ${CMAKE_COMMAND} ${ARGN} RESULT_VARIABLE _sdl_rc
+                      OUTPUT_VARIABLE _sdl_out ERROR_VARIABLE _sdl_out)
+      file(APPEND ${_sdl_log} "${_sdl_out}")
+      if(_sdl_rc)
+        message(FATAL_ERROR "SDL build failed, see ${_sdl_log}")
+      endif()
+    endmacro()
+    set(_sdl_args -G ${CMAKE_GENERATOR} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${SDL3_ROOT}
+        -DCMAKE_INSTALL_LIBDIR=lib -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF -DSDL_TESTS=OFF
+        -DSDL_EXAMPLES=OFF -DSDL_INSTALL_DOCS=OFF)
+    if(CMAKE_TOOLCHAIN_FILE)
+      # a relative toolchain path is taken from the build directory, then from the source directory, as CMake does
+      get_filename_component(_sdl_tc ${CMAKE_TOOLCHAIN_FILE} ABSOLUTE BASE_DIR ${CMAKE_BINARY_DIR})
+      if(NOT EXISTS ${_sdl_tc})
+        get_filename_component(_sdl_tc ${CMAKE_TOOLCHAIN_FILE} ABSOLUTE BASE_DIR ${CMAKE_SOURCE_DIR})
+      endif()
+      list(APPEND _sdl_args -DCMAKE_TOOLCHAIN_FILE=${_sdl_tc})
+    endif()
+    if(LLVM_MINGW)
+      list(APPEND _sdl_args -DLLVM_MINGW=${LLVM_MINGW})
+    endif()
+    _sdl_run(-S ${_sdl_work}/SDL3-${SDL3_VERSION} -B ${_sdl_work}/build ${_sdl_args})
+    _sdl_run(--build ${_sdl_work}/build)
+    _sdl_run(--install ${_sdl_work}/build)
+    file(REMOVE_RECURSE ${_sdl_work})
+  endif()
+endif()
+find_package(SDL3 REQUIRED CONFIG COMPONENTS SDL3-static PATHS ${SDL3_ROOT} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 
 # -- the sources, C or C++ by each file's `// COMPILE: -lang c++` marker ----------------------------
 file(GLOB_RECURSE ALL_C CONFIGURE_DEPENDS ${SRC}/*.c)
@@ -84,8 +143,10 @@ target_compile_options(evnova_ce PRIVATE ${EVNOVA_FLAGS})
 # the only file that sees FFmpeg's headers: their structs must keep FFmpeg's enum sizes
 target_include_directories(evnova_ce PRIVATE ${FFMPEG_ROOT}/include)
 set_source_files_properties(${SRC}/media/media.c PROPERTIES COMPILE_OPTIONS -fno-short-enums)
+# the same for SDL's headers: only the platform layer sees them
+set_source_files_properties(${SRC}/platform/platform_sdl.c PROPERTIES COMPILE_OPTIONS -fno-short-enums)
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "EV Nova CE" LINKER_LANGUAGE CXX)
-target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} ${WIN_LIBS} gdiplus)
+target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${WIN_LIBS} gdiplus)
 target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map"
   # CE's 2 GB memory pool needs the large-address-aware bit
   -Wl,--large-address-aware)

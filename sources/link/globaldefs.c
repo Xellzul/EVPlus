@@ -5,7 +5,6 @@
 #include "resources.h"
 #include "burger.h"
 #include "burgerchan.h"
-#include "burgerddraw.h"
 #include "crashlog.h"
 #include "render.h"
 #include "ships.h"

@@ -263,7 +263,6 @@ extern void GetResInfo(Handle h, short *id, uint32_t *type,
 
 extern unsigned long long TimerGetMicroseconds(void);
 extern void LockVideoPage(void);
-extern void UnlockVideoPage(void);
 extern void ST_HaltSound(void *sound);
 extern void PlatformClose(void);
 extern void ST_Close(void);
@@ -278,19 +277,6 @@ extern void OSCursorHide(void);
 extern void OSCursorReset(void);
 extern unsigned char OSCursorVisibleFlag;        /* burgermisc2.c */
 extern void ReleaseVideo(void);
-/* a display gamma ramp, each entry 0.0 (black) to 1.0 (full) */
-typedef struct GammaTable_t {
-    float Red[256];
-    float Green[256];
-    float Blue[256];
-} GammaTable_t;
-extern void VideoOSGammaInit(void);
-extern void VideoOSGammaDestroy(void);
-extern void VideoOSGammaSet(const GammaTable_t *);
-extern void VideoOSGammaGet(GammaTable_t *);
-extern void Video555To565(void);
-extern void DrawShapeLowLevel(Word x, Word y, Word width, Word height, Word skip,
-                              void *shape);
 extern Word32 LastTick;
 extern Word32 ReadTick(void);
 extern void WaitTicks(Word tickCount);
@@ -383,32 +369,23 @@ extern void *Win95MainWindow;
 extern char **__argv;                            /* MSL setupargs.obj */
 extern Word Win95ApplsActive;                    /* burgeronce.c */
 extern short Win95DirectSoundVolumes[256];       /* burgeronce.c */
-extern unsigned char Win95UseBackBuffer;         /* burgergraphics.c */
 extern char *VideoOffscreen;
-extern int32_t VideoPageLocked;
-extern unsigned char CurrentPalette[0x300];
-extern void *BurgerHPalette;
-extern void *BurgerHBitMap;
 
 /* the engine's names for BurgerLib's display globals, as the mac build spells them */
 #define videoBase VideoPointer
 #define gVideoWidth ScreenWidth
 #define gVideoHeight ScreenHeight
-#define gGamePalette CurrentPalette
 
 /* input globals (burgerinput.c) */
 extern int32_t Win95MouseX;
 extern int32_t Win95MouseY;
 extern Word JoystickPresent;                     /* globaldefs.c */
 extern Word32 Win95MouseButton;                  /* burgerkbwin.c */
-extern int32_t VideoFullScreen;                     /* burgervideomode.c */
 /* the hyperspace white-out (port addition, burgervideomode.c): blend from..to of 256 over 60 Hz ticks */
 #define kWhiteNone          0
 #define kWhiteSolid         256
 #define kWhiteFadeTicks     90                      /* 1.1.1's CGDisplayFade duration, 1.5 s */
 extern void VideoFadeWhite(Word from, Word to, uint32_t ticks);
-extern int32_t Win95DestScreenX;                    /* burgervideomode.c */
-extern int32_t Win95DestScreenY;                    /* burgervideomode.c */
 
 /* sound globals (burgersndwin.c) */
 struct DSound;
@@ -435,7 +412,6 @@ extern void *LoadAFileFP(FILE *fp, uint32_t *length);
 extern ULong fgetfilesize(FILE *fp);     /* BurgerLib fgetfilesize */
 extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib CreateDirectoryPathNative */
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
-extern void MouseSetRange(int32_t width, int32_t height);   /* BurgerLib MouseSetRange */
 extern unsigned char IndirectSetLock(void **handle, unsigned char lock);
 extern ULong IndirectGetSize(void **handle);
 extern int32_t IndirectSetSize(void **handle, ULong size);

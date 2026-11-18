@@ -3,13 +3,11 @@
 
 #include "burgertypes.h"
 #include "burger.h"
-#include "win32.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-Word OSCursorLastCursor;                         /* 0x00870dc8 */
 
 /* OSCursorShow (BurgerLib OCWin95Code). */
 // FUNCTION: EVNOVA 0x004f1a20
@@ -17,8 +15,7 @@ void OSCursorShow(void)
 {
     if (OSCursorVisibleFlag == 0) {
         OSCursorVisibleFlag = 1;
-        while (ShowCursor(1) < 0)
-            ;
+        PlatCursorShow(1);
     }
 }
 
@@ -28,8 +25,7 @@ void OSCursorHide(void)
 {
     if (OSCursorVisibleFlag != 0) {
         OSCursorVisibleFlag = 0;
-        while (ShowCursor(0) >= 0)
-            ;
+        PlatCursorShow(0);
     }
 }
 
@@ -37,18 +33,9 @@ void OSCursorHide(void)
 // FUNCTION: EVNOVA 0x004f1a80
 void OSCursorReset(void)
 {
-    void *cursor;
-
-    if (OSCursorLastCursor != IDC_ARROW) {
-        cursor = LoadCursorA(Burger::Win32::m_pInstance,(const char *)IDC_ARROW);
-        if (cursor != 0 || (cursor = LoadCursorA(0, (const char *)IDC_ARROW)) != 0) {
-            OSCursorLastCursor = IDC_ARROW;
-            SetCursor(cursor);
-        }
-    }
+    PlatCursorArrow();
     OSCursorVisibleFlag = 1;
-    while (ShowCursor(1) < 0)
-        ;
+    PlatCursorShow(1);
 }
 
 #ifdef __cplusplus

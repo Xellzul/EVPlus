@@ -9,6 +9,7 @@
 #include "burgermath.h"
 #include "burger.h"
 #include "win32.h"
+#include "platform.h"
 #include "shipobj.h"
 #include "resources.h"
 #include "gameconst.h"
@@ -771,7 +772,7 @@ void PlayGame(void)
                 missionSoundID = -1;
                 if (ST_IsSoundPlaying(warpUpSnd[1]) != 0) {
                     doubleTime = 1;
-                } else if (GetKeyState(ceX2Hotkey) & 1) {
+                } else if (PlatKeyToggled(ceX2Hotkey)) {
                     if (abs(AngularDifference(shipData[0].heading,
                                 shipData[0].desiredHeading)) <= 10
                             && ST_IsSoundPlaying(warpUpSnd[0]) != 0) {

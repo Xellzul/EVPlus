@@ -1,18 +1,14 @@
 // COMPILE: -lang c++ -bool off
-/* burgermouse.c -- BurgerLib InMouseWin95: mouse presence, buttons, position, and the cursor clip. Notes: Research/notes/burgermouse.md */
-
-#include <stdlib.h>
+/* burgermouse.c -- BurgerLib InMouseWin95: mouse presence, buttons and position. Notes: Research/notes/burgermouse.md */
 
 #include "burgertypes.h"
 #include "burger.h"
-#include "win32.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 Word MousePresent;                               /* 0x008701b8 */
-static unsigned char Once;                       /* 0x00865ab0, clip hook registered */
 
 /* MouseInit (BurgerLib InMouseWin95). */
 // FUNCTION: EVNOVA 0x004d7af0
@@ -57,43 +53,6 @@ void MouseReadPosition(int32_t *h, int32_t *v)
         if (p >= (int32_t)ScreenHeight)
             p = ScreenHeight - 1;
         *v = p;
-    }
-}
-
-/* KillClipping (BurgerLib KillClipping). */
-// FUNCTION: EVNOVA 0x004d7b80
-void KillClipping(void)
-{
-    ClipCursor(0);
-}
-
-/* MouseSetRange (BurgerLib MouseSetRange). */
-// FUNCTION: EVNOVA 0x004d7ba0
-void MouseSetRange(int32_t width, int32_t height)
-{
-    WinRect bounds;
-    POINT origin;
-
-    if (Once == 0) {
-        Once = 1;
-        atexit(KillClipping);
-    }
-    if (VideoFullScreen == 0) {
-        origin.x = 0;
-        origin.y = 0;
-        if (Win95MainWindow != 0)
-            ClientToScreen(Win95MainWindow, &origin);
-        Win95DestScreenX = origin.x;
-        Win95DestScreenY = origin.y;
-        ClipCursor(0);
-    } else {
-        bounds.right = width;
-        bounds.bottom = height;
-        Win95DestScreenX = 0;
-        bounds.left = 0;
-        bounds.top = 0;
-        Win95DestScreenY = 0;
-        ClipCursor(&bounds);
     }
 }
 

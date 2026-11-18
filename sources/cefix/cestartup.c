@@ -1,5 +1,5 @@
-/* cestartup.c -- EV Nova CE: startup, ddraw.ini, video mode, cnc-ddraw windowing, x2 key,
-   window procedure. Notes: Research/cefix-plan.md */
+/* cestartup.c -- EV Nova CE: startup, ddraw.ini, video mode, windowing, x2 key. CE left the window to
+   cnc-ddraw (its ddraw.dll); the platform layer has it now. Notes: Research/cefix-plan.md */
 
 #include <stdlib.h>
 #include <string.h>
@@ -8,26 +8,18 @@
 #include "burger.h"
 #include "player.h"
 #include "cefix.h"
+#include "platform.h"
 
 #define kIniFileName        "ddraw.ini"
 #define kDefaultX2Hotkey    "0x14"              /* VK_CAPITAL */
 #define kVideoDepth         15
-#define kVideoFullScreen    0x01                /* cnc-ddraw decides the real mode */
+#define kVideoFullScreen    0x01                /* borderless, at the desktop's mode */
 #define kVideoAlways        0x02
-#define kSMCXScreen         0
-#define kSMCYScreen         1
-#define kWMSetCursor        0x0020
-#define kWMToggleFullscreen (0x8000 + 117)      /* WM_APP + 117, cnc-ddraw */
-#define kCncSetFullscreen   1
-#define kCncSetWindowed     2
-#define kHTClient           1
-#define kIDCArrow           ((const char *)32512)
 #define kRegOptionNonVolatile 0
 #define kKeyWrite           0x20006
 #define kRegSZ              1
 #define kSHCNEAssocChanged  0x08000000
 #define kSHCNFIDList        0
-#define kWineOverride       "native, builtin"
 #define kGameIconGroup      202
 #define kNplayIconGroup     203                 /* CE's .nplay icon */
 #define kRTGroupIcon        ((const char *)14)  /* RT_GROUP_ICON */
@@ -36,8 +28,6 @@ __declspec(dllimport) unsigned int __stdcall GetPrivateProfileIntA(const char *a
     const char *key, int def, const char *file);
 __declspec(dllimport) uint32_t __stdcall GetPrivateProfileStringA(const char *app,
     const char *key, const char *def, char *out, uint32_t size, const char *file);
-__declspec(dllimport) int __stdcall PostMessageA(void *hwnd, unsigned int msg,
-    unsigned int wParam, int32_t lParam);
 __declspec(dllimport) void __stdcall SHChangeNotify(int32_t eventId, unsigned int flags,
     const void *item1, const void *item2);
 
@@ -58,52 +48,17 @@ static void SetRegValue(const char *key, const char *value)
     RegCloseKey(hkey);
 }
 
-/* Under Wine, ddraw.dll next to the exe is used only once a dll override names it;
-   a newly added override needs a restart. */
-static int AddWineDllOverride(const char *exePath)
-{
-    char key[kCEMaxPath + 64];
-    const char *exeName;
-    void *hkey;
-    int added;
-
-    if (GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version") == NULL)
-        return 0;
-    exeName = strrchr(exePath, '\\');
-    exeName = exeName != NULL ? exeName + 1 : exePath;
-    sprintf(key, "SOFTWARE\\Wine\\AppDefaults\\%s\\DllOverrides", exeName);
-    if (RegCreateKeyExA(HKEY_CURRENT_USER, key, 0, NULL, kRegOptionNonVolatile,
-                        kKeyWrite | KEY_READ, NULL, &hkey, NULL) != 0)
-        return 0;
-    added = 0;
-    if (RegQueryValueExA(hkey, "ddraw", NULL, NULL, NULL, NULL) != 0
-        && RegSetValueExA(hkey, "ddraw", 0, kRegSZ, (const unsigned char *)kWineOverride,
-                          sizeof(kWineOverride)) == 0
-        && RegQueryValueExA(hkey, "ddraw", NULL, NULL, NULL, NULL) == 0)
-        added = 1;
-    RegCloseKey(hkey);
-    return added;
-}
-
 /* CE's entry wrapper and its MSL-entry hook, run as WinMain's first statement: the
    ddraw.ini path, the App Paths key and the .nplay association, then the first argument
-   becomes the current directory. Returns nonzero when the game must quit because a
-   restarted copy was launched instead. */
-int CE_Startup(char *cmdLine, int cmdShow)
+   becomes the current directory. */
+void CE_Startup(void)
 {
     char exePath[kCEMaxPath];
     char command[kCEMaxPath + 16];
     char *slash;
     int icon;
 
-    /* CE imports ddraw.dll: cnc-ddraw's DllMain sets DPI awareness before the window exists,
-       and this reference keeps it loaded through ReleaseVideo's FreeLibrary. */
-    LoadLibraryA("ddraw.dll");
     GetModuleFileNameA(NULL, exePath, sizeof(exePath));
-    if (AddWineDllOverride(exePath)) {
-        ShellExecuteA(NULL, "open", exePath, cmdLine, NULL, cmdShow);
-        return 1;
-    }
 
     strcpy(ceIniPath, exePath);
     slash = strrchr(ceIniPath, '\\');
@@ -124,7 +79,6 @@ int CE_Startup(char *cmdLine, int cmdShow)
     /* like CE: a .nplay FILE as the argument fails here and changes nothing */
     if (__argc > 1)
         SetCurrentDirectoryA(__argv[1]);
-    return 0;
 }
 
 void CE_ReadX2Hotkey(void)
@@ -149,42 +103,26 @@ void CE_InitializeMonitor(void)
 {
     int32_t width;
     int32_t height;
+    int desktopWidth;
+    int desktopHeight;
 
     width = GetPrivateProfileIntA(kCEIniSection, "game_width", 0, ceIniPath);
     height = GetPrivateProfileIntA(kCEIniSection, "game_height", 0, ceIniPath);
+    PlatDesktopSize(&desktopWidth, &desktopHeight);
     if (width == 0)
-        width = GetSystemMetrics(kSMCXScreen);
+        width = desktopWidth;
     if (height == 0)
-        height = GetSystemMetrics(kSMCYScreen);
+        height = desktopHeight;
     SetDisplayToSize(width, height, kVideoDepth, kVideoFullScreen | kVideoAlways);
 }
 
-/* The windowed checkbox shows cnc-ddraw's state. Without cnc-ddraw the system ddraw.dll
-   has no DDIsWindowed, and the checkbox falls back to the game's own pref. */
+/* The windowed checkbox shows the window's state as it is, also after Alt+Enter. */
 unsigned char CE_IsWindowed(void)
 {
-    void *ddraw;
-    int32_t (__stdcall *isWindowed)(void);
-
-    isWindowed = NULL;
-    ddraw = GetModuleHandleA("ddraw.dll");
-    if (ddraw != NULL)
-        isWindowed = (int32_t (__stdcall *)(void))GetProcAddress(ddraw, "DDIsWindowed");
-    if (isWindowed == NULL)
-        return settings.windowedPending;
-    return isWindowed() != 0;
+    return PlatVideoIsFullScreen() == 0;
 }
 
 void CE_ToggleFullscreen(void)
 {
-    PostMessageA(Win95MainWindow, kWMToggleFullscreen,
-                 ceRunInAWindow ? kCncSetWindowed : kCncSetFullscreen, 0);
-}
-
-/* After a resize over the client area the cursor is the game's again, not an hourglass. */
-int32_t __stdcall CE_WndProc(void *hwnd, uint32_t msg, uint32_t wParam, int32_t lParam)
-{
-    if (msg == kWMSetCursor && (lParam & 0xffff) == kHTClient)
-        SetCursor(LoadCursorA(NULL, kIDCArrow));
-    return WinGameWndProc(hwnd, msg, wParam, lParam);
+    PlatVideoSetFullScreen(ceRunInAWindow == 0);
 }

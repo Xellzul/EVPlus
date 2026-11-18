@@ -648,8 +648,8 @@ extern void EditTextKey(ControlRecord *rec, int32_t key, int32_t mods);
 void DrawBevel(Rect *r, const RGBColor *fill, const RGBColor *light, const RGBColor *dark);
 extern void LUpdate(void *list);
 #define ListUpdate(rgn, list) LUpdate(list)
-extern int32_t __stdcall WinGameWndProc(void *hwnd, uint32_t msg,
-                         uint32_t wParam, int32_t lParam);
+struct PlatEvent;
+extern void WinGameEvent(const struct PlatEvent *ev);
 extern void ShutdownWinGame(void);
 extern void FillRectWithColor(Rect *r, RGBColor *color);
 extern short FindFirstCoLocatedSystem(short sys);
@@ -695,7 +695,6 @@ extern void OpenDataFiles(void);
 extern void OpenPrefs(void);
 extern void PStr2CStr(char *dst, const unsigned char *src);
 extern void PaintOval(Rect *r);
-extern void PaletteSetPtr(unsigned int start, unsigned int count, const unsigned char *pal);
 extern void PenSize(short width, short height);
 extern void CloseMovieFile(short resRefNum);
 extern int PtInRect(int h, int v, Rect *r);
@@ -853,7 +852,7 @@ extern void SetDialogVisible(DialogPtr dlg, unsigned char value);
 extern void SizeDialogWindow(DialogPtr dlg, short width, short height,
                          Boolean update);
 extern void OffsetDialogWindow(DialogPtr dlg, short dh, short dv, Boolean update);
-extern void CreateGameWindow(void *hInstance, int32_t nCmdShow);
+extern void CreateGameWindow(void);
 extern CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title);
 extern int32_t GetControlValue(ControlPtr ctl);
 extern void InvalDialogRect(DialogPtr dlg, Rect *box);

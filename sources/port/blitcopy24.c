@@ -382,12 +382,6 @@ unsigned char gGammaRamp[32];
 CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
 {
     memset(&gGamePort, 0, sizeof(gGamePort));
-    if (Win95MainWindow != NULL) {
-        MoveWindow(Win95MainWindow, bounds->left, bounds->top,
-                   bounds->right - bounds->left, bounds->bottom - bounds->top, 1);
-        UpdateWindow(Win95MainWindow);
-        SetFocus(Win95MainWindow);
-    }
     LockVideoPage();
     gGamePort.pnSize.v = 1;
     gGamePort.pnSize.h = gGamePort.pnSize.v;
