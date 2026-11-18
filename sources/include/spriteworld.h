@@ -422,23 +422,13 @@ extern void SWCheckIdleSpriteOverlap(SpriteWorldRec *spriteWorldP,
                                      SpritePtr idleSpriteP,
                                      SpritePtr headActiveSpriteP); /* 0x00478bb0 */
 
-#ifdef MACBUILD
-/* the mac 1.1.1 SpriteWorld's functions the win port never had */
-extern short SWCreateRegionMaskFromGWorld(CGrafPtr gWorld, Rect *rectP, RgnHandle maskRgn);
-extern void SWSetTransparentColor(RGBColor *color);
+/* the mac SpriteWorld's transparent colour (white) and 16-bit alpha-free colour mask,
+   used by SWCreatePixelMaskFromGWorld */
 extern RGBColor gSWTransparentColor;
-extern Rect *GetCPortPortRect(CGrafPtr port);
-extern short SWCreateMaskAndFixImage(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP);
-extern void SWCopyGWorlds(CGrafPtr srcGWorldP, CGrafPtr dstGWorldP);
-extern void SWFlipPixelsHorizontally(CGrafPtr dstGWorldP, Rect *rectP);
-extern void SWFlipPixelsVertically(CGrafPtr dstGWorldP, Rect *rectP);
-extern short SWBlackenGWorld(CGrafPtr oldGWorld);
-extern short SWWhitenGWorld(CGrafPtr oldGWorld);
-extern short SWFastWhitenGWorld(CGrafPtr pictureGWorld);
-
-/* the masking blitters' alpha-free colour masks */
 #define kAlphaMask16    0x7FFF
-#define kAlphaMask32    0x00FFFFFFL
+
+#ifdef MACBUILD
+extern Rect *GetCPortPortRect(CGrafPtr port);
 
 /* SpriteWorld's error codes the win port never names */
 #define kMaxFramesErr               101

@@ -9,6 +9,7 @@
 
 unsigned short SWMaskedRGBValue;
 unsigned short SWTransparentRGBValue;
+RGBColor gSWTransparentColor = {0xFFFF, 0xFFFF, 0xFFFF};  /* white: SWCreatePixelMaskFromGWorld */
 short gSWStickyError;
 
 
