@@ -623,7 +623,6 @@ extern Boolean Button(void);
 extern void ClosePrefs(void);
 EXTERN_CPP_BEGIN
 extern Rect screenMinusDockRect;
-extern int32_t paintBlackFlag;
 EXTERN_CPP_END
 extern void BusyIdle(void);
 extern void Delay(uint32_t numTicks, uint32_t *finalTicks);

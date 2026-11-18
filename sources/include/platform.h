@@ -22,10 +22,11 @@ extern void PlatQuit(void);
 extern int PlatVideoCreateWindow(const char *title);      /* hidden until PlatVideoOpen; 0 = made */
 extern int PlatVideoOpen(int width, int height, int fullScreen);   /* the frame's size; 0 = open */
 extern void PlatVideoClose(void);                          /* drops the frame, keeps the window */
-extern void *PlatVideoLock(int *pitch);                    /* the frame's pixels to fill, NULL = no frame */
-/* The frame is complete. It is shown at once, or -- when the last one was shown less than a display refresh
-   ago -- by the next present or event poll after that time; a newer frame replaces one still waiting. */
-extern void PlatVideoPresent(void);
+/* A complete frame: the size given to PlatVideoOpen, pitch bytes a row. It is shown at once, or -- when the
+   last one was shown too short a time ago for a display to tell them apart -- copied, and shown by the next
+   present or event poll after that time; a newer frame replaces one still waiting. The pixels must stay
+   readable until the next PlatVideoPresent or PlatVideoClose. */
+extern void PlatVideoPresent(const void *pixels, int pitch);
 extern void PlatVideoSetFullScreen(int on);
 extern int PlatVideoIsFullScreen(void);
 extern void PlatDesktopSize(int *width, int *height);      /* the main display, in pixels */
@@ -38,10 +39,12 @@ extern void *PlatNativeWindow(void);
 #define PLAT_EV_KEY_UP      2       /* scan, key */
 #define PLAT_EV_CHAR        3       /* ch, scan (the key that typed it) */
 #define PLAT_EV_MOUSE_MOVE  4       /* x, y */
-#define PLAT_EV_MOUSE_DOWN  5       /* button, x, y */
-#define PLAT_EV_MOUSE_UP    6       /* button, x, y */
+#define PLAT_EV_MOUSE_DOWN  5       /* button (where: the last PLAT_EV_MOUSE_MOVE) */
+#define PLAT_EV_MOUSE_UP    6       /* button */
 #define PLAT_EV_MOUSE_WHEEL 7       /* wheel */
-#define PLAT_EV_ACTIVATE    8       /* on: the window gained (1) or lost (0) the keyboard */
+/* on: the window gained (1) or lost (0) the keyboard. On Windows a loss to another window of this program
+   (a Win32 dialog the game opened) is not reported, nor the gain after it. */
+#define PLAT_EV_ACTIVATE    8
 #define PLAT_EV_MINIMIZED   9
 #define PLAT_EV_CLOSE       10      /* the user asked to close the window or quit */
 
@@ -80,7 +83,7 @@ typedef struct PlatEvent {
     /* a typed character as a Unicode code point. Also 8, 9, 13 and 27 for Backspace, Tab, Enter and
        Escape, and 1..26 for Ctrl+A..Z */
     int ch;
-    int x, y;                       /* the mouse in frame pixels; outside 0..size-1 when over the bars */
+    int x, y;                       /* mouse move: in frame pixels; outside 0..size-1 when over the bars */
     int button;                     /* PLAT_BUTTON_* */
     int wheel;                      /* 120 a notch, positive away from the user */
     int on;

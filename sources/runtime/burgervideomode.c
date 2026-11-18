@@ -1,8 +1,6 @@
 // COMPILE: -lang c++ -bool off
 /* burgervideomode.c -- BurgerLib GrWin95Code on the platform layer (platform.h): the display mode, the page lock and flip, the release, the filled rectangle. The game draws a 5-5-5 offscreen page and the flip hands it to the platform's frame; DirectDraw's surfaces, palette and gamma ramp are gone. Notes: Research/notes/burgervideomode.md */
 
-#include <string.h>
-
 #include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
@@ -17,6 +15,7 @@ Word ScreenClipLeft;                             /* 0x00870d8c */
 Word ScreenClipTop;                              /* 0x0087091c */
 char *VideoPointer;                              /* 0x00870114 */
 char *VideoOffscreen;                            /* 0x00870dbc the page the game draws */
+static unsigned short *WhitePage;                /* the page blended toward white, while a white-out runs */
 int32_t VideoHardWidth;                             /* 0x00870de8 its bytes per row */
 Word VideoColorDepth;
 
@@ -34,9 +33,9 @@ void LockVideoPage(void)
 }
 
 /* Port addition (not in the exe): 1.1.1's hyperspace white-out. 1.1.1 has CGDisplayFade blend the whole
-   display to and from solid white over 1.5 s while the game runs on; here the frame is blended toward
-   white as the offscreen is copied into it, by the fade's position at that moment. The offscreen the game
-   draws into is untouched. */
+   display to and from solid white over 1.5 s while the game runs on; here a copy of the offscreen blended
+   toward white is shown in its place, by the fade's position at that moment. The offscreen the game draws
+   into is untouched. */
 static Word whiteFrom;
 static Word whiteTo;
 static Word32 whiteStart;
@@ -60,9 +59,9 @@ static Word CurrentWhite(void)
     return whiteFrom + ((int32_t)whiteTo - (int32_t)whiteFrom) * (int32_t)elapsed / (int32_t)whiteTicks;
 }
 
-/* the offscreen into the platform's frame, blended toward white by a of 256, linear in each channel as
-   CGDisplayFade's kCGDisplayBlendSolidColor mix */
-static void CopyPageToFrame(void *frame, int pitch, Word a)
+/* the offscreen into WhitePage, blended toward white by a of 256, linear in each channel as CGDisplayFade's
+   kCGDisplayBlendSolidColor mix */
+static void BlendPageToWhite(Word a)
 {
     unsigned short lut5[32];
     const unsigned short *src;
@@ -72,16 +71,11 @@ static void CopyPageToFrame(void *frame, int pitch, Word a)
     ULong y;
     Word i;
 
-    if (a == kWhiteNone) {
-        for (y = 0; y < ScreenHeight; y++)
-            memcpy((char *)frame + y * pitch, VideoOffscreen + y * VideoHardWidth, VideoHardWidth);
-        return;
-    }
     for (i = 0; i < 32; i++)
         lut5[i] = i + (((31 - i) * a + 128) >> 8);
     for (y = 0; y < ScreenHeight; y++) {
         src = (const unsigned short *)(VideoOffscreen + y * VideoHardWidth);
-        dst = (unsigned short *)((char *)frame + y * pitch);
+        dst = (unsigned short *)((char *)WhitePage + y * VideoHardWidth);
         for (x = 0; x < ScreenWidth; x++) {
             p = src[x];
             dst[x] = lut5[(p >> 10) & 31] << 10 | lut5[(p >> 5) & 31] << 5 | lut5[p & 31];
@@ -93,18 +87,19 @@ static void CopyPageToFrame(void *frame, int pitch, Word a)
 // FUNCTION: EVNOVA 0x004ec960
 void UpdateAndPageFlip(void)
 {
-    void *frame;
-    int pitch;
+    Word white;
 
     if (VideoOffscreen == 0)
         return;
-    frame = PlatVideoLock(&pitch);
-    if (frame == 0) {
-        NonFatal("Can't lock the buffer bits!\n");
-        return;
+    white = CurrentWhite();
+    if (white != kWhiteNone && WhitePage == 0)
+        WhitePage = (unsigned short *)AllocAPointer(VideoHardWidth * ScreenHeight);
+    if (white != kWhiteNone && WhitePage != 0) {
+        BlendPageToWhite(white);
+        PlatVideoPresent(WhitePage, VideoHardWidth);
+    } else {
+        PlatVideoPresent(VideoOffscreen, VideoHardWidth);
     }
-    CopyPageToFrame(frame, pitch, CurrentWhite());
-    PlatVideoPresent();
 }
 
 /* ReleaseVideo (BurgerLib GrWin95Code). */
@@ -112,6 +107,10 @@ void UpdateAndPageFlip(void)
 void ReleaseVideo(void)
 {
     PlatVideoClose();
+    if (WhitePage != 0) {
+        DeallocAPointer(WhitePage);
+        WhitePage = 0;
+    }
     if (VideoOffscreen != 0) {
         DeallocAPointer(VideoOffscreen);
         VideoOffscreen = 0;

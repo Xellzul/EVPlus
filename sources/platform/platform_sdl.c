@@ -4,14 +4,21 @@
 #define SDL_MAIN_HANDLED                /* the game has its own entry point (port/winmain.c) */
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#ifdef SDL_PLATFORM_WIN32
+#include <windows.h>                    /* FocusStaysInProgram */
+#endif
 #include "platform.h"
 
 #define kScanCount      256             /* SDL's keyboard scan codes all lie below this */
 #define kExtended       0x80            /* PlatEvent.scan: an E0-prefixed key */
 #define kQueueSize      64              /* events waiting, a power of 2 */
+#define kFocusNotes     16              /* focus losses waiting in SDL's queue, a power of 2 */
 #define kWheelNotch     120
 #define kBytesPerPixel  2
 #define kDefaultRefresh 60              /* Hz, when the display does not tell */
+/* two frames are never held apart longer than this, whatever the display: the game's own frames in flight
+   come 21 ms apart and must each be shown as they come */
+#define kMaxShowInterval (10 * SDL_NS_PER_MS)
 /* a window that is not full screen opens at the frame's size, or at this share of the display when the frame is larger */
 #define kWindowShareNum 9
 #define kWindowShareDen 10
@@ -21,13 +28,13 @@ static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static int gFrameWidth;
 static int gFrameHeight;
-static unsigned char *gFrame;           /* the game's latest frame, gFrameWidth * kBytesPerPixel bytes a row */
-static bool gFramePresented;            /* the game has presented a frame */
-static bool gFrameFresh;                /* ... that the texture does not have yet */
+static unsigned char *gFrame;           /* a frame waiting to be shown, gFrameWidth * kBytesPerPixel bytes a row */
+static bool gFrameFresh;                /* gFrame holds one */
 static bool gFrameDrawn;                /* the texture has a frame to show */
+static const void *gGamePixels;         /* the game's last frame, where the game keeps it, */
+static int gGamePitch;                  /* and its bytes a row */
 static Uint64 gShowInterval;            /* ns between the starts of two shows */
-static Uint64 gShowStart;               /* the last show: when it began, */
-static Uint64 gShowEnd;                 /* when it was done */
+static Uint64 gShowStart;               /* when the last show began */
 
 static PlatEvent gQueue[kQueueSize];
 static unsigned gQueueHead;
@@ -36,6 +43,11 @@ static int gLastScan;                   /* the last key pressed: the key a typed
 static int gButtons;                    /* PLAT_BUTTON_* held */
 static SDL_Scancode gSwallowedKey;      /* its release is not reported: the Enter of Alt+Enter */
 static unsigned char gToggled[kScanCount];
+static bool gActive;                    /* the game was last told the window has the keyboard */
+/* for each focus loss still in SDL's queue, in order: it went to another window of this program */
+static bool gFocusNote[kFocusNotes];
+static unsigned gFocusNoteHead;
+static unsigned gFocusNoteTail;
 
 /* SDL scan code (USB usage) to PC set 1 scan code, | kExtended for the E0 keys. Pause and Num Lock as
    Windows reports them: Pause 45, Num Lock E0 45. */
@@ -77,7 +89,14 @@ static const unsigned char kPCScan[kScanCount] = {
     [SDL_SCANCODE_LCTRL] = 0x1d, [SDL_SCANCODE_LSHIFT] = 0x2a, [SDL_SCANCODE_LALT] = 0x38,
     [SDL_SCANCODE_LGUI] = 0x5b | kExtended, [SDL_SCANCODE_RCTRL] = 0x1d | kExtended,
     [SDL_SCANCODE_RSHIFT] = 0x36, [SDL_SCANCODE_RALT] = 0x38 | kExtended,
-    [SDL_SCANCODE_RGUI] = 0x5c | kExtended
+    [SDL_SCANCODE_RGUI] = 0x5c | kExtended,
+    [SDL_SCANCODE_KP_EQUALS] = 0x59, [SDL_SCANCODE_KP_COMMA] = 0x7e,
+    [SDL_SCANCODE_F13] = 0x64, [SDL_SCANCODE_F14] = 0x65, [SDL_SCANCODE_F15] = 0x66, [SDL_SCANCODE_F16] = 0x67,
+    [SDL_SCANCODE_F17] = 0x68, [SDL_SCANCODE_F18] = 0x69, [SDL_SCANCODE_F19] = 0x6a, [SDL_SCANCODE_F20] = 0x6b,
+    [SDL_SCANCODE_F21] = 0x6c, [SDL_SCANCODE_F22] = 0x6d, [SDL_SCANCODE_F23] = 0x6e, [SDL_SCANCODE_F24] = 0x76,
+    [SDL_SCANCODE_INTERNATIONAL1] = 0x73, [SDL_SCANCODE_INTERNATIONAL2] = 0x70,
+    [SDL_SCANCODE_INTERNATIONAL3] = 0x7d, [SDL_SCANCODE_INTERNATIONAL4] = 0x79,
+    [SDL_SCANCODE_INTERNATIONAL5] = 0x7b, [SDL_SCANCODE_LANG1] = 0x72, [SDL_SCANCODE_LANG2] = 0x71
 };
 
 /* -- start-up ------------------------------------------------------------------------------------- */
@@ -118,48 +137,120 @@ static void Redraw(void)
     SDL_RenderPresent(gRenderer);
 }
 
-/* ns until the fresh frame may be shown; 0 = now. Shows start no closer than 3/4 of a display refresh, and
-   after a show the game gets at least as long as the show took. */
+/* ns until another frame may be shown; 0 = now */
 static Uint64 FrameDueIn(void)
 {
     Uint64 now;
     Uint64 due;
-    Uint64 rest;
 
     if (!gFrameDrawn)
         return 0;
     now = SDL_GetTicksNS();
     due = gShowStart + gShowInterval;
-    rest = gShowEnd + (gShowEnd - gShowStart);
-    if (rest > due)
-        due = rest;
     return due > now ? due - now : 0;
 }
 
-/* The game's frame onto the screen, if it is fresh and due. The game presents far more often than a display
-   can show -- at start-up once per step of its progress bar, thousands of times -- and an upload and present
-   takes milliseconds (CE had cnc-ddraw show the page from a thread of its own, so a flip cost the game
-   nothing). A frame presented before the last one has had its time waits here: the next present or event
-   poll shows it once it is due, unless a newer frame has replaced it by then. */
-static void ShowFrame(void)
+/* Rows of 16-bit x1r5g5b5 pixels into the texture, which is 32-bit: only the software renderer takes 5-5-5
+   pixels as they are, and SDL's own conversion of a whole frame takes several times as long as this one
+   pass. A 5-bit channel becomes 8 bits by repeating its top bits, which is what a GPU makes of it. */
+static bool UploadFrame(const void *pixels, int pitch)
+{
+    const Uint16 *src;
+    Uint32 *dst;
+    Uint32 p;
+    Uint32 rb;
+    Uint32 g;
+    void *texels;
+    int texelPitch;
+    int x;
+    int y;
+
+    if (!SDL_LockTexture(gTexture, NULL, &texels, &texelPitch))
+        return false;
+    for (y = 0; y < gFrameHeight; y++) {
+        src = (const Uint16 *)((const char *)pixels + (size_t)y * pitch);
+        dst = (Uint32 *)((char *)texels + (size_t)y * texelPitch);
+        for (x = 0; x < gFrameWidth; x++) {
+            p = src[x];
+            rb = ((p & 0x7c00) << 9) | ((p & 0x001f) << 3);
+            g = (p & 0x03e0) << 6;
+            rb |= (rb >> 5) & 0x070007;
+            g |= (g >> 5) & 0x000700;
+            dst[x] = 0xff000000u | rb | g;
+        }
+    }
+    SDL_UnlockTexture(gTexture);
+    return true;
+}
+
+static void ShowNow(const void *pixels, int pitch)
+{
+    gShowStart = SDL_GetTicksNS();
+    if (UploadFrame(pixels, pitch))
+        gFrameDrawn = true;
+    gFrameFresh = false;
+    Redraw();
+}
+
+/* a frame kept for later: a copy, as the game draws on in its own */
+static void KeepFrame(const void *pixels, int pitch)
+{
+    int y;
+
+    for (y = 0; y < gFrameHeight; y++)
+        SDL_memcpy(gFrame + (size_t)y * gFrameWidth * kBytesPerPixel, (const char *)pixels + (size_t)y * pitch,
+                   (size_t)gFrameWidth * kBytesPerPixel);
+    gFrameFresh = true;
+}
+
+/* The game presents far more often than a display can show -- at start-up once per step of its progress
+   bar, thousands of times -- and an upload and present takes milliseconds (CE had cnc-ddraw show the page
+   from a thread of its own, so a flip cost the game nothing). A frame presented too soon after the last
+   one waits in gFrame: the next present or event poll shows it once it is due, unless a newer frame has
+   replaced it by then. */
+static void ShowWaitingFrame(void)
 {
     if (!gFrameFresh || gTexture == NULL || FrameDueIn() != 0)
         return;
-    gShowStart = SDL_GetTicksNS();
-    SDL_UpdateTexture(gTexture, NULL, gFrame, gFrameWidth * kBytesPerPixel);
-    gFrameFresh = false;
-    gFrameDrawn = true;
-    Redraw();
-    gShowEnd = SDL_GetTicksNS();
+    ShowNow(gFrame, gFrameWidth * kBytesPerPixel);
 }
 
-/* While the user drags the window's edge the event loop does not run: SDL sends these exposes here, on
-   the main thread, for the window to be redrawn at once. */
-static bool SDLCALL ExposeWatch(void *userdata, SDL_Event *event)
+/* The window loses the keyboard right now: does it go to another window of this program -- a Win32 dialog
+   the game opened, its file dialog -- rather than to another program? The game's window procedure took only
+   the second for being switched out (WM_ACTIVATEAPP). */
+static bool FocusStaysInProgram(void)
 {
+#ifdef SDL_PLATFORM_WIN32
+    HWND front;
+    DWORD process;
+
+    front = GetForegroundWindow();
+    process = 0;
+    if (front != NULL && GetWindowThreadProcessId(front, &process) != 0)
+        return process == GetCurrentProcessId();
+#endif
+    return false;
+}
+
+/* Called as SDL queues an event, on the main thread for the two taken here.
+   - While the user drags the window's edge the event loop does not run: SDL sends these exposes for the
+     window to be redrawn at once.
+   - Where a focus loss goes can only be told while it happens; by the time the event is polled a dialog
+     may have come and gone. */
+static bool SDLCALL EventWatch(void *userdata, SDL_Event *event)
+{
+    unsigned next;
+
     (void)userdata;
-    if (event->type == SDL_EVENT_WINDOW_EXPOSED && event->window.data1 == 1)
+    if (event->type == SDL_EVENT_WINDOW_EXPOSED && event->window.data1 == 1) {
         Redraw();
+    } else if (event->type == SDL_EVENT_WINDOW_FOCUS_LOST) {
+        next = (gFocusNoteTail + 1) & (kFocusNotes - 1);
+        if (next != gFocusNoteHead) {
+            gFocusNote[gFocusNoteTail] = FocusStaysInProgram();
+            gFocusNoteTail = next;
+        }
+    }
     return true;
 }
 
@@ -168,12 +259,15 @@ static bool MakeFrameTexture(void)
     if (gTexture != NULL)
         SDL_DestroyTexture(gTexture);
     gFrameDrawn = false;
-    gFrameFresh = gFramePresented;          /* a frame the game gave before goes into the new texture */
-    gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_XRGB1555, SDL_TEXTUREACCESS_STREAMING,
+    gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
                                  gFrameWidth, gFrameHeight);
     if (gTexture == NULL)
         return false;
+    SDL_SetTextureBlendMode(gTexture, SDL_BLENDMODE_NONE);
     SDL_SetTextureScaleMode(gTexture, SDL_SCALEMODE_LINEAR);
+    /* a frame the game gave before (the graphics device was reset) goes into the new texture */
+    if (!gFrameFresh && gGamePixels != NULL)
+        KeepFrame(gGamePixels, gGamePitch);
     return true;
 }
 
@@ -183,7 +277,7 @@ int PlatVideoCreateWindow(const char *title)
                                SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (gWindow == NULL)
         return -1;
-    SDL_AddEventWatch(ExposeWatch, NULL);
+    SDL_AddEventWatch(EventWatch, NULL);
     return 0;
 }
 
@@ -244,6 +338,8 @@ int PlatVideoOpen(int width, int height, int fullScreen)
     if (refresh < 1)
         refresh = kDefaultRefresh;
     gShowInterval = (Uint64)(SDL_NS_PER_SECOND / refresh) * 3 / 4;
+    if (gShowInterval > kMaxShowInterval)
+        gShowInterval = kMaxShowInterval;
     Redraw();
     return 0;
 }
@@ -255,24 +351,21 @@ void PlatVideoClose(void)
     gTexture = NULL;
     SDL_free(gFrame);
     gFrame = NULL;
-    gFramePresented = false;
+    gGamePixels = NULL;
     gFrameFresh = false;
     gFrameDrawn = false;
 }
 
-void *PlatVideoLock(int *pitch)
+void PlatVideoPresent(const void *pixels, int pitch)
 {
-    *pitch = gFrameWidth * kBytesPerPixel;
-    return gFrame;
-}
-
-void PlatVideoPresent(void)
-{
-    if (gFrame == NULL)
+    if (gTexture == NULL || gFrame == NULL)
         return;
-    gFramePresented = true;
-    gFrameFresh = true;
-    ShowFrame();
+    gGamePixels = pixels;
+    gGamePitch = pitch;
+    if (FrameDueIn() == 0)
+        ShowNow(pixels, pitch);
+    else
+        KeepFrame(pixels, pitch);
 }
 
 void PlatVideoSetFullScreen(int on)
@@ -425,6 +518,7 @@ static void Translate(SDL_Event *e)
     SDL_Keymod mod;
     const char *text;
     Uint32 ch;
+    bool staysInProgram;
 
     SDL_zero(ev);
     switch (e->type) {
@@ -506,10 +600,23 @@ static void Translate(SDL_Event *e)
         Push(&ev);
         break;
     case SDL_EVENT_WINDOW_FOCUS_GAINED:
-        PushType(PLAT_EV_ACTIVATE, 1);
+        if (!gActive) {
+            gActive = true;
+            PushType(PLAT_EV_ACTIVATE, 1);
+        }
         break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:
-        PushType(PLAT_EV_ACTIVATE, 0);
+        /* EventWatch's note for this loss; without one (more losses queued than notes) it counts */
+        if (gFocusNoteHead != gFocusNoteTail) {
+            staysInProgram = gFocusNote[gFocusNoteHead];
+            gFocusNoteHead = (gFocusNoteHead + 1) & (kFocusNotes - 1);
+            if (staysInProgram)
+                break;
+        }
+        if (gActive) {
+            gActive = false;
+            PushType(PLAT_EV_ACTIVATE, 0);
+        }
         break;
     case SDL_EVENT_WINDOW_MINIMIZED:
         PushType(PLAT_EV_MINIMIZED, 0);
@@ -534,7 +641,7 @@ int PlatPollEvent(PlatEvent *ev)
 {
     SDL_Event e;
 
-    ShowFrame();
+    ShowWaitingFrame();
     while (gQueueHead == gQueueTail) {
         if (!SDL_PollEvent(&e))
             return 0;
@@ -551,13 +658,13 @@ void PlatWaitEvent(int ms)
 
     if (gQueueHead != gQueueTail)
         return;
-    ShowFrame();
+    ShowWaitingFrame();
     if (gFrameFresh) {
         /* a frame is waiting for its time: that ends the wait too */
         due = FrameDueIn() / SDL_NS_PER_MS + 1;
         if (due < (Uint64)ms) {
             SDL_WaitEventTimeout(NULL, (Sint32)due);
-            ShowFrame();
+            ShowWaitingFrame();
             return;
         }
     }

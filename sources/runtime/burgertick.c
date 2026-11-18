@@ -21,6 +21,7 @@ static Word GotMilk;                             /* 0x00865868 */
 #define kTickFraction   8                        /* milliseconds kept in 24.8 fixed point */
 #define kTickPeriod     0x10aa                   /* 1000/60 ms in 24.8: 16.664 */
 #define kTickSleepMs    16
+#define kWaitStepMs     1                        /* WaitTicks looks at the tick count this often */
 #define kTickStackSize  0x400
 #define kTimerPriority  2                        /* THREAD_PRIORITY_HIGHEST */
 
@@ -67,7 +68,8 @@ Word32 ReadTick(void)
 }
 
 /* WaitTicks (BurgerLib TkWin95Code). The exe sleeps in WaitMessage and has the timer thread post a message
-   at each tick; here the wait ends at an event or after one tick's time. */
+   at each tick; here the wait ends at an event or after a millisecond, so that it returns as the tick
+   count changes and not up to a tick later. */
 // FUNCTION: EVNOVA 0x004d5e90
 void WaitTicks(Word tickCount)
 {
@@ -76,7 +78,7 @@ void WaitTicks(Word tickCount)
     KeyboardKbhit();
     now = ReadTick();
     while (now - LastTick < tickCount) {
-        PlatWaitEvent(kTickSleepMs);
+        PlatWaitEvent(kWaitStepMs);
         KeyboardKbhit();
         now = ReadTick();
     }
