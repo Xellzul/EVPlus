@@ -1,10 +1,10 @@
 // COMPILE: -lang c++ -bool off
-/* burgerinput.c -- the alert box and the debug log. Notes: Research/notes/burgerinput.md */
+/* burgerinput.c -- the alert box and the debug log, on the platform layer (platform.h). Notes: Research/notes/burgerinput.md */
 
 #include "burgertypes.h"
 #include "burger.h"
 #include "macport.h"
-#include "win32.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,26 +15,30 @@ int32_t Win95MouseX;                                /* 0x0087001c */
 int32_t Win95MouseY;                                /* 0x00870020 */
 int32_t MouseClicked;                               /* 0x0087017c */
 
-#define kAlertStyle   0
+#define kAlertTitleMax      0x300
+#define kAlertTextMax       0x1000               /* Alert's 1024 bytes, each up to three in UTF-8 */
 
-static Word Tested;                              /* 0x00865ad8 DbWin95Code's .bss, in order */
-static int (__stdcall *DebugTest)(void);
-static char Semi[24];                            /* 0x00865ae0 critsec, the log file's lock */
+static PlatMutex *Semi;                          /* 0x00865ae0 the log file's lock */
 static int32_t Inited;                              /* 0x00865af8 lock state */
 
 #define kDebugLockNone  0
 #define kDebugLockLive  1
 #define kDebugLockGone  2
 
+/* The exe: a Windows message box with an OK button and no icon, the desktop brought to the front first.
+   It took the text in the system's ANSI code page; here that is code page 1252. */
 // FUNCTION: EVNOVA 0x004d9c90
 void ShowAlert(const char *title, const char *message)
 {
+    char titleText[kAlertTitleMax];
+    char messageText[kAlertTextMax];
     unsigned int wasVisible;
 
     wasVisible = OSCursorIsVisible();
     OSCursorShow();
-    SetForegroundWindow(GetDesktopWindow());
-    MessageBoxA(Win95MainWindow, message, title, kAlertStyle);
+    TextToUtf8(titleText, title, sizeof(titleText));
+    TextToUtf8(messageText, message, sizeof(messageText));
+    PlatAlert(titleText, messageText);
     if (wasVisible == 0)
         OSCursorHide();
 }
@@ -42,27 +46,12 @@ void ShowAlert(const char *title, const char *message)
 // FUNCTION: EVNOVA 0x004d9cf0
 void Cleanup(void)
 {
-    DeleteCriticalSection(Semi);
+    PlatMutexDestroy(Semi);
+    Semi = 0;
     Inited = kDebugLockGone;
 }
 
-/* Halt (BurgerLib dbwin32): break into an attached debugger. Not linked. */
-__declspec(dllimport) void __stdcall DebugBreak(void);
-
-void Halt(void)
-{
-    void *kernel;
-
-    if (!Tested) {
-        kernel = LoadLibraryA("kernel32.dll");
-        if (kernel)
-            DebugTest = (int (__stdcall *)(void))GetProcAddress(kernel, "IsDebuggerPresent");
-        Tested = 1;
-    }
-    if (DebugTest && DebugTest())
-        DebugBreak();
-}
-
+/* The text goes to LogFile.Txt and to the platform's debug output (the exe: OutputDebugString). */
 // FUNCTION: EVNOVA 0x004d9d10
 void DebugXString(const char *string)
 {
@@ -70,12 +59,12 @@ void DebugXString(const char *string)
     unsigned int length;
 
     if (Inited == kDebugLockNone) {
-        InitializeCriticalSection(Semi);
+        Semi = PlatMutexCreate();
         Inited = kDebugLockLive;
         atexit(Cleanup);
     }
     if (Inited == kDebugLockLive)
-        EnterCriticalSection(Semi);
+        PlatMutexLock(Semi);
     length = strlen(string);
     if (length != 0) {
         log = FOpenExpandedPath("LogFile.Txt", "a");
@@ -84,9 +73,9 @@ void DebugXString(const char *string)
             fclose(log);
         }
     }
-    OutputDebugStringA(string);
+    PlatDebugLog(string);
     if (Inited == kDebugLockLive)
-        LeaveCriticalSection(Semi);
+        PlatMutexUnlock(Semi);
 }
 
 #ifdef __cplusplus

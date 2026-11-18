@@ -2259,8 +2259,7 @@ void ShutdownWinGame(void)
     }
 }
 
-/* The platform layer comes up and makes the window, hidden until the display mode is set. Win95MainWindow
-   is its HWND, for what is still Win32: the GDI text, the alert box, the file dialog. */
+/* The platform layer comes up and makes the window, hidden until the display mode is set. */
 // FUNCTION: EVNOVA 0x004d2950
 void CreateGameWindow(void)
 {
@@ -2269,7 +2268,6 @@ void CreateGameWindow(void)
     atexit(PlatQuit);
     if (PlatVideoCreateWindow("EV Nova") != 0)
         Fatal("Can't allocate my window");
-    Win95MainWindow = PlatNativeWindow();
 }
 
 EXTERN_C_END

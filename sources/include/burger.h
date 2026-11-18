@@ -327,7 +327,6 @@ extern char *VideoPointer;
 extern uint32_t ScreenWidth;
 extern uint32_t ScreenHeight;
 extern int32_t ScreenFlags;                         /* burgergraphics.c */
-extern void *Win95MainWindow;
 extern char **__argv;                            /* MSL setupargs.obj */
 extern Word Win95ApplsActive;                    /* burgeronce.c */
 extern char *VideoOffscreen;

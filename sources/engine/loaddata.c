@@ -2701,7 +2701,7 @@ short WritePilotData(short stellar)
     altPlayerFileHand = NULL;
     strcpy(path, pilotsFolder);
     PStr2CStr(name, playerName);
-    TextToFileName(path + strlen(path), name, sizeof(path) - strlen(path));
+    TextToUtf8(path + strlen(path), name, sizeof(path) - strlen(path));
     strcat(path, ".plt");
     playerFileHand = (PilotRec **)AllocAHandle2(sizeof(PilotRec), 0);
     altPlayerFileHand = (PilotRec2 **)AllocAHandle2(sizeof(PilotRec2), 0);
@@ -3661,7 +3661,7 @@ short LoadPilotData(char *path)
     if (path[strlen(path) - 1] == ':')
         path[strlen(path) - 1] = 0;
     tail = strrchr(path, ':');
-    FileNameToText(fileText, tail + 1, sizeof(fileText));
+    Utf8ToText(fileText, tail + 1, sizeof(fileText));
     strncpy((char *)playerName, fileText, 0x1f);
     if (strrchr((char *)playerName, '.'))
         *strrchr((char *)playerName, '.') = 0;
@@ -3723,7 +3723,7 @@ void DeletePilotFile(const char *name)
     char path[2048];
 
     strcpy(path, pilotsFolder);
-    TextToFileName(path + strlen(path), name, sizeof(path) - strlen(path));
+    TextToUtf8(path + strlen(path), name, sizeof(path) - strlen(path));
     strcat(path, ".plt");
     if (!DoesPilotExist(path))
         return;

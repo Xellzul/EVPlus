@@ -31,9 +31,8 @@ extern void PlatVideoPresent(const void *pixels, int pitch);
 extern void PlatVideoSetFullScreen(int on);
 extern int PlatVideoIsFullScreen(void);
 extern void PlatDesktopSize(int *width, int *height);      /* the main display, in pixels */
-/* the window as the OS knows it (Windows: the HWND). Only for the GDI text and the Win32 dialogs,
-   until those are replaced. */
-extern void *PlatNativeWindow(void);
+/* a message with an OK button, in front of the window; returns when the user has closed it. UTF-8 */
+extern void PlatAlert(const char *title, const char *message);
 
 /* -- events --------------------------------------------------------------------------------------- */
 #define PLAT_EV_KEY_DOWN    1       /* scan, key, repeat */

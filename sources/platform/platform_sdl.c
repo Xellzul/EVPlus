@@ -439,13 +439,11 @@ void PlatDesktopSize(int *width, int *height)
     }
 }
 
-void *PlatNativeWindow(void)
+/* no icon, as the game's box; what cannot be shown is at least logged */
+void PlatAlert(const char *title, const char *message)
 {
-#ifdef SDL_PLATFORM_WIN32
-    if (gWindow != NULL)
-        return SDL_GetPointerProperty(SDL_GetWindowProperties(gWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
-#endif
-    return NULL;
+    if (!SDL_ShowSimpleMessageBox(0, title, message, gWindow))
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s: %s", title, message);
 }
 
 /* -- events --------------------------------------------------------------------------------------- */

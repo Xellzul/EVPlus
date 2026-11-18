@@ -823,7 +823,7 @@ void DoNewPilot(void)
     TrimResourceName(shipNameP);
     strcpy(path, pilotsFolder);
     PStr2CStr((char *)prompt, newPlayerName[0]);
-    TextToFileName(path + strlen(path), (char *)prompt, sizeof(path) - strlen(path));
+    TextToUtf8(path + strlen(path), (char *)prompt, sizeof(path) - strlen(path));
     strcat(path, ".plt");
     if (DoesPilotExist(path)) {
         SWSetPortToWindow(gSpriteWorld);

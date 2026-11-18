@@ -1,6 +1,7 @@
-/* filenames.c -- a name in the game's text as a file name and back. The game's paths are UTF-8; a name
-   the player typed (a pilot's) is in the Western ANSI code page, 1252, as the exe's window received it.
-   The exe handed such a name to Windows as it was, which took it in the system's code page. */
+/* utf8text.c -- the game's text as UTF-8 and back. The game's paths and what the platform layer shows are
+   UTF-8; a name the player typed (a pilot's) and an alert's text are in the Western ANSI code page, 1252,
+   as the exe's window received and showed them. The exe handed such text to Windows as it was, which took
+   it in the system's code page. */
 
 #include <string.h>
 #include "macport.h"
@@ -49,7 +50,7 @@ static unsigned NextChar(const unsigned char **text)
     return c >= least ? c : kReplacement;
 }
 
-void TextToFileName(char *out, const char *text, int outSize)
+void TextToUtf8(char *out, const char *text, int outSize)
 {
     const unsigned char *src = (const unsigned char *)text;
     unsigned c;
@@ -72,7 +73,7 @@ void TextToFileName(char *out, const char *text, int outSize)
     out[n] = 0;
 }
 
-void FileNameToText(char *out, const char *name, int outSize)
+void Utf8ToText(char *out, const char *name, int outSize)
 {
     const unsigned char *src = (const unsigned char *)name;
     unsigned c;

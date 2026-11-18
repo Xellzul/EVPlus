@@ -17,7 +17,6 @@
 #include "stellar.h"
 #include "cefix.h"
 
-void *Win95MainWindow;
 int gDisableUpdatesMode;
 uint32_t ScreenWidth;
 uint32_t ScreenHeight;
