@@ -509,7 +509,7 @@ void StartMovie(void *movie)
                    (Looping(m) || !MediaHasVideo(m->media) || m->posMs < m->durationMs || m->durationMs <= 0)) {
             m->audio = MediaAudioOpen(m->path);
             if (m->audio != NULL) {
-                m->stream = PlatAudioOpen(PullAudio, m);
+                m->stream = PlatAudioOpen(MEDIA_AUDIO_RATE, PullAudio, m);
                 if (m->stream == NULL) {        /* no audio device: play on silently, open nothing again */
                     MediaAudioClose(m->audio);
                     m->audio = NULL;

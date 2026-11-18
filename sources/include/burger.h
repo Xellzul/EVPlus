@@ -368,7 +368,6 @@ extern int32_t ScreenFlags;                         /* burgergraphics.c */
 extern void *Win95MainWindow;
 extern char **__argv;                            /* MSL setupargs.obj */
 extern Word Win95ApplsActive;                    /* burgeronce.c */
-extern short Win95DirectSoundVolumes[256];       /* burgeronce.c */
 extern char *VideoOffscreen;
 
 /* the engine's names for BurgerLib's display globals, as the mac build spells them */
@@ -388,7 +387,6 @@ extern Word32 Win95MouseButton;                  /* burgerkbwin.c */
 extern void VideoFadeWhite(Word from, Word to, uint32_t ticks);
 
 /* sound globals (burgersndwin.c) */
-struct DSound;
 extern Word MusicVolume;
 extern Word SystemState;
 extern ULong BurgerVoiceCount;                       /* BurgerVoiceCount */
@@ -498,8 +496,6 @@ extern ULong gSampleRate;
 extern ULong BurgerSndExitIn;                    /* burgerfile.c */
 extern int32_t BurgerSndKillProcs[3];               /* burgerfile.c */
 
-extern unsigned char _ST_SupportsSystemVolume(void);
-extern int32_t _ST_GetSystemVolume(ULong *left, ULong *right, ULong *max);
 extern ULong UFix32_To_UInt32(ULong rate);
 extern void CriticalEnter(void *lock);
 extern void CriticalLeave(void *lock);

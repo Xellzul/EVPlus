@@ -8,7 +8,6 @@
 #include "burgerplat.h"
 #include "gameutil.h"
 #include "win32.h"
-#include "burgerdsound.h"
 
 #ifdef __cplusplus
 extern "C" {

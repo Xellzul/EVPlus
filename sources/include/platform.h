@@ -1,9 +1,9 @@
 /* platform.h -- the operating-system services the game runs on. Only plain C types cross this header: the
    files behind it see their library's own headers and are built with that library's enum size, the game with
    -fshort-enums.
-   On SDL (platform/platform_sdl.c, every platform): start-up, the window and its frame, the events, the cursor.
-   Still Windows (platform/platform_win.c, waveOut): the movie audio output, the clocks, the debug log, path
-   conversion; another platform supplies its own file. */
+   On SDL (platform/platform_sdl.c, every platform): start-up, the window and its frame, the events, the cursor,
+   the audio outputs, the clocks, the debug log. Still Windows (platform/platform_win.c): path conversion;
+   another platform supplies its own. */
 #ifndef PLATFORM_H
 #define PLATFORM_H
 #include <stdint.h>
@@ -99,20 +99,23 @@ extern int PlatKeyToggled(int winKey);
 extern void PlatCursorShow(int show);
 extern void PlatCursorArrow(void);                         /* back to the system arrow */
 
-/* -- under the QuickTime functions (media/quicktime.c, media.c): a streaming audio output on its own
-   thread, the clocks, the debug log, path conversion ------------------------------------------------ */
+/* -- audio: outputs of 16-bit stereo, each fed on the audio thread by a pull function. The Sound Tool's
+   mix is one (runtime/atsnddrv.c), every playing movie's sound another (media/quicktime.c) -------------- */
 typedef struct PlatAudio PlatAudio;
-/* called on the output thread with the stream locked; returns frames written, 0 at the end */
+/* called on the audio thread with the output locked; fills `frames' stereo frames or fewer and returns how
+   many, 0 at the end (it is not called again after that) */
 typedef int (*PlatAudioPull)(void *ctx, int16_t *out, int frames);
 
-extern PlatAudio *PlatAudioOpen(PlatAudioPull pull, void *ctx);   /* starts playing at once */
+/* starts playing at once; `rate' in frames a second. NULL when there is no audio device */
+extern PlatAudio *PlatAudioOpen(int rate, PlatAudioPull pull, void *ctx);
 extern void PlatAudioPause(PlatAudio *s);
 extern void PlatAudioResume(PlatAudio *s);
 extern void PlatAudioLock(PlatAudio *s);                   /* excludes the pull */
 extern void PlatAudioUnlock(PlatAudio *s);
-extern int PlatAudioDrained(PlatAudio *s);                 /* the pull ended and everything queued was played */
+extern int PlatAudioDrained(PlatAudio *s);                 /* the pull ended and what it gave was played */
 extern void PlatAudioClose(PlatAudio *s);                  /* synchronous: the pull is never called after */
 
+/* -- clocks, log, paths ----------------------------------------------------------------------------- */
 extern uint64_t PlatMicroseconds(void);                   /* monotonic */
 extern uint32_t PlatLocalSeconds1904(void);               /* Mac clock: seconds since 1904-01-01, local time */
 extern void PlatDebugLog(const char *msg);

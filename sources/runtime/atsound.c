@@ -7,26 +7,16 @@
 
 #include "burgerchan.h"
 
-extern int32_t _ST_GetCurrentSampleRate(ULong *device);
 extern int32_t _ST_CreateSoundPump(void);
-extern void _ST_SetSystemVolume(ULong a, ULong b);      /* 0x00507b10 */
 extern void _ST_DisposeSoundPump(void);                  /* 0x005076a0 */
 
 
-void *gDirectSoundModule;                              /* 0x00870dac DSOUND.DLL */
-void *gDirectSoundCreate;                              /* 0x00870de4 DirectSoundCreate */
 int32_t gMaxVoices;                               /* 0x00870958 channels */
 int32_t gCookieCounter;                               /* 0x00870df4 */
-ULong gSampleBits;                               /* 0x0087000c bits */
-ULong gNumChannels;                              /* 0x008700e4 channels */
-int32_t gSamplesPerBuffer;                          /* 0x00870920 buffer */
-ULong gBytesPerBuffer;                           /* 0x00870068 */
-ULong gDurationBuffer;                           /* 0x00870010 */
 
 #define kMaxChannels    kSoundChannels
-#define kSampleBits     0x10
-#define kSampleChannels 2
-#define kBufferBytes    0x1000
+/* the mix is 16-bit stereo at this rate (16.16): what the exe chose on a machine with DirectSound */
+#define kOutputRate     0xac440000UL                     /* 44100.0 */
 
 
 // FUNCTION: EVNOVA 0x004d6290
@@ -56,14 +46,6 @@ int32_t ST_Open(unsigned short channels, ULong device)
 
     SystemSetQuitProc(ST_Close);
 
-    gDirectSoundModule = LoadLibraryA("DSOUND.DLL");
-    if (gDirectSoundModule != 0)
-        gDirectSoundCreate = GetProcAddress(gDirectSoundModule, "DirectSoundCreate");
-    if (gDirectSoundCreate == 0 && waveOutGetNumDevs() == 0) {
-        err = kNoDevice;
-        goto done;
-    }
-
     gMaxVoices = channels;
     if (gMaxVoices > kMaxChannels)
         gMaxVoices = kMaxChannels;
@@ -71,23 +53,11 @@ int32_t ST_Open(unsigned short channels, ULong device)
     gCookieCounter = 1;
     gNumVoices = 0;
     memset(gTheVoices, 0, kChannelTable);
-    gSampleBits = kSampleBits;
-    gNumChannels = kSampleChannels;
 
-    if (device == 0) {
-        e = _ST_GetCurrentSampleRate(&gSampleRate);
-        if (e != 0) {
-            err = e;
-            err = kNoDefault;
-            goto done;
-        }
-    } else {
+    if (device == 0)
+        gSampleRate = kOutputRate;
+    else
         gSampleRate = device;
-    }
-
-    gSamplesPerBuffer = kBufferBytes;
-    gBytesPerBuffer = ((gNumChannels << 12) * gSampleBits) >> 3;
-    gDurationBuffer = gSamplesPerBuffer * kMillisPerSecond /UFix32_To_UInt32(gSampleRate);
 
     e = _ST_CreateSoundPump();
     if (e != 0) {
@@ -97,12 +67,6 @@ int32_t ST_Open(unsigned short channels, ULong device)
 
     gSoundToolOpen = 1;
     ST_HaltSound(0);
-
-    if (_ST_SupportsSystemVolume() != 0) {
-        e = _ST_GetSystemVolume(&gSaveLeftVolume, &gSaveRightVolume, &gSaveMaxVolume);
-        if (e != 0)
-            err = e;
-    }
 done:
     return err;
 }
@@ -112,7 +76,8 @@ static double DAT_00576b10[7] = {
     440.0, 16384.0, 6.2831852 * 440.0, 6.2831852, 64.0, 128.0, 65536.0
 };
 
-unsigned char gRestoreSysVolume;                 /* 0x00870e0c */
+/* the device's volume as the exe found it when the Sound Tool opened (to put back at close): not read
+   any more, there is no device volume on the platform layer. ST_GetSysVolume still answers from these. */
 ULong gSaveLeftVolume;                              /* 0x008700a4, 4 B */
 ULong gSaveRightVolume;                              /* 0x00870100, 4 B */
 ULong gSaveMaxVolume;                              /* 0x00870dcc, 4 B */
@@ -127,12 +92,6 @@ void ST_Close(void)
     err = 0;
     if (gSoundToolOpen != 0) {
         ST_HaltSound(0);
-        if (gSaveMaxVolume != 0 && gRestoreSysVolume != 0) {
-            if (_ST_SupportsSystemVolume() != 0)
-                _ST_SetSystemVolume(gSaveLeftVolume, gSaveRightVolume);
-            gRestoreSysVolume = 0;
-            gSaveMaxVolume = 0;
-        }
         _ST_DisposeSoundPump();
         e = CriticalDispose(gCriticalSection);
         if (e != 0)

@@ -1,6 +1,6 @@
 /* platform_sdl.c -- platform.h on SDL3, the same on every platform: start-up, the window and its frame, the
-   events, the cursor. Built with SDL's enum size (-fno-short-enums, CMakeLists.txt) and without any game
-   header. */
+   events, the cursor, the audio outputs, the clocks, the debug log. Built with SDL's enum size
+   (-fno-short-enums, CMakeLists.txt) and without any game header. */
 #define SDL_MAIN_HANDLED                /* the game has its own entry point (port/winmain.c) */
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -19,6 +19,11 @@
 /* two frames are never held apart longer than this, whatever the display: the game's own frames in flight
    come 21 ms apart and must each be shown as they come */
 #define kMaxShowInterval (10 * SDL_NS_PER_MS)
+/* the game came back with another frame within this of the last one: it is not pacing itself (in flight it
+   fills every frame up to 20 ms) but presenting in a burst, as at start-up */
+#define kBurstGap       (2 * SDL_NS_PER_MS)
+/* in a burst the game gets this many times as long as a show took before the next show */
+#define kBurstRest      3
 /* a window that is not full screen opens at the frame's size, or at this share of the display when the frame is larger */
 #define kWindowShareNum 9
 #define kWindowShareDen 10
@@ -35,6 +40,9 @@ static const void *gGamePixels;         /* the game's last frame, where the game
 static int gGamePitch;                  /* and its bytes a row */
 static Uint64 gShowInterval;            /* ns between the starts of two shows */
 static Uint64 gShowStart;               /* when the last show began */
+static Uint64 gShowEnd;                 /* and when it was done */
+static Uint64 gShowRest;                /* ns after gShowEnd in which nothing more is shown; 0 outside a burst */
+static Uint64 gPresentEnd;              /* when the game's last present returned */
 
 static PlatEvent gQueue[kQueueSize];
 static unsigned gQueueHead;
@@ -44,6 +52,21 @@ static int gButtons;                    /* PLAT_BUTTON_* held */
 static SDL_Scancode gSwallowedKey;      /* its release is not reported: the Enter of Alt+Enter */
 static unsigned char gToggled[kScanCount];
 static bool gActive;                    /* the game was last told the window has the keyboard */
+
+#define kPullFrames     1024            /* asked of a pull function at a time */
+#define kBytesPerFrame  4               /* 16-bit stereo */
+#define kSeconds1904To1970 2082844800   /* the Mac clock starts in 1904, SDL's in 1970 */
+
+struct PlatAudio {
+    SDL_AudioStream *stream;            /* NULL once the layer has shut down */
+    PlatAudioPull pull;
+    void *ctx;
+    SDL_AtomicInt ended;                /* the pull returned 0 */
+    PlatAudio *next;
+};
+
+static bool gAudioUp;
+static PlatAudio *gAudioOutputs;        /* the open ones, for PlatQuit */
 /* for each focus loss still in SDL's queue, in order: it went to another window of this program */
 static bool gFocusNote[kFocusNotes];
 static unsigned gFocusNoteHead;
@@ -108,11 +131,20 @@ int PlatInit(void)
     SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
         return -1;
+    gAudioUp = SDL_InitSubSystem(SDL_INIT_AUDIO);       /* the game runs without sound, too */
     return 0;
 }
 
 void PlatQuit(void)
 {
+    PlatAudio *s;
+
+    /* outputs the game still holds lose their stream here: closing them later only frees the record */
+    for (s = gAudioOutputs; s != NULL; s = s->next) {
+        SDL_DestroyAudioStream(s->stream);
+        s->stream = NULL;
+    }
+    gAudioUp = false;
     PlatVideoClose();
     if (gRenderer != NULL)
         SDL_DestroyRenderer(gRenderer);
@@ -147,6 +179,8 @@ static Uint64 FrameDueIn(void)
         return 0;
     now = SDL_GetTicksNS();
     due = gShowStart + gShowInterval;
+    if (due < gShowEnd + gShowRest)
+        due = gShowEnd + gShowRest;
     return due > now ? due - now : 0;
 }
 
@@ -183,13 +217,20 @@ static bool UploadFrame(const void *pixels, int pitch)
     return true;
 }
 
-static void ShowNow(const void *pixels, int pitch)
+/* false = the frame could not be put into the texture; a frame that was waiting still waits */
+static bool ShowNow(const void *pixels, int pitch)
 {
+    bool shown;
+
     gShowStart = SDL_GetTicksNS();
-    if (UploadFrame(pixels, pitch))
+    shown = UploadFrame(pixels, pitch);
+    if (shown) {
         gFrameDrawn = true;
-    gFrameFresh = false;
-    Redraw();
+        gFrameFresh = false;
+        Redraw();
+    }
+    gShowEnd = SDL_GetTicksNS();
+    return shown;
 }
 
 /* a frame kept for later: a copy, as the game draws on in its own */
@@ -207,7 +248,10 @@ static void KeepFrame(const void *pixels, int pitch)
    bar, thousands of times -- and an upload and present takes milliseconds (CE had cnc-ddraw show the page
    from a thread of its own, so a flip cost the game nothing). A frame presented too soon after the last
    one waits in gFrame: the next present or event poll shows it once it is due, unless a newer frame has
-   replaced it by then. */
+   replaced it by then.
+   Where a show takes longer than the time two are held apart (a large frame, a fast display) that alone
+   would still show nearly every frame of a burst, so in a burst the game also gets kBurstRest times as long
+   as the show took. Not in flight: there the frames come 21 ms apart and each is shown as it comes. */
 static void ShowWaitingFrame(void)
 {
     if (!gFrameFresh || gTexture == NULL || FrameDueIn() != 0)
@@ -354,6 +398,7 @@ void PlatVideoClose(void)
     gGamePixels = NULL;
     gFrameFresh = false;
     gFrameDrawn = false;
+    gShowRest = 0;
 }
 
 void PlatVideoPresent(const void *pixels, int pitch)
@@ -362,10 +407,10 @@ void PlatVideoPresent(const void *pixels, int pitch)
         return;
     gGamePixels = pixels;
     gGamePitch = pitch;
-    if (FrameDueIn() == 0)
-        ShowNow(pixels, pitch);
-    else
+    gShowRest = SDL_GetTicksNS() - gPresentEnd < kBurstGap ? (gShowEnd - gShowStart) * kBurstRest : 0;
+    if (FrameDueIn() != 0 || !ShowNow(pixels, pitch))
         KeepFrame(pixels, pitch);
+    gPresentEnd = SDL_GetTicksNS();
 }
 
 void PlatVideoSetFullScreen(int on)
@@ -706,4 +751,127 @@ void PlatCursorShow(int show)
 void PlatCursorArrow(void)
 {
     SDL_SetCursor(SDL_GetDefaultCursor());
+}
+
+/* -- audio ---------------------------------------------------------------------------------------- */
+
+/* SDL wants `additional' more bytes of the output's own format */
+static void SDLCALL FeedOutput(void *userdata, SDL_AudioStream *stream, int additional, int total)
+{
+    PlatAudio *s = (PlatAudio *)userdata;
+    Sint16 buffer[kPullFrames * 2];
+    int frames;
+    int got;
+
+    (void)total;
+    frames = additional / kBytesPerFrame;
+    while (frames > 0 && SDL_GetAtomicInt(&s->ended) == 0) {
+        got = s->pull(s->ctx, buffer, frames < kPullFrames ? frames : kPullFrames);
+        if (got <= 0) {
+            SDL_SetAtomicInt(&s->ended, 1);
+            break;
+        }
+        SDL_PutAudioStreamData(stream, buffer, got * kBytesPerFrame);
+        frames -= got;
+    }
+}
+
+PlatAudio *PlatAudioOpen(int rate, PlatAudioPull pull, void *ctx)
+{
+    SDL_AudioSpec spec;
+    PlatAudio *s;
+
+    if (!gAudioUp)
+        return NULL;
+    s = (PlatAudio *)SDL_calloc(1, sizeof *s);
+    if (s == NULL)
+        return NULL;
+    s->pull = pull;
+    s->ctx = ctx;
+    spec.format = SDL_AUDIO_S16;
+    spec.channels = 2;
+    spec.freq = rate;
+    s->stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, FeedOutput, s);
+    if (s->stream == NULL) {
+        SDL_free(s);
+        return NULL;
+    }
+    s->next = gAudioOutputs;
+    gAudioOutputs = s;
+    SDL_ResumeAudioStreamDevice(s->stream);     /* a new output is paused */
+    return s;
+}
+
+void PlatAudioPause(PlatAudio *s)
+{
+    if (s != NULL && s->stream != NULL)
+        SDL_PauseAudioStreamDevice(s->stream);
+}
+
+void PlatAudioResume(PlatAudio *s)
+{
+    if (s != NULL && s->stream != NULL)
+        SDL_ResumeAudioStreamDevice(s->stream);
+}
+
+void PlatAudioLock(PlatAudio *s)
+{
+    if (s != NULL && s->stream != NULL)
+        SDL_LockAudioStream(s->stream);
+}
+
+void PlatAudioUnlock(PlatAudio *s)
+{
+    if (s != NULL && s->stream != NULL)
+        SDL_UnlockAudioStream(s->stream);
+}
+
+int PlatAudioDrained(PlatAudio *s)
+{
+    if (s == NULL || s->stream == NULL)
+        return 1;
+    return SDL_GetAtomicInt(&s->ended) != 0 && SDL_GetAudioStreamQueued(s->stream) <= 0;
+}
+
+void PlatAudioClose(PlatAudio *s)
+{
+    PlatAudio **link;
+
+    if (s == NULL)
+        return;
+    for (link = &gAudioOutputs; *link != NULL; link = &(*link)->next) {
+        if (*link == s) {
+            *link = s->next;
+            break;
+        }
+    }
+    if (s->stream != NULL)
+        SDL_DestroyAudioStream(s->stream);      /* waits for a pull that is running */
+    SDL_free(s);
+}
+
+/* -- clocks, log ---------------------------------------------------------------------------------- */
+
+uint64_t PlatMicroseconds(void)
+{
+    return SDL_GetTicksNS() / SDL_NS_PER_US;
+}
+
+uint32_t PlatLocalSeconds1904(void)
+{
+    SDL_DateTime local;
+    SDL_Time now;
+    Sint64 seconds;
+
+    if (!SDL_GetCurrentTime(&now))
+        return 0;
+    seconds = now / SDL_NS_PER_SECOND;
+    if (SDL_TimeToDateTime(now, &local, true))
+        seconds += local.utc_offset;
+    return (uint32_t)(seconds + kSeconds1904To1970);
+}
+
+void PlatDebugLog(const char *msg)
+{
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", msg);
 }
