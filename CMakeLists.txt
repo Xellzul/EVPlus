@@ -149,7 +149,7 @@ set_source_files_properties(${SRC}/media/media.c PROPERTIES COMPILE_OPTIONS -fno
 # the same for SDL's headers: only the platform layer sees them
 set_source_files_properties(${SRC}/platform/platform_sdl.c PROPERTIES COMPILE_OPTIONS -fno-short-enums)
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "EV Nova CE" LINKER_LANGUAGE CXX)
-target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${WIN_LIBS} gdiplus)
+target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${WIN_LIBS})
 target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map"
   # CE's 2 GB memory pool needs the large-address-aware bit
   -Wl,--large-address-aware)
