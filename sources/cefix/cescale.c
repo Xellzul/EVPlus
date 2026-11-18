@@ -43,17 +43,16 @@ int CE_Scale(int value)
     return CE_Round(value * ceScaleFactor);
 }
 
-// BUG (CE F13): the grid hit-test is CE's DIV r8, the 16-bit offset by the cell size's low byte,
-// so a cell of 256 px or more (ui_scale 3.08 and up) makes a click divide by 0 or need a
-// quotient over 255, and both fault (#DE)
+/* The grid hit-test: the cell a click `offset' pixels into the grid falls in. The original game divided by
+   its constant cell size ((where.h - box.left) / 83, tradedlg.c). CE (F13) made the size follow ui_scale
+   and divided with an 8-bit machine division, the 16-bit offset by the size's low byte: with a cell of 256
+   pixels or more (ui_scale 3.08 and up) a click divided by zero or overflowed, and the game died. Fixed:
+   the original's whole division. */
 int CE_GridDivide(int offset, int cell)
 {
-    unsigned int quotient;
-
-    quotient = (unsigned short)offset / (unsigned char)cell;
-    if (quotient > 0xff)
-        RaiseException(kCEIntOverflow, 0, 0, NULL);
-    return (unsigned char)quotient;
+    if (cell <= 0)
+        return 0;
+    return offset / cell;
 }
 
 void CE_ScaleRect(Rect *r)

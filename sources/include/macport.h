@@ -1,6 +1,6 @@
 /* macport.h -- Mac OS Toolbox types and shims for the Windows port. Notes: Research/notes/macport.md */
 #include "gametypes.h"
-#include "win32.h"
+#include "int32.h"
 #include "burgertypes.h"
 
 #ifndef MACPORT_H

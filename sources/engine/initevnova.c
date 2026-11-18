@@ -8,7 +8,6 @@
 #include "macport.h"
 #include "burgermath.h"
 #include "burger.h"
-#include "win32.h"
 #include "platform.h"
 #include "shipobj.h"
 #include "resources.h"

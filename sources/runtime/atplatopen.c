@@ -6,13 +6,11 @@
 #include "burgerplat.h"
 #include "burgertypes.h"
 #include "burger.h"
-#include "win32.h"
 
 typedef void (*PlatformCallback)(void);
 
 extern int32_t _EncodingPreflight(void);
 
-void *gProcessHeap;                              /* 0x00870108 heap */
 unsigned char gPlatformOpen;                      /* 0x00870e10, 1 B */
 
 // FUNCTION: EVNOVA 0x004d3163
@@ -22,7 +20,6 @@ int32_t PlatformOpen(void)
 
     if (gPlatformOpen != 0)
         return 0;
-    gProcessHeap = GetProcessHeap();
     gPlatformOpen = 1;
     err = _EncodingPreflight();
     if (err != 0)

@@ -7,7 +7,6 @@
 #include "burger.h"
 #include "burgerplat.h"
 #include "gameutil.h"
-#include "win32.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -31,6 +31,20 @@ extern void PlatVideoPresent(const void *pixels, int pitch);
 extern void PlatVideoSetFullScreen(int on);
 extern int PlatVideoIsFullScreen(void);
 extern void PlatDesktopSize(int *width, int *height);      /* the main display, in pixels */
+/* The program starts in the platform layer, which calls the game (port/winmain.c) with the arguments
+   kept for it: PlatArg(0) is the program, the rest what it was started with, UTF-8. */
+extern int GameMain(void);
+extern int PlatArgCount(void);
+extern const char *PlatArg(int index);                     /* "" past the last */
+
+/* Makes the program and a kind of file it opens known to the system: where the program lies, under the
+   name it is asked for by (`programName'), and that a file with this extension is opened by starting the
+   program with the file as its argument. `typeId' names the kind to the system, `description' to the
+   user; the kind's icon is the program's icon resource `icon', or `fallbackIcon' when it has no such one.
+   Windows: written to the user's registry. */
+extern void PlatRegisterFileType(const char *programName, const char *extension, const char *typeId,
+                                 const char *description, int icon, int fallbackIcon);
+
 /* a message with an OK button, in front of the window; returns when the user has closed it. UTF-8 */
 extern void PlatAlert(const char *title, const char *message);
 
@@ -127,6 +141,7 @@ extern void PlatMutexDestroy(PlatMutex *m);
 extern const char *PlatExeFolder(void);                    /* where the program lies, ending in a separator */
 /* the folder relative paths start from, ending in a separator; 0 = not known or too long for `out' */
 extern int PlatCurrentFolder(char *out, int outSize);
+extern int PlatSetCurrentFolder(const char *path);         /* 0 = it is no folder: nothing changed */
 extern FILE *PlatFileOpen(const char *path, const char *mode);    /* C's fopen */
 
 #define kPlatNothing    0                                  /* there is nothing of that name */

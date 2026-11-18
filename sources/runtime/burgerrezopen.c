@@ -8,7 +8,6 @@
 #include "burgerplat.h"
 #include "burgertypes.h"
 #include "burger.h"
-#include "win32.h"
 
 #include "gametypes.h"
 #include "burgerrez.h"

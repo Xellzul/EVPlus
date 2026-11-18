@@ -1,7 +1,6 @@
 // COMPILE: -lang c++ -bool off
 /* dialogmgr.c -- the port's Dialog, Control and List Manager (win 0x004cea90..0x004d2950, in exe order). Notes: Research/notes/dialogmgr.md */
 #include "burgerplat.h"
-#include "win32.h"
 #include <stddef.h>
 #include <string.h>   /* strcpy 0x004d6010, strlen 0x004eedb0 */
 #include <stdio.h>
@@ -222,19 +221,6 @@ static __inline void DisposeControl(void *ctl)
  * the screen bounds moved to the origin, because the dialog draws into its own
  * offscreen world and is blitted into place later.
  */
-
-/*
- * Register the window class and create the app's single window (win
- * 0x004d2950), called once from WinMain with the instance handle.
- */
-
-#define CS_DBLCLKS  0x0008
-#define CS_OWNDC    0x0020
-
-#define kMainWindowStyle (WS_POPUP | WS_VISIBLE | WS_BORDER | WS_SYSMENU | WS_MINIMIZEBOX)
-
-#define WS_EX_APPWINDOW 0x00040000
-
 
 /*
  * The rest of the window plumbing: the list scrollbar pair the dialog list

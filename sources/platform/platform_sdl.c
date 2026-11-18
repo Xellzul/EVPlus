@@ -1,10 +1,9 @@
 /* platform_sdl.c -- platform.h on SDL3, the same on every platform: start-up, the window and its frame, the
    events, the cursor, the audio outputs, the clocks, the debug log. Built with SDL's enum size
    (-fno-short-enums, CMakeLists.txt) and without any game header. */
-#define SDL_MAIN_HANDLED                /* the game has its own entry point (port/winmain.c) */
 #include <stdlib.h>
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
+#include <SDL3/SDL_main.h>          /* makes `main' below the program's entry on every system */
 #ifdef SDL_PLATFORM_WIN32
 #include <windows.h>                    /* FocusStaysInProgram */
 #endif
@@ -127,7 +126,6 @@ static const unsigned char kPCScan[kScanCount] = {
 
 int PlatInit(void)
 {
-    SDL_SetMainReady();
     /* the click that brings the window to the front is a click in the game too, as a Win32 window gets it */
     SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
@@ -847,6 +845,28 @@ void PlatAudioClose(PlatAudio *s)
     if (s->stream != NULL)
         SDL_DestroyAudioStream(s->stream);      /* waits for a pull that is running */
     SDL_free(s);
+}
+
+/* -- the program's entry and its arguments, which SDL hands over as UTF-8 ------------------------- */
+
+static int gArgCount;
+static char **gArgs;
+
+int main(int argc, char *argv[])
+{
+    gArgCount = argc;
+    gArgs = argv;
+    return GameMain();
+}
+
+int PlatArgCount(void)
+{
+    return gArgCount;
+}
+
+const char *PlatArg(int index)
+{
+    return (index >= 0 && index < gArgCount && gArgs[index] != NULL) ? gArgs[index] : "";
 }
 
 /* -- files ------------------------------------------------------------------------------------------ */

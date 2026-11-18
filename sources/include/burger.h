@@ -327,7 +327,6 @@ extern char *VideoPointer;
 extern uint32_t ScreenWidth;
 extern uint32_t ScreenHeight;
 extern int32_t ScreenFlags;                         /* burgergraphics.c */
-extern char **__argv;                            /* MSL setupargs.obj */
 extern Word Win95ApplsActive;                    /* burgeronce.c */
 extern char *VideoOffscreen;
 
@@ -475,7 +474,6 @@ extern int32_t VideoSetMode(int32_t *rec);
 extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);
 extern void KeyboardFlush(void);
 extern int32_t CreateDirectoryPath(const char *path);
-extern int32_t Win95Allow1Instance(const char *name);
 extern void JoystickDestroy(void);
 extern void Fatal(const char *fmt, ...);
 extern void NonFatal(const char *fmt, ...);

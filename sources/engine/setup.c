@@ -1553,10 +1553,6 @@ void InitSprites(void)
     commRect.right = GetCWindowPortRect(gWind)->right - ceStatusBarWidth - 50;
     commRect.bottom = GetCWindowPortRect(gWind)->bottom - 5;
     commRect.top = commRect.bottom - CE_Scale(26) - 4;
-    // BUG (CE F12.80-81): CE drops only the store of 29470 / width; its idiv still runs, so a zero
-    // width faults (divide by zero), reproduced here
-    if (commRect.right - commRect.left == 0)
-        RaiseException(kCEIntDivideByZero, 0, 0, NULL);
 }
 
 

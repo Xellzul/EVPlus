@@ -3,7 +3,6 @@
 #include <string.h>
 #include "burgertypes.h"
 #include "burger.h"
-#include "win32.h"
 
 #include "burgerchan.h"
 

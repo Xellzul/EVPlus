@@ -1,8 +1,11 @@
-/* platform_win.c -- what of platform.h is still Windows only: opening a file by a UTF-8 path and the
-   installed fonts. Everything else is platform_sdl.c. */
+/* platform_win.c -- what of platform.h is still Windows only: opening a file and changing the current
+   folder by a UTF-8 path, the program's file type in the registry, and the installed fonts. Everything else is platform_sdl.c. */
 #include <stdio.h>
 #include <stdlib.h>
+#include <direct.h>
+#include <wchar.h>
 #include <windows.h>
+#include <shlobj.h>
 #include "platform.h"
 
 #define kWidePath   0x800               /* the game's longest path, in characters */
@@ -21,6 +24,83 @@ FILE *PlatFileOpen(const char *path, const char *mode)
         return NULL;
     return _wfopen(widePath, wideMode);
 }
+
+int PlatSetCurrentFolder(const char *path)
+{
+    wchar_t widePath[kWidePath];
+
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, widePath, kWidePath) == 0)
+        return 0;
+    return _wchdir(widePath) == 0;
+}
+
+/* -- the program and its file type in the registry, as CE wrote them at every start -------------------- */
+
+#define kKeyMax     512
+#define kNameMax    128
+
+static void SetRegValue(const wchar_t *key, const wchar_t *value)
+{
+    HKEY hkey;
+
+    if (RegCreateKeyExW(HKEY_CURRENT_USER, key, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hkey, NULL)
+            != ERROR_SUCCESS)
+        return;
+    RegSetValueExW(hkey, NULL, 0, REG_SZ, (const BYTE *)value, (DWORD)((wcslen(value) + 1) * sizeof(wchar_t)));
+    RegCloseKey(hkey);
+}
+
+/* `key' = prefix + name (+ suffix) */
+static void MakeKey(wchar_t *key, const wchar_t *prefix, const char *name, const wchar_t *suffix)
+{
+    wchar_t wide[kNameMax];
+
+    wide[0] = 0;
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, wide, kNameMax);
+    wide[kNameMax - 1] = 0;
+    wcscpy(key, prefix);
+    wcscat(key, wide);
+    wcscat(key, suffix);
+}
+
+void PlatRegisterFileType(const char *programName, const char *extension, const char *typeId,
+                          const char *description, int icon, int fallbackIcon)
+{
+    wchar_t exePath[kWidePath];
+    wchar_t key[kKeyMax];
+    wchar_t value[kWidePath + 32];
+    wchar_t wide[kNameMax];
+
+    if (GetModuleFileNameW(NULL, exePath, kWidePath) == 0)
+        return;
+    exePath[kWidePath - 1] = 0;
+    MakeKey(key, L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\", programName, L"");
+    SetRegValue(key, exePath);
+
+    MakeKey(key, L"Software\\Classes\\", extension, L"");
+    MakeKey(wide, L"", typeId, L"");
+    SetRegValue(key, wide);
+
+    MakeKey(key, L"Software\\Classes\\", typeId, L"");
+    MakeKey(wide, L"", description, L"");
+    SetRegValue(key, wide);
+
+    MakeKey(key, L"Software\\Classes\\", typeId, L"\\shell\\open\\command");
+    _snwprintf(value, kWidePath + 32, L"\"%ls\" \"%%1\"", exePath);
+    value[kWidePath + 31] = 0;
+    SetRegValue(key, value);
+
+    if (FindResourceW(NULL, MAKEINTRESOURCEW(icon), (LPCWSTR)RT_GROUP_ICON) == NULL)
+        icon = fallbackIcon;
+    MakeKey(key, L"Software\\Classes\\", typeId, L"\\DefaultIcon");
+    _snwprintf(value, kWidePath + 32, L"\"%ls\",-%d", exePath, icon);
+    value[kWidePath + 31] = 0;
+    SetRegValue(key, value);
+
+    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+}
+
+/* -- installed fonts ------------------------------------------------------------------------------- */
 
 #define kTtcTag     0x66637474          /* 'ttcf': the whole collection file a font is part of */
 #define kWholeFile  0

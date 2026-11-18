@@ -3,7 +3,6 @@
 
 #include "burgertypes.h"
 #include "burger.h"
-#include "win32.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +31,6 @@ typedef struct MyHandle {
 #define kSearchGranule  1024
 #define kPointerHandle  -4                       /* AllocAPointer's handle, 16 bytes back */
 #define kPointerHeader  0x10
-#define GMEM_NOT_BANKED 0x1000
 #define MMStageCompact  0
 #define MMStagePurge    1
 #define kHexNoTerminator  0x4000
@@ -73,38 +71,23 @@ static MyHandle *FreeHands;                      /* 0x00865acc */
 static Word8 *MemoryBlockList;                   /* 0x00865ad0 */
 MemPurgeProcPtr MemPurgeCallBack;                /* 0x00870164 */
 
+/* The exe took its blocks from Windows (GlobalAlloc) and asked for each to be kept in RAM (VirtualLock),
+   ignoring the answer. For the pool the answer was no: a program may pin only about its smallest working
+   set, some hundred kB, and under Wine 588 kB of the 2 GB were found pinned. */
 static void *FooAlloc(Word32 size)
 {
-    void *block;
-
-    block = GlobalAlloc(GMEM_NOT_BANKED, size);
-    if (block != 0)
-        VirtualLock(block, size);
-    return block;
+    return malloc(size);
 }
 
 static void FooFree(void *block)
 {
-    Word32 length;
-
-    if ((Word32)block != 0) {
-        length = GlobalSize(block);
-        VirtualUnlock(block, length);
-        GlobalFree(block);
-    }
+    free(block);
 }
 
-/* FooFree with its guard as a pointer test: the exe keeps this one inline where the
-   integer-guard FooFree above is parked (notes). */
+/* the exe had FooFree a second time, inline, in InitMemory's search */
 static void FooFreeNonNull(void *block)
 {
-    Word32 length;
-
-    if (block != 0) {
-        length = GlobalSize(block);
-        VirtualUnlock(block, length);
-        GlobalFree(block);
-    }
+    free(block);
 }
 
 /* DeInitMemory (BurgerLib MMMemoryManager, the atexit handler InitMemory registers). */

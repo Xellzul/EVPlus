@@ -6,12 +6,10 @@
 #include "burger.h"
 #define LockResult unsigned char
 #include "burgerplat.h"
-#include "win32.h"
 
-
-extern void *gProcessHeap;                       /* atplatopen.c */
-
-#define kHeapZeroMemory 8
+/* The exe took these blocks from the process's heap (HeapAlloc), which answers a request for no bytes
+   with a block; C's malloc need not. */
+#define AtLeastOne(size)    ((size) != 0 ? (size) : 1)
 
 // FUNCTION: EVNOVA 0x004fe1f9
 void *MemoryAllocate(ULong size)
@@ -21,7 +19,7 @@ void *MemoryAllocate(ULong size)
 
     err = 0;
     p = 0;
-    p = HeapAlloc(gProcessHeap, 0, size);
+    p = malloc(AtLeastOne(size));
     if (p == 0)
         err = kOutOfMemory;
     return p;
@@ -35,7 +33,7 @@ void *MemoryAllocateClear(ULong size)
 
     err = 0;
     p = 0;
-    p = HeapAlloc(gProcessHeap, kHeapZeroMemory, size);
+    p = calloc(1, AtLeastOne(size));
     if (p == 0)
         err = kOutOfMemory;
     return p;
@@ -47,7 +45,7 @@ void MemoryDeallocate(void *p)
     int32_t err;
 
     err = 0;
-    HeapFree(gProcessHeap, 0, p);
+    free(p);
 }
 
 // FUNCTION: EVNOVA 0x004fe2b0
@@ -517,8 +515,6 @@ int32_t _IndirectValidate(void **handle)
     block = 0;
     found = 0;
     for (block = gMemBlockList; block != 0; block = block->next) {
-        IsBadReadPtr(block, block->count * sizeof(ULong));
-        IsBadWritePtr(block, block->count * sizeof(ULong));
         for (i = 0; i < block->count; i++) {
             if ((void **)&block->records[i] == handle)
                 found = 1;
@@ -527,10 +523,6 @@ int32_t _IndirectValidate(void **handle)
             if (err == 0 && block->records[i].used != 0 && block->records[i].ptr == 0)
                 err = kOSFailure;
         }
-    }
-    if (handle != 0 && IndirectGetSize(handle) != 0) {
-        IsBadReadPtr(*handle, IndirectGetSize(handle));
-        IsBadWritePtr(*handle, IndirectGetSize(handle));
     }
     return err;
 }

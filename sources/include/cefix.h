@@ -14,19 +14,11 @@ extern "C" {
 struct Rect;
 struct DialogRecord;
 
-/* the faults CE's own code takes (the CE bug sites) */
-#define kCEIntDivideByZero      0xc0000094UL    /* STATUS_INTEGER_DIVIDE_BY_ZERO */
-#define kCEIntOverflow          0xc0000095UL    /* STATUS_INTEGER_OVERFLOW: a DIV quotient too wide */
-
-__declspec(dllimport) void __stdcall RaiseException(uint32_t code, uint32_t flags,
-    uint32_t count, const uint32_t *args);
-
 /* cestartup.c */
 #define kCEMaxPath          260
 #define kCEIniSection       "EV Nova"
 #define kCEMemoryPoolSize   (2040UL * 1024 * 1024)  /* WinMain's pool: under 2 GiB, no size reads negative */
 
-extern char ceIniPath[kCEMaxPath];
 extern int ceX2Hotkey;
 extern unsigned char ceRunInAWindow;
 
@@ -68,8 +60,6 @@ void CE_ExpandFilesPath(char *dst, const char *path);
 void CE_ExpandPlugInsPath(char *dst, const char *path);
 
 /* cetext.c */
-
-struct WinRect;
 
 void CE_DrawVersion(void);
 
