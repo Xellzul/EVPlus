@@ -26,6 +26,7 @@
 #include "burger.h"
 #include "crashlog.h"
 #include "cefix.h"
+#include "platform.h"
 
 #define kRoidYieldBase   0x32
 #define kRoidYieldSpread 0x65
@@ -2420,7 +2421,7 @@ EXTERN_C_END
 Boolean systemFlag[kMaxSystems];
 Boolean speechMgrPresent;
 short maxAutoExploreJumps;
-uint32_t randomSeed;
+uint64_t randomSeed;
 
 EXTERN_C_BEGIN
 
@@ -2862,54 +2863,20 @@ Boolean SystemHasService(short sysID, short kind)
 }
 
 
-#define kRandMultiplier 16807
-
-/* The 68k `swap` idiom: the >> 16 half is always zero for a value already
-   masked to 15 bits and mwcc folds it away, but the PPC build emits it
-   literally and mac 1.1.1 emits a `ror`, so it is in the source. */
-#define SwapHalves(x) (((x) << 16) + ((x) >> 16))
-
+/* A random value in [0, range); 0 reseeds the generator from the clock. */
 // FUNCTION: EVNOVA 0x004683b0
 // MAC: _Rand i386 0x000a4c76 ppc 0x000b08b4
 short Rand(short range)
 {
-    uint32_t lo;
-    uint32_t temp;
-    uint32_t hi;
-    uint32_t seed;
+    uint32_t seconds;
     short result;
 
     if (range == 0) {
         /* BUG: this path never sets result, so Rand(0) returns garbage */
-        GetDateTime(&randomSeed);
-        randomSeed += ReadTick();
+        GetDateTime(&seconds);
+        randomSeed = seconds + ReadTick();
     } else {
-        seed = randomSeed;
-        lo = kRandMultiplier;
-        hi = lo;
-        lo *= seed & 0xffff;
-        temp = lo;
-        temp >>= 16;
-        hi *= seed >> 16;
-        hi += temp;
-        temp = hi;
-        temp += temp;
-        temp >>= 16;
-        lo &= 0xffff;
-        lo -= 0x7fffffff;
-        hi &= 0x7fff;
-        hi = SwapHalves(hi);
-        hi += temp;
-        lo += hi;
-        if ((lo & 0x80000000) != 0)
-            lo += 0x7fffffff;
-        randomSeed = lo;
-        if ((lo & 0xffff) == 0x8000)
-            lo &= 0xffff0000;
-        temp = range;
-        temp *= lo & 0xffff;
-        temp >>= 16;
-        result = temp;
+        result = (short)PlatRand(&randomSeed, range);
     }
     return result;
 }
@@ -2925,7 +2892,7 @@ void SetRandSeed(uint32_t seed)
 // MAC: _GetRandSeed i386 0x000a4d17 ppc 0x000b0978
 uint32_t GetRandSeed(void)
 {
-    return randomSeed;
+    return (uint32_t)randomSeed;
 }
 
 #define kDateStrings   137  /* STR# holding the month names and ordinals */

@@ -1243,6 +1243,11 @@ void PlatSleep(int ms)
     SDL_Delay((Uint32)ms);
 }
 
+int32_t PlatRand(uint64_t *state, int32_t n)
+{
+    return SDL_rand_r(state, n);
+}
+
 uint32_t PlatLocalSeconds1904(void)
 {
     SDL_DateTime local;

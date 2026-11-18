@@ -176,6 +176,9 @@ extern void *PlatSystemFont(const char *family, int bold, int italic, int *size)
 extern uint64_t PlatMicroseconds(void);                   /* monotonic, from any thread */
 extern void PlatSleep(int ms);                            /* 0 may return at once */
 extern uint32_t PlatLocalSeconds1904(void);               /* Mac clock: seconds since 1904-01-01, local time */
+
+/* -- random numbers: a value in [0, n) for n > 0, the generator's state in *state -------------------- */
+extern int32_t PlatRand(uint64_t *state, int32_t n);
 extern void PlatDebugLog(const char *msg);
 
 #ifdef __cplusplus

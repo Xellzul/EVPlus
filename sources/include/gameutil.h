@@ -73,7 +73,7 @@ extern Handle disasterFileHand;
 extern Handle outfitSystemFileHand;
 extern unsigned char outfitShortNames[512][256];
 extern Handle personFileHand;
-extern uint32_t randomSeed;
+extern uint64_t randomSeed;
 extern Handle rankFileHand;
 extern int32_t gResourcesReleased;
 extern struct ListRec *gRezFiles;                /* the open RezFiles, BurgerLib's list */
