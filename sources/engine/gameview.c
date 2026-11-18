@@ -17,7 +17,6 @@
 
 #define kKeyShift      0x2a
 #define kKeyRightShift 0x36
-#define kMacKeyShift   MacKey(0x38)
 #define kIntroDescID   0x7fff
 
 /*
@@ -29,33 +28,19 @@
 void DoAboutBox(void)
 {
     StopIntroMusic(1);
-#ifdef MACBUILD
-    if (KeyCheck(kMacKeyShift) && didSpeak == 0 && gPause == 0) {
-        CheckSpeechMgr();
-#ifdef MAC1010
-        SpeakIt("Greetings professor Follkinn. Would you like to play a game?", 1);
-#else
-        SpeakIt("\pGreetings professor Follkinn. Would you like to play a game?", 1);
-#endif
-#else
     if ((KeyCheck(kKeyShift) != 0 || KeyCheck(kKeyRightShift) != 0)
         && didSpeak == 0 && gPause == 0) {
         CheckSpeechMgr();
         SpeakIt("Greetings professor Follkinn. Would you like to play a game?", 1);
-#endif
         didSpeak = 1;
         return;
     } else {
-#ifdef MACBUILD
         mainScreenBackgroundDirty = 1;
-#endif
         LoadDescription(briefingTextPtr, kIntroDescID);
         MungeBriefing(0, -1);
         strcpy(textShowString, briefingTextPtr);
         ShowTextDialog(0, 0, 1);
-#ifdef MACBUILD
         mainScreenBackgroundDirty = 1;
-#endif
     }
 }
 
@@ -123,9 +108,7 @@ short TrackMainScreenButtons(Point where)
         SWSetPortToWindow(gSpriteWorld);
         while (Button()) {
             BusyIdle();
-#ifndef MACBUILD
             HandleIntroMusic(0);
-#endif
             GetGlobalMouse(&pt);
             CopyBits(GWorldContainerBits(&loadPort),
                      GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
