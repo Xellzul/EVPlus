@@ -233,14 +233,13 @@ extern void CompactHandles(void);
 extern void DumpHandles(void);
 extern void SetHandlePurgeFlag(void **handle, Word flag);
 
-/* QuickTime calls, linked from qtmlClient.lib */
+/* QuickTime calls, media/quicktime.c */
 extern void HLock(Handle h);                                         /* 0x004f1470 */
 extern void HUnlock(Handle h);
 extern void HPurge(Handle h);
 extern void Gestalt(int32_t selector, int32_t *result);
 extern short EnterMovies(void);
 extern void ExitMovies(void);
-extern void QT_DisposeGWorld(void *gworld);       /* QuickTime's, renamed in CMakeLists.txt */
 extern void SetTrackGWorld(void *track, void *movieData, int32_t a3,
                            short (*proc)(void), int32_t a5);
 extern int32_t GetTimeBaseFlags(void *timeBase);

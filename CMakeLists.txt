@@ -3,77 +3,61 @@
 #   cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake
 #   cmake --build build                      -> build/EV Nova CE.exe
 #
-# Needs: llvm-mingw (default /opt/llvm-mingw), and `unar` (package unarchiver) once, to unpack
-# input-files/QT6SDK_Win.hqx for QuickTime's qtmlClient.lib -- or pass -DQTML_CLIENT_LIB=/path/qtmlClient.lib.
+# Needs: llvm-mingw (default /opt/llvm-mingw); sh, make and xz once, to build FFmpeg (downloaded, or
+# -DFFMPEG_TARBALL=/path offline; or pass -DFFMPEG_ROOT=/path). The FFmpeg DLLs and its licence are copied next to the exe.
 cmake_minimum_required(VERSION 3.20)
 project(EVNova C CXX RC)
 
 set(SRC ${CMAKE_SOURCE_DIR}/sources)
 
-# -- QuickTime's client library, from the Apple SDK in input-files/ ---------------------------------
-set(QTML_CLIENT_LIB "" CACHE FILEPATH "qtmlClient.lib (empty: unpack it from input-files/QT6SDK_Win.hqx)")
-if(NOT QTML_CLIENT_LIB)
-  set(_qt ${CMAKE_BINARY_DIR}/qtsdk)
-  set(QTML_CLIENT_LIB ${_qt}/qtmlClient.lib)
-  if(NOT EXISTS ${QTML_CLIENT_LIB})
-    find_program(UNAR unar)
-    if(NOT UNAR)
-      message(FATAL_ERROR "qtmlClient.lib is unpacked from input-files/QT6SDK_Win.hqx with `unar`, which is not "
-                          "installed: install it or pass -DQTML_CLIENT_LIB=/path/to/qtmlClient.lib")
+# -- FFmpeg
+# Built once by cmake/build-ffmpeg.sh into build/ffmpeg from the pinned release: downloaded into build/, or
+# -DFFMPEG_TARBALL=/path/to/ffmpeg-<ver>.tar.xz (offline); either is checked against the SHA256. Or take an
+# install with -DFFMPEG_ROOT=/path (include/, lib/*.dll.a, bin/*.dll).
+set(FFMPEG_VERSION 9.0.2)
+set(FFMPEG_SHA256 8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e)
+set(FFMPEG_TARBALL "" CACHE FILEPATH "ffmpeg-${FFMPEG_VERSION}.tar.xz for offline builds (empty: download it)")
+set(FFMPEG_ROOT "" CACHE PATH "FFmpeg install (empty: build FFmpeg ${FFMPEG_VERSION} with cmake/build-ffmpeg.sh)")
+if(NOT FFMPEG_ROOT)
+  set(FFMPEG_ROOT ${CMAKE_BINARY_DIR}/ffmpeg)
+  if(NOT EXISTS ${FFMPEG_ROOT}/lib/libavformat.dll.a)
+    set(_ff_name ffmpeg-${FFMPEG_VERSION}.tar.xz)
+    set(_ff_tar ${FFMPEG_TARBALL})
+    if(NOT _ff_tar)
+      set(_ff_tar ${CMAKE_BINARY_DIR}/${_ff_name})
+      if(NOT EXISTS ${_ff_tar})
+        message(STATUS "downloading https://ffmpeg.org/releases/${_ff_name}")
+        file(DOWNLOAD https://ffmpeg.org/releases/${_ff_name} ${_ff_tar}.part
+             EXPECTED_HASH SHA256=${FFMPEG_SHA256} STATUS _ff_dl)
+        list(GET _ff_dl 0 _ff_rc)
+        if(_ff_rc)
+          file(REMOVE ${_ff_tar}.part)
+          message(FATAL_ERROR "FFmpeg download failed (${_ff_dl}); pass -DFFMPEG_TARBALL=/path/to/"
+                              "${_ff_name} or -DFFMPEG_ROOT=/path/to/ffmpeg")
+        endif()
+        file(RENAME ${_ff_tar}.part ${_ff_tar})
+      endif()
     endif()
-    execute_process(COMMAND ${UNAR} -q -f -o ${_qt} ${CMAKE_SOURCE_DIR}/input-files/QT6SDK_Win.hqx
-                    RESULT_VARIABLE rc)
-    if(rc OR NOT EXISTS ${_qt}/QT6SDK.zip)
-      message(FATAL_ERROR "could not unpack input-files/QT6SDK_Win.hqx with unar")
+    file(SHA256 ${_ff_tar} _ff_sum)
+    if(NOT _ff_sum STREQUAL FFMPEG_SHA256)
+      message(FATAL_ERROR "${_ff_tar}: SHA256 ${_ff_sum}, expected ${FFMPEG_SHA256}")
     endif()
-    file(ARCHIVE_EXTRACT INPUT ${_qt}/QT6SDK.zip DESTINATION ${_qt}/zip
-         PATTERNS "*/QTDevWin/Libraries/qtmlClient.lib")
-    file(GLOB_RECURSE _lib ${_qt}/zip/*qtmlClient.lib)
-    file(COPY_FILE ${_lib} ${QTML_CLIENT_LIB})
+    message(STATUS "building FFmpeg from ${_ff_tar} (once, a few minutes)")
+    execute_process(COMMAND sh ${CMAKE_SOURCE_DIR}/cmake/build-ffmpeg.sh ${_ff_tar} ${FFMPEG_ROOT} ${LLVM_MINGW}
+                    RESULT_VARIABLE rc OUTPUT_FILE ${CMAKE_BINARY_DIR}/ffmpeg-build.log
+                    ERROR_FILE ${CMAKE_BINARY_DIR}/ffmpeg-build.log)
+    if(rc OR NOT EXISTS ${FFMPEG_ROOT}/lib/libavformat.dll.a)
+      message(FATAL_ERROR "FFmpeg build failed, see ${CMAKE_BINARY_DIR}/ffmpeg-build.log")
+    endif()
   endif()
 endif()
-
-# Four members of qtmlClient.lib define Mac Toolbox functions the port defines too (CopyBits, NewGWorld,
-# Delay, ...). The port's are the ones the game uses, so those members are linked from copies with QuickTime's
-# definitions renamed: no clash, and no member calls one of these names itself, so nothing else changes.
-# The game calls QuickTime's own DisposeGWorld/GetPixBaseAddr/GetGWorldDevice/GetGWorldPixMap by their QT_ names
-# (burgerpict.c, tradedlg.c).
-set(_qd_dups GetPort PenSize MoveTo Line BackColor SectRect PaintRect EraseRect FrameOval PaintOval RectInRgn
-    CopyBits CopyMask DisposePixPat GetPixPat FillCRect RGBForeColor GetGDevice Color2Index GetPicture)
-set(_qt_members QDOffScreenShim QuickdrawShim OSUtilsShim TextUtilsShim)
-set(_qt_renames_QDOffScreenShim _DisposeGWorld=_QT_DisposeGWorld _GetPixBaseAddr=_QT_GetPixBaseAddr
-    _GetGWorldDevice=_QT_GetGWorldDevice _GetGWorldPixMap=_QT_GetGWorldPixMap _NewGWorld=_QT_NewGWorld)
-set(_qt_renames_QuickdrawShim "")
-foreach(s ${_qd_dups})
-  list(APPEND _qt_renames_QuickdrawShim _${s}=_QT_${s})
+set(FFMPEG_LIBS avformat avcodec swscale swresample avutil)
+set(FFMPEG_IMPORT "")
+foreach(l ${FFMPEG_LIBS})
+  list(APPEND FFMPEG_IMPORT ${FFMPEG_ROOT}/lib/lib${l}.dll.a)
 endforeach()
-set(_qt_renames_OSUtilsShim _Delay=_QT_Delay)
-set(_qt_renames_TextUtilsShim _NumToString=_QT_NumToString)
-
-set(QT_RENAMED "")
-set(_x ${CMAKE_BINARY_DIR}/qtsdk/extract)
-execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-ar t ${QTML_CLIENT_LIB} OUTPUT_VARIABLE _members)
-foreach(m ${_qt_members})
-  set(_out ${CMAKE_BINARY_DIR}/qtsdk/${m}_renamed.obj)
-  list(APPEND QT_RENAMED ${_out})
-  if(EXISTS ${_out} AND NOT ${QTML_CLIENT_LIB} IS_NEWER_THAN ${_out}
-     AND NOT ${CMAKE_CURRENT_LIST_FILE} IS_NEWER_THAN ${_out})
-    continue()
-  endif()
-  file(REMOVE_RECURSE ${_x})
-  file(MAKE_DIRECTORY ${_x})
-  string(REGEX MATCH "[^\n]*\\\\${m}\\.obj" _m "${_members}")
-  execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-ar x ${QTML_CLIENT_LIB} "${_m}" WORKING_DIRECTORY ${_x}
-                  RESULT_VARIABLE rc1)
-  set(_args "")
-  foreach(r ${_qt_renames_${m}})
-    list(APPEND _args --redefine-sym ${r})
-  endforeach()
-  execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-objcopy ${_args} "${_x}/${_m}" ${_out} RESULT_VARIABLE rc2)
-  if(NOT _m OR rc1 OR rc2 OR NOT EXISTS ${_out})
-    message(FATAL_ERROR "could not extract/rename ${m}.obj from ${QTML_CLIENT_LIB}")
-  endif()
-endforeach()
+file(GLOB FFMPEG_DLLS ${FFMPEG_ROOT}/bin/*.dll)
+file(GLOB FFMPEG_LICENSE ${FFMPEG_ROOT}/share/licenses/FFmpeg-COPYING.LGPLv2.1.txt)
 
 # -- the sources, C or C++ by each file's `// COMPILE: -lang c++` marker ----------------------------
 file(GLOB_RECURSE ALL_C CONFIGURE_DEPENDS ${SRC}/*.c)
@@ -97,10 +81,13 @@ set(WIN_LIBS kernel32 user32 gdi32 winmm advapi32 shell32 comdlg32)
 add_executable(evnova_ce WIN32 ${GAME_SRC} ${SRC}/rsrc/evnova.rc)
 target_include_directories(evnova_ce PRIVATE ${SRC}/include)
 target_compile_options(evnova_ce PRIVATE ${EVNOVA_FLAGS})
+# the only file that sees FFmpeg's headers: their structs must keep FFmpeg's enum sizes
+target_include_directories(evnova_ce PRIVATE ${FFMPEG_ROOT}/include)
+set_source_files_properties(${SRC}/media/media.c PROPERTIES COMPILE_OPTIONS -fno-short-enums)
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "EV Nova CE" LINKER_LANGUAGE CXX)
-target_link_libraries(evnova_ce PRIVATE ${QT_RENAMED} ${QTML_CLIENT_LIB} ${WIN_LIBS} gdiplus)
+target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} ${WIN_LIBS} gdiplus)
 target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map"
-  # qtmlClient.lib was built with MSVC and asks for its C runtime; mingw's is linked instead
-  -Wl,-Xlink=-nodefaultlib:LIBCMT -Wl,-Xlink=-nodefaultlib:OLDNAMES
   # CE's 2 GB memory pool needs the large-address-aware bit
   -Wl,--large-address-aware)
+add_custom_command(TARGET evnova_ce POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FFMPEG_DLLS} ${FFMPEG_LICENSE} $<TARGET_FILE_DIR:evnova_ce>)

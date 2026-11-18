@@ -12,28 +12,9 @@
 extern "C" {
 #endif
 
-/* QuickTime's own records. The port's PixMap (macport.h) is a different layout, so a
-   QuickTime GWorld is only ever touched through these. */
+/* the ImageDescription in a QuickTime-compressed PICT opcode */
 #pragma pack(push, 2)
-typedef struct QTPixMap {
-    char *baseAddr;                              /* +0x00 */
-    short rowBytes;                              /* +0x04 top two bits are flags */
-    Rect bounds;                                 /* +0x06 */
-    short pmVersion;                             /* +0x0e */
-    short packType;                              /* +0x10 */
-    int32_t packSize;                               /* +0x12 */
-    int32_t hRes;                                   /* +0x16 */
-    int32_t vRes;                                   /* +0x1a */
-    short pixelType;                             /* +0x1e */
-    short pixelSize;                             /* +0x20 */
-    short cmpCount;                              /* +0x22 */
-    short cmpSize;                               /* +0x24 */
-    int32_t planeBytes;                             /* +0x26 */
-    void *pmTable;                               /* +0x2a */
-    int32_t pmReserved;                             /* +0x2e */
-} QTPixMap, **QTPixMapHandle;
-
-typedef struct QTImageDescription {
+typedef struct ImageDescription {
     int32_t idSize;                                 /* +0x00 */
     uint32_t cType;                         /* +0x04 */
     int32_t resvd1;                                 /* +0x08 */
@@ -53,11 +34,8 @@ typedef struct QTImageDescription {
     unsigned char name[32];                      /* +0x32 */
     short depth;                                 /* +0x52 */
     short clutID;                                /* +0x54 */
-} QTImageDescription, **QTImageDescriptionHandle;
+} ImageDescription, **ImageDescriptionHandle;
 #pragma pack(pop)
-
-typedef struct QTGWorld *QTGWorldPtr;            /* opaque: QuickTime owns it */
-typedef struct QTGDevice **QTGDHandle;
 
 /* the PICT PixMap record after its rowBytes and bounds, host order */
 typedef struct PICTPixmap_t {
@@ -75,28 +53,19 @@ typedef struct PICTPixmap_t {
     int32_t reserved;                               /* +0x20 */
 } PICTPixmap_t;
 
-/* QuickTime selector stubs, qtmlClient.lib. The last three are QuickTime's GetPixBaseAddr,
-   GetGWorldDevice and GetGWorldPixMap, linked under a QT_ prefix (CMakeLists.txt renames them); the
-   plain Toolbox names belong to the port's QuickDraw code. */
+/* QuickTime calls, media/quicktime.c; the GWorld is the port's CGrafPort (macport.h) */
 extern Handle NewHandle(int32_t size);                                  /* 0x004f1450 */
 extern void DisposeHandle(Handle h);                                 /* 0x004f1490 */
 extern void MacSetRect(Rect *r, short left, short top, short right, short bottom);
                                                                      /* 0x004f2a10 */
-extern short DecompressImage(char *data, QTImageDescriptionHandle desc, QTPixMapHandle dst,
+extern short DecompressImage(char *data, ImageDescriptionHandle desc, PixMapPtr dst,
                              const Rect *srcRect, const Rect *dstRect, short mode,
                              void *mask);                            /* 0x004fc270 */
-extern short NewImageGWorld(QTGWorldPtr *gworld, QTImageDescriptionHandle desc,
+extern short NewImageGWorld(CGrafPtr *gworld, ImageDescriptionHandle desc,
                             uint32_t flags);                    /* 0x004fc290 */
-extern unsigned char LockPixels(QTPixMapHandle pm);                  /* 0x004fc2f0 */
-extern void GetGWorld(QTGWorldPtr *port, QTGDHandle *device);        /* 0x004fc330 */
-extern void SetGWorld(QTGWorldPtr port, QTGDHandle device);          /* 0x004fc350 */
-extern char *QT_GetPixBaseAddr(QTPixMapHandle pm);
-extern QTGDHandle QT_GetGWorldDevice(QTGWorldPtr gworld);
-extern QTPixMapHandle QT_GetGWorldPixMap(QTGWorldPtr gworld);
 
 #define kPixMapRowFlag      0x8000      /* rowBytes: a PixMap, not a BitMap */
 #define kDeviceIndexFlag    0x8000      /* ctFlags: entries are in order, ignore their values */
-#define kQTRowBytesMask     0x3fff
 #define kVariableLength     -1
 
 /* PICT opcodes this decoder acts on */
@@ -416,12 +385,12 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
     Word i;
     Word8 *WorkPtr;
     const Word8 *DataPtr;
-    QTImageDescriptionHandle Desc;
-    QTImageDescription *DescPtr;
-    QTGWorldPtr GWorld;
-    QTGWorldPtr SavePort;
-    QTGDHandle SaveDevice;
-    QTPixMapHandle PixMap;
+    ImageDescriptionHandle Desc;
+    ImageDescription *DescPtr;
+    CGrafPtr GWorld;
+    CGrafPtr SavePort;
+    void *SaveDevice;
+    PixMapPtr PixMap;
     Word Parity;
     Rect PixBounds;
     Rect SrcRect;
@@ -622,11 +591,11 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
             MaskSize = BigLong(InputPtr + 0x40);
             DataPtr += 0x44;
             DataPtr += MatteSize + MaskSize;
-            if (BigLong(DataPtr) == sizeof(QTImageDescription)) {
-                Desc = (QTImageDescriptionHandle)NewHandle(sizeof(QTImageDescription));
+            if (BigLong(DataPtr) == sizeof(ImageDescription)) {
+                Desc = (ImageDescriptionHandle)NewHandle(sizeof(ImageDescription));
                 HLock((Handle)Desc);
                 DescPtr = *Desc;
-                *DescPtr = *(const QTImageDescription *)DataPtr;
+                *DescPtr = *(const ImageDescription *)DataPtr;
                 DescPtr->idSize = SwapLong(DescPtr->idSize);
                 DescPtr->cType = SwapLong(DescPtr->cType);
                 DescPtr->resvd1 = SwapLong(DescPtr->resvd1);
@@ -650,21 +619,21 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
                 GWorld = NULL;
                 Err = NewImageGWorld(&GWorld, Desc, noNewDevice);
                 if (!Err) {
-                    PixMap = QT_GetGWorldPixMap(GWorld);
+                    PixMap = &GWorld->pix;
                     LockPixels(PixMap);
                     MacSetRect(&Bounds, 0, 0, (*Desc)->width, (*Desc)->height);
                     GetGWorld(&SavePort, &SaveDevice);
-                    SetGWorld(GWorld, QT_GetGWorldDevice(GWorld));
+                    SetGWorld(GWorld, GetGWorldDevice(GWorld));
                     Err = DecompressImage((char *)DataPtr, Desc, PixMap, &Bounds, &Bounds, srcCopy,
                                           NULL);
                     SetGWorld(SavePort, SaveDevice);
                 }
                 if (!Err) {
-                    ImagePtr->RowBytes = (*PixMap)->rowBytes & kQTRowBytesMask;
+                    ImagePtr->RowBytes = PixMap->rowBytes;
                     Size = ImagePtr->RowBytes * ImagePtr->Height;
                     ImagePtr->ImagePtr = (Word8 *)AllocAPointer(Size);
-                    memcpy(ImagePtr->ImagePtr, QT_GetPixBaseAddr(PixMap), Size);
-                    switch ((*PixMap)->pixelSize) {
+                    memcpy(ImagePtr->ImagePtr, GetPixBaseAddr(PixMap), Size);
+                    switch (PixMap->pixelSize) {
                     case 8:
                         ImagePtr->DataType = IMAGE8_PAL;
                         break;
@@ -678,10 +647,10 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
                         ImagePtr->DataType = IMAGE8888;
                         break;
                     default:
-                        NonFatal("Unsuppored PICT bit depth %d.\n", (*PixMap)->pixelSize);
+                        NonFatal("Unsuppored PICT bit depth %d.\n", PixMap->pixelSize);
                         break;
                     }
-                    if ((*PixMap)->pixelSize == 16) {
+                    if (PixMap->pixelSize == 16) {
                         int Rows;
                         int Skip;
                         Word16 *SwapPtr;
@@ -708,7 +677,7 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
                     NonFatal("Unable to decompress QT PICT.\n");
                 }
                 if (GWorld) {
-                    QT_DisposeGWorld(GWorld);
+                    DisposeGWorld(GWorld);
                 }
                 if (Desc) {
                     DisposeHandle((Handle)Desc);

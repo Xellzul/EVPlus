@@ -73,7 +73,8 @@ typedef struct PixMap {
 } PixMap, *PixMapPtr;
 typedef struct CGrafPort {
     Boolean offscreen;
-    char filler1[3];
+    Boolean bigEndian;              /* 16-bit pixels big-endian: a NewGWorldFromPtr with k16BE555PixelFormat */
+    char filler1[2];
     PixMap pix;
     int32_t depth;
     void *hdc;
@@ -136,6 +137,12 @@ extern void *GetPortVisRgn(void *port);
 extern short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds,
                        void *theGDH);
 extern PixMapPtr GetGWorldPixMap(CGrafPtr world);
+/* QuickTime's GWorld calls (media/quicktime.c); DisposeGWorld frees these too */
+extern short NewGWorldFromPtr(CGrafPtr *gw, OSType pixelFormat, const Rect *bounds, void *cTable,
+                              void *aGDevice, int32_t flags, void *baseAddr, int32_t rowBytes);
+extern Boolean LockPixels(PixMapPtr pm);
+extern void GetGWorld(CGrafPtr *port, void **device);
+extern void SetGWorld(CGrafPtr port, void *device);
 extern PixMapPtr GetWindowPixMap(CWindowPtr window);
 extern void QDGetCIconBounds(Image_t *icon, Rect *r);
 extern PicHandle GetPictureNoGamma(int picID);

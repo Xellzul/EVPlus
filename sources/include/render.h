@@ -113,11 +113,8 @@ extern uint32_t lastRolloverAnimTime;
 extern short rolloverAlpha;
 extern short rolloverIndex;
 extern Handle intfFileHand;
-extern void *gIntroMovieData;
+extern CGrafPtr gIntroMovieData;
 EXTERN_CPP_END
-extern void QTNewGWorldFromPtr(void **gw, int32_t pixelFormat, Rect *boundsRect,
-                               int32_t cTable, int32_t aGDevice, int32_t flags, int32_t baseAddr,
-                               int32_t rowBytes);
 EXTERN_CPP_BEGIN
 extern uint32_t lastLogoAnimTime;
 extern uint32_t lastSlideAnimTime;

@@ -99,7 +99,7 @@ char playerInfoText[3][4096];
 short nagCount;
 short previewPicID;
 RGBColor shopGridColor[2];
-void *gIntroMovieData;
+CGrafPtr gIntroMovieData;
 Rect gMovieBox;
 /* the menu icon cache draws into a port on mac, into the port's container on win */
 #define MenuIconPort(gwc) (gwc)
@@ -6224,8 +6224,8 @@ void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
     gMovieBox.bottom = box->bottom;
 
     port = *windowPort;
-    QTNewGWorldFromPtr(&gIntroMovieData, k16BE555PixelFormat, &gMovieBox, 0, 0, 0,
-                       (int32_t)port->pix.baseAddr, port->pix.rowBytes);
+    NewGWorldFromPtr(&gIntroMovieData, k16BE555PixelFormat, &gMovieBox, NULL, NULL, 0,
+                     port->pix.baseAddr, port->pix.rowBytes);
 
     PStr2CStr(cname, name);
 
@@ -6282,7 +6282,7 @@ void EndLoopingMovie(void)
     if (loopingMovie != NULL) {
         DisposeMovie(loopingMovie);
         loopingMovie = NULL;
-        QT_DisposeGWorld(gIntroMovieData);
+        DisposeGWorld(gIntroMovieData);
         gIntroMovieData = NULL;
     }
 }
@@ -6400,11 +6400,11 @@ found:
         gMovieBox.bottom = box.bottom;
         SetMovieBox(movie, &gMovieBox);
         port = GetCWindowGrafPort(gWind);
-        QTNewGWorldFromPtr(&gIntroMovieData, k16LE555PixelFormat, &gMovieBox, 0, 0, 0,
-                           (int32_t)port->pix.baseAddr +
-                           box.top * port->pix.rowBytes +
-                           (port->pix.pixelSize >> 3) * box.left,
-                           port->pix.rowBytes);
+        NewGWorldFromPtr(&gIntroMovieData, k16LE555PixelFormat, &gMovieBox, NULL, NULL, 0,
+                         (char *)port->pix.baseAddr +
+                         box.top * port->pix.rowBytes +
+                         (port->pix.pixelSize >> 3) * box.left,
+                         port->pix.rowBytes);
         SetMovieGWorld(movie, gIntroMovieData, 0);
         track = GetMovieIndTrackType(movie, 1, 0x76696465, 1);
         SetTrackGWorld(track, gIntroMovieData, 0, IntroMovieIdleProc, 0);
@@ -6449,7 +6449,7 @@ found:
             ShowTheCursor();
         }
         DisposeMovie(movie);
-        QT_DisposeGWorld(gIntroMovieData);
+        DisposeGWorld(gIntroMovieData);
         gIntroMovieData = NULL;
         SWSetPortToWindow(gSpriteWorld);
         ForeColor(blackColor);
