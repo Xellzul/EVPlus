@@ -405,22 +405,6 @@ CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
  * tells SpriteWorld where the back buffer went if a world already exists.
  */
 
-// FUNCTION: EVNOVA 0x004b8c20
-void ReleaseScreenDC(void)
-{
-    /* the exe gives the window's device context back here; text is no longer drawn through one */
-}
-
-// FUNCTION: EVNOVA 0x004b8c40
-void AcquireScreenDC(void)
-{
-    LockVideoPage();
-    gGamePort.pix.baseAddr = videoBase;
-    gGamePort.pix.rowBytes = VideoWidth;
-    if (gSpriteWorld != NULL)
-        SWWindowMoved(gSpriteWorld);
-}
-
 /* Two sources in order: an EVNova.ini override keyed by list and index, then the STR#
    resource. `entry' is seeded from `base' before the count is read (`entry = base + 2'
    coalesces the pair). */

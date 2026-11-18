@@ -5,6 +5,7 @@
 #include "burgertypes.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,11 +20,9 @@ extern void * ResizeAPointer(void *mem, uint32_t size);
 extern int32_t IndirectDeallocate(void **p);               /* atplatheap.c */
 
 /* the platform heap (atplatheap.c) */
-extern void * MemoryAllocate(uint32_t size);
 extern void MemoryClear(void *p, uint32_t n);
 extern void MemoryDeallocate(void *p);
 extern void MemoryCopy(void *dst, const void *src, uint32_t n);
-extern void MemoryFill(void *p, int c, uint32_t n);
 extern void SystemSetQuitProc(void (*fn)(void));
 extern int32_t PlatformOpen(void);
 extern int32_t FT_Open(void);
@@ -32,7 +31,6 @@ extern ULong TimerGetTicks(void);                 /* atticks.c: milliseconds; on
 extern ULong TimerGetTickRate(void);                 /* atticks.c: the tick rate that goes with it */
 extern int32_t _IndirectValidate(void **handle);         /* atplatheap.c: the heap check */
 extern void * MemoryAllocateClear(uint32_t size);
-extern void FastMemSet(void *DestPtr, Word Fill, Word32 Length);
 extern void DebugXString(const char *string);
 
 /* the hash table (athashtbl.c) */
@@ -158,14 +156,12 @@ extern Word ResourceGetRezNum(struct RezFile *rez, const char *name);
 extern Handle ResourceLoadHandle(struct RezFile *rez, int32_t index);
 extern Handle ResourceLoadHandleByName(struct RezFile *rez, const char *name);
 extern unsigned int SetAPrefix(unsigned int prefix, const char *path);
-extern void PopAPrefix(unsigned int prefix);
 extern void *LoadAFile(const char *fileName, uint32_t *length);
 extern char *GetFileExtension(const char *name);
 extern Handle StrCopyHandle(const char *text);
 extern char *StrCopy(const char *text);
 extern void StripLeadingAndTrailingWhiteSpace(char *text);
 extern void ExtractAString2(const char *src, ULong *size, Word flags, char *dst, ULong dstSize);
-extern Word SetErrBombFlag(Word flag);
 extern Word BombFlag;
 extern char ErrorMsg[512];                       /* burgerfatal.c */
 extern Word IAmExiting;                          /* burgerfatal2.c */
@@ -205,7 +201,6 @@ extern void SetHandlePurgeFlag(void **handle, Word flag);
 extern void HLock(Handle h);                                         /* 0x004f1470 */
 extern void HUnlock(Handle h);
 extern void HPurge(Handle h);
-extern void Gestalt(int32_t selector, int32_t *result);
 extern short EnterMovies(void);
 extern void ExitMovies(void);
 extern void SetTrackGWorld(void *track, void *movieData, int32_t a3,
@@ -338,7 +333,6 @@ extern char *VideoOffscreen;
 /* input globals (burgerinput.c) */
 extern int32_t Win95MouseX;
 extern int32_t Win95MouseY;
-extern Word JoystickPresent;                     /* globaldefs.c */
 extern Word32 Win95MouseButton;                  /* burgerkbwin.c */
 /* the hyperspace white-out (port addition, burgervideomode.c): blend from..to of 256 over 60 Hz ticks */
 #define kWhiteNone          0
@@ -367,7 +361,6 @@ extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib Cr
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
 extern unsigned char IndirectSetLock(void **handle, unsigned char lock);
 extern ULong IndirectGetSize(void **handle);
-extern int32_t IndirectSetSize(void **handle, ULong size);
 extern char *StringCopySafe(char *dst, const char *src, uint32_t size);
 extern char *StringFromNumber(char *out, ULong value);
 extern char *String2UpperCopySafe(char *dst, const char *src, ULong n);
@@ -376,7 +369,6 @@ extern char *StringDuplicate(const char *s);
 extern char *String2Upper(char *s);
 extern char *String2Lower(char *s);
 extern char *StringFindString(const char *s, const char *sub);
-extern unsigned char IndirectGetLock(void **handle);
 struct ITElement;
 
 /* the interface tool's settings, window layer, drawing and input, called from its control
@@ -433,14 +425,6 @@ extern int32_t HashInsert(struct HashTable *t, const char *key, const char *valu
 extern int32_t HashAppend(struct HashTable *t, const char *key, const char *value);
 extern unsigned char HashRemove(struct HashTable *t, const char *key);
 struct WindowNode;
-extern void MemoryMove(void *dst, const void *src, ULong n);
-extern int32_t IndirectAppendData(void **handle, const void *data, ULong length);
-extern int32_t IndirectReplaceData(void **handle, const void *data, ULong length);
-extern int32_t IndirectAppend(void **handle, void **from);
-extern int32_t IndirectReplace(void **handle, void **from);
-extern int32_t IndirectInsertData(void **handle, const void *data, ULong length);
-extern int32_t IndirectSpliceData(void **handle, ULong offset, ULong oldLength, const void *data,
-                         ULong newLength);
 extern ULong UnicodeGetByteCount(const unsigned short *s);
 extern const unsigned short *UnicodeAdvance(const unsigned short *s, ULong *code);
 extern unsigned short *C2UStringCopySafe(unsigned short *dst, const unsigned char *src,
@@ -460,28 +444,18 @@ static inline char *CopyString(char *dst, const char *src)
     return dst;
 }
 
-extern void **IndirectDuplicate(void **handle);
-extern unsigned char AtomicMaskTest(ULong *word, ULong bit);
-extern void **IndirectAllocateTempMem(ULong size);
 extern void **IndirectAllocate(ULong size);
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);
 extern char *ConvertNativePathToPath(const char *path);
 extern void *LoadAFileHandle(const char *path);
 extern void **AllocAHandleClear(ULong size);
-extern void VideoGetCurrentMode(int32_t *out);
-extern int32_t VideoSetMode(int32_t *rec);
 extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);
 extern void KeyboardFlush(void);
 extern int32_t CreateDirectoryPath(const char *path);
-extern void JoystickDestroy(void);
 extern void Fatal(const char *fmt, ...);
 extern void NonFatal(const char *fmt, ...);
 
-/* Burger.h maps strlen onto the library's word-at-a-time FastStrLen (burgerpow2.c) */
-extern Word FastStrLen(const char *Input);
-#undef strlen
-#define strlen(x) FastStrLen(x)
 
 /* the guarded copy the file and sound tools inline (atfilespec.c, atsndmem.c) */
 static inline void BlockMoveData(const void *src, void *dst, ULong size)
@@ -497,8 +471,6 @@ extern unsigned int KeyboardKbhit(void);
 extern unsigned int KeyboardGetch(void);
 extern void KeyboardCallPollingProcs(void);
 extern void ProcessSystemEvents(void);
-extern void KeyboardAddRoutine(void (*proc)(void *), void *data);
-extern void KeyboardRemoveRoutine(void (*proc)(void *), void *data);
 extern Word32 PowerOf2(Word32 Input);
 
 /* the song decoders' front end (burgerdigsong.c) */

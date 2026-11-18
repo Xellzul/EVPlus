@@ -50,17 +50,6 @@ void NonFatal(const char *fmt, ...)
     }
 }
 
-/* SetErrBombFlag (BurgerLib DbDebugManager). */
-// FUNCTION: EVNOVA 0x00503ee0
-Word SetErrBombFlag(Word flag)
-{
-    Word old;
-
-    old = BombFlag;
-    BombFlag = flag;
-    return old;
-}
-
 /* DebugXLongWord (BurgerLib DbDebugManager). */
 // FUNCTION: EVNOVA 0x00503ef0
 void DebugXLongWord(Word32 value)

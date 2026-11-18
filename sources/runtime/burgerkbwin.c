@@ -248,7 +248,7 @@ void ProcessSystemEvents(void)
 // FUNCTION: EVNOVA 0x004d7a80
 void KeyboardInit(void)
 {
-    FastMemSet(KeyArray, 0, kKeyTableSize);
+    memset(KeyArray, 0, kKeyTableSize);
     BurgerKeyStart = 0;
     BurgerKeyEnd = 0;
     MouseClicked = 0;

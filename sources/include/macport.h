@@ -53,13 +53,6 @@ typedef ControlPtr ControlRef;
 typedef Image_t *CIconHandle;
 typedef Image_t *PixPatHandle;
 typedef void *Movie;
-typedef struct ComponentDescription {
-    int32_t componentType;
-    int32_t componentSubType;
-    int32_t componentManufacturer;
-    uint32_t componentFlags;
-    uint32_t componentFlagsMask;
-} ComponentDescription;
 
 typedef struct PixMap {
     Rect bounds;
@@ -623,7 +616,6 @@ typedef int EventChar;
 #define kRLE8ResType 0x726c9138UL
 #define kRLEDResType 0x726c9144UL
 
-extern void AcquireScreenDC(void);
 extern void *NewPortPixels(int width, int rows, int bits);
 extern short Alert(short alertID, void *filterProc);
 #define StopAlert(id, filter) Alert(id, filter)
@@ -686,7 +678,6 @@ extern Image_t *GetPixPat(short id);
 extern void GetPort(CGrafPtr *port);
 extern void InitFonts(void);
 extern short InitializeQTML(int32_t flags);
-extern void *FindNextComponent(void *prev, ComponentDescription *cd);
 extern void InsetRect(Rect *r, int dh, int dv);
 extern void InvertRect(Rect *r);
 extern unsigned char KeyCheck(short scanCode);
@@ -719,7 +710,6 @@ extern void PtToAngle(const Rect *r, Point pt, short *angle);
 extern Boolean RectInRgn(Rect *r, void *rgn);
 extern void RedrawDialog(DialogPtr dlg);
 extern void RedrawDialogs(int a);
-extern void ReleaseScreenDC(void);
 extern void ResetScreenRect(void);
 extern void ScreenEndScene(void);
 extern int SectRect(const Rect *a, const Rect *b, Rect *dst);

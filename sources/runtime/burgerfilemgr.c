@@ -79,46 +79,6 @@ FILE *FOpenExpandedPath(const char *path, const char *mode)
     return PlatFileOpen(expanded, mode);
 }
 
-/* CopyAFile (BurgerLib FmFileManager): a file copied in 64K pieces. Not linked. */
-Word CopyAFile(const char *dest, const char *source)
-{
-    FILE *in;
-    FILE *out;
-    void *buffer;
-    ULong size;
-    ULong chunk;
-    Word result;
-
-    result = 1;
-    buffer = AllocAPointer(0x10000);
-    if (buffer != 0) {
-        in = FOpenExpandedPath(source, "rb");
-        if (in != 0) {
-            out = FOpenExpandedPath(dest, "wb");
-            if (out != 0) {
-                result = 0;
-                size = fgetfilesize(in);
-                while (size != 0) {
-                    chunk = size;
-                    if (chunk > 0x10000)
-                        chunk = 0x10000;
-                    if (fread(buffer, 1, chunk, in) != chunk ||
-                        fwrite(buffer, 1, chunk, out) != chunk) {
-                        result = 1;
-                        break;
-                    }
-                    size -= chunk;
-                }
-                if (fclose(out) != 0)
-                    result = 1;
-            }
-            fclose(in);
-        }
-        DeallocAPointer(buffer);
-    }
-    return result;
-}
-
 /* DeleteAFile (BurgerLib FmFileManager). */
 // FUNCTION: EVNOVA 0x004f1e30
 Word DeleteAFile(const char *name)
@@ -259,55 +219,6 @@ unsigned int SetAPrefix(unsigned int num, const char *name)
     return -1;
 }
 
-/* BurgerLib's GetAPrefix: a copy of prefix num in a new pointer ("" when unset). */
-static char *GetAPrefix(Word num)
-{
-    Handle handle;
-    Word length;
-    char *result;
-
-    if (num < PREFIXMAX) {
-        handle = PrefixHandles[num];
-        if (handle != 0) {
-            length = GetAHandleSize(handle);
-            result = (char *)AllocAPointer(length);
-            if (result != 0)
-                memcpy(result, *handle, length);
-            return result;
-        }
-        return (char *)AllocAPointerClear(1);
-    }
-    NonFatal("Invalid prefix number\n");
-    return 0;
-}
-
-/* PopAPrefix (BurgerLib FmFileManager): drop the last directory from prefix num. */
-// FUNCTION: EVNOVA 0x004f21b0
-void PopAPrefix(unsigned int num)
-{
-    char *path;
-    char *end;
-    Word length;
-
-    path = GetAPrefix(num);
-    if (path != 0) {
-        length = strlen(path);
-        if (length >= 3) {
-            end = path + (length - 2);
-            do {
-                if ((Word8)*end == ':')
-                    break;
-                --end;
-            } while (end != path);
-            *end = 0;
-        } else {
-            path[0] = 0;
-        }
-        SetAPrefix(num, path);
-        DeallocAPointer(path);
-    }
-}
-
 /* The exe takes the address of its own PARAMETER SLOT (`lea eax,[esp+0x14]'
    is arg1, not a local), so this writes the caller's value out. */
 /* fwritelong (BurgerLib's void signature). */
@@ -386,26 +297,6 @@ int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length)
     return 0;
 }
 
-/* SaveATextFile (BurgerLib FmFileManager): SaveAFile in text mode. Not linked. */
-Word SaveATextFile(const char *name, const void *data, uint32_t length)
-{
-    FILE *file;
-    uint32_t written;
-    int closed;
-
-    file = FOpenExpandedPath(name, "w");
-    if (file == 0) {
-        NonFatal("Can't open the file to save to\n");
-        return 0;
-    }
-    written = fwrite(data, 1, length, file);
-    closed = fclose(file);
-    if (written == length && closed == 0)
-        return 1;
-    NonFatal("Error in saving file contents\n");
-    return 0;
-}
-
 /* LoadAFile (BurgerLib FmFileManager). */
 // FUNCTION: EVNOVA 0x004f24c0
 void *LoadAFile(const char *name, uint32_t *length)
@@ -416,20 +307,6 @@ void *LoadAFile(const char *name, uint32_t *length)
     if (fp != 0)
         return LoadAFileFP(fp, length);
     NonFatal("File %s was not found\n", name);
-    if (length != 0)
-        *length = 0;
-    return 0;
-}
-
-/* LoadAFileNative (BurgerLib FmFileManager): LoadAFile for a name already expanded. Not linked. */
-void *LoadAFileNative(const char *name, uint32_t *length)
-{
-    FILE *fp;
-
-    fp = PlatFileOpen(name, "rb");
-    if (fp != 0)
-        return LoadAFileFP(fp, length);
-    NonFatal("File not found\n");
     if (length != 0)
         *length = 0;
     return 0;

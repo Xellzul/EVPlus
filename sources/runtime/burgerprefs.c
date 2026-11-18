@@ -255,48 +255,6 @@ static PrefsNode *PrefsFindEntry(PrefsNode *group, const char *key)
     return 0;
 }
 
-/* PrefFileSectionGetFloat and ...GetDouble (BurgerLib PgPrefFile): a number read from a key,
-   clamped to a range unless an end is zero. Not linked. */
-float PrefFileSectionGetFloat(PrefsNode *group, const char *key, float dflt, float min,
-                              float max)
-{
-    PrefsNode *node;
-    char *value;
-    float result;
-
-    node = PrefsFindEntry(group, key);
-    value = node != 0 ? node->ValueText : 0;
-    if (value == 0 || sscanf(value, "%f", &result) != 1)
-        return dflt;
-    if (!min || !max)
-        return result;
-    if (result < min)
-        return min;
-    if (result > max)
-        return max;
-    return result;
-}
-
-double PrefFileSectionGetDouble(PrefsNode *group, const char *key, double dflt, double min,
-                                double max)
-{
-    PrefsNode *node;
-    char *value;
-    double result;
-
-    node = PrefsFindEntry(group, key);
-    value = node != 0 ? node->ValueText : 0;
-    if (value == 0 || sscanf(value, "%lf", &result) != 1)
-        return dflt;
-    if (!min || !max)
-        return result;
-    if (result < min)
-        return min;
-    if (result > max)
-        return max;
-    return result;
-}
-
 /* The value is unquoted into the caller's buffer first; only if that came
    back unchanged AND the value is non-empty does the value replace the
    default, and the copy below runs on whichever survived. */
@@ -351,22 +309,6 @@ void PrefFileSectionAddEntry(PrefsNode *group, const char *key, const char *valu
         node->Prev = next->Prev;
         node->Next->Prev = node;
         node->Prev->Next = node;
-    }
-}
-
-/* PrefFileSectionPutFloat (BurgerLib PgPrefFile): a key set to a number. Not linked. */
-void PrefFileSectionPutFloat(PrefsNode *group, const char *key, float value)
-{
-    char text[64];
-    PrefsNode *node;
-
-    sprintf(text, "%g", value);
-    node = PrefsFindEntry(group, key);
-    if (node != 0) {
-        DeallocAPointer(node->ValueText);
-        node->ValueText = StrCopy(text);
-    } else {
-        PrefFileSectionAddEntry(group, key, text);
     }
 }
 

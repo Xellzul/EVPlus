@@ -38,7 +38,7 @@ int ImageParseCicn(Image_t *Output, const Word8 *InputPtr)
     Word count;
 
     WorkPtr = (Word8 *)InputPtr;
-    FastMemSet(Output, 0, 0x1c);
+    memset(Output, 0, 0x1c);
     sp = (Word16 *)WorkPtr;
     Output->Width = (short)SwapUShort(sp + 6)
                   - (short)SwapUShort(sp + 4);
@@ -75,7 +75,7 @@ int ImageParseCicn(Image_t *Output, const Word8 *InputPtr)
     maskPtr = WorkPtr;
     WorkPtr += SwapUShort((Word16 *)maskRBPtr) * Output->Height;
     WorkPtr += SwapUShort((Word16 *)bmapRBPtr) * Output->Height;
-    FastMemSet(used, 0, 0x100);
+    memset(used, 0, 0x100);
     used[0] = 0xff;
     count = SwapUShort((Word16 *)(WorkPtr + 6)) + 1;
     {

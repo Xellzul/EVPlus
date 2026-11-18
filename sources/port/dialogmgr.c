@@ -2234,7 +2234,6 @@ void WinGameEvent(const PlatEvent *ev)
 // FUNCTION: EVNOVA 0x004d28b0
 void ShutdownWinGame(void)
 {
-    JoystickDestroy();
     KeyboardDestroy();
     MouseDestroy();
     if (VideoWidth != 0) {

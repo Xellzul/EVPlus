@@ -21,8 +21,6 @@
 #define kNoMovieFound   (-2048)
 #define kCodecErr       (-8960)
 
-#define kGestaltQuickTime 0x7174696d                /* 'qtim' */
-#define kQuickTimeVersion 0x06408000                /* QuickTime 6.4, the CE install's QuickTime.qts */
 #define kVideoMediaType   0x76696465                /* 'vide' */
 #define kFormat16BE555    0x00000010                /* k16BE555PixelFormat */
 #define kFormat16LE555    0x4c353535                /* k16LE555PixelFormat 'L555' */
@@ -96,19 +94,6 @@ short MemError(void)
 short InitializeQTML(int32_t flags) { (void)flags; return kNoErr; }
 void TerminateQTML(void) { }
 short EnterMovies(void) { return kNoErr; }
-
-void Gestalt(int32_t selector, int32_t *result)
-{
-    if ((uint32_t)selector == kGestaltQuickTime && result != NULL)
-        *result = kQuickTimeVersion;
-}
-
-/* the game only asks whether the Animation decompressor exists (initevnova.c); FFmpeg's qtrle is built in */
-void *FindNextComponent(void *prev, ComponentDescription *desc)
-{
-    (void)desc;
-    return prev == NULL ? (void *)(intptr_t)kDeviceToken : NULL;
-}
 
 int32_t GetMainDevice(void) { return kDeviceToken; }
 

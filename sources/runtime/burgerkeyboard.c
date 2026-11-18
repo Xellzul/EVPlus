@@ -47,50 +47,6 @@ void KeyboardCallPollingProcs(void)
     }
 }
 
-/* KeyboardAddRoutine (BurgerLib InKeyboard). */
-// FUNCTION: EVNOVA 0x004f1850
-void KeyboardAddRoutine(void (*proc)(void *), void *data)
-{
-    PollProcs_t **handle;
-    PollProcs_t *entry;
-
-    handle = (PollProcs_t **)AllocAHandle2(sizeof(PollProcs_t), 0);
-    if (handle != 0) {
-        entry = *handle;
-        entry->Proc = proc;
-        entry->Data = data;
-        entry->Next = MasterKbHitProcList;
-        MasterKbHitProcList = handle;
-    }
-}
-
-/* KeyboardRemoveRoutine (BurgerLib InKeyboard). */
-// FUNCTION: EVNOVA 0x004f18a0
-void KeyboardRemoveRoutine(void (*proc)(void *), void *data)
-{
-    PollProcs_t **handle;
-    PollProcs_t **prev;
-    PollProcs_t *entry;
-
-    handle = MasterKbHitProcList;
-    if (handle != 0) {
-        prev = 0;
-        do {
-            entry = *handle;
-            if (entry->Proc == proc && entry->Data == data) {
-                if (prev != 0)
-                    (*prev)->Next = entry->Next;
-                else
-                    MasterKbHitProcList = entry->Next;
-                DeallocAHandle(handle);
-                break;
-            }
-            prev = handle;
-            handle = entry->Next;
-        } while (handle != 0);
-    }
-}
-
 /* KeyIsDown (BurgerLib KeyboardIsPressed). */
 // FUNCTION: EVNOVA 0x004f1900
 unsigned int KeyIsDown(unsigned int scanCode)
@@ -116,7 +72,7 @@ void KeyboardFlush(void)
 {
     while (KeyboardKbhit() != 0)
         KeyboardGetch();
-    FastMemSet(KeyArray, 0, kKeyTableSize);
+    memset(KeyArray, 0, kKeyTableSize);
     MouseClicked = 0;
 }
 

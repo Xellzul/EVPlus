@@ -19,7 +19,7 @@ void **AllocAHandleClear(ULong size)
 
     h = AllocAHandle2(size, 0);
     if (h != 0)
-        FastMemSet(*h, 0, size);
+        memset(*h, 0, size);
     return h;
 }
 
@@ -31,7 +31,7 @@ void *AllocAPointerClear(uint32_t size)
 
     mem = AllocAPointer(size);
     if (mem != 0)
-        FastMemSet(mem, 0, size);
+        memset(mem, 0, size);
     return mem;
 }
 

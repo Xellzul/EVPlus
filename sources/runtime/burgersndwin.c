@@ -175,7 +175,7 @@ int32_t ParseSoundFileImage(AudioDesc *desc, Word8 *data, ULong size)
     float rate;
     int32_t failed;
 
-    FastMemSet(desc, 0, sizeof(AudioDesc));
+    memset(desc, 0, sizeof(AudioDesc));
     failed = 1;
 
     if (size >= kMinRiff && *(ULong *)data == kRiff

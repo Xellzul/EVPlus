@@ -324,7 +324,7 @@ int32_t ResourceInit(RezFile *rez, const char *path, ULong start)
     int32_t flags;
 
     if (rez != 0) {
-        FastMemSet(rez, 0, kRezStateSize);
+        memset(rez, 0, kRezStateSize);
         if (path != 0) {
             file = FOpenExpandedPath(path, "rb");
             if (file != 0) {

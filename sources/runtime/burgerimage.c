@@ -27,7 +27,7 @@ void ImageDestroy(struct Image_t *ImagePtr)
         DeallocAPointer(ImagePtr->ImagePtr);
         DeallocAPointer(ImagePtr->PalettePtr);
         DeallocAPointer(ImagePtr->AlphaPtr);
-        FastMemSet(ImagePtr, 0, sizeof(Image_t));
+        memset(ImagePtr, 0, sizeof(Image_t));
     }
 }
 

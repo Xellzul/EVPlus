@@ -404,7 +404,7 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
     short Err;
     Word32 Size;
 
-    FastMemSet(ImagePtr, 0, sizeof(Image_t));
+    memset(ImagePtr, 0, sizeof(Image_t));
     Parity = (Word)InputPtr & 1;        /* opcodes are word aligned to the picture's start */
     ImagePtr->Width = BigShort(InputPtr + 8) - BigShort(InputPtr + 4);
     ImagePtr->Height = BigShort(InputPtr + 6) - BigShort(InputPtr + 2);

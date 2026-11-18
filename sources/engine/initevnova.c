@@ -31,14 +31,6 @@ extern void HideControlStrip(void);
 extern void CarbonHackCleanup(void);
 extern void DisposeGammaTools(void);
 
-#define kQuickTimeGestalt   'qtim'
-#define kQuickTime5         0x05000000
-
-#define kRLEDecompressor    'imdc'
-#define kRLECodec           'rle '
-#define kAppleManufacturer  'appl'
-#define kComponentFlagsMask 0x20000000
-
 #define kMaxGamma     6
 #define kDefaultGamma 3
 
@@ -367,8 +359,6 @@ void InitEVNova(void)
 {
     unsigned char alertText[256];
     long grow;
-    int32_t qtVersion;
-    ComponentDescription cd;
     int err;
     short i;
 
@@ -399,25 +389,6 @@ void InitEVNova(void)
     InitDataFiles();
     CE_ReadX2Hotkey();
     LoadPrefs();
-    Gestalt(kQuickTimeGestalt, &qtVersion);
-    if (qtVersion < kQuickTime5) {
-        ShowTheCursor();
-        ShowAlert("QuickTime v5.0 or Newer Required",
-                  "EV Nova requires QuickTime v5.0 or newer.  You can get the latest version of QuickTime from http://www.apple.com/quicktime/");
-        ExitToShell();
-    }
-
-    cd.componentType = kRLEDecompressor;
-    cd.componentSubType = kRLECodec;
-    cd.componentManufacturer = kAppleManufacturer;
-    cd.componentFlags = 0;
-    cd.componentFlagsMask = kComponentFlagsMask;
-    if (FindNextComponent(0, &cd) == 0) {
-        ShowTheCursor();
-        ShowAlert("QuickTime requires Internet Extras",
-                  "EV Nova requires QuickTime v5.0 or newer with the Internet Extras component.  You can install the component from the QuickTime settings panel, under Update Check.");
-        ExitToShell();
-    }
 
     crashlog("initializing monitor");
     CE_InitializeMonitor();
