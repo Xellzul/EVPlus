@@ -8,9 +8,7 @@
 #include "macport.h"
 #include "burgermath.h"
 #include "burger.h"
-#ifndef MACBUILD
 #include "win32.h"
-#endif
 #include "shipobj.h"
 #include "resources.h"
 #include "gameconst.h"
@@ -29,20 +27,6 @@
 #include "cefix.h"
 #include "prototypes.h"
 #include "gametypes.h"
-#ifdef MACBUILD
-#include "../mac/include/ASWRegistrationCarbonAPI.h"
-
-extern void SetupToolbox(void);
-extern void CarbonHackInit(void);
-extern void SelectNovaSupport(void);
-extern OSStatus EVInstallEndianFlippers(void);
-#if V111
-extern CFStringRef CFStringCreateFromString(const char *str, int32_t len);
-extern CFStringRef relative2absolute(CFStringRef path);
-#endif
-extern FSRef *novaSupportFolder;
-extern int32_t startupMemoryFree;
-#endif
 extern int32_t PreflightMemoryUsageTotal(void);
 extern void HideControlStrip(void);
 extern void CarbonHackCleanup(void);
@@ -74,7 +58,6 @@ Rect backUpdateRect;
 uint32_t lastSmokeUpdateTime;
 uint32_t lastKeypressTime;
 uint32_t lastEventLoopTime;
-#ifndef MACBUILD
 ShipObj *shipData;
 ShipRec *shipClass;
 SpobRecord *stellarData;
@@ -191,11 +174,6 @@ GWorldContainer statusOffPort;
 GWorldContainer loadPort;
 uint32_t tix;
 uint32_t floatingMapStartTime;
-#endif
-#ifdef V111
-unsigned char useLegacyRenderingPipeline;
-#endif
-#ifndef MACBUILD
 uint32_t lastMouseMoveTime;
 uint32_t lastEscortMenuTime;
 uint32_t lastFrameTime;
@@ -374,7 +352,6 @@ Boolean playerHasIllegalOutfits;
 Boolean allReinforcementsInhibited;
 Boolean playerHasTribbles;
 Boolean playerHasPerishableJunk;
-#endif
 
 EXTERN_C_BEGIN
 
@@ -388,14 +365,11 @@ EXTERN_C_BEGIN
 // FUNCTION: EVNOVA 0x00416100
 // MAC: _InitEVNova i386 0x0004666c ppc 0x0004eb44
 void InitEVNova(void)
-#if !defined(MACBUILD) || defined(MAC1010)
 {
     unsigned char alertText[256];
     long grow;
-#ifndef MACBUILD
     int32_t qtVersion;
     ComponentDescription cd;
-#endif
     int err;
     short i;
 
@@ -426,7 +400,6 @@ void InitEVNova(void)
     InitDataFiles();
     CE_ReadX2Hotkey();
     LoadPrefs();
-#ifndef MACBUILD
     Gestalt(kQuickTimeGestalt, &qtVersion);
     if (qtVersion < kQuickTime5) {
         ShowTheCursor();
@@ -446,7 +419,6 @@ void InitEVNova(void)
                   "EV Nova requires QuickTime v5.0 or newer with the Internet Extras component.  You can install the component from the QuickTime settings panel, under Update Check.");
         ExitToShell();
     }
-#endif
 
     crashlog("initializing monitor");
     CE_InitializeMonitor();
@@ -459,24 +431,12 @@ void InitEVNova(void)
 
     crashlog("building trig table");
     BuildTrigTable();
-#ifndef MACBUILD
     if (settings.gamma > kMaxGamma)
         settings.gamma = kDefaultGamma;
     BuildGammaRamp((settings.gamma * 10.0 + 70.0));
-#endif
     gWind = 0;
     SavePrefs();
 
-#ifdef MACBUILD
-    if (KeyCheck(kScanOption) && AreWeFrontProcess()) {
-        crashlog("showing prefs dialog before window creation");
-        smallTextFont = 3;
-        smallTextSize = 9;
-        DoPrefsDialog();
-        settings.windowed = settings.windowedPending;
-    }
-    GetMainDevice();
-#endif
 
     crashlog("opening platform tool");
     err = PlatformOpen();
@@ -632,237 +592,13 @@ void InitEVNova(void)
     DoMainScreen();
 
     crashlog("main screen disposed");
-#else
-{
-    unsigned char alertText[256];
-    Size grow;
-    char *path;
-    char *envPath;
-    char *dir;
-#if V111
-    CFStringRef envStr;
-    CFStringRef absStr;
-    CFURLRef url;
-#endif
-    short i;
-
-    SetResLoad(true);
-    gameLoaded = gameInProgress = 0;
-    preventStatusCopy = 0;
-    gWind = 0;
-    gSpriteWorld = 0;
-    screenFaded = 0;
-
-    SetupToolbox();
-    CarbonHackInit();
-
-    crashlog_print("initializing arrays\n");
-    InitArrays();
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    crashlog_print("opening data files\n");
-    IterateInGameEventLoop(kEventLoopTicks);
-    IterateInGameEventLoop(kEventLoopTicks);
-
-    LoadPrefs(1);
-    if (KeyCheck(MacKey(0x3a)) && AreWeFrontProcess()) {
-        crashlog_print("showing prefs dialog before window creation\n");
-        smallTextFont = 3;
-        smallTextSize = 9;
-        DoPrefsDialog();
-        settings.windowed = settings.windowedPending;
-        LoadPrefs(1);
-    }
-    IterateInGameEventLoop(kEventLoopTicks);
-
-#if V111
-    {
-        envPath = getenv("EVNOVA_SUPPORT_FOLDER_PATH");
-        if (envPath != NULL) {
-            novaSupportFolder = malloc(sizeof(FSRef));
-            envStr = CFStringCreateFromString(envPath, strlen(envPath));
-            if (envStr != NULL) {
-                absStr = relative2absolute(envStr);
-                if (absStr != NULL) {
-                    url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, absStr,
-                                                        kCFURLPOSIXPathStyle, true);
-                    if (url != NULL) {
-                        if (!CFURLGetFSRef(url, novaSupportFolder)) {
-                            free(novaSupportFolder);
-                            novaSupportFolder = NULL;
-                        }
-                        CFRelease(url);
-                    }
-                    CFRelease(absStr);
-                }
-                CFRelease(envStr);
-            }
-        }
-        if (KeyCheck(MacKey(0x38)) && AreWeFrontProcess()) {
-            SelectNovaSupport();
-            CountEVPlugins(*novaSupportFolder, 0);
-        }
-    }
-#endif
-    InitDataFiles();
-    if (EVInstallEndianFlippers() == 0) {
-        if (novaSupportFolder != NULL) {
-            dir = malloc(0x200);
-            FSRefMakePath(novaSupportFolder, (UInt8 *)dir, 0x200);
-            path = malloc(strlen(dir) + 13);
-            sprintf(path, "%s/debuglog.txt", dir);
-            free(dir);
-        }
-        crashlog_open(path);
-        if (path != NULL)
-            free(path);
-        crashlog_print("game engine was compiled ");
-        crashlog_print("Dec  6 2011");
-        crashlog_print("\n");
-        crashlog_print("game engine version is ");
-        crashlog_print("1.1.1");
-#if TARGET_RT_LITTLE_ENDIAN
-        crashlog_print(" x86");
-#else
-        crashlog_print(" PPC");
-#endif
-        crashlog_print("\n");
-        crashlog_print("\n");
-
-        crashlog_print("opening data files & loading prefs\n");
-
-        crashlog_print("initializing monitor\n");
-        SetupMonitor();
-
-        crashlog_print("initializing QuickTime\n");
-        if (EnterMovies() != 0)
-            FatalStartupError(kAlertQuickTime);
-
-        crashlog_print("building trig table\n");
-        BuildTrigTable();
-        gWind = 0;
-        GetMainDevice();
-        InitColors();
-        SetupDialogs();
-
-
-        pluginCount = CountEVPlugins(pluginsFolder, kPlugInFileType);
-        OpenDataFiles();
-        pluginCount = CountEVPlugins(pluginsFolder, kPlugInFileType);
-
-        cursorHidden = 0;
-        if (settings.windowed == 0)
-            HideTheCursor();
-        if (!screenFaded)
-            FadeScreenOut();
-
-        crashlog_print("loading sounds\n");
-        LoadSounds();
-        SWEnterSpriteWorld();
-
-        crashlog_print("creating window\n");
-        SetupWind();
-
-        crashlog_print("initializing sprite world\n");
-        SetupSpriteWorld();
-        inBackground = 0;
-        AdjustSoundVolume();
-
-        crashlog_print("creating offscreen buffers\n");
-        InitOffscreen();
-
-        crashlog_print("starting music\n");
-        SetupIntroMusic();
-        ShowAmbrosiaLogo();
-        FadeScreenIn();
-        IterateInGameEventLoop(0x3c);
-
-        crashlog_print("initializing strings\n");
-        LoadStrings();
-        IterateInGameEventLoop(kEventLoopTicks);
-
-        crashlog_print("initializing status bar\n");
-        InitStatus();
-        IterateInGameEventLoop(kEventLoopTicks);
-
-        crashlog_print("initializing objects\n");
-        InitObjects();
-        IterateInGameEventLoop(kEventLoopTicks);
-
-        crashlog_print("initializing buttons\n");
-        InitButtons();
-
-        crashlog_print("loading object data\n");
-        LoadObjectData();
-        IterateInGameEventLoop(kEventLoopTicks);
-
-        crashlog_print("loading mission data\n");
-        InitMissions();
-        IterateInGameEventLoop(kEventLoopTicks);
-
-        crashlog_print("propagating mission bit effects\n");
-        PropagateMissionBitEffects();
-        IterateInGameEventLoop(kEventLoopTicks);
-
-        FadeScreenOut();
-        HideAmbrosiaLogo();
-
-        crashlog_print("showing splash screen\n");
-        ShowSplashScreen();
-        FadeScreenIn();
-        IterateInGameEventLoop(kEventLoopTicks);
-        InitIntroProgressBar();
-
-        crashlog_print("loading sprites\n");
-        LoadSprites();
-
-        crashlog_print("checking memory\n");
-        grow = 0x7fffffff;
-        startupMemoryFree = MaxMem(&grow);
-
-        crashlog_print("loading ship sprites\n");
-        LoadShipSprites();
-
-        crashlog_print("configuring sprites\n");
-        InitSprites();
-
-        crashlog_print("initializing player\n");
-        ResetPlayer(1);
-        ResetPlayerRecord(1);
-        gameLoaded = gameInProgress = 0;
-        IterateInGameEventLoop(kEventLoopTicks);
-
-        crashlog_print("initializing main screen\n");
-        FadeScreenOut();
-        DisposeIntroProgressBar();
-        InitMainScreen();
-
-        crashlog_print("opening last pilot file\n");
-        OpenLastPilotFile();
-        IterateInGameEventLoop(kEventLoopTicks);
-
-        crashlog_print("propagating mission bit effects\n");
-        PropagateMissionBitEffects();
-        gameLoaded = 1;
-
-        crashlog_print("---");
-        gPause = 1;
-        DoMainScreen();
-    }
-
-    crashlog_print("main screen disposed\n");
-#endif
 
     FadeScreenOut();
     ShowTheCursor();
-#ifndef MACBUILD
     KeyboardDestroy();
     MouseDestroy();
-#endif
     Bye();
-#ifndef MACBUILD
     ClosePrefs();
-#endif
 }
 
 #define kEscapePodType  0x2ff
@@ -901,10 +637,6 @@ void PlayGame(void)
     float dx;
     float dy;
     float deathTime;
-#ifdef MACBUILD
-    GDHandle device;
-    Rect box;
-#endif
 
     GetTime(&d);
     RedrawStatus(1);
@@ -923,9 +655,7 @@ void PlayGame(void)
     RefreshWindowBuffer();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
         RefreshSAT();
-#if !V111
     FadeScreenIn();
-#endif
     lastLoMemWarningTime = 0;
     CheckLoMem();
     lastSmokeUpdateTime = ReadTick();
@@ -962,26 +692,6 @@ void PlayGame(void)
 
     while (gQuit == 0 && gPause == 0) {
         MyProfileEnter(kProfGameLoop);
-#ifdef MACBUILD
-#if V111
-        if (useLegacyRenderingPipeline)
-#endif
-        {
-            device = gSpriteWorld->mainSWGDH;
-            if (device != NULL) {
-                if ((*(*device)->gdPMap)->pixelSize != gSpriteWorld->pixelDepth) {
-                    gPause = 1;
-                    break;
-                }
-                box = (*(*device)->gdPMap)->bounds;
-                if (box.right - box.left != mainDeviceInitBounds.right - mainDeviceInitBounds.left
-                    || box.bottom - box.top != mainDeviceInitBounds.bottom - mainDeviceInitBounds.top) {
-                    gPause = 1;
-                    break;
-                }
-            }
-        }
-#endif
         HandleTimeAdjustment();
         keyPressedThisFrame = 0;
         if (inBackground == 0) {
@@ -1038,9 +748,7 @@ void PlayGame(void)
                 MyProfileEnter(kProfPostAnimate);
                 PostAnimateHandler();
                 MyProfileExit(kProfPostAnimate);
-#ifndef MACBUILD
                 ScreenEndScene();
-#endif
                 MyProfileExit(kProfDrawing);
                 MyProfileEnter(kProfPostDraw);
                 if (KeyCheck(keyPrefs.pause)) {
@@ -1369,9 +1077,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
     unsigned char wasDying;
     char msg[256];
     Boolean selfHit;
-#ifndef MAC1010
     Boolean hostile;
-#endif
     Boolean enemy;
     int32_t aligned;
     short angle;
@@ -1845,9 +1551,7 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
     short k;
     short slot;
     short sysOf;
-#if !V111
     short count;
-#endif
     short govt;
     short navIndex;
     short shipSyst;
@@ -3645,7 +3349,9 @@ void MakeEscortsHyperWithParent(ShipObj *ship)
     }
 }
 
-#if V111
+#ifdef MACBUILD
+// KEPT: unfinished, new in 1.1.1 (nothing calls it, even on mac) -- the escorts of `ship' cancel
+// their jump and fly back into formation; possible future use, not enabled on win
 /* MakeEscortsCancelJump (mac _MakeEscortsCancelJump, mac-only: new in 1.1.1). */
 // MAC: _MakeEscortsCancelJump i386 0x0003fdeb ppc 0x00047218
 void MakeEscortsCancelJump(ShipObj *ship)
@@ -4092,9 +3798,7 @@ short SpawnPerson(short sys, unsigned char noDisabled, short person)
 void DoShipCapture(ShipObj *me, Boolean asEscort)
 {
     unsigned char buf[256];
-#if !defined(MACBUILD) && !V111
     int32_t slotL;
-#endif
     int32_t capType;
     short m;
     short w;
@@ -4106,9 +3810,7 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
     if (slot != -1) {
         if (me->persType != -1)
             personData[me->persType].loaded = 0;
-#if !defined(MACBUILD) && !V111
         slotL = slot;
-#endif
         shipData[slotL].type = shipData[0].type;
         shipData[slotL].dude = -1;
         shipData[slotL].persType = -1;
