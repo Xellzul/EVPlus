@@ -1,4 +1,4 @@
-# EV Nova CE with llvm-mingw -- no Docker, Wine or Metrowerks.
+# EV Nova CE with llvm-mingw
 #
 #   cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake
 #   cmake --build build                      -> build/EV Nova CE.exe
@@ -33,34 +33,52 @@ if(NOT QTML_CLIENT_LIB)
   endif()
 endif()
 
-# QuickTime's own DisposeGWorld/GetPixBaseAddr/GetGWorldDevice/GetGWorldPixMap live beside the port's
-# same-named emulation: the game calls QuickTime's four by their exe addresses (burgerpict.c, tradedlg.c), so
-# that member is linked with those four renamed
-set(QT_RENAMED ${CMAKE_BINARY_DIR}/qtsdk/QDOffScreenShim_renamed.obj)
-if(NOT EXISTS ${QT_RENAMED} OR ${QTML_CLIENT_LIB} IS_NEWER_THAN ${QT_RENAMED})
-  set(_x ${CMAKE_BINARY_DIR}/qtsdk/extract)
+# Four members of qtmlClient.lib define Mac Toolbox functions the port defines too (CopyBits, NewGWorld,
+# Delay, ...). The port's are the ones the game uses, so those members are linked from copies with QuickTime's
+# definitions renamed: no clash, and no member calls one of these names itself, so nothing else changes.
+# QuickTime's DisposeGWorld/GetPixBaseAddr/GetGWorldDevice/GetGWorldPixMap get their exe-address names: the
+# game calls QuickTime's four by those (burgerpict.c, tradedlg.c). The rest get a QT_ prefix.
+set(_qd_dups GetPort PenSize MoveTo Line BackColor SectRect PaintRect EraseRect FrameOval PaintOval RectInRgn
+    CopyBits CopyMask DisposePixPat GetPixPat FillCRect RGBForeColor GetGDevice Color2Index GetPicture)
+set(_qt_members QDOffScreenShim QuickdrawShim OSUtilsShim TextUtilsShim)
+set(_qt_renames_QDOffScreenShim _DisposeGWorld=_FUN_004fc310 _GetPixBaseAddr=_FUN_004fc370
+    _GetGWorldDevice=_FUN_004fc390 _GetGWorldPixMap=_FUN_004fc3b0 _NewGWorld=_QT_NewGWorld)
+set(_qt_renames_QuickdrawShim "")
+foreach(s ${_qd_dups})
+  list(APPEND _qt_renames_QuickdrawShim _${s}=_QT_${s})
+endforeach()
+set(_qt_renames_OSUtilsShim _Delay=_QT_Delay)
+set(_qt_renames_TextUtilsShim _NumToString=_QT_NumToString)
+
+set(QT_RENAMED "")
+set(_x ${CMAKE_BINARY_DIR}/qtsdk/extract)
+execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-ar t ${QTML_CLIENT_LIB} OUTPUT_VARIABLE _members)
+foreach(m ${_qt_members})
+  set(_out ${CMAKE_BINARY_DIR}/qtsdk/${m}_renamed.obj)
+  list(APPEND QT_RENAMED ${_out})
+  if(EXISTS ${_out} AND NOT ${QTML_CLIENT_LIB} IS_NEWER_THAN ${_out}
+     AND NOT ${CMAKE_CURRENT_LIST_FILE} IS_NEWER_THAN ${_out})
+    continue()
+  endif()
   file(REMOVE_RECURSE ${_x})
   file(MAKE_DIRECTORY ${_x})
-  execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-ar t ${QTML_CLIENT_LIB} OUTPUT_VARIABLE _members)
-  string(REGEX MATCH "[^\n]*QDOffScreenShim\\.obj" _m "${_members}")
-  execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-ar x ${QTML_CLIENT_LIB} "${_m}" WORKING_DIRECTORY ${_x} RESULT_VARIABLE rc1)
-  execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-objcopy
-      --redefine-sym _DisposeGWorld=_FUN_004fc310 --redefine-sym _GetPixBaseAddr=_FUN_004fc370
-      --redefine-sym _GetGWorldDevice=_FUN_004fc390 --redefine-sym _GetGWorldPixMap=_FUN_004fc3b0
-      "${_x}/${_m}" ${QT_RENAMED} RESULT_VARIABLE rc2)
-  if(rc1 OR rc2 OR NOT EXISTS ${QT_RENAMED})
-    message(FATAL_ERROR "could not extract/rename QDOffScreenShim.obj from ${QTML_CLIENT_LIB}")
+  string(REGEX MATCH "[^\n]*\\\\${m}\\.obj" _m "${_members}")
+  execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-ar x ${QTML_CLIENT_LIB} "${_m}" WORKING_DIRECTORY ${_x}
+                  RESULT_VARIABLE rc1)
+  set(_args "")
+  foreach(r ${_qt_renames_${m}})
+    list(APPEND _args --redefine-sym ${r})
+  endforeach()
+  execute_process(COMMAND ${LLVM_MINGW}/bin/llvm-objcopy ${_args} "${_x}/${_m}" ${_out} RESULT_VARIABLE rc2)
+  if(NOT _m OR rc1 OR rc2 OR NOT EXISTS ${_out})
+    message(FATAL_ERROR "could not extract/rename ${m}.obj from ${QTML_CLIENT_LIB}")
   endif()
-endif()
+endforeach()
 
 # -- the sources, C or C++ by each file's `// COMPILE: -lang c++` marker ----------------------------
 file(GLOB_RECURSE ALL_C CONFIGURE_DEPENDS ${SRC}/*.c)
 set(GAME_SRC "")
 foreach(f ${ALL_C})
-  file(RELATIVE_PATH rel ${SRC} ${f})
-  if(rel MATCHES "^v111/")
-    continue()
-  endif()
   file(STRINGS ${f} marker LIMIT_COUNT 30 REGEX "^[ \t]*//[ \t]*COMPILE:.*-lang c\\+\\+")
   if(marker)
     set_source_files_properties(${f} PROPERTIES LANGUAGE CXX)
@@ -71,7 +89,7 @@ endforeach()
 # MW's -enum min, signed plain char, its FP evaluation in double; the decompile's pointer/aliasing habits;
 # one section per function so the link drops what nothing uses (as MW's linker does)
 set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-enums -fno-strict-aliasing
-    -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double -fcommon -w
+    -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double -w
     $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
 
 set(WIN_LIBS kernel32 user32 gdi32 winmm advapi32 shell32 comdlg32)
@@ -84,8 +102,5 @@ target_link_libraries(evnova_ce PRIVATE ${QT_RENAMED} ${QTML_CLIENT_LIB} ${WIN_L
 target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map"
   # qtmlClient.lib was built with MSVC and asks for its C runtime; mingw's is linked instead
   -Wl,-Xlink=-nodefaultlib:LIBCMT -Wl,-Xlink=-nodefaultlib:OLDNAMES
-  # it also carries QuickDraw stand-ins the port defines itself (CopyBits, NewGWorld, ...): the port's
-  # objects come first on the line, so its definitions win, as they did under MW
-  -Wl,--allow-multiple-definition
   # CE's 2 GB memory pool needs the large-address-aware bit
   -Wl,--large-address-aware)
