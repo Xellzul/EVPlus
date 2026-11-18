@@ -1,6 +1,7 @@
 // COMPILE: -lang c++ -bool off
 /* burgerprefs.c -- the preferences file: open, close, write, lookup. Notes: Research/notes/burgerprefs.md */
 
+#include <stddef.h>
 #include <stdio.h>
 
 #include "burgertypes.h"

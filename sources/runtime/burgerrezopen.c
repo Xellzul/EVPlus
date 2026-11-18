@@ -1,6 +1,7 @@
 // COMPILE: -lang c++ -bool off
 /* burgerrezopen.c -- BurgerLib RzResourceManager, one TU: opening a .rez container, then closing, purging, releasing and looking up. Notes: Research/notes/burgerrezopen.md */
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
