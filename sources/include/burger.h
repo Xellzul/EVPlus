@@ -223,8 +223,7 @@ extern Word MusicVolume;
 extern Word SystemState;
 extern ULong BurgerVoiceCount;                       /* BurgerVoiceCount */
 
-struct adpcm_state;
-struct AdpcmVoice;
+struct MixVoice;
 struct TextBuilder;
 
 extern int32_t ST_Open(unsigned short channels, ULong device);
@@ -243,11 +242,10 @@ extern void StreamHandleEndSave(struct TextBuilder *b);
 extern void StreamHandlePutByte(struct TextBuilder *b, int32_t ch);
 extern void StreamHandlePutStringNoZero(struct TextBuilder *b, const char *s);
 extern void FastMemSet16(void *dst, ULong value, ULong bytes);
-extern void adpcm_coder(short indata[], char outdata[], int len,
-                        struct adpcm_state *state);
-extern unsigned char ADPCM_Mixer(ULong *data, short **out, ULong frames, ULong step,
-                                  struct AdpcmVoice *voice, unsigned short left,
-                                  unsigned short right);
+extern void ImaDecodePackets(const unsigned char *src, ULong packets, short *out);   /* atadpcm.c */
+extern void ImaDecodeStream(const unsigned char *src, ULong samples, short *out);
+extern unsigned char PCM_Mixer(const short *data, short **out, ULong frames, ULong step,
+                               struct MixVoice *voice, unsigned short left, unsigned short right);
 
 extern int32_t gNumVoices;
 extern ULong gSaveRightVolume;

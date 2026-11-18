@@ -7,21 +7,13 @@
 #define kChannelBytes  sizeof(SoundChannel)                /* 0x38 on 32-bit */
 #define kChannelTable  (kSoundChannels * kChannelBytes)   /* 0x380 on 32-bit */
 
-/* Jack Jansen's IMA ADPCM coder state (adpcm.c). */
-struct adpcm_state {
-    short valprev;
-    char index;
-};
-
-/* A playing channel's decoder position. */
-typedef struct AdpcmVoice {
-    short valprev;                               /* +0x00 */
-    unsigned short index;                        /* +0x02 */
-    uint32_t pos;                           /* +0x04 */
-    uint32_t total;                         /* +0x08 */
-    int32_t lastLeft;                               /* +0x0c */
-    int32_t lastRight;                              /* +0x10 */
-} AdpcmVoice;
+/* A playing channel's position in its samples. */
+typedef struct MixVoice {
+    uint32_t pos;                                /* the next sample */
+    uint32_t total;                              /* samples in the sound */
+    int32_t lastLeft;                            /* the last levelled sample, for interpolation */
+    int32_t lastRight;
+} MixVoice;
 
 typedef struct SoundChannel {
     uint32_t id;                            /* +0x00 */
@@ -30,7 +22,7 @@ typedef struct SoundChannel {
     uint32_t device;                        /* +0x0c, 16.16 */
     void (*done)(int32_t reason, void *sound, void *ref);   /* +0x10 */
     void *data;                                  /* +0x14 */
-    AdpcmVoice voice;                            /* +0x18 */
+    MixVoice voice;                              /* +0x18 */
     int32_t unk2C;                                /* +0x2c */
     unsigned short leftLevel;                    /* +0x30 */
     unsigned short rightLevel;                   /* +0x32 */

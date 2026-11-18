@@ -1,8 +1,7 @@
 // COMPILE: -lang c++ -bool off
 /* swfiximagegworld.c -- SWFixImageGWorld (win 0x00479260, SpriteWorldUtils.c line 1212, donor SpriteWorldUtils.c line 1099). Notes: Research/notes/swfiximagegworld.md */
 /* kClear is all-ones (-1) and kSolid zero, one constant each: the exe stores 0xffff and
-   0xffffffff and the truncation does the rest. The exe also returned early at 8 bits and
-   shallower, and had an unreachable `case 8:'; the game draws only at 16 bits. */
+   0xffffffff and the truncation does the rest. */
 #include "macport.h"
 #include "shipobj.h"
 #include "spriteworld.h"

@@ -63,8 +63,7 @@ void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
         numRowsToCopy);
 }
 
-/* backgroundValue was the 8-bit blitter's palette index to blend toward; the 16-bit one is
-   handed `32 - level', an alpha weight out of 32. */
+/* backgroundValue is unused; the blitter is handed `32 - level', an alpha weight out of 32. */
 
 // FUNCTION: EVNOVA 0x00470680
 // MAC: _BlitPixieFloatingRectDrawProc i386 0x000ba405 ppc 0x000c63a4

@@ -1,11 +1,12 @@
-/* atadpcm.c -- IMA ADPCM: Jack Jansen's public-domain coder that packs sounds held in memory, and the decoder that resamples and mixes them. Notes: Research/notes/atadpcm.md */
+/* atadpcm.c -- the Sound Toolkit's samples: decoding IMA ADPCM (Mac `ima4' sounds) into 16-bit PCM when a
+   sound is loaded, and the mixer that resamples a 16-bit voice and adds it into the output.
+   Notes: Research/notes/atadpcm.md */
 
 #include "burgertypes.h"
 #include "burger.h"
 #include "burgerchan.h"
 
 #define kMaxStepIndex 88
-#define FromBE32(v) Swap32(v)
 
 static int indexTable[16] = {                    /* 0x005794e8 */
     -1, -1, -1, -1, 2, 4, 6, 8,
@@ -24,222 +25,155 @@ static int stepsizeTable[kMaxStepIndex + 1] = {  /* 0x00579528 */
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 };
 
-static const double DAT_00579690[4] = {          /* 0x00579690, unreferenced */
-    0.0, -1.0, 1.0, 2147483648.0
-};
+#define kImaPacketBytes     34                  /* a 2-byte header, then 32 bytes of nibbles */
+#define kImaPacketSamples   64
+#define kImaHeaderIndex     0x7f                /* the header's step index; the rest is the predictor */
+#define kImaResyncDiff      0x7f                /* how far the running predictor may be from the header's */
 
-// FUNCTION: EVNOVA 0x00507e20
-void adpcm_coder(short indata[], char outdata[], int len,
-                 struct adpcm_state *state)
+/* One IMA ADPCM nibble: the next sample from the running predictor and step index. */
+static short ImaNibble(int nibble, int *predictor, int *index)
 {
-    short *inp;
-    signed char *outp;
-    int val;
-    int sign;
-    int delta;
-    int diff;
     int step;
-    int valpred;
-    int vpdiff;
-    int index;
-    int outputbuffer;
-    int bufferstep;
+    int diff;
 
-    outp = (signed char *)outdata;
-    inp = indata;
-
-    valpred = state->valprev;
-    index = state->index;
-    step = stepsizeTable[index];
-
-    bufferstep = 1;
-
-    for (; len > 0; len--) {
-        val = *inp++;
-
-        diff = val - valpred;
-        sign = (diff < 0) ? 8 : 0;
-        if (sign)
-            diff = -diff;
-
-        delta = 0;
-        vpdiff = step >> 3;
-
-        if (diff >= step) {
-            delta = 4;
-            diff -= step;
-            vpdiff += step;
-        }
-        step >>= 1;
-        if (diff >= step) {
-            delta |= 2;
-            diff -= step;
-            vpdiff += step;
-        }
-        step >>= 1;
-        if (diff >= step) {
-            delta |= 1;
-            vpdiff += step;
-        }
-
-        if (sign)
-            valpred -= vpdiff;
-        else
-            valpred += vpdiff;
-
-        if (valpred > 32767)
-            valpred = 32767;
-        else if (valpred < -32768)
-            valpred = -32768;
-
-        delta |= sign;
-
-        index += indexTable[delta];
-        if (index < 0)
-            index = 0;
-        if (index > kMaxStepIndex)
-            index = kMaxStepIndex;
-        step = stepsizeTable[index];
-
-        if (bufferstep)
-            outputbuffer = (delta << 4) & 0xf0;
-        else
-            *outp++ = (delta & 0x0f) | outputbuffer;
-        bufferstep = !bufferstep;
-    }
-
-    if (!bufferstep)
-        *outp++ = outputbuffer;
-
-    state->valprev = valpred;
-    state->index = index;
+    step = stepsizeTable[*index];
+    diff = step >> 3;
+    if (nibble & 4)
+        diff += step;
+    if (nibble & 2)
+        diff += step >> 1;
+    if (nibble & 1)
+        diff += step >> 2;
+    if (nibble & 8)
+        *predictor -= diff;
+    else
+        *predictor += diff;
+    if (*predictor > 32767)
+        *predictor = 32767;
+    else if (*predictor < -32768)
+        *predictor = -32768;
+    *index += indexTable[nibble];
+    if (*index < 0)
+        *index = 0;
+    else if (*index > kMaxStepIndex)
+        *index = kMaxStepIndex;
+    return (short)*predictor;
 }
 
-#define kNibblesPerWord   8
-#define kFirstNibbleShift 28
+/* Mac `ima4' data: packets of 64 samples, the nibbles low one first, decoded as one stream from silence.
+   A packet's header (big-endian: the predictor's top 9 bits, the step index) is taken
+   only where the stream has drifted from it -- QuickTime's rule, and FFmpeg's: the header keeps only 9
+   bits of the predictor, so re-seeding from every one would add a step of up to 127 at each packet. */
+void ImaDecodePackets(const unsigned char *src, ULong packets, short *out)
+{
+    ULong p;
+    int i;
+    int header;
+    int headerPredictor;
+    int headerIndex;
+    int predictor;
+    int index;
+
+    predictor = 0;
+    index = 0;
+    for (p = 0; p < packets; p++) {
+        header = (src[0] << 8) | src[1];
+        headerPredictor = (short)(header & ~kImaHeaderIndex);
+        headerIndex = header & kImaHeaderIndex;
+        if (headerIndex > kMaxStepIndex)
+            headerIndex = kMaxStepIndex;
+        if (headerIndex != index || headerPredictor - predictor > kImaResyncDiff
+                || predictor - headerPredictor > kImaResyncDiff) {
+            predictor = headerPredictor;
+            index = headerIndex;
+        }
+        src += 2;
+        for (i = 0; i < kImaPacketSamples / 2; i++) {
+            *out++ = ImaNibble(src[i] & 0xf, &predictor, &index);
+            *out++ = ImaNibble(src[i] >> 4, &predictor, &index);
+        }
+        src += kImaPacketSamples / 2;
+    }
+}
+
+/* Headerless IMA ADPCM, one stream from silence, the nibbles high one first. */
+void ImaDecodeStream(const unsigned char *src, ULong samples, short *out)
+{
+    ULong i;
+    int predictor;
+    int index;
+
+    predictor = 0;
+    index = 0;
+    for (i = 0; i < samples; i++)
+        out[i] = ImaNibble((i & 1) ? (src[i / 2] & 0xf) : (src[i / 2] >> 4), &predictor, &index);
+}
+
 #define kRateShift        12
 #define kFracOne          0x100
 #define kLevelShift       7
 
-/* Decode a voice at a 20.12 step, add it into *out (stereo 16-bit, frames
-   long) with linear interpolation, and advance. out 0 decodes only.
-   0xff once the voice has run out. */
+/* Read a voice at a 20.12 step, add it into *out (stereo 16-bit, frames long) with linear interpolation
+   between the samples it lands on, and advance. out 0 only advances. 0xff once the voice has run out.
+   Each call starts its step count afresh. */
 // FUNCTION: EVNOVA 0x00507f90
-unsigned char ADPCM_Mixer(ULong *data, short **out, ULong frames,
-                           ULong step, AdpcmVoice *voice,
-                           unsigned short left, unsigned short right)
+unsigned char PCM_Mixer(const short *data, short **out, ULong frames,
+                        ULong step, MixVoice *voice,
+                        unsigned short left, unsigned short right)
 {
     short *dst;
-    int32_t vpdiff;
-    int32_t stepsize;
-    int32_t valprev;
-    int32_t index;
-    ULong *wp;
     ULong remaining;
     ULong pos;
-    ULong word;
     ULong accum;
     ULong lastAccum;
+    ULong delta;
+    int32_t sample;
     int32_t lastL;
     int32_t lastR;
-    char done;
-    ULong delta;
+    int32_t l;
     int32_t r;
-    int32_t shift;
+    int32_t frac;
     int32_t s;
-    int32_t t;
+    char done;
 
     accum = lastAccum = 0;
     done = 0;
-    valprev = voice->valprev;
-    index = voice->index;
     pos = voice->pos;
     lastL = voice->lastLeft;
     lastR = voice->lastRight;
-    if (out != 0)
-        dst = *out;
-    else
-        dst = 0;
-
-    wp = data + pos / kNibblesPerWord;
-    stepsize = stepsizeTable[index];
-    shift = kFirstNibbleShift - (pos & (kNibblesPerWord - 1)) * 4;
-    word = *wp++;
-    word = FromBE32(word);
-    remaining = voice->total;
-    remaining -= pos;
+    dst = out != 0 ? *out : 0;
+    remaining = voice->total - pos;
 
     while (remaining != 0) {
-        if (shift < 0) {
-            word = *wp++;
-            word = FromBE32(word);
-            shift = kFirstNibbleShift;
-        }
-        delta = (word >> shift) & 0xf;
-        shift -= 4;
+        sample = data[pos];
         remaining--;
         pos++;
-
-        index += indexTable[delta];
-        r = ((delta & 7) << 4) | 8;
-        if (index < 0)
-            index = 0;
-        else if (index > kMaxStepIndex)
-            index = kMaxStepIndex;
-        vpdiff = (r * stepsize) >> 6;
-        if (delta & 8) {
-            valprev -= vpdiff;
-            if (valprev < -32768)
-                valprev = -32768;
-        } else {
-            valprev += vpdiff;
-            if (valprev > 32767)
-                valprev = 32767;
-        }
 
         accum += step;
         delta = (accum >> kRateShift) - (lastAccum >> kRateShift);
         if (delta >= 1) {
             lastAccum = accum;
-            vpdiff = valprev * left >> kLevelShift;
-            r = (valprev * right) >> kLevelShift;
-            if (dst != 0) {
-                for (stepsize = kFracOne / delta; stepsize <= kFracOne; stepsize += kFracOne / delta) {
-                    s = (((vpdiff - lastL) * stepsize) >> 8) + lastL;
-                    s += dst[0];
-                    if (s < -32768)
-                        s = -32768;
-                    else if (s > 32767)
-                        s = 32767;
-                    dst[0] = s;
-                    t = (((r - lastR) * stepsize) >> 8) + lastR;
-                    t += dst[1];
-                    if (t < -32768)
-                        t = -32768;
-                    else if (t > 32767)
-                        t = 32767;
-                    dst[1] = t;
+            l = (sample * left) >> kLevelShift;
+            r = (sample * right) >> kLevelShift;
+            for (frac = kFracOne / delta; frac <= kFracOne; frac += kFracOne / delta) {
+                if (dst != 0) {
+                    s = (((l - lastL) * frac) >> 8) + lastL + dst[0];
+                    dst[0] = s < -32768 ? -32768 : (s > 32767 ? 32767 : s);
+                    s = (((r - lastR) * frac) >> 8) + lastR + dst[1];
+                    dst[1] = s < -32768 ? -32768 : (s > 32767 ? 32767 : s);
                     dst += 2;
-                    if (--frames == 0)
-                        goto finished;
                 }
-            } else {
-                for (stepsize = kFracOne / delta; stepsize <= kFracOne; stepsize += kFracOne / delta) {
-                    if (--frames == 0)
-                        goto finished;
-                }
+                if (--frames == 0)
+                    goto finished;
             }
-            lastL = vpdiff;
+            lastL = l;
             lastR = r;
         }
-        stepsize = stepsizeTable[index];
     }
 
 finished:
     if (remaining == 0)
         done = 0xff;
-    voice->valprev = valprev;
-    voice->index = index;
     voice->pos = pos;
     voice->lastLeft = lastL;
     voice->lastRight = lastR;

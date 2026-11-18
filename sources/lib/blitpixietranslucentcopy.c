@@ -4,7 +4,7 @@
 #include "shipobj.h"
 #include "spriteworld.h"
 
-/* the blitters' shared blend state (the exe kept it beside the 8-bit alpha table) */
+/* the blitters' shared blend state */
 uint32_t alpha;
 uint32_t alphaR;
 uint32_t alphaG;

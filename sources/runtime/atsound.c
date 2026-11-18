@@ -9,8 +9,7 @@
 extern int32_t _ST_CreateSoundPump(void);
 extern void _ST_DisposeSoundPump(void);                  /* 0x005076a0 */
 
-/* A zeroed block; the exe took it from the process heap, which answers a request for no bytes with a
-   block, so a zero size still gets one byte. */
+/* A zeroed block; a zero size still gets one byte. */
 static void *AllocClear(ULong size)
 {
     return calloc(1, size != 0 ? size : 1);
@@ -193,8 +192,6 @@ ULong ST_PlaySoundParam(SoundRequest *req)
 
         gTheVoices[i].sound = req->handle;
         gTheVoices[i].data = (char *)req->handle + 0x10;
-        gTheVoices[i].voice.valprev = 0;
-        gTheVoices[i].voice.index = 0;
         gTheVoices[i].voice.pos = 0;
         gTheVoices[i].voice.total = raw[1];
         gTheVoices[i].voice.lastLeft = 0;
@@ -349,7 +346,7 @@ typedef struct SoundDesc {
 #define kDataFormatShorts 3                           /* short type, long init */
 #define kSndCommandShorts 4                           /* short cmd, param1; long param2 */
 
-/* A packed sound: this header, then IMA ADPCM, two samples a byte. */
+/* A sound ready for the mixer: this header, then 16-bit PCM in the machine's byte order. */
 typedef struct MemSound {
     ULong tag;
     ULong samples;
@@ -358,126 +355,77 @@ typedef struct MemSound {
 } MemSound;
 
 #define kMemSoundTag      0x646e7361UL                /* "asnd" in memory */
-#define kMemSoundIma      0x6d494d41UL                /* "AMIm" in memory */
+#define kMemSoundPcm      0x204d4350UL                /* "PCM " in memory */
 #define kImaPacketBytes   34
-#define kImaPacketWords   (kImaPacketBytes / 2)
+#define kImaPacketSamples 64
 
-/* Pack a parsed sound as IMA ADPCM behind a MemSound header. Mac `ima4'
-   data is already ADPCM and only loses each packet's two-byte header. */
+/* A parsed sound as 16-bit PCM behind a MemSound header: `ima4' decoded, 8-bit samples widened by
+   repeating the byte, 16-bit ones as they are. Lengths are rounded up to 8 samples of silence. */
 // FUNCTION: EVNOVA 0x004d6900
 void *_ST_SoundRefCreate(SoundDesc *desc)
 {
-    int32_t err = 0;
-    short *pcm = 0;
-    unsigned short *temp = 0;
-    MemSound *block = 0;
+    MemSound *block;
+    short *pcm;
     unsigned char *raw;
+    unsigned short v;
     ULong count;
     ULong samples;
-    ULong bytes;
-    struct adpcm_state state;
+    ULong packets;
+    ULong i;
+    unsigned char ima;
 
-    if (desc->compression == kCompressionIma4 && desc->bits == kSixteenBit) {
+    packets = 0;
+    ima = desc->compression == kCompressionIma4 && desc->bits == kSixteenBit;
+    if (ima) {
         if (desc->flags != 0) {
-            count = desc->size * 2;
-            samples = (count + 7) & ~7;
-            bytes = samples / 2;
-            bytes += sizeof(MemSound);
-            block = AllocClear(bytes);
-            if (block != 0)
-                BlockMoveData(desc->data, block + 1, desc->size);
+            count = desc->size * 2;                   /* bare nibbles, no packet headers */
         } else {
-            count = desc->size * 2;
-            samples = (count - count / kImaPacketBytes + 7) & ~7;
-            bytes = samples / 2;
-            block = AllocClear(bytes + sizeof(MemSound));
-            if (block != 0) {
-                unsigned short *src;
-                unsigned short *dst;
-                unsigned short v;
-                ULong i;
+            packets = desc->size / kImaPacketBytes;
+            count = packets * kImaPacketSamples;
+        }
+    } else if (desc->bits == 8) {
+        count = desc->size;
+    } else {
+        count = desc->size / 2;
+    }
+    samples = (count + 7) & ~7;
 
-                src = desc->data;
-                dst = (unsigned short *)(block + 1);
-                for (i = 0; i < desc->size / 2; i++) {
-                    v = *src++;
-                    if (i % kImaPacketWords != 0) {
-                        v = ((v << 4) & 0xf0f0) | ((v >> 4) & 0x0f0f);
-                        *dst++ = v;
-                    }
-                }
-            }
+    block = AllocClear(sizeof(MemSound) + samples * sizeof(short));
+    if (block == 0)
+        return 0;
+    pcm = (short *)(block + 1);
+    if (ima) {
+        if (desc->flags != 0)
+            ImaDecodeStream(desc->data, count, pcm);
+        else
+            ImaDecodePackets(desc->data, packets, pcm);
+    } else if (desc->bits == 8) {
+        raw = desc->data;
+        for (i = 0; i < count; i++) {
+            v = raw[i];
+            if (desc->flags == 0)
+                v ^= 0x80;
+            v |= v << 8;
+            pcm[i] = (short)v;
         }
     } else {
-        if (desc->bits == 8) {
-            count = desc->size;
-            samples = (count + 7) & ~7;
-            bytes = samples * 2;
-            raw = desc->data;
-            temp = AllocClear(bytes);
-            if (temp != 0) {
-                unsigned short *dst;
-                unsigned short v;
-                ULong i;
-
-                dst = temp;
-                if (desc->flags != 0) {
-                    for (i = 0; i < count; i++) {
-                        v = *raw++;
-                        v |= v << 8;
-                        *dst++ = v;
-                    }
-                } else {
-                    for (i = 0; i < count; i++) {
-                        v = *raw++;
-                        v += 0x80;
-                        v |= v << 8;
-                        *dst++ = v;
-                    }
-                }
-            } else
-                return 0;
-            pcm = (short *)temp;
-        } else {
-            count = desc->size / 2;
-            samples = (count + 7) & ~7;
-            bytes = samples * 2;
-            if (bytes == desc->size) {
-                pcm = desc->data;
-            } else {
-                temp = AllocClear(bytes);
-                if (temp == 0)
-                    return 0;
-                BlockMoveData(desc->data, temp, desc->size);
-                pcm = (short *)temp;
-            }
-        }
-        block = AllocClear(bytes / 4 + sizeof(MemSound));
-        if (block != 0) {
-            state.valprev = 0;
-            state.index = 0;
-            adpcm_coder(pcm, (char *)(block + 1), samples, &state);
-        }
+        memcpy(pcm, desc->data, count * sizeof(short));
     }
 
-    if (block != 0) {
-        block->tag = kMemSoundTag;
-        block->samples = samples;
-        block->rate = desc->rate;
-        block->format = kMemSoundIma;
-    }
-    if (temp != 0)
-        free(temp);
+    block->tag = kMemSoundTag;
+    block->samples = samples;
+    block->rate = desc->rate;
+    block->format = kMemSoundPcm;
     return block;
 }
 
-#define kVoiceStepShift   4                           /* 16.16 rate to the decoder's 20.12 */
+#define kVoiceStepShift   4                           /* 16.16 rate to the mixer's 20.12 */
 #define kSoundTick        3
 #define kSoundFinished    1
 
 /* Mix every playing channel into a zeroed stereo 16-bit buffer, then tell
    each owner it ticked and retire the channels that ran out. Channels past
-   the voice limit are decoded without being heard. */
+   the voice limit are advanced without being heard. */
 typedef void (*MixerNotifyProc)(int32_t reason, ULong id, SoundRequest *request);
 
 // FUNCTION: EVNOVA 0x004d6b90
@@ -499,10 +447,10 @@ void _ST_MixVoices(short *buffer, ULong frames)
         chan = &gTheVoices[i];
         out = buffer;
         if (i < gMaxVoices)
-            chan->finished = ADPCM_Mixer(chan->data, &out, frames, chan->stream >> kVoiceStepShift,
+            chan->finished = PCM_Mixer((const short *)chan->data, &out, frames, chan->stream >> kVoiceStepShift,
                                        &chan->voice, chan->leftLevel, chan->rightLevel);
         else
-            chan->finished = ADPCM_Mixer(chan->data, 0, frames, chan->stream >> kVoiceStepShift,
+            chan->finished = PCM_Mixer((const short *)chan->data, 0, frames, chan->stream >> kVoiceStepShift,
                                        &chan->voice, chan->leftLevel, chan->rightLevel);
     }
 
