@@ -36,9 +36,7 @@ void ShowSplashScreen(void)
     CopyBits(GWorldContainerBits(&loadPort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
              rect, GetCWindowPortRect(gWind), 0, 0);
-#ifndef MACBUILD
     ScreenEndScene();
-#endif
 }
 
 
@@ -65,20 +63,14 @@ void ShowAmbrosiaLogo(void)
     DrawPicHandle((PicHandle)pic, &box);
     if (pic != 0)
         QDReleaseResource((PicHandle)pic);
-#if V111
-#else
     FadeScreenIn();
-#endif
 }
 
 // FUNCTION: EVNOVA 0x004ab180
 // MAC: _HideAmbrosiaLogo i386 0x0006108f ppc 0x00068e40
 void HideAmbrosiaLogo(void)
 {
-#if V111
-#else
     FadeScreenOut();
-#endif
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect((WindowRef)gWind));
 }
