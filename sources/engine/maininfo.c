@@ -22,14 +22,6 @@
 #include "ships.h"
 #include "cefix.h"
 #include "space.h"
-#ifdef MACBUILD
-#include "../mac/include/rt3_ev_nova.h"
-
-#define kStrDepth256         17
-#define kStrDepthThousands   18
-#define kStrResolution       19
-#define kStrResolutionTail   20
-#endif
 
 // FUNCTION: EVNOVA 0x004873b0
 // MAC: _MainScreenUpdate i386 0x00017c0d ppc 0x0001b8e8
@@ -245,12 +237,10 @@ void MainScreenUpdate(short which)
 // MAC: _MainScreenIdle i386 0x00018ae8 ppc 0x0001c6f0
 void MainScreenIdle(void)
 {
-#if !V111
     Rect strip;
     Point mouse;
 
     HandleIntroMusic(0);
-#endif
     MainScreenAnimIdle();
     strip = *GetCWindowPortRect((WindowRef)gWind);
     strip.bottom = strip.top + kHotStripHeight;
@@ -322,12 +312,8 @@ void SetupInterfaceBackground(void)
 #define kPlainStrIdx  0x118
 #define kItemMemoryText 0x13
 #define kItem3StrIdx  0x10
-#define kBytesPerMB   1000000
-#define kMemorySlack  (10 * kBytesPerMB)
 
 // FUNCTION: EVNOVA 0x004884f0
-#if V111
-#else
 void PrefsDialogUpdate(void)
 {
     Rect box;
@@ -357,7 +343,6 @@ void PrefsDialogUpdate(void)
         DrawIndString(kAlertStrList, kItem3StrIdx);
     }
 }
-#endif
 
 /* ---- DoPrefsDialog (0x00488650) ---- */
 
@@ -393,311 +378,6 @@ void PrefsDialogUpdate(void)
 
 // FUNCTION: EVNOVA 0x00488650
 // MAC: _DoPrefsDialog i386 0x00016459 ppc 0x0001a1ec
-#ifdef MAC1010
-extern int32_t gSystemVersion;
-extern int32_t startupMemoryFree;
-extern void PreflightMemoryUsage(int32_t *base, int32_t *engineGlow, int32_t *runningLights, int32_t *weaponGlow);
-
-void DoPrefsDialog(void)
-{
-    Str255 volText;
-    Settings saved;
-    Rect box;
-    void *item;
-    int32_t baseSize;
-    int32_t engineGlowSize;
-    int32_t lightsSize;
-    int32_t weaponGlowSize;
-    short itemHit;
-    short itemType;
-    void *ctl;
-    Boolean done;
-    int32_t needed;
-    int32_t size;
-
-    prefsDialog = NULL;
-    prefsDialog = GetNewDialog(kPrefsDlogID, 0, -1);
-    if (prefsDialog == NULL)
-        return;
-
-    if (gWind != NULL)
-        CenterWindow(FrontWindow(prefsDialog), gWind);
-    ShowMacWindow(FrontWindow(prefsDialog));
-    SelectWindow(FrontWindow(prefsDialog));
-    SetDialogGWorld(prefsDialog);
-    RedrawDialog(prefsDialog);
-    FrameDefaultButton(prefsDialog, 1);
-
-    saved = settings;
-    done = 0;
-    PreflightMemoryUsage(&baseSize, &engineGlowSize, &lightsSize, &weaponGlowSize);
-    GetMainDevice();
-
-    do {
-        SetDialogGWorld(prefsDialog);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        ForeColor(blackColor);
-
-        GetDialogItem(prefsDialog, kItemFullScreen, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (gSystemVersion >= 0x1000) {
-            SetControlValue(ctl, 1);
-            HiliteControl(ctl, 255);
-        } else if (settings.yieldEvents != 0) {
-            SetControlValue(ctl, 1);
-        } else {
-            SetControlValue(ctl, 0);
-        }
-
-        if (settings.windowed != 0 && gameLoaded != 0) {
-            GetDialogItem(prefsDialog, kItemMessages, &itemType, (Handle *)&item, &box);
-            SetControlValue(ctl = item, 0);
-            HiliteControl(ctl, 255);
-        }
-
-        GetDialogItem(prefsDialog, kItemMusic, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.introMusic != 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemSmoothing, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.windowedPending != 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemEarlyOut, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.noMovies == 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemNoDebris, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.noDebris == 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemShipSets, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.shipAnimations != 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemShipGlow, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.engineGlows != 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemShipLights, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.runningLights != 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemShipWeapons, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.weaponGlows != 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemStatusBar, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.parallaxStars != 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemAutoAim, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.ambientSounds != 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemMessages, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.noHyperGamma == 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemNetwork, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.noVersionCheck == 0)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(prefsDialog, kItemMusicVolText, &itemType, (Handle *)&item, &box);
-        if (settings.volume >= 0 && settings.volume <= kMaxMusicVol) {
-            GetIndString(volText, kMusicVolStrList, settings.volume + 1);
-            SetDialogItemText(item, volText);
-        } else {
-            SetDialogItemText(item, "\p???");
-        }
-
-        majorPrefsChange = 0;
-        if (settings.windowedPending != settings.windowed)
-            majorPrefsChange = 1;
-        if (gameLoaded != 0) {
-            if (settings.shipAnimations != saved.shipAnimations || settings.engineGlows != saved.engineGlows
-                || settings.runningLights != saved.runningLights || settings.weaponGlows != saved.weaponGlows)
-                majorPrefsChange = 1;
-        }
-
-        SetDialogGWorld(prefsDialog);
-        GetDialogItem(prefsDialog, kItemMemoryText, &itemType, (Handle *)&item, &box);
-        ForeColor(blackColor);
-        EraseRect(&box);
-        MoveTo(box.left, box.bottom - 10);
-        if (gameLoaded != 0 || gWind == NULL) {
-            TextFont(0);
-            TextSize(12);
-            DrawIndString(kGameStrList, kPlainStrIdx);
-        } else {
-            TextFont(smallTextFont);
-            TextSize(smallTextSize);
-#if !TARGET_API_MAC_CARBON
-            size = baseSize;
-            if (settings.runningLights != 0)
-                size += lightsSize;
-            if (settings.engineGlows != 0)
-                size += engineGlowSize;
-            if (settings.weaponGlows != 0)
-                size += weaponGlowSize;
-            needed = size + kMemorySlack;
-            if ((uint32_t)needed > startupMemoryFree) {
-                needed -= startupMemoryFree;
-                needed = needed / kBytesPerMB + 1;
-                NumToString(needed, volText);
-                DrawIndString(kAlertStrList, 0xb);
-                DrawString("\p ");
-                DrawString(volText);
-                DrawString("\p ");
-                if (needed == 1)
-                    DrawIndString(kAlertStrList, 0xc);
-                else
-                    DrawIndString(kAlertStrList, 0xd);
-                DrawString("\p ");
-                DrawIndString(kAlertStrList, 0xe);
-            } else {
-                DrawIndString(kAlertStrList, 0xf);
-                DrawString("\p ");
-                DrawIndString(kAlertStrList, 0xe);
-            }
-#endif
-        }
-        PenSize(1, 1);
-        MoveTo(box.left, box.bottom);
-        LineTo(box.right, box.bottom);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        if (majorPrefsChange != 0 && gWind != NULL) {
-            GetDialogItem(prefsDialog, 3, &itemType, (Handle *)&item, &box);
-            EraseRect(&box);
-            MoveTo(box.left, box.bottom - 5);
-            DrawIndString(kAlertStrList, kItem3StrIdx);
-        }
-
-        ModalDialog(NULL, &itemHit);
-
-        if (itemHit == kItemDone) {
-            SavePrefs();
-            done = 1;
-        }
-        if (itemHit == kItemMusic) {
-            settings.introMusic = (settings.introMusic == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemFullScreen && gSystemVersion < 0x1000) {
-            settings.yieldEvents = (settings.yieldEvents == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemSmoothing) {
-            settings.windowedPending = (settings.windowedPending == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemEarlyOut) {
-            settings.noMovies = (settings.noMovies == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemNoDebris) {
-            settings.noDebris = (settings.noDebris == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemShipSets) {
-            settings.shipAnimations = (settings.shipAnimations == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemShipGlow) {
-            settings.engineGlows = (settings.engineGlows == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemShipLights) {
-            settings.runningLights = (settings.runningLights == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemShipWeapons) {
-            settings.weaponGlows = (settings.weaponGlows == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemStatusBar) {
-            settings.parallaxStars = (settings.parallaxStars == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemAutoAim) {
-            settings.ambientSounds = (settings.ambientSounds == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemMessages) {
-            settings.noHyperGamma = (settings.noHyperGamma == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemNetwork) {
-            settings.noVersionCheck = (settings.noVersionCheck == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemKeys) {
-            DoKeyDialog();
-            RedrawDialog(prefsDialog);
-            if (gameLoaded != 0 && gPause != 0) {
-                MainScreenAnimDraw();
-                MainScreenUpdate(1);
-            }
-            FrameDefaultButton(prefsDialog, 1);
-        }
-        if (itemHit == kItemMusicUp) {
-            if (settings.volume < kMaxMusicVol) {
-                settings.volume += 1;
-                RedrawDialog(prefsDialog);
-            } else {
-                settings.volume = kMaxMusicVol;
-            }
-            HandleIntroMusic(1);
-            AdjustSoundVolume();
-            PlaySound(beepSnd[4], kBeepChannel, gSoundVolume, gSoundVolume);
-        }
-        if (itemHit == kItemMusicDown) {
-            if (settings.volume > 0) {
-                settings.volume -= 1;
-                RedrawDialog(prefsDialog);
-            } else {
-                settings.volume = 0;
-            }
-            HandleIntroMusic(1);
-            AdjustSoundVolume();
-            PlaySound(beepSnd[4], kBeepChannel, gSoundVolume, gSoundVolume);
-        }
-    } while (done == 0);
-
-    if (gWind != NULL)
-        SWSetPortToWindow(gSpriteWorld);
-    DisposeDialog(prefsDialog);
-    prefsDialog = NULL;
-    if (settings.introMusic == 0)
-        StopIntroMusic(0);
-}
-#else
 void DoPrefsDialog(void)
 {
     unsigned char savedShipSets;
@@ -976,7 +656,6 @@ void DoPrefsDialog(void)
     if (settings.introMusic == 0)
         StopIntroMusic(0);
 }
-#endif
 
 /* entergame -- EnterGameFromMainScreen and DoNewPilot. Notes: Research/notes/entergame.md */
 
@@ -985,51 +664,10 @@ void DoPrefsDialog(void)
 void EnterGameFromMainScreen(void)
 {
     Rect box;
-#ifdef MACBUILD
-    Size grow;
-    GDHandle device;
-    Str255 msg;
-    Str255 num;
-#else
     Str255 pilotName;
-#endif
 
     crashlog("---");
     crashlog("entering game");
-#ifdef MACBUILD
-    if (useLegacyRenderingPipeline) {
-        device = gSpriteWorld->mainSWGDH;
-        if (device != NULL) {
-            if ((*(*device)->gdPMap)->pixelSize != gSpriteWorld->pixelDepth) {
-                if (gSpriteWorld->pixelDepth == 8)
-                    GetIndString(msg, kAlertStrList, kStrDepth256);
-                else
-                    GetIndString(msg, kAlertStrList, kStrDepthThousands);
-                EVNoteAlert(msg);
-                return;
-            }
-            box = (*(*device)->gdPMap)->bounds;
-            if (box.right - box.left != mainDeviceInitBounds.right - mainDeviceInitBounds.left
-                || box.bottom - box.top != mainDeviceInitBounds.bottom - mainDeviceInitBounds.top) {
-                strcpy((char *)msg, "");
-                StrcatIndCString((char *)msg, kAlertStrList, kStrResolution);
-                strcat((char *)msg, " ");
-                NumToString(mainDeviceInitBounds.right - mainDeviceInitBounds.left, num);
-                PtoCstr(num);
-                strcat((char *)msg, (char *)num);
-                strcat((char *)msg, "x");
-                NumToString(mainDeviceInitBounds.bottom - mainDeviceInitBounds.top, num);
-                PtoCstr(num);
-                strcat((char *)msg, (char *)num);
-                strcat((char *)msg, " ");
-                StrcatIndCString((char *)msg, kAlertStrList, kStrResolutionTail);
-                CtoPstr((char *)msg);
-                EVNoteAlert(msg);
-                return;
-            }
-        }
-    }
-#endif
     SWWindowMoved(gSpriteWorld);
     playerIsLanded = 0;
     crashlog("adjusting sounds");
@@ -1073,12 +711,10 @@ void EnterGameFromMainScreen(void)
     DoPlayGameWork(1);
     ignoreKeys = 0;
     gameFrozen = 0;
-#if !defined(MACBUILD) || (defined(MAC1010) && !TARGET_API_MAC_CARBON)
     RedrawStatus(1);
     RefreshSAT();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
     RedrawComm(0);
-#endif
     statusRedraw[kRedrawCargo] = 1;
     escortMenuOnscreen = 0;
     mBarHidden = 1;
@@ -1137,9 +773,6 @@ void EnterGameFromMainScreen(void)
     if (!gQuit) {
         crashlog("showing main screen again");
         InvalWindowPortRect((WindowRef)gWind);
-#if defined(MACBUILD) && !defined(MAC1010)
-        FadeScreenIn();
-#endif
         MainScreenAppearStart();
         MainScreenAppear();
         SetupInterfaceBackground();
