@@ -86,7 +86,7 @@ static void DrawFontPage(short family, short count)
     short drawn;
 
     FontRealName(family, kRealNameSize, 0, real, sizeof(real));
-    sprintf(text, "Font %d of %d   asked for: \"%s\"   drawn with: \"%s\"", family + 1, count,
+    snprintf(text, sizeof(text), "Font %d of %d   asked for: \"%s\"   drawn with: \"%s\"", family + 1, count,
             FontFamilyName(family), real);
     TextFont(smallTextFont);
     TextFace(0);
@@ -111,7 +111,7 @@ static void DrawFontPage(short family, short count)
         SetColor(kTickRed, 0, 0);
         SetRect(&tick, kSampleLeft + measuredMac, y + 1, kSampleLeft + measuredMac + 1, y + 1 + kTickHeight);
         PaintRect(&tick);
-        sprintf(text, "%d %s  width %d / %d / %d", kLines[i].size, kLines[i].styleName, measured,
+        snprintf(text, sizeof(text), "%d %s  width %d / %d / %d", kLines[i].size, kLines[i].styleName, measured,
                 measuredMac, drawn);
         Label(kLabelLeft, y, text);
     }
@@ -121,7 +121,7 @@ static void DrawFontPage(short family, short count)
     TextFont(family);
     TextFace(0);
     TextSize(kWrapSize);
-    sprintf(text, "%d plain, %d wide: height %d", kWrapSize, kWrapWidth,
+    snprintf(text, sizeof(text), "%d plain, %d wide: height %d", kWrapSize, kWrapWidth,
             MeasureWrappedText(kParagraph, strlen(kParagraph), kWrapWidth));
     SetColor(0xffff, 0xffff, 0xffff);
     DrawTextRun(kParagraph, strlen(kParagraph), &box, 1, 0);
@@ -174,7 +174,7 @@ void DebugFontScreen(void)
     count = FontFamilyCount();
     for (family = 0; family < count; family++) {
         FontRealName(family, kRealNameSize, 0, real, sizeof(real));
-        sprintf(text, "font %d: asked for \"%s\", drawn with \"%s\"", family + 1, FontFamilyName(family), real);
+        snprintf(text, sizeof(text), "font %d: asked for \"%s\", drawn with \"%s\"", family + 1, FontFamilyName(family), real);
         crashlog(text);
     }
     for (family = 0; family < count; family++) {

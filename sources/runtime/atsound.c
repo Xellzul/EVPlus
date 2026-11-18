@@ -76,7 +76,8 @@ static double DAT_00576b10[7] = {
 };
 
 /* the device's volume as the exe found it when the Sound Tool opened (to put back at close): not read
-   any more, there is no device volume on the platform layer. ST_GetSysVolume still answers from these. */
+   any more, there is no device volume on the platform layer. ST_GetSysVolume still computes from these,
+   which stay 0, so its answer means nothing; no caller uses it. */
 ULong gSaveLeftVolume;                              /* 0x008700a4, 4 B */
 ULong gSaveRightVolume;                              /* 0x00870100, 4 B */
 ULong gSaveMaxVolume;                              /* 0x00870dcc, 4 B */

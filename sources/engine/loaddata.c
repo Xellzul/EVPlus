@@ -2907,8 +2907,9 @@ Boolean OpenPilotFile(char *missingResource)
         DeleteAllComputerShips(1, 1);
         crashlog("loading pilot data");
         data = ConvertNativePathToPath(path);
-        result = LoadPilotData(data);
-        DeallocAPointer(data);
+        result = data != NULL ? LoadPilotData(data) : kPilotUnreadable;
+        if (data != NULL)
+            DeallocAPointer(data);
         OSCursorReset();
         ShowTheCursor();
         crashlog("open file setup 2");

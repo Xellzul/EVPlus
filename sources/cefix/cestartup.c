@@ -74,12 +74,18 @@ static int IniString(const char *key, const char *def, char *out, int outSize)
     size_t length;
     int inSection;
     int found;
+    int skipped;
 
     value = def;
     found = 0;
     inSection = 0;
     file = PlatFileOpen(ceIniPath, "r");
     while (file != NULL && !found && fgets(line, sizeof(line), file) != NULL) {
+        /* a line too long for the buffer: its rest is not another line */
+        if (strchr(line, '\n') == NULL) {
+            while ((skipped = fgetc(file)) != EOF && skipped != '\n')
+                ;
+        }
         text = Trimmed(line, line + strlen(line));
         if (text[0] == ';' || text[0] == 0)
             continue;

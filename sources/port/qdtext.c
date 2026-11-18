@@ -29,7 +29,7 @@
 /* a character: what the font is asked for */
 typedef struct TextUnit {
     unsigned short unicode;
-    unsigned char macRoman;             /* its Mac Roman code when it came from Mac Roman text, else 0 */
+    unsigned char macRoman;             /* its Mac Roman code, 0 when it has none */
 } TextUnit;
 
 /* Mac OS Roman 0x80..0xff */
@@ -49,6 +49,20 @@ static const unsigned short kAnsiHigh[32] = {
     0x20ac, 0x0081, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021, 0x02c6, 0x2030, 0x0160, 0x2039, 0x0152, 0x008d, 0x017d, 0x008f,
     0x0090, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014, 0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x009d, 0x017e, 0x0178
 };
+
+/* a character's Mac Roman code, 0 when Mac Roman does not have it */
+static unsigned char ToMacRoman(unsigned unicode)
+{
+    int i;
+
+    if (unicode < 0x80)
+        return (unsigned char)unicode;
+    for (i = 0; i < 128; i++) {
+        if (kMacRoman[i] == unicode)
+            return (unsigned char)(0x80 + i);
+    }
+    return 0;
+}
 
 /* a byte of code page 1252 as a Unicode character */
 unsigned AnsiToUnicode(unsigned char c)
@@ -88,7 +102,7 @@ static int FromAnsi(const char *text, int count, TextUnit *out)
             i++;
         }
         out[n].unicode = AnsiToUnicode(c);
-        out[n].macRoman = 0;
+        out[n].macRoman = ToMacRoman(out[n].unicode);
         n++;
     }
     return n;
@@ -104,7 +118,8 @@ typedef struct TextStyle {
 
 /* The font, size and style set in the port. A font number the font cache does not know (the scrolling
    text asks for 20, the Mac's number for Times) leaves the port with the font it drew or measured with
-   before, as GDI does when the exe selects no font; a port that has had none gets the system font. */
+   before (GDI kept the font selected last); a port that has had none gets font 0 at the port's size,
+   where GDI had its stock System font. */
 static int CurrentStyle(TextStyle *style)
 {
     CGrafPtr port;
@@ -193,6 +208,15 @@ typedef struct ClipRect {
     int bottom;
 } ClipRect;
 
+/* `old' moved towards `target' by coverage `a' of kFull, to the nearest step either way */
+static int Blend(int old, int target, int a)
+{
+    int moved;
+
+    moved = (target - old) * a;
+    return old + (moved >= 0 ? moved + kFull / 2 : moved - kFull / 2) / kFull;
+}
+
 /* the port's foreground colour through the gamma ramp, a channel in 8 bits, as the exe hands it to GDI */
 typedef struct TextColor {
     int r;
@@ -236,15 +260,15 @@ static void DrawGlyph(PixMap *pix, const RasterGlyph *glyph, int x, int baseline
                 b = color->b >> 3;
                 if (a != kFull) {
                     old = *(unsigned short *)p;
-                    r = ((old >> 10) & 31) + ((r - (int)((old >> 10) & 31)) * a + kFull / 2) / kFull;
-                    g = ((old >> 5) & 31) + ((g - (int)((old >> 5) & 31)) * a + kFull / 2) / kFull;
-                    b = (old & 31) + ((b - (int)(old & 31)) * a + kFull / 2) / kFull;
+                    r = Blend((old >> 10) & 31, r, a);
+                    g = Blend((old >> 5) & 31, g, a);
+                    b = Blend(old & 31, b, a);
                 }
                 *(unsigned short *)p = (r << 10) | (g << 5) | b;
             } else {
-                p[0] = p[0] + ((color->b - p[0]) * a + kFull / 2) / kFull;
-                p[1] = p[1] + ((color->g - p[1]) * a + kFull / 2) / kFull;
-                p[2] = p[2] + ((color->r - p[2]) * a + kFull / 2) / kFull;
+                p[0] = Blend(p[0], color->b, a);
+                p[1] = Blend(p[1], color->g, a);
+                p[2] = Blend(p[2], color->r, a);
             }
         }
     }

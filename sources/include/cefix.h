@@ -15,7 +15,6 @@ struct Rect;
 struct DialogRecord;
 
 /* cestartup.c */
-#define kCEMaxPath          260
 #define kCEIniSection       "EV Nova"
 #define kCEMemoryPoolSize   (2040UL * 1024 * 1024)  /* WinMain's pool: under 2 GiB, no size reads negative */
 

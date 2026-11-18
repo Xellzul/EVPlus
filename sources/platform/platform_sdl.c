@@ -766,6 +766,9 @@ static void SDLCALL FeedOutput(void *userdata, SDL_AudioStream *stream, int addi
         got = s->pull(s->ctx, buffer, frames < kPullFrames ? frames : kPullFrames);
         if (got <= 0) {
             SDL_SetAtomicInt(&s->ended, 1);
+            /* without this SDL keeps the last frames back while it converts the rate, waiting for more,
+               and the output never reads as drained */
+            SDL_FlushAudioStream(stream);
             break;
         }
         SDL_PutAudioStreamData(stream, buffer, got * kBytesPerFrame);
@@ -1122,9 +1125,13 @@ static char *StartIn(const char *folder)
     return start;
 }
 
+#define kDialogErrorMax 200
+
 typedef struct DialogAnswer {
     SDL_AtomicInt done;
     char *path;                         /* NULL: cancelled, or the dialog could not be shown */
+    bool failed;                        /* it could not be shown: `error' says why */
+    char error[kDialogErrorMax];
 } DialogAnswer;
 
 static void SDLCALL DialogClosed(void *userdata, const char * const *files, int filter)
@@ -1132,8 +1139,12 @@ static void SDLCALL DialogClosed(void *userdata, const char * const *files, int 
     DialogAnswer *answer = (DialogAnswer *)userdata;
 
     (void)filter;
-    if (files != NULL && files[0] != NULL)
+    if (files == NULL) {
+        answer->failed = true;
+        SDL_strlcpy(answer->error, SDL_GetError(), sizeof answer->error);   /* this thread's error */
+    } else if (files[0] != NULL) {
         answer->path = SDL_strdup(files[0]);
+    }
     SDL_SetAtomicInt(&answer->done, 1);
 }
 
@@ -1160,6 +1171,11 @@ int PlatOpenFileDialog(const char *kindName, const char *extension, const char *
         SDL_Delay(kDialogPoll);
     }
     SDL_free(start);
+    if (answer.failed) {
+        /* a system without a file dialog: the user must not take it for a cancel of their own */
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "file dialog: %s", answer.error);
+        PlatAlert("", "The file dialog could not be opened.");
+    }
     chosen = answer.path != NULL && SDL_strlen(answer.path) < (size_t)outSize;
     if (chosen) {
         SDL_strlcpy(out, answer.path, (size_t)outSize);

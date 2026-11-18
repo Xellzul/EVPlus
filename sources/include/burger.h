@@ -519,7 +519,6 @@ extern int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short l
 extern ULong ST_PlaySoundParam(SoundRequest *req);
 
 extern unsigned char KeyArray[128];
-extern unsigned char *DAT_00576ce8;
 extern int32_t gGDIDIBSectionFunc;
 
 #ifdef __cplusplus

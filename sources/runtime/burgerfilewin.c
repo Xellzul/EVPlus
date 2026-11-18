@@ -292,7 +292,7 @@ static Word RootLength(const char *path)
             if (parts == 0 && path[n] != 0)
                 ++n;
         }
-        return n;
+        return n > 2 ? n : 0;                   /* two separators and no name are no share */
     }
     if (path[0] != 0 && path[1] == kVolumeColon)
         return kDriveRoot;
@@ -318,8 +318,8 @@ static void FullNativePath(char *out, const char *path)
     }
     n = strlen(whole);
     length = strlen(path);
-    if (length > kPathBuffer - 1 - n)
-        length = kPathBuffer - 1 - n;
+    if (length > kPathBuffer - 2 - n)          /* the result may gain a separator after "X:" */
+        length = kPathBuffer - 2 - n;
     memcpy(whole + n, path, length);
     whole[n + length] = 0;
 
@@ -364,7 +364,7 @@ static void FullNativePath(char *out, const char *path)
 char *ConvertNativePathToPath(const char *path)
 {
     char full[kPathBuffer];
-    char out[kPathBuffer];
+    char out[kPathBuffer + 16];                  /* ".D25:" for "X:\", and a last ':' */
     char *dst;
     char *src;
     Word c;

@@ -32,8 +32,9 @@ typedef struct RasterGlyph {
 } RasterGlyph;
 
 /* The bytes of a font file; the font takes them over and frees them when it is closed, or at once when
-   they are no font (NULL). */
-extern RasterFont *RasterOpen(void *data, int size);
+   they are no font (NULL). A file of several fonts (.ttc) opens as the one of that family name, as its
+   first when there is none or `family' is NULL. */
+extern RasterFont *RasterOpen(void *data, int size, const char *family);
 extern void RasterClose(RasterFont *font);
 extern const char *RasterFamily(const RasterFont *font);    /* "Geneva" */
 extern int RasterIsBold(const RasterFont *font);            /* the file itself is a bold */
@@ -43,7 +44,8 @@ extern int RasterIsItalic(const RasterFont *font);
 extern void RasterMetrics(RasterFont *font, int pixelSize, int *ascent, int *descent);
 
 /* `unicode' is looked up in the font's Unicode character map; a font that has only a Mac Roman map is asked
-   for `macRoman' (0 = the character is not from Mac Roman text). NULL = out of memory. */
+   for `macRoman' (0 = it has no Mac Roman code). NULL = no glyph could be made: out of memory, or the font
+   could not be set to that size, load or draw it. */
 extern const RasterGlyph *RasterGetGlyph(RasterFont *font, int pixelSize, int flags, unsigned unicode,
                                          unsigned macRoman);
 

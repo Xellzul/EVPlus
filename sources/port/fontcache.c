@@ -56,7 +56,7 @@ static void AddGameFont(const char *path, void *ctx)
 
     (void)ctx;
     data = PlatLoadFile(path, &size);
-    font = RasterOpen(data, size);
+    font = RasterOpen(data, size, NULL);
     if (font == NULL)
         return;
     entry = (GameFont *)malloc(sizeof(GameFont));
@@ -151,7 +151,7 @@ static RasterFont *FindFace(const char *name, int style, const char **source)
     }
     data = PlatSystemFont(name, (style & kFontBold) != 0, (style & kFontItalic) != 0, &size);
     *source = "installed";
-    return RasterOpen(data, size);
+    return RasterOpen(data, size, name);
 }
 
 /* the family's font file for a style, looked up once */

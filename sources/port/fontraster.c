@@ -16,7 +16,7 @@
 #include "fontraster.h"
 
 #define kBuckets        251             /* glyph cache: a small prime */
-#define kItalicSlant    0x5700          /* 16.16: about 0.34, GDI's slant of 20 degrees */
+#define kItalicSlant    0x5700          /* 16.16: 0.34, about 19 degrees; not measured against GDI's */
 #define kFixedOne       0x10000
 #define kFrac           6               /* FreeType's 26.6 */
 #define kFracHalf       32
@@ -24,7 +24,7 @@
 
 typedef struct CachedGlyph {
     struct CachedGlyph *next;
-    unsigned unicode;
+    unsigned code;                      /* what the font's character map was asked for */
     int pixelSize;
     int flags;
     RasterGlyph glyph;                  /* coverage follows the record */
@@ -42,10 +42,30 @@ struct RasterFont {
 
 static FT_Library gLibrary;
 
-RasterFont *RasterOpen(void *data, int size)
+/* two names alike, upper and lower case ASCII letters taken as one */
+static int SameName(const char *a, const char *b)
+{
+    int ca;
+    int cb;
+
+    do {
+        ca = (unsigned char)*a++;
+        cb = (unsigned char)*b++;
+        if (ca >= 'a' && ca <= 'z')
+            ca -= 'a' - 'A';
+        if (cb >= 'a' && cb <= 'z')
+            cb -= 'a' - 'A';
+    } while (ca == cb && ca != 0);
+    return ca == cb;
+}
+
+RasterFont *RasterOpen(void *data, int size, const char *family)
 {
     RasterFont *font;
+    FT_Face member;
     FT_ULong length;
+    FT_Long count;
+    FT_Long i;
 
     if (data == NULL)
         return NULL;
@@ -60,6 +80,20 @@ RasterFont *RasterOpen(void *data, int size)
         return NULL;
     }
     font->data = data;
+    /* a file of several fonts (.ttc): the one of that name, where the first is another */
+    count = font->face->num_faces;
+    if (family != NULL && count > 1 && !SameName(RasterFamily(font), family)) {
+        for (i = 1; i < count; i++) {
+            if (FT_New_Memory_Face(gLibrary, data, size, i, &member) != 0)
+                continue;
+            if (member->family_name != NULL && SameName(member->family_name, family)) {
+                FT_Done_Face(font->face);
+                font->face = member;
+                break;
+            }
+            FT_Done_Face(member);
+        }
+    }
     if (FT_Select_Charmap(font->face, FT_ENCODING_UNICODE) != 0) {
         font->macRomanOnly = 1;
         FT_Select_Charmap(font->face, FT_ENCODING_APPLE_ROMAN);
@@ -112,12 +146,16 @@ int RasterIsItalic(const RasterFont *font)
     return (font->face->style_flags & FT_STYLE_FLAG_ITALIC) != 0;
 }
 
-static void SetSize(RasterFont *font, int pixelSize)
+/* 0 = the font cannot be had at that size (one of bitmaps only, without that size) */
+static int SetSize(RasterFont *font, int pixelSize)
 {
     if (font->setSize != pixelSize) {
-        FT_Set_Pixel_Sizes(font->face, 0, pixelSize);
+        font->setSize = 0;
+        if (FT_Set_Pixel_Sizes(font->face, 0, pixelSize) != 0)
+            return 0;
         font->setSize = pixelSize;
     }
+    return 1;
 }
 
 static unsigned Be16(const FT_Byte *p)
@@ -185,7 +223,11 @@ void RasterMetrics(RasterFont *font, int pixelSize, int *ascent, int *descent)
 
     if (VdmxLookup(font, pixelSize, ascent, descent))
         return;
-    SetSize(font, pixelSize);
+    if (!SetSize(font, pixelSize)) {
+        *ascent = pixelSize;
+        *descent = 0;
+        return;
+    }
     scale = font->face->size->metrics.y_scale;
     os2 = FT_Get_Sfnt_Table(font->face, FT_SFNT_OS2);
     if (os2 != NULL && (os2->usWinAscent != 0 || os2->usWinDescent != 0)) {
@@ -199,7 +241,7 @@ void RasterMetrics(RasterFont *font, int pixelSize, int *ascent, int *descent)
     *descent = (int)((FT_MulFix(down, scale) + kFracHalf) >> kFrac);
 }
 
-static CachedGlyph *MakeGlyph(RasterFont *font, int pixelSize, int flags, unsigned unicode, unsigned macRoman)
+static CachedGlyph *MakeGlyph(RasterFont *font, int pixelSize, int flags, unsigned code)
 {
     FT_GlyphSlot slot;
     FT_Matrix slant;
@@ -215,14 +257,21 @@ static CachedGlyph *MakeGlyph(RasterFont *font, int pixelSize, int flags, unsign
     int y;
     int v;
 
-    SetSize(font, pixelSize);
-    index = FT_Get_Char_Index(font->face, font->macRomanOnly ? (macRoman != 0 ? macRoman : unicode) : unicode);
+    if (!SetSize(font, pixelSize))
+        return NULL;
+    index = FT_Get_Char_Index(font->face, code);
     load = (flags & kRasterSmooth) != 0 ? FT_LOAD_DEFAULT : FT_LOAD_TARGET_MONO;
     if ((flags & kRasterItalic) != 0)
         load |= FT_LOAD_NO_BITMAP;      /* a bitmap strike cannot be slanted */
     if (FT_Load_Glyph(font->face, index, load) != 0 && FT_Load_Glyph(font->face, 0, load) != 0)
         return NULL;
     slot = font->face->glyph;
+    /* an embedded bitmap that is neither one bit nor one byte a pixel (2 or 4 bits, colour): the outline
+       instead */
+    if (slot->format == FT_GLYPH_FORMAT_BITMAP && slot->bitmap.pixel_mode != FT_PIXEL_MODE_MONO
+            && slot->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY
+            && FT_Load_Glyph(font->face, index, load | FT_LOAD_NO_BITMAP) != 0)
+        return NULL;
     if ((flags & kRasterItalic) != 0 && slot->format == FT_GLYPH_FORMAT_OUTLINE) {
         slant.xx = kFixedOne;
         slant.xy = kItalicSlant;
@@ -232,6 +281,8 @@ static CachedGlyph *MakeGlyph(RasterFont *font, int pixelSize, int flags, unsign
     }
     if (slot->format != FT_GLYPH_FORMAT_BITMAP
             && FT_Render_Glyph(slot, (flags & kRasterSmooth) != 0 ? FT_RENDER_MODE_NORMAL : FT_RENDER_MODE_MONO) != 0)
+        return NULL;
+    if (slot->bitmap.pixel_mode != FT_PIXEL_MODE_MONO && slot->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY)
         return NULL;
 
     width = (int)slot->bitmap.width;
@@ -258,7 +309,7 @@ static CachedGlyph *MakeGlyph(RasterFont *font, int pixelSize, int flags, unsign
             }
         }
     }
-    g->unicode = unicode;
+    g->code = code;
     g->pixelSize = pixelSize;
     g->flags = flags;
     g->glyph.advance = (int)((slot->advance.x + kFracHalf) >> kFrac) + ((flags & kRasterBold) != 0 ? 1 : 0);
@@ -274,13 +325,16 @@ const RasterGlyph *RasterGetGlyph(RasterFont *font, int pixelSize, int flags, un
 {
     CachedGlyph *g;
     unsigned bucket;
+    unsigned code;
 
-    bucket = (unicode * 31u + (unsigned)pixelSize * 7u + (unsigned)flags) % kBuckets;
+    /* a font with only a Mac Roman map is asked by Mac Roman code: that code is the glyph's key */
+    code = font->macRomanOnly && macRoman != 0 ? macRoman : unicode;
+    bucket = (code * 31u + (unsigned)pixelSize * 7u + (unsigned)flags) % kBuckets;
     for (g = font->buckets[bucket]; g != NULL; g = g->next) {
-        if (g->unicode == unicode && g->pixelSize == pixelSize && g->flags == flags)
+        if (g->code == code && g->pixelSize == pixelSize && g->flags == flags)
             return &g->glyph;
     }
-    g = MakeGlyph(font, pixelSize, flags, unicode, macRoman);
+    g = MakeGlyph(font, pixelSize, flags, code);
     if (g == NULL)
         return NULL;
     g->next = font->buckets[bucket];
