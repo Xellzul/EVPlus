@@ -32,7 +32,6 @@ typedef unsigned long long ULongLong;
 /* a hand-assembled body: no prologue, no epilogue */
 #define NAKED __declspec(naked)
 
-#define kStirPointerBackoff 3
 #define kNoLength           0xffffffff
 
 /* UTF-16 surrogate decoding */

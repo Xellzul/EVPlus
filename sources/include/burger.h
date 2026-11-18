@@ -188,7 +188,6 @@ extern uint32_t gSaveMaxVolume;
 extern int32_t MouseClicked;
 extern char gCriticalSection[16];
 extern unsigned char gSoundToolOpen;
-extern struct FileTypeMap **gFT_FileTypes;       /* atftopen.c: the file-type map */
 extern Word8 ResourceJustLoaded;                 /* 0x00870e11, set by ResourceLoadHandle */
 extern Word32 MaxMemSize;                        /* 0x00576c50, read by InitMemory */
 /* handles */
@@ -270,10 +269,6 @@ extern void WaitTicks(Word tickCount);
 #define kFoldLow        0x61       /* 'a' */
 #define kFoldHigh       0x7a       /* 'z' */
 
-/* the file tool: a spec from kSpecIDMin to kSpecIDMax is a folder number, not a handle */
-#define kSpecIDMin          -5
-#define kSpecIDMax          100
-#define IsSpecID(spec)      ((int32_t)(spec) >= kSpecIDMin && (int32_t)(spec) <= kSpecIDMax)
 
 #define Swap32(v)  ((((v) >> 24) & 0xffUL) | (((v) >> 8) & 0xff00UL) \
                     | (((v) & 0xff00UL) << 8) | (((v) & 0xffUL) << 24))
@@ -365,7 +360,6 @@ struct adpcm_state;
 struct AdpcmVoice;
 struct TextBuilder;
 struct WindowNode;
-struct FTFile;
 
 extern int32_t ST_Open(unsigned short channels, ULong device);
 extern int32_t fgetstr(char *buf, int32_t size, FILE *stream);
@@ -414,33 +408,9 @@ struct ITPage;
 struct FolderSpec;
 #define DTSysRect struct ITRect
 extern unsigned char IndirectIsUnicode(void **handle, char *nameOut);
-extern int32_t FT_PathDispose(struct FolderSpec **spec);
 
-/* called by the nag screen (rt3nag.c) */
-extern void *FT_GetResFile(void);                 /* atfilespec.c */
-extern int32_t FT_ResourceLoad(void *module, unsigned short id, const char *resType, ULong macType,
-                         ULong maxSize, int32_t unused, void ***handle);
-extern int32_t FT_VirtualPathMount(void **handle, unsigned char mode, struct FolderSpec ***result);
 
 /* the interface tool's control procs, registered by name (atwndclass.c) */
-extern int32_t _FT_FileRead(struct FTFile *file, ULong count, void *buffer);
-extern int32_t _FT_FileWrite(struct FTFile *file, ULong count, const void *buffer);
-extern int32_t _FT_FileGetEOF(struct FTFile *file, ULong *size);
-extern int32_t _FT_FileSetEOF(struct FTFile *file, ULong size);
-extern int32_t _FT_FileGetMark(struct FTFile *file, ULong *position);
-extern int32_t _FT_FileSetMark(struct FTFile *file, ULong position);
-extern int32_t _FT_ChunkRead(struct FTFile *file, ULong count, void *buffer);
-extern int32_t _FT_ChunkWrite(struct FTFile *file, ULong count, const void *buffer);
-extern int32_t _FT_ChunkGetEOF(struct FTFile *file, ULong *size);
-extern int32_t _FT_ChunkSetEOF(struct FTFile *file, ULong size);
-extern int32_t _FT_ChunkGetMark(struct FTFile *file, ULong *position);
-extern int32_t _FT_ChunkSetMark(struct FTFile *file, ULong position);
-extern int32_t _FT_BufferRead(struct FTFile *file, ULong count, void *buffer);
-extern int32_t _FT_BufferWrite(struct FTFile *file, ULong count, const void *buffer);
-extern int32_t _FT_BufferGetEOF(struct FTFile *file, ULong *size);
-extern int32_t _FT_BufferSetEOF(struct FTFile *file, ULong size);
-extern int32_t _FT_BufferGetMark(struct FTFile *file, ULong *position);
-extern int32_t _FT_BufferSetMark(struct FTFile *file, ULong position);
 extern struct ControlType *gIT_HandlerList;
 extern void StreamHandleInitPut(struct TextBuilder *b);
 extern void StreamHandleDestroy(struct TextBuilder *b);
@@ -496,20 +466,8 @@ static inline char *CopyString(char *dst, const char *src)
 }
 
 extern void **IndirectDuplicate(void **handle);
-struct FTFileInfo;
-/* 1.0.10 passes the get-flags and save flag in a byte */
-#define FTFlagArg int32_t
-extern int32_t FT_FileGetFlags(int32_t folder, const char *name, struct FTFileInfo *info, FTFlagArg flags);
-extern int32_t FT_FileLoad(int32_t folder, const char *name, ULong maxSize, int32_t flags,
-                         void ***handle);
-extern int32_t FT_FileSave(int32_t folder, const char *name, FTFlagArg flags, ULong type,
-                         ULong creator, void **handle);
-extern int32_t FT_FileDelete(int32_t folder, const char *name);
-struct FileTypeMap;
-extern void _FT_FileTypesLookup(const char *name, ULong type, struct FileTypeMap *entry);
 extern unsigned char AtomicMaskTest(ULong *word, ULong bit);
 extern void **IndirectAllocateTempMem(ULong size);
-extern unsigned char _FT_IsIndirectBusy(void *p);
 extern void **IndirectAllocate(ULong size);
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);

@@ -526,23 +526,6 @@ typedef struct ITClick {
 /* a condition stored as a byte flag: the exe builds it `mov al,1 / xor al,al`, not setcc */
 #define AsByte(c)           ((c) ? (unsigned char)1 : (unsigned char)0)
 
-typedef struct FTFileInfo {
-    char name[256];
-    unsigned char flags[5];     /* readable, writable, folder, hidden, archive */
-    ULong size;                 /* bytes, or a folder's entry count */
-    ULong created;
-    ULong modified;
-    ULong type;
-    ULong creator;
-} FTFileInfo;
-
-/* the file manager's extension to Mac type/creator map */
-typedef struct FileTypeMap {
-    ULong type;
-    ULong creator;
-    ULong extension;                             /* left-justified, NUL-padded */
-    ULong preferred;
-} FileTypeMap;
 
 #define kNetFamilyNone  0
 #define kNetFamilyInet  2

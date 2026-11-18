@@ -1,48 +1,8 @@
-/* ambrosia.h -- AmbrosiaTools' shared constants (the at* and it* objects): the file tool's errors and
-   info bits, the socket layer's events, and the interface tool's control messages, keys, styles and
+/* ambrosia.h -- AmbrosiaTools' shared constants (the at* and it* objects): the socket layer's events, and the interface tool's control messages, keys, styles and
    image formats. Types and prototypes stay in burger.h / burgerplat.h. */
 #ifndef AMBROSIA_H
 #define AMBROSIA_H
 
-/* the file tool (atfilespec*.c) */
-#define kNoFile             ((void *)-1)         /* INVALID_HANDLE_VALUE */
-
-#define kFolderShared       -7
-#define kFolderDocuments    -6
-#define kFolderTemporary    -5
-#define kFolderAppData      -4
-#define kFolderUserData     -3
-#define kFolderApplication  -2
-
-#define kFTErrCancelled     -7007
-#define kFTErrBadPath       -7200
-#define kFTErrBadName       -7201
-#define kFTErrDirNotFound   -7202
-#define kFTErrFileNotFound  -7203
-#define kFTErrExists        -7204
-#define kFTErrBadEntry      -7206
-#define kFTErrBusy          -7208
-#define kFTErrPermission    -7209
-#define kFTErrPosition      -7210
-#define kFTErrDiskFull      -7211
-#define kFTErrNoVolume      -7212
-#define kFTErrTooManyFiles  -7213
-#define kFTErrNotAFile      -7214                /* the spec is a file of files */
-
-#define kFTFileSize         0x148                /* sizeof(FTFile) */
-
-/* FTFileInfo.flags; an archive entry keeps the first four as bits of its `flags` */
-#define kFTInfoReadable     0
-#define kFTInfoWritable     1
-#define kFTInfoFolder       2
-#define kFTInfoHidden       3
-#define kFTInfoArchive      4
-
-#define kEpochYear          1970
-#define kDaysPerYear        365
-#define kFebruary           2
-#define kDefaultEntries     10
-#define kMaxEntries         1000
 #define ATSwap32(v)         ((long long)Swap32(v))  /* widens: one-operand imul, adc */
 #define IsSignature(s, t)   ((s)[0] == (t)[0] && (s)[1] == (t)[1] && (s)[2] == (t)[2] \
                              && (s)[3] == (t)[3])
