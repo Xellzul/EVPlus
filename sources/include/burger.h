@@ -150,12 +150,10 @@ extern Word PaletteFindColorIndex(const Word8 *pal, Word red, Word green,
 extern int32_t ParseSoundFileImage(struct AudioDesc *info, Word8 *data,
                                 ULong size);
 extern void ExpandAPathToBuffer(char *dst, const char *path);   /* BurgerLib form */
-extern void ExpandAPathToBufferNative(char *dst, const char *path);   /* a Windows path */
+extern void ExpandAPathToBufferNative(char *dst, const char *path);   /* a Windows path, UTF-8 */
 extern Word DoesFileExistNative(const char *name);
 extern Word GetADirectoryEntry(struct DirectorySearch_t *dir);
 extern Word DeleteAFileNative(const char *name);
-extern char *GetAVolumeName(Word driveNum);
-extern Word FindAVolumeByName(const char *name);
 extern Word ResourceGetRezNum(struct RezFile *rez, const char *name);
 extern Handle ResourceLoadHandle(struct RezFile *rez, int32_t index);
 extern Handle ResourceLoadHandleByName(struct RezFile *rez, const char *name);
@@ -281,7 +279,6 @@ extern void WaitTicks(Word tickCount);
 #define PREFIXSYSTEM        34                   /* "$:" */
 #define kPrefixCurrent      8
 #define kPrefixApp          9
-#define kDriveCount         26
 #define kNoVolume           ((Word)-1)
 
 /* BurgerLib's memory manager, number and string helpers, fixed-point maths */

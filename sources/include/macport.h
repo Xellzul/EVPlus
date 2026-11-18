@@ -796,6 +796,10 @@ extern void TextFont(short font);
 extern void TextSize(short size);
 extern short TextWidth(const char *text, int byteCount);
 extern short TextWidthMacRoman(const char *text, int byteCount);
+extern unsigned AnsiToUnicode(unsigned char c);             /* code page 1252, the typed text's */
+/* port/filenames.c: a typed name as (part of) a UTF-8 path, and a file's name as game text */
+extern void TextToFileName(char *out, const char *text, int outSize);
+extern void FileNameToText(char *out, const char *name, int outSize);
 extern void UpdateAndPageFlip(void);
 extern RGBColor *blackColor;
 extern int32_t gCaretPhase;

@@ -1,18 +1,25 @@
-/* platform_win.c -- what of platform.h is still Windows only: the path conversion and the installed fonts. Everything else is
-   platform_sdl.c. */
+/* platform_win.c -- what of platform.h is still Windows only: opening a file by a UTF-8 path and the
+   installed fonts. Everything else is platform_sdl.c. */
+#include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include "platform.h"
 
-void PlatPathToUtf8(const char *path, char *out, int outSize)
-{
-    wchar_t wide[1024];
+#define kWidePath   0x800               /* the game's longest path, in characters */
+#define kWideMode   8
 
-    out[0] = '\0';
-    if (MultiByteToWideChar(CP_ACP, 0, path, -1, wide, 1024) == 0)
-        return;
-    if (WideCharToMultiByte(CP_UTF8, 0, wide, -1, out, outSize, NULL, NULL) == 0)
-        out[0] = '\0';
+/* Windows' fopen takes the path in the system's code page, which cannot hold every file name: the wide
+   one takes them all. */
+FILE *PlatFileOpen(const char *path, const char *mode)
+{
+    wchar_t widePath[kWidePath];
+    wchar_t wideMode[kWideMode];
+
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, widePath, kWidePath) == 0)
+        return NULL;
+    if (MultiByteToWideChar(CP_UTF8, 0, mode, -1, wideMode, kWideMode) == 0)
+        return NULL;
+    return _wfopen(widePath, wideMode);
 }
 
 #define kTtcTag     0x66637474          /* 'ttcf': the whole collection file a font is part of */

@@ -7,12 +7,11 @@
 #include "burgertypes.h"
 #include "burger.h"
 #include "burgerplat.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define kFirstHardDrive 2                        /* C: */
 
 int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length);
 void *LoadAFileHandleFP(FILE *file);
@@ -77,7 +76,7 @@ FILE *FOpenExpandedPath(const char *path, const char *mode)
     char expanded[kPathBufferSize];
 
     ExpandAPathToBufferNative(expanded, path);
-    return fopen(expanded, mode);
+    return PlatFileOpen(expanded, mode);
 }
 
 /* CopyAFile (BurgerLib FmFileManager): a file copied in 64K pieces. Not linked. */
@@ -427,7 +426,7 @@ void *LoadAFileNative(const char *name, uint32_t *length)
 {
     FILE *fp;
 
-    fp = fopen(name, "rb");
+    fp = PlatFileOpen(name, "rb");
     if (fp != 0)
         return LoadAFileFP(fp, length);
     NonFatal("File not found\n");
@@ -507,32 +506,6 @@ void *LoadAFileHandleFP(FILE *file)
         fclose(file);
     }
     return h;
-}
-
-/* FindAVolumeByName (BurgerLib FmFileManager): the drive number carrying ":name:", or -1. */
-// FUNCTION: EVNOVA 0x004f2720
-Word FindAVolumeByName(const char *name)
-{
-    Word drive;
-    int differ;
-    Word oldFlag;
-    char *volume;
-
-    drive = kFirstHardDrive;
-    oldFlag = SetErrBombFlag(0);
-    do {
-        volume = GetAVolumeName(drive);
-        if (volume != 0) {
-            differ = stricmp(volume, name);
-            DeallocAPointer(volume);
-            if (differ == 0) {
-                SetErrBombFlag(oldFlag);
-                return drive;
-            }
-        }
-    } while (++drive < kDriveCount);
-    SetErrBombFlag(oldFlag);
-    return kNoVolume;
 }
 
 #ifdef __cplusplus

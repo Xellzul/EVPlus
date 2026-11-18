@@ -44,19 +44,14 @@ typedef struct TimeDate_t {
     Word8 Second;                                /* +0x0b */
 } TimeDate_t;
 
-/* BurgerLib's directory walker, win32 flavour */
+/* BurgerLib's directory walker. The exe's also had the entry's two dates and whether it was hidden, a
+   system file or read-only, none of them read, and Windows' own search record. */
 typedef struct DirectorySearch_t {
-    Word32 FileSize;                             /* +0x00 */
-    TimeDate_t Create;                           /* +0x04 */
-    TimeDate_t Modify;                           /* +0x10 */
-    char Dir;                                    /* +0x1c */
-    char System;                                 /* +0x1d */
-    char Hidden;                                 /* +0x1e */
-    char Locked;                                 /* +0x1f */
-    char Name[256];                              /* +0x20 */
-    void *FindHandle;                            /* +0x120 */
-    Word HandleOk;                               /* +0x124 */
-    char MyFindT[320];                           /* +0x128 */
+    Word32 FileSize;                             /* 0 for an empty file; see burgerfilewin.c */
+    char Dir;
+    char Name[1024];                             /* UTF-8 */
+    void *FindHandle;                            /* the folder's listing */
+    Word HandleOk;                               /* the search is open */
 } DirectorySearch_t;
 
 /* Win32's BITMAPINFOHEADER and BITMAPINFO (one RGBQUAD) */

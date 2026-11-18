@@ -2701,7 +2701,7 @@ short WritePilotData(short stellar)
     altPlayerFileHand = NULL;
     strcpy(path, pilotsFolder);
     PStr2CStr(name, playerName);
-    strcat(path, name);
+    TextToFileName(path + strlen(path), name, sizeof(path) - strlen(path));
     strcat(path, ".plt");
     playerFileHand = (PilotRec **)AllocAHandle2(sizeof(PilotRec), 0);
     altPlayerFileHand = (PilotRec2 **)AllocAHandle2(sizeof(PilotRec2), 0);
@@ -2878,7 +2878,6 @@ short WritePilotData(short stellar)
 // MAC: _OpenPilotFile i386 0x00076644 ppc 0x0007f498
 Boolean OpenPilotFile(char *missingResource)
 {
-    OPENFILENAMEA ofn;
     char initDir[0x800];
     char path[0x800];
     unsigned char text[256];
@@ -2887,22 +2886,11 @@ Boolean OpenPilotFile(char *missingResource)
     int gotFile;
 
     *missingResource = 0;
-    memset(&ofn, 0, sizeof(ofn));
 
+    /* the exe: GetOpenFileName, for a file that exists, "PLT" added to a name typed without one */
     path[0] = 0;
     ExpandAPathToBufferNative(initDir, pilotsFolder);
-
-    ofn.lStructSize = 0x4c;
-    ofn.hwndOwner = Win95MainWindow;
-    ofn.lpstrFilter = "EV Nova Pilot\0*.PLT\0";
-    ofn.lpstrFile = path;
-    ofn.nMaxFile = 0x800;
-    ofn.lpstrInitialDir = initDir;
-    ofn.Flags = 0x1804;
-    ofn.lpstrDefExt = "PLT";
-
-
-    gotFile = GetOpenFileNameA(&ofn);
+    gotFile = PlatOpenFileDialog("EV Nova Pilot", "plt", initDir, path, sizeof(path));
 
     while (Win95ApplsActive == 0) {
         PlatSleep(0);
@@ -2939,7 +2927,6 @@ Boolean OpenPilotFile(char *missingResource)
         }
         return 0;
     } else {
-        CommDlgExtendedError();
         OSCursorReset();
         ShowTheCursor();
         return 0;
@@ -3275,6 +3262,7 @@ void DumpPilotLog(void)
 short LoadPilotData(char *path)
 {
     char buf[0x40];
+    char fileText[0x100];
     Str255 text;
     FILE *f;
     char *tail;
@@ -3673,7 +3661,8 @@ short LoadPilotData(char *path)
     if (path[strlen(path) - 1] == ':')
         path[strlen(path) - 1] = 0;
     tail = strrchr(path, ':');
-    strncpy((char *)playerName, tail + 1, 0x1f);
+    FileNameToText(fileText, tail + 1, sizeof(fileText));
+    strncpy((char *)playerName, fileText, 0x1f);
     if (strrchr((char *)playerName, '.'))
         *strrchr((char *)playerName, '.') = 0;
     CStr2PStr((char *)playerName, (char *)playerName);
@@ -3734,7 +3723,7 @@ void DeletePilotFile(const char *name)
     char path[2048];
 
     strcpy(path, pilotsFolder);
-    strcat(path, name);
+    TextToFileName(path + strlen(path), name, sizeof(path) - strlen(path));
     strcat(path, ".plt");
     if (!DoesPilotExist(path))
         return;

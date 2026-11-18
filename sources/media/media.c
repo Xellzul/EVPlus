@@ -108,11 +108,8 @@ static int FindAudio(AVFormatContext *fmt)
 
 static int OpenInput(AVFormatContext **fmt, const char *path)
 {
-    char utf8[1024];
-
     av_log_set_level(AV_LOG_QUIET);
-    PlatPathToUtf8(path, utf8, sizeof utf8);
-    return avformat_open_input(fmt, utf8, NULL, NULL);
+    return avformat_open_input(fmt, path, NULL, NULL);      /* the game's paths are UTF-8, as FFmpeg's */
 }
 
 MediaFile *MediaOpen(const char *path)

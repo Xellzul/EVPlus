@@ -50,6 +50,12 @@ static const unsigned short kAnsiHigh[32] = {
     0x0090, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014, 0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x009d, 0x017e, 0x0178
 };
 
+/* a byte of code page 1252 as a Unicode character */
+unsigned AnsiToUnicode(unsigned char c)
+{
+    return (c >= 0x80 && c < 0xa0) ? kAnsiHigh[c - 0x80] : c;
+}
+
 /* Mac Roman bytes as characters, as DrawTextRun draws them */
 static int FromMacRoman(const char *text, int count, TextUnit *out)
 {
@@ -81,7 +87,7 @@ static int FromAnsi(const char *text, int count, TextUnit *out)
                 continue;
             i++;
         }
-        out[n].unicode = (c >= 0x80 && c < 0xa0) ? kAnsiHigh[c - 0x80] : c;
+        out[n].unicode = AnsiToUnicode(c);
         out[n].macRoman = 0;
         n++;
     }

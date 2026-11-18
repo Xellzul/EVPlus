@@ -7,6 +7,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 #include <stdint.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,8 +124,30 @@ extern void PlatMutexUnlock(PlatMutex *m);
 extern void PlatMutexDestroy(PlatMutex *m);
 
 /* -- files and fonts ---------------------------------------------------------------------------------
-   Paths are UTF-8 here. */
+   Every path is UTF-8, in the system's own form otherwise ("C:\dir\file" on Windows). */
 extern const char *PlatExeFolder(void);                    /* where the program lies, ending in a separator */
+/* the folder relative paths start from, ending in a separator; 0 = not known or too long for `out' */
+extern int PlatCurrentFolder(char *out, int outSize);
+extern FILE *PlatFileOpen(const char *path, const char *mode);    /* C's fopen */
+
+#define kPlatNothing    0                                  /* there is nothing of that name */
+#define kPlatFile       1
+#define kPlatFolder     2
+extern int PlatPathKind(const char *path, uint64_t *size); /* `size' may be NULL */
+
+/* Everything in a folder, never "." or "..", in the order Windows lists an NTFS folder in, on every system:
+   by name, upper and lower case alike. 0 = the folder could not be read. */
+typedef void (*PlatFoundProc)(const char *name, int isFolder, uint64_t size, void *ctx);
+extern int PlatListFolder(const char *folder, PlatFoundProc found, void *ctx);
+/* makes the folder and the missing ones above it; nonzero when something of that name is there afterwards */
+extern int PlatMakeFolder(const char *path);
+extern int PlatRemove(const char *path);                   /* a file or an empty folder; 0 = nothing removed */
+extern int PlatEnv(const char *name, char *out, int outSize);     /* an environment variable; 0 = not set */
+/* The system's dialog for choosing one file to open, of the kind named ("EV Nova Pilot") with that
+   extension ("plt"). It starts in `startFolder', and once a file has been chosen, in that file's folder.
+   Returns when it is closed: nonzero with the path in `out', 0 when the user cancelled. */
+extern int PlatOpenFileDialog(const char *kindName, const char *extension, const char *startFolder, char *out,
+                              int outSize);
 /* the files of a folder whose names match a pattern such as "*.ttf", upper or lower case; each is handed
    to `found' with its whole path. Returns how many. */
 extern int PlatListFiles(const char *folder, const char *pattern, void (*found)(const char *path, void *ctx),
@@ -135,13 +158,11 @@ extern void *PlatLoadFile(const char *path, int *size);    /* the whole file in 
    family; the system may answer with the plain one. */
 extern void *PlatSystemFont(const char *family, int bold, int italic, int *size);
 
-/* -- clocks, log, paths ----------------------------------------------------------------------------- */
+/* -- clocks, log ------------------------------------------------------------------------------------- */
 extern uint64_t PlatMicroseconds(void);                   /* monotonic, from any thread */
 extern void PlatSleep(int ms);                            /* 0 may return at once */
 extern uint32_t PlatLocalSeconds1904(void);               /* Mac clock: seconds since 1904-01-01, local time */
 extern void PlatDebugLog(const char *msg);
-/* a path in the ANSI code page (the game's) as UTF-8 (FFmpeg's file names on Windows) */
-extern void PlatPathToUtf8(const char *path, char *out, int outSize);
 
 #ifdef __cplusplus
 }

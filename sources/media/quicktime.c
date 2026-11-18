@@ -324,7 +324,7 @@ static void PToC(char *dst, const unsigned char *p)
 
 static int FileExists(const char *path)
 {
-    FILE *f = fopen(path, "rb");
+    FILE *f = PlatFileOpen(path, "rb");
 
     if (f == NULL)
         return 0;

@@ -886,6 +886,276 @@ int PlatListFiles(const char *folder, const char *pattern, void (*found)(const c
     return count;
 }
 
+int PlatCurrentFolder(char *out, int outSize)
+{
+    char *folder;
+    size_t length;
+    int fits;
+
+    out[0] = 0;
+    folder = SDL_GetCurrentDirectory();
+    if (folder == NULL)
+        return 0;
+    length = SDL_strlen(folder);
+    fits = length < (size_t)outSize;
+    if (fits)
+        SDL_memcpy(out, folder, length + 1);
+    SDL_free(folder);
+    return fits;
+}
+
+int PlatPathKind(const char *path, uint64_t *size)
+{
+    SDL_PathInfo info;
+
+    if (size != NULL)
+        *size = 0;
+    if (!SDL_GetPathInfo(path, &info) || info.type == SDL_PATHTYPE_NONE)
+        return kPlatNothing;
+    if (info.type == SDL_PATHTYPE_DIRECTORY)
+        return kPlatFolder;
+    if (size != NULL)
+        *size = info.size;
+    return kPlatFile;
+}
+
+/* -- a folder's listing, in NTFS' order: names compared as UTF-16 after each character is made upper
+   case. NTFS has a table for that; this is the table's part for Latin, Greek and Cyrillic letters, other
+   characters compare as they are. ---------------------------------------------------------------- */
+
+#define kFirstSurrogate     0xd800
+#define kFirstAstral        0x10000
+#define kAfterAstral        0x100000
+
+static Uint32 UpperCase(Uint32 c)
+{
+    if (c < 0x80)
+        return (c >= 'a' && c <= 'z') ? c - 0x20 : c;
+    if (c >= 0xe0 && c <= 0xfe && c != 0xf7)
+        return c - 0x20;
+    if (c == 0xff)
+        return 0x178;
+    if (c >= 0x100 && c <= 0x17f) {
+        if (c == 0x131)
+            return 'I';
+        if (c == 0x17f)
+            return 'S';
+        if (c == 0x130 || c == 0x138 || c == 0x149 || c == 0x178)
+            return c;
+        if ((c >= 0x139 && c <= 0x148) || c >= 0x179)
+            return (c & 1) == 0 ? c - 1 : c;        /* upper case on the odd codes */
+        return (c & 1) != 0 ? c - 1 : c;            /* upper case on the even codes */
+    }
+    if (c == 0x3c2)
+        return 0x3a3;                               /* final sigma */
+    if ((c >= 0x3b1 && c <= 0x3c9) || (c >= 0x430 && c <= 0x44f))
+        return c - 0x20;
+    if (c >= 0x450 && c <= 0x45f)
+        return c - 0x50;
+    return c;
+}
+
+/* where a character stands in UTF-16's order: those past 0xffff are written with 0xd800..0xdfff */
+static Uint32 Utf16Order(Uint32 c)
+{
+    if (c < kFirstSurrogate)
+        return c;
+    if (c >= kFirstAstral)
+        return kFirstSurrogate + (c - kFirstAstral);
+    return c + kAfterAstral;
+}
+
+typedef struct FolderEntry {
+    char *name;
+    int isFolder;
+    Uint64 size;
+} FolderEntry;
+
+typedef struct FolderList {
+    FolderEntry *items;
+    int count;
+    int room;
+} FolderList;
+
+static int SDLCALL CompareEntries(const void *a, const void *b)
+{
+    const char *left = ((const FolderEntry *)a)->name;
+    const char *right = ((const FolderEntry *)b)->name;
+    const char *l = left;
+    const char *r = right;
+    Uint32 cl;
+    Uint32 cr;
+
+    do {
+        cl = Utf16Order(UpperCase(SDL_StepUTF8(&l, NULL)));
+        cr = Utf16Order(UpperCase(SDL_StepUTF8(&r, NULL)));
+        if (cl != cr)
+            return cl < cr ? -1 : 1;
+    } while (cl != 0);
+    return SDL_strcmp(left, right);         /* two names Windows could not hold side by side */
+}
+
+static SDL_EnumerationResult SDLCALL AddEntry(void *userdata, const char *dirname, const char *fname)
+{
+    FolderList *list = (FolderList *)userdata;
+    FolderEntry *grown;
+    FolderEntry *entry;
+    SDL_PathInfo info;
+    char *path;
+
+    if (list->count == list->room) {
+        grown = (FolderEntry *)SDL_realloc(list->items, (size_t)(list->room * 2 + 16) * sizeof *grown);
+        if (grown == NULL)
+            return SDL_ENUM_FAILURE;
+        list->items = grown;
+        list->room = list->room * 2 + 16;
+    }
+    entry = &list->items[list->count];
+    entry->name = SDL_strdup(fname);
+    if (entry->name == NULL)
+        return SDL_ENUM_FAILURE;
+    entry->isFolder = 0;
+    entry->size = 0;
+    path = NULL;
+    if (SDL_asprintf(&path, "%s%s", dirname, fname) >= 0 && SDL_GetPathInfo(path, &info)) {
+        entry->isFolder = info.type == SDL_PATHTYPE_DIRECTORY;
+        entry->size = entry->isFolder ? 0 : info.size;
+    }
+    SDL_free(path);
+    list->count++;
+    return SDL_ENUM_CONTINUE;
+}
+
+int PlatListFolder(const char *folder, PlatFoundProc found, void *ctx)
+{
+    FolderList list;
+    bool read;
+    int i;
+
+    SDL_zero(list);
+    read = SDL_EnumerateDirectory(folder, AddEntry, &list);
+    if (read) {
+        SDL_qsort(list.items, (size_t)list.count, sizeof *list.items, CompareEntries);
+        for (i = 0; i < list.count; i++)
+            found(list.items[i].name, list.items[i].isFolder, list.items[i].size, ctx);
+    }
+    for (i = 0; i < list.count; i++)
+        SDL_free(list.items[i].name);
+    SDL_free(list.items);
+    return read;
+}
+
+int PlatMakeFolder(const char *path)
+{
+    SDL_CreateDirectory(path);
+    return PlatPathKind(path, NULL) != kPlatNothing;
+}
+
+/* SDL counts removing what is not there as done */
+int PlatRemove(const char *path)
+{
+    return PlatPathKind(path, NULL) != kPlatNothing && SDL_RemovePath(path);
+}
+
+int PlatEnv(const char *name, char *out, int outSize)
+{
+    const char *value;
+
+    out[0] = 0;
+    value = SDL_GetEnvironmentVariable(SDL_GetEnvironment(), name);
+    if (value == NULL || value[0] == 0 || SDL_strlen(value) >= (size_t)outSize)
+        return 0;
+    SDL_strlcpy(out, value, (size_t)outSize);
+    return 1;
+}
+
+/* -- the file dialog. SDL shows it without waiting and answers through a call that may come from another
+   thread; the game wants the answer before it goes on, so the events are kept moving until it is there
+   (they stay queued for the game) and the window is redrawn when the dialog uncovers it. --------------- */
+
+#define kDialogPoll     10              /* ms */
+#ifdef SDL_PLATFORM_WINDOWS
+#define kSeparator      "\\"
+#else
+#define kSeparator      "/"
+#endif
+
+/* Windows' own dialog, which the game used, opens in the folder the program names only until the user
+   has chosen a file somewhere: from then on it opens there. SDL's opens where it is told every time, so
+   that folder is kept here, until the program ends. */
+static char *gDialogFolder;
+
+static bool IsSeparator(char c)
+{
+    return c == '/' || c == '\\';
+}
+
+/* a folder as SDL wants a place to start in: what follows the last separator is taken for a file's name */
+static char *StartIn(const char *folder)
+{
+    char *start;
+    size_t length;
+
+    if (folder == NULL || PlatPathKind(folder, NULL) != kPlatFolder)
+        return NULL;
+    length = SDL_strlen(folder);
+    start = NULL;
+    SDL_asprintf(&start, "%s%s", folder, (length != 0 && IsSeparator(folder[length - 1])) ? "" : kSeparator);
+    return start;
+}
+
+typedef struct DialogAnswer {
+    SDL_AtomicInt done;
+    char *path;                         /* NULL: cancelled, or the dialog could not be shown */
+} DialogAnswer;
+
+static void SDLCALL DialogClosed(void *userdata, const char * const *files, int filter)
+{
+    DialogAnswer *answer = (DialogAnswer *)userdata;
+
+    (void)filter;
+    if (files != NULL && files[0] != NULL)
+        answer->path = SDL_strdup(files[0]);
+    SDL_SetAtomicInt(&answer->done, 1);
+}
+
+int PlatOpenFileDialog(const char *kindName, const char *extension, const char *startFolder, char *out,
+                       int outSize)
+{
+    SDL_DialogFileFilter filter;
+    DialogAnswer answer;
+    char *start;
+    char *end;
+    int chosen;
+
+    out[0] = 0;
+    filter.name = kindName;
+    filter.pattern = extension;
+    SDL_zero(answer);
+    start = StartIn(gDialogFolder);
+    if (start == NULL)
+        start = StartIn(startFolder);
+    SDL_ShowOpenFileDialog(DialogClosed, &answer, gWindow, &filter, 1, start, false);
+    while (SDL_GetAtomicInt(&answer.done) == 0) {
+        SDL_PumpEvents();
+        ShowWaitingFrame();
+        SDL_Delay(kDialogPoll);
+    }
+    SDL_free(start);
+    chosen = answer.path != NULL && SDL_strlen(answer.path) < (size_t)outSize;
+    if (chosen) {
+        SDL_strlcpy(out, answer.path, (size_t)outSize);
+        for (end = answer.path + SDL_strlen(answer.path); end > answer.path && !IsSeparator(end[-1]); end--)
+            ;
+        *end = 0;
+        SDL_free(gDialogFolder);
+        gDialogFolder = answer.path;            /* the folder the file lies in */
+    } else {
+        SDL_free(answer.path);
+    }
+    return chosen;
+}
+
 void *PlatLoadFile(const char *path, int *size)
 {
     size_t length;

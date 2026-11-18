@@ -1,29 +1,20 @@
 // COMPILE: -lang c++ -bool off
-/* burgerfilewin.c -- BurgerLib FmWin95Code: directory scans, native paths and volume names. Notes: Research/notes/burgerfilewin.md */
+/* burgerfilewin.c -- BurgerLib FmWin95Code on the platform layer (platform.h): directory scans, native
+   paths, the default prefixes. Native paths keep Windows' form ("X:\dir\file", "\\server\share\dir") and
+   are UTF-8. Notes: Research/notes/burgerfilewin.md */
 
 #include <stdio.h>
 #include <string.h>
 #include "burgertypes.h"
 #include "burger.h"
 #include "burgerplat.h"
-#include "win32.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* The Win32 search record BurgerLib keeps as bytes in DirectorySearch_t */
-#define FindData(dir) ((WIN32_FIND_DATAA *)(dir)->MyFindT)
-
-#define kFileAttrReadOnly   0x01
-#define kFileAttrHidden     0x02
-#define kFileAttrSystem     0x04
-#define kFileAttrDirectory  0x10
 #define kSearchOpen         1
-#define kSearchStepping     2
-#define kFailCriticalErrors 1
-#define kVolumeNameSize     0x40
-#define kErrorAlreadyExists 183
 #define kVolumeColon        ':'
 #define kPathSeparator      '\\'
 #define kPathBuffer         0x2000
@@ -32,14 +23,69 @@ extern "C" {
 #define kLowerA             'a'
 #define kAboveLowerZ        '{'
 #define kUpperMask          0xdf
+#define kDriveRoot          2                    /* "X:" */
 
 /* DoesFileExistNative (BurgerLib FmWin95Code): 1 for a file, 0 for a directory or nothing. */
 // FUNCTION: EVNOVA 0x004d9150
 Word DoesFileExistNative(const char *name)
 {
-    if (GetFileAttributesA(name) & kFileAttrDirectory)
-        return 0;
-    return 1;
+    return PlatPathKind(name, 0) == kPlatFile;
+}
+
+/* The exe walked the folder with FindFirstFile and FindNextFile; the platform layer hands over the whole
+   listing at once, so it is kept and stepped through. Its order is the one Windows gives an NTFS folder,
+   by name, on every system: plug-ins load in it. */
+typedef struct FolderItem {
+    struct FolderItem *next;
+    Word32 FileSize;
+    char Dir;
+    char Name[1];
+} FolderItem;
+
+typedef struct Listing {
+    FolderItem *head;
+    FolderItem *tail;
+    FolderItem *step;                            /* the entry GetADirectoryEntry gives next */
+} Listing;
+
+static void AddItem(const char *name, int isFolder, uint64_t size, void *ctx)
+{
+    Listing *listing = (Listing *)ctx;
+    FolderItem *item;
+    Word length;
+
+    length = strlen(name);
+    if (length >= sizeof(((DirectorySearch_t *)0)->Name))
+        return;
+    item = (FolderItem *)AllocAPointer(sizeof(FolderItem) + length);
+    if (item == 0)
+        return;
+    item->next = 0;
+    item->Dir = isFolder != 0;
+    /* BUG: the exe read the size's two halves the wrong way round: a file is 0xffffffff bytes unless its
+       length is a multiple of 4 GB. All the game asks is whether a file is empty. */
+    if ((Word32)size != 0)
+        item->FileSize = 0xffffffff;
+    else
+        item->FileSize = (Word32)(size >> 32);
+    memcpy(item->Name, name, length + 1);
+    if (listing->tail != 0)
+        listing->tail->next = item;
+    else
+        listing->head = item;
+    listing->tail = item;
+}
+
+static void FreeListing(Listing *listing)
+{
+    FolderItem *item;
+    FolderItem *next;
+
+    for (item = listing->head; item != 0; item = next) {
+        next = item->next;
+        DeallocAPointer(item);
+    }
+    DeallocAPointer(listing);
 }
 
 /* OpenADirectory (BurgerLib FmWin95Code). */
@@ -47,75 +93,39 @@ Word DoesFileExistNative(const char *name)
 Word OpenADirectory(DirectorySearch_t *dir, const char *name)
 {
     char path[kPathBufferSize];
-    char pattern[kPathBufferSize];
-    Word length;
+    Listing *listing;
 
     ExpandAPathToBufferNative(path, name);
-    length = strlen(path);
-    strcpy(pattern, path);
-    if (length != 0 && path[length - 1] != '\\')
-        strcat(pattern, "\\");
-    strcat(pattern, "*.*");
-    dir->FindHandle = FindFirstFileA(pattern, (WIN32_FIND_DATAA *)dir->MyFindT);
-    if (dir->FindHandle != INVALID_HANDLE_VALUE) {
-        dir->HandleOk = kSearchOpen;
-        return 0;
+    listing = (Listing *)AllocAPointerClear(sizeof(Listing));
+    if (listing != 0) {
+        if (PlatListFolder(path, AddItem, listing)) {
+            listing->step = listing->head;
+            dir->FindHandle = listing;
+            dir->HandleOk = kSearchOpen;
+            return 0;
+        }
+        FreeListing(listing);
     }
     return 1;
 }
 
-static void ConvertDosDate(TimeDate_t *out, FILETIME *in)
-{
-    SYSTEMTIME st;
-
-    FileTimeToLocalFileTime(in, in);
-    FileTimeToSystemTime(in, &st);
-    out->Milliseconds = st.wMilliseconds;
-    out->Second = st.wSecond;
-    out->Minute = st.wMinute;
-    out->Hour = st.wHour;
-    out->Day = st.wDay;
-    out->DayOfWeek = st.wDayOfWeek;
-    out->Month = st.wMonth;
-    out->Year = st.wYear;
-}
-
-/* GetADirectoryEntry (BurgerLib FmWin95Code): the next entry, skipping "." and "..";
-   1 at the end. */
+/* GetADirectoryEntry (BurgerLib FmWin95Code): the next entry; 1 at the end. The exe skipped "." and
+   "..", which the platform layer never lists, and also told hidden, system and read-only entries and
+   their dates, which nothing read. */
 // FUNCTION: EVNOVA 0x004d9280
 Word GetADirectoryEntry(DirectorySearch_t *dir)
 {
-    Word32 flags;
+    Listing *listing;
+    FolderItem *item;
 
-    for (;;) {
-        if (dir->HandleOk == kSearchStepping && FindNextFileA(dir->FindHandle, FindData(dir)) == 0)
-            return 1;
-        dir->HandleOk = kSearchStepping;
-        strcpy(dir->Name, FindData(dir)->cFileName);
-        flags = FindData(dir)->dwFileAttributes;
-        dir->Dir = 0;
-        dir->Hidden = 0;
-        dir->System = 0;
-        dir->Locked = 0;
-        if (!(flags & kFileAttrDirectory))
-            break;
-        dir->Dir = 1;
-        if (strcmp(".", dir->Name) != 0 && strcmp("..", dir->Name) != 0)
-            break;
-    }
-    if (flags & kFileAttrHidden)
-        dir->Hidden = 1;
-    if (flags & kFileAttrSystem)
-        dir->System = 1;
-    if (flags & kFileAttrReadOnly)
-        dir->Locked = 1;
-    ConvertDosDate(&dir->Create, &FindData(dir)->ftCreationTime);
-    ConvertDosDate(&dir->Modify, &FindData(dir)->ftLastWriteTime);
-    /* BUG: the size halves are swapped: any file with a non-zero low word reads as 0xffffffff */
-    if (FindData(dir)->nFileSizeLow != 0)
-        dir->FileSize = 0xffffffff;
-    else
-        dir->FileSize = FindData(dir)->nFileSizeHigh;
+    listing = (Listing *)dir->FindHandle;
+    if (dir->HandleOk == 0 || listing->step == 0)
+        return 1;
+    item = listing->step;
+    listing->step = item->next;
+    strcpy(dir->Name, item->Name);
+    dir->Dir = item->Dir;
+    dir->FileSize = item->FileSize;
     return 0;
 }
 
@@ -124,7 +134,7 @@ Word GetADirectoryEntry(DirectorySearch_t *dir)
 void CloseADirectory(struct DirectorySearch_t *dir)
 {
     if (dir->HandleOk != 0) {
-        FindClose(dir->FindHandle);
+        FreeListing((Listing *)dir->FindHandle);
         dir->HandleOk = 0;
         dir->FindHandle = 0;
     }
@@ -135,65 +145,32 @@ void CloseADirectory(struct DirectorySearch_t *dir)
 // FUNCTION: EVNOVA 0x004d94f0
 Word DeleteAFileNative(const char *name)
 {
-    if (DeleteFileA(name) != 0 || RemoveDirectoryA(name) != 0)
+    if (PlatRemove(name))
         return 0;
     return 1;
 }
 
-/* BurgerLib's DirCreate, inlined twice below: 0 when the directory is there afterwards. */
-static int32_t DirCreate(const char *path)
-{
-    SECURITY_ATTRIBUTES sa;
-
-    sa.nLength = sizeof(sa);
-    sa.lpSecurityDescriptor = 0;
-    sa.bInheritHandle = 0;
-    if (CreateDirectoryA(path, &sa) != 0 || GetLastError() == kErrorAlreadyExists)
-        return 0;
-    return 1;
-}
-
-/* Create every directory along a native path; 0 once the last exists. */
+/* Create every directory along a native path; 0 once the last exists. As in the exe, a file of that
+   name counts as the directory being there. */
 /* CreateDirectoryPathNative (BurgerLib CreateDirectoryPathNative). */
 // FUNCTION: EVNOVA 0x004d9530
 int32_t CreateDirectoryPathNative(char *path)
 {
-    char *p;
-    unsigned char saved;
-    int32_t failed;
-
-    if (DirCreate(path) == 0)
+    if (PlatMakeFolder(path))
         return 0;
-    if (path[0] != 0) {
-        p = path;
-        if (path[0] != 0 && path[1] == kVolumeColon)
-            p = p + 2;
-        if (*p == kPathSeparator)
-            p = p + 1;
-        do {
-            p = (char *)strchr((const char *)p, kPathSeparator);
-            if (p == 0)
-                p = strchr(path, 0);
-            saved = *p;
-            *p = 0;
-            failed = DirCreate(path);
-            *p = saved;
-            ++p;
-        } while (saved != 0);
-        if (failed == 0)
-            return 0;
-    }
     return 1;
 }
 
-/* ExpandAPathToBufferNative (BurgerLib FmWin95Code): ":volume:dir:file" becomes "X:\dir\file"
-   (or "\\volume\dir\file" for a volume no drive carries), ".Dn:" drive n. */
+/* ExpandAPathToBufferNative (BurgerLib FmWin95Code): ".Dn:dir:file" becomes "X:\dir\file" for drive n,
+   ":server:share:dir" becomes "\\server\share\dir". The exe first asked every drive from C to Z whether
+   its volume label was `server' and, finding one, answered "X:\share\dir"; only a path of the second form
+   ever got there (the game makes them from a network place it is run from, ConvertNativePathToPath), for
+   which that drive would have been the wrong place. */
 // FUNCTION: EVNOVA 0x004d9680
 void ExpandAPathToBufferNative(char *out, const char *name)
 {
     char path[kPathBufferSize];
     Word8 c;
-    Word8 next;
     Word t;
     Word index;
     Word device;
@@ -203,24 +180,7 @@ void ExpandAPathToBufferNative(char *out, const char *name)
     device = kNoVolume;
     src = path;
     if ((Word8)path[0] == ':') {
-        index = 0;
-        do {
-            ++index;
-            c = src[index];
-        } while (c != ':' && c != 0);
-        next = src[index + 1];
-        src[index] = ':';
-        src[index + 1] = 0;
-        device = FindAVolumeByName(src);
-        src[index] = c;
-        src[index + 1] = next;
-        if (device == kNoVolume) {
-            *out++ = '\\';
-        } else {
-            src += index;
-            if (c != 0)
-                ++src;
-        }
+        *out++ = '\\';
     } else if ((Word8)src[0] == '.') {
         t = (Word8)src[1];
         if (t >= 'a' && t < 'z' + 1)
@@ -265,38 +225,6 @@ void ExpandAPathToBufferNative(char *out, const char *name)
     *out = 0;
 }
 
-/* GetAVolumeName (BurgerLib FmWin95Code): ":label:" of drive driveNum in a new pointer, or 0. */
-// FUNCTION: EVNOVA 0x004d9820
-char *GetAVolumeName(Word driveNum)
-{
-    char label[kVolumeNameSize];
-    char root[8];
-    char *result;
-    Word oldMode;
-    Word length;
-
-    root[0] = driveNum + 'A';
-    root[1] = ':';
-    root[2] = '\\';
-    root[3] = 0;
-    oldMode = SetErrorMode(kFailCriticalErrors);
-    result = 0;
-    if (GetVolumeInformationA(root, label, sizeof(label), 0, 0, 0, 0, 0) != 0) {
-        length = strlen(label);
-        if (length != 0) {
-            result = (char *)AllocAPointer(length + 3);
-            if (result != 0) {
-                result[0] = ':';
-                memcpy(result + 1, label, length);
-                result[length + 1] = ':';
-                result[length + 2] = 0;
-            }
-        }
-    }
-    SetErrorMode(oldMode);
-    return result;
-}
-
 /* The length of an open file, its position left where it was. */
 // FUNCTION: EVNOVA 0x004d9920
 ULong fgetfilesize(FILE *fp)
@@ -314,16 +242,15 @@ ULong fgetfilesize(FILE *fp)
 /* BurgerLib publishes PREFIXBOOT 32, PREFIXPREFS 33 and PREFIXSYSTEM 34, which are
    this file's 0x20, 0x21 and 0x22. */
 
-
-#define kDirBuffer      0x104
-#define kVolumeNameLen  3
-
+/* The current folder (8), the program's (9) and the one for preferences ("@:", %APPDATA%). The exe also
+   set the system folder ("$:") and the drive it is on ("*:"), which no path of the game names, took the
+   program's folder from its first argument, and without an APPDATA variable (Windows 95) kept preferences
+   in the Windows folder: now "@:" is then left unset, which is the current folder. */
 // FUNCTION: EVNOVA 0x004d9990
 void SetDefaultPrefixs(void)
 {
-    char dir[kDirBuffer];
+    char folder[kPathBufferSize];
     char *path;
-    char *env;
 
     path = ConvertNativePathToPath("");
     if (path != 0) {
@@ -331,33 +258,105 @@ void SetDefaultPrefixs(void)
         DeallocAPointer(path);
     }
 
-    path = ConvertNativePathToPath(__argv[0]);
+    path = ConvertNativePathToPath(PlatExeFolder());
     if (path != 0) {
         SetAPrefix(kPrefixApp, path);
         DeallocAPointer(path);
-        PopAPrefix(kPrefixApp);
     }
 
-    GetSystemDirectoryA(dir, kDirBuffer);
-    path = ConvertNativePathToPath(dir);
-    if (path != 0) {
-        SetAPrefix(PREFIXSYSTEM, path);
-        path[kVolumeNameLen] = 0;
-        SetAPrefix(PREFIXBOOT, path);
-        DeallocAPointer(path);
+    if (PlatEnv("APPDATA", folder, sizeof(folder))) {
+        path = ConvertNativePathToPath(folder);
+        if (path != 0) {
+            SetAPrefix(PREFIXPREFS, path);
+            DeallocAPointer(path);
+        }
     }
+}
 
-    env = getenv("APPDATA");
-    if (env != 0) {
-        path = ConvertNativePathToPath(env);
-    } else {
-        GetWindowsDirectoryA(dir, kDirBuffer);
-        path = ConvertNativePathToPath(dir);
+static Word IsSeparator(char c)
+{
+    return c == '\\' || c == '/';
+}
+
+/* how much of a whole path names its drive or network share: "X:" or "\\server\share"; 0 for neither */
+static Word RootLength(const char *path)
+{
+    Word n;
+    Word parts;
+
+    if (IsSeparator(path[0]) && IsSeparator(path[1])) {
+        n = 2;
+        for (parts = 0; parts < 2; parts++) {
+            while (path[n] != 0 && !IsSeparator(path[n]))
+                ++n;
+            if (parts == 0 && path[n] != 0)
+                ++n;
+        }
+        return n;
     }
-    if (path != 0) {
-        SetAPrefix(PREFIXPREFS, path);
-        DeallocAPointer(path);
+    if (path[0] != 0 && path[1] == kVolumeColon)
+        return kDriveRoot;
+    return 0;
+}
+
+/* What the exe had GetFullPathName do: a path made whole against the current folder, "." and ".."
+   resolved, '\' between its parts. `out' holds kPathBuffer bytes and gets "X:\..." or "\\server\share...". */
+static void FullNativePath(char *out, const char *path)
+{
+    char whole[kPathBuffer];
+    const char *part;
+    Word root;
+    Word floor;
+    Word length;
+    Word n;
+
+    whole[0] = 0;
+    if (RootLength(path) == 0) {
+        PlatCurrentFolder(whole, kPathBuffer / 2);
+        if (IsSeparator(path[0]))
+            whole[RootLength(whole)] = 0;       /* from the current drive's top */
     }
+    n = strlen(whole);
+    length = strlen(path);
+    if (length > kPathBuffer - 1 - n)
+        length = kPathBuffer - 1 - n;
+    memcpy(whole + n, path, length);
+    whole[n + length] = 0;
+
+    root = RootLength(whole);
+    if (root == 0) {
+        out[0] = 0;                             /* no current folder to start from */
+        return;
+    }
+    memcpy(out, whole, root);
+    for (n = 0; n < root; n++) {
+        if (out[n] == '/')
+            out[n] = kPathSeparator;
+    }
+    floor = root;
+    n = root;
+    part = whole + root;
+    while (*part != 0) {
+        while (IsSeparator(*part))
+            ++part;
+        length = 0;
+        while (part[length] != 0 && !IsSeparator(part[length]))
+            ++length;
+        if (length == 2 && part[0] == '.' && part[1] == '.') {
+            while (n > floor && out[n - 1] != kPathSeparator)
+                --n;
+            if (n > floor)
+                --n;
+        } else if (length != 0 && !(length == 1 && part[0] == '.')) {
+            out[n++] = kPathSeparator;
+            memcpy(out + n, part, length);
+            n += length;
+        }
+        part += length;
+    }
+    if (n == kDriveRoot && root == kDriveRoot)
+        out[n++] = kPathSeparator;              /* a drive's top is "X:\" */
+    out[n] = 0;
 }
 
 /* ConvertNativePathToPath (BurgerLib ConvertNativePathToPath). */
@@ -366,7 +365,6 @@ char *ConvertNativePathToPath(const char *path)
 {
     char full[kPathBuffer];
     char out[kPathBuffer];
-    char *filePart;
     char *dst;
     char *src;
     Word c;
@@ -377,7 +375,9 @@ char *ConvertNativePathToPath(const char *path)
     src = full;
     if (*path == 0)
         path = ".";
-    GetFullPathNameA(path, kPathBuffer, src, &filePart);
+    FullNativePath(src, path);
+    if (src[0] == 0)
+        return 0;
     if (src[0] == kBackslash && src[1] == kBackslash) {
         *dst++ = kColon;
         src += 2;
