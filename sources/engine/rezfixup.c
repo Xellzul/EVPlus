@@ -195,7 +195,7 @@ unsigned short addr_00576092[29] = {   /* covers 0xa6 == minSize */
     4, 1, 3,
     5
 };
-unsigned short addr_005760cc[4] = {   /* rle8/rleD: covers 0x10 == minSize */
+unsigned short addr_005760cc[4] = {   /* rleD: covers 0x10 == minSize */
     4, 1, 8,
     5
 };

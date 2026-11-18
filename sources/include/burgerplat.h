@@ -46,27 +46,6 @@ typedef struct AudioDesc {
     float                  TimeInSeconds;            /* +0x34 */
 } AudioDesc;
 
-/* a handle is a record pointer; the record's first word is the block */
-struct MemBlock;
-
-typedef struct MemRecord {
-    void *ptr;                                   /* +0x00 */
-    ULong guard;                                 /* +0x04 */
-    ULong size;                                  /* +0x08 */
-    unsigned char locked;                        /* +0x0c */
-    unsigned char used;                          /* +0x0d */
-    struct MemBlock *block;                      /* +0x10 */
-} MemRecord;
-
-typedef struct MemBlock {
-    ULong count;                                 /* +0x00 */
-    ULong reserved[2];                           /* +0x04 */
-    struct MemBlock *next;                       /* +0x0c */
-    MemRecord records[1];                        /* +0x10 */
-} MemBlock;
-
-#define kRecordGuard      0xdeadbeefUL
-
 /* a text buffer that grows its handle */
 typedef struct TextBuilder {
     char **handle;                               /* +0x00, a Handle */

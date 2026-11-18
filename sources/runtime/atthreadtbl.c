@@ -13,7 +13,7 @@ int32_t CriticalCreate(void *lock)
     Mutex *m;
 
     m = lock;
-    MemoryClear(m, sizeof(Mutex));
+    memset(m, 0, sizeof(Mutex));
     m->magic = kMutexMagic;
     if ((m->section = PlatMutexCreate()) == 0) {
         CriticalDispose(lock);
@@ -31,7 +31,7 @@ int32_t CriticalDispose(void *lock)
     m = lock;
     if (m->section != 0)
         PlatMutexDestroy(m->section);
-    MemoryClear(m, sizeof(Mutex));
+    memset(m, 0, sizeof(Mutex));
     return 0;
 }
 

@@ -31,7 +31,7 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
         depth = requestedDepth;
     } else {
         depth = srcSpriteP->frameArray[0]->frameDepth;
-        if (depth != 8 && depth != 16 && depth != 32)
+        if (depth != 16 && depth != 32)
             err = kWrongDepthErr;
     }
 

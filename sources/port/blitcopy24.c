@@ -2237,17 +2237,22 @@ void *ST_LoadSndResource(short id)
 {
     char **h;
     void **copy;
+    uint32_t size;
     void *sound;
 
+    /* the loader byte-swaps 16-bit samples in place, so it works on a copy */
     sound = NULL;
     h = GetResource(kSoundType, id);
     if (h != NULL) {
         LockAHandle(h);
-        copy = (void **)IndirectInitialize(*h, GetAHandleSize(h));
+        size = GetAHandleSize(h);
+        copy = AllocAHandle2(size, 0);
+        if (copy != NULL)
+            memcpy(*copy, *h, size);
         ReleaseResource(h);
         if (copy != NULL) {
             sound = ST_LoadSndResourceIndirect(copy, 0);
-            IndirectDeallocate(copy);
+            DeallocAHandle(copy);
         }
     }
     return sound;

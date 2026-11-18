@@ -5,7 +5,7 @@
 #include "ambrosia.h"
 #include "platform.h"
 
-extern void _ST_MixerDispatch(short *buffer, ULong frames);   /* atsndmem.c */
+extern void _ST_MixerDispatch(short *buffer, ULong frames);   /* atsound.c */
 
 static PlatAudio *gMixerOutput;
 

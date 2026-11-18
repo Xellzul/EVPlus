@@ -27,7 +27,6 @@
 #include "cefix.h"
 #include "prototypes.h"
 #include "gametypes.h"
-extern void DisposeGammaTools(void);
 
 #define kMaxGamma     6
 #define kDefaultGamma 3

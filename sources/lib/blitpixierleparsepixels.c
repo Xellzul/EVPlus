@@ -46,7 +46,7 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
     *frameData = 0;
 
-    if (depth != 8 && depth != 16 && depth != 32)
+    if (depth != 16 && depth != 32)
         return kParamErr;
 
     if (byteWidth == 0 || numRows == 0)
@@ -81,9 +81,6 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
             for (x = 0; x < width; x += bytesPerPixel) {
                 switch (depthL) {
-                case 8:
-                    maskValue = *maskPixel;
-                    break;
                 case 16:
                     maskValue = *(unsigned short *)maskPixel;
                     break;
@@ -111,8 +108,6 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
                     case 3:
                         *runToken = runCount + RLE_FILL;
-                        if (depth < 16)
-                            lastPixel |= lastPixel << 8;
                         if (depth < 32)
                             lastPixel |= lastPixel << 16;
                         runToken[1] = lastPixel;
@@ -131,9 +126,6 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
                     }
                 } else {
                     switch (depthL) {
-                    case 8:
-                        pixelValue = *srcPixel;
-                        break;
                     case 16:
                         pixelValue = *(unsigned short *)srcPixel;
                         break;
@@ -154,8 +146,6 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
                     case 3:
                         *runToken = runCount + RLE_FILL;
-                        if (depth < 16)
-                            lastPixel |= lastPixel << 8;
                         if (depth < 32)
                             lastPixel |= lastPixel << 16;
                         runToken[1] = lastPixel;
@@ -182,10 +172,6 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
                     }
 
                     switch (depthL) {
-                    case 8:
-                        *tokens = pixelValue;
-                        tokens += 1;
-                        break;
                     case 16:
                         *(unsigned short *)tokens = pixelValue;
                         tokens += 2;
@@ -215,8 +201,6 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
             case 3:
                 *runToken = runCount + RLE_FILL;
-                if (depth < 16)
-                    lastPixel |= lastPixel << 8;
                 if (depth < 32)
                     lastPixel |= lastPixel << 16;
                 runToken[1] = lastPixel;

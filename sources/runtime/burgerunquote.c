@@ -113,6 +113,7 @@ char *ParseQuotedString(char *out, int32_t outSize, const char *src)
 #define kDigitMask     0xff
 #define kSawDigit      0x8000
 #define kMaxDigits     10
+
 static const ULong kPow10[kMaxDigits] = {
     1UL, 10UL, 100UL, 1000UL, 10000UL,
     100000UL, 1000000UL, 10000000UL, 100000000UL, 1000000000UL

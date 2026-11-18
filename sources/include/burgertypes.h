@@ -12,9 +12,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#define AT_STATIC
-#define AT_EXTERN
-
 /* MacTypes.h's booleans for the win port's C++ (-bool off), plain ints; C has burger.h's */
 #ifdef __cplusplus
 #define false 0

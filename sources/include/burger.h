@@ -17,19 +17,11 @@ extern void DeallocAPointer(void *MemPtr);
 extern FILE *FOpenExpandedPath(const char *path, const char *mode);
 extern void * AllocAPointerClear(uint32_t size);
 extern void * ResizeAPointer(void *mem, uint32_t size);
-extern int32_t IndirectDeallocate(void **p);               /* atplatheap.c */
 
-/* the platform heap (atplatheap.c) */
-extern void MemoryClear(void *p, uint32_t n);
-extern void MemoryDeallocate(void *p);
-extern void MemoryCopy(void *dst, const void *src, uint32_t n);
 extern int32_t SetDisplayToSize(uint32_t w, uint32_t h, uint32_t depth, uint32_t flags);
 extern ULong TimerGetTicks(void);                 /* atticks.c: milliseconds; only differences mean anything */
 extern ULong TimerGetTickRate(void);                 /* atticks.c: the tick rate that goes with it */
-extern int32_t _IndirectValidate(void **handle);         /* atplatheap.c: the heap check */
-extern void * MemoryAllocateClear(uint32_t size);
 extern void DebugXString(const char *string);
-extern void * IndirectInitialize(const void *src, uint32_t size);
 
 /* the lock (atthreadtbl.c) */
 extern int32_t CriticalDispose(void *lock);
@@ -142,7 +134,6 @@ extern void ST_HaltSound(void *sound);
 extern void ST_Close(void);
 extern ULong UFix32_Divide(ULong device, ULong rate);
 extern ULong UFix32_Multiply(ULong ratio, ULong rate);
-extern unsigned char (*gIndirectBusy)(void *p);
 extern unsigned int DoesFileExist(const char *path);
 extern char *NumberToAscii(char *dst, ULong value, ULong flags);
 extern void OSCursorShow(void);
@@ -156,8 +147,6 @@ extern void WaitTicks(Word tickCount);
 #define ResetLastTick() LastTick=ReadTick()
 
 /* BurgerLib's own constants */
-#define kOSFailure      -7000
-#define kBadArgument    -7002
 #define kOutOfMemory    -7004
 #define kNoDevice       -7401      /* sound: no output device */
 #define kMillisPerSecond 1000
@@ -247,8 +236,6 @@ extern void *LoadAFileFP(FILE *fp, uint32_t *length);
 extern ULong fgetfilesize(FILE *fp);     /* BurgerLib fgetfilesize */
 extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib CreateDirectoryPathNative */
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
-extern unsigned char IndirectSetLock(void **handle, unsigned char lock);
-extern ULong IndirectGetSize(void **handle);
 
 extern void StreamHandleInitPut(struct TextBuilder *b);
 extern void StreamHandleDestroy(struct TextBuilder *b);
@@ -272,7 +259,6 @@ extern ULong UFix32_To_UInt32(ULong rate);
 extern void CriticalEnter(void *lock);
 extern void CriticalLeave(void *lock);
 
-extern void **IndirectAllocate(ULong size);
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);
 extern char *ConvertNativePathToPath(const char *path);

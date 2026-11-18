@@ -9,6 +9,13 @@
 extern int32_t _ST_CreateSoundPump(void);
 extern void _ST_DisposeSoundPump(void);                  /* 0x005076a0 */
 
+/* A zeroed block; the exe took it from the process heap, which answers a request for no bytes with a
+   block, so a zero size still gets one byte. */
+static void *AllocClear(ULong size)
+{
+    return calloc(1, size != 0 ? size : 1);
+}
+
 
 int32_t gMaxVoices;                               /* 0x00870958 channels */
 int32_t gCookieCounter;                               /* 0x00870df4 */
@@ -108,7 +115,7 @@ void ST_DisposeSound(void *sound)
 
     err = 0;
     if (sound != 0 && ((intptr_t)sound & 1) == 0)
-        MemoryDeallocate(sound);
+        free(sound);
 }
 
 // FUNCTION: EVNOVA 0x004d64f0
@@ -161,9 +168,7 @@ ULong ST_PlaySoundParam(SoundRequest *req)
 
         i = 0;
         CriticalEnter(&gCriticalSection);
-        // BUG: gTheVoices[i] is read before the i < kSoundChannels test; with all 16 channels busy
-        // and none preemptable this reads gTheVoices[16], one past the array
-        while (gTheVoices[i].sound != 0 && i < kSoundChannels && preempt == 0) {
+        while (i < kSoundChannels && gTheVoices[i].sound != 0 && preempt == 0) {
             if (req->priority >= gTheVoices[i].priority
                 && req->rightLevel + req->leftLevel
                    >= gTheVoices[i].leftLevel + gTheVoices[i].rightLevel)
@@ -378,14 +383,14 @@ void *_ST_SoundRefCreate(SoundDesc *desc)
             samples = (count + 7) & ~7;
             bytes = samples / 2;
             bytes += sizeof(MemSound);
-            block = MemoryAllocateClear(bytes);
+            block = AllocClear(bytes);
             if (block != 0)
                 BlockMoveData(desc->data, block + 1, desc->size);
         } else {
             count = desc->size * 2;
             samples = (count - count / kImaPacketBytes + 7) & ~7;
             bytes = samples / 2;
-            block = MemoryAllocateClear(bytes + sizeof(MemSound));
+            block = AllocClear(bytes + sizeof(MemSound));
             if (block != 0) {
                 unsigned short *src;
                 unsigned short *dst;
@@ -409,7 +414,7 @@ void *_ST_SoundRefCreate(SoundDesc *desc)
             samples = (count + 7) & ~7;
             bytes = samples * 2;
             raw = desc->data;
-            temp = MemoryAllocateClear(bytes);
+            temp = AllocClear(bytes);
             if (temp != 0) {
                 unsigned short *dst;
                 unsigned short v;
@@ -440,14 +445,14 @@ void *_ST_SoundRefCreate(SoundDesc *desc)
             if (bytes == desc->size) {
                 pcm = desc->data;
             } else {
-                temp = MemoryAllocateClear(bytes);
+                temp = AllocClear(bytes);
                 if (temp == 0)
                     return 0;
                 BlockMoveData(desc->data, temp, desc->size);
                 pcm = (short *)temp;
             }
         }
-        block = MemoryAllocateClear(bytes / 4 + sizeof(MemSound));
+        block = AllocClear(bytes / 4 + sizeof(MemSound));
         if (block != 0) {
             state.valprev = 0;
             state.index = 0;
@@ -462,7 +467,7 @@ void *_ST_SoundRefCreate(SoundDesc *desc)
         block->format = kMemSoundIma;
     }
     if (temp != 0)
-        MemoryDeallocate(temp);
+        free(temp);
     return block;
 }
 
@@ -646,8 +651,6 @@ void *ST_LoadSndResourceIndirect(void **handle, int32_t flags)
     ULong rateStatus;
     unsigned char stereo;
 
-    IndirectSetLock(handle, 1);
-
     if ((unsigned char)flags != 0)
         offset = 0;
     else
@@ -657,7 +660,6 @@ void *ST_LoadSndResourceIndirect(void **handle, int32_t flags)
         stereo = 0;
         header = (SoundHeader *)((unsigned char *)*handle + offset);
 
-        /* BUG: the refusals below return with the handle still locked */
         switch (header->encode) {
         case kStandardHeader:
             offset += kStandardSkip;
@@ -693,7 +695,7 @@ void *ST_LoadSndResourceIndirect(void **handle, int32_t flags)
 
         rateStatus = UFix32_Divide(gSampleRate, (long long)Swap32(header->sampleRate));
 
-        handleSize = IndirectGetSize(handle);
+        handleSize = GetAHandleSize((Handle)handle);
         size = handleSize - offset;
         desc.data = (unsigned char *)*handle + offset;
         desc.size = size;
@@ -708,6 +710,5 @@ void *ST_LoadSndResourceIndirect(void **handle, int32_t flags)
         result = _ST_SoundRefCreate(&desc);
     }
 
-    IndirectSetLock(handle, 0);
     return result;
 }

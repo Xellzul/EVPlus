@@ -1,8 +1,8 @@
 // COMPILE: -lang c++ -bool off
 /* swfiximagegworld.c -- SWFixImageGWorld (win 0x00479260, SpriteWorldUtils.c line 1212, donor SpriteWorldUtils.c line 1099). Notes: Research/notes/swfiximagegworld.md */
-/* kClear is all-ones (-1) and kSolid zero, one constant each: the exe stores 0xff,
-   0xffff and 0xffffffff and the truncation does the rest. `case 8:' is unreachable below
-   the `depth <= 8' return and is still compiled -- dropping it loses a dispatch edge. */
+/* kClear is all-ones (-1) and kSolid zero, one constant each: the exe stores 0xffff and
+   0xffffffff and the truncation does the rest. The exe also returned early at 8 bits and
+   shallower, and had an unreachable `case 8:'; the game draws only at 16 bits. */
 #include "macport.h"
 #include "shipobj.h"
 #include "spriteworld.h"
@@ -46,9 +46,6 @@ short SWFixImageGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP)
     ComputePixelValues(depth);
     transparentValue = SWTransparentRGBValue;
 
-    if (depth <= 8)
-        return noErr;
-
     GetPort(&saveGWorld);
     saveDevice = GetGWorldDevice(saveGWorld);
 
@@ -63,27 +60,6 @@ short SWFixImageGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP)
     rowBytes -= (width * depth) >> 3;
 
     switch (depth) {
-        case 8:
-            {
-                unsigned char *dst = (unsigned char *)baseAddr;
-                unsigned char *mask = (unsigned char *)maskAddr;
-
-                for (y = 0; y < height; y++) {
-                    for (x = 0; x < width; x++) {
-                        if (*mask) {
-                            *dst++ = 0;
-                            *mask++ = kClear;
-                        } else {
-                            dst++;
-                            *mask++ = kSolid;
-                        }
-                    }
-                    dst = dst + rowBytes;
-                    mask = mask + rowBytes;
-                }
-            }
-            break;
-
         case 16:
             {
                 unsigned short *dst = (unsigned short *)baseAddr;
