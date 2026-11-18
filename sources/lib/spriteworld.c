@@ -544,9 +544,7 @@ void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP)
 
 
 
-#ifndef MACBUILD
 SpriteWorldRec *gSWCurrentSpriteWorld;                   /* 0x008706f0 */
-#endif
 
 // FUNCTION: EVNOVA 0x00478480
 // MAC: _SWAnimateSpriteWorld i386 0x000b95e6 ppc 0x000c5550
@@ -965,40 +963,12 @@ short SWFlagRectAsChanged(SpriteWorldPtr spriteWorldP, Rect *theChangedRect)
 
 // FUNCTION: EVNOVA 0x00478e20
 // MAC: _SWIsWindowInForeground i386 0x000b88cd ppc 0x000c47c8
-#ifdef MACBUILD
-Boolean SWIsWindowInForeground(SpriteWorldPtr spriteWorldP)
-{
-    if (!AreWeFrontProcess()) {
-        spriteWorldP->fastBlit = false;
-    } else if ((FrontWindow)() != NULL) {
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-        if (spriteWorldP->windowFrameP->framePort == (CGrafPtr)(FrontWindow)()) {
-            if (EmptyRgn(((WindowPeek)(FrontWindow)())->contRgn))
-#else
-        if (spriteWorldP->windowFrameP->framePort == GetWindowGrafPort((FrontWindow)())) {
-            GetWindowRegion((FrontWindow)(), kWindowContentRgn, spriteWorldP->windowRgn);
-            if (EmptyRgn(spriteWorldP->windowRgn))
-#endif
-                spriteWorldP->fastBlit = false;
-            else
-                spriteWorldP->fastBlit = true;
-        } else {
-            spriteWorldP->fastBlit = false;
-        }
-    } else {
-        spriteWorldP->fastBlit = false;
-    }
-
-    return spriteWorldP->fastBlit;
-}
-#else
 Boolean SWIsWindowInForeground(SpriteWorldPtr spriteWorldP)
 {
     spriteWorldP->fastBlit = 1;
 
     return spriteWorldP->fastBlit;
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00478e40
 // MAC: _AreWeFrontProcess i386 0x000b8866 ppc 0x000c475c

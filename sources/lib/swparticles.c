@@ -10,17 +10,6 @@
 
 EXTERN_C_BEGIN
 
-#ifdef MAC_GAMEUTILS_ONLY
-static ParticlePtr gParticleArray = NULL;
-static int gLowestUnusedElement = 0;
-static int32_t gLastElementInUse = 0;
-static int gNumberOfParticlesActive = 0;
-static int gGravity = 0;
-static uint32_t gNumArrayElements = 0;
-static Boolean gParticlesInitialized = false;
-static int32_t scrollOffsetHoriz = 0;
-static int32_t scrollOffsetVert = 0;
-#else
 static ParticlePtr gParticleArray = NULL;
 static int gLowestUnusedElement;
 static int32_t gLastElementInUse;
@@ -30,18 +19,12 @@ static uint32_t gNumArrayElements;
 static Boolean gParticlesInitialized = false;
 static int32_t scrollOffsetHoriz;
 static int32_t scrollOffsetVert;
-#endif
 
-#ifndef MAC_PARTICLES_ONLY
 // FUNCTION: EVNOVA 0x0047b7d0
 // MAC: _RestoreControlStrip i386 0x000c95d6 ppc 0x000d55dc
 void RestoreControlStrip(void)
 {
 }
-
-#endif
-
-#ifndef MAC_GAMEUTILS_ONLY
 
 // FUNCTION: EVNOVA 0x0047b7e0
 // MAC: _InitParticles i386 0x000c4f83 ppc 0x000d11c0
@@ -264,50 +247,6 @@ void DrawParticlesOffscreen(SpriteWorldPtr spriteWorldP)
 
 // FUNCTION: EVNOVA 0x0047c3a0
 // MAC: _UpdateParticlesInWindow i386 0x000c61fb ppc 0x000d24b4
-#if V111
-void UpdateParticlesInWindow(SpriteWorldPtr spriteWorldP)
-{
-    Particle *particlePtr;
-    FramePtr windowFrameP = spriteWorldP->windowFrameP;
-    int32_t count = gLastElementInUse;
-    int horizLoc, vertLoc;
-    int32_t index;
-
-    if (windowFrameP == 0 || !windowFrameP->isFrameLocked)
-        SW_ASSERT_FAIL("SWParticles.c", 440, 440);
-    if (windowFrameP->frameDepth < 8)
-        SW_ASSERT_FAIL("SWParticles.c", 441, 441);
-    if (gParticlesInitialized != 1)
-        SW_ASSERT_FAIL("SWParticles.c", 442, 442);
-
-    FOREACH_DEPTH_DO
-    (
-        spriteWorldP->pixelDepth,
-        for (index = 0, particlePtr = gParticleArray; index <= count; index++, particlePtr++)
-        {
-            if (particlePtr->lifeRemaining > 0)
-            {
-                horizLoc = (particlePtr->horizLoc >> 8) - scrollOffsetHoriz;
-                vertLoc = (particlePtr->vertLoc >> 8) - scrollOffsetVert;
-
-                particlePtr->drawnHorizLoc = horizLoc;
-                particlePtr->drawnVertLoc = vertLoc;
-            }
-        }
-    )
-
-    MoveParticles();
-}
-
-#ifdef MACBUILD
-// MAC: _UpdateParticlesInScrollingWindow i386 0x000c63ba ppc 0x000d26b4
-void UpdateParticlesInScrollingWindow(SpriteWorldPtr spriteWorldP)
-{
-    SW_ASSERT(gParticlesInitialized == true, 522);
-    MoveParticles();
-}
-#endif
-#else
 void UpdateParticlesInWindow(SpriteWorldRec *spriteWorldP)
 {
     Particle *particlePtr;
@@ -370,7 +309,6 @@ void UpdateParticlesInWindow(SpriteWorldRec *spriteWorldP)
 
     MoveParticles();
 }
-#endif
 
 // FUNCTION: EVNOVA 0x0047c800
 // MAC: _MoveParticles i386 0x000c60c5 ppc 0x000d2304
@@ -413,6 +351,5 @@ void MoveParticles(void)
             gLastElementInUse--;
     }
 }
-#endif
 
 EXTERN_C_END
