@@ -88,7 +88,6 @@ extern Boolean PlayerHasAnyCargo(void);
 extern void AddToPlayerKills(int strength);
 extern void FrameDefaultButton(void *dlg, short flag);
 extern void SWExitSpriteWorld(void);
-extern void RestoreControlStrip(void);
 extern short InitParticles(int numElements, int gravity);
 extern void DisposeParticles(void);
 extern void DoAboutBox(void);

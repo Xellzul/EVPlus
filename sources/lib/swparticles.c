@@ -20,12 +20,6 @@ static Boolean gParticlesInitialized = false;
 static int32_t scrollOffsetHoriz;
 static int32_t scrollOffsetVert;
 
-// FUNCTION: EVNOVA 0x0047b7d0
-// MAC: _RestoreControlStrip i386 0x000c95d6 ppc 0x000d55dc
-void RestoreControlStrip(void)
-{
-}
-
 // FUNCTION: EVNOVA 0x0047b7e0
 // MAC: _InitParticles i386 0x000c4f83 ppc 0x000d11c0
 short InitParticles(int numElements, int gravity)

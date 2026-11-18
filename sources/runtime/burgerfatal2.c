@@ -50,16 +50,6 @@ void NonFatal(const char *fmt, ...)
     }
 }
 
-/* DebugXLongWord (BurgerLib DbDebugManager). */
-// FUNCTION: EVNOVA 0x00503ef0
-void DebugXLongWord(Word32 value)
-{
-    char text[16];
-
-    NumberToAscii(text, value, 0);
-    DebugXString(text);
-}
-
 #ifdef __cplusplus
 }
 #endif

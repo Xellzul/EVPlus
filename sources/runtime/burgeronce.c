@@ -5,8 +5,6 @@
 #include "burgertypes.h"
 #include "burger.h"
 
-void *Burger::Win32::m_pInstance;                /* 0x008676a8 */
-
 #ifdef __cplusplus
 extern "C" {
 #endif

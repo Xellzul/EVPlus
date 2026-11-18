@@ -221,10 +221,7 @@ short SWCreateSpriteFromRLEResource(SpritePtr *srcSpriteP, void *spriteStorageP,
 
     device = GetGDevice();
 
-    if (GetGDeviceDepth(device) == 8)
-        spriteData = (RLEPixelDataHdl)GetResource(kRLE8ResType, rleResID);
-    else
-        spriteData = (RLEPixelDataHdl)GetResource(kRLEDResType, rleResID);
+    spriteData = (RLEPixelDataHdl)GetResource(kRLEDResType, rleResID);
 
     if (spriteData != 0) {
         *srcSpriteP = 0;

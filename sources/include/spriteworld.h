@@ -87,7 +87,6 @@ extern short SWCreateSpriteFromSinglePictXY(SpriteWorldRec *destSpriteWorldP,
                           short borderWidth, short borderHeight, short maxFrames,
                           MaskType maskType);
 extern void SWWindowMoved(SpriteWorldPtr spriteWorldP);            /* 0x00477f10 */
-extern Boolean sw_depth_ok(SpriteWorldPtr world);                    /* 0x00478f10 */
 extern short SWCloneFramesFromMaster(SpritePtr dstSpriteP, SpritePtr masterSpriteP); /* 0x00475f70 */
 extern void SWSetSpriteFrameRange(SpritePtr srcSpriteP, short firstFrameIndex,
                                   short lastFrameIndex); /* 0x00475a60 */
@@ -143,7 +142,6 @@ extern void EraseLightningBeam(FramePtr srcFrameP, FramePtr dstFrameP,
                                Point srcPoint, Point dstPoint,
                                short halfWidth, short segPercent, short jitter); /* 0x0047afd0 */
 extern void ComputePixelValues(short pixelSize);                       /* 0x00479210 */
-extern short GetGDeviceDepth(void *theGDH);                            /* 0x0047b7c0 */
 extern void MoveParticles(void);                                       /* 0x0047c800 */
 extern SpriteRec *gSWCurrentSpriteBeingDrawn;            /* 0x00870da8 */
 extern SpriteWorldRec *gSWCurrentSpriteWorld;            /* 0x008706f0 */

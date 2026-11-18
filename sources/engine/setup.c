@@ -617,11 +617,6 @@ void Bye(void)
 
     ByeLog("closing other tools");
     ST_Close();
-    FT_Close();
-    PlatformClose();
-
-    crashlog("showing control strip");
-    RestoreControlStrip();
 
     crashlog("clean exit");
 

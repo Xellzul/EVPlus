@@ -4745,8 +4745,7 @@ void TerminateCron(short index)
 void FloaterEraseCallback(void *a)
 {
     if (commCount >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-            AreWeFrontProcess() == 0) {
+        if (inBackground != 0 || gSpriteWorld->fastBlit == 0) {
             CopyBits(GetPortPixMapBits(
                          gSpriteWorld->backFrameP->framePort),
                      GetPortPixMapBits(
@@ -4758,8 +4757,7 @@ void FloaterEraseCallback(void *a)
         }
     }
     if (showFloatingMap >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-            AreWeFrontProcess() == 0) {
+        if (inBackground != 0 || gSpriteWorld->fastBlit == 0) {
             CopyBits(GetPortPixMapBits(
                          gSpriteWorld->backFrameP->framePort),
                      GetPortPixMapBits(
@@ -4771,8 +4769,7 @@ void FloaterEraseCallback(void *a)
         }
     }
     if (escortMenuOnscreen >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0 ||
-            AreWeFrontProcess() == 0) {
+        if (inBackground != 0 || gSpriteWorld->fastBlit == 0) {
             CopyBits(GetPortPixMapBits(
                          gSpriteWorld->backFrameP->framePort),
                      GetPortPixMapBits(
@@ -4847,8 +4844,7 @@ void PostAnimateHandler(void)
     int passes;
 
     if (commCount >= 0) {
-        if (inBackground == 0 && gSpriteWorld->fastBlit != 0 &&
-            AreWeFrontProcess() != 0) {
+        if (inBackground == 0 && gSpriteWorld->fastBlit != 0) {
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
                          &commRect, &commRect);
         } else {
@@ -4861,8 +4857,7 @@ void PostAnimateHandler(void)
         }
     }
     if (showFloatingMap >= 0) {
-        if (inBackground == 0 && gSpriteWorld->fastBlit != 0 &&
-            AreWeFrontProcess() != 0) {
+        if (inBackground == 0 && gSpriteWorld->fastBlit != 0) {
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
                          &floatingMapRect, &floatingMapRect);
         } else {
@@ -4876,8 +4871,7 @@ void PostAnimateHandler(void)
             showFloatingMap = -1;
     }
     if (escortMenuOnscreen >= 0) {
-        if (inBackground == 0 && gSpriteWorld->fastBlit != 0 &&
-            AreWeFrontProcess() != 0) {
+        if (inBackground == 0 && gSpriteWorld->fastBlit != 0) {
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
                          &escortMenuRect, &escortMenuRect);
         } else {

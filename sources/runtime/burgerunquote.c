@@ -113,12 +113,6 @@ char *ParseQuotedString(char *out, int32_t outSize, const char *src)
 #define kDigitMask     0xff
 #define kSawDigit      0x8000
 #define kMaxDigits     10
-#define kMaxHexDigits  8
-
-static const char NibbleToAsciiUC[16] = {
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-};
-
 static const ULong kPow10[kMaxDigits] = {
     1UL, 10UL, 100UL, 1000UL, 10000UL,
     100000UL, 1000000UL, 10000000UL, 100000000UL, 1000000000UL
@@ -157,36 +151,6 @@ char *NumberToAscii(char *dst, ULong value, ULong flags)
     }
 
     *dst = (value + '0');
-    if ((flags & kNoTerminator) == 0)
-        dst[1] = 0;
-    return dst + 1;
-}
-
-/* NumberToAsciiHex (BurgerLib StStringManager; the 2007 archive's Burger::Str::ToAsciiHex):
-   the same flags as NumberToAscii, eight digits at most. */
-// FUNCTION: EVNOVA 0x004fc080
-char *NumberToAsciiHex(char *dst, ULong value, ULong flags)
-{
-    ULong digits;
-    ULong nibble;
-
-    digits = flags & kDigitMask;
-    if (digits != 0 && digits < kMaxHexDigits)
-        value = value << ((kMaxHexDigits - digits) * 4);
-    else
-        digits = kMaxHexDigits;
-
-    while (--digits) {
-        nibble = value >> 28;
-        if ((flags & kSawDigit) != 0 || nibble != 0) {
-            flags = flags | kSawDigit;
-            *dst = NibbleToAsciiUC[nibble];
-            dst = dst + 1;
-        }
-        value = value << 4;
-    }
-
-    *dst = NibbleToAsciiUC[value >> 28];
     if ((flags & kNoTerminator) == 0)
         dst[1] = 0;
     return dst + 1;

@@ -19,7 +19,6 @@ static __inline void CopyRect(Rect *d, const Rect *s)
 }
 
 extern void DeltaIntroProgressBar(double amount);
-extern Boolean AreWeFrontProcess(void);
 extern void CenterRect(Rect *r, Rect *bounds);
 extern void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
                           short depth, short picID);

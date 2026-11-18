@@ -320,9 +320,6 @@ void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP, Boolean updateWindow)
     if (!spriteWorldP->windowFrameP->isFrameLocked)
         SWAssertFail("SpriteWorld.c", 1443);
 
-    if (!sw_depth_ok(spriteWorldP))
-        return;
-
     saveScreenDrawProc = spriteWorldP->screenDrawProc;
     SWSetSpriteWorldScreenDrawProc(spriteWorldP, BlitPixieRectDrawProc);
 
@@ -569,9 +566,6 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
     if (!spriteWorldP->windowFrameP->isFrameLocked)
         SWAssertFail("SpriteWorld.c", 1987);
 
-    if (!sw_depth_ok(spriteWorldP))
-        return;
-
     gSWCurrentSpriteWorld = spriteWorldP;
 
     if (!spriteWorldP->frameHasOccurred)
@@ -766,7 +760,7 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
     curSpriteP = headActiveSpriteP;
 
     if (spriteWorldP->fastBlit) {
-        while (curSpriteP != 0 && AreWeFrontProcess()) {
+        while (curSpriteP != 0) {
             if (curSpriteP->srD3) {
                 screenDestRect = curSpriteP->destFrameRect;
 
@@ -968,13 +962,6 @@ Boolean SWIsWindowInForeground(SpriteWorldPtr spriteWorldP)
     spriteWorldP->fastBlit = 1;
 
     return spriteWorldP->fastBlit;
-}
-
-// FUNCTION: EVNOVA 0x00478e40
-// MAC: _AreWeFrontProcess i386 0x000b8866 ppc 0x000c475c
-Boolean AreWeFrontProcess(void)
-{
-    return 1;
 }
 
 // FUNCTION: EVNOVA 0x00478e50

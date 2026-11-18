@@ -27,18 +27,11 @@
 #include "cefix.h"
 #include "prototypes.h"
 #include "gametypes.h"
-extern void HideControlStrip(void);
-extern void CarbonHackCleanup(void);
 extern void DisposeGammaTools(void);
 
 #define kMaxGamma     6
 #define kDefaultGamma 3
 
-#define kAlertPlatformOpen  0x16
-#define kAlertFileOpen      0x17
-#define kAlertDrawOpen      0x18
-#define kAlertInterfaceOpen 0x19
-#define kAlertRegOpen       0x1a
 #define kAlertQuickTime     0x15
 
 #define kEventLoopTicks     10
@@ -369,7 +362,6 @@ void InitEVNova(void)
     screenFaded = 0;
 
     ScrambleRand();
-    PlatformOpen();
     KeyboardInit();
     MouseInit();
     SetDefaultPrefixs();
@@ -406,24 +398,6 @@ void InitEVNova(void)
     gWind = 0;
     SavePrefs();
 
-
-    crashlog("opening platform tool");
-    err = PlatformOpen();
-    if (err != 0) {
-        crashlog_print("Platform_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertPlatformOpen);
-    }
-
-    crashlog("opening file tool");
-    err = FT_Open();
-    if (err != 0) {
-        crashlog_print("FT_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertFileOpen);
-    }
 
     crashlog("initializing arrays");
     InitArrays();

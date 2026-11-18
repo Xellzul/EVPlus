@@ -4037,8 +4037,6 @@ void RefreshSAT(void)
 
     if (creatingPilotFile != 0 || gPause != 0)
         return;
-    if (!sw_depth_ok(gSpriteWorld))
-        return;
 
     SWSetPortToBackground(gSpriteWorld);
     SetSystemBackgroundColor();

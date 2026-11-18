@@ -27,23 +27,11 @@ int32_t ST_Open(unsigned short channels, ULong device)
     if (gSoundToolOpen != 0)
         goto done;
 
-    e = PlatformOpen();
-    if (e != 0) {
-        err = e;
-        goto done;
-    }
-    e = FT_Open();
-    if (e != 0) {
-        err = e;
-        goto done;
-    }
     e = CriticalCreate(&gCriticalSection);
     if (e != 0) {
         err = e;
         goto done;
     }
-
-    SystemSetQuitProc(ST_Close);
 
     gMaxVoices = channels;
     if (gMaxVoices > kMaxChannels)
