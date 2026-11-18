@@ -45,7 +45,6 @@ EXTERN_CPP_BEGIN
 extern SoundRequest warpUpSoundSpec;                 /* 0x00591a98 (mac name) */
 extern SoundRequest planetSoundSpec;                 /* 0x00591ab4 (mac name) */
 EXTERN_CPP_END
-extern short ScrambleRand(void);                     /* 0x004ab970 (licensescramble.c) */
 
 #ifdef __cplusplus
 }

@@ -2863,22 +2863,23 @@ Boolean SystemHasService(short sysID, short kind)
 }
 
 
-/* A random value in [0, range); 0 reseeds the generator from the clock. */
+/* A random value in [0, range); 0 for an empty range (range <= 0). */
 // FUNCTION: EVNOVA 0x004683b0
 // MAC: _Rand i386 0x000a4c76 ppc 0x000b08b4
 short Rand(short range)
 {
-    uint32_t seconds;
-    short result;
+    if (range <= 0)
+        return 0;
+    return (short)PlatRand(&randomSeed, range);
+}
 
-    if (range == 0) {
-        /* BUG: this path never sets result, so Rand(0) returns garbage */
-        GetDateTime(&seconds);
-        randomSeed = seconds + ReadTick();
-    } else {
-        result = (short)PlatRand(&randomSeed, range);
-    }
-    return result;
+/* Seeds the generator from the clock. */
+void RandSeedFromClock(void)
+{
+    uint32_t seconds;
+
+    GetDateTime(&seconds);
+    randomSeed = seconds + ReadTick();
 }
 
 /* SetRandSeed (mac _SetRandSeed; dead on win, stripped). */

@@ -360,7 +360,7 @@ void InitEVNova(void)
     gSpriteWorld = 0;
     screenFaded = 0;
 
-    ScrambleRand();
+    RandSeedFromClock();
     KeyboardInit();
     MouseInit();
     SetDefaultPrefixs();
@@ -4196,7 +4196,8 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
         shipData[slot].canScoop = ShipCanScoop(&shipData[slot]);
         AISetup(&shipData[slot]);
         if ((fleetData[f].flags & kFleetFlagRandomCargo) &&
-            shipClass[shipData[slot].type].inherentAI <= kShipTypeBraveTrader)
+            shipClass[shipData[slot].type].inherentAI <= kShipTypeBraveTrader &&
+            shipClass[shipData[slot].type].cargo > 0)
             shipData[slot].cargo[Rand(kCargoTypes)] =
                 Rand(shipClass[shipData[slot].type].cargo) + 1;
         shipData[slot].lastStellar = -2;
@@ -4278,7 +4279,8 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
                         shipData[esc].formLeader = slot;
                         shipData[slot].hasFormation = 1;
                         if ((fleetData[f].flags & kFleetFlagRandomCargo) &&
-                            shipClass[shipData[esc].type].inherentAI <= kShipTypeBraveTrader)
+                            shipClass[shipData[esc].type].inherentAI <= kShipTypeBraveTrader &&
+                            shipClass[shipData[esc].type].cargo > 0)
                             shipData[esc].cargo[Rand(kCargoTypes)] =
                                 Rand(shipClass[shipData[esc].type].cargo) + 1;
                         if (stellar != -1) {

@@ -49,6 +49,7 @@ extern void ParseTextDescription(void);
 extern void PlayQTMovieFromDesc(short id);
 extern short PlayerHasFightersOfOutfitType(short outfitIndex);
 extern short Rand(short range);
+extern void RandSeedFromClock(void);
 extern Boolean ResourceExists(uint32_t type, short id);
 extern Boolean nv_ResourceExists(uint32_t type, short id);
 extern ResRecord *nv_FindResourceRecord(uint32_t type, short id);
