@@ -617,8 +617,6 @@ void Bye(void)
 
     ByeLog("closing other tools");
     ST_Close();
-    IT_Close();
-    DT_Close();
     FT_Close();
     PlatformClose();
 

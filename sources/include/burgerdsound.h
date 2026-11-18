@@ -140,8 +140,6 @@ typedef struct PrivSound {
 
 typedef int32_t (*SoundProc)(PrivSound *sound, void *data);
 
-extern PrivSound BurgerSamples[kMaxVoices + 1];  /* 0x0086e8c8 */
-extern int32_t SoundIterator(SoundProc proc, void *data, int32_t cookie, int32_t firstOnly);
 
 #ifdef __cplusplus
 }

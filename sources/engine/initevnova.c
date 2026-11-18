@@ -455,24 +455,6 @@ void InitEVNova(void)
         FatalStartupError(kAlertFileOpen);
     }
 
-    crashlog("opening draw tool");
-    err = DT_Open();
-    if (err != 0) {
-        crashlog_print("DT_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertDrawOpen);
-    }
-
-    crashlog("opening interface tool");
-    err = IT_Open();
-    if (err != 0) {
-        crashlog_print("IT_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kAlertInterfaceOpen);
-    }
-
     crashlog("initializing arrays");
     InitArrays();
     IterateInGameEventLoop(kEventLoopTicks);

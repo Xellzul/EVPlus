@@ -42,7 +42,6 @@ __declspec(dllimport) void __stdcall SHChangeNotify(int32_t eventId, unsigned in
     const void *item1, const void *item2);
 
 extern int __argc;                              /* MSL runtime */
-extern void *gCustomCursorH;                      /* the game cursor, atcursor.c */
 
 char ceIniPath[kCEMaxPath];
 int ceX2Hotkey;
@@ -186,6 +185,6 @@ void CE_ToggleFullscreen(void)
 int32_t __stdcall CE_WndProc(void *hwnd, uint32_t msg, uint32_t wParam, int32_t lParam)
 {
     if (msg == kWMSetCursor && (lParam & 0xffff) == kHTClient)
-        SetCursor(gCustomCursorH != NULL ? gCustomCursorH : LoadCursorA(NULL, kIDCArrow));
+        SetCursor(LoadCursorA(NULL, kIDCArrow));
     return WinGameWndProc(hwnd, msg, wParam, lParam);
 }

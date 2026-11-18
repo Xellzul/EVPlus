@@ -79,8 +79,7 @@ set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-e
     -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double -fcommon -w
     $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
 
-set(WIN_LIBS kernel32 user32 gdi32 winmm wsock32 advapi32 comctl32 shell32 version comdlg32 iphlpapi ole32
-    oleaut32 opengl32)
+set(WIN_LIBS kernel32 user32 gdi32 winmm advapi32 shell32 comdlg32)
 
 # the runtime as an archive: members are pulled only when referenced, as with MW's rt.lib
 add_library(evnova_ce_rt STATIC ${RT_SRC})

@@ -71,93 +71,21 @@ struct ITStream;
 struct ITImage;
 struct ITPort;
 struct ITPixels;
-extern int32_t DT_BufferRead(struct ITStream *stream, void *dst, ULong count);
-extern struct ITPort *_DT_SurfaceGetContext(void *image);
-extern struct ITPort *_DT_ContextGetContext(struct ITImage *image);
-extern struct ITPixels *_DT_SurfaceGetImage(void *image);
-extern struct ITPixels *_DT_ImageGetImage(struct ITImage *image);
-extern struct ITPixels *_DT_ImageGetAlpha(struct ITImage *image);
 struct ITDib;
 struct ITDevice;
-extern int32_t DT_SyncDib(struct ITDib *dib, unsigned char store, unsigned char load);
-extern void _DT_ContextDispose(struct ITPort *port);
-extern void _DT_PrinterDispose(struct ITDevice *device);
-extern void _DT_ImageDispose(struct ITPixels *pixels);
-extern void _DT_ImageUnlock(struct ITImage *image, struct ITImage *other);
 struct ITPalette;
 struct ITRect;
-extern struct ITImage *_DT_SurfaceCreate(struct ITPort **portOut, struct ITDevice **deviceOut,
-                                    struct ITPixels **pixelsOut);
-extern int32_t _DT_SurfaceDispose(struct ITImage *image, unsigned char fromPort,
-                         unsigned char fromDevice, unsigned char fromPixels);
-extern void _DT_PaletteToInverse(unsigned char *table, const struct ITPalette *palette);
-extern int32_t _DT_ImageCalcFormat(ULong format, unsigned char *flag, unsigned char *bits,
-                         unsigned char *shift, unsigned char *mask, unsigned short *scale);
-extern ULong _DT_ImageCalcStamp(const struct ITPixels *info);
-extern struct ITRect *CopyDT_2SysRect(struct ITRect *dst, const struct ITRect *src);
-extern int32_t _DT_ImageLock(struct ITImage *image, struct ITImage *other,
-                         unsigned char *rebuilt);
 struct ITPixelInfo;
-extern int32_t DT_ImageLock(struct ITImage *image, struct ITImage *other,
-                         struct ITPixelInfo *info, unsigned char *rebuilt);
-extern void DT_ImageUnlock(struct ITImage *image, struct ITImage *other);
-extern void _DT_ImageReplace(struct ITImage *a, struct ITImage *b);
-extern void _DT_SurfaceReplace(struct ITImage *a, struct ITImage *b);
-extern struct ITRect *DT_SetRect(struct ITRect *r, int32_t left, int32_t top, int32_t right,
-                                   int32_t bottom);
 struct ITTransparent;
 struct ITBackground;
 struct ITColor;
-extern void DT_AlphaInfoDefaults(struct ITTransparent *t);
-extern void DT_FileInfoDefaults(struct ITBackground *bg);
-extern void DT_ImageSetRawColors(struct ITImage *image, struct ITImage *mask, ULong row,
-                         const struct ITColor *src);
-extern struct ITImage *DT_ImageCreate(const struct ITRect *bounds, ULong format,
-                                    const struct ITPalette *palette);
-extern int32_t DT_ImageDispose(struct ITImage *image);
-extern void DT_ImageSetRawPixels(struct ITImage *image, struct ITImage *mask, ULong row,
-                         const unsigned char *src);
 struct PictColorTable;
-extern int32_t _PICT_ReadRect(struct ITStream *stream, short *rect);
-extern int32_t _PICT_ReadColorTable(struct ITStream *stream, struct PictColorTable *table);
 extern struct ITPalette gDT_AlphaPalette;        /* atpalinit.c: the greyscale palette */
 extern uint32_t gDT_Mults[9];            /* atpalinit.c: channel width to 16-bit factor */
 
 /* the interface tool's image loaders, one per file format: (stream, image, mask, transparency
    answer, background answer) */
-extern int32_t BMP_Decode(struct ITStream *stream, struct ITImage **imageOut,
-                         struct ITImage **maskOut, struct ITTransparent *trans,
-                         struct ITBackground *bg);
-extern int32_t GIF_Decode(struct ITStream *stream, struct ITImage **imageOut,
-                         struct ITImage **maskOut, struct ITTransparent *trans,
-                         struct ITBackground *bg);
-extern int32_t JPEG_Decode(struct ITStream *stream, struct ITImage **imageOut,
-                         struct ITImage **maskOut, struct ITTransparent *trans,
-                         struct ITBackground *bg);
-extern int32_t PNG_Decode(struct ITStream *stream, struct ITImage **imageOut,
-                         struct ITImage **maskOut, struct ITTransparent *trans,
-                         struct ITBackground *bg);
-extern int32_t PICT_Decode(struct ITStream *stream, struct ITImage **imageOut,
-                         struct ITImage **maskOut, struct ITTransparent *trans,
-                         struct ITBackground *bg);
-extern int32_t PPAT_Decode(struct ITStream *stream, struct ITImage **imageOut,
-                         struct ITImage **maskOut, struct ITTransparent *trans,
-                         struct ITBackground *bg);
-extern int32_t TGA_Decode(struct ITStream *stream, struct ITImage **imageOut,
-                         struct ITImage **maskOut, struct ITTransparent *trans,
-                         struct ITBackground *bg);
-extern struct ITRect *DT_ImageGetRect(struct ITImage *image, struct ITRect *bounds);
-extern struct ITRect *DT_RectOffset(struct ITRect *r, int32_t dh, int32_t dv);
-extern int32_t DT_ImageResize(struct ITImage *image, struct ITImage *mask, const struct ITRect *bounds);
-extern unsigned char DT_IsRectEqual(const struct ITRect *a, const struct ITRect *b);
-extern int32_t DT_ImageCopy(struct ITImage *dst, const struct ITRect *dstRect, unsigned char copy,
-                         struct ITImage *src, struct ITImage *srcMask,
-                         const struct ITTransparent *trans, const struct ITRect *srcRect);
 struct ITPoint;
-extern int32_t DT_ImageTile(struct ITImage *dst, const struct ITRect *dstRect,
-                         const struct ITPoint *origin, unsigned char copy, struct ITImage *src,
-                         struct ITImage *srcMask, const struct ITTransparent *trans);
-extern int32_t DT_ImagePreflightTile(struct ITImage *image, struct ITImage *mask);
 
 /* string helpers (atplatstr.c) */
 extern uint32_t StringGetLength(const unsigned char *s);
@@ -322,13 +250,9 @@ extern void KeyboardInit(void);
 extern void KeyboardDestroy(void);
 extern void MouseDestroy(void);
 extern void SetDefaultPrefixs(void);
-extern void DT_Close(void);
 extern void ST_DisposeSound(void *snd);
 extern unsigned short ST_IsSoundPlaying(void *snd);
 
-extern int32_t DT_Open(void);
-extern int32_t IT_Open(void);
-extern int32_t IT_OpenBrowser(const char *command);
 
 /* the resource manager (engine/resmgr.c) */
 extern Handle GetResource(uint32_t type, short id);
@@ -345,7 +269,6 @@ extern void ST_HaltSound(void *sound);
 extern void PlatformClose(void);
 extern void ST_Close(void);
 extern void FT_Close(void);
-extern void IT_Close(void);
 extern ULong UFix32_Divide(ULong device, ULong rate);
 extern ULong UFix32_Multiply(ULong ratio, ULong rate);
 extern unsigned char (*gIndirectBusy)(void *p);
@@ -490,7 +413,6 @@ extern int32_t Win95DestScreenY;                    /* burgervideomode.c */
 
 /* sound globals (burgersndwin.c) */
 struct DSound;
-extern struct DSound *MyDirectSoundDevice;
 extern Word MusicVolume;
 extern Word SystemState;
 extern ULong BurgerVoiceCount;                       /* BurgerVoiceCount */
@@ -528,37 +450,12 @@ extern char *String2Lower(char *s);
 extern char *StringFindString(const char *s, const char *sub);
 extern unsigned char IndirectGetLock(void **handle);
 struct ITElement;
-extern int32_t IT_ItemHandlerInstall(struct WindowNode *owner, const char *name,
-                         int32_t (*proc)(void *hwnd, void *dc, struct ITElement *element,
-                                      void **data, ULong msg, ULong a, void *b));
 
 /* the interface tool's settings, window layer, drawing and input, called from its control
    procs (interfacetool.c, ittoolkit.c, itgfx.c, itinput.c) */
 struct ITKeyEvent;
 struct ITInputEvent;
 struct ITClick;
-extern unsigned char IT_ItemCallbackIsViewEnabled(void);
-extern int32_t IT_ItemCallbackSoundEvent(int32_t event);
-extern char *IT_ItemCallbackGetParam(const char *key, unsigned char inherit);
-extern int32_t IT_ItemCallbackGetNumber(const char *s);
-extern struct ITColor IT_ItemCallbackGetColor(const char *s);
-extern unsigned char IT_ItemCallbackGetFlag(const char *s);
-extern unsigned char IT_ItemCallbackGetAlign(int32_t *align);
-extern struct ITPoint *CopyDT_2SysPoint(struct ITPoint *dst, const struct ITPoint *src);
-extern int32_t _IT_ViewHandleIdle(struct WindowNode *window);
-extern int32_t _IT_ViewHandleKey(struct WindowNode *window, const struct ITKeyEvent *key,
-                         struct ITClick *click);
-extern int32_t _IT_ViewHandleClick(struct WindowNode *window, struct ITInputEvent *event,
-                         struct ITClick *click);
-extern int32_t _IT_ViewHandleActivate(struct WindowNode *window, unsigned char active);
-extern int32_t _IT_ViewHandleCursor(struct WindowNode *window, struct ITInputEvent *event,
-                         unsigned short *modifiers);
-extern struct ITImage *DT_ContextCreateRaw(void *dc, unsigned char save);
-extern int32_t DT_ResetAttributes(struct ITImage *image, unsigned char pen, unsigned char brush,
-                         unsigned char font, unsigned char clip, unsigned char origin);
-extern int32_t DT_SetLineAttributes(struct ITImage *image, const struct ITColor *fore,
-                         const struct ITColor *back, const unsigned char *pattern, int32_t width);
-extern unsigned char InputReadMouseState(void *hwnd, struct ITInputEvent *event);
 extern struct ITColor gDT_ColorBlack;              /* atpalinit.c: default text colour, black */
 extern unsigned char gDT_PatternLtGray[];           /* atpalinit.c: the light grey pattern */
 extern unsigned char gDT_PatternMdGray[];           /* atpalinit.c: the 50% grey pattern */
@@ -576,66 +473,7 @@ extern struct WindowNode *gIT_ViewList;          /* atcursor.c */
 struct ITControl;
 struct ITPage;
 struct FolderSpec;
-extern int32_t DT_ImageFileLoad(void **handle, struct ITImage **imageOut, struct ITImage **maskOut,
-                         struct ITTransparent *trans, struct ITBackground *bg);
-extern void *DT_PeekAtSysContext(struct ITImage *image);
-extern int32_t DT_ContextDispose(struct ITImage *image);
-extern int32_t DT_GetFillBackColor(struct ITImage *image, struct ITColor *back);
-extern int32_t DT_SetFillBackColor(struct ITImage *image, const struct ITColor *back);
-extern void *DT_GetClipRegion(struct ITImage *image);
-extern int32_t DT_SetClipRegion(struct ITImage *image, void *region);
-extern int32_t DT_SetClipRect(struct ITImage *image, const struct ITRect *r);
-extern int32_t DT_AddInvalidRect(struct ITImage *image, const struct ITRect *r);
-extern int32_t DT_DrawImageTile(struct ITImage *image, const struct ITRect *clip,
-                         const struct ITPoint *origin, struct ITImage *src,
-                         struct ITImage *mask, int32_t unused, const struct ITRect *srcRect);
-extern int32_t DT_EraseRect(struct ITImage *image, const struct ITRect *r);
-extern unsigned char DT_IsPointInRect(const struct ITPoint *pt, const struct ITRect *r);
-extern unsigned char DT_IsRectEmpty(const struct ITRect *r);
-extern struct ITRect *DT_RectInset(struct ITRect *r, int32_t dh, int32_t dv);
-extern struct ITRect *DT_RectIntersect(struct ITRect *r, const struct ITRect *a,
-                                   const struct ITRect *b);
-extern void DT_RegionDispose(void *region);
 #define DTSysRect struct ITRect
-extern ULong DT_2SysColor(const struct ITColor *color);
-extern struct ITPoint *CopySys2DT_Point(struct ITPoint *dst, const struct ITPoint *src);
-extern struct ITRect *CopySys2DT_Rect(struct ITRect *dst, const struct ITRect *src);
-extern struct ITColor *CopySys2DT_Color(struct ITColor *color, const ULong *ref);
-extern int32_t IT_ViewChange(struct WindowNode *window, struct FolderSpec **folder, const char *file,
-                         const char *path, const char *anchor);
-extern int32_t IT_ViewDispose(struct WindowNode *window);
-extern int32_t _IT_ViewHandleTest(struct WindowNode *window, ULong item, unsigned char *hit);
-extern int32_t _IT_ViewHandleDraw(struct WindowNode *window, const struct ITRect *area,
-                         unsigned char noBlit);
-extern int32_t _IT_ViewSetFocus(struct WindowNode *window, struct ITControl *control, uint32_t item,
-                         unsigned char keep);
-extern int32_t _IT_ViewMoveFocus(struct WindowNode *window, unsigned char forward,
-                         struct WindowNode *skipWindow, struct ITControl *skipControl,
-                         ULong only);
-extern int32_t _IT_ViewQueryFocus(struct WindowNode *window, void **out);
-extern int32_t _IT_ViewValidate(struct WindowNode *window);
-extern int32_t _IT_ViewCallback(struct WindowNode *window, struct ITPage *page,
-                         struct ITControl *control, int32_t event);
-extern int32_t _IT_ViewDissectLink(struct WindowNode *window, const char *link, char **file,
-                         char **anchor);
-extern int32_t _IT_ItemCallback(struct WindowNode *window, struct ITControl *control, ULong msg,
-                         ULong a, void *b);
-extern int32_t IT_ViewSetItemEnabled(void *windowRef, int32_t index, unsigned char enable);
-extern struct ITElement *PT_ParseTreeInsertNode(struct ITElement *root, struct ITElement *where,
-                                      struct ITElement *node, unsigned char before);
-extern struct ITElement *PT_ParseTreeGetParent(struct ITElement *root, struct ITElement *node);
-extern struct ITElement *PT_ParseTreeGetNext(struct ITElement *root, struct ITElement *node);
-extern void PT_ParseTreeDispose(struct ITElement *e);
-extern struct ITElement *_IT_ParseTreeFindNextTag(struct ITElement *root, struct ITElement *start,
-                                      const char *name, unsigned char skip);
-extern struct ITElement *_IT_ParseTreeFindLastNode(void *doc, struct ITElement *element);
-extern char *_IT_ParseTreeFindAttribute(struct ITElement *root, struct ITElement *element, const char *tag,
-                          const char *key, unsigned char inherit);
-extern char *_IT_SimpleFindAttribute(struct ITElement *element, const char *key);
-extern int32_t _IT_ParseAttributeGetNumber(unsigned char wide, const char *s);
-extern struct ITColor _IT_ParseAttributeGetColor(unsigned char wide, const char *s);
-extern struct ITRect *_IT_ParseAttributeGetRect(void *rect, unsigned char wide, const char *s);
-extern int32_t _IT_PageListDispose(void *tableRef);
 extern unsigned char IndirectIsUnicode(void **handle, char *nameOut);
 extern int32_t FT_PathDispose(struct FolderSpec **spec);
 
@@ -644,26 +482,8 @@ extern void *FT_GetResFile(void);                 /* atfilespec.c */
 extern int32_t FT_ResourceLoad(void *module, unsigned short id, const char *resType, ULong macType,
                          ULong maxSize, int32_t unused, void ***handle);
 extern int32_t FT_VirtualPathMount(void **handle, unsigned char mode, struct FolderSpec ***result);
-extern unsigned char DT_IsOpen(void);         /* atpalinit.c */
-extern unsigned char IT_IsOpen(void);         /* atcursor.c */
-extern int32_t IT_ViewCreateModal(void *folder, const char *file, const char *path,
-                         int32_t (*proc)(struct WindowNode *window, int32_t refcon, int32_t event,
-                                      void *where, int32_t index, const char *name),
-                         int32_t refcon, char *result);   /* ittoolkit.c */
-extern int32_t IT_ViewGetNamedItem(struct WindowNode *window, const char *name);   /* ittoolkit.c */
-extern int32_t IT_ViewSetItemVisible(void *windowRef, int32_t index, unsigned char show);
 
 /* the interface tool's control procs, registered by name (atwndclass.c) */
-extern int32_t IT_ButtonHandler(void *hwnd, void *dc, struct ITElement *element, void **data,
-                         ULong msg, ULong a, void *b);       /* BUTTON, IMAGE, IMG: ittoolkit.c */
-extern int32_t IT_BorderHandler(void *hwnd, void *dc, struct ITElement *element, void **data,
-                         ULong msg, ULong a, void *b);       /* BORDER: itborder.c */
-extern int32_t IT_FrameHandler(void *hwnd, void *dc, struct ITElement *element, void **data,
-                         ULong msg, ULong a, void *b);       /* FRAME: itframe.c */
-extern int32_t IT_PopupHandler(void *hwnd, void *dc, struct ITElement *element, void **data,
-                         ULong msg, ULong a, void *b);       /* POPUP: itpopup.c */
-extern int32_t IT_TextHandler(void *hwnd, void *dc, struct ITElement *element, void **data,
-                         ULong msg, ULong a, void *b);       /* TEXTBOX: ittextbox.c */
 extern int32_t _FT_FileRead(struct FTFile *file, ULong count, void *buffer);
 extern int32_t _FT_FileWrite(struct FTFile *file, ULong count, const void *buffer);
 extern int32_t _FT_FileGetEOF(struct FTFile *file, ULong *size);
@@ -689,8 +509,6 @@ extern void StreamHandleEndSave(struct TextBuilder *b);
 extern void StreamHandlePutByte(struct TextBuilder *b, int32_t ch);
 extern void StreamHandlePutStringNoZero(struct TextBuilder *b, const char *s);
 extern void FastMemSet16(void *dst, ULong value, ULong bytes);
-extern uint32_t crc32(uint32_t crc, const unsigned char *buf,
-                           unsigned len);
 extern void adpcm_coder(short indata[], char outdata[], int len,
                         struct adpcm_state *state);
 extern unsigned char ADPCM_Mixer(ULong *data, short **out, ULong frames, ULong step,
@@ -714,8 +532,6 @@ extern int32_t HashInsert(struct HashTable *t, const char *key, const char *valu
 extern int32_t HashAppend(struct HashTable *t, const char *key, const char *value);
 extern unsigned char HashRemove(struct HashTable *t, const char *key);
 struct WindowNode;
-extern int32_t IT_ViewParamText(struct WindowNode *window, const char *key, const char *value);
-extern int32_t IT_SetCursor(short cursorId);
 extern void MemoryMove(void *dst, const void *src, ULong n);
 extern int32_t IndirectAppendData(void **handle, const void *data, ULong length);
 extern int32_t IndirectReplaceData(void **handle, const void *data, ULong length);
@@ -747,17 +563,6 @@ extern void **IndirectDuplicate(void **handle);
 extern ULong TimerGetUTCSeconds(void);
 extern uint32_t TimerGetElapsedSeconds(void);
 struct FTFileInfo;
-typedef struct PackInfo {       /* filled by the handle packers when not NULL */
-    ULong magic;                /* 'sqsh' */
-    ULong tag;                  /* 'zlib', 'pack', 'PACK' or 'none' */
-    ULong size;                 /* unpacked size and checksum */
-    ULong sum;
-    ULong packedSize;
-    ULong packedSum;
-    ULong reserved[2];
-} PackInfo;
-extern int32_t IndirectDecompress(void **handle, ULong tag, PackInfo *info);
-extern int32_t IndirectCompress(void **handle, ULong tag, PackInfo *info);
 /* 1.0.10 passes the get-flags and save flag in a byte */
 #define FTFlagArg int32_t
 extern int32_t FT_FileGetFlags(int32_t folder, const char *name, struct FTFileInfo *info, FTFlagArg flags);
@@ -770,15 +575,12 @@ struct FileTypeMap;
 extern void _FT_FileTypesLookup(const char *name, ULong type, struct FileTypeMap *entry);
 extern unsigned char AtomicMaskTest(ULong *word, ULong bit);
 extern void **IndirectAllocateTempMem(ULong size);
-extern int32_t PT_ParseEncode(void **h, unsigned char wide, unsigned char url,
-                         unsigned char spaces, unsigned char quotes);
 extern unsigned char IsPlatformOpen(void);
 extern unsigned char _FT_IsIndirectBusy(void *p);
 extern void **IndirectAllocate(ULong size);
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);
 extern float FUN_004eed20(float lenSquared);
-extern int32_t MemoryChecksum(void *data, uint32_t size);
 extern char *ConvertNativePathToPath(const char *path);
 extern void *LoadAFileHandle(const char *path);
 extern void **AllocAHandleClear(ULong size);
@@ -789,7 +591,6 @@ extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);
 extern void KeyboardFlush(void);
 extern int32_t CreateDirectoryPath(const char *path);
 extern int32_t Win95Allow1Instance(const char *name);
-extern void KillSoundPlayer(void);
 extern void JoystickDestroy(void);
 extern void Fatal(const char *fmt, ...);
 extern void NonFatal(const char *fmt, ...);
@@ -815,49 +616,20 @@ extern void KeyboardCallPollingProcs(void);
 extern void ProcessSystemEvents(void);
 extern void KeyboardAddRoutine(void (*proc)(void *), void *data);
 extern void KeyboardRemoveRoutine(void (*proc)(void *), void *data);
-extern void KillDigitalDriver(void);
 extern Word32 PowerOf2(Word32 Input);
-extern void DigitalMusicPlay(Word SongNum);
-extern void DigitalMusicShutdown(void);
 
 /* the song decoders' front end (burgerdigsong.c) */
 struct DigitalMusicReadState_t;
-extern Word DigitalMusicGetSilenceVal(Word32 Format);
-extern Word32 DigitalMusicDecode(struct DigitalMusicReadState_t *State, void *Buffer,
-                                 Word32 Length);
-extern Word8 DigitalMusicReadStateInit(struct DigitalMusicReadState_t *State,
-                                       struct AudioDesc *Desc, const Word8 *Image,
-                                       Word32 BufferSize,
-                                       Word32 (*ReadProc)(void *, Word8 *, Word32),
-                                       void *ReadData);
-extern void DigitalMusicReadStateDestroy(struct DigitalMusicReadState_t *State);
-extern void DigitalMusicReset(struct DigitalMusicReadState_t *State);
 
 /* the sample expanders the song decoders call (burgermace.c, burgermsadpcm.c) and the
    8-bit law tables (burgerulaw.c, burgeralaw.c) */
 struct MACEState_t;
 struct ADPCMUnpackState_t;
-extern void MACEExp1to6(const Word8 *InBufPtr, Word8 *OutBufPtr, Word32 Count,
-                        struct MACEState_t *InStatePtr, struct MACEState_t *OutStatePtr,
-                        Word NumChannels, Word WhichChannel);
-extern void MACEExp1to3(const Word8 *InBufPtr, Word8 *OutBufPtr, Word32 Count,
-                        struct MACEState_t *InStatePtr, struct MACEState_t *OutStatePtr,
-                        Word NumChannels, Word WhichChannel);
-extern Word ADPCMDecodeBlock(struct ADPCMUnpackState_t *StatePtr);
 extern const short UnpackULawTable[256];
 extern const short UnpackALawTable[256];
 
 /* the read-ahead file stream (burgerrswin.c) */
 struct ReadFileStream_t;
-extern struct ReadFileStream_t *ReadFileStreamNew(const char *FileName, Word32 ChunkCount,
-                                                  Word32 ChunkSize);
-extern void ReadFileStreamDelete(struct ReadFileStream_t *Input);
-extern Word ReadFileStreamActive(struct ReadFileStream_t *Input);
-extern void ReadFileStreamStop(struct ReadFileStream_t *Input);
-extern void ReadFileStreamStart(struct ReadFileStream_t *Input, Word32 Offset);
-extern Word8 *ReadFileStreamGetData(struct ReadFileStream_t *Input, Word32 *LengthPtr,
-                                    Word32 Length);
-extern void StopASound(ULong cookie);
 extern unsigned int OSCursorIsVisible(void);
 extern void CStr2PStr(char *dst, const char *src);
 extern int32_t TimerGetSeconds(void);

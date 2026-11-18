@@ -1,5 +1,5 @@
 // COMPILE: -lang c++ -bool off
-/* burgersndwin.c -- BurgerLib's SnSoundManager: shutting the voices down, the AIFF extended, the voice sweep and parsing a sound file image. Notes: Research/notes/burgersndwin.md */
+/* burgersndwin.c -- BurgerLib's SnSoundManager: the AIFF extended and parsing a sound file image. Notes: Research/notes/burgersndwin.md */
 
 #include <string.h>
 
@@ -18,27 +18,6 @@ ULong BurgerVoiceCount = 0x20;                       /* 0x00578670, .data Burger
 Word MusicVolume = 255;                          /* 0x00578674 */
 Word SystemState = 3;                            /* 0x00578678 */
 static Word8 ExitProc;
-
-#define kSecondaryFlag      2
-
-PrivSound BurgerSamples[kMaxVoices + 1];         /* 0x0086e8c8 */
-DSound *MyDirectSoundDevice;                     /* 0x0086fff8 */
-
-/* KillSoundPlayer (BurgerLib SnSoundManager). */
-// FUNCTION: EVNOVA 0x004fc3f0
-void KillSoundPlayer(void)
-{
-    ULong i;
-
-    i = 0;
-    do {
-        StopASound(i | kCookieIsVoice);
-        i = i + 1;
-    } while (i < BurgerVoiceCount);
-    BurgerSndKillProcs[2] = 0;
-    BurgerSndExitIn = BurgerSndExitIn & ~kSecondaryFlag;
-    KillDigitalDriver();
-}
 
 #define kExtendedSign   0x8000                   /* sign bit of the 80-bit exponent word */
 #define kExponentRebias 0x3c00                   /* 16383 - 1023: extended to double bias */
@@ -77,33 +56,6 @@ double ConvertAiffExtended(const void *Input)
             Out[7 - i] = (Value << 5);
     } while (++i < 8);
     return Result;
-}
-
-/* SoundIterator (BurgerLib SnSoundManager). */
-// FUNCTION: EVNOVA 0x004fc4e0
-int32_t SoundIterator(SoundProc proc, void *data, int32_t cookie, int32_t firstOnly)
-{
-    PrivSound *sound;
-    ULong count;
-    int32_t result;
-
-    result = 0;
-    sound = BurgerSamples;
-    if ((cookie & kCookieIsVoice) != 0) {
-        cookie &= ~kCookieIsVoice;
-        if (cookie < BurgerVoiceCount)
-            result = proc(&sound[cookie], data);
-    } else {
-        for (count = BurgerVoiceCount; count != 0; count--) {
-            if (sound->SampleResource == cookie) {
-                result = proc(sound, data);
-                if (firstOnly != 0)
-                    break;
-            }
-            sound++;
-        }
-    }
-    return result;
 }
 
 #define kVocSignature     "Creative Voice File\x1a"

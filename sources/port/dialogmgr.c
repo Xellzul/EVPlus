@@ -2348,8 +2348,6 @@ void ShutdownWinGame(void)
     JoystickDestroy();
     KeyboardDestroy();
     MouseDestroy();
-    KillSoundPlayer();
-    DigitalMusicShutdown();
     if (VideoWidth != 0) {
         LockVideoPage();
         DrawARect16(0, 0, gVideoWidth, gVideoHeight, 0);
