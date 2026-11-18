@@ -1034,7 +1034,7 @@ int32_t _FT_RemapError(ULong winError)
     case ERROR_TOO_MANY_OPEN_FILES:
     case ERROR_NO_MORE_FILES:
     case ERROR_NO_MORE_SEARCH_HANDLES:
-    case ERROR_TOO_MANY_DESCRIPTORS:
+    case ERROR_NO_MORE_USER_HANDLES:
         err = kFTErrTooManyFiles;
         break;
     case ERROR_ACCESS_DENIED:

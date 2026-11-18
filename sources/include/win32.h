@@ -13,42 +13,22 @@ extern "C" {
 #endif
 
 /* user32 window messages */
-#define WM_CREATE           0x0001
 #define WM_DESTROY          0x0002
 #define WM_MOVE             0x0003
 #define WM_SIZE             0x0005
-#define WM_ACTIVATE         0x0006
-#define WM_SETFOCUS         0x0007
-#define WM_KILLFOCUS        0x0008
-#define WM_GETTEXTLENGTH    0x000e
 #define WM_PAINT            0x000f
 #define WM_CLOSE            0x0010
 #define WM_QUIT             0x0012
-#define WM_ERASEBKGND       0x0014
 #define WM_ENDSESSION       0x0016
 #define WM_ACTIVATEAPP      0x001c
 #define WM_SETCURSOR        0x0020
 #define WM_GETMINMAXINFO    0x0024
-#define WM_SETFONT          0x0030
 #define WM_KEYDOWN          0x0100
 #define WM_KEYUP            0x0101
 #define WM_CHAR             0x0102
-#define WM_DEADCHAR         0x0103
 #define WM_SYSKEYDOWN       0x0104
 #define WM_SYSKEYUP         0x0105
 #define WM_SYSCHAR          0x0106
-#define WM_SYSDEADCHAR      0x0107
-#define WM_INITDIALOG       0x0110
-#define WM_COMMAND          0x0111
-#define WM_SYSCOMMAND       0x0112
-#define WM_TIMER            0x0113
-#define WM_CTLCOLORMSGBOX   0x0132
-#define WM_CTLCOLOREDIT     0x0133
-#define WM_CTLCOLORLISTBOX  0x0134
-#define WM_CTLCOLORBTN      0x0135
-#define WM_CTLCOLORDLG      0x0136
-#define WM_CTLCOLORSCROLLBAR 0x0137
-#define WM_CTLCOLORSTATIC   0x0138
 #define WM_MOUSEMOVE        0x0200
 #define WM_LBUTTONDOWN      0x0201
 #define WM_LBUTTONUP        0x0202
@@ -60,53 +40,28 @@ extern "C" {
 #define WM_MBUTTONUP        0x0208
 #define WM_MBUTTONDBLCLK    0x0209
 #define WM_MOUSEWHEEL       0x020a
-#define WM_PRINT            0x0317
 #define WM_QUERYNEWPALETTE  0x030f
-#define BM_SETSTATE         0x00f3
-#define PRF_CHECKVISIBLE    0x00000001
-#define PRF_CLIENT          0x00000004
-#define PRF_ERASEBKGND      0x00000008
 
 /* user32 window styles, virtual keys and other constants */
 #define WS_POPUP            0x80000000UL
-#define WS_CHILD            0x40000000UL
 #define WS_VISIBLE          0x10000000UL
 #define WS_CAPTION          0x00c00000UL
 #define WS_BORDER           0x00800000UL
 #define WS_SYSMENU          0x00080000UL
 #define WS_MINIMIZEBOX      0x00020000UL
-#define WS_TABSTOP          0x00010000UL
-#define SW_HIDE             0
-#define SW_SHOW             5
-#define GWL_HINSTANCE       (-6)
 #define IDC_ARROW           32512
-#define IDC_HAND            32649
-#define VK_LBUTTON          0x01
-#define VK_RBUTTON          0x02
-#define VK_MBUTTON          0x04
-#define VK_RETURN           0x0d
 #define VK_SHIFT            0x10
 #define VK_CONTROL          0x11
 #define VK_MENU             0x12
 #define VK_CAPITAL          0x14
-#define VK_LWIN             0x5b
-#define VK_RWIN             0x5c
-#define VK_NUMLOCK          0x90
 #define VK_SCROLL           0x91
 
 /* gdi32 */
-#define CLR_INVALID         0xffffffffUL
 #define BLACK_BRUSH         4
-#define WHITE_BRUSH         0
-#define BITSPIXEL           12
-#define LOGPIXELSX          88
 #define LOGPIXELSY          90
 #define FW_NORMAL           400
 #define FW_BOLD             700
 #define SRCCOPY             0x00cc0020UL
-#define SRCAND              0x008800c6UL
-#define SRCPAINT            0x00ee0086UL
-#define ROP_DSNA            0x00220326UL    /* dest AND NOT source */
 
 /* kernel32 files */
 #define GENERIC_READ        0x80000000UL
@@ -167,7 +122,7 @@ extern "C" {
 #define ERROR_BUSY                      170
 #define ERROR_ALREADY_EXISTS            183
 #define ERROR_FILE_INVALID              1006
-#define ERROR_TOO_MANY_DESCRIPTORS      1158
+#define ERROR_NO_MORE_USER_HANDLES      1158
 #define ERROR_NO_VOLUME_ID              1173
 #define ERROR_CANCELLED                 1223
 
@@ -180,15 +135,10 @@ extern "C" {
 #define TOKEN_QUERY             0x0008
 
 /* kernel32 threads and waits, wsock32 */
-#define CREATE_SUSPENDED    0x00000004
-#define THREAD_PRIORITY_ABOVE_NORMAL 1
 #define THREAD_PRIORITY_HIGHEST 2
 #define THREAD_PRIORITY_TIME_CRITICAL 15
 #define INFINITE            0xffffffff
-#define WAIT_FAILED         0xffffffffUL
 #define WAIT_TIMEOUT        0x102
-#define AF_INET             2
-#define SOCK_DGRAM          2
 
 /* Win32's RECT: four longs in left/top/right/bottom order, which is what
    DirectDraw's Blt and the window calls expect. Not the Mac Rect. */
@@ -286,31 +236,7 @@ __declspec(dllimport) unsigned int __stdcall SetPaletteEntries(void *hpal, unsig
 __declspec(dllimport) unsigned int __stdcall SetDIBColorTable(void *hdc, unsigned int start,
                                                               unsigned int count,
                                                               const void *colors);
-__declspec(dllimport) int __stdcall RestoreDC(void *hdc, int saved);
-__declspec(dllimport) int __stdcall AbortDoc(void *hdc);
-__declspec(dllimport) int __stdcall EndDoc(void *hdc);
-__declspec(dllimport) int __stdcall GdiFlush(void);
-__declspec(dllimport) int __stdcall GetDIBits(void *hdc, void *bitmap, unsigned int start,
-    unsigned int lines, void *bits, void *info, unsigned int usage);
-__declspec(dllimport) int __stdcall SetDIBits(void *hdc, void *bitmap, unsigned int start,
-    unsigned int lines, const void *bits, const void *info, unsigned int usage);
-__declspec(dllimport) int __stdcall GlobalUnlock(void *mem);
-__declspec(dllimport) void * __stdcall CreateCompatibleBitmap(void *hdc, int w, int h);
-__declspec(dllimport) int __stdcall SaveDC(void *hdc);
-__declspec(dllimport) int __stdcall GetClientRect(void *hwnd, WinRect *r);
-__declspec(dllimport) unsigned int __stdcall GetDIBColorTable(void *hdc, unsigned int start,
-    unsigned int count, void *colors);
-__declspec(dllimport) int __stdcall GetClipRgn(void *hdc, void *rgn);
-__declspec(dllimport) int __stdcall GetRgnBox(void *rgn, WinRect *r);
-__declspec(dllimport) int __stdcall DPtoLP(void *hdc, void *points, int count);
-__declspec(dllimport) int __stdcall SetRectRgn(void *rgn, int left, int top, int right,
-    int bottom);
 __declspec(dllimport) int __stdcall OffsetRgn(void *rgn, int dx, int dy);
-__declspec(dllimport) uint32_t __stdcall GetRegionData(void *rgn, uint32_t size,
-    void *data);
-__declspec(dllimport) void * __stdcall ExtCreateRegion(const void *xform, uint32_t size,
-    const void *data);
-__declspec(dllimport) int __stdcall CombineRgn(void *dst, void *src1, void *src2, int mode);
 __declspec(dllimport) void * __stdcall CreateWindowExA(uint32_t exStyle,
     const char *className, const char *windowName, uint32_t style,
     int x, int y, int w, int h, void *parent, void *menu, void *instance,
@@ -403,15 +329,12 @@ __declspec(dllimport) void * __stdcall CreateThread(void *sa, uint32_t stack,
     LPTHREAD_START_ROUTINE start, void *param, uint32_t flags,
     uint32_t *threadId);
 __declspec(dllimport) int __stdcall SetThreadPriority(void *thread, int priority);
-__declspec(dllimport) void * __stdcall GetCurrentThread(void);
-__declspec(dllimport) uint32_t __stdcall GetVersion(void);
 __declspec(dllimport) uint32_t __stdcall SuspendThread(void *thread);
 __declspec(dllimport) uint32_t __stdcall ResumeThread(void *thread);
 __declspec(dllimport) int __stdcall TerminateThread(void *thread, uint32_t code);
 __declspec(dllimport) void * __stdcall CreateEventA(void *sa, int manual, int initial,
                                                    const char *name);
 __declspec(dllimport) int __stdcall SetEvent(void *event);
-__declspec(dllimport) int __stdcall ResetEvent(void *event);
 
 /* kernel32 clock, files and pointer probes */
 typedef struct SYSTEMTIME {
@@ -496,7 +419,6 @@ __declspec(dllimport) uint32_t __stdcall GetCurrentDirectoryA(uint32_t bufLen,
 __declspec(dllimport) int __stdcall SetCurrentDirectoryA(const char *path);
 __declspec(dllimport) uint32_t __stdcall GetTempPathA(uint32_t bufLen, char *buf);
 __declspec(dllimport) uint32_t __stdcall SleepEx(uint32_t ms, int alertable);
-__declspec(dllimport) uint32_t __stdcall GetCurrentProcessId(void);
 __declspec(dllimport) int __stdcall FreeLibrary(void *module);
 __declspec(dllimport) int __stdcall SetConsoleCtrlHandler(PHANDLER_ROUTINE handler, int add);
 __declspec(dllimport) uint32_t __stdcall GetConsoleTitleA(char *title,
@@ -548,15 +470,9 @@ __declspec(dllimport) int __stdcall SetWindowPos(void *hwnd, void *insertAfter,
     int x, int y, int cx, int cy, unsigned int flags);
 __declspec(dllimport) int __stdcall MessageBoxA(void *hwnd, const char *text,
                                                 const char *caption, unsigned int type);
-__declspec(dllimport) int __stdcall MessageBeep(unsigned int type);
 __declspec(dllimport) int __stdcall ClipCursor(const WinRect *r);
-__declspec(dllimport) void * __stdcall LoadIconA(void *inst, const char *name);
 __declspec(dllimport) void * __stdcall CopyIcon(void *icon);
-__declspec(dllimport) int __stdcall DestroyCursor(void *cursor);
-__declspec(dllimport) void * __stdcall CreateCursor(void *inst, int hotX, int hotY,
-    int width, int height, const void *andPlane, const void *xorPlane);
 __declspec(dllimport) void * __stdcall SetCursor(void *cursor);
-__declspec(dllimport) int __cdecl wsprintfA(char *out, const char *fmt, ...);
 
 /* gdi32 */
 __declspec(dllimport) void * __stdcall CreateFontA(int height, int width,
@@ -566,12 +482,6 @@ __declspec(dllimport) void * __stdcall CreateFontA(int height, int width,
         uint32_t quality, uint32_t pitchAndFamily, const char *faceName);
 __declspec(dllimport) int __stdcall GetDeviceCaps(void *hdc, int index);
 __declspec(dllimport) int __stdcall SetBkMode(void *hdc, int mode);
-__declspec(dllimport) int __stdcall SetMapMode(void *hdc, int mode);
-__declspec(dllimport) int __stdcall SetROP2(void *hdc, int mode);
-__declspec(dllimport) unsigned int __stdcall SetTextAlign(void *hdc, unsigned int align);
-__declspec(dllimport) void * __stdcall GetCurrentObject(void *hdc, unsigned int type);
-__declspec(dllimport) void * __stdcall CreatePen(int style, int width, uint32_t color);
-__declspec(dllimport) int __stdcall MoveToEx(void *hdc, int x, int y, POINT *old);
 
 typedef struct TEXTMETRICA {
     int32_t tmHeight;
@@ -607,70 +517,13 @@ __declspec(dllimport) void * __stdcall CreatePalette(const void *logPalette);
 #define RGB(r, g, b) \
     ((uint32_t)(((unsigned char)(r) | ((unsigned short)((unsigned char)(g)) << 8)) | \
                      (((uint32_t)(unsigned char)(b)) << 16)))
-__declspec(dllimport) uint32_t __stdcall GetTextColor(void *hdc);
-__declspec(dllimport) uint32_t __stdcall GetBkColor(void *hdc);
-__declspec(dllimport) uint32_t __stdcall SetBkColor(void *hdc, uint32_t color);
-__declspec(dllimport) void * __stdcall CreateSolidBrush(uint32_t color);
-__declspec(dllimport) void * __stdcall CreateBitmap(int width, int height, unsigned int planes,
-                                                    unsigned int bitCount, const void *bits);
-__declspec(dllimport) void * __stdcall CreatePatternBrush(void *bitmap);
-__declspec(dllimport) int __stdcall LPtoDP(void *hdc, POINT *points, int count);
-__declspec(dllimport) int __stdcall ExtSelectClipRgn(void *hdc, void *hrgn, int mode);
-__declspec(dllimport) int __stdcall SetViewportOrgEx(void *hdc, int x, int y, POINT *old);
-__declspec(dllimport) int __stdcall GetMapMode(void *hdc);
-__declspec(dllimport) uint32_t __stdcall GetObjectType(void *obj);
 __declspec(dllimport) int __stdcall BitBlt(void *dst, int x, int y, int width, int height,
                                            void *src, int srcX, int srcY, uint32_t rop);
-__declspec(dllimport) int __stdcall StretchBlt(void *dst, int x, int y, int width, int height,
-                                               void *src, int srcX, int srcY, int srcWidth,
-                                               int srcHeight, uint32_t rop);
-__declspec(dllimport) int __stdcall StretchDIBits(void *hdc, int x, int y, int width, int height,
-                                                  int srcX, int srcY, int srcWidth,
-                                                  int srcHeight, const void *bits,
-                                                  const void *info, unsigned int usage,
-                                                  uint32_t rop);
-__declspec(dllimport) int __stdcall SetDIBitsToDevice(void *hdc, int x, int y,
-                                                      uint32_t width, uint32_t height,
-                                                      int srcX, int srcY, unsigned int startScan,
-                                                      unsigned int lines, const void *bits,
-                                                      const void *info, unsigned int usage);
 
 /* user32, the interface tool */
-__declspec(dllimport) int __stdcall IsWindowVisible(void *hwnd);
 __declspec(dllimport) int __stdcall InvalidateRect(void *hwnd, const WinRect *r, int erase);
-__declspec(dllimport) int __stdcall ValidateRect(void *hwnd, const WinRect *r);
-__declspec(dllimport) int __stdcall AdjustWindowRect(WinRect *r, uint32_t style, int menu);
-__declspec(dllimport) void * __stdcall ChildWindowFromPointEx(void *hwnd, POINT pt,
-                                                              unsigned int flags);
-__declspec(dllimport) void * __stdcall WindowFromPoint(POINT pt);
-__declspec(dllimport) int __stdcall ScreenToClient(void *hwnd, POINT *point);
-__declspec(dllimport) int __stdcall GetCursorPos(POINT *point);
-__declspec(dllimport) int __stdcall DestroyWindow(void *hwnd);
-__declspec(dllimport) int __stdcall ShowWindow(void *hwnd, int show);
-__declspec(dllimport) void * __stdcall GetParent(void *hwnd);
-__declspec(dllimport) int __stdcall GetWindowTextA(void *hwnd, char *text, int size);
-__declspec(dllimport) int __stdcall SetWindowTextA(void *hwnd, const char *text);
-__declspec(dllimport) int __stdcall GetWindowTextLengthA(void *hwnd);
-__declspec(dllimport) int __stdcall EnableWindow(void *hwnd, int enable);
-__declspec(dllimport) void * __stdcall ChildWindowFromPoint(void *hwnd, POINT point);
-__declspec(dllimport) int32_t __stdcall SendMessageA(void *hwnd, unsigned int msg,
-                                                  unsigned int wParam, int32_t lParam);
 __declspec(dllimport) int __stdcall PeekMessageA(void *msg, void *hwnd, unsigned int first,
                                                  unsigned int last, unsigned int remove);
-__declspec(dllimport) unsigned int __stdcall SetTimer(void *hwnd, unsigned int id,
-                                                      unsigned int elapse, void *proc);
-__declspec(dllimport) short __stdcall GetAsyncKeyState(int key);
-__declspec(dllimport) int32_t __stdcall GetDialogBaseUnits(void);
-__declspec(dllimport) int __stdcall EnumWindows(void *proc, int32_t lParam);
-__declspec(dllimport) int __stdcall EnumChildWindows(void *parent, void *proc, int32_t lParam);
-__declspec(dllimport) int __stdcall DialogBoxIndirectParamA(void *instance, const void *dlg,
-                                                            void *parent, void *proc,
-                                                            int32_t lParam);
-__declspec(dllimport) int __stdcall EndDialog(void *hwnd, int result);
-__declspec(dllimport) int __stdcall GetDlgCtrlID(void *hwnd);
-__declspec(dllimport) int __stdcall MapWindowPoints(void *from, void *to, POINT *points,
-                                                    unsigned int count);
-__declspec(dllimport) int __stdcall EqualRect(const WinRect *a, const WinRect *b);
 
 /* gdi32's LOGFONTA */
 typedef struct LOGFONTA {
@@ -689,23 +542,6 @@ typedef struct LOGFONTA {
     unsigned char lfPitchAndFamily; /* +0x1b */
     char lfFaceName[32];            /* +0x1c */
 } LOGFONTA;                         /* 0x3c */
-
-__declspec(dllimport) void * __stdcall CreateFontIndirectA(const LOGFONTA *font);
-__declspec(dllimport) int __stdcall SetPixelV(void *hdc, int x, int y, uint32_t color);
-__declspec(dllimport) int __stdcall BeginPath(void *hdc);
-__declspec(dllimport) int __stdcall EndPath(void *hdc);
-__declspec(dllimport) int __stdcall WidenPath(void *hdc);
-__declspec(dllimport) int __stdcall FillPath(void *hdc);
-__declspec(dllimport) int __stdcall GetTextExtentPoint32A(void *hdc, const char *text, int length,
-                                                          POINT *size);
-__declspec(dllimport) int __stdcall GetCurrentPositionEx(void *hdc, POINT *point);
-__declspec(dllimport) int __stdcall TextOutA(void *hdc, int x, int y, const char *text,
-                                             int length);
-__declspec(dllimport) int __stdcall EnumFontFamiliesA(void *hdc, const char *family,
-                                                      void *proc, int32_t lParam);
-
-/* comctl32 */
-__declspec(dllimport) void __stdcall InitCommonControls(void);
 
 __declspec(dllimport) void * __stdcall BeginPaint(void *hwnd, PAINTSTRUCT *ps);
 __declspec(dllimport) int __stdcall EndPaint(void *hwnd, PAINTSTRUCT *ps);
@@ -727,12 +563,7 @@ __declspec(dllimport) void * __stdcall ShellExecuteA(void *hwnd, const char *op,
 
 /* advapi32 */
 #define HKEY_CURRENT_USER   ((void *)0x80000001)
-#define HKEY_LOCAL_MACHINE  ((void *)0x80000002)
 #define KEY_READ            0x20019
-#define KEY_ALL_ACCESS      0xf003f
-#define REG_BINARY          3
-__declspec(dllimport) int32_t __stdcall RegOpenKeyExA(void *key, const char *subKey,
-    uint32_t options, uint32_t access, void **result);
 __declspec(dllimport) int32_t __stdcall RegQueryValueExA(void *key, const char *name,
     uint32_t *reserved, uint32_t *type, unsigned char *data,
     uint32_t *size);
@@ -743,9 +574,6 @@ __declspec(dllimport) int32_t __stdcall RegCreateKeyExA(void *key, const char *s
 __declspec(dllimport) int32_t __stdcall RegSetValueExA(void *key, const char *name,
     uint32_t reserved, uint32_t type, const unsigned char *data,
     uint32_t size);
-__declspec(dllimport) int32_t __stdcall RegFlushKey(void *key);
-__declspec(dllimport) int __stdcall GetUserNameA(char *buf, uint32_t *size);
-
 
 /* winmm */
 __declspec(dllimport) uint32_t __stdcall timeGetTime(void);
@@ -805,31 +633,6 @@ __declspec(dllimport) uint32_t __stdcall waveOutGetVolume(void *wave,
                                                                uint32_t *volume);
 __declspec(dllimport) uint32_t __stdcall waveOutSetVolume(void *wave,
                                                                uint32_t volume);
-
-/* wsock32: called through the linker's jump thunks, as the exe does, so not dllimport */
-extern int __stdcall WSAStartup(unsigned short version, void *data);
-extern int __stdcall WSACleanup(void);
-extern int __stdcall WSAGetLastError(void);
-extern uint32_t __stdcall socket(int af, int type, int protocol);
-extern int __stdcall closesocket(uint32_t s);
-extern int __stdcall bind(uint32_t s, const void *name, int nameLen);
-extern int __stdcall getsockname(uint32_t s, void *name, int *nameLen);
-extern int __stdcall getsockopt(uint32_t s, int level, int name, void *value,
-                                int *length);
-extern int __stdcall setsockopt(uint32_t s, int level, int name, const void *value,
-                                int length);
-extern int __stdcall recvfrom(uint32_t s, void *buf, int length, int flags,
-                              void *from, int *fromLen);
-extern int __stdcall sendto(uint32_t s, const void *buf, int length, int flags,
-                            const void *to, int toLen);
-extern void * __stdcall gethostbyname(const char *name);
-extern int __stdcall gethostname(char *name, int length);
-extern uint32_t __stdcall accept(uint32_t s, void *addr, int *addrLen);
-extern int __stdcall connect(uint32_t s, const void *name, int nameLen);
-extern int __stdcall recv(uint32_t s, void *buf, int length, int flags);
-extern int __stdcall send(uint32_t s, const void *buf, int length, int flags);
-extern int __stdcall shutdown(uint32_t s, int how);
-extern void * __stdcall gethostbyaddr(const void *addr, int length, int type);
 
 #ifdef __cplusplus
 }
