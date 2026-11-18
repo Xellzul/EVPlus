@@ -62,7 +62,7 @@ void DoSystemMap(void)
     short found;
     short i;
     short j;
-    short routeLen; // BUG (all versions): read by the shift-click hit-test before Clear Route or a shift-click sets it
+    short routeLen;
     int32_t last;
     short prev;
     short s2;
@@ -105,6 +105,13 @@ void DoSystemMap(void)
     if (mapZoom <= 0.0)
         mapZoom = 1.0;
     CompactHyperRoute();
+    routeLen = 1;
+    for (i = 1; i < kMaxHyperRoute; i++) {
+        if (hyperRoute[i] == -1) {
+            routeLen = i;
+            break;
+        }
+    }
     showClearRouteButton = 0;
     if (hypergateMapMode == 0) {
         for (i = 1; i < kMaxHyperRoute; i++) {
