@@ -56,21 +56,16 @@ endif()
 # -- the sources, C or C++ by each file's `// COMPILE: -lang c++` marker ----------------------------
 file(GLOB_RECURSE ALL_C CONFIGURE_DEPENDS ${SRC}/*.c)
 set(GAME_SRC "")
-set(RT_SRC "")
 foreach(f ${ALL_C})
   file(RELATIVE_PATH rel ${SRC} ${f})
-  if(rel MATCHES "^(include|mac|v111)/")
+  if(rel MATCHES "^v111/")
     continue()
   endif()
   file(STRINGS ${f} marker LIMIT_COUNT 30 REGEX "^[ \t]*//[ \t]*COMPILE:.*-lang c\\+\\+")
   if(marker)
     set_source_files_properties(${f} PROPERTIES LANGUAGE CXX)
   endif()
-  if(rel MATCHES "^runtime/")
-    list(APPEND RT_SRC ${f})
-  else()
-    list(APPEND GAME_SRC ${f})
-  endif()
+  list(APPEND GAME_SRC ${f})
 endforeach()
 
 # MW's -enum min, signed plain char, its FP evaluation in double; the decompile's pointer/aliasing habits;
@@ -81,15 +76,11 @@ set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-e
 
 set(WIN_LIBS kernel32 user32 gdi32 winmm advapi32 shell32 comdlg32)
 
-# the runtime as an archive: members are pulled only when referenced, as with MW's rt.lib
-add_library(evnova_ce_rt STATIC ${RT_SRC})
 add_executable(evnova_ce WIN32 ${GAME_SRC} ${SRC}/rsrc/evnova.rc)
-foreach(t evnova_ce evnova_ce_rt)
-  target_include_directories(${t} PRIVATE ${SRC}/include)
-  target_compile_options(${t} PRIVATE ${EVNOVA_FLAGS})
-endforeach()
+target_include_directories(evnova_ce PRIVATE ${SRC}/include)
+target_compile_options(evnova_ce PRIVATE ${EVNOVA_FLAGS})
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "EV Nova CE" LINKER_LANGUAGE CXX)
-target_link_libraries(evnova_ce PRIVATE evnova_ce_rt ${QT_RENAMED} ${QTML_CLIENT_LIB} ${WIN_LIBS} gdiplus)
+target_link_libraries(evnova_ce PRIVATE ${QT_RENAMED} ${QTML_CLIENT_LIB} ${WIN_LIBS} gdiplus)
 target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map"
   # qtmlClient.lib was built with MSVC and asks for its C runtime; mingw's is linked instead
   -Wl,-Xlink=-nodefaultlib:LIBCMT -Wl,-Xlink=-nodefaultlib:OLDNAMES
