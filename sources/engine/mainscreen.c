@@ -115,6 +115,8 @@ void DoMainScreen(void)
     crashlog("setting up main screen graphics");
     SetupInterfaceBackground();
     ShowTheCursor();
+    if (CE_IniInt("debug_fonts", 0) != 0)
+        DebugFontScreen();
     crashlog("doing main screen");
     LoadMainScreenAnim();
     MainScreenAnimDraw();

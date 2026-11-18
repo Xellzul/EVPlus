@@ -28,7 +28,7 @@ extern void SystemSetQuitProc(void (*fn)(void));
 extern int32_t PlatformOpen(void);
 extern int32_t FT_Open(void);
 extern int32_t SetDisplayToSize(uint32_t w, uint32_t h, uint32_t depth, uint32_t flags);
-extern ULong TimerGetTicks(void);                 /* atticks.c: milliseconds since boot */
+extern ULong TimerGetTicks(void);                 /* atticks.c: milliseconds; only differences mean anything */
 extern ULong TimerGetTickRate(void);                 /* atticks.c: the tick rate that goes with it */
 extern int32_t _IndirectValidate(void **handle);         /* atplatheap.c: the heap check */
 extern void * MemoryAllocateClear(uint32_t size);

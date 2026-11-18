@@ -90,6 +90,11 @@ void CE_ReadX2Hotkey(void)
     ceX2Hotkey = strtol(buf, NULL, 0);
 }
 
+int CE_IniInt(const char *key, int def)
+{
+    return GetPrivateProfileIntA(kCEIniSection, key, def, ceIniPath);
+}
+
 double CE_IniDouble(const char *key, const char *def)
 {
     char buf[8];

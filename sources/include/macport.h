@@ -113,6 +113,11 @@ EXTERN_CPP_END
 extern void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t end);
 extern void FrameRect(const Rect *r);
 extern void GetFNum(const unsigned char *name, short *familyID);
+/* the font test page (port/fonttest.c) and what it asks the font cache */
+extern void DebugFontScreen(void);
+extern short FontFamilyCount(void);
+extern const char *FontFamilyName(short familyID);
+extern void FontRealName(short familyID, short size, short style, char *out, int outSize);
 extern void DrawTextRun(const void *text, uint32_t byteCount, Rect *box,
                         Boolean clipped, int height);
 extern CGrafPtr CurrentGrafPort;

@@ -32,6 +32,7 @@ extern unsigned char ceRunInAWindow;
 
 void CE_Startup(void);
 double CE_IniDouble(const char *key, const char *def);
+int CE_IniInt(const char *key, int def);
 void CE_ReadX2Hotkey(void);
 void CE_InitializeMonitor(void);
 unsigned char CE_IsWindowed(void);

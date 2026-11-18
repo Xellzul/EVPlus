@@ -124,7 +124,7 @@ extern void PlatMutexDestroy(PlatMutex *m);
 
 /* -- clocks, log, paths ----------------------------------------------------------------------------- */
 extern uint64_t PlatMicroseconds(void);                   /* monotonic, from any thread */
-extern void PlatSleep(int ms);                            /* 0 = only lets other threads run */
+extern void PlatSleep(int ms);                            /* 0 may return at once */
 extern uint32_t PlatLocalSeconds1904(void);               /* Mac clock: seconds since 1904-01-01, local time */
 extern void PlatDebugLog(const char *msg);
 /* a path in the ANSI code page (the game's) as UTF-8 (FFmpeg's file names on Windows) */
