@@ -1497,8 +1497,7 @@ void DefenseShipAI(ShipObj *ship)
     ship->aiTimer = 0.0f;
     ship->targetStellar = -1;
     if (ship->targetShip != -1) {
-        /* BUG: i is the finished scan's counter, not targetShip */
-        if (!ShipVisibleToShip(&shipData[i], ship))
+        if (!ShipVisibleToShip(&shipData[ship->targetShip], ship))
             ship->targetShip = -1;
     }
     if (ship->targetShip == -1) {
