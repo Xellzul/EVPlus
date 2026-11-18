@@ -199,11 +199,6 @@ void DoMainScreen(void)
     DisposeMainScreenSounds();
 }
 
-// FUNCTION: EVNOVA 0x00486ec0
-void FUN_00486ec0(void)
-{
-}
-
 // FUNCTION: EVNOVA 0x00486ed0
 // MAC: _MainScreenChoice i386 0x0001a72a ppc 0x0001e614
 void MainScreenChoice(short which)

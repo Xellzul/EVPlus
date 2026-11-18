@@ -6282,7 +6282,7 @@ void EndLoopingMovie(void)
     if (loopingMovie != NULL) {
         DisposeMovie(loopingMovie);
         loopingMovie = NULL;
-        FUN_004fc310(gIntroMovieData);
+        QT_DisposeGWorld(gIntroMovieData);
         gIntroMovieData = NULL;
     }
 }
@@ -6449,7 +6449,7 @@ found:
             ShowTheCursor();
         }
         DisposeMovie(movie);
-        FUN_004fc310(gIntroMovieData);
+        QT_DisposeGWorld(gIntroMovieData);
         gIntroMovieData = NULL;
         SWSetPortToWindow(gSpriteWorld);
         ForeColor(blackColor);
@@ -6471,11 +6471,6 @@ void PlayQTMovieFromDesc(short id)
 }
 
 
-
-// FUNCTION: EVNOVA 0x0049e420
-void FUN_0049e420(void)
-{
-}
 
 // FUNCTION: EVNOVA 0x0049e430
 // MAC: _DrawEscortMenuInFrame i386 0x00056268 ppc 0x0005e590

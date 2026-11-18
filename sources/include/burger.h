@@ -240,7 +240,7 @@ extern void HPurge(Handle h);
 extern void Gestalt(int32_t selector, int32_t *result);
 extern short EnterMovies(void);
 extern void ExitMovies(void);
-extern void FUN_004fc310(void *gworld);
+extern void QT_DisposeGWorld(void *gworld);       /* QuickTime's, renamed in CMakeLists.txt */
 extern void SetTrackGWorld(void *track, void *movieData, int32_t a3,
                            short (*proc)(void), int32_t a5);
 extern int32_t GetTimeBaseFlags(void *timeBase);
@@ -580,7 +580,6 @@ extern unsigned char _FT_IsIndirectBusy(void *p);
 extern void **IndirectAllocate(ULong size);
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);
-extern float FUN_004eed20(float lenSquared);
 extern char *ConvertNativePathToPath(const char *path);
 extern void *LoadAFileHandle(const char *path);
 extern void **AllocAHandleClear(ULong size);

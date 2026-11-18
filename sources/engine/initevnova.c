@@ -460,7 +460,6 @@ void InitEVNova(void)
     IterateInGameEventLoop(kEventLoopTicks);
 
     crashlog("opening data files");
-    FUN_0049e420();
     IterateInGameEventLoop(kEventLoopTicks);
     InitColors();
 
@@ -475,7 +474,6 @@ void InitEVNova(void)
     cursorHidden = 0;
     if (settings.windowed == 0)
         HideTheCursor();
-    FUN_00486ec0();
     ST_Open(8, 0);
     oldVolume = ST_GetSysVolume();
 

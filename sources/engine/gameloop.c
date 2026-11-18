@@ -1747,11 +1747,6 @@ void HandleComm(void)
 /* shotData, stride 0x48 */
 
 
-static __inline float FloatSqrt(float x)
-{
-    return FUN_004eed20(x);
-}
-
 #define kMaxCoronaFrames        0x10
 
 // FUNCTION: EVNOVA 0x0042f270
@@ -2017,7 +2012,7 @@ void HandleBeams(unsigned char advance)
 
                         if (best != -1) {
                             off = muzzle;
-                            len = FloatSqrt(XYFloatSquaredDist(&muzzle,
+                            len = sqrtf(XYFloatSquaredDist(&muzzle,
                                       &shipData[best].pos))
                                   - GetMasterShipSpriteXSize(shipData[best].type) * 0.2;
                             Accel(angle, len, &off);
@@ -2148,7 +2143,7 @@ void HandleBeams(unsigned char advance)
 
                             if (bestRoid != -1) {
                                 off = muzzle;
-                                len = FloatSqrt(XYFloatSquaredDist(&muzzle,
+                                len = sqrtf(XYFloatSquaredDist(&muzzle,
                                           &asteroidData[bestRoid].pos))
                                       - GetSpriteYSize(
                                           masterAsteroidSprite[asteroidData[bestRoid].type])

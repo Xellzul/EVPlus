@@ -76,8 +76,8 @@ typedef struct PICTPixmap_t {
 } PICTPixmap_t;
 
 /* QuickTime selector stubs, qtmlClient.lib. The last three are QuickTime's GetPixBaseAddr,
-   GetGWorldDevice and GetGWorldPixMap, linked under address names (tools/qtorder.tsv); those
-   Toolbox names belong to the port's QuickDraw code. */
+   GetGWorldDevice and GetGWorldPixMap, linked under a QT_ prefix (CMakeLists.txt renames them); the
+   plain Toolbox names belong to the port's QuickDraw code. */
 extern Handle NewHandle(int32_t size);                                  /* 0x004f1450 */
 extern void DisposeHandle(Handle h);                                 /* 0x004f1490 */
 extern void MacSetRect(Rect *r, short left, short top, short right, short bottom);
@@ -90,9 +90,9 @@ extern short NewImageGWorld(QTGWorldPtr *gworld, QTImageDescriptionHandle desc,
 extern unsigned char LockPixels(QTPixMapHandle pm);                  /* 0x004fc2f0 */
 extern void GetGWorld(QTGWorldPtr *port, QTGDHandle *device);        /* 0x004fc330 */
 extern void SetGWorld(QTGWorldPtr port, QTGDHandle device);          /* 0x004fc350 */
-extern char *FUN_004fc370(QTPixMapHandle pm);                        /* GetPixBaseAddr */
-extern QTGDHandle FUN_004fc390(QTGWorldPtr gworld);                  /* GetGWorldDevice */
-extern QTPixMapHandle FUN_004fc3b0(QTGWorldPtr gworld);              /* GetGWorldPixMap */
+extern char *QT_GetPixBaseAddr(QTPixMapHandle pm);
+extern QTGDHandle QT_GetGWorldDevice(QTGWorldPtr gworld);
+extern QTPixMapHandle QT_GetGWorldPixMap(QTGWorldPtr gworld);
 
 #define kPixMapRowFlag      0x8000      /* rowBytes: a PixMap, not a BitMap */
 #define kDeviceIndexFlag    0x8000      /* ctFlags: entries are in order, ignore their values */
@@ -650,11 +650,11 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
                 GWorld = NULL;
                 Err = NewImageGWorld(&GWorld, Desc, noNewDevice);
                 if (!Err) {
-                    PixMap = FUN_004fc3b0(GWorld);
+                    PixMap = QT_GetGWorldPixMap(GWorld);
                     LockPixels(PixMap);
                     MacSetRect(&Bounds, 0, 0, (*Desc)->width, (*Desc)->height);
                     GetGWorld(&SavePort, &SaveDevice);
-                    SetGWorld(GWorld, FUN_004fc390(GWorld));
+                    SetGWorld(GWorld, QT_GetGWorldDevice(GWorld));
                     Err = DecompressImage((char *)DataPtr, Desc, PixMap, &Bounds, &Bounds, srcCopy,
                                           NULL);
                     SetGWorld(SavePort, SaveDevice);
@@ -663,7 +663,7 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
                     ImagePtr->RowBytes = (*PixMap)->rowBytes & kQTRowBytesMask;
                     Size = ImagePtr->RowBytes * ImagePtr->Height;
                     ImagePtr->ImagePtr = (Word8 *)AllocAPointer(Size);
-                    memcpy(ImagePtr->ImagePtr, FUN_004fc370(PixMap), Size);
+                    memcpy(ImagePtr->ImagePtr, QT_GetPixBaseAddr(PixMap), Size);
                     switch ((*PixMap)->pixelSize) {
                     case 8:
                         ImagePtr->DataType = IMAGE8_PAL;
@@ -708,7 +708,7 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
                     NonFatal("Unable to decompress QT PICT.\n");
                 }
                 if (GWorld) {
-                    FUN_004fc310(GWorld);
+                    QT_DisposeGWorld(GWorld);
                 }
                 if (Desc) {
                     DisposeHandle((Handle)Desc);

@@ -36,13 +36,13 @@ endif()
 # Four members of qtmlClient.lib define Mac Toolbox functions the port defines too (CopyBits, NewGWorld,
 # Delay, ...). The port's are the ones the game uses, so those members are linked from copies with QuickTime's
 # definitions renamed: no clash, and no member calls one of these names itself, so nothing else changes.
-# QuickTime's DisposeGWorld/GetPixBaseAddr/GetGWorldDevice/GetGWorldPixMap get their exe-address names: the
-# game calls QuickTime's four by those (burgerpict.c, tradedlg.c). The rest get a QT_ prefix.
+# The game calls QuickTime's own DisposeGWorld/GetPixBaseAddr/GetGWorldDevice/GetGWorldPixMap by their QT_ names
+# (burgerpict.c, tradedlg.c).
 set(_qd_dups GetPort PenSize MoveTo Line BackColor SectRect PaintRect EraseRect FrameOval PaintOval RectInRgn
     CopyBits CopyMask DisposePixPat GetPixPat FillCRect RGBForeColor GetGDevice Color2Index GetPicture)
 set(_qt_members QDOffScreenShim QuickdrawShim OSUtilsShim TextUtilsShim)
-set(_qt_renames_QDOffScreenShim _DisposeGWorld=_FUN_004fc310 _GetPixBaseAddr=_FUN_004fc370
-    _GetGWorldDevice=_FUN_004fc390 _GetGWorldPixMap=_FUN_004fc3b0 _NewGWorld=_QT_NewGWorld)
+set(_qt_renames_QDOffScreenShim _DisposeGWorld=_QT_DisposeGWorld _GetPixBaseAddr=_QT_GetPixBaseAddr
+    _GetGWorldDevice=_QT_GetGWorldDevice _GetGWorldPixMap=_QT_GetGWorldPixMap _NewGWorld=_QT_NewGWorld)
 set(_qt_renames_QuickdrawShim "")
 foreach(s ${_qd_dups})
   list(APPEND _qt_renames_QuickdrawShim _${s}=_QT_${s})

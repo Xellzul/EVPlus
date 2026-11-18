@@ -129,7 +129,7 @@ short CalcLeadAngle(ShipObj *self, ShipObj *target, short weaponType,
                 dx -= overridePos->x;
                 dy -= overridePos->y;
             }
-            dist = FUN_004eed20(dx * dx + dy * dy);
+            dist = sqrtf(dx * dx + dy * dy);
             speed = weaponStats[weaponType].speed100;
             if (guidance == kGuidanceRocket) {
                 if (dist <= speed * 19.59)
@@ -182,7 +182,7 @@ short CalcObjectLeadAngle(ShipObj *self, FloatPoint *targetPos, FloatPoint *targ
                 dy -= self->pos.y;
             }
             speed = weaponStats[weaponType].speed100;
-            dist = FUN_004eed20(dx * dx + dy * dy);
+            dist = sqrtf(dx * dx + dy * dy);
             if (guidance == kGuidanceRocket) {
                 if (dist <= speed * 19.59)
                     speed = dist / (speed * 0.316);
@@ -223,7 +223,7 @@ short CalcSpobLeadAngle(SpobRecord *spob, ShipObj *target)
         dx = targetX - spob->pos.h;
         dy = target->pos.y - spob->pos.v;
         speed = weaponStats[weaponType].speed100;
-        dist = FUN_004eed20(dx * dx + dy * dy);
+        dist = sqrtf(dx * dx + dy * dy);
         if (weaponStats[weaponType].guidance == kGuidanceRocket) {
             if (dist <= speed * 19.59)
                 speed = dist / (speed * 0.316);
