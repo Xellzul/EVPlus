@@ -48,7 +48,7 @@ void BlitPixieRLETranslucent8(unsigned char *rleTokens, unsigned char *dstPixel,
                 BlitPixieTranslucentCopy8(dstPixel, rleTokens, count);
 
             rleTokens += count;
-            PtrAddBytes(rleTokens, (-(int32_t)rleTokens) & 3);
+            PtrAddBytes(rleTokens, (-(intptr_t)rleTokens) & 3);
             dstPixel += count;
             break;
 

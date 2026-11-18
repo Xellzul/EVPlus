@@ -1,7 +1,7 @@
 # EV Nova CE with llvm-mingw
 #
 #   cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake
-#   cmake --build build                      -> build/EV Nova CE.exe
+#   cmake --build build                      -> build/evnova64.exe
 #
 # Needs: llvm-mingw (default /opt/llvm-mingw); sh, make and xz once, to build FFmpeg (downloaded, or
 # -DFFMPEG_TARBALL=/path offline; or pass -DFFMPEG_ROOT=/path). The FFmpeg DLLs and its licence are copied next to the exe.
@@ -191,7 +191,9 @@ endforeach()
 # MW's -enum min, signed plain char, its FP evaluation in double; the decompile's pointer/aliasing habits;
 # one section per function so the link drops what nothing uses (as MW's linker does)
 set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-enums -fno-strict-aliasing
-    -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double -w
+    -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double
+    -Wno-everything -Werror=pointer-to-int-cast -Werror=int-to-pointer-cast -Werror=void-pointer-to-int-cast
+    -Werror=int-to-void-pointer-cast
     $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
 
 set(WIN_LIBS kernel32 user32 gdi32 advapi32 shell32 comdlg32)
@@ -207,11 +209,9 @@ set_source_files_properties(${SRC}/platform/platform_sdl.c PROPERTIES COMPILE_OP
 # and for FreeType's: only the glyph renderer sees them
 set_source_files_properties(${SRC}/port/fontraster.c PROPERTIES
     COMPILE_OPTIONS -fno-short-enums INCLUDE_DIRECTORIES ${FREETYPE_ROOT}/include/freetype2)
-set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "EV Nova CE" LINKER_LANGUAGE CXX)
+set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "evnova64" LINKER_LANGUAGE CXX)
 target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${FREETYPE_ROOT}/lib/libfreetype.a
     ${WIN_LIBS})
-target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map"
-  # CE's 2 GB memory pool needs the large-address-aware bit
-  -Wl,--large-address-aware)
+target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map")
 add_custom_command(TARGET evnova_ce POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FFMPEG_DLLS} ${FFMPEG_LICENSE} $<TARGET_FILE_DIR:evnova_ce>)

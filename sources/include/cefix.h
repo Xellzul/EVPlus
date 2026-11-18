@@ -16,7 +16,6 @@ struct DialogRecord;
 
 /* cestartup.c */
 #define kCEIniSection       "EV Nova"
-#define kCEMemoryPoolSize   (2040UL * 1024 * 1024)  /* WinMain's pool: under 2 GiB, no size reads negative */
 
 extern int ceX2Hotkey;
 extern unsigned char ceRunInAWindow;

@@ -176,10 +176,10 @@ int32_t IndirectDeallocate(void **p)
     e = 0;
     if (_IndirectValidate(0) == 0) {
         free(p[0]);
-        p[0] = 0;
-        p[2] = 0;
-        ((char *)p)[0xc] = 0;
-        ((char *)p)[0xd] = 0;
+        ((MemRecord *)p)->ptr = 0;
+        ((MemRecord *)p)->size = 0;
+        ((MemRecord *)p)->locked = 0;
+        ((MemRecord *)p)->used = 0;
     }
     /* BUG: no return here: the caller reads eax, _IndirectValidate's code on its failure and a
        zero left by the stores on success */

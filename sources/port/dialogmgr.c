@@ -112,11 +112,11 @@ typedef struct DlgListRec {
 /* the box a run of wrapped text will occupy, sat on its baseline */
 
 /*
- * The item list is a plain 0x28-stride array hanging off the dialog, and
+ * The item list is a plain ControlRecord array (0x28 stride on 32-bit) hanging off the dialog, and
  * item numbers are 1-based as the Toolbox has them. Every Dialog Manager
  * entry point that takes an item number funnels through this.
  */
-#define kDialogItemSize 0x28
+#define kDialogItemSize sizeof(ControlRecord)
 
 /* An absent item answers zero in each out-parameter except the handle, which
    gets the null record itself. */
@@ -538,7 +538,7 @@ void ParseDITL(DialogPtr dlg, unsigned char *p)
                 item->kind != 1)
                 dlg->editItem = item->itemNo;
         }
-        if (((int32_t)p & 1) != 0)
+        if (((intptr_t)p & 1) != 0)
             p += 1;
     }
 }
@@ -985,6 +985,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     int32_t mods;
     uint32_t saved;    /* the tick rate, then the eventProc's itemHit save: one register */
     int32_t temp;
+    char *text;
     int32_t doubleClick;
     int32_t clicked;
     int32_t localH;
@@ -1155,13 +1156,13 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                     keyChar = localH - (rec->box.left + 2);
                     localH = strlen((char *)rec->data);
                     located = 0;
-                    temp = (int32_t)rec->data;
+                    text = (char *)rec->data;
                     if (doubleClick != 0) {
                         rec->minValue = 0;
                         rec->maxValue = localH;
                     } else {
                         for (pos = 0; pos < localH; pos++) {
-                            w = TextWidth((char *)temp, pos + 1);
+                            w = TextWidth(text, pos + 1);
                             if (keyChar < w) {
                                 located = 1;
                                 rec->maxValue = pos;
@@ -1288,9 +1289,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                         }
                     } else if (keyChar == ASCII_DOWNARROW) {
                         if (editKind == kListItem) {
-                            list = (uint32_t)editRec->data;
-                            list = (int32_t)list;  /* the same round trip */
-                            if (editRec->value < ((DlgListRec *)list)->count) {
+                            if (editRec->value < ((DlgListRec *)editRec->data)->count) {
                                 editRec->value += 1;
                                 dlg->needsUpdate = 1;
                             }

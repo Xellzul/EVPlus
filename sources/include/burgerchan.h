@@ -4,8 +4,8 @@
 #define BURGERCHAN_H
 
 #define kSoundChannels 16
-#define kChannelBytes  0x38
-#define kChannelTable  (kSoundChannels * kChannelBytes)   /* 0x380 */
+#define kChannelBytes  sizeof(SoundChannel)                /* 0x38 on 32-bit */
+#define kChannelTable  (kSoundChannels * kChannelBytes)   /* 0x380 on 32-bit */
 
 /* Jack Jansen's IMA ADPCM coder state (adpcm.c). */
 struct adpcm_state {

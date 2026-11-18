@@ -28,11 +28,12 @@ typedef struct PrefsNode {
 #define kNodeGroup   1
 #define kNodeKey     2
 #define kNodeText    3
-#define kGroupName   0x0c                        /* inline, types 1 and 3 */
-#define kKeyName     0x10                        /* inline, type 2 */
-#define kLineHeader  0x0c                        /* the record without its text */
-#define kTextLineSize 0x10                       /* a section or verbatim line, text[4] */
-#define kKeyLineSize 0x14                        /* an entry, value pointer and key[4] */
+/* the offsets and sizes, as on 32-bit (0x0c, 0x10, 0x0c, 0x10, 0x14), from the record's own layout */
+#define kGroupName   offsetof(PrefsNode, ValueText)   /* inline, types 1 and 3 */
+#define kKeyName     sizeof(PrefsNode)                /* inline, type 2 */
+#define kLineHeader  offsetof(PrefsNode, ValueText)   /* the record without its text */
+#define kTextLineSize (kGroupName + 4)                /* a section or verbatim line, text[4] */
+#define kKeyLineSize (kKeyName + 4)                   /* an entry, value pointer and key[4] */
 #define kLineSize    0x400
 
 #define kOpenBracket  '['

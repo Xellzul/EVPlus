@@ -21,10 +21,6 @@ int GameMain(void)
 {
     CE_Startup();
     CreateGameWindow();
-    MaxMemSize = kCEMemoryPoolSize;
-    if (MaxMemSize < 0x8000000)
-        MaxMemSize = 0x8000000;
-    InitMemory();
     SetDefaultPrefixs();
     atexit(ShutdownWinGame);
     OSCursorReset();

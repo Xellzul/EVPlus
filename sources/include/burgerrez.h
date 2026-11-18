@@ -22,7 +22,7 @@ typedef struct RezEntry {
 } RezEntry;
 
 typedef struct RezName {
-    ULong HashOffset;
+    uintptr_t HashOffset;
     ULong RezNum;
 } RezName;
 

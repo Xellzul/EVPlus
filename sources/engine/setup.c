@@ -209,49 +209,49 @@ void InitArrays(void)
 
     if (AllocFailed(shipData, (ShipObj *)AllocAPointer(sizeof(ShipObj) * kMaxShips)))
         EV_ASSERT_FAIL("Setup.c", 0x1b6, 747);
-    if (AllocFailed(stellarData, (SpobRecord *)AllocAPointer(0x24c000)))
+    if (AllocFailed(stellarData, (SpobRecord *)AllocAPointer(sizeof(SpobRecord) * kMaxStellars)))
         EV_ASSERT_FAIL("Setup.c", 0x1b7, 748);
-    if (AllocFailed(systemData, (SystRecord *)AllocAPointer(0xfe000)))
+    if (AllocFailed(systemData, (SystRecord *)AllocAPointer(sizeof(SystRecord) * kMaxSystems)))
         EV_ASSERT_FAIL("Setup.c", 0x1b8, 749);
-    if (AllocFailed(shipClass, (ShipRec *)AllocAPointer(0x203400)))
+    if (AllocFailed(shipClass, (ShipRec *)AllocAPointer(sizeof(ShipRec) * kMaxShipTypes)))
         EV_ASSERT_FAIL("Setup.c", 0x1b9, 750);
-    if (AllocFailed(weaponStats, (WeapRecord *)AllocAPointer(0xc800)))
+    if (AllocFailed(weaponStats, (WeapRecord *)AllocAPointer(sizeof(WeapRecord) * kMaxWeapTypes)))
         EV_ASSERT_FAIL("Setup.c", 0x1ba, 751);
-    if (AllocFailed(explodData, (BoomSlot *)AllocAPointer(0x300)))
+    if (AllocFailed(explodData, (BoomSlot *)AllocAPointer(sizeof(BoomSlot) * kMaxExplods)))
         EV_ASSERT_FAIL("Setup.c", 0x1bb, 752);
-    if (AllocFailed(explodType, (BoomRecord *)AllocAPointer(0x200)))
+    if (AllocFailed(explodType, (BoomRecord *)AllocAPointer(sizeof(BoomRecord) * kMaxExplodTypes)))
         EV_ASSERT_FAIL("Setup.c", 0x1bc, 753);
-    if (AllocFailed(smokeData, (DebrisSlot *)AllocAPointer(0x600)))
+    if (AllocFailed(smokeData, (DebrisSlot *)AllocAPointer(sizeof(DebrisSlot) * kMaxDebris)))
         EV_ASSERT_FAIL("Setup.c", 0x1bd, 754);
-    if (AllocFailed(beamData, (BeamRecord *)AllocAPointer(0x880)))
+    if (AllocFailed(beamData, (BeamRecord *)AllocAPointer(sizeof(BeamRecord) * kMaxBeams)))
         EV_ASSERT_FAIL("Setup.c", 0x1be, 755);
-    if (AllocFailed(outfitSystem, (OutfRecord *)AllocAPointer(0x6f800)))
+    if (AllocFailed(outfitSystem, (OutfRecord *)AllocAPointer(sizeof(OutfRecord) * kMaxOutfits)))
         EV_ASSERT_FAIL("Setup.c", 0x1bf, 756);
-    if (AllocFailed(dudeData, (DudeRecord *)AllocAPointer(0x9400)))
+    if (AllocFailed(dudeData, (DudeRecord *)AllocAPointer(sizeof(DudeRecord) * kMaxDudes)))
         EV_ASSERT_FAIL("Setup.c", 0x1c0, 757);
-    if (AllocFailed(govtData, (GovtRecord *)AllocAPointer(0x8800)))
+    if (AllocFailed(govtData, (GovtRecord *)AllocAPointer(sizeof(GovtRecord) * kMaxGovts)))
         EV_ASSERT_FAIL("Setup.c", 0x1c1, 758);
-    if (AllocFailed(personData, (PersRecord *)AllocAPointer(0x1e5000)))
+    if (AllocFailed(personData, (PersRecord *)AllocAPointer(sizeof(PersRecord) * kMaxPersons)))
         EV_ASSERT_FAIL("Setup.c", 0x1c2, 759);
-    if (AllocFailed(asteroidData, (AsteroidObj *)AllocAPointer(0x240)))
+    if (AllocFailed(asteroidData, (AsteroidObj *)AllocAPointer(sizeof(AsteroidObj) * kMaxAsteroids)))
         EV_ASSERT_FAIL("Setup.c", 0x1c3, 760);
-    if (AllocFailed(disasterData, (OopsRecord *)AllocAPointer(0x21000)))
+    if (AllocFailed(disasterData, (OopsRecord *)AllocAPointer(sizeof(OopsRecord) * kMaxDisasters)))
         EV_ASSERT_FAIL("Setup.c", 0x1c4, 761);
-    if (AllocFailed(nebulaData, (NebuRecord *)AllocAPointer(0x4100)))
+    if (AllocFailed(nebulaData, (NebuRecord *)AllocAPointer(sizeof(NebuRecord) * kMaxNebulae)))
         EV_ASSERT_FAIL("Setup.c", 0x1c5, 762);
-    if (AllocFailed(fleetData, (FletRecord *)AllocAPointer(0x12400)))
+    if (AllocFailed(fleetData, (FletRecord *)AllocAPointer(sizeof(FletRecord) * kMaxFleets)))
         EV_ASSERT_FAIL("Setup.c", 0x1c6, 763);
-    if (AllocFailed(boxData, (BoxObj *)AllocAPointer(0xa00)))
+    if (AllocFailed(boxData, (BoxObj *)AllocAPointer(sizeof(BoxObj) * kMaxBoxes)))
         EV_ASSERT_FAIL("Setup.c", 0x1c7, 764);
-    if (AllocFailed(podData, (PodObj *)AllocAPointer(0x300)))
+    if (AllocFailed(podData, (PodObj *)AllocAPointer(sizeof(PodObj) * kMaxPods)))
         EV_ASSERT_FAIL("Setup.c", 0x1c8, 765);
-    if (AllocFailed(shotData, (ShotObj *)AllocAPointer(0x2400)))
+    if (AllocFailed(shotData, (ShotObj *)AllocAPointer(sizeof(ShotObj) * kMaxShots)))
         EV_ASSERT_FAIL("Setup.c", 0x1c9, 766);
-    if (AllocFailed(junkData, (JunkRecord *)AllocAPointer(0x29300)))
+    if (AllocFailed(junkData, (JunkRecord *)AllocAPointer(sizeof(JunkRecord) * kMaxJunks)))
         EV_ASSERT_FAIL("Setup.c", 0x1ca, 767);
-    if (AllocFailed(cronEvent, (CronRecord *)AllocAPointer(0x6a000)))
+    if (AllocFailed(cronEvent, (CronRecord *)AllocAPointer(sizeof(CronRecord) * kMaxCrons)))
         EV_ASSERT_FAIL("Setup.c", 0x1cb, 768);
-    if (AllocFailed(rankData, (RankRecord *)AllocAPointer(0x9000)))
+    if (AllocFailed(rankData, (RankRecord *)AllocAPointer(sizeof(RankRecord) * kMaxRanks)))
         EV_ASSERT_FAIL("Setup.c", 0x1cc, 769);
     if (AllocFailed(starData, (StarSlot *)AllocAPointer(sizeof(StarSlot) * kMaxStars)))
         EV_ASSERT_FAIL("Setup.c", 0x1cd, 770);
@@ -259,7 +259,7 @@ void InitArrays(void)
         EV_ASSERT_FAIL("Setup.c", 0x1ce, 771);
     if (AllocFailed(currentMissions, (MissionRecord *)AllocAPointer(sizeof(MissionRecord) * kMaxActiveMissions)))
         EV_ASSERT_FAIL("Setup.c", 0x1cf, 772);
-    if (AllocFailed(currentMissionObjectives, (MissionState *)AllocAPointer(0x140)))
+    if (AllocFailed(currentMissionObjectives, (MissionState *)AllocAPointer(sizeof(MissionState) * kMaxActiveMissions)))
         EV_ASSERT_FAIL("Setup.c", 0x1d0, 773);
 }
 

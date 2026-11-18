@@ -127,7 +127,7 @@ short SWCreateWindowFrame(CWindowPtr srcWindowP, SWFrameRec **newFrameP,
 
     if (tempFrameP != 0) {
         tempFrameP->framePort = GetCWindowGrafPort(srcWindowP);
-        tempFrameP->frameDevice = (void *)GetMainDevice();
+        tempFrameP->frameDevice = (void *)(intptr_t)GetMainDevice();
         tempFrameP->framePixHndl = GetWindowPixMap(srcWindowP);
         if (tempFrameP->framePixHndl == 0)
             tempFrameP->framePixHndl =

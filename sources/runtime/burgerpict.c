@@ -405,7 +405,7 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
     Word32 Size;
 
     memset(ImagePtr, 0, sizeof(Image_t));
-    Parity = (Word)InputPtr & 1;        /* opcodes are word aligned to the picture's start */
+    Parity = (Word)(uintptr_t)InputPtr & 1;        /* opcodes are word aligned to the picture's start */
     ImagePtr->Width = BigShort(InputPtr + 8) - BigShort(InputPtr + 4);
     ImagePtr->Height = BigShort(InputPtr + 6) - BigShort(InputPtr + 2);
     InputPtr += 10;                     /* picSize, picFrame */
@@ -431,7 +431,7 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
 
     Opcode = 0;
     for (;;) {
-        if (Version == 1 || ((Word)InputPtr & 1) != Parity) {
+        if (Version == 1 || ((Word)(uintptr_t)InputPtr & 1) != Parity) {
             Opcode = *InputPtr++;
         }
         if (Version == 2) {

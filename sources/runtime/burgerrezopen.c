@@ -19,7 +19,7 @@ extern "C" {
 static Word8 OnceHit;
 
 #define kRezHeaderSize  0x18
-#define kRezStateSize   0x24
+#define kRezStateSize   offsetof(RezFile, types)   /* BurgerLib's part, 0x24 on 32-bit */
 #define kOldVersion     0x20
 #define kTableOffset    0x0c
 #define kFlagOldFormat  2
@@ -41,6 +41,10 @@ typedef struct RezHeader {
 #define kOldKindShift     10
 #define kOldOffsetMask    0x1fffffffUL
 #define kNameMask         0x0007ffffUL
+/* the table on disk: old format groups and entries 12 bytes each, new format entries 16 */
+#define kDiskGroupOld     12
+#define kDiskEntryOld     12
+#define kDiskEntryNew     16
 
 /* BurgerLib's SwapEndian for the x86 mwcc target. */
 static __inline ULong SwapLong(ULong v)
@@ -100,7 +104,7 @@ Word ResourceFindName(RezFile *Input, const char *name, RezName **Result)
     return 0;
 }
 
-/* Expand the file's resource table into one handle, 20 bytes an entry,
+/* Expand the file's resource table into one handle, one RezEntry an entry (20 bytes on 32-bit),
    the name block copied behind it. Old tables use 12-byte records. */
 /* RezGroupNew (BurgerLib RezGroupNew). */
 // FUNCTION: EVNOVA 0x00500910
@@ -130,14 +134,14 @@ RezGroup **RezGroupNew(ULong *in, RezHeader *header, int32_t flags, ULong base)
                 if (flags & kFlagSwapped)
                     n = SwapLong(n);
                 scan += 3;
-                extra += n * 8 - 4;
+                extra += n * (sizeof(RezEntry) - kDiskEntryOld) - (kDiskGroupOld - sizeof(RezGroup));
                 scan = (ULong *)((Word8 *)scan + n * 12);
             } while (--i);
         } else {
             do {
                 n = scan[1];
                 scan += 2;
-                extra += n * 4;
+                extra += n * (sizeof(RezEntry) - kDiskEntryNew);
                 scan = (ULong *)((Word8 *)scan + n * 16);
             } while (--i);
         }
@@ -291,7 +295,7 @@ void ResourceHashNames(RezFile *rez)
                 do {
                     temp = entry->nameFlags & kNameMask;
                     if (temp != 0) {
-                        out->HashOffset = (ULong)(table + temp);
+                        out->HashOffset = (uintptr_t)(table + temp);
                         out->RezNum = id;
                         out++;
                     }
@@ -303,7 +307,7 @@ void ResourceHashNames(RezFile *rez)
             qsort(LockAHandle((Handle)names), count, sizeof(RezName), RezSortNames);
             out = *(RezName **)names;
             do {
-                out->HashOffset = out->HashOffset - (ULong)table;
+                out->HashOffset = out->HashOffset - (uintptr_t)table;
                 out++;
             } while (--count);
             UnlockAHandle((Handle)names);
@@ -368,8 +372,8 @@ int32_t ResourceInit(RezFile *rez, const char *path, ULong start)
 
 extern Word ResourceAddName(struct RezFile *rez, const char *name); /* 0x005010f0 */
 
-#define kEntryStride   0x14
-#define kGroupHeader   8
+#define kEntryStride   sizeof(RezEntry)    /* 0x14 on 32-bit */
+#define kGroupHeader   sizeof(RezGroup)    /* 8 */
 
 #define kLoadCountOne   0x01000000UL             /* the top byte counts ResourceLoadHandle calls */
 #define kLoadCountMask  0xff000000UL

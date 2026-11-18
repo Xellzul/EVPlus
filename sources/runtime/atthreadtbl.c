@@ -5,17 +5,6 @@
 #include "burger.h"
 #include "platform.h"
 
-/* the caller's lock storage is 16 bytes (gCriticalSection, atsound.c) */
-#define kLockStorage      16
-
-typedef struct Mutex {
-    PlatMutex *section;
-    ULong magic;
-    unsigned char live;
-} Mutex;
-
-_Static_assert(sizeof(Mutex) <= kLockStorage, "a lock must fit the storage its callers give it");
-
 #define kMutexMagic       0xdead1ce5UL
 
 // FUNCTION: EVNOVA 0x005044ce

@@ -5,12 +5,6 @@
 #include "burger.h"
 #include "spriteworld.h"
 
-/* backgroundColor is three shorts at +0xdf, +0xe1, +0xe3 -- ODD offsets, which x86
-   natural alignment cannot produce, so it cannot be declared as a member here.
-   Reached the way spriteworld.c's SWSetBackgroundColor reaches the same three. */
-#define backgroundRed(sw)   (*(unsigned short *)((char *)(sw) + 0xdf))
-#define backgroundGreen(sw) (*(unsigned short *)((char *)(sw) + 0xe1))
-#define backgroundBlue(sw)  (*(unsigned short *)((char *)(sw) + 0xe3))
 
 // FUNCTION: EVNOVA 0x00477630
 // MAC: _SWEnterSpriteWorld i386 0x000b6b30 ppc 0x000c2630
@@ -108,9 +102,9 @@ short SWCreateSpriteWorld(void *mainGDH, SpriteWorldRec **spriteWorldP,
         tempSpriteWorldP->lastMicroseconds = 0;
         tempSpriteWorldP->runningTimeCount = 0;
 
-        backgroundRed(tempSpriteWorldP) = 0;
-        backgroundGreen(tempSpriteWorldP) = 0;
-        backgroundBlue(tempSpriteWorldP) = 0;
+        tempSpriteWorldP->backgroundColor.red = 0;   /* +0xdf on 32-bit */
+        tempSpriteWorldP->backgroundColor.green = 0;   /* +0xe1 on 32-bit */
+        tempSpriteWorldP->backgroundColor.blue = 0;   /* +0xe3 on 32-bit */
         tempSpriteWorldP->backgroundValue = 0;
 
         SWClearStickyError();

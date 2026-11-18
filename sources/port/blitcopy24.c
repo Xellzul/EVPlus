@@ -622,6 +622,22 @@ PicHandle GetPictureNoGamma(int picID)
     return LoadPictResource(picID, 0);
 }
 
+/* A decoded picture as a CopyBits source. The exe passed a record of its own (bounds, then the bit depth
+   where a PixMap has pixelSize, then the Image_t) that only lined up with a PixMap's fields because every
+   pointer and integer there was 4 bytes; this fills a PixMap. (The exe's record also put AlphaPtr where
+   originV is; nothing reads originV.) */
+static void ImageAsPixMap(PixMap *pm, const Image_t *im)
+{
+    SetRect(&pm->bounds, 0, 0, im->Width, im->Height);
+    pm->pixelSize = (im->DataType + 7) & ~7;
+    pm->baseAddr = im->ImagePtr;
+    pm->ctab = im->PalettePtr;
+    pm->originV = 0;
+    pm->width = im->Width;
+    pm->height = im->Height;
+    pm->rowBytes = im->RowBytes;
+}
+
 /*
  * Blits a decoded picture straight into the current port. Name invented - the
  * mac has no twin, since on that side the caller would have had a real PixMap
@@ -630,22 +646,14 @@ PicHandle GetPictureNoGamma(int picID)
 // FUNCTION: EVNOVA 0x004b9070
 void DrawPicHandle(PicHandle pic, Rect *dstRect)
 {
-    SrcBitMap src;
+    PixMap src;
 
     if (pic == NULL || dstRect == NULL)
         return;
     if (CurrentGrafPort == NULL)
         return;
 
-    SetRect(&src.bounds, 0, 0, pic->Width, pic->Height);
-    src.rowBytes = (pic->DataType + 7) & ~7;
-    src.image.ImagePtr = pic->ImagePtr;
-    src.image.PalettePtr = pic->PalettePtr;
-    src.image.AlphaPtr = pic->AlphaPtr;
-    src.image.Width = pic->Width;
-    src.image.Height = pic->Height;
-    src.image.RowBytes = pic->RowBytes;
-    src.image.DataType = pic->DataType;
+    ImageAsPixMap(&src, pic);
     CopyBits((BitMapPtr)&src, GetPortBitMapForCopyBits(CurrentGrafPort),
              &src.bounds, dstRect, 0, NULL);
 }
@@ -996,7 +1004,7 @@ void LineTo(short h, short v)
                 count -= i;
                 nRows = err / dx;
                 err = err % dx;
-                p = (char *)((int32_t)p + yStep * nRows);
+                p = (char *)((intptr_t)p + yStep * nRows);
                 y0 += nRows;
             }
             if (x1 < clipLeft) {
@@ -1011,7 +1019,7 @@ void LineTo(short h, short v)
                 count -= i;
                 nRows = err / dx;
                 err = err % dx;
-                p = (char *)((int32_t)p + yStep * nRows);
+                p = (char *)((intptr_t)p + yStep * nRows);
                 y0 += nRows;
             }
             if (x1 >= clipRight) {
@@ -1023,11 +1031,11 @@ void LineTo(short h, short v)
             i = clipTop - y0;
             i = (i * dx - err) / dy + 1;
             err += i * dy;
-            p = (char *)((int32_t)p + i * xStep);
+            p = (char *)((intptr_t)p + i * xStep);
             count -= i;
             nRows = err / dx;
             err = err % dx;
-            p = (char *)((int32_t)p + yStep * nRows);
+            p = (char *)((intptr_t)p + yStep * nRows);
         }
         if (y1 >= clipBottom) {
             i = (y1 - clipBottom) + 1;
@@ -1052,7 +1060,7 @@ void LineTo(short h, short v)
                         *(unsigned short *)q = color32;
                         q += 2;
                     }
-                    q = (char *)((int32_t)q + rowAdvance);
+                    q = (char *)((intptr_t)q + rowAdvance);
                     rows--;
                 } while (rows != 0);
                 if (count != 0) {
@@ -1060,9 +1068,9 @@ void LineTo(short h, short v)
                         err += dy;
                         if (err >= dx) {
                             err -= dx;
-                            p = (char *)((int32_t)p + yStep);
+                            p = (char *)((intptr_t)p + yStep);
                         }
-                        p = (char *)((int32_t)p + xStep);
+                        p = (char *)((intptr_t)p + xStep);
                         q = p;
                         rows = penH;
                         do {
@@ -1090,9 +1098,9 @@ void LineTo(short h, short v)
                         err += dy;
                         if (err >= dx) {
                             err -= dx;
-                            p = (char *)((int32_t)p + yStep);
+                            p = (char *)((intptr_t)p + yStep);
                         }
-                        p = (char *)((int32_t)p + xStep);
+                        p = (char *)((intptr_t)p + xStep);
                         *(unsigned short *)p = color32;
                     } while (--count != 0);
                 }
@@ -1111,11 +1119,11 @@ void LineTo(short h, short v)
             rows = (rows * dy - err) / dx + 1;
             y0 += rows;
             err += rows * dx;
-            p = (char *)((int32_t)p + rows * yStep);
+            p = (char *)((intptr_t)p + rows * yStep);
             count -= rows;
             i = err / dy;
             err = err % dy;
-            p = (char *)((int32_t)p + xStep * i);
+            p = (char *)((intptr_t)p + xStep * i);
         }
         if (x1 < clipLeft) {
             i = clipLeft - x1;
@@ -1129,11 +1137,11 @@ void LineTo(short h, short v)
             i = (i * dy - err) / dx + 1;
             y0 += i;
             err += i * dx;
-            p = (char *)((int32_t)p + i * yStep);
+            p = (char *)((intptr_t)p + i * yStep);
             count -= i;
             nRows = err / dy;
             err = err % dy;
-            p = (char *)((int32_t)p + xStep * nRows);
+            p = (char *)((intptr_t)p + xStep * nRows);
         }
         if (x1 >= clipRight) {
             i = (x1 - clipRight) + 1;
@@ -1145,11 +1153,11 @@ void LineTo(short h, short v)
     if (y0 < clipTop) {
         skipped = clipTop - y0;
         err += skipped * dx;
-        p = (char *)((int32_t)p + skipped * yStep);
+        p = (char *)((intptr_t)p + skipped * yStep);
         count -= skipped;
         i = err / dy;
         err = err % dy;
-        p = (char *)((int32_t)p + xStep * i);
+        p = (char *)((intptr_t)p + xStep * i);
     }
     if (y1 >= clipBottom)
         count -= (y1 - clipBottom) + 1;
@@ -1170,7 +1178,7 @@ void LineTo(short h, short v)
                     *(unsigned short *)q = color32;
                     q += 2;
                 }
-                q = (char *)((int32_t)q + rowAdvance);
+                q = (char *)((intptr_t)q + rowAdvance);
                 rows--;
             } while (rows != 0);
             if (count != 0) {
@@ -1178,9 +1186,9 @@ void LineTo(short h, short v)
                     err += dx;
                     if (err >= dy) {
                         err -= dy;
-                        p = (char *)((int32_t)p + xStep);
+                        p = (char *)((intptr_t)p + xStep);
                     }
-                    p = (char *)((int32_t)p + yStep);
+                    p = (char *)((intptr_t)p + yStep);
                     q = p;
                     rows = penH;
                     do {
@@ -1196,7 +1204,7 @@ void LineTo(short h, short v)
                             *(unsigned short *)q = color32;
                             q += 2;
                         }
-                        q = (char *)((int32_t)q + rowAdvance);
+                        q = (char *)((intptr_t)q + rowAdvance);
                         rows--;
                     } while (rows != 0);
                 } while (--count != 0);
@@ -1208,9 +1216,9 @@ void LineTo(short h, short v)
                     err += dx;
                     if (err >= dy) {
                         err -= dy;
-                        p = (char *)((int32_t)p + xStep);
+                        p = (char *)((intptr_t)p + xStep);
                     }
-                    p = (char *)((int32_t)p + yStep);
+                    p = (char *)((intptr_t)p + yStep);
                     *(unsigned short *)p = color32;
                 } while (--count != 0);
             }
@@ -1991,22 +1999,14 @@ Image_t *GetCIcon(short id)
 // FUNCTION: EVNOVA 0x004bbbf0
 void nv_BlitImageOr(Rect *dstRect, Image_t *icon)
 {
-    SrcBitMap src;
+    PixMap src;
 
     if (icon == NULL || dstRect == NULL)
         return;
     if (CurrentGrafPort == NULL)
         return;
 
-    SetRect(&src.bounds, 0, 0, icon->Width, icon->Height);
-    src.rowBytes = (icon->DataType + 7) & ~7;
-    src.image.ImagePtr = icon->ImagePtr;
-    src.image.PalettePtr = icon->PalettePtr;
-    src.image.AlphaPtr = icon->AlphaPtr;
-    src.image.Width = icon->Width;
-    src.image.Height = icon->Height;
-    src.image.RowBytes = icon->RowBytes;
-    src.image.DataType = icon->DataType;
+    ImageAsPixMap(&src, icon);
     CopyBits((BitMapPtr)&src, GetPortBitMapForCopyBits(CurrentGrafPort),
              &src.bounds, dstRect, 1, NULL);
 }
@@ -2079,7 +2079,7 @@ void FillCRect(Rect *dstRect, Image_t *pat)
     Rect srcR;
     Rect dstR;
     int x;
-    SrcBitMap src;
+    PixMap src;
     unsigned int cols;
     unsigned int rows;
     unsigned int tileW;
@@ -2102,15 +2102,7 @@ void FillCRect(Rect *dstRect, Image_t *pat)
     if (cols == 0 || rows == 0)
         return;
 
-    SetRect(&src.bounds, 0, 0, tileW, tileH);
-    src.rowBytes = (pat->DataType + 7) & ~7;
-    src.image.ImagePtr = pat->ImagePtr;
-    src.image.PalettePtr = pat->PalettePtr;
-    src.image.AlphaPtr = pat->AlphaPtr;
-    src.image.Width = pat->Width;
-    src.image.Height = pat->Height;
-    src.image.RowBytes = pat->RowBytes;
-    src.image.DataType = pat->DataType;
+    ImageAsPixMap(&src, pat);
     y = 0;
     do {
         col = cols;

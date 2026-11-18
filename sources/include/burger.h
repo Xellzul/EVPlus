@@ -180,10 +180,15 @@ extern int32_t WritePrefsFile(struct PrefsNode *file, const char *path);
 extern uint32_t gSaveLeftVolume;
 extern uint32_t gSaveMaxVolume;
 extern int32_t MouseClicked;
-extern char gCriticalSection[16];
+/* a lock (atthreadtbl.c: CriticalCreate .. CriticalLeave take its address) */
+typedef struct Mutex {
+    struct PlatMutex *section;
+    ULong magic;
+    unsigned char live;
+} Mutex;
+extern Mutex gCriticalSection;                   /* the sound mixer's lock (atsound.c) */
 extern unsigned char gSoundToolOpen;
 extern Word8 ResourceJustLoaded;                 /* 0x00870e11, set by ResourceLoadHandle */
-extern Word32 MaxMemSize;                        /* 0x00576c50, read by InitMemory */
 /* handles */
 extern void **AllocAHandle2(Word32 MemSize, Word Flag);
 extern void DeallocAHandle(void *MemHandle);
@@ -191,10 +196,6 @@ extern uint32_t GetAHandleSize(Handle h);
 extern Handle ResizeAHandle(Handle h, uint32_t size);
 extern char * LockAHandle(Handle h);
 extern void UnlockAHandle(Handle h);
-typedef void (*MemPurgeProcPtr)(Word Stage);
-extern Word PurgeHandles(Word32 MemSize);
-extern void CompactHandles(void);
-extern void DumpHandles(void);
 extern void SetHandlePurgeFlag(void **handle, Word flag);
 
 /* QuickTime calls, media/quicktime.c */

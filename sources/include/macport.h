@@ -88,13 +88,6 @@ typedef CGrafPtr GrafPtr;
 typedef CWindowPtr WindowRef;
 typedef struct BitMap *BitMapPtr;
 
-typedef struct SrcBitMap {
-    Rect bounds;
-    uint32_t rowBytes;
-    Image_t image;
-    int32_t unk28[2];
-} SrcBitMap;
-
 typedef struct GWorldContainer {
     CGrafPtr world;
     Rect bounds;
@@ -549,7 +542,6 @@ extern void IncrementDate(DateTimeRec *date, int32_t daysToAdd);
 extern char *PtoCstr(unsigned char *str);
 extern unsigned char *CtoPstr(char *str);
 
-#define PORT_PIXMAP(port) ((PixMapPtr)((char *)(port) + 4))
 #define kAutoKey       5
 #define kBlue555  0x001f
 #define kCharCodeMask  0xff
@@ -697,6 +689,9 @@ extern void PStr2CStr(char *dst, const unsigned char *src);
 extern void PaintOval(Rect *r);
 extern void PenSize(short width, short height);
 extern void CloseMovieFile(short resRefNum);
+/* QuickDraw's PtInRect under a link name of its own: on 64-bit Windows names are not decorated, and
+   user32's PtInRect (which SDL uses) would clash with it */
+#define PtInRect QD_PtInRect
 extern int PtInRect(int h, int v, Rect *r);
 extern void QDReleaseResource(PicHandle pic);
 extern void RGBForeColor(const RGBColor *color);

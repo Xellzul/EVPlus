@@ -109,7 +109,6 @@ extern void HideTheMenuBar(void);
 extern void IncrementGameTime(void);
 extern void InitArrays(void);
 extern void InitEVNova(void);
-extern void InitMemory(void);
 extern void InitMissions(void);
 extern void InitObjects(void);
 extern void InitSprites(void);

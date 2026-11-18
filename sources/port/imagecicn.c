@@ -38,7 +38,7 @@ int ImageParseCicn(Image_t *Output, const Word8 *InputPtr)
     Word count;
 
     WorkPtr = (Word8 *)InputPtr;
-    memset(Output, 0, 0x1c);
+    memset(Output, 0, sizeof(Image_t));
     sp = (Word16 *)WorkPtr;
     Output->Width = (short)SwapUShort(sp + 6)
                   - (short)SwapUShort(sp + 4);

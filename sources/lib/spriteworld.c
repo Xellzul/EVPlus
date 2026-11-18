@@ -35,7 +35,7 @@ short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr src
 
     windRect = *srcRectP;
 
-    mainGDH = (void *)GetMainDevice();
+    mainGDH = (void *)(intptr_t)GetMainDevice();
 
     if (offscreenRectP == 0) {
         tempRect = windRect;

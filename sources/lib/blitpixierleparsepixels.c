@@ -102,7 +102,7 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
                     case 2:
                         *runToken = runCount + RLE_LITERAL;
-                        tokens += (-(int32_t)tokens) & 3;
+                        tokens += (-(intptr_t)tokens) & 3;
                         runToken = (int32_t *)tokens;
                         tokens += 4;
                         state = 1;
@@ -210,7 +210,7 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
             case 2:
                 *runToken = runCount + RLE_LITERAL;
-                tokens += (-(int32_t)tokens) & 3;
+                tokens += (-(intptr_t)tokens) & 3;
                 break;
 
             case 3:
@@ -224,7 +224,7 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
                 break;
             }
 
-            *rowHeader = (int32_t)(tokens - 4) + RLE_ROW - (int32_t)rowHeader;
+            *rowHeader = (int32_t)((tokens - 4) - (unsigned char *)rowHeader) + RLE_ROW;
 
             srcRow += rowBytes;
             maskRow += rowBytes;

@@ -44,7 +44,7 @@ void *LinkedListGetEntryData(ListRec *list, ULong index)
 }
 #endif
 
-#define kListNodeSize   0x10
+#define kListNodeSize   sizeof(ListNode)   /* 0x10 on 32-bit */
 
 // FUNCTION: EVNOVA 0x004ff8a0
 void LinkedListAddNewEntryEnd(ListRec *list, void *data)

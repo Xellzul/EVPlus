@@ -4170,6 +4170,7 @@ Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
     Boolean missed;
     uint32_t oldest;
     int32_t j;
+    Rect *r;
     short id;
 
     slot = -1;
@@ -4204,20 +4205,20 @@ Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
     ForeColor(blackColor);
     pic = GetPicture(picID);
     if (pic != 0) {
-        j = (int32_t)&listPicOffRect[(short)slot];
-        DrawPicHandle(pic, (Rect *)j);
+        r = &listPicOffRect[(short)slot];
+        DrawPicHandle(pic, r);
         QDReleaseResource(pic);
         iconCache[(short)slot].picID = picID;
         iconCache[(short)slot].stamp = ReadTick();
         missed = 0;
     } else {
-        j = (int32_t)&listPicOffRect[(short)slot];
-        PaintRect((Rect *)j);
+        r = &listPicOffRect[(short)slot];
+        PaintRect(r);
         missed = 1;
     }
     SetPort(savedPort);
     CopyBits((BitMapPtr)GetGWCPixMap(&iconsPort), (BitMapPtr)GetGWCPixMap(dest),
-             (Rect *)j, destRect, 0, 0);
+             r, destRect, 0, 0);
     return missed;
 }
 

@@ -1,18 +1,18 @@
-# Toolchain file: 32-bit Windows with llvm-mingw (clang + lld).
+# Toolchain file: 64-bit Windows (x86_64) with llvm-mingw (clang + lld).
 #   cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake [-DLLVM_MINGW=/opt/llvm-mingw]
 set(CMAKE_SYSTEM_NAME Windows)
-set(CMAKE_SYSTEM_PROCESSOR i686)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
 if(NOT LLVM_MINGW)
   set(LLVM_MINGW /opt/llvm-mingw)
 endif()
 set(LLVM_MINGW "${LLVM_MINGW}" CACHE PATH "llvm-mingw install root")
-set(_t ${LLVM_MINGW}/bin/i686-w64-mingw32)
+set(_t ${LLVM_MINGW}/bin/x86_64-w64-mingw32)
 set(CMAKE_C_COMPILER   ${_t}-clang)
 set(CMAKE_CXX_COMPILER ${_t}-clang++)
 set(CMAKE_RC_COMPILER  ${_t}-windres)
 set(CMAKE_AR           ${LLVM_MINGW}/bin/llvm-ar)
 set(CMAKE_RANLIB       ${LLVM_MINGW}/bin/llvm-ranlib)
-set(CMAKE_FIND_ROOT_PATH ${LLVM_MINGW}/i686-w64-mingw32)
+set(CMAKE_FIND_ROOT_PATH ${LLVM_MINGW}/x86_64-w64-mingw32)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)

@@ -22,7 +22,7 @@ void BlitPixieRLEAddOver8(unsigned char *rleTokens, unsigned char *dstPixel,
         case 2:
             BlitPixieAddOverCopy8(dstPixel, rleTokens, count);
             rleTokens += count;
-            PtrAddBytes(rleTokens, (-(int32_t)rleTokens) & 3);
+            PtrAddBytes(rleTokens, (-(intptr_t)rleTokens) & 3);
             dstPixel += count;
             break;
 

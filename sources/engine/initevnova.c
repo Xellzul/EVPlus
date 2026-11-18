@@ -372,7 +372,6 @@ void InitEVNova(void)
     PlatformOpen();
     KeyboardInit();
     MouseInit();
-    InitMemory();
     SetDefaultPrefixs();
     OpenPrefs();
 

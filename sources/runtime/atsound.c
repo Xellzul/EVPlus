@@ -37,7 +37,7 @@ int32_t ST_Open(unsigned short channels, ULong device)
         err = e;
         goto done;
     }
-    e = CriticalCreate(gCriticalSection);
+    e = CriticalCreate(&gCriticalSection);
     if (e != 0) {
         err = e;
         goto done;
@@ -93,7 +93,7 @@ void ST_Close(void)
     if (gSoundToolOpen != 0) {
         ST_HaltSound(0);
         _ST_DisposeSoundPump();
-        e = CriticalDispose(gCriticalSection);
+        e = CriticalDispose(&gCriticalSection);
         if (e != 0)
             err = e;
         gSoundToolOpen = 0;
@@ -119,7 +119,7 @@ void ST_DisposeSound(void *sound)
     int32_t err;
 
     err = 0;
-    if (sound != 0 && ((int32_t)sound & 1) == 0)
+    if (sound != 0 && ((intptr_t)sound & 1) == 0)
         MemoryDeallocate(sound);
 }
 
@@ -172,7 +172,7 @@ ULong ST_PlaySoundParam(SoundRequest *req)
             req->leftLevel = kMaxLevel;
 
         i = 0;
-        CriticalEnter(gCriticalSection);
+        CriticalEnter(&gCriticalSection);
         // BUG: gTheVoices[i] is read before the i < kSoundChannels test; with all 16 channels busy
         // and none preemptable this reads gTheVoices[16], one past the array
         while (gTheVoices[i].sound != 0 && i < kSoundChannels && preempt == 0) {
@@ -185,7 +185,7 @@ ULong ST_PlaySoundParam(SoundRequest *req)
         }
 
         if (i >= kSoundChannels) {
-            CriticalLeave(gCriticalSection);
+            CriticalLeave(&gCriticalSection);
             return 0;
         }
 
@@ -225,7 +225,7 @@ ULong ST_PlaySoundParam(SoundRequest *req)
 
         id = gTheVoices[i].id;
         gNumVoices++;
-        CriticalLeave(gCriticalSection);
+        CriticalLeave(&gCriticalSection);
     }
     return id;
 }
@@ -235,7 +235,7 @@ ULong ST_PlaySoundParam(SoundRequest *req)
 unsigned char gSoundToolOpen;                      /* 0x00870e12, live flag */
 int32_t gNumVoices;                               /* 0x00870db0, in use */
 SoundChannel gTheVoices[kSoundChannels];       /* 0x0086f718, 0x380 B */
-char gCriticalSection[16];                           /* 0x0086dc88, the lock */
+Mutex gCriticalSection;                             /* 0x0086dc88, the lock (16 bytes of storage in the exe) */
 SoundRequest gSoundVoiceStatus;                       /* 0x008707dc, callback ref */
 
 /* Counts the channels this sound occupies; a null sound counts them all. */
@@ -250,15 +250,15 @@ unsigned short ST_IsSoundPlaying(void *sound)
     found = 0;
     if (gSoundToolOpen != 0) {
         i = 0;
-        CriticalEnter(gCriticalSection);
+        CriticalEnter(&gCriticalSection);
         while (i < gNumVoices) {
-            if ((void *)gTheVoices[i].id == sound
+            if ((void *)(uintptr_t)gTheVoices[i].id == sound
                 || gTheVoices[i].sound == sound
                 || sound == 0)
                 found = found + 1;
             i = i + 1;
         }
-        CriticalLeave(gCriticalSection);
+        CriticalLeave(&gCriticalSection);
     }
     return found;
 }
@@ -276,9 +276,9 @@ void ST_HaltSound(void *sound)
     snd = 0;
     if (gSoundToolOpen != 0) {
         i = 0;
-        CriticalEnter(gCriticalSection);
+        CriticalEnter(&gCriticalSection);
         while (i < gNumVoices) {
-            if ((void *)gTheVoices[i].id == sound
+            if ((void *)(uintptr_t)gTheVoices[i].id == sound
                 || gTheVoices[i].sound == sound
                 || sound == 0) {
                 done = gTheVoices[i].done;
@@ -297,7 +297,7 @@ void ST_HaltSound(void *sound)
                 i++;
             }
         }
-        CriticalLeave(gCriticalSection);
+        CriticalLeave(&gCriticalSection);
     }
 }
 
@@ -540,9 +540,9 @@ void _ST_MixVoices(short *buffer, ULong frames)
 // FUNCTION: EVNOVA 0x004d6d00
 void _ST_MixerDispatch(short *buffer, ULong frames)
 {
-    CriticalEnter(gCriticalSection);
+    CriticalEnter(&gCriticalSection);
     _ST_MixVoices(buffer, frames);
-    CriticalLeave(gCriticalSection);
+    CriticalLeave(&gCriticalSection);
 }
 
 /* Where the sound header sits in a `snd ' resource: the data offset its

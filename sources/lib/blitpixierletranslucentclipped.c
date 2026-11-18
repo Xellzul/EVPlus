@@ -102,7 +102,7 @@ void BlitPixieRLETranslucentClipped(unsigned char *rleTokens, unsigned char *dst
             rleTokens += count;
             x += count;
             dstPixel += count;
-            rleTokens += (-(int32_t)rleTokens) & 3;
+            rleTokens += (-(intptr_t)rleTokens) & 3;
             break;
 
         case 3:
@@ -210,7 +210,7 @@ void BlitPixieRLEAddOverClipped(unsigned char *rleTokens, unsigned char *dstPixe
             rleTokens += count;
             x += count;
             dstPixel += count;
-            rleTokens += (-(int32_t)rleTokens) & 3;
+            rleTokens += (-(intptr_t)rleTokens) & 3;
             break;
 
         case 3:
@@ -341,7 +341,7 @@ void BlitPixieRLETranslucentClipped8(unsigned char *rleTokens, unsigned char *ds
             rleTokens += count;
             x += count;
             dstPixel += count;
-            rleTokens += (-(int32_t)rleTokens) & 3;
+            rleTokens += (-(intptr_t)rleTokens) & 3;
             break;
 
         case 3:
@@ -449,7 +449,7 @@ void BlitPixieRLEAddOverClipped8(unsigned char *rleTokens, unsigned char *dstPix
             rleTokens += count;
             x += count;
             dstPixel += count;
-            rleTokens += (-(int32_t)rleTokens) & 3;
+            rleTokens += (-(intptr_t)rleTokens) & 3;
             break;
 
         case 3:

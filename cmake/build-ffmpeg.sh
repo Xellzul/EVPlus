@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cross-builds the minimal LGPL FFmpeg the game's media layer uses (sources/media/media.c), as 32-bit
+# Cross-builds the minimal LGPL FFmpeg the game's media layer uses (sources/media/media.c), as 64-bit
 # Windows DLLs with llvm-mingw, and installs its licence as share/licenses/FFmpeg-COPYING.LGPLv2.1.txt. CMake
 # runs this on the first configure (into build/ffmpeg) unless -DFFMPEG_ROOT points at an existing install.
 #
@@ -23,11 +23,11 @@ mkdir -p "$work"
 tar -xJf "$tarball" -C "$work"
 src=$(find "$work" -mindepth 1 -maxdepth 1 -type d -name 'ffmpeg-*' | head -n 1)
 
-t=$llvm/bin/i686-w64-mingw32
+t=$llvm/bin/x86_64-w64-mingw32
 cd "$src"
 ./configure \
     --prefix="$prefix" \
-    --target-os=mingw32 --arch=x86 --enable-cross-compile --cross-prefix="$t-" \
+    --target-os=mingw32 --arch=x86_64 --enable-cross-compile --cross-prefix="$t-" \
     --cc="$t-clang" --cxx="$t-clang++" --ld="$t-clang" \
     --ar="$llvm/bin/llvm-ar" --ranlib="$llvm/bin/llvm-ranlib" --nm="$llvm/bin/llvm-nm" \
     --strip="$llvm/bin/llvm-strip" --windres="$t-windres" \

@@ -60,7 +60,7 @@ void BlitPixieRLEClipped(unsigned char *rleTokens, unsigned char *dstPixel,
             rleTokens += count;
             x += count;
             dstPixel += count;
-            rleTokens += (-(int32_t)rleTokens) & 3;
+            rleTokens += (-(intptr_t)rleTokens) & 3;
             break;
 
         case 3:
@@ -181,7 +181,7 @@ void FixupRLEPixelData(unsigned char *tokens, RLEPixelData *header)
                 break;
             }
 
-            tokens += (-(int32_t)tokens) & 3;
+            tokens += (-(intptr_t)tokens) & 3;
             break;
 
         case 4:

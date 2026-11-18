@@ -5,7 +5,7 @@
 
 EXTERN_C_BEGIN
 
-#define ALIGN_PTR(p) ( -((int32_t)(p)) & 3)
+#define ALIGN_PTR(p) ( -((intptr_t)(p)) & 3)
 
 // FUNCTION: EVNOVA 0x00472190
 // MAC: _BlitPixieRLECollision i386 0x000c0c8d ppc 0x000cca58
