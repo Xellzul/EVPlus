@@ -25,20 +25,6 @@
 #include "player.h"
 #include "ships.h"
 #include "sound.h"
-#ifdef MACBUILD
-extern void CarbonHackCleanup(void);
-extern FSRef *novaSupportFolder;
-extern short startupDepth;
-extern short oldDepth;
-extern int32_t gSystemVersion;
-extern double userSpeedSetting;
-extern void InitCluts(void);
-extern void BlitPixieDitherInit(void);
-extern int32_t QDGetNativeWindowFromPort(CGrafPtr port);
-extern int _CGSDefaultConnection(void);
-extern int CGSSetWindowDepthLimit(int cid, int window, int depth);
-extern int CGSSetWindowDepth(int cid, int window, int depth);
-#endif
 
 /* the resource type names in the log lines: MacRoman in the 1.0.10 text, UTF-8 in 1.1.1's */
 #define kSpinTypeName "sp\x95n"
@@ -70,17 +56,6 @@ void SetupSpriteWorld(void)
         ST_Close();
         ExitToShell();
     }
-#if V111
-    if (useLegacyRenderingPipeline) {
-        if (gSpriteWorld->pixelDepth != 8 && gSpriteWorld->pixelDepth != 16) {
-            FadeScreenIn();
-            GetIndString(str, kAlertStrList, 37);
-            EVNoteAlert(str);
-            ST_Close();
-            ExitToShell();
-        }
-    }
-#else
     if (gSpriteWorld->pixelDepth != 8 && gSpriteWorld->pixelDepth != 16) {
         FadeScreenIn();
         GetIndString(str, kAlertStrList, 37);
@@ -88,7 +63,6 @@ void SetupSpriteWorld(void)
         ST_Close();
         ExitToShell();
     }
-#endif
 
     SWCreateSpriteLayer(&starLayer);
     SWCreateSpriteLayer(&stellarLayer);
@@ -192,88 +166,6 @@ void SetupSpriteWorld(void)
 // MAC: _SetupWind i386 0x0001b462 ppc 0x0001f524
 void SetupWind(void)
 {
-#ifdef MACBUILD
-    Rect bounds;
-#ifndef MAC1010
-    int32_t window;
-#elif TARGET_API_MAC_CARBON
-    short width, height;
-#endif
-
-    fullScreenRestore = 0;
-    if (settings.windowed) {
-        bounds = mainWindRect;
-        if (mainWindRect.right - mainWindRect.left > 832
-                && mainWindRect.bottom - mainWindRect.top > 624)
-            SetRect(&mainWindRect, 0, 0, 832, 604);
-        else if (mainWindRect.right - mainWindRect.left > 800
-                && mainWindRect.bottom - mainWindRect.top > 600)
-            SetRect(&mainWindRect, 0, 0, 800, 580);
-        else {
-            mainWindRect.left += 5;
-            mainWindRect.right -= 5;
-            mainWindRect.top += 45;
-            mainWindRect.bottom -= 5;
-        }
-        bounds.top += 20;
-        CenterRect(&mainWindRect, &bounds);
-        if (mainWindRect.bottom - mainWindRect.top < 600)
-            OffsetRect(&mainWindRect, 0, 8);
-#if defined(MAC1010) && !TARGET_API_MAC_CARBON
-        gWind = (CWindowPtr)NewCWindow(NULL, &mainWindRect, "\pEV Nova", false, documentProc, NULL, true, -1);
-#else
-        CreateNewWindow(kDocumentWindowClass, kWindowCloseBoxAttribute, &mainWindRect, &gWind);
-#ifndef MAC1010
-        window = QDGetNativeWindowFromPort(GetWindowPort(gWind));
-        CGSSetWindowDepthLimit(_CGSDefaultConnection(), window, 3);
-        CGSSetWindowDepth(_CGSDefaultConnection(), window, 3);
-#endif
-        SetWTitle(gWind, "\pEV Nova");
-#endif
-        OffsetRect(&mainWindRect, -mainWindRect.left, -mainWindRect.top);
-    } else {
-#ifndef MAC1010
-        bounds = mainWindRect;
-        CreateNewWindow(kPlainWindowClass, kWindowNoAttributes, &mainWindRect, &gWind);
-        window = QDGetNativeWindowFromPort(GetWindowPort(gWind));
-        CGSSetWindowDepthLimit(_CGSDefaultConnection(), window, 3);
-        CGSSetWindowDepth(_CGSDefaultConnection(), window, 3);
-#elif TARGET_API_MAC_CARBON
-        CreateNewWindow(kPlainWindowClass, kWindowNoAttributes, &mainWindRect, &gWind);
-        height = width = 0;
-        BeginFullScreen((Ptr *)&fullScreenRestore, NULL, &width, &height, NULL, &rgbBlack, 0);
-#else
-        gWind = (CWindowPtr)NewCWindow(NULL, &mainWindRect, "\pEV Nova", false, plainDBox, NULL, true, -1);
-#endif
-    }
-#ifdef MAC1010
-    crashlog_print("main window rect: ("); /* BUG: `bounds' is unset when full screen */
-    crashlog_print_num(bounds.left);
-    crashlog_print(", ");
-    crashlog_print_num(bounds.top);
-    crashlog_print(", ");
-    crashlog_print_num(bounds.right);
-    crashlog_print(", ");
-    crashlog_print_num(bounds.bottom);
-    crashlog_print(")\n");
-#endif
-    ShowWindowNoFlash(gWind);
-    SetPort((GrafPtr)GetCWindowGrafPort((WindowRef)gWind));
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect((WindowRef)gWind));
-    SelectWindow((WindowRef)gWind);
-    BringToFront((WindowRef)gWind);
-    if (!useLegacyRenderingPipeline)
-        QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
-    if (settings.windowed == 0) {
-        HideTheMenuBar();
-        mBarHidden = 1;
-    }
-    screenCenter.h = ((GetCWindowPortRect((WindowRef)gWind)->right
-                             - GetCWindowPortRect((WindowRef)gWind)->left - kTargPanelInset) * 0.5);
-    screenCenter.v = ((GetCWindowPortRect((WindowRef)gWind)->bottom
-                             - GetCWindowPortRect((WindowRef)gWind)->top) * 0.5);
-#else
     short top;
     short left;
     short bottom;
@@ -306,7 +198,6 @@ void SetupWind(void)
                              - GetCWindowPortRect(gWind)->left - ceStatusBarWidth) * 0.5);
     screenCenter.v = ((GetCWindowPortRect(gWind)->bottom
                              - GetCWindowPortRect(gWind)->top) * 0.5);
-#endif
 }
 
 #define AllocFailed(var, expr) (var = (expr), !(var != NULL))
@@ -667,9 +558,7 @@ void Bye(void)
         SWDisposeFrame(&gSpriteWorld->backFrameP);
         SWDisposeFrame(&gSpriteWorld->workFrameP);
         SWDisposeFrame(&gSpriteWorld->extraBackFrameP);
-#if !V111
         SWDisposeWindowFrame(&gSpriteWorld->windowFrameP);
-#endif
     }
 
     ByeLog("disposing sprite world");
@@ -713,9 +602,7 @@ void Bye(void)
     ByeLog("disposing dialog buffer");
     DisposeDialogs();
 
-#if !TARGET_API_MAC_CARBON
     ByeLog("disposing window");
-#endif
     HideWindow((WindowRef)gWind);
     DisposeWindow(gWind);
     gWind = NULL;
@@ -734,19 +621,15 @@ void Bye(void)
     DT_Close();
     FT_Close();
     PlatformClose();
-#if !V111
 
-#if !TARGET_API_MAC_CARBON
     crashlog("showing control strip");
     RestoreControlStrip();
 
-#endif
     crashlog("clean exit");
 
     crashlog("\n\n- end of log -");
     crashlog_close();
     ExitToShell();
-#endif
 }
 
 // FUNCTION: EVNOVA 0x004ad7c0
@@ -782,9 +665,7 @@ void LoadSprites(void)
     short err;
     short i;
     int32_t resID;
-#ifndef MAC1010
     SpritePtr *q;
-#endif
 
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (GetSpriteInfo(i + 3000, &spriteID, &maskID, &xSize, &ySize, &xTiles, &yTiles)) {
@@ -1647,12 +1528,7 @@ void InitSprites(void)
     SWSetCurrentFrameIndex(alertSprite, 0);
     SWSetSpriteVisible(alertSprite, 0);
     SWSetSpriteDrawProc(alertSprite, BlitPixieRLETranslucentDrawProc);
-#if V111
-    if (useLegacyRenderingPipeline)
-        SWLockSprite(alertSprite);
-#else
     SWLockSprite(alertSprite);
-#endif
     SWSetSpriteLocation(alertSprite, screenCenter.h * 2 - GetSpriteXSize(alertSprite), 0);
 
     SWAddSprite(targetLayer, doubleTimeSprite);
@@ -2176,11 +2052,7 @@ void InitObjects(void)
     recentActivatedRank = -1;
     lastCursorAnimTime = 0;
     lastFrameTime = 0;
-#ifdef MACBUILD
-    lastFrameMicroseconds.lo = lastFrameMicroseconds.hi = 0;
-#else
     Microseconds(&lastFrameMicroseconds);
-#endif
     SetRect(&statusOffRect[0], 30, 8, 163, 142);
     SetRect(&statusOffRect[1], 99, 155, 173, 161);
     SetRect(&statusOffRect[2], 99, 170, 173, 176);
@@ -2445,7 +2317,6 @@ void ResetPlayerRecord(Boolean newPilot)
  * window, which is why the two sources are BurgerLib globals.
  */
 
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x004b42f0
 void ResetScreenRect(void)
 {
@@ -2454,7 +2325,6 @@ void ResetScreenRect(void)
     mainWindRect.bottom = gVideoHeight;
     mainWindRect.right = gVideoWidth;
 }
-#endif
 
 /*
  * No mac twin: 1.1.1 rewrote its preferences layer for OS X (_LoadPrefs is 2243
@@ -2462,102 +2332,7 @@ void ResetScreenRect(void)
  * describe the body.
  */
 
-#ifdef MAC1010
-void SetDefaultPrefs(void)
-{
-    short depth;
 
-    if (gSpriteWorld != NULL)
-        depth = gSpriteWorld->pixelDepth;
-    else
-        depth = (*(*GetMainDevice())->gdPMap)->pixelSize;
-
-    settings.introMusic = 1;
-    settings.voicesOn = 1;
-    settings.volume = 5;
-    settings.clipping = 0;
-    settings.noMovies = 0;
-    settings.noDebris = 0;
-    settings.windowed = 0;
-    settings.yieldEvents = 1;
-    settings.unused = 0;
-    settings.shipAnimations = 1;
-    settings.engineGlows = 1;
-    settings.parallaxStars = 1;
-    settings.ambientSounds = 1;
-    settings.noHyperGamma = 0;
-    settings.noVersionCheck = 0;
-    settings.showMapBorders = 0;
-    if (depth >= 16) {
-        settings.weaponGlows = 1;
-        settings.runningLights = 1;
-    } else {
-        settings.weaponGlows = 0;
-        settings.runningLights = 0;
-    }
-    DAT_00735488 = 1;
-    pstrcpy(lastPlayerName, "\p");
-}
-
-void SetDefaultKeys(void)
-{
-    keyPrefs.selectSecondary = 0x5;
-    keyPrefs.deselectSecondary = 0x9;
-    keyPrefs.firePrimary = 0x39;
-    keyPrefs.fireSecondary = 0x33;
-    keyPrefs.hail = 0x18;
-    keyPrefs.land = 0x2d;
-    keyPrefs.dismiss = 0x2c;
-    keyPrefs.faceTarget = 0x8;
-    keyPrefs.clearTarget = 0x3a;
-    keyPrefs.map = 0x26;
-    keyPrefs.targetNext = 0x38;
-    keyPrefs.targetNearest = 0x7;
-    keyPrefs.hyperspace = 0xc;
-    keyPrefs.nextSystem = 0x22;
-    keyPrefs.jump = 0x2e;
-    keyPrefs.board = 0x3;
-    keyPrefs.turnLeft = 0x73;
-    keyPrefs.turnRight = 0x74;
-    keyPrefs.accelerate = 0x76;
-    keyPrefs.reverse = 0x75;
-    keyPrefs.pause = 0x3d;
-    keyPrefs.afterburner = 0xe;
-    keyPrefs.playerInfo = 0x2b;
-    keyPrefs.navPreset[0] = 0x72;
-    keyPrefs.navPreset[1] = 0x70;
-    keyPrefs.navPreset[2] = 0x6b;
-    keyPrefs.navPreset[3] = 0x7e;
-    keyPrefs.cheatSpawn = 0x7a;
-    keyPrefs.cheatKill = 0x7d;
-    keyPrefs.cheatRevive = 0x7b;
-    keyPrefs.cheatArmor = 0x7c;
-    keyPrefs.cheatDamage = 0x71;
-    keyPrefs.cheatAmmo = 0x4b;
-    keyPrefs.cheatCredits = 0x1d;
-    keyPrefs.cheatSpare = 0x7f;
-    keyPrefs.cheatShipNext = 0x4d;
-    keyPrefs.cheatShipPrev = 0x46;
-    keyPrefs.missions = 0x2a;
-    keyPrefs.cloak = 0x28;
-    keyPrefs.toggleFPS = 0x67;
-    keyPrefs.escortMenu = 0x6;
-    keyPrefs.jettison = 0x20;
-    keyPrefs.eject = 0xf;
-    keyPrefs.selfDestruct = 0x13;
-    keyPrefs.quickKey[0] = 0x1a;
-    keyPrefs.quickKey[1] = 0x1b;
-    keyPrefs.quickKey[2] = 0x1c;
-    keyPrefs.quickKey[3] = 0x1d;
-    keyPrefs.quickKey[4] = 0x1f;
-    keyPrefs.escortOrder[0] = 0xb;
-    keyPrefs.escortOrder[1] = 0xa;
-    keyPrefs.escortOrder[2] = 0x1;
-    keyPrefs.escortOrder[3] = 0x0;
-}
-#endif
-
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x004b4320
 void SetDefaultPrefs(void)
 {
@@ -2653,319 +2428,11 @@ void SetDefaultKeys(void)
     keyPrefs.escortOrder[2] = 0x2f;
     keyPrefs.escortOrder[3] = 0x2e;
 }
-#endif
-
-
-/* 0x0058f8b4 is the IAT slot, not a variable: the exe reaches
-   GetSystemMetrics through it because the declaration is dllimport. */
-#define kModeFailAlert  0x25
-#ifdef MAC1010
-#define kMonitorFailAlert 0x2b
-#if TARGET_API_MAC_CARBON
-/* a display mode as the Carbon gamma library hands it back; the fields read are named */
-typedef struct ScreenSetting {
-    int32_t unk0;
-    Fixed refreshRate;
-    int32_t height;
-    int32_t width;
-    char unk10[7];
-    Boolean unk17;
-    char unk18[0x20];
-} ScreenSetting;
-extern ScreenRef NewScreenRef(GDHandle device, int32_t *err);
-extern int32_t GetCurrentSetting(ScreenRef screen, ScreenSetting *setting);
-extern int32_t GetColorDepthsAtThisResolution(ScreenRef screen);
-extern int32_t GetGamma(ScreenRef screen, ScreenGamma *gamma);
-extern int32_t SetColorDepth(ScreenRef screen, short depth);
-extern pascal void GetAvailableWindowPositioningBounds(GDHandle device, Rect *bounds);
-extern ScreenGamma gFadeGamma;
-#endif
-#endif
 
 // FUNCTION: EVNOVA 0x004b45e0
 // MAC: _SetupMonitor i386 0x0001e699 ppc 0x00022fcc
 void SetupMonitor(void)
 {
-#ifdef MAC1010
-#if TARGET_API_MAC_CARBON
-    int32_t err;
-    ScreenSetting setting;
-    short depths;
-
-    mainScreenDevice = GetMainDevice();
-    crashlog("getting available window positioning bounds");
-    GetAvailableWindowPositioningBounds(mainScreenDevice, &screenMinusDockRect);
-    crashlog("opening RezLib");
-    gScreenRef = NewScreenRef(0, &err);
-    if (err != 0) {
-        crashlog_print("NewScreenRef returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kMonitorFailAlert);
-    }
-    setting.unk17 = 0;
-    err = GetCurrentSetting(gScreenRef, &setting);
-    if (err != 0) {
-        crashlog_print("GetCurrentSetting returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(kMonitorFailAlert);
-    }
-    startupDepth = (*(*mainScreenDevice)->gdPMap)->pixelSize;
-    crashlog_print("main display at startup was ");
-    crashlog_print_num(setting.width);
-    crashlog_print("x");
-    crashlog_print_num(setting.height);
-    crashlog_print(" / ");
-    crashlog_print_num(startupDepth);
-    crashlog_print(" bits / ");
-    crashlog_print_num((uint32_t)setting.refreshRate >> 16);
-    crashlog_print(" Hz\n");
-    if (startupDepth != 8 && startupDepth != 16) {
-        depths = GetColorDepthsAtThisResolution(gScreenRef);
-        err = GetGamma(gScreenRef, &gFadeGamma);
-        if (err != 0) {
-            crashlog_print("GetGamma returned ");
-            crashlog_print_num(err);
-            crashlog_print("\n");
-            FatalStartupError(kMonitorFailAlert);
-        }
-        err = 0;
-        if (depths & 0x10) {
-            crashlog("switching to 16 bits");
-            err = SetColorDepth(gScreenRef, 16);
-            Delay(30, &tix);
-            if (err != 0) {
-                crashlog_print("SetColorDepth returned ");
-                crashlog_print_num(err);
-                crashlog_print("\n");
-            }
-        } else if (depths & 8) {
-            crashlog("switching to 8 bits");
-            err = SetColorDepth(gScreenRef, 8);
-            Delay(30, &tix);
-            if (err != 0) {
-                crashlog_print("SetColorDepth returned ");
-                crashlog_print_num(err);
-                crashlog_print("\n");
-            }
-        } else
-            FatalStartupError(0x2e);
-        if (err != 0) {
-            crashlog_print("SetColorDepth returned ");
-            crashlog_print_num(err);
-            crashlog_print("\n");
-            FatalStartupError(0x2f);
-        }
-    }
-    GetGamma(gScreenRef, &gOrigGamma);
-    mainScreenDevice = GetMainDevice();
-    if ((*(*mainScreenDevice)->gdPMap)->pixelSize != 8
-            && (*(*mainScreenDevice)->gdPMap)->pixelSize != 16)
-        FatalStartupError(kModeFailAlert);
-    mainDeviceInitBounds = (*(*mainScreenDevice)->gdPMap)->bounds;
-    InitCluts();
-#else
-    VTRequest wanted;
-    VTRequest current;
-    int err;
-    short e;
-
-    crashlog("opening monitor tool");
-    e = MT_Open();
-    err = e;
-    if (err != 0) {
-        crashlog_print("MT_Open returned ");
-        crashlog_print_num(err);
-        crashlog_print("\n");
-        FatalStartupError(0x2d);
-    }
-    mainScreenDevice = GetMainDevice();
-    MemoryClear(&wanted, sizeof(VTRequest));
-    e = MT_GetMode(1, &current);
-    err = e;
-    if (err == 0) {
-        crashlog_print("main display at startup was ");
-        crashlog_print_num(current.width);
-        crashlog_print("x");
-        crashlog_print_num(current.height);
-        crashlog_print(" / ");
-        crashlog_print_num(current.depth);
-        crashlog_print(" bits / ");
-        crashlog_print_num(current.rate);
-        crashlog_print(" Hz\n");
-        wanted.rate = current.rate;
-        wanted.rateRule = 1;
-        wanted.depth = current.depth;
-        wanted.width = current.width;
-        wanted.height = current.height;
-    } else {
-        crashlog_print("MT_GetMode returned ");
-        crashlog_print_num(err);
-        crashlog_print(", ignoring refresh rate\n");
-        wanted.rateRule = 0;
-        wanted.rate = 0;
-        wanted.width = (*(*mainScreenDevice)->gdPMap)->bounds.right - (*(*mainScreenDevice)->gdPMap)->bounds.left;
-        wanted.height = (*(*mainScreenDevice)->gdPMap)->bounds.bottom - (*(*mainScreenDevice)->gdPMap)->bounds.top;
-        wanted.depth = (*(*mainScreenDevice)->gdPMap)->pixelSize;
-    }
-    if (wanted.width < 800 && wanted.height < 600) {
-        wanted.width = 800;
-        wanted.height = 600;
-    }
-    if (wanted.depth < 8)
-        wanted.depth = 8;
-    if (wanted.depth > 16)
-        wanted.depth = 16;
-    wanted.sizeRule = 1;
-    wanted.depthRule = 1;
-    wanted.colorRule = 0;
-    wanted.color = 1;
-    crashlog_print("attempting to set main display to ");
-    crashlog_print_num(wanted.width);
-    crashlog_print("x");
-    crashlog_print_num(wanted.height);
-    crashlog_print(" / ");
-    crashlog_print_num(wanted.depth);
-    crashlog_print(" bits / ");
-    if (wanted.rateRule != 0) {
-        crashlog_print_num(wanted.rate);
-        crashlog_print(" Hz\n");
-    } else
-        crashlog_print(" any refresh rate\n");
-    if ((*(*mainScreenDevice)->gdPMap)->pixelSize < 8 || (*(*mainScreenDevice)->gdPMap)->pixelSize > 16) {
-        crashlog_print("setting main display to ");
-        crashlog_print_num(wanted.width);
-        crashlog_print("x");
-        crashlog_print_num(wanted.height);
-        crashlog_print(" / ");
-        crashlog_print_num(wanted.depth);
-        crashlog_print(" bits / ");
-        if (wanted.rateRule != 0) {
-            crashlog_print_num(wanted.rate);
-            crashlog_print(" Hz\n");
-        } else
-            crashlog_print(" any refresh rate\n");
-        e = MT_SetMode(1, &wanted);
-        err = e;
-        if (err != 0) {
-            crashlog_print("MT_SetMode returned ");
-            crashlog_print_num(err);
-            crashlog_print(", trying again\n");
-            wanted.rateRule = 0;
-            crashlog_print("setting main display to ");
-            crashlog_print_num(wanted.width);
-            crashlog_print("x");
-            crashlog_print_num(wanted.height);
-            crashlog_print(" / ");
-            crashlog_print_num(wanted.depth);
-            crashlog_print(" bits / any refresh rate (using main screen device)\n");
-            e = MT_SetMode(1, &wanted);
-            err = e;
-            if (err != 0) {
-                crashlog_print("MT_SetMode returned ");
-                crashlog_print_num(err);
-                crashlog_print(", trying again\n");
-                wanted.sizeRule = 0;
-                crashlog_print("setting main display to ");
-                crashlog_print_num(wanted.depth);
-                crashlog_print(" bits / any resolution / any refresh rate (using main screen device)\n");
-                e = MT_SetMode(1, &wanted);
-                err = e;
-                if (err != 0) {
-                    crashlog_print("MT_SetMode returned ");
-                    crashlog_print_num(err);
-                    crashlog_print(", exiting\n");
-                    FatalStartupError(0x2c);
-                }
-            }
-        }
-    }
-    mainScreenDevice = GetMainDevice();
-    if ((*(*mainScreenDevice)->gdPMap)->pixelSize != 8
-            && (*(*mainScreenDevice)->gdPMap)->pixelSize != 16)
-        FatalStartupError(kModeFailAlert);
-    mainDeviceInitBounds = (*(*mainScreenDevice)->gdPMap)->bounds;
-    InitCluts();
-#endif
-#elif defined(MACBUILD)
-#if V111
-    CGDisplayConfigRef config;
-    CFNumberRef refreshNumber;
-    int32_t refreshRate;
-    boolean_t exactMatch;
-    CFNumberRef depthNumber;
-    int32_t depth;
-    CGRect bounds;
-    CFDictionaryRef mode;
-
-    if (useLegacyRenderingPipeline) {
-        mainScreenDevice = GetMainDevice();
-        crashlog("getting available window positioning bounds");
-        GetAvailableWindowPositioningBounds(mainScreenDevice, &screenMinusDockRect);
-        startupDepth = CGDisplayBitsPerPixel(CGMainDisplayID());
-        bounds = CGDisplayBounds(CGMainDisplayID());
-        mode = CGDisplayCurrentMode(CGMainDisplayID());
-        if (mode != NULL) {
-            CFDictionaryGetValueIfPresent(mode, CFSTR("RefreshRate"), (const void **)&refreshNumber);
-            if (refreshNumber != NULL)
-                CFNumberGetValue(refreshNumber, kCFNumberIntType, &refreshRate);
-        }
-        crashlog_print("main display at startup was ");
-        crashlog_print_num(bounds.size.width);
-        crashlog_print("x");
-        crashlog_print_num(bounds.size.height);
-        crashlog_print(" / ");
-        crashlog_print_num(startupDepth);
-        crashlog_print(" bits / ");
-        crashlog_print_num(refreshRate);
-        crashlog_print(" Hz\n");
-        if (startupDepth != 8 && startupDepth != 16) {
-            exactMatch = 0;
-            mode = CGDisplayBestModeForParameters(CGMainDisplayID(), 16, bounds.size.width,
-                                                  bounds.size.height, &exactMatch);
-            if (mode == NULL)
-                goto done;
-            CFDictionaryGetValueIfPresent(mode, CFSTR("BitsPerPixel"), (const void **)&depthNumber);
-            if (depthNumber == NULL)
-                goto done;
-            CFNumberGetValue(depthNumber, kCFNumberIntType, &depth);
-            if (depth != 16) {
-                mode = CGDisplayBestModeForParameters(CGMainDisplayID(), 8, bounds.size.width,
-                                                      bounds.size.height, &exactMatch);
-                if (mode != NULL) {
-                    /* BUG: passes the CFNumberRef, not its address */
-                    CFDictionaryGetValueIfPresent(mode, CFSTR("BitsPerPixel"), (const void **)depthNumber);
-                    if (depthNumber != NULL)
-                        CFNumberGetValue(depthNumber, kCFNumberIntType, &depth);
-                }
-            }
-            if ((exactMatch || depth == 16 || depth == 8)
-                    && CGBeginDisplayConfiguration(&config) == kCGErrorSuccess) {
-                FadeScreenOut();
-                CGConfigureDisplayMode(config, CGMainDisplayID(), mode);
-                CGCompleteDisplayConfiguration(config, kCGConfigureForAppOnly);
-            } else {
-                CGCancelDisplayConfiguration(config);
-                FatalStartupError(46);
-            }
-        }
-    } else {
-        mainScreenDevice = GetMainDevice();
-        GetAvailableWindowPositioningBounds(mainScreenDevice, &screenMinusDockRect);
-        startupDepth = (*(*mainScreenDevice)->gdPMap)->pixelSize;
-    }
-done:
-#endif
-    mainScreenDevice = GetMainDevice();
-    if (useLegacyRenderingPipeline) {
-        if ((*(*mainScreenDevice)->gdPMap)->pixelSize != 8
-                && (*(*mainScreenDevice)->gdPMap)->pixelSize != 16)
-            FatalStartupError(kModeFailAlert);
-    }
-    GetPixBounds((*mainScreenDevice)->gdPMap, &mainDeviceInitBounds);
-    InitCluts();
-#endif
 }
 
 // FUNCTION: EVNOVA 0x004b4690
@@ -3116,11 +2583,7 @@ short firstShipWeapIndex;
 short firstShipShieldIndex;
 short shipSpriteLoaded[kMaxShipTypes][6];
 Rect mainWindRect;
-#ifdef MACBUILD
-Rect mainDeviceInitBounds;
-#else
 Rect screenMinusDockRect;
-#endif
 int32_t fullScreenRestore;
 
 
@@ -3546,9 +3009,7 @@ void ReportSpriteLoadError(short label, short value, short special)
     unsigned char labelText[256];
     unsigned char valueText[256];
     unsigned char specialText[256];
-#ifndef MACBUILD
     extern void NumToString(int value, unsigned char *str);  /* 0x004bbce0 */
-#endif
 
     if ((int32_t)special == 0)
         return;
@@ -3613,7 +3074,6 @@ void DisposeClonedSprite(SpritePtr *p)
     SWDisposeSprite(p);
 }
 
-#ifndef MACBUILD
 /* ScreenEndScene (mac @ScreenEndScene@0). */
 // FUNCTION: EVNOVA 0x004b6850
 void ScreenEndScene(void)
@@ -3715,156 +3175,4 @@ void BackColor(const RGBColor *color)
     dst->green = color->green;
     dst->blue = color->blue;
 }
-#endif
 
-#ifdef MACBUILD
-
-// MAC: _PreflightMemoryUsage i386 0x00022214 ppc 0x00026624
-void PreflightMemoryUsage(int32_t *base, int32_t *engineGlow, int32_t *runningLights, int32_t *weaponGlow)
-{
-    int32_t sizes[6];
-    short i;
-    short j;
-    short k;
-    short id;
-    Handle h;
-    short baseSets;
-    short altSets;
-    int32_t total;
-
-    for (i = 0; i < kMaxShipTypes; i++)
-        for (k = 0; k < 6; k++)
-            shipSpriteLoaded[i][k] = -1;
-    *base = *engineGlow = *runningLights = *weaponGlow = 0;
-    for (i = 0; i < kMaxShipTypes; i++) {
-        shipSpriteInfoHand = NULL;
-        shipSpriteInfoHand = (ShanRec **)GetResource(kShanType, i + kFirstResourceID);
-        if (shipSpriteInfoHand == NULL)
-            continue;
-        baseSets = (*shipSpriteInfoHand)->baseSetCount;
-        altSets = (*shipSpriteInfoHand)->altSetCount;
-        if (baseSets < 1)
-            baseSets = 1;
-        if (altSets < 1)
-            altSets = 1;
-        for (j = 0; j < 6; j++) {
-            sizes[j] = 0;
-            if (j == 0)
-                id = (*shipSpriteInfoHand)->baseImageID;
-            else if (j == 1)
-                id = (*shipSpriteInfoHand)->altImageID;
-            else if (j == 2)
-                id = (*shipSpriteInfoHand)->glowImageID;
-            else if (j == 3)
-                id = (*shipSpriteInfoHand)->lightImageID;
-            else if (j == 4)
-                id = (*shipSpriteInfoHand)->weapImageID;
-            else if (j == 5)
-                id = (*shipSpriteInfoHand)->shieldImageID;
-            if (id <= 0)
-                continue;
-            for (k = 0; k < i; k++) {
-                if (shipSpriteLoaded[k][j] == id) {
-                    id = -1;
-                    break;
-                }
-            }
-            if (id == -1)
-                continue;
-            h = GetResource((gSpriteWorld->pixelDepth == 16) ? kRLEDResType : kRLE8ResType, id);
-            if (h != NULL) {
-                sizes[j] = GetResourceSizeOnDisk(h);
-                ReleaseResource(h);
-            }
-            shipSpriteLoaded[i][j] = id;
-        }
-        *base = *base + sizes[0];
-        *base = *base + sizes[1];
-        *base = *base + sizes[5];
-        *engineGlow = *engineGlow + sizes[2];
-        *runningLights = *runningLights + sizes[3];
-        *weaponGlow = *weaponGlow + sizes[4];
-        total = 0;
-        for (j = 0; j < 6; j++)
-            total += sizes[j];
-        ReleaseResource((Handle)shipSpriteInfoHand);
-    }
-}
-
-// MAC: _PreflightMemoryUsageTotal i386 0x00022438 ppc 0x000268b0
-int32_t PreflightMemoryUsageTotal(void)
-{
-    int32_t engineGlow;
-    int32_t runningLights;
-    int32_t weaponGlow;
-    int32_t total;
-
-    PreflightMemoryUsage(&total, &engineGlow, &runningLights, &weaponGlow);
-    if (settings.runningLights)
-        total += runningLights;
-    if (settings.weaponGlows)
-        total += weaponGlow;
-    if (settings.engineGlows)
-        total += engineGlow;
-    return total;
-}
-
-// MAC: _DoMemoryUsageDialog i386 0x00022492 ppc 0x0002693c
-void DoMemoryUsageDialog(void)
-{
-    DialogPtr dlg;
-    short itemHit;
-    short itemType;
-    Handle itemHand;
-    Rect itemRect;
-    Boolean done;
-    ControlHandle ctl;
-
-    dlg = GetNewDialog(5000, NULL, -1);
-    if (dlg == NULL)
-        return;
-    ShowWindow(GetDialogWindow(dlg));
-    SetPort((GrafPtr)GetDialogPort(dlg));
-    SelectWindow(GetDialogWindow(dlg));
-    FrameDefaultButton(dlg, 1);
-    done = false;
-    do {
-        GetDialogItem(dlg, 3, &itemType, &itemHand, &itemRect);
-        ctl = (ControlHandle)itemHand;
-        if (settings.shipAnimations)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(dlg, 4, &itemType, &itemHand, &itemRect);
-        ctl = (ControlHandle)itemHand;
-        if (settings.engineGlows)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(dlg, 5, &itemType, &itemHand, &itemRect);
-        ctl = (ControlHandle)itemHand;
-        if (settings.runningLights)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        GetDialogItem(dlg, 6, &itemType, &itemHand, &itemRect);
-        ctl = (ControlHandle)itemHand;
-        if (settings.weaponGlows)
-            SetControlValue(ctl, 1);
-        else
-            SetControlValue(ctl, 0);
-        ModalDialog(NULL, &itemHit);
-        if (itemHit == 1)
-            done = true;
-        if (itemHit == 3)
-            settings.shipAnimations = !settings.shipAnimations;
-        if (itemHit == 4)
-            settings.engineGlows = !settings.engineGlows;
-        if (itemHit == 5)
-            settings.runningLights = !settings.runningLights;
-        if (itemHit == 6)
-            settings.weaponGlows = !settings.weaponGlows;
-    } while (!done);
-    DisposeDialog(dlg);
-}
-#endif

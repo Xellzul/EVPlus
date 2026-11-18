@@ -27,7 +27,6 @@
 #include "cefix.h"
 #include "prototypes.h"
 #include "gametypes.h"
-extern int32_t PreflightMemoryUsageTotal(void);
 extern void HideControlStrip(void);
 extern void CarbonHackCleanup(void);
 extern void DisposeGammaTools(void);
