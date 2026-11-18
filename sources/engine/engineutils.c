@@ -26,38 +26,6 @@
 #include "burger.h"
 #include "crashlog.h"
 #include "cefix.h"
-#ifndef MAC_FASTRANDOM_ONLY
-#ifdef MACBUILD
-#if V111
-#include <mach/mach.h>
-#endif
-/* Util.o's own globals and its mac-only functions (defined below at their places) */
-extern void PointToXYShort(Point pt, ShortPoint *xy);
-extern void XYShortToPoint(ShortPoint xy, Point *pt);
-extern StringPtr KeyCodeToString(short code);
-extern int32_t isPressed(unsigned char *keys, unsigned short k);
-extern void ShowHint(void);
-extern void InitCluts(void);
-extern void SetOrigClut(void);
-extern void FlushKeys(void);
-extern void InstantFighterRecall(void);
-extern void ShowFreeMem(void);
-extern void *LoadFrameFromCICN(short id);
-extern float FindDecayedShotPower(ShotObj *shot);
-extern Boolean isPowerPC(void);
-extern Boolean isG3(void);
-extern Boolean isG4(void);
-extern Boolean meetsMinimumRequirements(void);
-extern short ScanForKeys(void);
-extern Boolean HasMaxFightersOnBoard(short shipType);
-extern void UnsplitTwoLineString(const unsigned char *src, unsigned char *dst);
-/* the AmbrosiaTools DrawTools calls DrawPicHandle makes that burger.h does not declare */
-#include "burgerplat.h"
-extern struct ITRect Sys2DT_Rect(const Rect *r);
-extern int32_t DT_DrawImage(struct ITImage *dst, const struct ITRect *dstRect, struct ITImage *image,
-                         struct ITImage *mask, const struct ITTransparent *trans, const struct ITRect *srcRect);
-extern void DateToShortString(DateTimeRec date, char *out);
-#endif
 
 #define kRoidYieldBase   0x32
 #define kRoidYieldSpread 0x65
@@ -2091,7 +2059,6 @@ void CullNameString(unsigned char *name)
 }
 
 
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x00466810
 short FirstKeyDown(void)
 {
@@ -2114,9 +2081,7 @@ short FirstKeyDown(void)
     } while (code <= 0x7f);
     return -1;
 }
-#endif
 
-#if !defined(MACBUILD) || !V111
 // FUNCTION: EVNOVA 0x00466850
 void KeyPrefsToSlotTable(void)
 {
@@ -2194,18 +2159,7 @@ void SlotTableToKeyPrefs(void)
     keyPrefs.missions = newKeyPrefs[32];
     keyPrefs.toggleFPS = newKeyPrefs[33];
 }
-#endif
 
-#ifdef MACBUILD
-// MAC: _isPressed i386 0x00004d48 ppc 0x0000626c
-int32_t isPressed(unsigned char *keys, unsigned short k)
-{
-    unsigned char b = keys[k >> 3];
-
-    b >>= (k & 7);
-    return b & 1;
-}
-#endif
 
 // FUNCTION: EVNOVA 0x00466c10
 // MAC: _DupKeyCheck i386 0x00004d69 ppc 0x00006284
@@ -2466,22 +2420,12 @@ EXTERN_C_END
 Boolean systemFlag[kMaxSystems];
 Boolean speechMgrPresent;
 short maxAutoExploreJumps;
-#ifdef MAC1010
-unsigned short keyMap[8];
-#elif defined(MACBUILD)
-KeyMapByteArray keyMap;
-#else
-#endif
-#ifndef MACBUILD
 uint32_t randomSeed;
-#endif
 
 EXTERN_C_BEGIN
 
 /* screen fade state (names invented; the mac fades via CGDisplayFade instead) */
-#ifndef MACBUILD
 int32_t screenGamma = 0x00010000;           /* 0x00575878 — 16.16, 1.0 = full brightness */
-#endif
 
 /*
  * The windows port drives the palette from the DirectDraw side, so the mac
@@ -2692,7 +2636,6 @@ void DisplayMessage(short index)
 }
 
 /* Walk the gamma ramp to `percent` brightness over `duration` milliseconds. */
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x00467d60
 void FadeGammaTo(uint32_t percent, uint32_t duration)
 {
@@ -2716,50 +2659,9 @@ void FadeGammaTo(uint32_t percent, uint32_t duration)
     }
     screenGamma = target;
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00467de0
 // MAC: _FadeScreenOut i386 0x0000530f ppc 0x00006848
-#ifdef V111 /* V111: the Quartz display fade; mac 1.0.10 imports no CGDisplayFade */
-/* the fade reservation FadeScreenIn/Out and FadeWhiteIn/Out share (a file static on mac) */
-static CGDisplayFadeReservationToken token;
-
-void FadeScreenOut(void)
-{
-    if (screenFaded || inBackground)
-        return;
-    if (!settings.windowed) { /* POTENTIAL BUG (win V111): windowed skips the present 1.0.10's ScreenEndScene() gave */
-        if (gWind != NULL)
-            QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-        if (CGAcquireDisplayFadeReservation(15.0, &token) == kCGErrorSuccess)
-            CGDisplayFade(token, 1.0, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor,
-                          0.0, 0.0, 0.0, true);
-    }
-    screenFaded = true;
-}
-#elif defined(MAC1010)
-void FadeScreenOut(void)
-{
-#if TARGET_API_MAC_CARBON
-    RGBColor black;
-
-#endif
-    if (screenFaded != 0 || inBackground != 0)
-        return;
-#if TARGET_API_MAC_CARBON
-    if (gScreenRef != 0 && settings.windowed == 0) {
-        if (gWind != NULL)
-            QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-        black.red = black.green = black.blue = 0;
-        FadeToColor(gScreenRef, &black, 0.5f);
-    }
-#else
-    if (settings.windowed == 0)
-        GammaFadeTo(1, 0, kFadeMillis);
-#endif
-    screenFaded = 1;
-}
-#else
 void FadeScreenOut(void)
 {
     if (screenFaded != 0 || inBackground != 0)
@@ -2769,65 +2671,9 @@ void FadeScreenOut(void)
         FadeGammaTo(0, kFadeMillis);
     screenFaded = 1;
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00467e20
 // MAC: _FadeScreenIn i386 0x000053b2 ppc 0x00006924
-#ifdef V111 /* V111: the Quartz display fade */
-void FadeScreenIn(void)
-{
-    if (!screenFaded)
-        return;
-    if (!settings.windowed) { /* POTENTIAL BUG (win V111): windowed skips the present 1.0.10's ScreenEndScene() gave */
-        if (gWind != NULL)
-            QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-        if (token != 0 || CGAcquireDisplayFadeReservation(15.0, &token) == kCGErrorSuccess) {
-            CGDisplayFade(token, 1.0, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal,
-                          0.0, 0.0, 0.0, true);
-            CGReleaseDisplayFadeReservation(token);
-            token = 0;
-        }
-    }
-    screenFaded = false;
-}
-#ifdef MACBUILD
-// MAC: _FadeWhiteIn i386 0x0000546f ppc 0x00006a04
-void FadeWhiteIn(void)
-{
-    screenFaded = true;
-    if (CGAcquireDisplayFadeReservation(15.0, &token) == kCGErrorSuccess)
-        CGDisplayFade(token, 1.5, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor,
-                      1.0, 1.0, 1.0, false);
-}
-
-// MAC: _FadeWhiteOut i386 0x000054d1 ppc 0x00006a98
-void FadeWhiteOut(void)
-{
-    CGDisplayFade(token, 1.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal,
-                  1.0, 1.0, 1.0, false);
-    CGReleaseDisplayFadeReservation(token);
-    screenFaded = false;
-}
-#endif
-
-#elif defined(MAC1010)
-void FadeScreenIn(void)
-{
-    if (screenFaded == 0)
-        return;
-#if TARGET_API_MAC_CARBON
-    if (gScreenRef != 0 && settings.windowed == 0) {
-        if (gWind != NULL)
-            QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-        FadeToGamma(gScreenRef, &gOrigGamma, 0.5f);
-    }
-#else
-    if (settings.windowed == 0)
-        GammaFadeTo(1, 100, kFadeMillis);
-#endif
-    screenFaded = 0;
-}
-#else
 void FadeScreenIn(void)
 {
     if (screenFaded == 0)
@@ -2855,7 +2701,6 @@ void FadeWhiteOut(void)
     whiteReserved = false;
     screenFaded = false;
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00467e70
 // MAC: _RestoreOrigClut i386 0x00005537 ppc 0x00006b24
@@ -3016,8 +2861,6 @@ Boolean SystemHasService(short sysID, short kind)
     return 0;
 }
 
-#endif /* MAC_FASTRANDOM_ONLY */
-#ifndef MAC_NO_FASTRANDOM
 
 #define kRandMultiplier 16807
 
@@ -3035,19 +2878,11 @@ short Rand(short range)
     uint32_t hi;
     uint32_t seed;
     short result;
-#ifdef V111
-    uint32_t secs;
-#endif
 
     if (range == 0) {
-#ifdef V111
-        GetDateTime(&secs);
-        result = randomSeed = secs + ReadTick();
-#else
         /* BUG: this path never sets result, so Rand(0) returns garbage */
         GetDateTime(&randomSeed);
         randomSeed += ReadTick();
-#endif
     } else {
         seed = randomSeed;
         lo = kRandMultiplier;
@@ -3066,13 +2901,8 @@ short Rand(short range)
         hi = SwapHalves(hi);
         hi += temp;
         lo += hi;
-#ifdef MACBUILD
-        if (lo < 0) /* BUG: lo is unsigned, so the carry fold never runs */
-            lo += 0x7fffffff;
-#else
         if ((lo & 0x80000000) != 0)
             lo += 0x7fffffff;
-#endif
         randomSeed = lo;
         if ((lo & 0xffff) == 0x8000)
             lo &= 0xffff0000;
@@ -3097,8 +2927,6 @@ uint32_t GetRandSeed(void)
 {
     return randomSeed;
 }
-#endif /* MAC_NO_FASTRANDOM */
-#ifndef MAC_FASTRANDOM_ONLY
 
 #define kDateStrings   137  /* STR# holding the month names and ordinals */
 #define kFirstMonthStr  12  /* month 1 is index 13 */
@@ -3559,68 +3387,19 @@ Boolean PlaySoundDistance(int32_t unused, void *sound, short flags, FloatPoint *
 
 // FUNCTION: EVNOVA 0x00469480
 // MAC: _CheckSpeechMgr i386 0x00005906 ppc 0x00006fd0
-#ifdef MACBUILD
-void CheckSpeechMgr(void)
-{
-    int32_t response;
-    short voices;
-    Boolean hasSpeech;
-    Boolean ok;
-    OSErr err;
-
-    speechMgrPresent = false;
-#ifdef MAC1010
-    ok = Gestalt('vers', &response) == noErr;
-    if (ok) {
-        err = Gestalt(gestaltSpeechAttr, &response);
-        hasSpeech = err == noErr && BitTst(&response, 31 - gestaltSpeechMgrPresent);
-        if (hasSpeech ? BitTst(&response, 31 - gestaltSpeechHasPPCGlue) : hasSpeech) {
-#else
-    if (Gestalt('vers', &response) == noErr) {
-        hasSpeech = Gestalt(gestaltSpeechAttr, &response) == noErr
-                    && BitTst(&response, 31 - gestaltSpeechMgrPresent);
-        if (hasSpeech) {
-#endif
-            CountVoices(&voices);
-            if (voices > 0)
-                speechMgrPresent = true;
-        }
-    }
-}
-#else
 void CheckSpeechMgr(void)
 {
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00469490
 // MAC: _SpeakIt i386 0x0000b029 ppc 0x0000d948
-#ifdef MACBUILD
-void SpeakIt(char *msg, short flag)
-{
-    static SpeechChannel speechChannel;
-
-    if (speechMgrPresent) {
-        if (speechChannel != NULL) {
-            DisposeSpeechChannel(speechChannel);
-            speechChannel = NULL;
-        }
-#ifdef MAC1010
-        CtoPstr(msg);
-#endif
-        SpeakString((StringPtr)msg);
-        if (flag)
-            while (SpeechBusy())
-                BusyIdle();
-    }
-}
-#else
 void SpeakIt(char *msg, short flag)
 {
 }
-#endif
 
 #ifdef MACBUILD
+// KEPT: unfinished (nothing calls it, even on mac) -- true when the player's fighter bay for
+// shipType is full or has no bay outfit; possible future use, not enabled on win
 // MAC: _HasMaxFightersOnBoard i386 0x00005986 ppc 0x00007080
 Boolean HasMaxFightersOnBoard(short shipType)
 {
@@ -3817,9 +3596,6 @@ void DestroyPartialFleetCargo(short shipIndex)
 // MAC: _QuickKeyCheckHandler i386 0x00005d5a ppc 0x000074b8
 void QuickKeyCheckHandler(void)
 {
-#ifdef MACBUILD
-    GetKeys((void *)keyMap);
-#endif
     quickKeyCheckResult = 0;
 }
 
@@ -3828,16 +3604,7 @@ void QuickKeyCheckHandler(void)
 // MAC: _QuickKeyCheck i386 0x0000a0f5 ppc 0x0000c6e4
 unsigned char QuickKeyCheck(short scanCode)
 {
-#ifndef MACBUILD
     short i;
-#elif defined(MAC1010) /* 1.0.10 real: 0x100af67c word and bit split from the scan code, no isPressed */
-    short i;
-    short word;
-    short bit;
-#else
-    int i;
-    unsigned char result;
-#endif
 
     if (ignoreKeys)
         return 0;
@@ -3847,25 +3614,9 @@ unsigned char QuickKeyCheck(short scanCode)
                 return 0;
         }
     }
-#ifndef MACBUILD
     return KeyIsDown(scanCode);
-#elif defined(MAC1010)
-    word = (scanCode >> 4) & 0xf;
-    bit = scanCode & 0xf;
-    if (keyMap[word] & (1 << bit)) {
-        quickKeyCheckResult = true;
-        return 1;
-    }
-    return 0;
-#else
-    result = isPressed(keyMap, scanCode);
-    if (result)
-        quickKeyCheckResult = true;
-    return result;
-#endif
 }
 
-#ifndef MACBUILD
 // FUNCTION: EVNOVA 0x00469cf0
 unsigned char RawKeyCheck(short scanCode)
 {
@@ -3873,7 +3624,6 @@ unsigned char RawKeyCheck(short scanCode)
         return 0;
     return KeyIsDown(scanCode);
 }
-#endif
 
 // FUNCTION: EVNOVA 0x00469d10
 // MAC: _KeyCheck i386 0x0000a19b ppc 0x0000c7c8
@@ -4198,6 +3948,8 @@ Boolean PlayerHasAnyCargo(void)
 }
 
 #ifdef MACBUILD
+// KEPT: unfinished (nothing calls it, even on mac) -- puts every launched fighter of the player
+// straight back into its bay as ammo; possible future use, not enabled on win
 // MAC: _InstantFighterRecall i386 0x00005df3 ppc 0x000075ac
 void InstantFighterRecall(void)
 {
@@ -5515,7 +5267,6 @@ Boolean ShipsShareParent(ShipObj *a, ShipObj *b)
 
 // FUNCTION: EVNOVA 0x0046d250
 // MAC: _PtoCstr i386 0x000049e2 ppc 0x00005e04
-#if !defined(MAC1010) || TARGET_API_MAC_CARBON /* 1.0.10 Classic imports InterfaceLib's */
 char *PtoCstr(unsigned char *str)
 {
     short len = *str;
@@ -5526,7 +5277,6 @@ char *PtoCstr(unsigned char *str)
     str[len] = 0;
     return (char *)str;
 }
-#endif
 
 // FUNCTION: EVNOVA 0x0046d380
 // MAC: _CtoPstr i386 0x00004d13 ppc 0x00006210
@@ -6473,4 +6223,3 @@ void IonizeShip(ShipObj *ship, WeapRecord *weap, FloatPoint *pos)
 
 
 EXTERN_C_END
-#endif /* MAC_FASTRANDOM_ONLY */

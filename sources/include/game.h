@@ -245,12 +245,6 @@ extern void PropagateMissionBitEffects(void);
 extern void FadeWhiteIn(void);
 extern void FadeWhiteOut(void);
 extern void ExploreNebulaeFromSystem(short sys);
-#ifdef MACBUILD
-extern EventRecord gEvent;
-extern void MainScreenMouse(EventRecord *event);
-extern void FlushKeys(void);
-extern short ScanForKeys(void);
-#endif
 EXTERN_CPP_BEGIN
 extern short introTextID;
 extern short introPictID[4];
