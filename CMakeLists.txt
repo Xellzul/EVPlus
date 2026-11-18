@@ -121,6 +121,62 @@ if(NOT SDL3_ROOT)
 endif()
 find_package(SDL3 REQUIRED CONFIG COMPONENTS SDL3-static PATHS ${SDL3_ROOT} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 
+# -- FreeType (draws the game's text)
+# Built once into build/freetype from the pinned release, as a static library without its optional
+# dependencies (no compressed or PNG fonts, no HarfBuzz), the same way as SDL: downloaded into build/, or
+# -DFREETYPE_TARBALL=/path/to/freetype-<ver>.tar.xz (offline); either is checked against the SHA256. Or take an
+# install with -DFREETYPE_ROOT=/path (include/freetype2 and lib/libfreetype.a).
+set(FREETYPE_VERSION 2.14.3)
+set(FREETYPE_SHA256 36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f)
+set(FREETYPE_TARBALL "" CACHE FILEPATH "freetype-${FREETYPE_VERSION}.tar.xz for offline builds (empty: download it)")
+set(FREETYPE_ROOT "" CACHE PATH "FreeType install (empty: build FreeType ${FREETYPE_VERSION} from its release tarball)")
+if(NOT FREETYPE_ROOT)
+  set(FREETYPE_ROOT ${CMAKE_BINARY_DIR}/freetype)
+  if(NOT EXISTS ${FREETYPE_ROOT}/lib/libfreetype.a)
+    set(_ft_name freetype-${FREETYPE_VERSION}.tar.xz)
+    pinned_tarball(_ft_tar https://download.savannah.gnu.org/releases/freetype/${_ft_name}
+                   ${_ft_name} ${FREETYPE_SHA256} "${FREETYPE_TARBALL}"
+                   "pass -DFREETYPE_TARBALL=/path/to/${_ft_name} or -DFREETYPE_ROOT=/path/to/freetype")
+    message(STATUS "building FreeType from ${_ft_tar} (once, under a minute)")
+    set(_ft_work ${FREETYPE_ROOT}.work)
+    set(_ft_log ${CMAKE_BINARY_DIR}/freetype-build.log)
+    file(REMOVE_RECURSE ${_ft_work})
+    file(ARCHIVE_EXTRACT INPUT ${_ft_tar} DESTINATION ${_ft_work})
+    file(WRITE ${_ft_log} "")
+    macro(_ft_run)
+      execute_process(COMMAND ${CMAKE_COMMAND} ${ARGN} RESULT_VARIABLE _ft_rc
+                      OUTPUT_VARIABLE _ft_out ERROR_VARIABLE _ft_out)
+      file(APPEND ${_ft_log} "${_ft_out}")
+      if(_ft_rc)
+        message(FATAL_ERROR "FreeType build failed, see ${_ft_log}")
+      endif()
+    endmacro()
+    set(_ft_args -G ${CMAKE_GENERATOR} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${FREETYPE_ROOT}
+        -DCMAKE_INSTALL_LIBDIR=lib -DBUILD_SHARED_LIBS=OFF -DFT_DISABLE_ZLIB=ON -DFT_DISABLE_BZIP2=ON
+        -DFT_DISABLE_PNG=ON -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BROTLI=ON)
+    if(CMAKE_TOOLCHAIN_FILE)
+      get_filename_component(_ft_tc ${CMAKE_TOOLCHAIN_FILE} ABSOLUTE BASE_DIR ${CMAKE_BINARY_DIR})
+      if(NOT EXISTS ${_ft_tc})
+        get_filename_component(_ft_tc ${CMAKE_TOOLCHAIN_FILE} ABSOLUTE BASE_DIR ${CMAKE_SOURCE_DIR})
+      endif()
+      list(APPEND _ft_args -DCMAKE_TOOLCHAIN_FILE=${_ft_tc})
+    endif()
+    if(LLVM_MINGW)
+      list(APPEND _ft_args -DLLVM_MINGW=${LLVM_MINGW})
+    endif()
+    if(CMAKE_MAKE_PROGRAM)
+      list(APPEND _ft_args -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM})
+    endif()
+    _ft_run(-S ${_ft_work}/freetype-${FREETYPE_VERSION} -B ${_ft_work}/build ${_ft_args})
+    _ft_run(--build ${_ft_work}/build)
+    _ft_run(--install ${_ft_work}/build)
+    file(REMOVE_RECURSE ${_ft_work})
+  endif()
+endif()
+if(NOT EXISTS ${FREETYPE_ROOT}/lib/libfreetype.a OR NOT EXISTS ${FREETYPE_ROOT}/include/freetype2/ft2build.h)
+  message(FATAL_ERROR "no FreeType in ${FREETYPE_ROOT} (include/freetype2/ft2build.h, lib/libfreetype.a)")
+endif()
+
 # -- the sources, C or C++ by each file's `// COMPILE: -lang c++` marker ----------------------------
 file(GLOB_RECURSE ALL_C CONFIGURE_DEPENDS ${SRC}/*.c)
 set(GAME_SRC "")
@@ -148,8 +204,12 @@ target_include_directories(evnova_ce PRIVATE ${FFMPEG_ROOT}/include)
 set_source_files_properties(${SRC}/media/media.c PROPERTIES COMPILE_OPTIONS -fno-short-enums)
 # the same for SDL's headers: only the platform layer sees them
 set_source_files_properties(${SRC}/platform/platform_sdl.c PROPERTIES COMPILE_OPTIONS -fno-short-enums)
+# and for FreeType's: only the glyph renderer sees them
+set_source_files_properties(${SRC}/port/fontraster.c PROPERTIES
+    COMPILE_OPTIONS -fno-short-enums INCLUDE_DIRECTORIES ${FREETYPE_ROOT}/include/freetype2)
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "EV Nova CE" LINKER_LANGUAGE CXX)
-target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${WIN_LIBS})
+target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${FREETYPE_ROOT}/lib/libfreetype.a
+    ${WIN_LIBS})
 target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map"
   # CE's 2 GB memory pool needs the large-address-aware bit
   -Wl,--large-address-aware)

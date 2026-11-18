@@ -122,6 +122,19 @@ extern void PlatMutexLock(PlatMutex *m);
 extern void PlatMutexUnlock(PlatMutex *m);
 extern void PlatMutexDestroy(PlatMutex *m);
 
+/* -- files and fonts ---------------------------------------------------------------------------------
+   Paths are UTF-8 here. */
+extern const char *PlatExeFolder(void);                    /* where the program lies, ending in a separator */
+/* the files of a folder whose names match a pattern such as "*.ttf", upper or lower case; each is handed
+   to `found' with its whole path. Returns how many. */
+extern int PlatListFiles(const char *folder, const char *pattern, void (*found)(const char *path, void *ctx),
+                         void *ctx);
+extern void *PlatLoadFile(const char *path, int *size);    /* the whole file in a malloc'd block, or NULL */
+/* An installed font by its family name, as the bytes of its font file in a malloc'd block; NULL when the
+   system has no font of that name (never a look-alike). `bold' and `italic' ask for that member of the
+   family; the system may answer with the plain one. */
+extern void *PlatSystemFont(const char *family, int bold, int italic, int *size);
+
 /* -- clocks, log, paths ----------------------------------------------------------------------------- */
 extern uint64_t PlatMicroseconds(void);                   /* monotonic, from any thread */
 extern void PlatSleep(int ms);                            /* 0 may return at once */

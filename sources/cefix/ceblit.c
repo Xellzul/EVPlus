@@ -24,18 +24,6 @@
 #define kKernelReach        2.0         /* the cubic's half width, in source pixels at full size */
 #define kPixelHalf          0.5
 
-typedef struct WinBitmap {              /* Win32 BITMAP */
-    int32_t bmType;
-    int32_t bmWidth;
-    int32_t bmHeight;
-    int32_t bmWidthBytes;
-    unsigned short bmPlanes;
-    unsigned short bmBitsPixel;
-    void *bmBits;
-} WinBitmap;
-
-__declspec(dllimport) int __stdcall GetObjectA(void *object, int size, void *out);
-
 /* -- pixels: 16-bit x1r5g5b5 (bit 15 = opaque where a mask was applied), 24-bit R G B, 32-bit B G R x ------ */
 
 typedef struct Color {
@@ -443,15 +431,15 @@ void CE_Blit16Mask(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect,
     Blit(src, dst, srcRect, dstRect, 1);
 }
 
-/* NewGWorld records depth / 8 * width as the row stride, but the DIB section pads each row
-   to 4 bytes: take the stride the bitmap really has, so odd widths draw straight. */
+/* NewGWorld records depth / 8 * width as the row stride, but the port's pixels have each row padded
+   to 4 bytes (NewPortPixels; a DIB section in the exe): take that stride, so odd widths draw straight. */
+#define kRowAlignBits       32
+
 short CE_NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
 {
-    WinBitmap bm;
     short err;
 
     err = NewGWorld(out, depth, bounds, theGDH);
-    GetObjectA((*out)->bitmap, sizeof(bm), &bm);
-    (*out)->pix.rowBytes = bm.bmWidthBytes;
+    (*out)->pix.rowBytes = ((*out)->pix.width * depth + kRowAlignBits - 1) / kRowAlignBits * (kRowAlignBits / 8);
     return err;
 }

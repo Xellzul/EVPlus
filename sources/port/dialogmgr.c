@@ -1911,19 +1911,9 @@ void SizeDialogWindow(DialogPtr dlg, short width, short height, char update)
     gw = dlg->port;
     gw->pix.width = width;
     gw->pix.height = height;
-    {
-        BitmapInfo bmi = {0};
-
-        bmi.bmiHeader.biSize = kDIBHeaderSize;
-        bmi.bmiHeader.biWidth = gw->pix.width;
-        bmi.bmiHeader.biHeight = -gw->pix.height;
-        bmi.bmiHeader.biPlanes = 1;
-        bmi.bmiHeader.biBitCount = gw->pix.pixelSize;
-        bmi.bmiHeader.biCompression = 0;
-        bmi.bmiHeader.biSizeImage = 0;
-        DeleteObject(gw->bitmap);
-        gw->bitmap = CreateDIBSection(gw->hdc, &bmi, 0, &gw->pix.baseAddr, NULL, 0);
-    }
+    free(gw->pixels);
+    gw->pixels = NewPortPixels(gw->pix.width, gw->pix.height, gw->pix.pixelSize);
+    gw->pix.baseAddr = gw->pixels;
     gw->pix.rowBytes = gw->pix.pixelSize / 8 * gw->pix.width;
     dlg->port->pix.bounds.right = dlg->port->pix.bounds.left + width;
     dlg->port->pix.bounds.bottom = dlg->port->pix.bounds.top + height;

@@ -395,7 +395,6 @@ CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
     gGamePort.pix.height = gVideoHeight;
     gGamePort.pix.rowBytes = VideoWidth;
     gGamePort.depth = VideoColorDepth;
-    gGamePort.hdc = (Win95MainWindow != NULL) ? GetDC(Win95MainWindow) : 0;
     CurrentGrafPort = &gGamePort;
     return &gGamePort;
 }
@@ -409,26 +408,15 @@ CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
 // FUNCTION: EVNOVA 0x004b8c20
 void ReleaseScreenDC(void)
 {
-    void *dc;
-
-    dc = gGamePort.hdc;
-    if (dc != NULL)
-        ReleaseDC(Win95MainWindow, dc);
+    /* the exe gives the window's device context back here; text is no longer drawn through one */
 }
 
 // FUNCTION: EVNOVA 0x004b8c40
 void AcquireScreenDC(void)
 {
-    void *dc;
-
     LockVideoPage();
     gGamePort.pix.baseAddr = videoBase;
     gGamePort.pix.rowBytes = VideoWidth;
-    if (Win95MainWindow != NULL)
-        dc = GetDC(Win95MainWindow);
-    else
-        dc = NULL;
-    gGamePort.hdc = dc;
     if (gSpriteWorld != NULL)
         SWWindowMoved(gSpriteWorld);
 }
@@ -1837,12 +1825,23 @@ char RectInRgn(Rect *r, void *rgn)
    is the width rounded up to a multiple of eight. 16 maps to 15 because the port's DIBs
    are 555. */
 
+/* The pixels of a port: zeroed, each row ending on a 4-byte boundary. The exe's are DIB sections, which
+   GDI lays out so; the game's row strides (CE_NewGWorld) count on it. */
+#define kRowAlignBits   32
+
+void *NewPortPixels(int width, int rows, int bits)
+{
+    size_t stride;
+
+    stride = (size_t)((width * bits + kRowAlignBits - 1) / kRowAlignBits) * (kRowAlignBits / 8);
+    return calloc(stride != 0 ? stride : 1, rows > 0 ? rows : 1);
+}
+
 // FUNCTION: EVNOVA 0x004bb870
 short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
 {
     int bitCount;
     CGrafPtr gw;
-    void *screenDC;
 
     /* BUG: no default, so any other depth stores an uninitialised bitCount */
     switch (depth) {
@@ -1856,7 +1855,7 @@ short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
         bitCount = 32;
         break;
     }
-    gw = (CGrafPtr)AllocAPointer(0x50);
+    gw = (CGrafPtr)AllocAPointerClear(sizeof(CGrafPort));
     gw->pix.bounds.top = bounds->top;
     gw->pix.bounds.left = bounds->left;
     gw->pix.bounds.bottom = bounds->bottom;
@@ -1874,26 +1873,14 @@ short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
     gw->txFace = 0;
     gw->txSize = 9;
     gw->offscreen = 1;
-    screenDC = GetDC(Win95MainWindow);
-    gw->hdc = CreateCompatibleDC(screenDC);
-    ReleaseDC(Win95MainWindow, screenDC);
     gw->pix.ctab = NULL;
     gw->pix.originV = 0;
     gw->pix.width = bounds->right - bounds->left;
     gw->pix.height = bounds->bottom - bounds->top;
     gw->depth = bitCount;
-    {
-        BitmapInfo bmi = {0};
-
-        bmi.bmiHeader.biSize = kDIBHeaderSize;
-        bmi.bmiHeader.biWidth = gw->pix.width;
-        bmi.bmiHeader.biHeight = -(gw->pix.height + 1);
-        bmi.bmiHeader.biPlanes = 1;
-        bmi.bmiHeader.biBitCount = depth;
-        bmi.bmiHeader.biCompression = 0;
-        bmi.bmiHeader.biSizeImage = 0;
-        gw->bitmap = CreateDIBSection(gw->hdc, &bmi, 0, &gw->pix.baseAddr, NULL, 0);
-    }
+    /* one row more than the port is high, as the exe's bitmap has */
+    gw->pixels = NewPortPixels(gw->pix.width, gw->pix.height + 1, depth);
+    gw->pix.baseAddr = gw->pixels;
     gw->pix.rowBytes = depth / 8 * gw->pix.width;
     *out = gw;
     return 0;
@@ -1904,10 +1891,8 @@ void DisposeGWorld(CGrafPtr port)
 {
     if (port == NULL)
         return;
-    if (port->offscreen != 0) {
-        DeleteObject(port->bitmap);
-        DeleteDC(port->hdc);
-    }
+    if (port->offscreen != 0)
+        free(port->pixels);
     DeallocAPointer(port);
 }
 

@@ -2,6 +2,7 @@
    events, the cursor, the audio outputs, the clocks, the debug log. Built with SDL's enum size
    (-fno-short-enums, CMakeLists.txt) and without any game header. */
 #define SDL_MAIN_HANDLED                /* the game has its own entry point (port/winmain.c) */
+#include <stdlib.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #ifdef SDL_PLATFORM_WIN32
@@ -848,6 +849,60 @@ void PlatAudioClose(PlatAudio *s)
     if (s->stream != NULL)
         SDL_DestroyAudioStream(s->stream);      /* waits for a pull that is running */
     SDL_free(s);
+}
+
+/* -- files ------------------------------------------------------------------------------------------ */
+
+const char *PlatExeFolder(void)
+{
+    const char *base = SDL_GetBasePath();
+
+    return base != NULL ? base : "";
+}
+
+int PlatListFiles(const char *folder, const char *pattern, void (*found)(const char *path, void *ctx), void *ctx)
+{
+    char **names;
+    char *path;
+    size_t length;
+    int count;
+    int i;
+
+    count = 0;
+    names = SDL_GlobDirectory(folder, pattern, SDL_GLOB_CASEINSENSITIVE, &count);
+    if (names == NULL)
+        return 0;
+    for (i = 0; i < count; i++) {
+        length = SDL_strlen(folder) + SDL_strlen(names[i]) + 2;
+        path = (char *)SDL_malloc(length);
+        if (path == NULL)
+            continue;
+        SDL_snprintf(path, length, "%s%s%s", folder,
+                     (folder[0] != 0 && SDL_strchr("/\\", folder[SDL_strlen(folder) - 1]) == NULL) ? "/" : "", names[i]);
+        found(path, ctx);
+        SDL_free(path);
+    }
+    SDL_free(names);
+    return count;
+}
+
+void *PlatLoadFile(const char *path, int *size)
+{
+    size_t length;
+    void *loaded;
+    void *copy;
+
+    *size = 0;
+    loaded = SDL_LoadFile(path, &length);
+    if (loaded == NULL)
+        return NULL;
+    copy = malloc(length != 0 ? length : 1);        /* the caller frees it with free() */
+    if (copy != NULL) {
+        SDL_memcpy(copy, loaded, length);
+        *size = (int)length;
+    }
+    SDL_free(loaded);
+    return copy;
 }
 
 /* -- locks ----------------------------------------------------------------------------------------- */

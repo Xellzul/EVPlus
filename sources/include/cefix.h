@@ -71,8 +71,6 @@ void CE_ExpandPlugInsPath(char *dst, const char *path);
 
 struct WinRect;
 
-int CE_MacRomanToWide(const void *text, uint32_t count, char *out, uint32_t outCount);
-int CE_DrawTextW(void *hdc, const char *text, int count, struct WinRect *r, unsigned int format);
 void CE_DrawVersion(void);
 
 /* cedialog.c */

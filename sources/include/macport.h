@@ -77,8 +77,11 @@ typedef struct CGrafPort {
     char filler1[2];
     PixMap pix;
     int32_t depth;
-    void *hdc;
-    void *bitmap;
+    void *pixels;                   /* the port's own pixel memory; NULL for a port over pixels it does not own */
+    short lastFont;                 /* the font, size and style text was last drawn or measured with here: */
+    short lastSize;                 /* what an unknown font number leaves in use (port/qdtext.c) */
+    short lastFace;
+    Boolean hasLastFont;
     RGBColor foreColor;
     RGBColor backColor;
     Point pnLoc;
@@ -621,6 +624,7 @@ typedef int EventChar;
 #define kRLEDResType 0x726c9144UL
 
 extern void AcquireScreenDC(void);
+extern void *NewPortPixels(int width, int rows, int bits);
 extern short Alert(short alertID, void *filterProc);
 #define StopAlert(id, filter) Alert(id, filter)
 extern void BackColor(const RGBColor *color);
@@ -667,7 +671,8 @@ extern CWindowPtr FrontWindow(void *window);
 extern Image_t *GetCIcon(short iconID);
 extern void *GetCWindowVisRgn(void *window);
 extern Rect *GetDialogPortRect(DialogPtr dlg);
-extern void *GetFont(short fontID, short size, short style);
+struct FontSpec;
+extern int GetFont(short fontID, short size, short style, struct FontSpec *spec);
 /* the procs a dialog record carries: its update (draw) proc and its event filter */
 typedef void (*DialogUpdateProc)(void);
 typedef Boolean (*DialogEventProc)(DialogPtr dlg, EventRecord *ev, short *itemHit);
