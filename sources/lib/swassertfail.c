@@ -3,22 +3,17 @@
 #include "macport.h"
 #include "burger.h"
 #include "shipobj.h"
-#ifdef MACBUILD
 #include "stellar.h"
-#include "spriteworld.h"
-#endif
 
 EXTERN_C_BEGIN
 
 #define kAssertAlertID 128
 
-#ifndef MACBUILD
 typedef unsigned char Str15[16];
 
 typedef void (*CleanUpCallBackPtr)(void);
 
 CleanUpCallBackPtr gSWCleanUpCallBackP;              /* 0x008700d0 */
-#endif
 
 // FUNCTION: EVNOVA 0x004794d0
 // MAC: _SWAssertFail i386 0x000a7a50 ppc 0x000b2850
@@ -29,9 +24,7 @@ void SWAssertFail(char *filename, int lineNum)
     short n, result;
     uint32_t junkTime;
 
-#ifdef MACBUILD
     FadeScreenIn();
-#endif
 
     NumToString(lineNum, lineString);
 
