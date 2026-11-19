@@ -662,6 +662,15 @@ void PlatWaitEvent(int ms)
     SDL_WaitEventTimeout(NULL, ms);
 }
 
+int PlatKeyIsDown(int scan)
+{
+    int count;
+    const bool *state;
+
+    state = SDL_GetKeyboardState(&count);
+    return scan > 0 && scan < count && state[scan];
+}
+
 int PlatKeyToggled(int winKey)
 {
     SDL_Keymod mod;

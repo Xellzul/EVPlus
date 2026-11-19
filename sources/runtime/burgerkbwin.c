@@ -26,8 +26,6 @@ int32_t Win95MouseYDelta;                           /* 0x00870180 */
 
 #define kKeyQueueMask   0x7f
 #define kKeyAsciiMask   0xff
-#define kKeyHeld        1                        /* KeyArray: held now */
-#define kKeyPressed     2                        /* KeyArray: pressed since last read */
 
 /* Queue one key; a full queue drops it. */
 static void BurgerPostKey(Word32 key)
@@ -168,12 +166,6 @@ static void Win95ProcessEvent(const PlatEvent *ev)
         key = SpecialKey(ev->key);
         if (key != 0)
             BurgerPostKey(key);
-        if (scan != kScanNone)
-            KeyArray[scan] |= kKeyHeld | kKeyPressed;
-        break;
-    case PLAT_EV_KEY_UP:
-        if (scan != kScanNone)
-            KeyArray[scan] &= ~kKeyHeld;
         break;
     case PLAT_EV_CHAR:
         key = AnsiChar(ev->ch);
@@ -217,12 +209,11 @@ void ProcessSystemEvents(void)
     }
 }
 
-/* Reset the input subsystem: forget every key and click. */
+/* Reset the input subsystem: empty the key queue, forget every click. */
 /* KeyboardInit (BurgerLib KeyboardInit). */
 // FUNCTION: EVNOVA 0x004d7a80
 void KeyboardInit(void)
 {
-    memset(KeyArray, 0, sizeof(KeyArray));
     BurgerKeyStart = 0;
     BurgerKeyEnd = 0;
     MouseClicked = 0;

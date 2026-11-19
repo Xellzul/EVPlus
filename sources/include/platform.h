@@ -105,6 +105,8 @@ typedef struct PlatEvent {
 
 extern int PlatPollEvent(PlatEvent *ev);                   /* 0 = no event waiting */
 extern void PlatWaitEvent(int ms);                         /* returns once an event waits, or after ms */
+/* 1 while the key with this scan code (kScan*) is held, as of the events read so far */
+extern int PlatKeyIsDown(int scan);
 /* the toggle state of a key named by its Windows virtual-key code (ddraw.ini's key_x2mode): the lock
    keys answer their lock state, a letter, digit or function key flips at each press */
 extern int PlatKeyToggled(int winKey);

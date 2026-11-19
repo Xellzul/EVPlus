@@ -288,8 +288,6 @@ extern void CStr2PStr(char *dst, const char *src);
 extern int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level);
 extern ULong ST_PlaySoundParam(SoundRequest *req);
 
-extern unsigned char KeyArray[kScanCount];
-
 #ifdef __cplusplus
 }
 #endif
