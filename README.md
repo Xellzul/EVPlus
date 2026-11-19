@@ -11,6 +11,8 @@ The first configure also downloads SDL 3.4.20 and builds it as a static library 
 `-DSDL3_TARBALL=/path/to/SDL3-3.4.20.tar.gz`.
 The same goes for FreeType 2.14.3 (draws the text), built into `build/freetype`. Offline: pass
 `-DFREETYPE_TARBALL=/path/to/freetype-2.14.3.tar.xz`.
+And yyjson 0.13.0 (reads and writes the preferences), unpacked into `build/yyjson` and built with the game. Offline:
+pass `-DYYJSON_TARBALL=/path/to/yyjson-0.13.0.tar.gz`.
 
 `cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake`
 
@@ -22,4 +24,6 @@ Outputs `build/evnova64.exe` + DLLs. Options: `-DLLVM_MINGW=/path/to/llvm-mingw`
 ## Credits:
 andrews05 for CE patches - https://github.com/andrews05/EV-Nova-CE
 
-Portions of this software are copyright © 2026 The FreeType Project (https://freetype.org). All rights reserved. 
+Portions of this software are copyright © 2026 The FreeType Project (https://freetype.org). All rights reserved.
+
+yyjson (https://github.com/ibireme/yyjson): Copyright (c) 2020 YaoYuan <ibireme@gmail.com>, MIT License.
