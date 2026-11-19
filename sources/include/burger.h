@@ -77,7 +77,12 @@ extern void *OpenPrefsFile(const char *name);
 extern struct PrefsNode *PrefsFindGroup(struct PrefsNode *file, const char *name);
 extern void PrefsGetString(struct PrefsNode *group, const char *key, const char *dflt,
                            char *out, int32_t outSize);
+#ifdef _WIN32
 extern int stricmp(const char *s1, const char *s2);   /* MSL Extras */
+#else
+#include <strings.h>
+#define stricmp strcasecmp
+#endif
 
 /* runtime-block globals */
 extern uint32_t gSaveLeftVolume;

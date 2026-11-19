@@ -1,6 +1,7 @@
 /* burgerfilewin.cpp -- BurgerLib FmWin95Code on the platform layer (platform.h): directory scans, native
-   paths, the default prefixes. Native paths keep Windows' form ("X:\dir\file", "\\server\share\dir") and
-   are UTF-8. Notes: Research/notes/burgerfilewin.md */
+   paths, the default prefixes. Native paths are UTF-8, in Windows' form ("X:\dir\file", "\\server\share\dir")
+   on Windows; elsewhere "/dir/file", which BurgerLib holds as ":dir:file:" (its network-share form, the
+   file system's top standing for the share). Notes: Research/notes/burgerfilewin.md */
 
 #include <stdio.h>
 #include <string.h>
@@ -15,7 +16,11 @@ extern "C" {
 
 #define kSearchOpen         1
 #define kVolumeColon        ':'
+#ifdef _WIN32
 #define kPathSeparator      '\\'
+#else
+#define kPathSeparator      '/'
+#endif
 #define kPathBuffer         0x2000
 #define kBackslash          '\\'
 #define kColon              ':'
@@ -179,7 +184,12 @@ void ExpandAPathToBufferNative(char *out, const char *name)
     device = kNoVolume;
     src = path;
     if ((Word8)path[0] == ':') {
-        *out++ = '\\';
+#ifdef _WIN32
+        *out++ = kPathSeparator;
+#else
+        ++src;                                  /* ":dir:" is "/dir" */
+        *out++ = kPathSeparator;
+#endif
     } else if ((Word8)src[0] == '.') {
         t = (Word8)src[1];
         if (t >= 'a' && t < 'z' + 1)
@@ -204,21 +214,23 @@ void ExpandAPathToBufferNative(char *out, const char *name)
             src += index;
         }
     }
+#ifdef _WIN32
     if (device != kNoVolume) {
         out[0] = (device + 'A');
         out[1] = ':';
-        out[2] = '\\';
+        out[2] = kPathSeparator;
         out += 3;
     }
+#endif
     if (*src != 0) {
         do {
             c = *src++;
             if (c == ':')
-                c = '\\';
+                c = kPathSeparator;
             *out++ = c;
         } while (c != 0);
         out -= 2;
-        if ((Word8)*out != '\\')
+        if ((Word8)*out != kPathSeparator)
             ++out;
     }
     *out = 0;
@@ -241,7 +253,32 @@ ULong fgetfilesize(FILE *fp)
 /* BurgerLib publishes PREFIXBOOT 32, PREFIXPREFS 33 and PREFIXSYSTEM 34, which are
    this file's 0x20, 0x21 and 0x22. */
 
-/* The current folder (8), the program's (9) and the one for preferences ("@:", %APPDATA%). The exe also
+#ifdef _WIN32
+static Word PrefsFolder(char *folder, Word size)
+{
+    return PlatEnv("APPDATA", folder, size);
+}
+#else
+#define kPrefsFolderName    "EV Nova"
+
+/* $XDG_CONFIG_HOME/EV Nova, or ~/.config/EV Nova; made when it is not there */
+static Word PrefsFolder(char *folder, Word size)
+{
+    char base[kPathBufferSize];
+    int length;
+
+    if (PlatEnv("XDG_CONFIG_HOME", base, sizeof(base)) && base[0] == '/')
+        length = snprintf(folder, size, "%s/%s", base, kPrefsFolderName);
+    else if (PlatEnv("HOME", base, sizeof(base)))
+        length = snprintf(folder, size, "%s/.config/%s", base, kPrefsFolderName);
+    else
+        return 0;
+    return length > 0 && (Word)length < size && PlatMakeFolder(folder);
+}
+#endif
+
+/* The current folder (8), the program's (9) and the one for preferences ("@:": %APPDATA% on Windows,
+   the user's configuration folder elsewhere). The exe also
    set the system folder ("$:") and the drive it is on ("*:"), which no path of the game names, took the
    program's folder from its first argument, and without an APPDATA variable (Windows 95) kept preferences
    in the Windows folder: now "@:" is then left unset, which is the current folder. */
@@ -263,7 +300,7 @@ void SetDefaultPrefixs(void)
         DeallocAPointer(path);
     }
 
-    if (PlatEnv("APPDATA", folder, sizeof(folder))) {
+    if (PrefsFolder(folder, sizeof(folder))) {
         path = ConvertNativePathToPath(folder);
         if (path != 0) {
             SetAPrefix(PREFIXPREFS, path);
@@ -272,6 +309,7 @@ void SetDefaultPrefixs(void)
     }
 }
 
+#ifdef _WIN32
 static Word IsSeparator(char c)
 {
     return c == '\\' || c == '/';
@@ -358,6 +396,56 @@ static void FullNativePath(char *out, const char *path)
     out[n] = 0;
 }
 
+#else
+/* A path made whole against the current folder, "." and ".." resolved: "/..." in `out' (kPathBuffer bytes),
+   "" when there is no current folder to start from. */
+static void FullNativePath(char *out, const char *path)
+{
+    char whole[kPathBuffer];
+    const char *part;
+    Word length;
+    Word n;
+
+    whole[0] = 0;
+    if (path[0] != kPathSeparator)
+        PlatCurrentFolder(whole, kPathBuffer / 2);
+    n = strlen(whole);
+    if (path[0] != kPathSeparator && (n == 0 || whole[0] != kPathSeparator)) {
+        out[0] = 0;
+        return;
+    }
+    length = strlen(path);
+    if (length > kPathBuffer - 2 - n)
+        length = kPathBuffer - 2 - n;
+    memcpy(whole + n, path, length);
+    whole[n + length] = 0;
+
+    n = 0;
+    part = whole;
+    while (*part != 0) {
+        while (*part == kPathSeparator)
+            ++part;
+        length = 0;
+        while (part[length] != 0 && part[length] != kPathSeparator)
+            ++length;
+        if (length == 2 && part[0] == '.' && part[1] == '.') {
+            while (n > 0 && out[n - 1] != kPathSeparator)
+                --n;
+            if (n > 0)
+                --n;
+        } else if (length != 0 && !(length == 1 && part[0] == '.')) {
+            out[n++] = kPathSeparator;
+            memcpy(out + n, part, length);
+            n += length;
+        }
+        part += length;
+    }
+    if (n == 0)
+        out[n++] = kPathSeparator;
+    out[n] = 0;
+}
+#endif
+
 /* ConvertNativePathToPath (BurgerLib ConvertNativePathToPath). */
 // FUNCTION: EVNOVA 0x004d9b10
 char *ConvertNativePathToPath(const char *path)
@@ -377,6 +465,7 @@ char *ConvertNativePathToPath(const char *path)
     FullNativePath(src, path);
     if (src[0] == 0)
         return 0;
+#ifdef _WIN32
     if (src[0] == kBackslash && src[1] == kBackslash) {
         *dst++ = kColon;
         src += 2;
@@ -391,9 +480,13 @@ char *ConvertNativePathToPath(const char *path)
         dst += strlen(dst);
         *dst++ = kColon;
     }
+#else
+    *dst++ = kColon;                            /* "/dir" is ":dir:" */
+    ++src;
+#endif
     c = *src;
     while (c != 0) {
-        if (c == kBackslash)
+        if (c == kPathSeparator)
             c = kColon;
         *dst = c;
         ++src;

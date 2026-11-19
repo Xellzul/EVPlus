@@ -11,6 +11,7 @@
 #define kToggleCount    256             /* the keys key_x2mode can name all lie below this */
 #define kFocusNotes     16              /* focus losses waiting in SDL's queue, a power of 2 */
 #define kBytesPerPixel  2
+#define kPathMax        4096            /* bytes of a path, with its end */
 #define kDefaultRefresh 60              /* Hz, when the display does not tell */
 /* two frames are never held apart longer than this, whatever the display: the game's own frames in flight
    come 21 ms apart and must each be shown as they come */
@@ -725,8 +726,9 @@ const char *PlatExeFolder(void)
     return base != NULL ? base : "";
 }
 
-int PlatListFiles(const char *folder, const char *pattern, void (*found)(const char *path, void *ctx), void *ctx)
+int PlatListFiles(const char *where, const char *pattern, void (*found)(const char *path, void *ctx), void *ctx)
 {
+    char folder[kPathMax];
     char **names;
     char *path;
     size_t length;
@@ -734,6 +736,8 @@ int PlatListFiles(const char *folder, const char *pattern, void (*found)(const c
     int i;
 
     count = 0;
+    if (!PlatFindPath(where, folder, sizeof folder))
+        return 0;
     names = SDL_GlobDirectory(folder, pattern, SDL_GLOB_CASEINSENSITIVE, &count);
     if (names == NULL)
         return 0;
@@ -769,13 +773,14 @@ int PlatCurrentFolder(char *out, int outSize)
     return fits;
 }
 
-int PlatPathKind(const char *path, uint64_t *size)
+int PlatPathKind(const char *name, uint64_t *size)
 {
+    char path[kPathMax];
     SDL_PathInfo info;
 
     if (size != NULL)
         *size = 0;
-    if (!SDL_GetPathInfo(path, &info) || info.type == SDL_PATHTYPE_NONE)
+    if (!PlatFindPath(name, path, sizeof path) || !SDL_GetPathInfo(path, &info) || info.type == SDL_PATHTYPE_NONE)
         return kPlatNothing;
     if (info.type == SDL_PATHTYPE_DIRECTORY)
         return kPlatFolder;
@@ -891,14 +896,15 @@ static SDL_EnumerationResult SDLCALL AddEntry(void *userdata, const char *dirnam
     return SDL_ENUM_CONTINUE;
 }
 
-int PlatListFolder(const char *folder, PlatFoundProc found, void *ctx)
+int PlatListFolder(const char *name, PlatFoundProc found, void *ctx)
 {
+    char folder[kPathMax];
     FolderList list;
     bool read;
     int i;
 
     SDL_zero(list);
-    read = SDL_EnumerateDirectory(folder, AddEntry, &list);
+    read = PlatFindPath(name, folder, sizeof folder) && SDL_EnumerateDirectory(folder, AddEntry, &list);
     if (read) {
         SDL_qsort(list.items, (size_t)list.count, sizeof *list.items, CompareEntries);
         for (i = 0; i < list.count; i++)
@@ -910,17 +916,108 @@ int PlatListFolder(const char *folder, PlatFoundProc found, void *ctx)
     return read;
 }
 
-int PlatMakeFolder(const char *path)
+int PlatMakeFolder(const char *name)
 {
+    char path[kPathMax];
+
+    if (!PlatFindPath(name, path, sizeof path))
+        return 0;
     SDL_CreateDirectory(path);
     return PlatPathKind(path, NULL) != kPlatNothing;
 }
 
 /* SDL counts removing what is not there as done */
-int PlatRemove(const char *path)
+int PlatRemove(const char *name)
 {
-    return PlatPathKind(path, NULL) != kPlatNothing && SDL_RemovePath(path);
+    char path[kPathMax];
+
+    return PlatFindPath(name, path, sizeof path) && PlatPathKind(path, NULL) != kPlatNothing
+           && SDL_RemovePath(path);
 }
+
+#ifdef SDL_PLATFORM_WINDOWS
+int PlatFindPath(const char *path, char *out, int outSize)
+{
+    if (SDL_strlen(path) >= (size_t)outSize)
+        return 0;
+    SDL_strlcpy(out, path, (size_t)outSize);
+    return 1;
+}
+#else
+/* the first `length' bytes of `want' name `name', upper and lower case alike, in NTFS' way */
+static bool SameName(const char *name, const char *want, size_t length)
+{
+    while (length != 0) {
+        if (*name == 0 || UpperCase(SDL_StepUTF8(&name, NULL)) != UpperCase(SDL_StepUTF8(&want, &length)))
+            return false;
+    }
+    return *name == 0;
+}
+
+typedef struct NameSearch {
+    const char *want;
+    size_t length;
+    char *found;
+} NameSearch;
+
+static SDL_EnumerationResult SDLCALL MatchName(void *userdata, const char *dirname, const char *fname)
+{
+    NameSearch *search = (NameSearch *)userdata;
+
+    (void)dirname;
+    if (!SameName(fname, search->want, search->length))
+        return SDL_ENUM_CONTINUE;
+    search->found = SDL_strdup(fname);
+    return SDL_ENUM_SUCCESS;
+}
+
+int PlatFindPath(const char *path, char *out, int outSize)
+{
+    SDL_PathInfo info;
+    NameSearch search;
+    size_t length;
+    size_t start;
+    size_t end;
+    char first;
+    char cut;
+
+    length = SDL_strlen(path);
+    if (length >= (size_t)outSize)
+        return 0;
+    SDL_memcpy(out, path, length + 1);
+    if (SDL_GetPathInfo(out, &info))
+        return 1;
+    for (start = 0; start < length; start = end) {
+        while (out[start] == '/')
+            start++;
+        for (end = start; end < length && out[end] != '/'; end++)
+            ;
+        if (end == start)
+            break;
+        cut = out[end];
+        out[end] = 0;
+        if (!SDL_GetPathInfo(out, &info)) {
+            search.want = path + start;
+            search.length = end - start;
+            search.found = NULL;
+            first = out[start];
+            out[start] = 0;
+            SDL_EnumerateDirectory(start == 0 ? "." : out, MatchName, &search);
+            out[start] = first;
+            /* a name whose other case is longer or shorter in UTF-8 would move the rest: not taken */
+            if (search.found == NULL || SDL_strlen(search.found) != end - start) {
+                SDL_free(search.found);
+                out[end] = cut;
+                break;
+            }
+            SDL_memcpy(out + start, search.found, end - start);
+            SDL_free(search.found);
+        }
+        out[end] = cut;
+    }
+    return 1;
+}
+#endif
 
 int PlatEnv(const char *name, char *out, int outSize)
 {
@@ -1034,13 +1131,16 @@ int PlatOpenFileDialog(const char *kindName, const char *extension, const char *
     return chosen;
 }
 
-void *PlatLoadFile(const char *path, int *size)
+void *PlatLoadFile(const char *name, int *size)
 {
+    char path[kPathMax];
     size_t length;
     void *loaded;
     void *copy;
 
     *size = 0;
+    if (!PlatFindPath(name, path, sizeof path))
+        return NULL;
     loaded = SDL_LoadFile(path, &length);
     if (loaded == NULL)
         return NULL;

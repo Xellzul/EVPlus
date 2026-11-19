@@ -1,8 +1,8 @@
 /* platform.h -- the operating-system services the game runs on. Plain C types cross this header, and SDL's
    events (the game's event pump, runtime/burgerkbwin.cpp, reads them).
    On SDL (platform/platform_sdl.cpp, every platform): start-up, the window and its frame, the events, the cursor,
-   the audio outputs, the clocks, the debug log. Still Windows (platform/platform_win.cpp): path conversion;
-   another platform supplies its own. */
+   the audio outputs, the clocks, the debug log. Per system (platform/platform_win.cpp, platform_unix.cpp):
+   opening files and changing folder by a UTF-8 path, the program's file type, the installed fonts. */
 #ifndef PLATFORM_H
 #define PLATFORM_H
 #include <stdint.h>
@@ -99,12 +99,16 @@ extern void PlatMutexUnlock(PlatMutex *m);
 extern void PlatMutexDestroy(PlatMutex *m);
 
 /* -- files and fonts ---------------------------------------------------------------------------------
-   Every path is UTF-8, in the system's own form otherwise ("C:\dir\file" on Windows). */
+   Every path is UTF-8, in the system's own form otherwise ("C:\dir\file" on Windows). Names are matched
+   upper and lower case alike, as on Windows and the Mac, also where the file system tells them apart. */
 extern const char *PlatExeFolder(void);                    /* where the program lies, ending in a separator */
 /* the folder relative paths start from, ending in a separator; 0 = not known or too long for `out' */
 extern int PlatCurrentFolder(char *out, int outSize);
 extern int PlatSetCurrentFolder(const char *path);         /* 0 = it is no folder: nothing changed */
 extern FILE *PlatFileOpen(const char *path, const char *mode);    /* C's fopen */
+/* The path as it lies on disk: each part that is not there under its own name is the one of that name in
+   other case, when there is one; the parts after one found under no case stay as given. 0 = too long. */
+extern int PlatFindPath(const char *path, char *out, int outSize);
 
 #define kPlatNothing    0                                  /* there is nothing of that name */
 #define kPlatFile       1

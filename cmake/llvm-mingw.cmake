@@ -1,5 +1,5 @@
 # Toolchain file: 64-bit Windows (x86_64) with llvm-mingw (clang + lld).
-#   cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/llvm-mingw.cmake [-DLLVM_MINGW=/opt/llvm-mingw]
+#   cmake --preset windows [-DLLVM_MINGW=/opt/llvm-mingw]
 set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 if(NOT LLVM_MINGW)

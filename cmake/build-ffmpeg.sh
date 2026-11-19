@@ -1,9 +1,10 @@
 #!/bin/sh
-# Cross-builds the minimal LGPL FFmpeg the game's media layer uses (sources/media/media.c), as 64-bit
-# Windows DLLs with llvm-mingw, and installs its licence as share/licenses/FFmpeg-COPYING.LGPLv2.1.txt. CMake
-# runs this on the first configure (into build/ffmpeg) unless -DFFMPEG_ROOT points at an existing install.
+# Builds the minimal LGPL FFmpeg the game's media layer uses (sources/media/), as shared libraries: 64-bit
+# Windows DLLs with llvm-mingw, or with "native" this system's own (clang), and installs its licence as
+# share/licenses/FFmpeg-COPYING.LGPLv2.1.txt. CMake runs this on the first configure (into <build>/ffmpeg)
+# unless -DFFMPEG_ROOT points at an existing install.
 #
-#   cmake/build-ffmpeg.sh <ffmpeg-x.y.z.tar.xz> <install dir> [llvm-mingw root]
+#   cmake/build-ffmpeg.sh <ffmpeg-x.y.z.tar.xz> <install dir> [llvm-mingw root | native]
 #
 # Needs: sh, make, tar with xz. No nasm: the hand-written x86 assembly is off (--disable-x86asm).
 # LGPL: no --enable-gpl / --enable-nonfree.
@@ -13,7 +14,7 @@ tarball=$1
 prefix=$2
 llvm=${3:-/opt/llvm-mingw}
 if [ -z "$tarball" ] || [ -z "$prefix" ]; then
-    echo "usage: $0 <ffmpeg tarball> <install dir> [llvm-mingw root]" >&2
+    echo "usage: $0 <ffmpeg tarball> <install dir> [llvm-mingw root | native]" >&2
     exit 2
 fi
 
@@ -23,17 +24,23 @@ mkdir -p "$work"
 tar -xJf "$tarball" -C "$work"
 src=$(find "$work" -mindepth 1 -maxdepth 1 -type d -name 'ffmpeg-*' | head -n 1)
 
-t=$llvm/bin/x86_64-w64-mingw32
 cd "$src"
-./configure \
+if [ "$llvm" = native ]; then
+    set -- --cc=clang --cxx=clang++ --ld=clang --enable-pthreads
+else
+    t=$llvm/bin/x86_64-w64-mingw32
+    set -- \
+        --target-os=mingw32 --arch=x86_64 --enable-cross-compile --cross-prefix="$t-" \
+        --cc="$t-clang" --cxx="$t-clang++" --ld="$t-clang" \
+        --ar="$llvm/bin/llvm-ar" --ranlib="$llvm/bin/llvm-ranlib" --nm="$llvm/bin/llvm-nm" \
+        --strip="$llvm/bin/llvm-strip" --windres="$t-windres" \
+        --enable-w32threads --disable-pthreads
+fi
+./configure "$@" \
     --prefix="$prefix" \
-    --target-os=mingw32 --arch=x86_64 --enable-cross-compile --cross-prefix="$t-" \
-    --cc="$t-clang" --cxx="$t-clang++" --ld="$t-clang" \
-    --ar="$llvm/bin/llvm-ar" --ranlib="$llvm/bin/llvm-ranlib" --nm="$llvm/bin/llvm-nm" \
-    --strip="$llvm/bin/llvm-strip" --windres="$t-windres" \
     --enable-shared --disable-static \
     --disable-programs --disable-doc --disable-network --disable-autodetect --disable-x86asm \
-    --disable-debug --enable-w32threads --disable-pthreads \
+    --disable-debug \
     --disable-everything \
     --disable-avdevice --disable-avfilter \
     --enable-avformat --enable-avcodec --enable-swscale --enable-swresample \
