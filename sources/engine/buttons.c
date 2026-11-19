@@ -1171,41 +1171,6 @@ void DrawBarButtons(short hilited)
     }
 }
 
-/* TrackOkButton (mac _TrackOkButton): dead on win (stripped). */
-// MAC: _TrackOkButton i386 0x00026d7a ppc 0x0002b428
-Boolean TrackOkButton(Rect box)
-{
-    Point mouse;
-    Boolean inside;
-    Boolean nowInside;
-
-    GetMouse(&mouse);
-    inside = PtInRectPoint(mouse, &box) != 0;
-    DrawOkButton(box, inside);
-    while (StillDown() != 0) {
-        BusyIdle();
-        GetMouse(&mouse);
-        nowInside = PtInRectPoint(mouse, &box) != 0;
-        if (nowInside != inside)
-            DrawOkButton(box, nowInside);
-        inside = nowInside;
-    }
-    return inside;
-}
-
-/* DrawOkButton (mac _DrawOkButton): dead on win (stripped). */
-// MAC: _DrawOkButton i386 0x00026d06 ppc 0x0002b3b0
-void DrawOkButton(Rect box, Boolean hilited)
-{
-    CGrafPtr port;
-
-    GetPort((GrafPtr *)&port);
-    if (hilited)
-        DrawButton(port, &box, buttonLabel[kOkButtonLabel], 0, 1, 0);
-    else
-        DrawButton(port, &box, buttonLabel[kOkButtonLabel], 0, 0, 0);
-}
-
 // FUNCTION: EVNOVA 0x004a2960
 // MAC: _TrackTextButtons i386 0x00026bb0 ppc 0x0002b25c
 short TrackTextButtons(Point where)

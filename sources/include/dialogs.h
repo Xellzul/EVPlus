@@ -66,7 +66,6 @@ extern void DrawPlunderButtons(short hilited);
 extern void DrawRaceButtons(short hilited);
 void DrawShipyardButtons(short hilited);
 extern void DrawSingleMissionButtons(short hilited);
-extern void DrawOkButton(Rect box, Boolean hilited);
 extern void DrawTextButtons(short hilited);
 extern void DrawTradeButtons(short hilited);
 extern Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial,
@@ -110,7 +109,6 @@ extern short TrackPlunderButtons(Point where);
 extern short TrackRaceButtons(Point where);
 extern short TrackShipyardButtons(Point where);
 extern short TrackSingleMissionButtons(Point where);
-extern Boolean TrackOkButton(Rect box);
 extern short TrackTextButtons(Point where);
 extern short TrackTradeButtons(Point where);
 extern void BarDialogUpdate(void);

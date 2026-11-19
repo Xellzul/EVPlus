@@ -443,37 +443,6 @@ FloatPoint XYShortToFloat(ShortPoint pt)
     return f;
 }
 
-/* not linked, not verified against the exe (mac _XYFloatToShort, _VectorToAngle, _CalcShipStopDist) */
-// MAC: _XYFloatToShort i386 0x000028ec ppc 0x00003400
-ShortPoint XYFloatToShort(FloatPoint f)
-{
-    ShortPoint pt;
-
-    pt.h = f.x;
-    pt.v = f.y;
-    return pt;
-}
-
-// MAC: _VectorToAngle i386 0x0000290b ppc 0x00003444
-short VectorToAngle(FloatPoint *v)
-{
-    Rect unit;
-    Point pt;
-    short angle;
-
-    pt.h = v->x * 1000.0f;
-    pt.v = v->y * 1000.0f;
-    SetRect(&unit, -1, -1, 1, 1);
-    PtToAngle(&unit, pt, &angle);
-    return angle;
-}
-
-// MAC: _CalcShipStopDist i386 0x0000298a ppc 0x000034dc
-float CalcShipStopDist(void)
-{
-    return 20000.0f;
-}
-
 // FUNCTION: EVNOVA 0x00463550
 // MAC: _ShipShieldCapacity i386 0x00002995 ppc 0x000034e8
 float ShipShieldCapacity(ShipObj *ship)
@@ -2854,20 +2823,6 @@ void RandSeedFromClock(void)
 
     GetDateTime(&seconds);
     randomSeed = seconds + ReadTick();
-}
-
-/* SetRandSeed (mac _SetRandSeed; dead on win, stripped). */
-// MAC: _SetRandSeed i386 0x000a4d08 ppc 0x000b0968
-void SetRandSeed(uint32_t seed)
-{
-    randomSeed = seed;
-}
-
-/* GetRandSeed (mac _GetRandSeed; dead on win, stripped). */
-// MAC: _GetRandSeed i386 0x000a4d17 ppc 0x000b0978
-uint32_t GetRandSeed(void)
-{
-    return (uint32_t)randomSeed;
 }
 
 #define kDateStrings   137  /* STR# holding the month names and ordinals */

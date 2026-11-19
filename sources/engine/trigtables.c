@@ -11,7 +11,6 @@
 
 float tableSin[360];
 float tableCos[360];
-float tableTan[360];
 float trigResult;
 short tableArcTan[0x400];
 
@@ -27,7 +26,6 @@ void BuildTrigTable(void)
         v = ang = (float)i * kDegToRad;
         tableSin[i] = sin(v);
         tableCos[i] = cos(v);
-        tableTan[i] = tan(v);
     }
     for (i = 0; i <= 0x3ff; i++) {
         v = atan(i * kArctanStep);
@@ -57,17 +55,6 @@ void TableCos(short angle)
     while (angle >= kFullCircle)
         angle -= kFullCircle;
     trigResult = tableCos[angle];
-}
-
-/* TableTan (mac _TableTan, dead on win: uncalled, the linker strips it). */
-// MAC: _TableTan i386 0x0002596e ppc 0x0002a030
-void TableTan(short angle)
-{
-    while (angle < 0)
-        angle += kFullCircle;
-    while (angle >= kFullCircle)
-        angle -= kFullCircle;
-    trigResult = tableTan[angle];
 }
 
 #define kArctanScale   100.0f
