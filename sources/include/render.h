@@ -5,6 +5,7 @@
 #include "gametypes.h"
 #include "macport.h"
 #include "spriteworld.h"
+#include "movie.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +68,6 @@ extern void HandleStellarSprites(void);
 extern void HideTheCursor(void);
 extern void InitColors(void);
 extern void InitIntroProgressBar(void);
-extern short IntroMovieIdleProc(void);
 extern int KeyboardGet(void);
 extern short LoadExtendedShipSprites(short shipType);
 extern void LoadIntfResource(void);
@@ -112,7 +112,6 @@ extern uint32_t lastRolloverAnimTime;
 extern short rolloverAlpha;
 extern short rolloverIndex;
 extern Handle intfFileHand;
-extern CGrafPtr gIntroMovieData;
 EXTERN_CPP_END
 EXTERN_CPP_BEGIN
 extern uint32_t lastLogoAnimTime;
@@ -122,7 +121,6 @@ extern short logoFrameCount;
 extern short logoIndex;
 extern short gMainPicHeightDelta;
 extern short gMainPicWidthDelta;
-extern short loopingMovieResRefNum;
 extern short planetPicId;
 extern unsigned char weapName[256][256];
 extern Rect interfacePicRect;
@@ -160,7 +158,7 @@ extern short statusFontID;
 extern GWorldContainer statusOffPort;
 extern uint32_t tix;
 
-extern void *loopingMovie;
+extern Movie loopingMovie;
 
 extern void *mainScreenSnd[4];
 extern Rect slideDestRect[3];
@@ -181,9 +179,6 @@ extern void DoPlayGameWork(unsigned char advance);
 extern void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite);
 extern void FloaterDrawCallback(SpriteWorldPtr world);
 extern void BeamEraseCallback(SpriteWorldPtr world);
-EXTERN_CPP_BEGIN
-extern Rect gMovieBox;
-EXTERN_CPP_END
 extern void StartLoopingMovie(const unsigned char *name, void *window,
                               Rect *box);
 extern void PreloadPortDialog(SpobRecord *spob, short stellar);

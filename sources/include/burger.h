@@ -99,16 +99,6 @@ extern uint32_t GetAHandleSize(Handle h);
 extern Handle ResizeAHandle(Handle h, uint32_t size);
 extern char * LockAHandle(Handle h);
 
-/* QuickTime calls, media/quicktime.c */
-extern void HUnlock(Handle h);
-extern void HPurge(Handle h);
-extern short EnterMovies(void);
-extern void ExitMovies(void);
-extern void SetTrackGWorld(void *track, void *movieData, int32_t a3,
-                           short (*proc)(void), int32_t a5);
-extern int32_t GetTimeBaseFlags(void *timeBase);
-extern void SetTimeBaseFlags(void *timeBase, int32_t flags);
-
 extern void KeyboardInit(void);
 extern void SetDefaultPrefixs(void);
 extern void ST_DisposeSound(void *snd);

@@ -7,6 +7,7 @@
 #include "shipobj.h"
 #include "gameconst.h"
 #include "spriteworld.h"
+#include "movie.h"
 
 /* the registered name <REG> shows (mission text, the loading bar): EV Nova CE's unlicensed default */
 #define kRegisteredName "EV Nova Community"

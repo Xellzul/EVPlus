@@ -222,9 +222,8 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
         ResizeAHandle((Handle)frameHandle, size);
 
-        err = MemError();
-        if ((int)err == noErr)
-            *frameData = frameHandle;
+        err = noErr;
+        *frameData = frameHandle;
     } else {
         err = kMemFullErr;
     }

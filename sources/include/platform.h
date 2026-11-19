@@ -68,7 +68,7 @@ extern void PlatCursorShow(int show);
 extern void PlatCursorArrow(void);                         /* back to the system arrow */
 
 /* -- audio: outputs of 16-bit stereo, each fed on the audio thread by a pull function. The Sound Tool's
-   mix is one (runtime/atsnddrv.c), every playing movie's sound another (media/quicktime.c) -------------- */
+   mix is one (runtime/atsnddrv.c), every playing movie's sound another (media/movie.c) ------------------- */
 typedef struct PlatAudio PlatAudio;
 /* called on the audio thread with the output locked; fills `frames' stereo frames or fewer and returns how
    many, 0 at the end (it is not called again after that) */

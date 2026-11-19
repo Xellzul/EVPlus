@@ -13,7 +13,7 @@
 #include "render.h"
 #include "burger.h"
 #include "gameutil.h"
-#include "cefix.h"
+#include "movie.h"
 
 #define kMusicIdleTicks   0x28   /* HandleIntroMusic services at most this often */
 #define kMaxVolume        0x100
@@ -24,9 +24,6 @@
 #define kMusicStrings     130    /* STR# holding the intro song's file name */
 #define kIntroSongName    2
 #define kExtensionCount   3
-
-#define fsRdPerm          1
-#define newMovieActive    1
 
 /* the load-bar and intro-music object's globals */
 Rect progressRect;
@@ -46,16 +43,12 @@ char *gMusicExtensions[kExtensionCount] = { "", ".mov", ".mp3" };  /* 0x00575a70
 // MAC: _SetupIntroMusic i386 0x00061af8 ppc 0x000698d4
 void SetupIntroMusic(void)
 {
-    short result;
     short i;
     short volume;
-    int err;
-    int specErr;
-    short resID;
-    char path[256];
-    FSSpec spec;
-    short refNum;
+    char path[kMoviePathMax];
     char name[256];
+    char files[kExtensionCount][256 + 8];
+    const char *names[kExtensionCount];
     Str255 songName;
 
     if (settings.introMusic == '\0')
@@ -63,49 +56,20 @@ void SetupIntroMusic(void)
 
     GetIndString(songName, kMusicStrings, kIntroSongName);
     introMusicMovie = 0;
-    i = 0;
-    do {
-        PStr2CStr(name, songName);
-        sprintf(path, "9:Nova Plug-ins:%s%s", name, gMusicExtensions[i]);
-        CE_ExpandPlugInsPath(path, path);
-        CStr2PStr(path, path);
-        result = FSMakeFSSpec(0, 0, path, &spec);
-        specErr = result;
-        if (specErr == 0)
-            result = OpenMovieFile(&spec, &refNum, fsRdPerm);
-        err = result;
-    } while (err != 0 && ++i < kExtensionCount);
-
-    if (err != 0) {
-        i = 0;
-        do {
-            PStr2CStr(name, songName);
-            sprintf(path, "9:Nova Files:%s%s", name, gMusicExtensions[i]);
-            CE_ExpandFilesPath(path, path);
-            CStr2PStr(path, path);
-            result = FSMakeFSSpec(0, 0, path, &spec);
-            specErr = result;
-            if (specErr == 0)
-                result = OpenMovieFile(&spec, &refNum, fsRdPerm);
-            err = result;
-        } while (err != 0 && ++i < kExtensionCount);
-        if (err != 0)
-            return;
+    PStr2CStr(name, songName);
+    for (i = 0; i < kExtensionCount; i++) {
+        sprintf(files[i], "%s%s", name, gMusicExtensions[i]);
+        names[i] = files[i];
     }
-
-    resID = 0;
-    // BUG: NewMovieFromFile's result is dropped and the err test below is stale (always 0 here);
-    // a file that opens but is not a playable movie leaves introMusicMovie NULL and it is still used
-    NewMovieFromFile(&introMusicMovie, refNum, &resID, 0, newMovieActive, 0);
-    CloseMovieFile(refNum);
-    if (err != 0)
+    if (!MovieFindFile(names, kExtensionCount, path, sizeof path))
         return;
+    introMusicMovie = MovieOpen(path);
 
     volume = settings.volume * kStartVolumeScale;
     if (volume > kMaxVolume)
         volume = kMaxVolume;
-    SetMovieVolume(introMusicMovie, volume);
-    StartMovie(introMusicMovie);
+    MovieSetVolume(introMusicMovie, volume);
+    MovieStart(introMusicMovie);
     lastMoviesTaskTime = 0;
 }
 
@@ -117,12 +81,12 @@ void StopIntroMusic(Boolean fade)
     int32_t start;
 
     if (introMusicMovie != 0) {
-        if (fade != 0 && IsMovieDone(introMusicMovie) == 0) {
+        if (fade != 0 && MovieDone(introMusicMovie) == 0) {
             volume = settings.volume * kVolumeScale;
             if (volume > kMaxVolume)
                 volume = kMaxVolume;
             while (volume > 0) {
-                SetMovieVolume(introMusicMovie, volume);
+                MovieSetVolume(introMusicMovie, volume);
                 start = ReadTick();
                 do {
                     BusyIdle();
@@ -132,8 +96,8 @@ void StopIntroMusic(Boolean fade)
                     volume = 0;
             }
         }
-        StopMovie(introMusicMovie);
-        DisposeMovie(introMusicMovie);
+        MovieStop(introMusicMovie);
+        MovieClose(introMusicMovie);
         introMusicMovie = 0;
     }
 }
@@ -146,15 +110,14 @@ void HandleIntroMusic(Boolean force)
 
     if (introMusicMovie != 0) {
         if (force != 0 || ReadTick() >= lastMoviesTaskTime + kMusicIdleTicks) {
-            if (IsMovieDone(introMusicMovie) != 0) {
-                DisposeMovie(introMusicMovie);
+            if (MovieDone(introMusicMovie) != 0) {
+                MovieClose(introMusicMovie);
                 introMusicMovie = 0;
             } else {
                 volume = settings.volume * kVolumeScale;
                 if (volume > kMaxVolume)
                     volume = kMaxVolume;
-                SetMovieVolume(introMusicMovie, volume);
-                MoviesTask(introMusicMovie, 0);
+                MovieSetVolume(introMusicMovie, volume);
                 lastMoviesTaskTime = ReadTick();
             }
         }

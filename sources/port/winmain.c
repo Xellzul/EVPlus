@@ -24,13 +24,11 @@ int GameMain(void)
     SetDefaultPrefixs();
     atexit(ShutdownWinGame);
     OSCursorReset();
-    InitializeQTML(2);
     gRezOpenPending = 1;
     EVOpenResourceFile("9:Nova.rez");
     CE_InitScaleFactor();
     InitFonts();
     InitEVNova();
-    TerminateQTML();
     return 0;
 }
 

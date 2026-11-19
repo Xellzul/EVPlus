@@ -122,9 +122,6 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
             srcSpriteP->rleDataH = (char **)spriteData;
             srcSpriteP->ownsRLEData = true;
         }
-    } else {
-        if ((int)err == noErr)
-            err = MemError();
     }
 
     SWSetStickyIfError(err);

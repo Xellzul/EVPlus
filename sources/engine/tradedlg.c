@@ -23,6 +23,7 @@
 #include "burger.h"
 #include "sound.h"
 #include "cefix.h"
+#include "movie.h"
 #include "ai.h"
 #include "space.h"
 
@@ -58,7 +59,6 @@ short lastClickItem;
 short outfitScroll;
 short shipyardScroll;
 short shipBuyMode;
-short loopingMovieResRefNum;
 short junkType[2];
 uint32_t lastClickTime;
 float priceFluxMult[2];
@@ -89,7 +89,7 @@ unsigned char textInputString[256];
 Rect listPicOffRect[kPictCacheSlots];
 Rect listScreenRect[kGridCells];
 Rect listPicScreenRect[kGridCells];
-void *loopingMovie = NULL;
+Movie loopingMovie = NULL;
 TEHandle textDialogTextHandle;
 uint32_t lastTextScrollTime;
 uint32_t ambientNoiseDelay;
@@ -99,8 +99,6 @@ char playerInfoText[3][4096];
 short nagCount;
 short previewPicID;
 RGBColor shopGridColor[2];
-CGrafPtr gIntroMovieData;
-Rect gMovieBox;
 /* the menu icon cache draws into a port on mac, into the port's container on win */
 #define MenuIconPort(gwc) (gwc)
 
@@ -4232,7 +4230,7 @@ void SwitchedIn(EventRecord *ev)
     cursorHidden = 0;
     ShowTheCursor();
     if (introMusicMovie != NULL)
-        StartMovie(introMusicMovie);
+        MovieStart(introMusicMovie);
 }
 
 // FUNCTION: EVNOVA 0x00497d50
@@ -4243,7 +4241,7 @@ void SwitchedOut(EventRecord *ev)
 
     inBackground = 1;
     if (introMusicMovie != NULL)
-        StopMovie(introMusicMovie);
+        MovieStop(introMusicMovie);
     if (warpUpSnd[0] != NULL && ST_IsSoundPlaying(warpUpSnd[0]) != 0)
         ST_HaltSound(warpUpSnd[0]);
     snd = warpUpSnd[1];
@@ -6198,13 +6196,10 @@ void ShowTheMenuBar(void)
 // MAC: _StartLoopingMovie i386 0x00060266 ppc 0x00067fb8
 void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
 {
-    short found;
     CGrafPtr port;
-    void *timeBase;
     char cname[0x100];
-    char path[0x100];
-    char scratch[0x108];
-    short movieResId = 0;
+    char path[kMoviePathMax];
+    const char *names[1];
     CGrafPtr *windowPort = (CGrafPtr *)window;
 
     if (settings.noMovies != 0)
@@ -6213,50 +6208,20 @@ void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
     if (loopingMovie != NULL)
         EndLoopingMovie();
 
-    gMovieBox.left = box->left;
-    gMovieBox.right = box->right;
-    gMovieBox.top = box->top;
-    gMovieBox.bottom = box->bottom;
-
     port = *windowPort;
-    NewGWorldFromPtr(&gIntroMovieData, k16BE555PixelFormat, &gMovieBox, NULL, NULL, 0,
-                     port->pix.baseAddr, port->pix.rowBytes);
-
     PStr2CStr(cname, name);
-
-    sprintf(path, "9:Nova Plug-ins:%s", cname);
-    CE_ExpandPlugInsPath(path, path);
-    CStr2PStr(path, path);
-    found = FSMakeFSSpec(0, 0, path, scratch);
-    if ((int)found == 0)
-        found = OpenMovieFile(scratch, &loopingMovieResRefNum, 1);
-    if ((int)found != 0) {
-        PStr2CStr(cname, name);
-        sprintf(path, "9:Nova Files:%s", cname);
-        CE_ExpandFilesPath(path, path);
-        CStr2PStr(path, path);
-        found = FSMakeFSSpec(0, 0, path, scratch);
-        if ((int)found == 0)
-            found = OpenMovieFile(scratch, &loopingMovieResRefNum, 1);
-        if ((int)found != 0)
-            return;
-    }
-
-    found = NewMovieFromFile(&loopingMovie, loopingMovieResRefNum, &movieResId, 0, 1, 0);
-    CloseMovieFile(loopingMovieResRefNum);
-    if ((int)found != 0) {
-        loopingMovie = NULL;
+    names[0] = cname;
+    if (!MovieFindFile(names, 1, path, sizeof path))
         return;
-    }
+    loopingMovie = MovieOpen(path);
+    if (loopingMovie == NULL)
+        return;
 
-    SetMovieGWorld(loopingMovie, gIntroMovieData, 0);
-    SetMovieBox(loopingMovie, &gMovieBox);
-    SetMoviePlayHints(loopingMovie, 2, 2);
-    timeBase = GetMovieTimeBase(loopingMovie);
-    SetTimeBaseFlags(timeBase, GetTimeBaseFlags(timeBase) | 1);
-    GoToBeginningOfMovie(loopingMovie);
-    SetMovieRate(loopingMovie, 0x10000);
-    StartMovie(loopingMovie);
+    MovieSetTarget(loopingMovie, port->pix.baseAddr, port->pix.rowBytes, box->right - box->left,
+                   box->bottom - box->top, 1);
+    MovieSetLoop(loopingMovie, 1);
+    MovieRewind(loopingMovie);
+    MovieStart(loopingMovie);
 }
 
 // FUNCTION: EVNOVA 0x0049da80
@@ -6264,7 +6229,7 @@ void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
 void LoopingMovieIdle(void)
 {
     if (loopingMovie != NULL) {
-        MoviesTask(loopingMovie, 0);
+        MovieDraw(loopingMovie);
         nv_UpdateDialogWindow(0);
         ScreenEndScene();
     }
@@ -6275,29 +6240,10 @@ void LoopingMovieIdle(void)
 void EndLoopingMovie(void)
 {
     if (loopingMovie != NULL) {
-        DisposeMovie(loopingMovie);
+        MovieClose(loopingMovie);
         loopingMovie = NULL;
-        DisposeGWorld(gIntroMovieData);
-        gIntroMovieData = NULL;
     }
 }
-
-/* the movie's idle callback; taken by address at 0x0049deb1 */
-// FUNCTION: EVNOVA 0x0049daf0
-short IntroMovieIdleProc(void)
-{
-    ScreenEndScene();
-    return 0;
-}
-
-#pragma pack(push, 1)
-typedef struct FileSpec {
-    short vRefNum;
-    int32_t parID;
-    char name[256];
-} FileSpec;
-#pragma pack(pop)
-
 
 /* The inputs that skip a movie, a bit each: any mouse button, Space, Return, keypad Enter. */
 static unsigned MovieSkipInputs(void)
@@ -6313,154 +6259,97 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
     unsigned held;
     unsigned down;
     char nameBuf[256];
-    FileSpec spec;
+    char path[kMoviePathMax];
+    const char *names[1];
     short dw, dh;
     short w, h;
-    int32_t err;
-    short r;
-    short refNum;
-    short resId;
+    int movieW, movieH;
     Rect movieBox;
-    char pathBuf[2048];
-    Rect scaled;
     Rect box;
     Movie movie;
-    void *track;
     CGrafPtr port;
     float ratio;
 
-    if (settings.noMovies == 0) {
-        PStr2CStr(nameBuf, name);
-        sprintf(pathBuf, "9:Nova Plug-ins:%s", nameBuf);
-        CE_ExpandPlugInsPath(pathBuf, pathBuf);
-        CStr2PStr(pathBuf, pathBuf);
-        r = FSMakeFSSpec(0, 0, pathBuf, &spec);
-        if ((int32_t)r == 0)
-            r = OpenMovieFile(&spec, &refNum, 1);
-        err = r;
-        if (err == 0)
-            goto found;
-        PStr2CStr(nameBuf, name);
-        sprintf(pathBuf, "9:Nova Files:%s", nameBuf);
-        CE_ExpandFilesPath(pathBuf, pathBuf);
-        CStr2PStr(pathBuf, pathBuf);
-        r = FSMakeFSSpec(0, 0, pathBuf, &spec);
-        if ((int32_t)r == 0)
-            r = OpenMovieFile(&spec, &refNum, 1);
-        err = r;
-        if (err == 0)
-            goto found;
+    if (settings.noMovies != 0)
         return;
-found:
-        resId = 0;
-        // BUG: NewMovieFromFile's result is dropped and the err test below is the stale OpenMovieFile one;
-        // a file that opens but is not a movie leaves `movie' uninitialised and it is played
-        NewMovieFromFile(&movie, refNum, &resId, 0, 1, 0);
-        CloseMovieFile(refNum);
-        if (err != 0)
-            return;
-        if (fade != 0) {
-            FadeScreenOut();
-            HideTheCursor();
-        }
-        GetMovieBox(movie, &gMovieBox);
-        box.left = gMovieBox.left;
-        box.top = gMovieBox.top;
-        box.right = gMovieBox.right;
-        box.bottom = gMovieBox.bottom;
-        OffsetRect(&box, -box.left, -box.top);
-        if (doubled != 0) {
-            scaled.top = 0;
-            scaled.right = ((box.right - box.left) * 2);
-            scaled.bottom = ((box.bottom - box.top) * 2);
-            scaled.right += 1;
-            scaled.bottom += 1;
-            scaled.left = 0;
-            OffsetRect(&scaled, -scaled.left, -scaled.top);
-            box.top = scaled.top;
-            box.left = scaled.left;
-            box.bottom = scaled.bottom;
-            box.right = scaled.right;
-        }
-        gMovieBox.left = box.left;
-        gMovieBox.top = box.top;
-        gMovieBox.right = box.right;
-        gMovieBox.bottom = box.bottom;
-        SetMovieBox(movie, &gMovieBox);
-        if (fade != 0)
-            GetCWindowPortRect(gWind);
-        movieBox.bottom = gVideoHeight;
-        movieBox.right = gVideoWidth;
-        movieBox.top = 0;
-        movieBox.left = 0;
-        CenterRect(&box, &movieBox);
-        gMovieBox.left = box.left;
-        gMovieBox.top = box.top;
-        gMovieBox.right = box.right;
-        gMovieBox.bottom = box.bottom;
-        SetMovieBox(movie, &gMovieBox);
-        port = GetCWindowGrafPort(gWind);
-        NewGWorldFromPtr(&gIntroMovieData, k16LE555PixelFormat, &gMovieBox, NULL, NULL, 0,
-                         (char *)port->pix.baseAddr +
-                         box.top * port->pix.rowBytes +
-                         (port->pix.pixelSize >> 3) * box.left,
-                         port->pix.rowBytes);
-        SetMovieGWorld(movie, gIntroMovieData, 0);
-        track = GetMovieIndTrackType(movie, 1, 0x76696465, 1);
-        SetTrackGWorld(track, gIntroMovieData, 0, IntroMovieIdleProc, 0);
-        w = gVideoWidth;
-        h = gVideoHeight;
-        dw = box.right - box.left;
-        dh = box.bottom - box.top;
-        /* BUG: both letterbox fits compute the new bottom from box.left, not box.top */
-        if (dw > w) {
-            ratio = w / (float)dw;
-            box.right = (box.left + dw * ratio);
-            box.bottom = (box.left + dh * ratio);
-        }
-        dw = box.right - box.left;
-        dh = box.bottom - box.top;
-        if (dh > h) {
-            ratio = h / (float)dh;
-            box.right = (box.left + dw * ratio);
-            box.bottom = (box.left + dh * ratio);
-        }
-        InsetRect(&box, -1, -1);
-        FrameRect(&box);
-        GoToBeginningOfMovie(movie);
-        LoadMovieIntoRam(movie, 0, GetMovieDuration(movie), 0);
-        if (fade != 0)
-            FadeScreenIn();
-        StartMovie(movie);
-        /* only a new press skips: an input still down from before (the Return that confirmed a jump,
-           the click on OK) counts once it has been let go */
-        KeyboardKbhit();
-        held = MovieSkipInputs();
-        while (IsMovieDone(movie) == 0) {
-            MoviesTask(movie, 0);
-            KeyboardKbhit();
-            down = MovieSkipInputs();
-            held &= down;
-            if ((down & ~held) != 0) {
-                FlushEvents(0xf, 0);
-                break;
-            }
-            LastTick = ReadTick();
-            WaitTicks(2);
-        }
-        StopMovie(movie);
-        if (fade != 0) {
-            FadeScreenOut();
-            ShowTheCursor();
-        }
-        DisposeMovie(movie);
-        DisposeGWorld(gIntroMovieData);
-        gIntroMovieData = NULL;
-        SWSetPortToWindow(gSpriteWorld);
-        ForeColor(blackColor);
-        RedrawDialogs(1);
+    PStr2CStr(nameBuf, name);
+    names[0] = nameBuf;
+    if (!MovieFindFile(names, 1, path, sizeof path))
         return;
+    movie = MovieOpen(path);
+    if (movie == NULL)
+        return;
+    if (fade != 0) {
+        FadeScreenOut();
+        HideTheCursor();
     }
+    MovieSize(movie, &movieW, &movieH);
+    box.left = 0;
+    box.top = 0;
+    box.right = movieW;
+    box.bottom = movieH;
+    if (doubled != 0) {
+        box.right = movieW * 2 + 1;
+        box.bottom = movieH * 2 + 1;
+    }
+    movieBox.bottom = gVideoHeight;
+    movieBox.right = gVideoWidth;
+    movieBox.top = 0;
+    movieBox.left = 0;
+    CenterRect(&box, &movieBox);
+    port = GetCWindowGrafPort(gWind);
+    MovieSetTarget(movie, (char *)port->pix.baseAddr + box.top * port->pix.rowBytes +
+                              (port->pix.pixelSize >> 3) * box.left,
+                   port->pix.rowBytes, box.right - box.left, box.bottom - box.top, 0);
+    w = gVideoWidth;
+    h = gVideoHeight;
+    dw = box.right - box.left;
+    dh = box.bottom - box.top;
+    /* BUG: both letterbox fits compute the new bottom from box.left, not box.top */
+    if (dw > w) {
+        ratio = w / (float)dw;
+        box.right = (box.left + dw * ratio);
+        box.bottom = (box.left + dh * ratio);
+    }
+    dw = box.right - box.left;
+    dh = box.bottom - box.top;
+    if (dh > h) {
+        ratio = h / (float)dh;
+        box.right = (box.left + dw * ratio);
+        box.bottom = (box.left + dh * ratio);
+    }
+    InsetRect(&box, -1, -1);
+    FrameRect(&box);
+    MovieRewind(movie);
+    if (fade != 0)
+        FadeScreenIn();
+    MovieStart(movie);
+    /* only a new press skips: an input still down from before (the Return that confirmed a jump,
+       the click on OK) counts once it has been let go */
+    KeyboardKbhit();
+    held = MovieSkipInputs();
+    while (MovieDone(movie) == 0) {
+        if (MovieDraw(movie))
+            ScreenEndScene();
+        KeyboardKbhit();
+        down = MovieSkipInputs();
+        held &= down;
+        if ((down & ~held) != 0) {
+            FlushEvents(0xf, 0);
+            break;
+        }
+        LastTick = ReadTick();
+        WaitTicks(2);
+    }
+    MovieStop(movie);
+    if (fade != 0) {
+        FadeScreenOut();
+        ShowTheCursor();
+    }
+    MovieClose(movie);
+    SWSetPortToWindow(gSpriteWorld);
+    ForeColor(blackColor);
+    RedrawDialogs(1);
 }
 
 // FUNCTION: EVNOVA 0x0049e3c0

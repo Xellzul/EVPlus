@@ -31,11 +31,6 @@ extern short pendingVoiceMsg;           /* 0x007353fe (globaldefs.c) */
 extern short pendingVoiceParity;        /* 0x00735402 (globaldefs.c) */
 EXTERN_CPP_END
 
-
-/* --- one declaration per name --- */
-extern void SetMovieVolume(Movie movie, short volume); /* 0x004d9fb0 */
-
-
 extern void SetupIntroMusic(void);                   /* 0x004ab5d0 */
 extern void StopIntroMusic(Boolean fadeOut);            /* 0x004ab820 */
 extern void HandleIntroMusic(Boolean force);            /* 0x004ab8d0 */

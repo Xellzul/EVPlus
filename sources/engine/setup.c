@@ -595,7 +595,7 @@ void Bye(void)
     gWind = NULL;
 
     ByeLog("closing QuickTime");
-    ExitMovies();
+    MovieStopAll();
 
     ByeLog("carbon cleanup");
     ShowTheCursor();

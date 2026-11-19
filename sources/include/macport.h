@@ -30,12 +30,6 @@ typedef struct EventRecord {
 } EventRecord;
 #pragma pack(pop)
 
-typedef struct FSSpec {
-    short vRefNum;
-    int32_t parID;
-    Str255 name;
-} FSSpec;
-
 typedef struct CGrafPort *CWindowPtr;
 typedef struct ControlRecord {
     int32_t kind;
@@ -53,7 +47,6 @@ typedef struct ControlRecord *ControlPtr;
 typedef ControlPtr ControlRef;
 typedef Image_t *CIconHandle;
 typedef Image_t *PixPatHandle;
-typedef void *Movie;
 
 typedef struct PixMap {
     Rect bounds;
@@ -67,8 +60,7 @@ typedef struct PixMap {
 } PixMap, *PixMapPtr;
 typedef struct CGrafPort {
     Boolean offscreen;
-    Boolean bigEndian;              /* 16-bit pixels big-endian: a NewGWorldFromPtr with k16BE555PixelFormat */
-    char filler1[2];
+    char filler1[3];
     PixMap pix;
     int32_t depth;
     void *pixels;                   /* the port's own pixel memory; NULL for a port over pixels it does not own */
@@ -132,12 +124,6 @@ extern void *GetPortVisRgn(void *port);
 extern short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds,
                        void *theGDH);
 extern PixMapPtr GetGWorldPixMap(CGrafPtr world);
-/* QuickTime's GWorld calls (media/quicktime.c); DisposeGWorld frees these too */
-extern short NewGWorldFromPtr(CGrafPtr *gw, OSType pixelFormat, const Rect *bounds, void *cTable,
-                              void *aGDevice, int32_t flags, void *baseAddr, int32_t rowBytes);
-extern Boolean LockPixels(PixMapPtr pm);
-extern void GetGWorld(CGrafPtr *port, void **device);
-extern void SetGWorld(CGrafPtr port, void *device);
 extern PixMapPtr GetWindowPixMap(CWindowPtr window);
 extern void QDGetCIconBounds(Image_t *icon, Rect *r);
 extern PicHandle GetPictureNoGamma(int picID);
@@ -304,9 +290,6 @@ typedef struct RLEPixelData {
 #define memFullErr      (-108)
 #define resNotFound     (-192)
 #define srcCopy         0
-#define noNewDevice     2               /* QuickTime GWorldFlags */
-#define k16BE555PixelFormat 0x00000010  /* QuickTime pixel formats */
-#define k16LE555PixelFormat 0x4c353535  /* 'L555' */
 
 #define SW_ROWBYTES(frame, rows) \
         ((frame)->scanLinePtrArray[(rows) - (frame)->frameRect.top])
@@ -643,7 +626,6 @@ extern PicHandle GetPicture(int picID);
 extern Image_t *GetPixPat(short id);
 extern void GetPort(CGrafPtr *port);
 extern void InitFonts(void);
-extern short InitializeQTML(int32_t flags);
 extern void InsetRect(Rect *r, int dh, int dv);
 extern void InvertRect(Rect *r);
 extern unsigned char KeyCheck(ScanCode scanCode);
@@ -662,20 +644,15 @@ extern void OpenPrefs(void);
 extern void PStr2CStr(char *dst, const unsigned char *src);
 extern void PaintOval(Rect *r);
 extern void PenSize(short width, short height);
-extern void CloseMovieFile(short resRefNum);
 /* QuickDraw's PtInRect under a link name of its own: on 64-bit Windows names are not decorated, and
    user32's PtInRect (which SDL uses) would clash with it */
 #define PtInRect QD_PtInRect
 extern int PtInRect(int h, int v, Rect *r);
 extern void QDReleaseResource(PicHandle pic);
 extern void RGBForeColor(const RGBColor *color);
-extern void ForeColor(int32_t color);
-extern void *NewPtr(int32_t size);
-extern void DisposePtr(void *ptr);
 #define TickCount() ReadTick()
 extern CGrafPtr GetWindowPort(CWindowPtr window);
 #define QDFlushPortBuffer(port, region) ScreenEndScene()
-extern void PtToAngle(const Rect *r, Point pt, short *angle);
 extern Boolean RectInRgn(Rect *r, void *rgn);
 extern void RedrawDialog(DialogPtr dlg);
 extern void RedrawDialogs(int a);
@@ -687,23 +664,8 @@ extern void SetDialogDefaultItem(DialogPtr dlg, int32_t value);
 extern short Random(void);
 extern short SWSetSpriteWorldScreenDrawProc(SpriteWorldRec *spriteWorld,
                                             DrawProcPtr proc);
-extern void SetMovieBox(Movie movie, Rect *box);
-extern void DisposeMovie(Movie movie);
-extern void GetMovieBox(Movie movie, Rect *box);
-extern int32_t GetMovieDuration(Movie movie);
-extern void GoToBeginningOfMovie(Movie movie);
-extern Boolean IsMovieDone(Movie movie);
-extern void LoadMovieIntoRam(Movie movie, int32_t time, int32_t duration, int32_t flags);
-extern void MoviesTask(Movie movie, int32_t maxMs);
 extern void Microseconds(UnsignedWide *now);
 extern void StringToNum(const unsigned char *str, int32_t *value);
-extern void *GetMovieTimeBase(Movie movie);
-extern void SetMovieRate(Movie movie, int32_t rate);
-extern void SetMoviePlayHints(Movie movie, int32_t a2, int32_t a3);
-extern void *GetMovieIndTrackType(Movie movie, int32_t a, int32_t type, int32_t b);
-extern void SetMovieGWorld(Movie movie, void *gworld, int32_t a3);
-extern void StartMovie(Movie movie);
-extern void StopMovie(Movie movie);
 extern void SetPort(CGrafPtr port);
 extern void SetPortWindowPort(CWindowPtr window);
 extern void SetRect(Rect *r, int left, int top, int right, int bottom);
@@ -713,12 +675,7 @@ extern Boolean StillDown(void);
 extern void StrcatOrdinalNumber(short n, char *dst, Boolean capitalize);
 extern short StringWidth(const unsigned char *str);
 extern void SysBeep(short duration);
-extern void TerminateQTML(void);
 extern void TETextBox(const void *text, int32_t length, Rect *box, short just);
-extern short FSMakeFSSpec(int32_t vRefNum, int32_t dirID, const void *name, void *spec);
-extern short OpenMovieFile(const void *spec, short *refNum, int32_t mode);
-extern int32_t NewMovieFromFile(Movie *movie, short refNum, short *resId,
-                             int32_t a4, int32_t a5, int32_t a6);
 extern int MeasureWrappedText(const char *text, int byteCount, int width);
 extern void NumToString(int32_t value, unsigned char *str);
 extern void QDGetPictureBounds(PicHandle pic, Rect *r);
@@ -726,7 +683,6 @@ extern void HideWindow(CWindowPtr window);
 extern void *GetGWorldDevice(CGrafPtr port);
 extern void DisposeGWorld(CGrafPtr port);
 extern void DebugStr(const char *message);
-extern short MemError(void);
 extern void FillCRect(Rect *dstRect, Image_t *pat);
 extern short GetFrameBiggestSize(SWFrameRec *frame);
 extern void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text);
@@ -884,8 +840,8 @@ extern char *GetPixBaseAddr(PixMapPtr pm);
 extern short GetPixRowBytes(PixMapPtr pm);
 extern short GetPixDepth(PixMapPtr pm);
 
-/* the port's blackColor and whiteColor are RGBColor globals, so its ForeColor(c) is RGBForeColor
-   (ForeColor itself, parenthesised, takes the QuickDraw numbers) and its BackColor takes the RGBColor */
+/* the port's blackColor and whiteColor are RGBColor globals, so its ForeColor(c) is RGBForeColor and its
+   BackColor takes the RGBColor */
 #define ForeColor(c) RGBForeColor(c)
 #define RGBBackColor(c) BackColor(c)
 #define GetWindowVisRgn(window) GetCWindowVisRgn(window)

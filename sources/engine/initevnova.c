@@ -31,8 +31,6 @@
 #define kMaxGamma     6
 #define kDefaultGamma 3
 
-#define kAlertQuickTime     0x15
-
 #define kEventLoopTicks     10
 
 short oldVolume;
@@ -379,11 +377,6 @@ void InitEVNova(void)
     crashlog("initializing monitor");
     CE_InitializeMonitor();
     ResetScreenRect();
-
-    crashlog("initializing QuickTime");
-    err = EnterMovies();
-    if (err != 0)
-        FatalStartupError(kAlertQuickTime);
 
     crashlog("building trig table");
     BuildTrigTable();

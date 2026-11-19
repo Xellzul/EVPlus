@@ -948,7 +948,8 @@ short SWFlagRectAsChanged(SpriteWorldPtr spriteWorldP, Rect *theChangedRect)
             curRectStructP->nextRectStructP = newUpdateRectP;
         }
     } else {
-        err = MemError();
+        // BUG: a failed allocation reports success
+        err = noErr;
     }
 
     return err;

@@ -7,6 +7,7 @@
 #include "burgerplat.h"
 #include "burger.h"
 #include "macport.h"
+#include "media.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,7 @@ typedef struct ImageDescription {
     unsigned char name[32];                      /* +0x32 */
     short depth;                                 /* +0x52 */
     short clutID;                                /* +0x54 */
-} ImageDescription, **ImageDescriptionHandle;
+} ImageDescription;
 #pragma pack(pop)
 
 /* the PICT PixMap record after its rowBytes and bounds, host order */
@@ -52,17 +53,6 @@ typedef struct PICTPixmap_t {
     int32_t table;                                  /* +0x1c */
     int32_t reserved;                               /* +0x20 */
 } PICTPixmap_t;
-
-/* QuickTime calls, media/quicktime.c; the GWorld is the port's CGrafPort (macport.h) */
-extern Handle NewHandle(int32_t size);                                  /* 0x004f1450 */
-extern void DisposeHandle(Handle h);                                 /* 0x004f1490 */
-extern void MacSetRect(Rect *r, short left, short top, short right, short bottom);
-                                                                     /* 0x004f2a10 */
-extern short DecompressImage(char *data, ImageDescriptionHandle desc, PixMapPtr dst,
-                             const Rect *srcRect, const Rect *dstRect, short mode,
-                             void *mask);                            /* 0x004fc270 */
-extern short NewImageGWorld(CGrafPtr *gworld, ImageDescriptionHandle desc,
-                            uint32_t flags);                    /* 0x004fc290 */
 
 #define kPixMapRowFlag      0x8000      /* rowBytes: a PixMap, not a BitMap */
 #define kDeviceIndexFlag    0x8000      /* ctFlags: entries are in order, ignore their values */
@@ -374,7 +364,6 @@ Word8 *DecodeImage(const Word8 *Input, Image_t *ImagePtr, Word32 RowBytes, Word 
 Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
 {
     PICTPixmap_t Pixmap;
-    Rect Bounds;
     Word Version;
     Word Opcode;
     Word Length;
@@ -385,12 +374,6 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
     Word i;
     Word8 *WorkPtr;
     const Word8 *DataPtr;
-    ImageDescriptionHandle Desc;
-    ImageDescription *DescPtr;
-    CGrafPtr GWorld;
-    CGrafPtr SavePort;
-    void *SaveDevice;
-    PixMapPtr PixMap;
     Word Parity;
     Rect PixBounds;
     Rect SrcRect;
@@ -592,94 +575,80 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
             DataPtr += 0x44;
             DataPtr += MatteSize + MaskSize;
             if (BigLong(DataPtr) == sizeof(ImageDescription)) {
-                Desc = (ImageDescriptionHandle)NewHandle(sizeof(ImageDescription));
-                DescPtr = *Desc;
-                *DescPtr = *(const ImageDescription *)DataPtr;
-                DescPtr->idSize = SwapLong(DescPtr->idSize);
-                DescPtr->cType = SwapLong(DescPtr->cType);
-                DescPtr->resvd1 = SwapLong(DescPtr->resvd1);
-                DescPtr->resvd2 = SwapShort(DescPtr->resvd2);
-                DescPtr->dataRefIndex = SwapShort(DescPtr->dataRefIndex);
-                DescPtr->version = SwapShort(DescPtr->version);
-                DescPtr->revisionLevel = SwapShort(DescPtr->revisionLevel);
-                DescPtr->vendor = SwapLong(DescPtr->vendor);
-                DescPtr->temporalQuality = SwapLong(DescPtr->temporalQuality);
-                DescPtr->spatialQuality = SwapLong(DescPtr->spatialQuality);
-                DescPtr->width = SwapShort(DescPtr->width);
-                DescPtr->height = SwapShort(DescPtr->height);
-                DescPtr->hRes = SwapLong(DescPtr->hRes);
-                DescPtr->vRes = SwapLong(DescPtr->vRes);
-                DescPtr->dataSize = SwapLong(DescPtr->dataSize);
-                DescPtr->frameCount = SwapShort(DescPtr->frameCount);
-                DescPtr->depth = SwapShort(DescPtr->depth);
-                DescPtr->clutID = SwapShort(DescPtr->clutID);
-                DataPtr += (*Desc)->idSize;
+                ImageDescription Desc;
+                Word8 *Pixels;
+                Word32 QTRowBytes;
+                Word32 Rows;
+                int PixelSize;
 
-                GWorld = NULL;
-                Err = NewImageGWorld(&GWorld, Desc, noNewDevice);
-                if (!Err) {
-                    PixMap = &GWorld->pix;
-                    LockPixels(PixMap);
-                    MacSetRect(&Bounds, 0, 0, (*Desc)->width, (*Desc)->height);
-                    GetGWorld(&SavePort, &SaveDevice);
-                    SetGWorld(GWorld, GetGWorldDevice(GWorld));
-                    Err = DecompressImage((char *)DataPtr, Desc, PixMap, &Bounds, &Bounds, srcCopy,
-                                          NULL);
-                    SetGWorld(SavePort, SaveDevice);
+                Desc = *(const ImageDescription *)DataPtr;
+                Desc.idSize = SwapLong(Desc.idSize);
+                Desc.cType = SwapLong(Desc.cType);
+                Desc.width = SwapShort(Desc.width);
+                Desc.height = SwapShort(Desc.height);
+                Desc.dataSize = SwapLong(Desc.dataSize);
+                Desc.depth = SwapShort(Desc.depth);
+                DataPtr += Desc.idSize;
+
+                /* decoded to 16 bits for depth 16, to 32 for 24 and 32, else to 8 (1-8 bit colour, 33-40 gray) */
+                if (Desc.depth == 16)
+                    PixelSize = 16;
+                else if (Desc.depth == 24 || Desc.depth == 32)
+                    PixelSize = 32;
+                else
+                    PixelSize = 8;
+                QTRowBytes = ((Word32)Desc.width * (PixelSize / 8) + 3) & ~3U;
+                /* the picture is ImagePtr->Height rows; the decoder writes the description's height */
+                Rows = (Word32)Desc.height > ImagePtr->Height ? (Word32)Desc.height : ImagePtr->Height;
+                Pixels = NULL;
+                Err = 1;
+                if (Desc.width > 0 && Desc.height > 0) {
+                    Pixels = (Word8 *)AllocAPointer(QTRowBytes * Rows);
+                    if (Pixels != NULL
+                            && MediaDecodeImage(Desc.cType, Desc.width, Desc.height, Desc.depth, DataPtr,
+                                                Desc.dataSize, Pixels, (int32_t)QTRowBytes, PixelSize) == 0)
+                        Err = 0;
                 }
                 if (!Err) {
-                    ImagePtr->RowBytes = PixMap->rowBytes;
-                    Size = ImagePtr->RowBytes * ImagePtr->Height;
-                    ImagePtr->ImagePtr = (Word8 *)AllocAPointer(Size);
-                    memcpy(ImagePtr->ImagePtr, GetPixBaseAddr(PixMap), Size);
-                    switch (PixMap->pixelSize) {
+                    ImagePtr->RowBytes = QTRowBytes;
+                    ImagePtr->ImagePtr = Pixels;
+                    switch (PixelSize) {
                     case 8:
                         ImagePtr->DataType = IMAGE8_PAL;
                         break;
                     case 16:
                         ImagePtr->DataType = IMAGE555;
                         break;
-                    case 24:
-                        ImagePtr->DataType = IMAGE888;
-                        break;
                     case 32:
                         ImagePtr->DataType = IMAGE8888;
                         break;
-                    default:
-                        NonFatal("Unsuppored PICT bit depth %d.\n", PixMap->pixelSize);
-                        break;
                     }
-                    if (PixMap->pixelSize == 16) {
-                        int Rows;
+                    if (PixelSize == 16) {
+                        int Rows16;
                         int Skip;
                         Word16 *SwapPtr;
 
-                        Rows = ImagePtr->Height;
+                        Rows16 = ImagePtr->Height;
                         Skip = ImagePtr->RowBytes - ImagePtr->Width * 2;
                         SwapPtr = (Word16 *)ImagePtr->ImagePtr;
                         do {
-                            int Pixels;
+                            int Pixels16;
 
-                            Pixels = ImagePtr->Width;
+                            Pixels16 = ImagePtr->Width;
                             do {
                                 *SwapPtr = SwapShort(*SwapPtr);
                                 ++SwapPtr;
-                            } while (--Pixels);
+                            } while (--Pixels16);
                             SwapPtr = (Word16 *)((Word8 *)SwapPtr + Skip);
-                        } while (--Rows);
+                        } while (--Rows16);
                     }
                     if (ImagePtr->DataType == IMAGE8_PAL && !ImagePtr->PalettePtr) {
                         ImagePtr->PalettePtr = (Word8 *)AllocAPointer(sizeof(MacStandardPalette));
                         memcpy(ImagePtr->PalettePtr, MacStandardPalette, sizeof(MacStandardPalette));
                     }
                 } else {
+                    DeallocAPointer(Pixels);
                     NonFatal("Unable to decompress QT PICT.\n");
-                }
-                if (GWorld) {
-                    DisposeGWorld(GWorld);
-                }
-                if (Desc) {
-                    DisposeHandle((Handle)Desc);
                 }
                 return 0;
             }

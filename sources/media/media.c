@@ -1,6 +1,6 @@
-/* media.c -- media decoding for the QuickTime functions (quicktime.c), on FFmpeg (LGPL, DLLs).
+/* media.c -- media decoding for the movies and songs (movie.c) and QuickTime-compressed PICTs, on FFmpeg (LGPL, DLLs).
  *
- * MediaFile: the container and the video decoder of one movie, used only from the game thread (MoviesTask).
+ * MediaFile: the container and the video decoder of one movie, used only from the game thread (MovieDraw).
  * MediaAudio: a second demuxer + decoder of the same file for the audio, used only from the audio output thread
  *          (under its lock), so the two never share an AVFormatContext.
  * MediaDecodeImage: one picture of a QuickTime-compressed PICT (burgerpict.c), decoded without a container.
