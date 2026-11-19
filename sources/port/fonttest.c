@@ -2,7 +2,7 @@
 /* fonttest.c -- a debug page for the text code: every font the game has asked for by then, one a page, with
    the name asked for and the name of the font really drawn, a sample line in each size and style with its
    measured and drawn widths, and a word-wrapped paragraph; the names also go into the debug log. Shown
-   before the main screen when ddraw.ini has debug_fonts=1 under [EV Nova]. */
+   before the main screen when kDebugFonts (mainscreen.c) is 1. */
 
 #include <stdio.h>
 #include <string.h>

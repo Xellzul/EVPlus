@@ -26,7 +26,6 @@ int GameMain(void)
     OSCursorReset();
     gRezOpenPending = 1;
     EVOpenResourceFile("9:Nova.rez");
-    CE_InitScaleFactor();
     InitFonts();
     InitEVNova();
     return 0;

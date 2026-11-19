@@ -17,8 +17,9 @@ extern int PlatInit(void);                                 /* 0 when the layer i
 extern void PlatQuit(void);
 
 /* -- video: one window showing the game's frame, 16-bit x1r5g5b5 pixels in host byte order ---------- */
-/* The frame is stretched to the window with its aspect kept (black bars), linear filter. Alt+Enter
-   switches between a borderless full screen and a resizable window; the layer handles it itself. */
+/* The frame is stretched to the window with its aspect kept (black bars), linear filter unless
+   PlatVideoSetScaling says otherwise. Alt+Enter switches between a borderless full screen and a resizable
+   window; the layer handles it itself. */
 extern int PlatVideoCreateWindow(const char *title);      /* hidden until PlatVideoOpen; 0 = made */
 extern int PlatVideoOpen(int width, int height, int fullScreen);   /* the frame's size; 0 = open */
 extern void PlatVideoClose(void);                          /* drops the frame, keeps the window */
@@ -28,6 +29,13 @@ extern void PlatVideoClose(void);                          /* drops the frame, k
    readable until the next PlatVideoPresent or PlatVideoClose. */
 extern void PlatVideoPresent(const void *pixels, int pitch);
 extern void PlatVideoSetFullScreen(int on);
+/* How the frame is stretched, kept for every later frame and window: the filter (kPlatFilter*), and
+   wholePixel = each frame pixel the same whole number of window pixels (the frame smaller in a window too
+   small for that). Can be called before PlatVideoOpen. */
+#define kPlatFilterNearest      0
+#define kPlatFilterLinear       1
+#define kPlatFilterPixelArt     2
+extern void PlatVideoSetScaling(int filter, int wholePixel);
 extern int PlatVideoIsFullScreen(void);
 extern void PlatDesktopSize(int *width, int *height);      /* the main display, in pixels */
 /* The program starts in the platform layer, which calls the game (port/winmain.c) with the arguments

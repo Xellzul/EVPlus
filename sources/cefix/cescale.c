@@ -6,7 +6,7 @@
 #include "burger.h"
 #include "cefix.h"
 
-double ceScaleFactor;
+double ceScaleFactor = 1.0;
 unsigned char ceScaleEnabled;
 int ceGridCellWidth = 83;           /* the grid pitch tradedlg.c lays out (0x00499150), not 84x55 */
 int ceGridCellHeight = 54;
@@ -24,10 +24,10 @@ int CE_Round(double value)
     return (value + (value >= 0 ? 0.5 : -0.5));
 }
 
-/* ddraw.ini's ui_scale, read before the fonts are set up. */
-void CE_InitScaleFactor(void)
+/* The preferences' UI scale, set once at start, before the screen is set up. */
+void CE_InitScaleFactor(double factor)
 {
-    ceScaleFactor = CE_IniDouble("ui_scale", "1.0");
+    ceScaleFactor = factor;
     if (ceScaleFactor == 0)
         ceScaleFactor = 1.0;
     ceScaleEnabled = ceScaleFactor != 1.0;

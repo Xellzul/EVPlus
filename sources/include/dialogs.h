@@ -18,9 +18,6 @@ void CommDialogUpdate(void);
 extern void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t lCell,
                          short lDataOffset, short lDataLen, ScrollRec **lHandle);
 EXTERN_CPP_BEGIN
-extern int32_t DAT_007355d0;
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern Boolean reenterMissionDialog;
 extern short adviceDisasterRandom;
 extern Boolean willTakeBribe;

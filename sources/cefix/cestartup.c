@@ -1,4 +1,4 @@
-/* cestartup.c -- EV Nova CE: startup, ddraw.ini, video mode, windowing, x2 key. CE left the window to
+/* cestartup.c -- EV Nova CE: startup, ddraw.ini, windowing, x2 key. CE left the window to
    cnc-ddraw (its ddraw.dll); the platform layer has it now. Notes: Research/cefix-plan.md */
 
 #include <stdlib.h>
@@ -6,15 +6,11 @@
 #include <stdio.h>
 #include "macport.h"
 #include "burger.h"
-#include "player.h"
 #include "cefix.h"
 #include "platform.h"
 
 #define kIniFileName        "ddraw.ini"
 #define kDefaultX2Hotkey    "0x14"              /* VK_CAPITAL */
-#define kVideoDepth         15
-#define kVideoFullScreen    0x01                /* borderless, at the desktop's mode */
-#define kVideoAlways        0x02
 #define kGameIconGroup      202
 #define kNplayIconGroup     203                 /* CE's .nplay icon */
 
@@ -123,52 +119,6 @@ void CE_ReadX2Hotkey(void)
 
     IniString("key_x2mode", kDefaultX2Hotkey, buf, sizeof(buf));
     ceX2Hotkey = strtol(buf, NULL, 0);
-}
-
-/* as GetPrivateProfileInt: the digits the value starts with, after a `-' if there is one; a value that
-   is no number is 0 */
-int CE_IniInt(const char *key, int def)
-{
-    char buf[32];
-    const char *p;
-    int negative;
-    int value;
-
-    if (!IniString(key, "", buf, sizeof(buf)))
-        return def;
-    p = buf;
-    negative = *p == '-';
-    if (negative)
-        p++;
-    for (value = 0; *p >= '0' && *p <= '9'; p++)
-        value = value * 10 + (*p - '0');
-    return negative ? -value : value;
-}
-
-double CE_IniDouble(const char *key, const char *def)
-{
-    char buf[8];
-
-    IniString(key, def, buf, sizeof(buf));
-    return atof(buf);
-}
-
-/* Replaces the monitor setup: ddraw.ini's game_width and game_height, else the desktop. */
-void CE_InitializeMonitor(void)
-{
-    int32_t width;
-    int32_t height;
-    int desktopWidth;
-    int desktopHeight;
-
-    width = CE_IniInt("game_width", 0);
-    height = CE_IniInt("game_height", 0);
-    PlatDesktopSize(&desktopWidth, &desktopHeight);
-    if (width == 0)
-        width = desktopWidth;
-    if (height == 0)
-        height = desktopHeight;
-    SetDisplayToSize(width, height, kVideoDepth, kVideoFullScreen | kVideoAlways);
 }
 
 /* The windowed checkbox shows the window's state as it is, also after Alt+Enter. */

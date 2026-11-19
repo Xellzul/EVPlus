@@ -1,5 +1,6 @@
 // COMPILE: -lang c++ -bool off
 /* maininfo.c -- the main-screen object (tu-map O23, win 0x004873b0..0x00489d70). Notes: Research/notes/maininfo.md */
+#include <math.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -21,6 +22,7 @@
 #include "prototypes.h"
 #include "ships.h"
 #include "cefix.h"
+#include "prefsdisplay.h"
 #include "space.h"
 
 // FUNCTION: EVNOVA 0x004873b0
@@ -310,8 +312,82 @@ void SetupInterfaceBackground(void)
 
 
 #define kPlainStrIdx  0x118
-#define kItemMemoryText 0x13
 #define kItem3StrIdx  0x10
+
+/* ---- the Preferences dialog: the items of the game's DITL 4003, without the two that did nothing (Share
+   Processor Time, Check For Updates), in three groups, the third with the display settings ---- */
+
+#define kPrefsWidth        500
+#define kPrefsHeight       313
+#define kMusicVolStrList   0x88
+#define kGammaStrList      0x8b
+#define kMaxMusicVol       8
+#define kMaxGamma          6
+#define kBeepChannel       1
+#define kUpArrowPict       134
+#define kDownArrowPict     135
+#define kUIScaleStep       0.1
+
+enum {
+    kItemDone = 1, kItemTitle, kItemNotice, kItemKeys,
+    kItemGraphicsHead, kItemSoundHead, kItemDisplayHead,
+    kItemShipSets, kItemShipGlow, kItemShipLights, kItemShipWeapons, kItemDebris, kItemStarfield,
+    kItemHyperspace,
+    kItemGammaLabel, kItemGammaText, kItemGammaDown, kItemGammaUp,
+    kItemMusic, kItemAmbient, kItemMovies,
+    kItemVolumeLabel, kItemMusicVolText, kItemMusicDown, kItemMusicUp,
+    kItemWindowed, kItemWholePixel,
+    kItemResLabel, kItemResText, kItemResAspect, kItemResDown, kItemResUp,
+    kItemFilterLabel, kItemFilterText, kItemFilterDown, kItemFilterUp,
+    kItemScaleLabel, kItemScaleText, kItemScaleDown, kItemScaleUp,
+    kPrefsItemCount = kItemScaleUp
+};
+
+/* the columns, and an item placed as DITL 4003 placed its own */
+#define kColGraphics    11
+#define kColSound       171
+#define kColDisplay     331
+#define kColWidth       160
+#define HEAD(l, text)       { kDitlStaticText, 33, l, 49, (l) + kColWidth, text, 0 }
+#define CHECK(t, l, text)   { kDitlCheckBox, t, l, (t) + 18, (l) + kColWidth, text, 0 }
+#define LABEL(t, l, text)   { kDitlStaticText, t, l, (t) + 16, (l) + 106, text, 0 }
+#define VALUE(t, l)         { kDitlStaticText, (t) + 19, (l) + 18, (t) + 35, (l) + 140, "", 0 }
+#define DOWN(t, l)          { kDitlPicture, (t) + 27, (l) + 1, (t) + 36, (l) + 12, NULL, kDownArrowPict }
+#define UP(t, l)            { kDitlPicture, (t) + 18, (l) + 1, (t) + 27, (l) + 12, NULL, kUpArrowPict }
+#define UPDOWN(t, l, text)  LABEL(t, l, text), VALUE(t, l), DOWN(t, l), UP(t, l)
+
+static const DialogItemSpec kPrefsItems[kPrefsItemCount] = {
+    { kDitlButton, 280, 389, 300, 459, "OK", 0 },
+    { kDitlUserItem, 5, 12, 28, 489, NULL, 0 },
+    { kDitlUserItem, 255, 69, 272, 431, NULL, 0 },
+    { kDitlButton, 280, 49, 300, 184, "Key Settings", 0 },
+    HEAD(kColGraphics, "Graphics"),
+    HEAD(kColSound, "Sound"),
+    HEAD(kColDisplay, "Display"),
+    CHECK(55, kColGraphics, "Ship Animations"),
+    CHECK(77, kColGraphics, "Engine Glows"),
+    CHECK(99, kColGraphics, "Running Lights"),
+    CHECK(121, kColGraphics, "Weapon Effects"),
+    CHECK(143, kColGraphics, "Smoke Trails"),
+    CHECK(165, kColGraphics, "Parallax Starfield"),
+    CHECK(187, kColGraphics, "Hyperspace Effects"),
+    UPDOWN(209, kColGraphics, "Brightness:"),
+    CHECK(55, kColSound, "Intro Music"),
+    CHECK(77, kColSound, "Ambient Sounds"),
+    CHECK(99, kColSound, "QuickTime Movies"),
+    UPDOWN(121, kColSound, "Sound Volume:"),
+    CHECK(55, kColDisplay, "Run in a window"),
+    CHECK(77, kColDisplay, "Whole-pixel scaling"),
+    LABEL(99, kColDisplay, "Resolution:"),
+    VALUE(99, kColDisplay),
+    { kDitlStaticText, 99 + 35, kColDisplay + 18, 99 + 51, kColDisplay + kColWidth, "", 0 },
+    DOWN(99, kColDisplay),
+    UP(99, kColDisplay),
+    UPDOWN(165, kColDisplay, "Filter:"),
+    UPDOWN(209, kColDisplay, "UI scale:"),
+};
+
+static const char *const kFilterNames[kScaleFilterCount] = { "Nearest", "Linear", "Pixel art" };
 
 // FUNCTION: EVNOVA 0x004884f0
 void PrefsDialogUpdate(void)
@@ -319,7 +395,7 @@ void PrefsDialogUpdate(void)
     Rect box;
 
     SetDialogGWorld(prefsDialog);
-    GetDialogItem(prefsDialog, kItemMemoryText, NULL, NULL, &box);
+    GetDialogItem(prefsDialog, kItemTitle, NULL, NULL, &box);
     RGBForeColor(&rgbBlack);
     EraseRect(&box);
     MoveTo(box.left, (box.bottom - 10));
@@ -337,65 +413,85 @@ void PrefsDialogUpdate(void)
     TextFont(smallTextFont);
     TextSize(smallTextSize);
     if (majorPrefsChange != 0 && gWind != NULL) {
-        GetDialogItem(prefsDialog, 3, NULL, NULL, &box);
+        GetDialogItem(prefsDialog, kItemNotice, NULL, NULL, &box);
         EraseRect(&box);
         MoveTo(box.left, (box.bottom - 5));
         DrawIndString(kAlertStrList, kItem3StrIdx);
     }
 }
 
-/* ---- DoPrefsDialog (0x00488650) ---- */
+static void SetPrefsCheck(short item, int on)
+{
+    Handle h;
 
-#define kPrefsDlogID       0xfa3
-#define kMusicVolStrList   0x88
-#define kGammaStrList   0x8b
-#define kMaxMusicVol          8
-#define kMaxGamma          6
-#define kTrueColorDepth  0x1000
-#define kBeepChannel          1
+    GetDialogItem(prefsDialog, item, NULL, &h, NULL);
+    SetControlValue((ControlPtr)h, on != 0);
+}
 
-#define kItemDone             1
-#define kItemFullScreen       2
-#define kItemMusic            8
-#define kItemMusicDown        6
-#define kItemMusicUp          7
-#define kItemEarlyOut         9
-#define kItemNoDebris       0xa
-#define kItemSmoothing      0xb
-#define kItemShipSets      0xc
-#define kItemShipGlow        0xd
-#define kItemShipLights      0xe
-#define kItemShipWeapons     0xf
-#define kItemKeys          0x10
-#define kItemStatusBar     0x12
-#define kItemAutoAim       0x14
-#define kItemMessages      0x15
-#define kItemGammaText  0x18
-#define kItemGammaDown     0x19
-#define kItemGammaUp       0x1a
-#define kItemMusicVolText     5
+static void SetPrefsText(short item, const char *text)
+{
+    Handle h;
+
+    GetDialogItem(prefsDialog, item, NULL, &h, NULL);
+    if (h != NULL)
+        SetControlText((ControlPtr)h, text);
+}
+
+/* a value out of a STR# list, or ??? when there is no such entry */
+static void SetPrefsListText(short item, short list, short value, short max)
+{
+    Str255 text;
+    Handle h;
+
+    GetDialogItem(prefsDialog, item, NULL, &h, NULL);
+    if (h == NULL)
+        return;
+    if (value < 0 || value > max) {
+        SetDialogItemText(h, "\p???");
+    } else {
+        GetIndString(text, list, value + 1);
+        SetDialogItemText(h, text);
+    }
+}
+
+/* the UI scale one step up or down from `scale' (a scale between steps goes to the next one), kept
+   between 1.0 and what the resolution allows */
+static double StepUIScale(double scale, int up, double max)
+{
+    double steps;
+
+    if (up)
+        steps = floor(scale / kUIScaleStep + 1e-6) + 1;
+    else
+        steps = ceil(scale / kUIScaleStep - 1e-6) - 1;
+    scale = steps * kUIScaleStep;
+    if (scale > max)
+        scale = max;
+    if (scale < 1.0)
+        scale = 1.0;
+    return floor(scale * 10 + 0.5) / 10;
+}
 
 // FUNCTION: EVNOVA 0x00488650
 // MAC: _DoPrefsDialog i386 0x00016459 ppc 0x0001a1ec
 void DoPrefsDialog(void)
 {
+    ResolutionChoice resolutions[kResolutionChoiceMax];
+    char text[kDisplayTextMax];
     unsigned char savedShipSets;
     unsigned char savedShipGlow;
     unsigned char savedShipWeapons;
     unsigned char savedShipLights;
-    Str255 volText;              /* +0x10 */
-    Rect box;                    /* +0x110 */
-    short itemType;              /* +0x118 */
-    short itemHit;               /* +0x11a */
-    void *item;                  /* +0x11c */
-    void *ctl;
     short savedGamma;
+    short resolutionCount;
+    short choice;
+    short itemHit;
+    double maxScale;
     Boolean done;
-    unsigned short gammaLevel;
-    unsigned short musicVol;
 
     prefsDialog = NULL;
-    prefsDialog = GetNewDialog(kPrefsDlogID, PrefsDialogUpdate, NULL);
+    prefsDialog = NewDialogFromItems(kPrefsWidth, kPrefsHeight, kPrefsItems, kPrefsItemCount,
+                                     PrefsDialogUpdate, NULL);
     if (prefsDialog == NULL)
         return;
 
@@ -411,12 +507,9 @@ void DoPrefsDialog(void)
     savedShipGlow = settings.engineGlows;
     savedShipWeapons = settings.weaponGlows;
     savedShipLights = settings.runningLights;
-    done = 0;
     savedGamma = settings.gamma;
-
-    GetDialogItem(prefsDialog, kItemFullScreen, NULL, (Handle *)&item, &box);
-    DisableControl((ControlPtr)item);
-    GetDialogItem(prefsDialog, kItemMessages, NULL, (Handle *)&item, &box);
+    resolutionCount = ResolutionChoices(resolutions);
+    done = 0;
 
     do {
         SetDialogGWorld(prefsDialog);
@@ -424,105 +517,28 @@ void DoPrefsDialog(void)
         TextSize(smallTextSize);
         ForeColor(blackColor);
 
-        GetDialogItem(prefsDialog, kItemFullScreen, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (DAT_007355d0 >= kTrueColorDepth) {
-            SetControlValue((ControlPtr)ctl, 1);
-        } else if (settings.yieldEvents != 0) {
-            SetControlValue((ControlPtr)ctl, 1);
-        } else {
-            SetControlValue((ControlPtr)ctl, 0);
-        }
-
-        if (settings.windowed != 0 && gameLoaded != 0) {
-            GetDialogItem(prefsDialog, kItemMessages, &itemType, (Handle *)&item, &box);
-            SetControlValue((ControlPtr)item, 0);
-        }
-
-        GetDialogItem(prefsDialog, kItemMusic, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.introMusic != 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemSmoothing, &itemType, (Handle *)&item, &box);
-        ctl = item;
+        SetPrefsCheck(kItemShipSets, settings.shipAnimations);
+        SetPrefsCheck(kItemShipGlow, settings.engineGlows);
+        SetPrefsCheck(kItemShipLights, settings.runningLights);
+        SetPrefsCheck(kItemShipWeapons, settings.weaponGlows);
+        SetPrefsCheck(kItemDebris, settings.noDebris == 0);
+        SetPrefsCheck(kItemStarfield, settings.parallaxStars);
+        SetPrefsCheck(kItemHyperspace, settings.noHyperGamma == 0);
+        SetPrefsListText(kItemGammaText, kGammaStrList, settings.gamma, kMaxGamma);
+        SetPrefsCheck(kItemMusic, settings.introMusic);
+        SetPrefsCheck(kItemAmbient, settings.ambientSounds);
+        SetPrefsCheck(kItemMovies, settings.noMovies == 0);
+        SetPrefsListText(kItemMusicVolText, kMusicVolStrList, settings.volume, kMaxMusicVol);
         ceRunInAWindow = CE_IsWindowed();
-        SetControlValue((ControlPtr)ctl, ceRunInAWindow);
-        GetDialogItem(prefsDialog, kItemEarlyOut, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.noMovies == 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemNoDebris, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.noDebris == 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemShipSets, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.shipAnimations != 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemShipGlow, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.engineGlows != 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemShipLights, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.runningLights != 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemShipWeapons, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.weaponGlows != 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemStatusBar, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.parallaxStars != 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemAutoAim, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.ambientSounds != 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemMessages, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.noHyperGamma == 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
-
-        GetDialogItem(prefsDialog, kItemMusicVolText, &itemType, (Handle *)&item, &box);
-        musicVol = settings.volume;
-        if ((short)musicVol < 0 || (short)musicVol > kMaxMusicVol) {
-            SetDialogItemText((Handle)item, "\p???");
-        } else {
-            GetIndString(volText, kMusicVolStrList, ((short)musicVol + 1));
-            SetDialogItemText((Handle)item, volText);
-        }
-
-        GetDialogItem(prefsDialog, kItemGammaText, NULL, (Handle *)&item, &box);
-        if (item != NULL) {
-            gammaLevel = settings.gamma;
-            if ((short)gammaLevel > kMaxGamma) {
-                SetDialogItemText((Handle)item, "\p???");
-            } else {
-                GetIndString(volText, kGammaStrList, ((short)gammaLevel + 1));
-                SetDialogItemText((Handle)item, volText);
-            }
-        }
+        SetPrefsCheck(kItemWindowed, ceRunInAWindow);
+        SetPrefsCheck(kItemWholePixel, settings.wholePixelScaling);
+        ResolutionSizeText(settings.gameWidth, settings.gameHeight, text);
+        SetPrefsText(kItemResText, text);
+        ResolutionAspectText(resolutions, resolutionCount, settings.gameWidth, settings.gameHeight, text);
+        SetPrefsText(kItemResAspect, text);
+        SetPrefsText(kItemFilterText, kFilterNames[settings.scaleFilter]);
+        UIScaleText(settings.uiScale, text);
+        SetPrefsText(kItemScaleText, text);
 
         majorPrefsChange = 0;
         if (settings.windowedPending != settings.windowed)
@@ -533,109 +549,123 @@ void DoPrefsDialog(void)
                 || settings.gamma != savedGamma)
                 majorPrefsChange = 1;
         }
+        if (settings.gameWidth != startGameWidth || settings.gameHeight != startGameHeight
+            || settings.uiScale != ceScaleFactor)
+            majorPrefsChange = 1;
 
         ModalDialog(NULL, &itemHit);
 
-        if (itemHit == kItemDone) {
+        switch (itemHit) {
+        case kItemDone:
             SavePrefs();
             done = 1;
-        }
-        if (itemHit == kItemMusic) {
-            settings.introMusic = (settings.introMusic == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemFullScreen && DAT_007355d0 < kTrueColorDepth) {
-            settings.yieldEvents = (settings.yieldEvents == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemSmoothing) {
-            ceRunInAWindow = (ceRunInAWindow == 0);
-            CE_ToggleFullscreen();
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemEarlyOut) {
-            settings.noMovies = (settings.noMovies == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemNoDebris) {
-            settings.noDebris = (settings.noDebris == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemShipSets) {
+            break;
+        case kItemShipSets:
             settings.shipAnimations = (settings.shipAnimations == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemShipGlow) {
+            break;
+        case kItemShipGlow:
             settings.engineGlows = (settings.engineGlows == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemShipLights) {
+            break;
+        case kItemShipLights:
             settings.runningLights = (settings.runningLights == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemShipWeapons) {
+            break;
+        case kItemShipWeapons:
             settings.weaponGlows = (settings.weaponGlows == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemStatusBar) {
+            break;
+        case kItemDebris:
+            settings.noDebris = (settings.noDebris == 0);
+            break;
+        case kItemStarfield:
             settings.parallaxStars = (settings.parallaxStars == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemAutoAim) {
-            settings.ambientSounds = (settings.ambientSounds == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemMessages) {
+            break;
+        case kItemHyperspace:
             settings.noHyperGamma = (settings.noHyperGamma == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemKeys) {
+            break;
+        case kItemGammaUp:
+            if (settings.gamma < kMaxGamma)
+                settings.gamma += 1;
+            else
+                settings.gamma = kMaxGamma;
+            break;
+        case kItemGammaDown:
+            if (settings.gamma > 0)
+                settings.gamma -= 1;
+            else
+                settings.gamma = 0;
+            break;
+        case kItemMusic:
+            settings.introMusic = (settings.introMusic == 0);
+            break;
+        case kItemAmbient:
+            settings.ambientSounds = (settings.ambientSounds == 0);
+            break;
+        case kItemMovies:
+            settings.noMovies = (settings.noMovies == 0);
+            break;
+        case kItemMusicUp:
+        case kItemMusicDown:
+            if (itemHit == kItemMusicUp)
+                settings.volume = settings.volume < kMaxMusicVol ? settings.volume + 1 : kMaxMusicVol;
+            else
+                settings.volume = settings.volume > 0 ? settings.volume - 1 : 0;
+            HandleIntroMusic(1);
+            AdjustSoundVolume();
+            PlaySound(beepSnd[4], kBeepChannel, gSoundVolume, gSoundVolume);
+            break;
+        case kItemKeys:
             DoKeyDialog();
-            RedrawDialog(prefsDialog);
             if (gameLoaded != 0 && gPause != 0) {
                 MainScreenAnimDraw();
                 MainScreenUpdate(1);
             }
             FrameDefaultButton(prefsDialog, 1);
+            break;
+        case kItemWindowed:
+            ceRunInAWindow = (ceRunInAWindow == 0);
+            CE_ToggleFullscreen();
+            break;
+        case kItemWholePixel:
+            settings.wholePixelScaling = (settings.wholePixelScaling == 0);
+            ApplyDisplayScaling();
+            break;
+        case kItemResUp:
+        case kItemResDown:
+            if (resolutionCount == 0)
+                break;
+            choice = FindResolutionChoice(resolutions, resolutionCount, settings.gameWidth,
+                                          settings.gameHeight);
+            if (choice < 0)
+                choice = itemHit == kItemResUp ? 0 : resolutionCount - 1;
+            else if (itemHit == kItemResUp && choice < resolutionCount - 1)
+                choice += 1;
+            else if (itemHit == kItemResDown && choice > 0)
+                choice -= 1;
+            settings.gameWidth = resolutions[choice].width;
+            settings.gameHeight = resolutions[choice].height;
+            maxScale = MaxUIScale(settings.gameWidth, settings.gameHeight, kPrefsWidth, kPrefsHeight);
+            if (settings.uiScale > maxScale)
+                settings.uiScale = maxScale;
+            break;
+        case kItemFilterUp:
+            if (settings.scaleFilter < kScaleFilterCount - 1)
+                settings.scaleFilter += 1;
+            ApplyDisplayScaling();
+            break;
+        case kItemFilterDown:
+            if (settings.scaleFilter > 0)
+                settings.scaleFilter -= 1;
+            ApplyDisplayScaling();
+            break;
+        case kItemScaleUp:
+        case kItemScaleDown:
+            maxScale = MaxUIScale(settings.gameWidth, settings.gameHeight, kPrefsWidth, kPrefsHeight);
+            if (itemHit == kItemScaleDown || settings.uiScale < maxScale)
+                settings.uiScale = StepUIScale(settings.uiScale, itemHit == kItemScaleUp, maxScale);
+            break;
+        default:
+            break;
         }
-        if (itemHit == kItemMusicUp) {
-            if (settings.volume < kMaxMusicVol) {
-                settings.volume += 1;
-                RedrawDialog(prefsDialog);
-            } else {
-                settings.volume = kMaxMusicVol;
-            }
-            HandleIntroMusic(1);
-            AdjustSoundVolume();
-            PlaySound(beepSnd[4], kBeepChannel, gSoundVolume, gSoundVolume);
-        }
-        if (itemHit == kItemMusicDown) {
-            if (settings.volume > 0) {
-                settings.volume -= 1;
-                RedrawDialog(prefsDialog);
-            } else {
-                settings.volume = 0;
-            }
-            HandleIntroMusic(1);
-            AdjustSoundVolume();
-            PlaySound(beepSnd[4], kBeepChannel, gSoundVolume, gSoundVolume);
-        }
-        if (itemHit == kItemGammaUp) {
-            if (settings.gamma < kMaxGamma) {
-                settings.gamma += 1;
-                RedrawDialog(prefsDialog);
-            } else {
-                settings.gamma = kMaxGamma;
-            }
-        }
-        if (itemHit == kItemGammaDown) {
-            if (settings.gamma > 0) {
-                settings.gamma -= 1;
-                RedrawDialog(prefsDialog);
-            } else {
-                settings.gamma = 0;
-            }
-        }
+        RedrawDialog(prefsDialog);
     } while (done == 0);
 
     if (gWind != NULL)

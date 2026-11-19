@@ -39,6 +39,8 @@ static Uint64 gShowStart;               /* when the last show began */
 static Uint64 gShowEnd;                 /* and when it was done */
 static Uint64 gShowRest;                /* ns after gShowEnd in which nothing more is shown; 0 outside a burst */
 static Uint64 gPresentEnd;              /* when the game's last present returned */
+static SDL_ScaleMode gScaleMode = SDL_SCALEMODE_LINEAR;
+static bool gWholePixel;                /* PlatVideoSetScaling's wholePixel */
 
 static int gButtons;                    /* mouse buttons held, a bit each */
 static SDL_Scancode gSwallowedKey;      /* the Enter of Alt+Enter: the game sees neither its press nor its release */
@@ -217,7 +219,24 @@ static bool FocusStaysInProgram(void)
     return false;
 }
 
-/* Called as SDL queues an event, on the main thread for the two taken here.
+/* The frame's fit in the window: whole-pixel scaling when asked for and the window holds the frame at
+   least once (SDL would crop it otherwise), else stretched with its aspect kept. */
+static void ApplyPresentation(void)
+{
+    SDL_RendererLogicalPresentation mode;
+    int w;
+    int h;
+
+    if (gRenderer == NULL || gFrameWidth <= 0 || gFrameHeight <= 0)
+        return;
+    mode = SDL_LOGICAL_PRESENTATION_LETTERBOX;
+    if (gWholePixel && SDL_GetCurrentRenderOutputSize(gRenderer, &w, &h) && w >= gFrameWidth
+            && h >= gFrameHeight)
+        mode = SDL_LOGICAL_PRESENTATION_INTEGER_SCALE;
+    SDL_SetRenderLogicalPresentation(gRenderer, gFrameWidth, gFrameHeight, mode);
+}
+
+/* Called as SDL queues an event, on the main thread for the three taken here.
    - While the user drags the window's edge the event loop does not run: SDL sends these exposes for the
      window to be redrawn at once.
    - Where a focus loss goes can only be told while it happens; by the time the event is polled a dialog
@@ -229,6 +248,8 @@ static bool SDLCALL EventWatch(void *userdata, SDL_Event *event)
     (void)userdata;
     if (event->type == SDL_EVENT_WINDOW_EXPOSED && event->window.data1 == 1) {
         Redraw();
+    } else if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+        ApplyPresentation();
     } else if (event->type == SDL_EVENT_WINDOW_FOCUS_LOST) {
         next = (gFocusNoteTail + 1) & (kFocusNotes - 1);
         if (next != gFocusNoteHead) {
@@ -249,7 +270,8 @@ static bool MakeFrameTexture(void)
     if (gTexture == NULL)
         return false;
     SDL_SetTextureBlendMode(gTexture, SDL_BLENDMODE_NONE);
-    SDL_SetTextureScaleMode(gTexture, SDL_SCALEMODE_LINEAR);
+    if (!SDL_SetTextureScaleMode(gTexture, gScaleMode))
+        SDL_SetTextureScaleMode(gTexture, SDL_SCALEMODE_LINEAR);
     /* a frame the game gave before (the graphics device was reset) goes into the new texture */
     if (!gFrameFresh && gGamePixels != NULL)
         KeepFrame(gGamePixels, gGamePitch);
@@ -317,6 +339,7 @@ int PlatVideoOpen(int width, int height, int fullScreen)
     SDL_SetWindowFullscreen(gWindow, fullScreen != 0);     /* no mode chosen: the desktop's, borderless */
     SDL_ShowWindow(gWindow);
     SDL_SyncWindow(gWindow);
+    ApplyPresentation();
     SDL_StartTextInput(gWindow);                           /* typed characters arrive as events */
     mode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(gWindow));
     refresh = mode != NULL ? mode->refresh_rate : 0;
@@ -352,6 +375,21 @@ void PlatVideoPresent(const void *pixels, int pitch)
     if (FrameDueIn() != 0 || !ShowNow(pixels, pitch))
         KeepFrame(pixels, pitch);
     gPresentEnd = SDL_GetTicksNS();
+}
+
+void PlatVideoSetScaling(int filter, int wholePixel)
+{
+    if (filter == kPlatFilterNearest)
+        gScaleMode = SDL_SCALEMODE_NEAREST;
+    else if (filter == kPlatFilterPixelArt)
+        gScaleMode = SDL_SCALEMODE_PIXELART;
+    else
+        gScaleMode = SDL_SCALEMODE_LINEAR;
+    gWholePixel = wholePixel != 0;
+    if (gTexture != NULL && !SDL_SetTextureScaleMode(gTexture, gScaleMode))
+        SDL_SetTextureScaleMode(gTexture, SDL_SCALEMODE_LINEAR);
+    ApplyPresentation();
+    Redraw();
 }
 
 void PlatVideoSetFullScreen(int on)

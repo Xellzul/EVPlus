@@ -350,7 +350,17 @@ typedef struct Settings {
     Boolean noHyperGamma;
     short volume;
     short gamma;
+    short gameWidth;                /* the resolution the game draws at; 0 = the desktop's */
+    short gameHeight;
+    short scaleFilter;              /* kScaleFilter* */
+    Boolean wholePixelScaling;
+    double uiScale;                 /* dialogs and status bar, 1.0 = as designed */
 } Settings;
+
+#define kScaleFilterNearest     0
+#define kScaleFilterLinear      1
+#define kScaleFilterPixelArt    2
+#define kScaleFilterCount       3
 
 typedef struct PrefsRecord {
     short introMusic;
@@ -368,7 +378,12 @@ typedef struct PrefsRecord {
     short yieldEvents;
     short volume;
     short gamma;
+    short gameWidth;
+    short gameHeight;
+    short scaleFilter;
+    short wholePixelScaling;
     short keys[36];
+    double uiScale;
 } PrefsRecord;
 
 /* one offerable mission in missionAvailData, stride 0x12c */

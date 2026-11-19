@@ -22,10 +22,7 @@ extern int ceX2Hotkey;
 extern unsigned char ceRunInAWindow;
 
 void CE_Startup(void);
-double CE_IniDouble(const char *key, const char *def);
-int CE_IniInt(const char *key, int def);
 void CE_ReadX2Hotkey(void);
-void CE_InitializeMonitor(void);
 unsigned char CE_IsWindowed(void);
 void CE_ToggleFullscreen(void);
 
@@ -38,7 +35,7 @@ extern int ceGridThumbSize;
 extern int ceStatusBarWidth;
 extern int ceListItemBaseHeight;
 
-void CE_InitScaleFactor(void);
+void CE_InitScaleFactor(double factor);
 int CE_Round(double value);
 int CE_Scale(int value);
 int CE_GridDivide(int offset, int cell);

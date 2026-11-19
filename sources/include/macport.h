@@ -622,6 +622,26 @@ extern void GetGlobalMouse(Point *pt);
 extern void GetMouse(Point *pt);
 extern DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc,
                               DialogEventProc eventProc);
+
+/* one item of NewDialogFromItems, as a DITL holds it */
+#define kDitlUserItem       0
+#define kDitlButton         4
+#define kDitlCheckBox       5
+#define kDitlStaticText     8
+#define kDitlPicture        0x40
+
+typedef struct DialogItemSpec {
+    unsigned char kind;             /* kDitl* */
+    short top;
+    short left;
+    short bottom;
+    short right;
+    const char *text;               /* a button's, check box's or static text's */
+    short resID;                    /* a picture's PICT */
+} DialogItemSpec;
+
+extern DialogPtr NewDialogFromItems(short width, short height, const DialogItemSpec *items, short count,
+                                    DialogUpdateProc updateProc, DialogEventProc eventProc);
 extern PicHandle GetPicture(int picID);
 extern Image_t *GetPixPat(short id);
 extern void GetPort(CGrafPtr *port);

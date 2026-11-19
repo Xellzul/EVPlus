@@ -203,6 +203,7 @@ static __inline void DisposeControl(void *ctl)
 
 #define kDLOGType 0x444c4f47
 #define kDITLType 0x4449544c
+#define kDlogDitlWord 9                 /* the DLOG template's word with its DITL's id */
 
 /* keys come back from KeyboardGet2 as BurgerLib ASCII codes */
 #define ASCII_BACKSPACE  0x08
@@ -634,13 +635,12 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
     return result;
 }
 
-// FUNCTION: EVNOVA 0x004cf760
-DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventProc eventProc)
+/* A dialog from a DLOG template and its DITL, both as they come off a rez file (big-endian). */
+static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsigned char *ditl,
+                                       DialogUpdateProc updateProc, DialogEventProc eventProc)
 {
     DialogPtr dlg;
-    Handle dlogRes;
-    Handle ditlRes;
-    short ditlID;
+
     dlg = (DialogPtr)AllocAPointerClear(sizeof(DialogRecord));
     dlg->itemCount = 0;
     dlg->editItem = 0;
@@ -650,14 +650,8 @@ DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventPro
     dlg->eventProc = (void *)eventProc;
     dlg->needsUpdate = 1;
     dlg->visible = 1;
-    dlogRes = GetResource(kDLOGType, dlogID);
-    LockAHandle(dlogRes);
-    ditlID = CE_SetDialogTemplateBounds(dlg, (const unsigned short *)*dlogRes);
-    ditlRes = GetResource(kDITLType, ditlID);
-    LockAHandle(ditlRes);
-    ParseDITL(dlg, (unsigned char *)*ditlRes);
-    ReleaseResource(ditlRes);
-    ReleaseResource(dlogRes);
+    CE_SetDialogTemplateBounds(dlg, dlogTemplate);
+    ParseDITL(dlg, ditl);
     dlg->portRect.top = dlg->bounds.top;
     dlg->portRect.left = dlg->bounds.left;
     dlg->portRect.bottom = dlg->bounds.bottom;
@@ -671,6 +665,84 @@ DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventPro
     gDialogCount += 1;
     gCurDialog = dlg;
     MouseClicked = 0;
+    return dlg;
+}
+
+// FUNCTION: EVNOVA 0x004cf760
+DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventProc eventProc)
+{
+    DialogPtr dlg;
+    Handle dlogRes;
+    Handle ditlRes;
+    short ditlID;
+
+    dlogRes = GetResource(kDLOGType, dlogID);
+    LockAHandle(dlogRes);
+    ditlID = SwapEndianShort((const unsigned short *)*dlogRes + kDlogDitlWord);
+    ditlRes = GetResource(kDITLType, ditlID);
+    LockAHandle(ditlRes);
+    dlg = NewDialogFromTemplate((const unsigned short *)*dlogRes, (unsigned char *)*ditlRes, updateProc,
+                                eventProc);
+    ReleaseResource(ditlRes);
+    ReleaseResource(dlogRes);
+    return dlg;
+}
+
+static void PutBigShort(unsigned char *p, int value)
+{
+    p[0] = (unsigned char)(value >> 8);
+    p[1] = (unsigned char)value;
+}
+
+/* A dialog of width x height made from a list of items instead of a DLOG and DITL resource: the
+   items become a DITL in memory, item 1 the first of the list. */
+DialogPtr NewDialogFromItems(short width, short height, const DialogItemSpec *items, short count,
+                             DialogUpdateProc updateProc, DialogEventProc eventProc)
+{
+    unsigned short dlogTemplate[kDlogDitlWord + 1];
+    unsigned char *ditl;
+    unsigned char *p;
+    size_t size;
+    size_t length;
+    DialogPtr dlg;
+    short i;
+
+    size = 2;
+    for (i = 0; i < count; i++) {
+        length = items[i].text != NULL ? strlen(items[i].text) : 0;
+        if (length > 255)
+            length = 255;
+        size += 14 + length + 2;
+    }
+    ditl = (unsigned char *)AllocAPointerClear(size);
+    PutBigShort(ditl, count - 1);
+    p = ditl + 2;
+    for (i = 0; i < count; i++) {
+        PutBigShort(p + 4, items[i].top);
+        PutBigShort(p + 6, items[i].left);
+        PutBigShort(p + 8, items[i].bottom);
+        PutBigShort(p + 10, items[i].right);
+        p[12] = items[i].kind;
+        if (items[i].kind == kPictureItem || items[i].kind == kIconItem) {
+            p[13] = 2;
+            PutBigShort(p + 14, items[i].resID);
+            p += 16;
+        } else {
+            length = items[i].text != NULL ? strlen(items[i].text) : 0;
+            if (length > 255)
+                length = 255;
+            p[13] = (unsigned char)length;
+            memcpy(p + 14, items[i].text, length);
+            p += 14 + length;
+        }
+        if (((p - ditl) & 1) != 0)
+            p += 1;
+    }
+    memset(dlogTemplate, 0, sizeof(dlogTemplate));
+    PutBigShort((unsigned char *)&dlogTemplate[2], height);
+    PutBigShort((unsigned char *)&dlogTemplate[3], width);
+    dlg = NewDialogFromTemplate(dlogTemplate, ditl, updateProc, eventProc);
+    DeallocAPointer(ditl);
     return dlg;
 }
 

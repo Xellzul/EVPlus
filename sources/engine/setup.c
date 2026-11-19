@@ -23,6 +23,7 @@
 #include "gameutil.h"
 #include "missions.h"
 #include "player.h"
+#include "platform.h"
 #include "ships.h"
 #include "sound.h"
 
@@ -2285,6 +2286,45 @@ void ResetPlayerRecord(Boolean newPilot)
  * window, which is why the two sources are BurgerLib globals.
  */
 
+#define kVideoDepth         15
+#define kVideoFullScreen    0x01                /* borderless, at the desktop's mode */
+#define kVideoAlways        0x02
+
+short startGameWidth;
+short startGameHeight;
+
+/* The screen at the preferences' resolution (gameWidth, gameHeight; 0 = the desktop's), shown with their
+   upscaling filter and whole-pixel scaling. */
+// FUNCTION: EVNOVA 0x004b45e0
+void SetupMonitor(void)
+{
+    int32_t width;
+    int32_t height;
+    int desktopWidth;
+    int desktopHeight;
+
+    startGameWidth = settings.gameWidth;
+    startGameHeight = settings.gameHeight;
+    width = settings.gameWidth;
+    height = settings.gameHeight;
+    PlatDesktopSize(&desktopWidth, &desktopHeight);
+    if (width == 0)
+        width = desktopWidth;
+    if (height == 0)
+        height = desktopHeight;
+    ApplyDisplayScaling();
+    SetDisplayToSize(width, height, kVideoDepth, kVideoFullScreen | kVideoAlways);
+}
+
+/* The preferences' upscaling filter and whole-pixel scaling, to the window. */
+void ApplyDisplayScaling(void)
+{
+    static const int kFilters[kScaleFilterCount] = { kPlatFilterNearest, kPlatFilterLinear,
+                                                     kPlatFilterPixelArt };
+
+    PlatVideoSetScaling(kFilters[settings.scaleFilter], settings.wholePixelScaling);
+}
+
 // FUNCTION: EVNOVA 0x004b42f0
 void ResetScreenRect(void)
 {
@@ -2322,6 +2362,11 @@ void SetDefaultPrefs(void)
     settings.weaponGlows = 1;
     settings.runningLights = 1;
     settings.gamma = 3;
+    settings.gameWidth = 0;
+    settings.gameHeight = 0;
+    settings.scaleFilter = kScaleFilterLinear;
+    settings.wholePixelScaling = 0;
+    settings.uiScale = 1.0;
     pstrcpy(lastPlayerName, "\p");
 }
 

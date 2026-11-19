@@ -192,6 +192,10 @@ extern short lastPortMissionLoc;
 extern uint32_t lastSmokeUpdateTime;
 extern Boolean mBarHidden;
 extern Rect mainWindRect;
+extern short startGameWidth;                /* the preferences' resolution the game started with */
+extern short startGameHeight;
+extern void SetupMonitor(void);
+extern void ApplyDisplayScaling(void);
 extern short menuFontID;
 extern RGBColor menuTextColor[2];
 extern void *missionSnd;

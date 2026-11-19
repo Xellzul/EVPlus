@@ -1,6 +1,7 @@
 // COMPILE: -lang c++ -bool off
 /* prefsjson.c -- the preferences file as JSON: a PrefsRecord's fields by name, the key bindings as an array of
-   scan codes (keycodes.h). Fields missing from the file, or not whole numbers, keep the record's value. */
+   scan codes (keycodes.h). Fields missing from the file, or not whole numbers, keep the record's value;
+   uiScale is any number. */
 #include "yyjson.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -31,6 +32,10 @@ static const PrefsJsonField kPrefsJsonFields[] = {
     { "yieldEvents",    offsetof(PrefsRecord, yieldEvents) },
     { "volume",         offsetof(PrefsRecord, volume) },
     { "gamma",          offsetof(PrefsRecord, gamma) },
+    { "gameWidth",      offsetof(PrefsRecord, gameWidth) },
+    { "gameHeight",     offsetof(PrefsRecord, gameHeight) },
+    { "scaleFilter",    offsetof(PrefsRecord, scaleFilter) },
+    { "wholePixelScaling", offsetof(PrefsRecord, wholePixelScaling) },
 };
 #define kPrefsJsonFieldCount (sizeof(kPrefsJsonFields) / sizeof(kPrefsJsonFields[0]))
 
@@ -70,6 +75,8 @@ void PrefsJsonLoad(const char *path, PrefsRecord *rec)
     if (yyjson_is_obj(root)) {
         for (i = 0; i < kPrefsJsonFieldCount; i++)
             ReadShort(yyjson_obj_get(root, kPrefsJsonFields[i].name), FieldOf(rec, i));
+        if (yyjson_is_num(yyjson_obj_get(root, "uiScale")))
+            rec->uiScale = yyjson_get_num(yyjson_obj_get(root, "uiScale"));
         keys = yyjson_obj_get(root, "keys");
         for (i = 0; i < kPrefsKeyCount; i++)
             ReadShort(yyjson_arr_get(keys, i), &rec->keys[i]);
@@ -93,6 +100,7 @@ void PrefsJsonSave(const char *path, PrefsRecord *rec)
     yyjson_mut_doc_set_root(doc, root);
     for (i = 0; i < kPrefsJsonFieldCount; i++)
         yyjson_mut_obj_add_int(doc, root, kPrefsJsonFields[i].name, *FieldOf(rec, i));
+    yyjson_mut_obj_add_real(doc, root, "uiScale", rec->uiScale);
     keys = yyjson_mut_arr_with_sint16(doc, rec->keys, kPrefsKeyCount);
     yyjson_mut_obj_add_val(doc, root, "keys", keys);
     text = yyjson_mut_write(doc, YYJSON_WRITE_PRETTY_TWO_SPACES | YYJSON_WRITE_NEWLINE_AT_END, &length);

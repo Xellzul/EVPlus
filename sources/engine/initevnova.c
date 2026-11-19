@@ -286,7 +286,6 @@ short playerEscortOrders[4];
 short lastIntfResourceID;
 short hypergateMapModeStellar;
 char absquatulateStr[256];
-int32_t DAT_007355d0;
 UnsignedWide lastFrameMicroseconds;
 Rect statusOffRect[8];
 RGBColor statusColor[8];
@@ -373,9 +372,10 @@ void InitEVNova(void)
     InitDataFiles();
     CE_ReadX2Hotkey();
     LoadPrefs();
+    CE_InitScaleFactor(settings.uiScale);
 
     crashlog("initializing monitor");
-    CE_InitializeMonitor();
+    SetupMonitor();
     ResetScreenRect();
 
     crashlog("building trig table");

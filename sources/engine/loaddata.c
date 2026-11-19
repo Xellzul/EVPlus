@@ -2382,6 +2382,11 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->yieldEvents = settings.yieldEvents != 0;
     rec->volume = settings.volume;
     rec->gamma = settings.gamma;
+    rec->gameWidth = settings.gameWidth;
+    rec->gameHeight = settings.gameHeight;
+    rec->scaleFilter = settings.scaleFilter;
+    rec->wholePixelScaling = settings.wholePixelScaling != 0;
+    rec->uiScale = settings.uiScale;
     KeyPrefsToSlotTable();
     for (i = 0; i <= 35; i++)
         rec->keys[i] = (short)newKeyPrefs[i];
@@ -2411,6 +2416,13 @@ static void RecordToPrefs(const PrefsRecord *rec)
     settings.gamma = rec->gamma;
     if (settings.gamma > 6)
         settings.gamma = 3;
+    settings.gameWidth = rec->gameWidth;
+    settings.gameHeight = rec->gameHeight;
+    settings.scaleFilter = rec->scaleFilter;
+    if (settings.scaleFilter < 0 || settings.scaleFilter >= kScaleFilterCount)
+        settings.scaleFilter = kScaleFilterLinear;
+    settings.wholePixelScaling = rec->wholePixelScaling != 0;
+    settings.uiScale = rec->uiScale > 0 ? rec->uiScale : 1.0;
     settings.windowedPending = settings.windowed;
     SetDefaultKeys();
     for (i = 0; i <= 35; i++)

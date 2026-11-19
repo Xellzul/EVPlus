@@ -13,6 +13,7 @@
 #define kMainScreenQuit     2
 #define kMainScreenEnter    3
 #define kMainScreenPrefs    4
+#define kDebugFonts         0       /* 1: the font test page (fonttest.c) before the main screen */
 #define kMainScreenAbout    5
 
 #define kCreditsTextID      0x7ffe
@@ -112,7 +113,7 @@ void DoMainScreen(void)
     crashlog("setting up main screen graphics");
     SetupInterfaceBackground();
     ShowTheCursor();
-    if (CE_IniInt("debug_fonts", 0) != 0)
+    if (kDebugFonts)
         DebugFontScreen();
     crashlog("doing main screen");
     LoadMainScreenAnim();
