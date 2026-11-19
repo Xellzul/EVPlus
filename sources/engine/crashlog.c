@@ -91,20 +91,6 @@ void crashlog_print_num(int num)
     }
 }
 
-/* crashlog_print_ostype (mac _crashlog_print_ostype, dead on win: uncalled, the linker strips it). */
-// MAC: _crashlog_print_ostype i386 0x000a49a3 ppc 0x000b056c
-void crashlog_print_ostype(OSType type)
-{
-    short i;
-
-    for (i = 0; i < 4; i++) {
-        if (logfile) {
-            fprintf(logfile, "%c", ((char *)&type)[i]);
-            fflush(logfile);
-        }
-    }
-}
-
 // FUNCTION: EVNOVA 0x00470220
 // MAC: _crashlog_mission_bit_set i386 0x000a4ab9 ppc 0x000b06f0
 void crashlog_mission_bit_set(char *str, char *pstr, short num, short num2, char *setString)
@@ -158,13 +144,6 @@ void crashlog(char *str)
 Boolean crashlog_isactive(void)
 {
     return logfile ? 1 : 0;
-}
-
-/* crashlog_get_file (mac _crashlog_get_file, dead on win: uncalled, the linker strips it). */
-// MAC: _crashlog_get_file i386 0x000a4a29 ppc 0x000b0640
-FILE *crashlog_get_file(void)
-{
-    return logfile ? logfile : stderr;
 }
 
 EXTERN_C_END

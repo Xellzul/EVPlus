@@ -32,31 +32,4 @@ void EvalCurrentMissionBitSetString(char *expr, short mission)
     ResetPlayerPrecalcedValues();
 }
 
-/* DumpMissionBitLog (mac _DumpMissionBitLog, no caller: dead on win). */
-// MAC: _DumpMissionBitLog i386 0x00099df1 ppc 0x000a5bf4
-void DumpMissionBitLog(void)
-{
-    FILE *log;
-    short i;
-
-    log = fopen("ncb_log.txt", "w");
-    fputs("EV Nova control bit state:\n\n", log);
-    for (i = 0; i < kMaxMissionBits; i++) {
-        fprintf(log, "%i   ", i);
-        if (i < 10000)
-            fputc(' ', log);
-        if (i < 1000)
-            fputc(' ', log);
-        if (i < 100)
-            fputc(' ', log);
-        if (i < 10)
-            fputc(' ', log);
-        if (missionBit[i])
-            fputs("1\n", log);
-        else
-            fputs("0\n", log);
-    }
-    fclose(log);
-}
-
 EXTERN_C_END
