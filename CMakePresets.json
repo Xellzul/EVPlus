@@ -17,10 +17,37 @@
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++"
       }
+    },
+    {
+      "name": "macos",
+      "displayName": "macOS arm64 (Apple clang, on a Mac)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
     }
   ],
   "buildPresets": [
-    { "name": "windows", "configurePreset": "windows" },
-    { "name": "linux", "configurePreset": "linux" }
+    {
+      "name": "windows",
+      "configurePreset": "windows"
+    },
+    {
+      "name": "linux",
+      "configurePreset": "linux"
+    },
+    {
+      "name": "macos",
+      "configurePreset": "macos"
+    }
   ]
 }

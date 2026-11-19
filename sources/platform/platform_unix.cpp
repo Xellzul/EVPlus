@@ -1,11 +1,15 @@
-/* platform_unix.cpp -- what of platform.h differs on Linux and other Unix systems: opening a file and changing
-   the current folder (names in any case), the program's file type, and the installed fonts (fontconfig).
-   Everything else is platform_sdl.cpp. */
+/* platform_unix.cpp -- what of platform.h differs on macOS, Linux and other Unix systems: opening a file and
+   changing the current folder (names in any case), the program's file type, and the installed fonts (Core Text
+   on macOS, fontconfig elsewhere). Everything else is platform_sdl.cpp. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <CoreText/CoreText.h>
+#else
 #include <fontconfig/fontconfig.h>
+#endif
 #include "platform.h"
 
 #define kPathMax    4096                /* bytes of a path, with its end */
@@ -43,6 +47,63 @@ void PlatRegisterFileType(const char *programName, const char *extension, const 
 
 /* -- installed fonts ------------------------------------------------------------------------------- */
 
+#ifdef __APPLE__
+#define kTraitCount 1
+
+/* Core Text answers any name with some font: only one of the family asked for counts */
+void *PlatSystemFont(const char *family, int bold, int italic, int *size)
+{
+    CFStringRef name;
+    CFMutableDictionaryRef wanted;
+    CFMutableDictionaryRef traits;
+    CFNumberRef traitBits;
+    CTFontDescriptorRef asked;
+    CTFontDescriptorRef found;
+    CFStringRef foundFamily;
+    CFURLRef url;
+    char path[kPathMax];
+    uint32_t bits;
+    void *data;
+
+    *size = 0;
+    data = NULL;
+    name = CFStringCreateWithCString(NULL, family, kCFStringEncodingUTF8);
+    if (name == NULL)
+        return NULL;
+    wanted = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    CFDictionarySetValue(wanted, kCTFontFamilyNameAttribute, name);
+    bits = (bold ? kCTFontBoldTrait : 0) | (italic ? kCTFontItalicTrait : 0);
+    if (bits != 0) {
+        traits = CFDictionaryCreateMutable(NULL, kTraitCount, &kCFTypeDictionaryKeyCallBacks,
+                                           &kCFTypeDictionaryValueCallBacks);
+        traitBits = CFNumberCreate(NULL, kCFNumberSInt32Type, &bits);
+        CFDictionarySetValue(traits, kCTFontSymbolicTrait, traitBits);
+        CFDictionarySetValue(wanted, kCTFontTraitsAttribute, traits);
+        CFRelease(traitBits);
+        CFRelease(traits);
+    }
+    asked = CTFontDescriptorCreateWithAttributes(wanted);
+    found = asked != NULL ? CTFontDescriptorCreateMatchingFontDescriptor(asked, NULL) : NULL;
+    if (found != NULL) {
+        foundFamily = (CFStringRef)CTFontDescriptorCopyAttribute(found, kCTFontFamilyNameAttribute);
+        url = (CFURLRef)CTFontDescriptorCopyAttribute(found, kCTFontURLAttribute);
+        if (foundFamily != NULL && url != NULL
+                && CFStringCompare(foundFamily, name, kCFCompareCaseInsensitive) == kCFCompareEqualTo
+                && CFURLGetFileSystemRepresentation(url, true, (UInt8 *)path, sizeof path))
+            data = PlatLoadFile(path, size);
+        if (foundFamily != NULL)
+            CFRelease(foundFamily);
+        if (url != NULL)
+            CFRelease(url);
+        CFRelease(found);
+    }
+    if (asked != NULL)
+        CFRelease(asked);
+    CFRelease(wanted);
+    CFRelease(name);
+    return data;
+}
+#else
 /* fontconfig answers any name with some font: only one of the family asked for counts */
 static int IsFamily(FcPattern *font, const char *family)
 {
@@ -83,3 +144,4 @@ void *PlatSystemFont(const char *family, int bold, int italic, int *size)
     FcPatternDestroy(wanted);
     return data;
 }
+#endif

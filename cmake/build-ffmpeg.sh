@@ -25,7 +25,11 @@ tar -xJf "$tarball" -C "$work"
 src=$(find "$work" -mindepth 1 -maxdepth 1 -type d -name 'ffmpeg-*' | head -n 1)
 
 cd "$src"
-if [ "$llvm" = native ]; then
+if [ "$llvm" = native ] && [ "$(uname)" = Darwin ]; then
+    # found beside the program (@rpath), on the macOS the game is built for
+    export MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-11.0}
+    set -- --cc=clang --cxx=clang++ --ld=clang --enable-pthreads --install-name-dir=@rpath
+elif [ "$llvm" = native ]; then
     set -- --cc=clang --cxx=clang++ --ld=clang --enable-pthreads
 else
     t=$llvm/bin/x86_64-w64-mingw32

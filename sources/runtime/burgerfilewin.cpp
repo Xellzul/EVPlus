@@ -258,6 +258,18 @@ static Word PrefsFolder(char *folder, Word size)
 {
     return PlatEnv("APPDATA", folder, size);
 }
+#elif defined(__APPLE__)
+/* ~/Library/Preferences, where the Mac versions kept their preferences */
+static Word PrefsFolder(char *folder, Word size)
+{
+    char home[kPathBufferSize];
+    int length;
+
+    if (!PlatEnv("HOME", home, sizeof(home)))
+        return 0;
+    length = snprintf(folder, size, "%s/Library/Preferences", home);
+    return length > 0 && (Word)length < size && PlatMakeFolder(folder);
+}
 #else
 #define kPrefsFolderName    "EV Nova"
 
@@ -278,7 +290,7 @@ static Word PrefsFolder(char *folder, Word size)
 #endif
 
 /* The current folder (8), the program's (9) and the one for preferences ("@:": %APPDATA% on Windows,
-   the user's configuration folder elsewhere). The exe also
+   ~/Library/Preferences on macOS, the user's configuration folder elsewhere). The exe also
    set the system folder ("$:") and the drive it is on ("*:"), which no path of the game names, took the
    program's folder from its first argument, and without an APPDATA variable (Windows 95) kept preferences
    in the Windows folder: now "@:" is then left unset, which is the current folder. */

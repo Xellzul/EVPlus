@@ -2,11 +2,12 @@
 #
 #   cmake --preset windows && cmake --build build/windows    -> build/windows/evnova64.exe (llvm-mingw)
 #   cmake --preset linux && cmake --build build/linux        -> build/linux/evnova64 (clang)
+#   cmake --preset macos && cmake --build build/macos        -> build/macos/evnova64 (Apple silicon, on a Mac)
 #
 # Needs: llvm-mingw (default /opt/llvm-mingw) or clang; sh, make and xz once, to build FFmpeg (downloaded, or
 # -DFFMPEG_TARBALL=/path offline; or pass -DFFMPEG_ROOT=/path). The FFmpeg libraries and its licence are copied next
 # to the program. SDL3 is built once too, as a static library (downloaded, or -DSDL3_TARBALL=/path offline; or
-# -DSDL3_ROOT=/path). Linux also needs fontconfig (the system's).
+# -DSDL3_ROOT=/path). Linux also needs fontconfig (the system's); macOS the Xcode command line tools.
 cmake_minimum_required(VERSION 3.20)
 project(EVNova C CXX)
 if(WIN32)
@@ -55,6 +56,9 @@ set(FFMPEG_ROOT "" CACHE PATH "FFmpeg install (empty: build FFmpeg ${FFMPEG_VERS
 if(WIN32)
   set(_ff_lib .dll.a)
   set(_ff_target ${LLVM_MINGW})
+elseif(APPLE)
+  set(_ff_lib .dylib)
+  set(_ff_target native)
 else()
   set(_ff_lib .so)
   set(_ff_target native)
@@ -66,7 +70,8 @@ if(NOT FFMPEG_ROOT)
     pinned_tarball(_ff_tar https://ffmpeg.org/releases/${_ff_name} ${_ff_name} ${FFMPEG_SHA256} "${FFMPEG_TARBALL}"
                    "pass -DFFMPEG_TARBALL=/path/to/${_ff_name} or -DFFMPEG_ROOT=/path/to/ffmpeg")
     message(STATUS "building FFmpeg from ${_ff_tar} (once, a few minutes)")
-    execute_process(COMMAND sh ${CMAKE_SOURCE_DIR}/cmake/build-ffmpeg.sh ${_ff_tar} ${FFMPEG_ROOT} ${_ff_target}
+    execute_process(COMMAND ${CMAKE_COMMAND} -E env MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+                    sh ${CMAKE_SOURCE_DIR}/cmake/build-ffmpeg.sh ${_ff_tar} ${FFMPEG_ROOT} ${_ff_target}
                     RESULT_VARIABLE rc OUTPUT_FILE ${CMAKE_BINARY_DIR}/ffmpeg-build.log
                     ERROR_FILE ${CMAKE_BINARY_DIR}/ffmpeg-build.log)
     if(rc OR NOT EXISTS ${FFMPEG_ROOT}/lib/libavformat${_ff_lib})
@@ -80,10 +85,21 @@ set(FFMPEG_DLLS "")
 foreach(l ${FFMPEG_LIBS})
   list(APPEND FFMPEG_IMPORT ${FFMPEG_ROOT}/lib/lib${l}${_ff_lib})
   if(NOT WIN32)
-    # the library under the name the program asks for (its soname, the shortest "lib<name>.so.<n>")
-    file(GLOB _ff_so ${FFMPEG_ROOT}/lib/lib${l}.so.*)
-    list(SORT _ff_so COMPARE NATURAL)
-    list(GET _ff_so 0 _ff_so)
+    # the library under the name the program asks for: the shortest of "lib<name>.so.<n>..." (Linux) or
+    # "lib<name>.<n>....dylib" (macOS)
+    if(APPLE)
+      file(GLOB _ff_found ${FFMPEG_ROOT}/lib/lib${l}.*.dylib)
+    else()
+      file(GLOB _ff_found ${FFMPEG_ROOT}/lib/lib${l}.so.*)
+    endif()
+    set(_ff_so "")
+    foreach(f ${_ff_found})
+      string(LENGTH "${f}" _len)
+      string(LENGTH "${_ff_so}" _best)
+      if(NOT _ff_so OR _len LESS _best)
+        set(_ff_so ${f})
+      endif()
+    endforeach()
     list(APPEND FFMPEG_DLLS ${_ff_so})
   endif()
 endforeach()
@@ -139,6 +155,10 @@ if(NOT SDL3_ROOT)
     if(CMAKE_MAKE_PROGRAM)
       list(APPEND _sdl_args -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM})
     endif()
+    if(APPLE)
+      list(APPEND _sdl_args "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+           -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
+    endif()
     _sdl_run(-S ${_sdl_work}/SDL3-${SDL3_VERSION} -B ${_sdl_work}/build ${_sdl_args})
     _sdl_run(--build ${_sdl_work}/build)
     _sdl_run(--install ${_sdl_work}/build)
@@ -193,6 +213,10 @@ if(NOT FREETYPE_ROOT)
     if(CMAKE_MAKE_PROGRAM)
       list(APPEND _ft_args -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM})
     endif()
+    if(APPLE)
+      list(APPEND _ft_args "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+           -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
+    endif()
     _ft_run(-S ${_ft_work}/freetype-${FREETYPE_VERSION} -B ${_ft_work}/build ${_ft_args})
     _ft_run(--build ${_ft_work}/build)
     _ft_run(--install ${_ft_work}/build)
@@ -241,6 +265,14 @@ if(WIN32)
   # one file to hand out: everything but FFmpeg in the exe
   set(SYSTEM_LINK -static)
   add_executable(evnova_ce WIN32 ${GAME_SRC} ${SRC}/rsrc/evnova.rc)
+  set(DEAD_CODE_LINK -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map")
+elseif(APPLE)
+  set(SYSTEM_LIBS "-framework CoreText" "-framework CoreFoundation")
+  set(SYSTEM_LINK "")
+  add_executable(evnova_ce ${GAME_SRC})
+  # FFmpeg from the program's folder
+  set_target_properties(evnova_ce PROPERTIES BUILD_WITH_INSTALL_RPATH ON INSTALL_RPATH "@executable_path")
+  set(DEAD_CODE_LINK -Wl,-dead_strip "-Wl,-map,${CMAKE_BINARY_DIR}/evnova_ce.map")
 else()
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(FONTCONFIG REQUIRED IMPORTED_TARGET fontconfig)
@@ -250,6 +282,7 @@ else()
   set(SYSTEM_LINK -Wl,--disable-new-dtags -Wl,--exclude-libs,libfreetype.a)
   add_executable(evnova_ce ${GAME_SRC})
   set_target_properties(evnova_ce PROPERTIES BUILD_WITH_INSTALL_RPATH ON INSTALL_RPATH "\$ORIGIN")
+  set(DEAD_CODE_LINK -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map")
 endif()
 target_include_directories(evnova_ce PRIVATE ${SRC}/include)
 target_compile_options(evnova_ce PRIVATE ${EVNOVA_FLAGS})
@@ -261,6 +294,6 @@ set_source_files_properties(${SRC}/port/prefsjson.cpp PROPERTIES
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "evnova64" LINKER_LANGUAGE CXX)
 target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${FREETYPE_ROOT}/lib/libfreetype.a yyjson
     ${SYSTEM_LIBS})
-target_link_options(evnova_ce PRIVATE ${SYSTEM_LINK} -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map")
+target_link_options(evnova_ce PRIVATE ${SYSTEM_LINK} ${DEAD_CODE_LINK})
 add_custom_command(TARGET evnova_ce POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FFMPEG_DLLS} ${FFMPEG_LICENSE} $<TARGET_FILE_DIR:evnova_ce>)
