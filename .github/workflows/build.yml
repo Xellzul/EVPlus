@@ -30,7 +30,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.preset }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Tools (Linux host)
         if: runner.os == 'Linux'
@@ -67,7 +67,7 @@ jobs:
           key=$(grep -E '^set\((FFMPEG|SDL3|FREETYPE|YYJSON)_(VERSION|SHA256) ' CMakeLists.txt | cat - cmake/build-ffmpeg.sh | shasum -a 256 | cut -c1-16)
           echo "key=$key" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             build/downloads
@@ -101,14 +101,14 @@ jobs:
           cp README.md CHANGELOG.md "$out/"
           tar -czf "$out.tar.gz" "$out"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: evplus-${{ matrix.preset }}
           path: evplus-${{ matrix.preset }}.tar.gz
           if-no-files-found: error
 
       # the FFmpeg source the builds were made from, published with a release (LGPL)
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: matrix.preset == 'linux' && startsWith(github.ref, 'refs/tags/v')
         with:
           name: ffmpeg-source
@@ -122,7 +122,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
