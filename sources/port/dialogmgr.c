@@ -431,31 +431,6 @@ done:
     return rec;
 }
 
-// FUNCTION: EVNOVA 0x004ceec0
-short nv_SetDialogTemplateBounds(DialogPtr dlg, const unsigned short *tmpl)
-{
-    int32_t itemsID;
-    int32_t halfWidth;
-    int32_t halfHeight;
-    int32_t centerX;
-    int32_t centerY;
-
-    dlg->bounds.top = SwapEndianShort(&tmpl[0]);
-    dlg->bounds.left = SwapEndianShort(&tmpl[1]);
-    dlg->bounds.bottom = SwapEndianShort(&tmpl[2]);
-    dlg->bounds.right = SwapEndianShort(&tmpl[3]);
-    itemsID = SwapEndianShort(&tmpl[9]);
-    halfWidth = (dlg->bounds.right - dlg->bounds.left) >> 1;
-    halfHeight = (dlg->bounds.bottom - dlg->bounds.top) >> 1;
-    centerX = gVideoWidth >> 1;
-    centerY = gVideoHeight >> 1;
-    dlg->bounds.left = centerX - halfWidth;
-    dlg->bounds.right = centerX + halfWidth;
-    dlg->bounds.top = centerY - halfHeight;
-    dlg->bounds.bottom = centerY + halfHeight;
-    return itemsID ? itemsID : itemsID;
-}
-
 // FUNCTION: EVNOVA 0x004cef50
 void ParseDITL(DialogPtr dlg, unsigned char *p)
 {

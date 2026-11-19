@@ -11,18 +11,6 @@
 extern "C" {
 #endif
 
-/* Allocate a handle and clear what it points at. */
-// FUNCTION: EVNOVA 0x004f2970
-void **AllocAHandleClear(ULong size)
-{
-    void **h;
-
-    h = AllocAHandle2(size, 0);
-    if (h != 0)
-        memset(*h, 0, size);
-    return h;
-}
-
 /* AllocAPointerClear (BurgerLib MMMemoryGeneric). */
 // FUNCTION: EVNOVA 0x004f29c0
 void *AllocAPointerClear(uint32_t size)

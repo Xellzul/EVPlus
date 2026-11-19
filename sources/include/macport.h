@@ -614,7 +614,6 @@ extern void DrawString(const unsigned char *str);
 extern void DrawText(const void *textBuf, int firstByte, int byteCount);
 extern void EraseRect(Rect *r);
 extern void ExitToShell(void);
-extern void SetupMonitor(void);
 extern void DisposePixPat(Image_t *pat);
 extern void InitDataFiles(void);
 extern void MakeAlias(char *name);

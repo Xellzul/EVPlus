@@ -2385,12 +2385,6 @@ void SetDefaultKeys(void)
     keyPrefs.escortOrder[3] = kScanC;
 }
 
-// FUNCTION: EVNOVA 0x004b45e0
-// MAC: _SetupMonitor i386 0x0001e699 ppc 0x00022fcc
-void SetupMonitor(void)
-{
-}
-
 // FUNCTION: EVNOVA 0x004b4690
 // MAC: _ResetGameData i386 0x0001de0c ppc 0x00022640
 void ResetGameData(void)

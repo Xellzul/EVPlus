@@ -246,8 +246,6 @@ extern void CriticalLeave(void *lock);
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);
 extern char *ConvertNativePathToPath(const char *path);
-extern void *LoadAFileHandle(const char *path);
-extern void **AllocAHandleClear(ULong size);
 extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);
 extern void KeyboardFlush(void);
 extern int32_t CreateDirectoryPath(const char *path);

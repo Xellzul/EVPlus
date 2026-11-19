@@ -14,7 +14,6 @@ extern "C" {
 #endif
 
 int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length);
-void *LoadAFileHandleFP(FILE *file);
 
 Handle PrefixHandles[PREFIXMAX];                /* 0x0087071c */
 static Word8 SetPfxInited;                       /* 0x00867488 */
@@ -340,49 +339,6 @@ void *LoadAFileFP(FILE *fp, uint32_t *length)
     if (length != 0)
         *length = size;
     return data;
-}
-
-// FUNCTION: EVNOVA 0x004f25f0
-void *LoadAFileHandle(const char *path)
-{
-    FILE *file;
-
-    file = FOpenExpandedPath(path, "rb");
-    if (file == 0) {
-        NonFatal("File %s was not found\n", path);
-        return 0;
-    }
-    return LoadAFileHandleFP(file);
-}
-
-/* Read the whole file into a new handle and close it. */
-// FUNCTION: EVNOVA 0x004f2650
-void *LoadAFileHandleFP(FILE *file)
-{
-    ULong size;
-    ULong got;
-    void *h;
-
-    h = 0;
-    if (file != 0) {
-        size = fgetfilesize(file);
-        if (size == 0) {
-            NonFatal("Empty file\n");
-        } else {
-            h = AllocAHandle2(size, 0);
-            if (h != 0) {
-                got = fread(LockAHandle((Handle)h), 1, size, file);
-                UnlockAHandle((Handle)h);
-                if (got != size) {
-                    DeallocAHandle(h);
-                    h = 0;
-                    NonFatal("Error in loading file\n");
-                }
-            }
-        }
-        fclose(file);
-    }
-    return h;
 }
 
 #ifdef __cplusplus
