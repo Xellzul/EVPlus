@@ -1546,7 +1546,7 @@ void InitSprites(void)
     ServiceIntroMusic(0);
 
     SetRect(&commRect, 25, 0, View::width - 50, View::height - 5);
-    commRect.top = commRect.bottom - View::ScaleInView(26) - 4;
+    commRect.top = commRect.bottom - View::ScaleInView(26 + 4);   /* two lines of comm text */
 }
 
 
