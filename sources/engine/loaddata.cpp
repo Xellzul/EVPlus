@@ -2787,11 +2787,11 @@ void DumpPilotLog(void)
     short found;
     uint32_t contribute[2];
 
-    log = fopen("pilotlog.txt", "r");
+    log = PlatFileOpen("pilotlog.txt", "r");
     if (log == NULL)
         return;
     fclose(log);
-    log = fopen("pilotlog.txt", "w");
+    log = PlatFileOpen("pilotlog.txt", "w");
     if (log == NULL)
         return;
 

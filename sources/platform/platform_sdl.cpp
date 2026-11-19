@@ -11,7 +11,6 @@
 #define kToggleCount    256             /* the keys key_x2mode can name all lie below this */
 #define kFocusNotes     16              /* focus losses waiting in SDL's queue, a power of 2 */
 #define kBytesPerPixel  2
-#define kPathMax        4096            /* bytes of a path, with its end */
 #define kDefaultRefresh 60              /* Hz, when the display does not tell */
 /* two frames are never held apart longer than this, whatever the display: the game's own frames in flight
    come 21 ms apart and must each be shown as they come */
@@ -728,7 +727,7 @@ const char *PlatExeFolder(void)
 
 int PlatListFiles(const char *where, const char *pattern, void (*found)(const char *path, void *ctx), void *ctx)
 {
-    char folder[kPathMax];
+    char folder[kPlatPathMax];
     char **names;
     char *path;
     size_t length;
@@ -775,7 +774,7 @@ int PlatCurrentFolder(char *out, int outSize)
 
 int PlatPathKind(const char *name, uint64_t *size)
 {
-    char path[kPathMax];
+    char path[kPlatPathMax];
     SDL_PathInfo info;
 
     if (size != NULL)
@@ -898,7 +897,7 @@ static SDL_EnumerationResult SDLCALL AddEntry(void *userdata, const char *dirnam
 
 int PlatListFolder(const char *name, PlatFoundProc found, void *ctx)
 {
-    char folder[kPathMax];
+    char folder[kPlatPathMax];
     FolderList list;
     bool read;
     int i;
@@ -918,7 +917,7 @@ int PlatListFolder(const char *name, PlatFoundProc found, void *ctx)
 
 int PlatMakeFolder(const char *name)
 {
-    char path[kPathMax];
+    char path[kPlatPathMax];
 
     if (!PlatFindPath(name, path, sizeof path))
         return 0;
@@ -929,7 +928,7 @@ int PlatMakeFolder(const char *name)
 /* SDL counts removing what is not there as done */
 int PlatRemove(const char *name)
 {
-    char path[kPathMax];
+    char path[kPlatPathMax];
 
     return PlatFindPath(name, path, sizeof path) && PlatPathKind(path, NULL) != kPlatNothing
            && SDL_RemovePath(path);
@@ -1133,7 +1132,7 @@ int PlatOpenFileDialog(const char *kindName, const char *extension, const char *
 
 void *PlatLoadFile(const char *name, int *size)
 {
-    char path[kPathMax];
+    char path[kPlatPathMax];
     size_t length;
     void *loaded;
     void *copy;

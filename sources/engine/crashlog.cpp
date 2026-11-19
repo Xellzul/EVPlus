@@ -4,6 +4,7 @@
 #include "burger.h"
 #include "macport.h"
 #include "crashlog.h"
+#include "platform.h"
 
 EXTERN_C_BEGIN
 
@@ -16,11 +17,11 @@ void crashlog_open(char *name)
 {
     DateTimeRec dtr;
 
-    logfile = fopen(name, "r");
+    logfile = PlatFileOpen(name, "r");
     if (logfile == NULL)
         return;
     fclose(logfile);
-    logfile = fopen(name, "w");
+    logfile = PlatFileOpen(name, "w");
     if (logfile) {
         fprintf(logfile, "EV Nova debug log\n\n");
         GetTime(&dtr);

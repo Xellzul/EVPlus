@@ -106,7 +106,7 @@ void PlatRegisterFileType(const char *programName, const char *extension, const 
 #define kWholeFile  0
 #define kProbeSize  12
 
-void *PlatSystemFont(const char *family, int bold, int italic, int *size)
+void *PlatSystemFont(const char *family, int bold, int italic, int lookAlike, int *size)
 {
     char got[LF_FACESIZE];
     HDC dc;
@@ -125,8 +125,8 @@ void *PlatSystemFont(const char *family, int bold, int italic, int *size)
         old = SelectObject(dc, font);
         got[0] = 0;
         GetTextFaceA(dc, sizeof got, got);
-        /* Windows answers any name with some font: only the one asked for counts */
-        if (lstrcmpiA(got, family) == 0) {
+        /* Windows answers any name with some font: only the one asked for counts, unless any will do */
+        if (lookAlike || lstrcmpiA(got, family) == 0) {
             table = kTtcTag;
             length = GetFontData(dc, table, 0, NULL, 0);
             if (length == GDI_ERROR) {

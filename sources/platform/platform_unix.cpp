@@ -12,11 +12,9 @@
 #endif
 #include "platform.h"
 
-#define kPathMax    4096                /* bytes of a path, with its end */
-
 FILE *PlatFileOpen(const char *name, const char *mode)
 {
-    char path[kPathMax];
+    char path[kPlatPathMax];
 
     if (!PlatFindPath(name, path, sizeof path))
         return NULL;
@@ -25,7 +23,7 @@ FILE *PlatFileOpen(const char *name, const char *mode)
 
 int PlatSetCurrentFolder(const char *name)
 {
-    char path[kPathMax];
+    char path[kPlatPathMax];
 
     if (!PlatFindPath(name, path, sizeof path))
         return 0;
@@ -49,19 +47,51 @@ void PlatRegisterFileType(const char *programName, const char *extension, const 
 
 #ifdef __APPLE__
 #define kTraitCount 1
+#define kFallbackFamily "Helvetica"         /* what a look-alike is when Core Text knows no such name */
 
-/* Core Text answers any name with some font: only one of the family asked for counts */
-void *PlatSystemFont(const char *family, int bold, int italic, int *size)
+/* The installed font of that family with these traits (0 = any), as Core Text matches it */
+static CTFontDescriptorRef MatchFont(CFStringRef name, uint32_t bits)
 {
-    CFStringRef name;
     CFMutableDictionaryRef wanted;
     CFMutableDictionaryRef traits;
     CFNumberRef traitBits;
     CTFontDescriptorRef asked;
     CTFontDescriptorRef found;
+
+    wanted = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    if (wanted == NULL)
+        return NULL;
+    CFDictionarySetValue(wanted, kCTFontFamilyNameAttribute, name);
+    if (bits != 0) {
+        traits = CFDictionaryCreateMutable(NULL, kTraitCount, &kCFTypeDictionaryKeyCallBacks,
+                                           &kCFTypeDictionaryValueCallBacks);
+        traitBits = CFNumberCreate(NULL, kCFNumberSInt32Type, &bits);
+        if (traits != NULL && traitBits != NULL) {
+            CFDictionarySetValue(traits, kCTFontSymbolicTrait, traitBits);
+            CFDictionarySetValue(wanted, kCTFontTraitsAttribute, traits);
+        }
+        if (traitBits != NULL)
+            CFRelease(traitBits);
+        if (traits != NULL)
+            CFRelease(traits);
+    }
+    asked = CTFontDescriptorCreateWithAttributes(wanted);
+    found = asked != NULL ? CTFontDescriptorCreateMatchingFontDescriptor(asked, NULL) : NULL;
+    if (asked != NULL)
+        CFRelease(asked);
+    CFRelease(wanted);
+    return found;
+}
+
+/* Core Text answers any name with some font: only one of the family asked for counts, unless any will do. A
+   family without the bold or italic member answers with its plain one. */
+void *PlatSystemFont(const char *family, int bold, int italic, int lookAlike, int *size)
+{
+    CFStringRef name;
+    CTFontDescriptorRef found;
     CFStringRef foundFamily;
     CFURLRef url;
-    char path[kPathMax];
+    char path[kPlatPathMax];
     uint32_t bits;
     void *data;
 
@@ -70,25 +100,19 @@ void *PlatSystemFont(const char *family, int bold, int italic, int *size)
     name = CFStringCreateWithCString(NULL, family, kCFStringEncodingUTF8);
     if (name == NULL)
         return NULL;
-    wanted = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-    CFDictionarySetValue(wanted, kCTFontFamilyNameAttribute, name);
     bits = (bold ? kCTFontBoldTrait : 0) | (italic ? kCTFontItalicTrait : 0);
-    if (bits != 0) {
-        traits = CFDictionaryCreateMutable(NULL, kTraitCount, &kCFTypeDictionaryKeyCallBacks,
-                                           &kCFTypeDictionaryValueCallBacks);
-        traitBits = CFNumberCreate(NULL, kCFNumberSInt32Type, &bits);
-        CFDictionarySetValue(traits, kCTFontSymbolicTrait, traitBits);
-        CFDictionarySetValue(wanted, kCTFontTraitsAttribute, traits);
-        CFRelease(traitBits);
-        CFRelease(traits);
-    }
-    asked = CTFontDescriptorCreateWithAttributes(wanted);
-    found = asked != NULL ? CTFontDescriptorCreateMatchingFontDescriptor(asked, NULL) : NULL;
+    found = MatchFont(name, bits);
+    if (found == NULL && bits != 0)
+        found = MatchFont(name, 0);
+    if (found == NULL && lookAlike)
+        found = MatchFont(CFSTR(kFallbackFamily), bits);
     if (found != NULL) {
         foundFamily = (CFStringRef)CTFontDescriptorCopyAttribute(found, kCTFontFamilyNameAttribute);
         url = (CFURLRef)CTFontDescriptorCopyAttribute(found, kCTFontURLAttribute);
-        if (foundFamily != NULL && url != NULL
-                && CFStringCompare(foundFamily, name, kCFCompareCaseInsensitive) == kCFCompareEqualTo
+        if (url != NULL
+                && (lookAlike || (foundFamily != NULL
+                                  && CFStringCompare(foundFamily, name, kCFCompareCaseInsensitive)
+                                     == kCFCompareEqualTo))
                 && CFURLGetFileSystemRepresentation(url, true, (UInt8 *)path, sizeof path))
             data = PlatLoadFile(path, size);
         if (foundFamily != NULL)
@@ -97,14 +121,11 @@ void *PlatSystemFont(const char *family, int bold, int italic, int *size)
             CFRelease(url);
         CFRelease(found);
     }
-    if (asked != NULL)
-        CFRelease(asked);
-    CFRelease(wanted);
     CFRelease(name);
     return data;
 }
 #else
-/* fontconfig answers any name with some font: only one of the family asked for counts */
+/* one of the font's family names is `family' */
 static int IsFamily(FcPattern *font, const char *family)
 {
     FcChar8 *name;
@@ -117,7 +138,8 @@ static int IsFamily(FcPattern *font, const char *family)
     return 0;
 }
 
-void *PlatSystemFont(const char *family, int bold, int italic, int *size)
+/* fontconfig answers any name with some font: only one of the family asked for counts, unless any will do */
+void *PlatSystemFont(const char *family, int bold, int italic, int lookAlike, int *size)
 {
     FcPattern *wanted;
     FcPattern *font;
@@ -133,11 +155,12 @@ void *PlatSystemFont(const char *family, int bold, int italic, int *size)
     FcPatternAddString(wanted, FC_FAMILY, (const FcChar8 *)family);
     FcPatternAddInteger(wanted, FC_WEIGHT, bold ? FC_WEIGHT_BOLD : FC_WEIGHT_REGULAR);
     FcPatternAddInteger(wanted, FC_SLANT, italic ? FC_SLANT_ITALIC : FC_SLANT_ROMAN);
+    FcPatternAddBool(wanted, FC_SCALABLE, FcTrue);          /* a bitmap-only font cannot be sized */
     FcConfigSubstitute(NULL, wanted, FcMatchPattern);
     FcDefaultSubstitute(wanted);
     font = FcFontMatch(NULL, wanted, &result);
     if (font != NULL) {
-        if (IsFamily(font, family) && FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch)
+        if ((lookAlike || IsFamily(font, family)) && FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch)
             data = PlatLoadFile((const char *)file, size);
         FcPatternDestroy(font);
     }

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "game.h"
 #include "burger.h"
+#include "platform.h"
 
 #define kProfileSlots 64
 
@@ -117,11 +118,11 @@ void MyProfileDump(const char *path)
     FILE *f;
     short i;
 
-    f = fopen(path, "r");
+    f = PlatFileOpen(path, "r");
     if (f == 0)
         return;
     fclose(f);
-    f = fopen(path, "w");
+    f = PlatFileOpen(path, "w");
     if (f != 0) {
         fprintf(f, "Profile report:\n\n");
         for (i = 0; i < kProfileSlots; i++)

@@ -1,8 +1,8 @@
 /* uiscale.h -- UI scaling: the UI is laid out in logical pixels (the game's own coordinates) and drawn in
    device pixels. A scaled pixel map holds more device pixels than its logical bounds span; Mapping converts
    between the two, one axis at a time. A pixel map whose size equals its bounds is not scaled. UI pixel maps
-   (sized as ScaleUIPort sizes them) all map with the screen's own proportion, so a logical edge falls on the
-   same device pixel in each of them. */
+   (sized as ScaleUIPort sizes them) all map with the screen's own proportion: a logical edge falls on the
+   same device pixel in each of them that starts where the screen does. */
 #pragma once
 
 #include "macport.h"

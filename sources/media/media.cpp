@@ -108,9 +108,13 @@ static int FindAudio(AVFormatContext *fmt)
     return -1;
 }
 
-static int OpenInput(AVFormatContext **fmt, const char *path)
+static int OpenInput(AVFormatContext **fmt, const char *name)
 {
+    char path[kPlatPathMax];
+
     av_log_set_level(AV_LOG_QUIET);
+    if (!PlatFindPath(name, path, sizeof path))
+        return AVERROR(ENAMETOOLONG);
     return avformat_open_input(fmt, path, NULL, NULL);      /* the game's paths are UTF-8, as FFmpeg's */
 }
 

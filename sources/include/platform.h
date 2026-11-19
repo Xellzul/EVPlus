@@ -105,6 +105,7 @@ extern const char *PlatExeFolder(void);                    /* where the program 
 /* the folder relative paths start from, ending in a separator; 0 = not known or too long for `out' */
 extern int PlatCurrentFolder(char *out, int outSize);
 extern int PlatSetCurrentFolder(const char *path);         /* 0 = it is no folder: nothing changed */
+#define kPlatPathMax     4096                              /* bytes of a path, with its end */
 extern FILE *PlatFileOpen(const char *path, const char *mode);    /* C's fopen */
 /* The path as it lies on disk: each part that is not there under its own name is the one of that name in
    other case, when there is one; the parts after one found under no case stay as given. 0 = too long. */
@@ -134,9 +135,10 @@ extern int PlatListFiles(const char *folder, const char *pattern, void (*found)(
                          void *ctx);
 extern void *PlatLoadFile(const char *path, int *size);    /* the whole file in a malloc'd block, or NULL */
 /* An installed font by its family name, as the bytes of its font file in a malloc'd block; NULL when the
-   system has no font of that name (never a look-alike). `bold' and `italic' ask for that member of the
-   family; the system may answer with the plain one. */
-extern void *PlatSystemFont(const char *family, int bold, int italic, int *size);
+   system has no font of that name. With `lookAlike' the font the system draws that name with, whatever its
+   own name. `bold' and `italic' ask for that member of the family; the system may answer with the plain
+   one. */
+extern void *PlatSystemFont(const char *family, int bold, int italic, int lookAlike, int *size);
 
 /* -- clocks, log ------------------------------------------------------------------------------------- */
 extern uint64_t PlatMicroseconds(void);                   /* monotonic, from any thread */

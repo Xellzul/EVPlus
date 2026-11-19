@@ -148,7 +148,7 @@ static RasterFont *FindFace(const char *name, int style, const char **source)
         *source = "beside the game";
         return best;
     }
-    data = PlatSystemFont(name, (style & kFontBold) != 0, (style & kFontItalic) != 0, &size);
+    data = PlatSystemFont(name, (style & kFontBold) != 0, (style & kFontItalic) != 0, 0, &size);
     *source = "installed";
     return RasterOpen(data, size, name);
 }
@@ -187,6 +187,15 @@ static RasterFont *FamilyFace(FontFamily *family, int style)
     if (font == NULL && gGameFonts != NULL) {
         font = gGameFonts->font;
         source = "beside the game";
+    }
+    if (font == NULL) {
+        /* no font file of any of these names: what the system draws the family with */
+        void *data;
+        int size;
+
+        data = PlatSystemFont(family->name, (style & kFontBold) != 0, (style & kFontItalic) != 0, 1, &size);
+        font = RasterOpen(data, size, NULL);
+        source = "installed look-alike";
     }
     family->faces[style] = font;
     if (style == 0)

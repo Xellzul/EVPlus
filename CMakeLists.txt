@@ -8,7 +8,7 @@
 # -DFFMPEG_TARBALL=/path offline; or pass -DFFMPEG_ROOT=/path). The FFmpeg libraries and its licence are copied next
 # to the program. SDL3 is built once too, as a static library (downloaded, or -DSDL3_TARBALL=/path offline; or
 # -DSDL3_ROOT=/path). Linux also needs fontconfig (the system's); macOS the Xcode command line tools.
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24)
 project(EVNova C CXX)
 if(WIN32)
   enable_language(RC)
@@ -48,7 +48,8 @@ endfunction()
 # -- FFmpeg
 # Built once by cmake/build-ffmpeg.sh into <build>/ffmpeg from the pinned release: downloaded into build/downloads, or
 # -DFFMPEG_TARBALL=/path/to/ffmpeg-<ver>.tar.xz (offline); either is checked against the SHA256. Or take an
-# install with -DFFMPEG_ROOT=/path (include/, and lib/*.dll.a + bin/*.dll on Windows, lib/*.so elsewhere).
+# install with -DFFMPEG_ROOT=/path (include/, and lib/*.dll.a + bin/*.dll on Windows, lib/*.dylib on macOS,
+# lib/*.so elsewhere).
 set(FFMPEG_VERSION 9.0.2)
 set(FFMPEG_SHA256 8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e)
 set(FFMPEG_TARBALL "" CACHE FILEPATH "ffmpeg-${FFMPEG_VERSION}.tar.xz for offline builds (empty: download it)")
@@ -71,7 +72,7 @@ if(NOT FFMPEG_ROOT)
                    "pass -DFFMPEG_TARBALL=/path/to/${_ff_name} or -DFFMPEG_ROOT=/path/to/ffmpeg")
     message(STATUS "building FFmpeg from ${_ff_tar} (once, a few minutes)")
     execute_process(COMMAND ${CMAKE_COMMAND} -E env MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
-                    sh ${CMAKE_SOURCE_DIR}/cmake/build-ffmpeg.sh ${_ff_tar} ${FFMPEG_ROOT} ${_ff_target}
+                    "FFMPEG_ARCH=${CMAKE_OSX_ARCHITECTURES}" sh ${CMAKE_SOURCE_DIR}/cmake/build-ffmpeg.sh ${_ff_tar} ${FFMPEG_ROOT} ${_ff_target}
                     RESULT_VARIABLE rc OUTPUT_FILE ${CMAKE_BINARY_DIR}/ffmpeg-build.log
                     ERROR_FILE ${CMAKE_BINARY_DIR}/ffmpeg-build.log)
     if(rc OR NOT EXISTS ${FFMPEG_ROOT}/lib/libavformat${_ff_lib})
@@ -85,21 +86,19 @@ set(FFMPEG_DLLS "")
 foreach(l ${FFMPEG_LIBS})
   list(APPEND FFMPEG_IMPORT ${FFMPEG_ROOT}/lib/lib${l}${_ff_lib})
   if(NOT WIN32)
-    # the library under the name the program asks for: the shortest of "lib<name>.so.<n>..." (Linux) or
-    # "lib<name>.<n>....dylib" (macOS)
+    # the library the program is linked against, under the name it asks for: its file's version cut to the
+    # major one, "lib<name>.so.<major>" (Linux) or "lib<name>.<major>.dylib" (macOS)
+    get_filename_component(_ff_real ${FFMPEG_ROOT}/lib/lib${l}${_ff_lib} REALPATH)
     if(APPLE)
-      file(GLOB _ff_found ${FFMPEG_ROOT}/lib/lib${l}.*.dylib)
+      string(REGEX REPLACE "^(.*/lib${l}\\.[0-9]+)\\..*dylib$" "\\1.dylib" _ff_so "${_ff_real}")
     else()
-      file(GLOB _ff_found ${FFMPEG_ROOT}/lib/lib${l}.so.*)
+      string(REGEX REPLACE "^(.*/lib${l}\\.so\\.[0-9]+)(\\..*)?$" "\\1" _ff_so "${_ff_real}")
     endif()
-    set(_ff_so "")
-    foreach(f ${_ff_found})
-      string(LENGTH "${f}" _len)
-      string(LENGTH "${_ff_so}" _best)
-      if(NOT _ff_so OR _len LESS _best)
-        set(_ff_so ${f})
-      endif()
-    endforeach()
+    get_filename_component(_ff_so_name ${_ff_so} NAME)
+    set(_ff_so ${FFMPEG_ROOT}/lib/${_ff_so_name})
+    if(NOT EXISTS ${_ff_so})
+      message(FATAL_ERROR "FFmpeg: no ${_ff_so} beside ${_ff_real}")
+    endif()
     list(APPEND FFMPEG_DLLS ${_ff_so})
   endif()
 endforeach()
@@ -148,6 +147,8 @@ if(NOT SDL3_ROOT)
         get_filename_component(_sdl_tc ${CMAKE_TOOLCHAIN_FILE} ABSOLUTE BASE_DIR ${CMAKE_SOURCE_DIR})
       endif()
       list(APPEND _sdl_args -DCMAKE_TOOLCHAIN_FILE=${_sdl_tc})
+    else()
+      list(APPEND _sdl_args -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
     endif()
     if(LLVM_MINGW)
       list(APPEND _sdl_args -DLLVM_MINGW=${LLVM_MINGW})
@@ -206,6 +207,8 @@ if(NOT FREETYPE_ROOT)
         get_filename_component(_ft_tc ${CMAKE_TOOLCHAIN_FILE} ABSOLUTE BASE_DIR ${CMAKE_SOURCE_DIR})
       endif()
       list(APPEND _ft_args -DCMAKE_TOOLCHAIN_FILE=${_ft_tc})
+    else()
+      list(APPEND _ft_args -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
     endif()
     if(LLVM_MINGW)
       list(APPEND _ft_args -DLLVM_MINGW=${LLVM_MINGW})

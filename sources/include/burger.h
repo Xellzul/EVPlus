@@ -7,6 +7,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifndef _WIN32
+#include <strings.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,7 +83,6 @@ extern void PrefsGetString(struct PrefsNode *group, const char *key, const char 
 #ifdef _WIN32
 extern int stricmp(const char *s1, const char *s2);   /* MSL Extras */
 #else
-#include <strings.h>
 #define stricmp strcasecmp
 #endif
 

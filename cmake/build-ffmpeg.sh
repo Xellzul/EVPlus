@@ -26,9 +26,13 @@ src=$(find "$work" -mindepth 1 -maxdepth 1 -type d -name 'ffmpeg-*' | head -n 1)
 
 cd "$src"
 if [ "$llvm" = native ] && [ "$(uname)" = Darwin ]; then
-    # found beside the program (@rpath), on the macOS the game is built for
+    # found beside the program (@rpath), on the macOS and for the processor ($FFMPEG_ARCH, default arm64) the
+    # game is built for, whatever the shell runs as
     export MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-11.0}
-    set -- --cc=clang --cxx=clang++ --ld=clang --enable-pthreads --install-name-dir=@rpath
+    arch=${FFMPEG_ARCH:-arm64}
+    set -- --cc=clang --cxx=clang++ --ld=clang --enable-pthreads --install-name-dir=@rpath \
+        --enable-cross-compile --target-os=darwin --arch="$arch" \
+        --extra-cflags="-arch $arch" --extra-ldflags="-arch $arch"
 elif [ "$llvm" = native ]; then
     set -- --cc=clang --cxx=clang++ --ld=clang --enable-pthreads
 else
