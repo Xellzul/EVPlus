@@ -562,7 +562,6 @@ typedef struct RoidRecord {
 
 typedef struct PrefsFileRec {
     struct PrefsNode       *file;
-    int32_t                   dirty;
 } PrefsFileRec;
 
 /* the four shot sprite layers, in address order */

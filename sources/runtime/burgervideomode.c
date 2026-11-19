@@ -146,6 +146,19 @@ int32_t SetDisplayToSize(ULong width, ULong height, ULong depth, ULong flags)
     return 0;
 }
 
+/* Fill with a 16-bit value; an odd last byte takes its low half. */
+// FUNCTION: EVNOVA 0x005273c0
+static void FastMemSet16(void *dst, ULong value, ULong bytes)
+{
+    while (bytes >= 2) {
+        *(unsigned short *)dst = value;
+        dst = (unsigned short *)dst + 1;
+        bytes -= 2;
+    }
+    if (bytes != 0)
+        *(unsigned char *)dst = value;
+}
+
 /* DrawARect16 (BurgerLib DrawARect16). */
 // FUNCTION: EVNOVA 0x004ee300
 void DrawARect16(int x, int y, Word Width, Word Height, Word Color)

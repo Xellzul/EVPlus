@@ -78,7 +78,6 @@ extern struct PrefsNode *PrefsFindGroup(struct PrefsNode *file, const char *name
 extern void PrefsGetString(struct PrefsNode *group, const char *key, const char *dflt,
                            char *out, int32_t outSize);
 extern int stricmp(const char *s1, const char *s2);   /* MSL Extras */
-extern int32_t WritePrefsFile(struct PrefsNode *file, const char *path);
 
 /* runtime-block globals */
 extern uint32_t gSaveLeftVolume;
@@ -218,7 +217,6 @@ extern Word SystemState;
 extern ULong BurgerVoiceCount;                       /* BurgerVoiceCount */
 
 struct MixVoice;
-struct TextBuilder;
 
 extern int32_t ST_Open(unsigned short channels, ULong device);
 extern int32_t fgetstr(char *buf, int32_t size, FILE *stream);
@@ -230,12 +228,6 @@ extern ULong fgetfilesize(FILE *fp);     /* BurgerLib fgetfilesize */
 extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib CreateDirectoryPathNative */
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
 
-extern void StreamHandleInitPut(struct TextBuilder *b);
-extern void StreamHandleDestroy(struct TextBuilder *b);
-extern void StreamHandleEndSave(struct TextBuilder *b);
-extern void StreamHandlePutByte(struct TextBuilder *b, int32_t ch);
-extern void StreamHandlePutStringNoZero(struct TextBuilder *b, const char *s);
-extern void FastMemSet16(void *dst, ULong value, ULong bytes);
 extern void ImaDecodePackets(const unsigned char *src, ULong packets, short *out);   /* atadpcm.c */
 extern void ImaDecodeStream(const unsigned char *src, ULong samples, short *out);
 extern unsigned char PCM_Mixer(const short *data, short **out, ULong frames, ULong step,

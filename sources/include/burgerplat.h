@@ -46,13 +46,4 @@ typedef struct AudioDesc {
     float                  TimeInSeconds;            /* +0x34 */
 } AudioDesc;
 
-/* a text buffer that grows its handle */
-typedef struct TextBuilder {
-    char **handle;                               /* +0x00, a Handle */
-    ULong length;                                /* +0x04 */
-    ULong capacity;                             /* +0x08 */
-    ULong extent;                                /* +0x0c */
-    int32_t failed;                                 /* +0x10 */
-} TextBuilder;
-
 #endif

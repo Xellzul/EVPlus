@@ -161,51 +161,6 @@ void ClosePrefsFile(PrefsNode *file)
     }
 }
 
-// FUNCTION: EVNOVA 0x004ffd30
-int32_t WritePrefsFile(PrefsNode *file, const char *path)
-{
-    TextBuilder text;
-    PrefsNode *node;
-    FILE *out;
-    int32_t result;                                /* never set on failure, as in the exe */
-
-    StreamHandleInitPut(&text);
-
-    node = file->Next;
-    while (node != file) {
-        switch (node->Type) {
-        case kNodeText:
-        default:
-            StreamHandlePutStringNoZero(&text, ((char *)node + kGroupName));
-            break;
-        case kNodeGroup:
-            StreamHandlePutByte(&text, kOpenBracket);
-            StreamHandlePutStringNoZero(&text, ((char *)node + kGroupName));
-            StreamHandlePutByte(&text, kCloseBracket);
-            break;
-        case kNodeKey:
-            StreamHandlePutStringNoZero(&text, ((char *)node + kKeyName));
-            StreamHandlePutStringNoZero(&text, " = ");
-            StreamHandlePutStringNoZero(&text, node->ValueText);
-            break;
-        }
-        StreamHandlePutByte(&text, kNewline);
-        node = node->Next;
-    }
-
-    StreamHandleEndSave(&text);
-    if (text.failed == 0) {
-        out = FOpenExpandedPath(path, "w");
-        if (out != 0) {
-            fwrite(LockAHandle(text.handle), 1, text.extent, out);
-            fclose(out);
-            result = 0;
-        }
-    }
-    StreamHandleDestroy(&text);
-    return result;
-}
-
 // FUNCTION: EVNOVA 0x004ffeb0
 PrefsNode *PrefsFindGroup(PrefsNode *file, const char *name)
 {

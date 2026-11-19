@@ -1,5 +1,5 @@
 // COMPILE: -lang c++ -bool off
-/* prefstr.c -- the prefs file: OpenPrefs, ClosePrefs, GetIniIndString, FlushPrefs (win 0x004bcfa0..0x004bd0c0, tu-map object O28; the next function starts the loaddata.c object). Notes: Research/notes/prefstr.md */
+/* prefstr.c -- the prefs file: OpenPrefs, ClosePrefs, GetIniIndString (win 0x004bcfa0..0x004bd0c0, tu-map object O28; the next function starts the loaddata.c object). Notes: Research/notes/prefstr.md */
 /*
  * prefstr.c — read one indexed string out of the port's prefs file
  * (win 0x004bd000).
@@ -71,8 +71,6 @@ char gPrefsDirectory[2054];
 
 #define kPrefStringMax 0x100
 
-static void FlushPrefs(void);
-
 static const char kPrefsFileName[] = "9:EVNova.ini";
 
 /* opened on first use, so nothing has to sequence it against startup */
@@ -84,7 +82,6 @@ void OpenPrefs(void)
     p = &gPrefs;
     if (p->file == NULL) {
         p->file = (struct PrefsNode *)OpenPrefsFile(kPrefsFileName);
-        p->dirty = 0;
     }
 }
 
@@ -93,7 +90,6 @@ void ClosePrefs(void)
 {
     PrefsFileRec *p;
 
-    FlushPrefs();
     p = &gPrefs;
     if (p->file != NULL) {
         ClosePrefsFile(p->file);
@@ -117,18 +113,5 @@ void GetIniIndString(char *out, int32_t listID, int32_t index)
             NumberToAscii(&key[1], index, 0);
             PrefsGetString(found, key, "", out, kPrefStringMax);
         }
-    }
-}
-
-/* only written back when something actually changed it */
-// FUNCTION: EVNOVA 0x004bd090
-static void FlushPrefs(void)
-{
-    PrefsFileRec *p;
-
-    p = &gPrefs;
-    if (p->file != NULL && p->dirty != 0) {
-        WritePrefsFile(p->file, kPrefsFileName);
-        p->dirty = 0;
     }
 }
