@@ -177,6 +177,25 @@ if(NOT EXISTS ${FREETYPE_ROOT}/lib/libfreetype.a OR NOT EXISTS ${FREETYPE_ROOT}/
   message(FATAL_ERROR "no FreeType in ${FREETYPE_ROOT} (include/freetype2/ft2build.h, lib/libfreetype.a)")
 endif()
 
+# -- yyjson (reads and writes the JSON preferences)
+# Unpacked once into build/yyjson from the pinned release (GitHub's archive of the tag: downloaded into build/,
+# or -DYYJSON_TARBALL=/path/to/yyjson-<ver>.tar.gz offline; either is checked against the SHA256) and built as a
+# static library with plain flags. Its file functions are compiled out: the game opens its own files.
+set(YYJSON_VERSION 0.13.0)
+set(YYJSON_SHA256 34e0f62a2bc11ab20d601e8ca1cc2b2079503aa45119a19133d89d19b94a0fae)
+set(YYJSON_TARBALL "" CACHE FILEPATH "yyjson-${YYJSON_VERSION}.tar.gz for offline builds (empty: download it)")
+set(YYJSON_DIR ${CMAKE_BINARY_DIR}/yyjson/yyjson-${YYJSON_VERSION})
+if(NOT EXISTS ${YYJSON_DIR}/src/yyjson.h)
+  set(_yy_name yyjson-${YYJSON_VERSION}.tar.gz)
+  pinned_tarball(_yy_tar https://github.com/ibireme/yyjson/archive/refs/tags/${YYJSON_VERSION}.tar.gz
+                 ${_yy_name} ${YYJSON_SHA256} "${YYJSON_TARBALL}" "pass -DYYJSON_TARBALL=/path/to/${_yy_name}")
+  file(ARCHIVE_EXTRACT INPUT ${_yy_tar} DESTINATION ${CMAKE_BINARY_DIR}/yyjson)
+endif()
+set(YYJSON_DEFS YYJSON_DISABLE_FILE=1 YYJSON_DISABLE_INCR_READER=1 YYJSON_DISABLE_UTILS=1)
+add_library(yyjson STATIC ${YYJSON_DIR}/src/yyjson.c)
+target_compile_definitions(yyjson PRIVATE ${YYJSON_DEFS})
+target_compile_options(yyjson PRIVATE -O2 -ffunction-sections -fdata-sections -w)
+
 # -- the sources, C or C++ by each file's `// COMPILE: -lang c++` marker ----------------------------
 file(GLOB_RECURSE ALL_C CONFIGURE_DEPENDS ${SRC}/*.c)
 set(GAME_SRC "")
@@ -209,8 +228,11 @@ set_source_files_properties(${SRC}/platform/platform_sdl.c PROPERTIES COMPILE_OP
 # and for FreeType's: only the glyph renderer sees them
 set_source_files_properties(${SRC}/port/fontraster.c PROPERTIES
     COMPILE_OPTIONS -fno-short-enums INCLUDE_DIRECTORIES ${FREETYPE_ROOT}/include/freetype2)
+# and yyjson's: only the JSON preferences see them (plain game flags: the header has no enums)
+set_source_files_properties(${SRC}/port/prefsjson.c PROPERTIES
+    COMPILE_DEFINITIONS "${YYJSON_DEFS}" INCLUDE_DIRECTORIES ${YYJSON_DIR}/src)
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "evnova64" LINKER_LANGUAGE CXX)
-target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${FREETYPE_ROOT}/lib/libfreetype.a
+target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${FREETYPE_ROOT}/lib/libfreetype.a yyjson
     ${WIN_LIBS})
 target_link_options(evnova_ce PRIVATE -static -Wl,--gc-sections "-Wl,-Map=${CMAKE_BINARY_DIR}/evnova_ce.map")
 add_custom_command(TARGET evnova_ce POST_BUILD

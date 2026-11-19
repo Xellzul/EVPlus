@@ -256,10 +256,8 @@ short pendingVoiceParity;
 short hyperRoute[kMaxHyperRoute];
 int32_t playerKills;
 double gSpeedMult;
-double DAT_00735450;
 DateTimeRec gameTime;
 DateTimeRec scenarioStartDate;
-Boolean DAT_00735488;
 Boolean inBackground;
 Boolean miningShipsActive;
 Boolean miningBoxesActive;
@@ -395,8 +393,6 @@ void InitEVNova(void)
         settings.gamma = kDefaultGamma;
     BuildGammaRamp((settings.gamma * 10.0 + 70.0));
     gWind = 0;
-    SavePrefs();
-
 
     crashlog("initializing arrays");
     InitArrays();

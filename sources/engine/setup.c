@@ -2324,7 +2324,6 @@ void SetDefaultPrefs(void)
     settings.weaponGlows = 1;
     settings.runningLights = 1;
     settings.gamma = 3;
-    DAT_00735488 = 1;
     pstrcpy(lastPlayerName, "\p");
 }
 

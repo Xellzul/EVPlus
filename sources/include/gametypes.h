@@ -328,7 +328,7 @@ typedef struct BoxObj {
     char                   pad25[3];
 } BoxObj;
 
-/* the live preferences; PrefsRecord is their file image */
+/* the live preferences; PrefsRecord holds the ones the preferences file keeps */
 typedef struct Settings {
     Boolean introMusic;
     Boolean voicesOn;
@@ -351,38 +351,24 @@ typedef struct Settings {
     short gamma;
 } Settings;
 
-#pragma pack(push, 1)
 typedef struct PrefsRecord {
-    short sig;
-    short musicEnabled;
-    short unk4;
-    short volume;
-    short keys[36];
-    short unk50;
-    DateTimeRec date;
-    short unk60;
-    short earlyOut;
-    short unk64;
+    short introMusic;
+    short voicesOn;
+    short noMovies;
     short noDebris;
-    short windowed;
-    short loadShipSets;
-    short loadShipGlow;
-    short loadShipWeapons;
-    short loadShipLights;
+    short shipAnimations;
+    short engineGlows;
+    short weaponGlows;
+    short runningLights;
     short parallaxStars;
-    short planetSounds;
-    short showInfluence;
+    short ambientSounds;
+    short showMapBorders;
     short noHyperGamma;
-    short unk7A;
+    short yieldEvents;
+    short volume;
     short gamma;
-    short unk7E;
-    short unk80;
-    short unk82;
-    short unk84;
-    short unk86;
-    short unk88;
+    short keys[36];
 } PrefsRecord;
-#pragma pack(pop)
 
 /* one offerable mission in missionAvailData, stride 0x12c */
 typedef struct MissionAvailRec {

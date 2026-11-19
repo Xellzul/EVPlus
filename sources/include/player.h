@@ -18,8 +18,6 @@ extern Settings settings;
 extern short recentActivatedRank;
 extern KeyPrefs keyPrefs;
 extern uint32_t lastEscortMenuTime;
-extern double DAT_00735450;
-extern Boolean DAT_00735488;
 extern float playerRepairInhibit;
 extern Boolean playerHasIllegalJunk;
 extern Boolean playerHasIllegalOutfits;
@@ -79,6 +77,8 @@ extern Boolean HasAfterburner(ShipObj *ship);
 extern Boolean HasDensityScanner(ShipObj *ship);
 extern Boolean HasIFF(ShipObj *ship);
 extern void LoadPrefs(void);
+extern void PrefsJsonLoad(const char *path, PrefsRecord *rec);    /* prefsjson.c */
+extern void PrefsJsonSave(const char *path, PrefsRecord *rec);
 extern void LoadResponse(short which);
 extern int32_t DoEncryption(void *buf, uint32_t len, uint32_t key);
 extern int32_t SaveAFile(const char *path, const void *data, uint32_t length);
@@ -175,7 +175,6 @@ EXTERN_CPP_BEGIN
 extern double gSpeedMult;
 extern unsigned char shipName[256];
 extern PilotRec2 **altPlayerFileHand;
-extern PrefsRecord **gPrefsHandle;
 extern PilotRec **playerFileHand;
 EXTERN_CPP_END
 

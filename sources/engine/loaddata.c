@@ -2433,201 +2433,97 @@ Boolean LoadPluginString(short id, void *dst)
     return 0;
 }
 
-// FUNCTION: EVNOVA 0x004c7400
-void LoadPrefs(void)
+/* The preferences file: the name from EVNova.ini, in the preferences folder, as JSON. */
+static void PrefsPath(char *path)
 {
-    DateTimeRec dtr;
-    char text[256];
     char name[256];
-    char path[2048];
-    short sig;
-    short i;
 
-    GetTime(&dtr);
     GetIniIndString(name, kPrefsStrList, 1);
     strcpy(path, gPrefsDirectory);
     strcat(path, name);
-    strcat(path, ".prf");
-    gPrefsHandle = (PrefsRecord **)LoadAFileHandle(path);
-    if (gPrefsHandle != NULL) {
-        LockAHandle((Handle)gPrefsHandle);
-        settings.introMusic = 0;
-        settings.voicesOn = 0;
-        settings.clipping = 0;
-        settings.noMovies = 0;
-        settings.noDebris = 0;
-        settings.parallaxStars = 0;
-        settings.yieldEvents = 0;
-        settings.windowed = 0;
-        settings.ambientSounds = 0;
-        settings.showMapBorders = 0;
-        settings.noHyperGamma = 0;
-        settings.shipAnimations = 0;
-        settings.engineGlows = 0;
-        settings.weaponGlows = 0;
-        settings.runningLights = 0;
-        sig = (*gPrefsHandle)->sig;
-        if (sig == kPrefsSig) {
-            if ((*gPrefsHandle)->musicEnabled != 0)
-                settings.introMusic = 1;
-            if ((*gPrefsHandle)->unk4 != 0)
-                settings.voicesOn = 1;
-            if ((*gPrefsHandle)->earlyOut != 0)
-                settings.noMovies = 1;
-            if ((*gPrefsHandle)->noDebris != 0)
-                settings.noDebris = 1;
-            if ((*gPrefsHandle)->loadShipSets != 0)
-                settings.shipAnimations = 1;
-            if ((*gPrefsHandle)->loadShipGlow != 0)
-                settings.engineGlows = 1;
-            if ((*gPrefsHandle)->loadShipWeapons != 0)
-                settings.weaponGlows = 1;
-            if ((*gPrefsHandle)->loadShipLights != 0)
-                settings.runningLights = 1;
-            if ((*gPrefsHandle)->parallaxStars != 0)
-                settings.parallaxStars = 1;
-            if ((*gPrefsHandle)->planetSounds != 0)
-                settings.ambientSounds = 1;
-            if ((*gPrefsHandle)->showInfluence != 0)
-                settings.showMapBorders = 1;
-            if ((*gPrefsHandle)->noHyperGamma != 0)
-                settings.noHyperGamma = 1;
-            if ((*gPrefsHandle)->unk64 != 0)
-                settings.yieldEvents = 1;
-            settings.volume = (*gPrefsHandle)->volume;
-            settings.gamma = (*gPrefsHandle)->gamma;
-            if (settings.gamma > 6)
-                settings.gamma = 3;
-            if ((*gPrefsHandle)->unk60 == 0)
-                DAT_00735488 = 0;
-            else
-                DAT_00735488 = 1;
-            settings.windowedPending = settings.windowed;
-            SetDefaultKeys();
-            for (i = 0; i <= 35; i++)
-                newKeyPrefs[i] = (*gPrefsHandle)->keys[i];
-            SlotTableToKeyPrefs();
-            DAT_00735450 = (*gPrefsHandle)->unk50;
-            DAT_00735450 *= 0.01;
-        }
-        UnlockAHandle((Handle)gPrefsHandle);
-        DeallocAHandle(gPrefsHandle);
-        if (sig != kPrefsSig) {
-            SetDefaultPrefs();
-            SetDefaultKeys();
-            GetIniIndString(text, kAlertStrList, 0x20);
-            ShowAlert("", text);
-        }
-    } else {
-        SetDefaultPrefs();
-        SetDefaultKeys();
-    }
+    strcat(path, ".json");
 }
 
-#define kPrefsRecSize   0x8c
+/* The settings and key bindings into a PrefsRecord. */
+static void PrefsToRecord(PrefsRecord *rec)
+{
+    short i;
+
+    rec->introMusic = settings.introMusic != 0;
+    rec->voicesOn = settings.voicesOn != 0;
+    rec->noMovies = settings.noMovies != 0;
+    rec->noDebris = settings.noDebris != 0;
+    rec->shipAnimations = settings.shipAnimations != 0;
+    rec->engineGlows = settings.engineGlows != 0;
+    rec->weaponGlows = settings.weaponGlows != 0;
+    rec->runningLights = settings.runningLights != 0;
+    rec->parallaxStars = settings.parallaxStars != 0;
+    rec->ambientSounds = settings.ambientSounds != 0;
+    rec->showMapBorders = settings.showMapBorders != 0;
+    rec->noHyperGamma = settings.noHyperGamma != 0;
+    rec->yieldEvents = settings.yieldEvents != 0;
+    rec->volume = settings.volume;
+    rec->gamma = settings.gamma;
+    KeyPrefsToSlotTable();
+    for (i = 0; i <= 35; i++)
+        rec->keys[i] = newKeyPrefs[i];
+}
+
+/* A PrefsRecord into the settings and key bindings. */
+static void RecordToPrefs(const PrefsRecord *rec)
+{
+    short i;
+
+    settings.introMusic = rec->introMusic != 0;
+    settings.voicesOn = rec->voicesOn != 0;
+    settings.clipping = 0;
+    settings.noMovies = rec->noMovies != 0;
+    settings.noDebris = rec->noDebris != 0;
+    settings.parallaxStars = rec->parallaxStars != 0;
+    settings.yieldEvents = rec->yieldEvents != 0;
+    settings.windowed = 0;
+    settings.ambientSounds = rec->ambientSounds != 0;
+    settings.showMapBorders = rec->showMapBorders != 0;
+    settings.noHyperGamma = rec->noHyperGamma != 0;
+    settings.shipAnimations = rec->shipAnimations != 0;
+    settings.engineGlows = rec->engineGlows != 0;
+    settings.weaponGlows = rec->weaponGlows != 0;
+    settings.runningLights = rec->runningLights != 0;
+    settings.volume = rec->volume;
+    settings.gamma = rec->gamma;
+    if (settings.gamma > 6)
+        settings.gamma = 3;
+    settings.windowedPending = settings.windowed;
+    SetDefaultKeys();
+    for (i = 0; i <= 35; i++)
+        newKeyPrefs[i] = rec->keys[i];
+    SlotTableToKeyPrefs();
+}
+
+/* The defaults, with whatever the preferences file holds on top. */
+// FUNCTION: EVNOVA 0x004c7400
+void LoadPrefs(void)
+{
+    PrefsRecord rec;
+    char path[2048];
+
+    SetDefaultPrefs();
+    SetDefaultKeys();
+    PrefsToRecord(&rec);
+    PrefsPath(path);
+    PrefsJsonLoad(path, &rec);
+    RecordToPrefs(&rec);
+}
 
 // FUNCTION: EVNOVA 0x004c7820
 void SavePrefs(void)
 {
-    char name[256];
+    PrefsRecord rec;
     char path[2048];
-    short i;
 
-    gPrefsHandle = NULL;
-    GetIniIndString(name, kPrefsStrList, 1);
-    strcpy(path, gPrefsDirectory);
-    strcat(path, name);
-    strcat(path, ".prf");
-    gPrefsHandle = (PrefsRecord **)AllocAHandleClear(kPrefsRecSize);
-    if (gPrefsHandle != NULL) {
-        LockAHandle((Handle)gPrefsHandle);
-        (*gPrefsHandle)->sig = kPrefsSig;
-        if (settings.introMusic != 0)
-            (*gPrefsHandle)->musicEnabled = 1;
-        else
-            (*gPrefsHandle)->musicEnabled = 0;
-        if (settings.voicesOn != 0)
-            (*gPrefsHandle)->unk4 = 1;
-        else
-            (*gPrefsHandle)->unk4 = 0;
-        if (settings.noMovies != 0)
-            (*gPrefsHandle)->earlyOut = 1;
-        else
-            (*gPrefsHandle)->earlyOut = 0;
-        if (settings.noDebris != 0)
-            (*gPrefsHandle)->noDebris = 1;
-        else
-            (*gPrefsHandle)->noDebris = 0;
-        if (settings.windowedPending != 0)
-            (*gPrefsHandle)->windowed = 1;
-        else
-            (*gPrefsHandle)->windowed = 0;
-        if (settings.shipAnimations != 0)
-            (*gPrefsHandle)->loadShipSets = 1;
-        else
-            (*gPrefsHandle)->loadShipSets = 0;
-        if (settings.engineGlows != 0)
-            (*gPrefsHandle)->loadShipGlow = 1;
-        else
-            (*gPrefsHandle)->loadShipGlow = 0;
-        if (settings.weaponGlows != 0)
-            (*gPrefsHandle)->loadShipWeapons = 1;
-        else
-            (*gPrefsHandle)->loadShipWeapons = 0;
-        if (settings.runningLights != 0)
-            (*gPrefsHandle)->loadShipLights = 1;
-        else
-            (*gPrefsHandle)->loadShipLights = 0;
-        if (settings.yieldEvents != 0)
-            (*gPrefsHandle)->unk64 = 1;
-        else
-            (*gPrefsHandle)->unk64 = 0;
-        if (settings.parallaxStars != 0)
-            (*gPrefsHandle)->parallaxStars = 1;
-        else
-            (*gPrefsHandle)->parallaxStars = 0;
-        if (settings.ambientSounds != 0)
-            (*gPrefsHandle)->planetSounds = 1;
-        else
-            (*gPrefsHandle)->planetSounds = 0;
-        if (settings.showMapBorders != 0)
-            (*gPrefsHandle)->showInfluence = 1;
-        else
-            (*gPrefsHandle)->showInfluence = 0;
-        if (settings.noHyperGamma != 0)
-            (*gPrefsHandle)->noHyperGamma = 1;
-        else
-            (*gPrefsHandle)->noHyperGamma = 0;
-        (*gPrefsHandle)->volume = settings.volume;
-        (*gPrefsHandle)->gamma = settings.gamma;
-        KeyPrefsToSlotTable();
-        for (i = 0; i <= 35; i++)
-            (*gPrefsHandle)->keys[i] = newKeyPrefs[i];
-        (*gPrefsHandle)->unk50 = (DAT_00735450 * 100.0);
-        if (DAT_00735488 != 0)
-            (*gPrefsHandle)->unk60 = 1;
-        else
-            (*gPrefsHandle)->unk60 = 0;
-        (*gPrefsHandle)->unk7E = 0;
-        (*gPrefsHandle)->unk80 = 0;
-        (*gPrefsHandle)->unk82 = 0;
-        (*gPrefsHandle)->unk84 = 0;
-        (*gPrefsHandle)->unk86 = 0;
-        (*gPrefsHandle)->unk88 = 0;
-        UnlockAHandle((Handle)gPrefsHandle);
-    }
-    if (gPrefsHandle != NULL) {
-        LockAHandle((Handle)gPrefsHandle);
-        SaveAFile(path, *gPrefsHandle, GetAHandleSize((Handle)gPrefsHandle));
-        UnlockAHandle((Handle)gPrefsHandle);
-        DeallocAHandle(gPrefsHandle);
-    } else {
-        FILE *f;
-
-        f = FOpenExpandedPath(path, "wb");
-        if (f != NULL)
-            fclose(f);
-    }
+    PrefsToRecord(&rec);
+    PrefsPath(path);
+    PrefsJsonSave(path, &rec);
 }
 
 // FUNCTION: EVNOVA 0x004c7d40

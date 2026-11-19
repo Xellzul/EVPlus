@@ -154,7 +154,6 @@ enum {
 #define kPilotWrongVersion (-42)
 #define kPortButtons        7
 #define kPortPriceScale 0.01
-#define kPrefsSig       0x69
 #define kQuarterCircle          0x5a
 #define kRankRecordSize             0x120
 #define kScrollToEnd  9999
