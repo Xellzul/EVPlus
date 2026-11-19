@@ -1,7 +1,7 @@
 /* platform.h -- the operating-system services the game runs on. Plain C types cross this header, and SDL's
-   events (the game's event pump, runtime/burgerkbwin.c, reads them).
-   On SDL (platform/platform_sdl.c, every platform): start-up, the window and its frame, the events, the cursor,
-   the audio outputs, the clocks, the debug log. Still Windows (platform/platform_win.c): path conversion;
+   events (the game's event pump, runtime/burgerkbwin.cpp, reads them).
+   On SDL (platform/platform_sdl.cpp, every platform): start-up, the window and its frame, the events, the cursor,
+   the audio outputs, the clocks, the debug log. Still Windows (platform/platform_win.cpp): path conversion;
    another platform supplies its own. */
 #ifndef PLATFORM_H
 #define PLATFORM_H
@@ -38,7 +38,7 @@ extern void PlatVideoSetFullScreen(int on);
 extern void PlatVideoSetScaling(int filter, int wholePixel);
 extern int PlatVideoIsFullScreen(void);
 extern void PlatDesktopSize(int *width, int *height);      /* the main display, in pixels */
-/* The program starts in the platform layer, which calls the game (port/winmain.c) with the arguments
+/* The program starts in the platform layer, which calls the game (port/winmain.cpp) with the arguments
    kept for it: PlatArg(0) is the program, the rest what it was started with, UTF-8. */
 extern int GameMain(void);
 extern int PlatArgCount(void);
@@ -76,7 +76,7 @@ extern void PlatCursorShow(int show);
 extern void PlatCursorArrow(void);                         /* back to the system arrow */
 
 /* -- audio: outputs of 16-bit stereo, each fed on the audio thread by a pull function. The Sound Tool's
-   mix is one (runtime/atsnddrv.c), every playing movie's sound another (media/movie.c) ------------------- */
+   mix is one (runtime/atsnddrv.cpp), every playing movie's sound another (media/movie.cpp) ------------------- */
 typedef struct PlatAudio PlatAudio;
 /* called on the audio thread with the output locked; fills `frames' stereo frames or fewer and returns how
    many, 0 at the end (it is not called again after that) */

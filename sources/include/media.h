@@ -1,4 +1,4 @@
-/* media.h -- the media decoding behind the movies (media/movie.c) and burgerpict.c, on FFmpeg (media/media.c,
+/* media.h -- the media decoding behind the movies (media/movie.cpp) and burgerpict.cpp, on FFmpeg (media/media.cpp,
    the only FFmpeg user). Video and audio of one movie use separate demuxers (video on the game thread, audio on the output
    thread). */
 #ifndef MEDIA_H

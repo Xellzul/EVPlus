@@ -1,5 +1,5 @@
-/* movie.h -- the game's movies and songs (media/movie.c): a file played on its own clock, the picture drawn
-   into 16-bit 5-5-5 pixels when asked, the sound on an audio stream of its own. Decoding is media.c. */
+/* movie.h -- the game's movies and songs (media/movie.cpp): a file played on its own clock, the picture drawn
+   into 16-bit 5-5-5 pixels when asked, the sound on an audio stream of its own. Decoding is media.cpp. */
 #ifndef MOVIE_H
 #define MOVIE_H
 #include <stddef.h>

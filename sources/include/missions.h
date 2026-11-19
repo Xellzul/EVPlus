@@ -31,7 +31,7 @@ extern void EvalSetExp(void);     /* 0x00449370 */
 extern short EvalTestExp(short *err);  /* 0x00449020 */
 extern Boolean DoMissionCargoPickup(short cargo, short needed);        /* 0x00440370 cargo room */
 extern void ApplyMissionPay(int32_t amount);  /* 0x00440750 */
-extern void HandleComm(void);                  /* 0x0042f1b0 (gameloop.c; mac _HandleComm) */
+extern void HandleComm(void);                  /* 0x0042f1b0 (gameloop.cpp; mac _HandleComm) */
 extern void LoadCurrentMissionData(short mission, short slot);   /* 0x0043f8c0 */
 extern void MissionHandler(void);                /* 0x00443760 */
 void MissionLandCargoCheck(short slot, short stel);

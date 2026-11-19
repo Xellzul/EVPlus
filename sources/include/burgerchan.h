@@ -35,7 +35,7 @@ typedef struct SoundChannel {
 extern "C" {
 #endif
 
-extern SoundChannel gTheVoices[kSoundChannels];      /* atsound.c */
+extern SoundChannel gTheVoices[kSoundChannels];      /* atsound.cpp */
 
 #ifdef __cplusplus
 }

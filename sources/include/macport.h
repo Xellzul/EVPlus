@@ -65,7 +65,7 @@ typedef struct CGrafPort {
     int32_t depth;
     void *pixels;                   /* the port's own pixel memory; NULL for a port over pixels it does not own */
     short lastFont;                 /* the font, size and style text was last drawn or measured with here: */
-    short lastSize;                 /* what an unknown font number leaves in use (port/qdtext.c) */
+    short lastSize;                 /* what an unknown font number leaves in use (port/qdtext.cpp) */
     short lastFace;
     Boolean hasLastFont;
     RGBColor foreColor;
@@ -95,7 +95,7 @@ EXTERN_CPP_END
 extern void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t end);
 extern void FrameRect(const Rect *r);
 extern void GetFNum(const unsigned char *name, short *familyID);
-/* the font test page (port/fonttest.c) and what it asks the font cache */
+/* the font test page (port/fonttest.cpp) and what it asks the font cache */
 extern void DebugFontScreen(void);
 extern short FontFamilyCount(void);
 extern const char *FontFamilyName(short familyID);
@@ -732,7 +732,7 @@ extern void TextSize(short size);
 extern short TextWidth(const char *text, int byteCount);
 extern short TextWidthMacRoman(const char *text, int byteCount);
 extern unsigned AnsiToUnicode(unsigned char c);             /* code page 1252, the typed text's */
-/* port/utf8text.c: the game's text (a typed name, an alert) as UTF-8 for a path or the system, and a
+/* port/utf8text.cpp: the game's text (a typed name, an alert) as UTF-8 for a path or the system, and a
    file's name as game text */
 extern void TextToUtf8(char *out, const char *text, int outSize);
 extern void Utf8ToText(char *out, const char *name, int outSize);

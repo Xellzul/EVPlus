@@ -20,11 +20,11 @@ extern void * AllocAPointerClear(uint32_t size);
 extern void * ResizeAPointer(void *mem, uint32_t size);
 
 extern int32_t SetDisplayToSize(uint32_t w, uint32_t h, uint32_t depth, uint32_t flags);
-extern ULong TimerGetTicks(void);                 /* atticks.c: milliseconds; only differences mean anything */
-extern ULong TimerGetTickRate(void);                 /* atticks.c: the tick rate that goes with it */
+extern ULong TimerGetTicks(void);                 /* atticks.cpp: milliseconds; only differences mean anything */
+extern ULong TimerGetTickRate(void);                 /* atticks.cpp: the tick rate that goes with it */
 extern void DebugXString(const char *string);
 
-/* the lock (atthreadtbl.c) */
+/* the lock (atthreadtbl.cpp) */
 extern int32_t CriticalDispose(void *lock);
 extern int32_t CriticalCreate(void *lock);
 
@@ -69,8 +69,8 @@ extern char *StrCopy(const char *text);
 extern void StripLeadingAndTrailingWhiteSpace(char *text);
 extern void ExtractAString2(const char *src, ULong *size, Word flags, char *dst, ULong dstSize);
 extern Word BombFlag;
-extern char ErrorMsg[512];                       /* burgerfatal.c */
-extern Word IAmExiting;                          /* burgerfatal2.c */
+extern char ErrorMsg[512];                       /* burgerfatal.cpp */
+extern Word IAmExiting;                          /* burgerfatal2.cpp */
 extern void *PrefFileNewFromMemory(const char *text, uint32_t size);
 extern void ClosePrefsFile(struct PrefsNode *file);
 extern void *OpenPrefsFile(const char *name);
@@ -83,13 +83,13 @@ extern int stricmp(const char *s1, const char *s2);   /* MSL Extras */
 extern uint32_t gSaveLeftVolume;
 extern uint32_t gSaveMaxVolume;
 extern int32_t MouseClicked;
-/* a lock (atthreadtbl.c: CriticalCreate .. CriticalLeave take its address) */
+/* a lock (atthreadtbl.cpp: CriticalCreate .. CriticalLeave take its address) */
 typedef struct Mutex {
     struct PlatMutex *section;
     ULong magic;
     unsigned char live;
 } Mutex;
-extern Mutex gCriticalSection;                   /* the sound mixer's lock (atsound.c) */
+extern Mutex gCriticalSection;                   /* the sound mixer's lock (atsound.cpp) */
 extern unsigned char gSoundToolOpen;
 extern Word8 ResourceJustLoaded;                 /* 0x00870e11, set by ResourceLoadHandle */
 /* handles */
@@ -105,7 +105,7 @@ extern void ST_DisposeSound(void *snd);
 extern unsigned short ST_IsSoundPlaying(void *snd);
 
 
-/* the resource manager (engine/resmgr.c) */
+/* the resource manager (engine/resmgr.cpp) */
 extern Handle GetResource(uint32_t type, short id);
 extern int32_t CountResources(uint32_t type);
 extern Handle GetIndResource(uint32_t type, short index);
@@ -124,7 +124,7 @@ extern char *NumberToAscii(char *dst, ULong value, ULong flags);
 extern void OSCursorShow(void);
 extern void OSCursorHide(void);
 extern void OSCursorReset(void);
-extern unsigned char OSCursorVisibleFlag;        /* burgermisc2.c */
+extern unsigned char OSCursorVisibleFlag;        /* burgermisc2.cpp */
 extern void ReleaseVideo(void);
 extern Word32 LastTick;
 extern Word32 ReadTick(void);
@@ -183,8 +183,8 @@ extern uint32_t VideoWidth;
 extern char *VideoPointer;
 extern uint32_t ScreenWidth;
 extern uint32_t ScreenHeight;
-extern int32_t ScreenFlags;                         /* burgergraphics.c */
-extern Word Win95ApplsActive;                    /* burgeronce.c */
+extern int32_t ScreenFlags;                         /* burgergraphics.cpp */
+extern Word Win95ApplsActive;                    /* burgeronce.cpp */
 extern char *VideoOffscreen;
 
 /* the engine's names for BurgerLib's display globals, as the mac build spells them */
@@ -192,13 +192,13 @@ extern char *VideoOffscreen;
 #define gVideoWidth ScreenWidth
 #define gVideoHeight ScreenHeight
 
-/* the hyperspace white-out (port addition, burgervideomode.c): blend from..to of 256 over 60 Hz ticks */
+/* the hyperspace white-out (port addition, burgervideomode.cpp): blend from..to of 256 over 60 Hz ticks */
 #define kWhiteNone          0
 #define kWhiteSolid         256
 #define kWhiteFadeTicks     90                      /* 1.1.1's CGDisplayFade duration, 1.5 s */
 extern void VideoFadeWhite(Word from, Word to, uint32_t ticks);
 
-/* sound globals (burgersndwin.c) */
+/* sound globals (burgersndwin.cpp) */
 
 struct MixVoice;
 
@@ -212,7 +212,7 @@ extern ULong fgetfilesize(FILE *fp);     /* BurgerLib fgetfilesize */
 extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib CreateDirectoryPathNative */
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
 
-extern void ImaDecodePackets(const unsigned char *src, ULong packets, short *out);   /* atadpcm.c */
+extern void ImaDecodePackets(const unsigned char *src, ULong packets, short *out);   /* atadpcm.cpp */
 extern void ImaDecodeStream(const unsigned char *src, ULong samples, short *out);
 extern unsigned char PCM_Mixer(const short *data, short **out, ULong frames, ULong step,
                                struct MixVoice *voice, unsigned short left, unsigned short right);

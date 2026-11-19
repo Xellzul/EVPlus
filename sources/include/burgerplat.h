@@ -21,7 +21,7 @@ typedef struct ListRec {
 /* BurgerLib's directory walker. The exe's also had the entry's two dates and whether it was hidden, a
    system file or read-only, none of them read, and Windows' own search record. */
 typedef struct DirectorySearch_t {
-    Word32 FileSize;                             /* 0 for an empty file; see burgerfilewin.c */
+    Word32 FileSize;                             /* 0 for an empty file; see burgerfilewin.cpp */
     char Dir;
     char Name[1024];                             /* UTF-8 */
     void *FindHandle;                            /* the folder's listing */

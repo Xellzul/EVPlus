@@ -1,0 +1,3818 @@
+/* loaddata.cpp -- pilot-folder setup, OpenDataFiles, LoadObjectData, LoadStrings, LoadPrefs/SavePrefs, the pilot file, the resource utilities, the chär record readers. Notes: Research/notes/loaddata.md */
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+
+#include "gameconst.h"
+#include "gametypes.h"
+#include "render.h"
+#include "crashlog.h"
+#include "player.h"
+#include "dialogs.h"
+#include "game.h"
+
+/* a resource handle's record: 1.0.10 casts the handle, an array field then indexes off the record */
+#define ResRec(T, h) ((T *)*(h))
+#define ClampRGB(c) \
+    if ((c).red > 0xffff) (c).red = 0xffff; \
+    if ((c).green > 0xffff) (c).green = 0xffff; \
+    if ((c).blue > 0xffff) (c).blue = 0xffff
+#include "gameutil.h"
+#include "stellar.h"
+#include "burger.h"
+#include "platform.h"
+#include "macport.h"
+#include "resources.h"
+#include "cefix.h"
+#include "sound.h"
+#include "ships.h"
+#include "ai.h"
+#include "shipobj.h"
+#include "missions.h"
+#include "space.h"
+#include "pilotfile.h"
+#include "prototypes.h"
+#include "endianswap.h"
+
+#define kPrefStringMax 0x100
+
+#define kSpobResName "sp\x9a" "b"
+#define kSystResName "s\xd8" "st"
+#define kShipResName "sh\x95" "p"
+#define kOutfResName "o\x9f" "tf"
+#define kDudeResName "d\x9f" "de"
+#define kPersResName "p\x91" "rs"
+
+
+/*
+ * Set up the pilot-file directory at startup (win 0x004bd0c0): "9:" plus
+ * string 3 of list 130 plus ":", which is the port's volume notation for a
+ * folder beside the application. The two debug switches are read here because
+ * this is the first thing that runs after the resource file opens.
+ */
+
+// FUNCTION: EVNOVA 0x004bd0c0
+// MAC: _InitDataFiles i386 0x0007138b ppc 0x00079dc4
+void InitDataFiles(void)
+{
+    char name[kPrefStringMax];
+
+    noSavePilotFiles = EVBugResourceFieldTest(12);
+    noUpdatePilotData = EVBugResourceFieldTest(13);
+    GetIniIndString(name, kPilotDirList, 3);
+    strcpy(pilotsFolder, "");
+    strcat(pilotsFolder, name);
+    strcat(pilotsFolder, ":");
+    strcpy(gPrefsDirectory, "@:");
+    lastIntfResourceID = -1;
+}
+
+/* prints/logs the Pascal string GetIndString just filled; NOT the same
+   address as crashlog_print_pstr (0x00470150) despite the similar role */
+/* called with a constant 0 at every site here; tail-calls through a lazy
+   singleton getter (0x52ce50) into 0x4fdf10 */
+/* CreateDirectoryPath is BurgerLib's CreateDirectoryPath: ExpandAPathToBufferNative
+   (0x004d9680) then CreateDirectoryPathNative (0x004d9530); nonzero on failure */
+
+
+// FUNCTION: EVNOVA 0x004bd160
+// MAC: _OpenDataFiles i386 0x00076a76 ppc 0x0007f85c
+void OpenDataFiles(void)
+{
+    char name[kPrefStringMax];
+    char path[0x800];
+    unsigned char str[kPrefStringMax];
+    Handle h;
+    short count;
+
+    GetIniIndString(name, kPilotDirList, 3);
+    strcpy(path, "");
+    strcat(path, name);
+    if (CreateDirectoryPath(path) != 0) {
+        FadeScreenIn();
+        GetIndString(str, kAlertStrList, 0x1d);
+        EVNoteAlert(str);
+        exit(0);
+    }
+
+    crashlog_print("opening files in ");
+    crashlog_print("Nova Files");
+    crashlog_print(" folder:\n");
+
+    if (OpenEVPlugins("Nova Files", ".rez", NULL) != 0) {
+        if (CE_OpenNovaFilesFallback("Nova Files", ".rez", NULL) != 0) {
+            FadeScreenIn();
+            GetIndString(str, kAlertStrList, 0x1e);
+            EVNoteAlert(str);
+            exit(0);
+        }
+    }
+
+    {
+        if (pluginCount > 0) {
+            crashlog_print("opening files in ");
+            crashlog_print("Nova Plug-Ins");
+            crashlog_print(" folder:\n");
+        }
+        if (CE_OpenPlugInsFallback("Nova Plug-Ins", ".rez", NULL) != 0) {
+            CreateDirectoryPath("Nova Plug-Ins");
+            if (OpenEVPlugins("Nova Plug-Ins", ".rez", NULL) != 0) {
+                FadeScreenIn();
+                GetIndString(str, kAlertStrList, 0x1f);
+                EVNoteAlert(str);
+                exit(0);
+            }
+        }
+    }
+
+    if (crashlog_isactive()) {
+        h = GetResource(kStringListType, kGameStrList);
+        if (h != NULL) {
+            count = SwapEndianShort(&ResRec(StringListRec, h)->count);
+            ReleaseResource(h);
+            if (count != 0x18c) {
+                crashlog_print("warning: STR# resource ");
+                crashlog_print_num(kGameStrList);
+                crashlog_print(" is missing strings (");
+                crashlog_print_num(0x18c - count);
+                crashlog_print(")\n");
+            }
+        }
+    }
+}
+
+/* NebuRecord is loaded without LockAHandle or AdjustHandleSize. */
+
+/* the mac keeps a resource unpurgeable while it is read and purgeable again after; the port's
+   resources never purge */
+#define ResourceNoPurge(h)
+#define ResourcePurge(h)
+#define LoadingIntroMusic() HandleIntroMusic(0)
+
+
+// FUNCTION: EVNOVA 0x004bd3c0
+// MAC: _LoadObjectData i386 0x000771b0 ppc 0x00080100
+void LoadObjectData(void)
+{
+    short loaded;
+    short n;
+    short j;
+    short i;
+    short prev;
+    short found;
+    short resID;
+    uint32_t resType;
+    short count;
+    short k;
+    short gunTally, turretTally;
+    short maxGuns, maxTurrets;
+    float base;
+    int32_t tradeEst;
+    short mountCount[8];
+    short mountID[8];
+    unsigned char name[256];
+    short mountAmmo[8];
+    RGBColor rgb;
+    Boolean used[kMaxStellars];
+
+    if (EVBugResourceFieldTest(0))
+        return;
+    SWSetPortToWindow(gSpriteWorld);
+
+    /* ---------------- spöb: stellar objects ---------------- */
+    {
+
+        found = 0;
+        count = CountResources(kSpobType);
+    if (count == 0)
+        crashlog("warning: no " kSpobResName " resources found");
+    for (i = 0; i < kMaxStellars; i++) {
+        stellarData[i].loaded = 0;
+        stellarFileHand = GetResource(kSpobType, i + kFirstResourceID);
+        if (stellarFileHand != NULL) {
+            LockAHandle(stellarFileHand);
+            ResourceNoPurge(stellarFileHand);
+            found++;
+            GetResInfo(stellarFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            strncpy((char *)stellarData[i].name, (char *)name, 31);
+            stellarData[i].pos.h = ResRec(SpobRes, stellarFileHand)->xPos;
+            stellarData[i].pos.v = ResRec(SpobRes, stellarFileHand)->yPos;
+            stellarData[i].type = ResRec(SpobRes, stellarFileHand)->type;
+            stellarData[i].flags = ResRec(SpobRes, stellarFileHand)->flags;
+            stellarData[i].flags2 = ResRec(SpobRes, stellarFileHand)->flags2;
+            stellarData[i].govt = ResRec(SpobRes, stellarFileHand)->govt;
+            stellarData[i].minStatus = ResRec(SpobRes, stellarFileHand)->minStatus;
+            stellarData[i].techLevel = ResRec(SpobRes, stellarFileHand)->techLevel;
+            stellarData[i].customPict = ResRec(SpobRes, stellarFileHand)->custPicID;
+            stellarData[i].customSound = ResRec(SpobRes, stellarFileHand)->custSndID;
+            stellarData[i].landingFee = ResRec(SpobRes, stellarFileHand)->fee;
+            stellarData[i].gravity = ResRec(SpobRes, stellarFileHand)->gravity;
+            stellarData[i].weapon = ResRec(SpobRes, stellarFileHand)->weapon;
+            if (stellarData[i].govt >= kFirstResourceID)
+                stellarData[i].govt -= kFirstResourceID;
+            else
+                stellarData[i].govt = -1;
+            stellarData[i].strength = ResRec(SpobRes, stellarFileHand)->strength;
+            stellarData[i].deadCounter = stellarData[i].strength;
+            stellarData[i].deadType = ResRec(SpobRes, stellarFileHand)->deadType;
+            stellarData[i].deadDays = ResRec(SpobRes, stellarFileHand)->deadTime;
+            stellarData[i].deadDaysLeft = 0;
+            stellarData[i].explodType = ResRec(SpobRes, stellarFileHand)->explodType;
+            if (stellarData[i].explodType < 0)
+                stellarData[i].explodType = -1;
+            if (stellarData[i].deadType < 0 || stellarData[i].deadType >= kMasterStellarSprites)
+                stellarData[i].deadType = stellarData[i].type;
+            strcpy(stellarData[i].onDestroy, ResRec(SpobRes, stellarFileHand)->onDestroy);
+            strcpy(stellarData[i].onRegen, ResRec(SpobRes, stellarFileHand)->onRegen);
+            for (j = 0; j < 3; j++)
+                stellarData[i].specialTech[j] = ResRec(SpobRes, stellarFileHand)->specialTech[j];
+            for (j = 0; j < 5; j++)
+                stellarData[i].specialTech[j + 3] = ResRec(SpobRes, stellarFileHand)->specialTech2[j];
+            stellarData[i].loaded = 1;
+            stellarData[i].prepared = 1;
+            stellarData[i].dominated = 0;
+            stellarData[i].tribute = ResRec(SpobRes, stellarFileHand)->tribute;
+            if (stellarData[i].tribute <= 0)
+                stellarData[i].tribute = stellarData[i].techLevel * 1000;
+            stellarData[i].defCount = ResRec(SpobRes, stellarFileHand)->defCount;
+            stellarData[i].defenseDude = ResRec(SpobRes, stellarFileHand)->defenseDude;
+            stellarData[i].animDelay = ResRec(SpobRes, stellarFileHand)->animDelay;
+            stellarData[i].frame0Bias = ResRec(SpobRes, stellarFileHand)->frame0Bias;
+            for (j = 0; j < kSpobHyperLinks; j++) {
+                stellarData[i].hyperLinks[j] = ResRec(SpobRes, stellarFileHand)->hyperLink[j];
+                if (stellarData[i].hyperLinks[j] >= kFirstResourceID)
+                    stellarData[i].hyperLinks[j] -= kFirstResourceID;
+                else
+                    stellarData[i].hyperLinks[j] = -1;
+            }
+            if (stellarData[i].defCount > 1000) {
+                if (stellarData[i].defCount > 10000)
+                    stellarData[i].defWaveSize = stellarData[i].defCount / 10 - 1000;
+                else
+                    stellarData[i].defWaveSize = stellarData[i].defCount / 10 - 100;
+            } else
+                stellarData[i].defWaveSize = stellarData[i].defCount;
+            if (stellarData[i].defenseDude >= kFirstResourceID)
+                stellarData[i].defenseDude -= kFirstResourceID;
+            else
+                stellarData[i].defenseDude = -1;
+            if (stellarData[i].techLevel < 0)
+                stellarData[i].techLevel = 0;
+            strcpy(stellarData[i].onDominate, ResRec(SpobRes, stellarFileHand)->onDominate);
+            strcpy(stellarData[i].onRelease, ResRec(SpobRes, stellarFileHand)->onRelease);
+            if (stellarData[i].weapon >= kFirstResourceID)
+                stellarData[i].weapon -= kFirstResourceID;
+            else
+                stellarData[i].weapon = -1;
+            AdjustHandleSize(stellarFileHand, 0x45e);
+            ResourcePurge(stellarFileHand);
+            ReleaseResource(stellarFileHand);
+            if (SpobCanLand(&stellarData[i]) && !SpobIsHyperOrWorm(&stellarData[i]) &&
+                crashlog_isactive()) {
+                if (stellarData[i].customPict >= kFirstResourceID) {
+                    if (!ResourceExists(kPictType, stellarData[i].customPict)) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(stellarData[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") custom landing picture not found\n");
+                    }
+                } else {
+                    if (!ResourceExists(kPictType, stellarData[i].type + 10000)) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(stellarData[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") lacks landing picture for stellar type\n");
+                    }
+                }
+                if (!ResourceExists(kDescType, i + kFirstResourceID)) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(stellarData[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") lacks landing description\n");
+                }
+                if (SpobHasBar(&stellarData[i]) &&
+                    !ResourceExists(kDescType, i + 10000)) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(stellarData[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") has a bar but no bar description\n");
+                }
+            }
+            LoadingIntroMusic();
+        } else {
+            stellarData[i].loaded = 0;
+            stellarData[i].prepared = 0;
+        }
+        if (found >= count)
+            break;
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+    }
+
+    /* ---------------- sÿst: systems ---------------- */
+    {
+        short link, target, total;
+
+        found = 0;
+        count = CountResources(kSystType);
+        if (count == 0)
+            crashlog("warning: no " kSystResName " resources found");
+        for (i = 0; i < kMaxSystems; i++) {
+            systemData[i].loaded = 0;
+            systemData[i].prepared = 0;
+            systemData[i].govt = -32767;
+            for (j = 0; j < kMaxSystemLinks; j++)
+                systemData[i].links[j] = -1;
+            systemFileHand = GetResource(kSystType, i + kFirstResourceID);
+            if (systemFileHand != NULL) {
+                LockAHandle(systemFileHand);
+                ResourceNoPurge(systemFileHand);
+                found++;
+                GetResInfo(systemFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                strncpy((char *)systemData[i].name, (char *)name, 31);
+                systemData[i].loaded = 1;
+                systemData[i].prepared = 1;
+                for (j = 0; j < 8; j++) {
+                    systemData[i].dudeTypes[j] = ResRec(SystRes, systemFileHand)->dudeTypes[j];
+                    systemData[i].dudeProbs[j] = ResRec(SystRes, systemFileHand)->probs[j];
+                }
+                systemData[i].avgShips = ResRec(SystRes, systemFileHand)->avgShips;
+                systemData[i].govt = ResRec(SystRes, systemFileHand)->govt;
+                systemData[i].message = ResRec(SystRes, systemFileHand)->message;
+                systemData[i].asteroidCount = ResRec(SystRes, systemFileHand)->asteroids;
+                systemData[i].interference = ResRec(SystRes, systemFileHand)->interference;
+                if (systemData[i].asteroidCount > 0) {
+                    systemData[i].asteroidCount *=
+                        (GetCWindowPortRect(gWind)->right -
+                                 GetCWindowPortRect(gWind)->left) / 640.0;
+                    if (systemData[i].asteroidCount > kMaxAsteroids)
+                        systemData[i].asteroidCount = kMaxAsteroids;
+                } else {
+                    systemData[i].asteroidCount = 0;
+                }
+                systemData[i].astTypes = ResRec(SystRes, systemFileHand)->astTypes;
+                systemData[i].pos.h = ResRec(SystRes, systemFileHand)->xPos;
+                systemData[i].pos.v = ResRec(SystRes, systemFileHand)->yPos;
+                if (systemData[i].govt >= kFirstResourceID && systemData[i].govt < kFirstResourceID + kMaxGovts)
+                    systemData[i].govt -= kFirstResourceID;
+                else
+                    systemData[i].govt = -1;
+                systemData[i].rgb.red = ((ResRec(SystRes, systemFileHand)->bkgndColor >> 16) & 0xff) * 256;
+                systemData[i].rgb.green = ((ResRec(SystRes, systemFileHand)->bkgndColor >> 8) & 0xff) * 256;
+                systemData[i].rgb.blue = (ResRec(SystRes, systemFileHand)->bkgndColor & 0xff) * 256;
+                systemData[i].rgb.red &= 0xfc00;
+                systemData[i].rgb.green &= 0xfc00;
+                systemData[i].rgb.blue &= 0xfc00;
+                systemData[i].mapPixel = ((((systemData[i].rgb.red + 0x801) >> 11) << 10) & 0x7c00) |
+                                ((((systemData[i].rgb.green + 0x801) >> 11) << 5) & 0x3e0) |
+                                (((systemData[i].rgb.blue + 0x801) >> 11) & 0x1f);
+                systemData[i].murk = ResRec(SystRes, systemFileHand)->murk;
+                if (systemData[i].murk > 100)
+                    systemData[i].murk = 100;
+                else if (systemData[i].murk < 8 && systemData[i].murk > 0)
+                    systemData[i].murk = 0;
+                else if (systemData[i].murk < 0)
+                    systemData[i].murk = -1;
+                total = 0;                       /* valid dude prob total */
+                systemData[i].fleetCount = 0;
+                systemData[i].fleetProbTotal = 0;
+                for (j = 0; j < 8; j++) {
+                    short dude = systemData[i].dudeTypes[j];
+                    if (dude >= kFirstResourceID && dude < kFirstResourceID + kMaxDudes) {
+                        systemData[i].dudeTypes[j] -= kFirstResourceID;
+                        total += systemData[i].dudeProbs[j];
+                    } else {
+                        if (dude <= -kFirstResourceID && dude > -(kFirstResourceID + kMaxFleets)) {
+                            /* negative dude entries reference fleets */
+                            systemData[i].fleets[systemData[i].fleetCount] = abs(dude) - kFirstResourceID;
+                            systemData[i].fleetProbs[systemData[i].fleetCount] = systemData[i].dudeProbs[j];
+                            systemData[i].fleetCount++;
+                            systemData[i].fleetProbTotal += systemData[i].dudeProbs[j];
+                        }
+                        systemData[i].dudeTypes[j] = -1;
+                        systemData[i].dudeProbs[j] = 0;
+                    }
+                }
+                if (total != 100 && total > 0) {
+                    for (j = 0; j < 8; j++)
+                        systemData[i].dudeProbs[j] *= 100.0 / (float)total;
+                }
+                for (j = 0; j < kMaxSystemLinks; j++) {
+                    link = total = ResRec(SystRes, systemFileHand)->con[j];
+                    if (link >= kFirstResourceID && link < kFirstResourceID + kMaxSystems)
+                        systemData[i].links[j] = link - kFirstResourceID;
+                    else
+                        systemData[i].links[j] = -1;
+                }
+                for (j = 0; j < kNavSlots; j++) {
+                    target = ResRec(SystRes, systemFileHand)->nav[j];
+                    if (target >= kFirstResourceID && target < kFirstResourceID + kMaxStellars) {
+                        systemData[i].navDefault[j] = target - kFirstResourceID;
+                        if (!stellarData[systemData[i].navDefault[j]].prepared) {
+                            crashlog_print("warning: ignoring reference to nonexistent stellar ID ");
+                            crashlog_print_num(systemData[i].navDefault[j] + kFirstResourceID);
+                            crashlog_print(" in system ");
+                            crashlog_print_pstr(systemData[i].name);
+                            crashlog_print(" (");
+                            crashlog_print_num(i + kFirstResourceID);
+                            crashlog_print(")\n");
+                            systemData[i].navDefault[j] = -1;
+                        }
+                    } else {
+                        systemData[i].navDefault[j] = -1;
+                    }
+                }
+                for (j = 0; j < 8; j++) {
+                    systemData[i].persons[j] = ResRec(SystRes, systemFileHand)->person[j];
+                    systemData[i].persProbs[j] = ResRec(SystRes, systemFileHand)->personProb[j];
+                    if (systemData[i].persons[j] >= kFirstResourceID && systemData[i].persons[j] < kFirstResourceID + kMaxPersons - 1)
+                        systemData[i].persons[j] -= kFirstResourceID;
+                    else
+                        systemData[i].persons[j] = -1;
+                    if (systemData[i].persProbs[j] < 0)
+                        systemData[i].persProbs[j] = 0;
+                    if (systemData[i].persProbs[j] > 100)
+                        systemData[i].persProbs[j] = 100;
+                }
+                systemData[i].reinforceFleet = ResRec(SystRes, systemFileHand)->reinfFleet;
+                systemData[i].reinforceTime = ResRec(SystRes, systemFileHand)->reinfTime;
+                systemData[i].reinforceInterval = ResRec(SystRes, systemFileHand)->reinfInterval;
+                if (systemData[i].reinforceFleet >= kFirstResourceID) {
+                    systemData[i].reinforceFleet -= kFirstResourceID;
+                    if (systemData[i].reinforceInterval < 1)
+                        systemData[i].reinforceInterval = 1;
+                } else {
+                    systemData[i].reinforceFleet = -1;
+                }
+                systemData[i].reinforceTimer = 0;
+                systemData[i].reinforceDaysLeft = 0;
+                strcpy(systemData[i].visibility, ResRec(SystRes, systemFileHand)->visibility);
+                AdjustHandleSize(systemFileHand, 0x1ac);
+                ResourcePurge(systemFileHand);
+                ReleaseResource(systemFileHand);
+                LoadingIntroMusic();
+            } else {
+                strcpy(systemData[i].visibility, "");
+            }
+            if (found >= count)
+                break;
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+
+        /* co-location chains: systems sharing a map position form linked groups */
+        for (i = 0; i < kMaxSystems; i++) {
+            systemData[i].colocGroup = -1;
+            systemData[i].colocNext = -1;
+        }
+        for (i = 0; i < kMaxSystems; i++) {
+            if (systemData[i].loaded && systemData[i].colocGroup == -1) {
+                prev = i;
+                systemData[i].colocGroup = i;
+                for (j = 0; j < kMaxSystems; j++) {
+                    if (systemData[j].loaded &&
+                        systemData[j].pos.h == systemData[i].pos.h &&
+                        systemData[j].pos.v == systemData[i].pos.v &&
+                        (systemData[j].colocGroup == -1 || j > i)) {
+                        systemData[prev].colocNext = j;
+                        systemData[j].colocGroup = i;
+                        prev = j;
+                    }
+                }
+            }
+        }
+
+        /* drop links to nonexistent systems */
+        for (i = 0; i < kMaxSystems; i++) {
+            if (systemData[i].prepared) {
+                for (j = 0; j < kMaxSystemLinks; j++) {
+                    link = systemData[i].links[j];
+                    if (systemData[i].links[j] != -1 && !systemData[systemData[i].links[j]].prepared) {
+                        systemData[i].links[j] = -1;
+                        crashlog_print("warning: ignoring link from ");
+                        crashlog_print_pstr(systemData[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") to nonexistent system ");
+                        crashlog_print_num(link + kFirstResourceID);
+                        crashlog_print("\n");
+                    }
+                }
+            }
+        }
+
+        /* canonicalize links to group leaders, drop self- and duplicate links */
+        for (i = 0; i < kMaxSystems; i++) {
+            if (systemData[i].prepared) {
+                for (n = 0; n < kMaxSystemLinks; n++) {
+                    link = systemData[i].links[n];
+                    if (link != -1) {
+                        systemData[i].links[n] = FindFirstCoLocatedSystem(link);
+                        if (systemData[i].links[n] == FindFirstCoLocatedSystem(i))
+                            systemData[i].links[n] = -1;
+                    }
+                }
+                for (j = 0; j < kMaxSystemLinks; j++) {
+                    if (systemData[i].links[j] != -1) {
+                        total = 0;
+                        for (n = 0; n <= j; n++)
+                            if (systemData[i].links[n] == systemData[i].links[j])
+                                total++;
+                        if (total > 1)
+                            systemData[i].links[j] = -1;
+                    }
+                }
+            }
+        }
+
+        /* assume implicit reciprocal links */
+        for (i = 0; i < kMaxSystems; i++) {
+            if (systemData[i].prepared) {
+                for (j = 0; j < kMaxSystemLinks; j++) {
+                    link = systemData[i].links[j];
+                    if (link != -1) {
+                        link = FindFirstCoLocatedSystem(link);
+                        if (link >= 0 && link < kMaxSystems && link != i) {
+                            Boolean haveBack = 0;
+                            for (n = 0; n < kMaxSystemLinks; n++) {
+                                if (systemData[link].links[n] != -1 &&
+                                    FindFirstCoLocatedSystem(systemData[link].links[n]) ==
+                                        FindFirstCoLocatedSystem(i)) {
+                                    haveBack = 1;
+                                    break;
+                                }
+                            }
+                            if (!haveBack) {
+                                crashlog_print("warning: assuming implicit reciprocal link from ");
+                                crashlog_print_pstr(systemData[i].name);
+                                crashlog_print(" (");
+                                crashlog_print_num(i + kFirstResourceID);
+                                crashlog_print(") to ");
+                                crashlog_print_pstr(systemData[link].name);
+                                crashlog_print(" (");
+                                crashlog_print_num(link + kFirstResourceID);
+                                crashlog_print(")\n");
+                                for (n = 0; n < kMaxSystemLinks; n++) {
+                                    if (systemData[link].links[n] == -1) {
+                                        systemData[link].links[n] = FindFirstCoLocatedSystem(i);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /* orphan stellars: every prepared spob must appear in some navDefault */
+        if (crashlog_isactive()) {
+            for (i = 0; i < kMaxStellars; i++)
+                used[i] = 0;
+            for (i = 0; i < kMaxSystems; i++) {
+                for (j = 0; j < kNavSlots; j++) {
+                    if (systemData[i].navDefault[j] >= 0 && systemData[i].navDefault[j] < kMaxStellars)
+                        used[systemData[i].navDefault[j]] = 1;
+                }
+            }
+            for (i = 0; i < kMaxStellars; i++) {
+                if (stellarData[i].prepared && !used[i]) {
+                    stellarData[i].loaded = 0;
+                    stellarData[i].prepared = 0;
+                    crashlog_print("warning: stellar ");
+                    if (stellarData[i].name[0] == 0)
+                        crashlog_print("\"\"");
+                    else
+                        crashlog_print_pstr(stellarData[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") does not exist in any system\n");
+                }
+            }
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+    }
+
+    /* ---------------- oütf: outfit items ---------------- */
+    {
+
+        found = 0;
+        count = CountResources(kOutfType);
+        for (i = 0; i < kMaxOutfits; i++) {
+            outfitSystemFileHand = GetResource(kOutfType, i + kFirstResourceID);
+            if (outfitSystemFileHand != NULL) {
+                found++;
+                LockAHandle(outfitSystemFileHand);
+                ResourceNoPurge(outfitSystemFileHand);
+                outfitSystem[i].techLevel = ResRec(OutfRes, outfitSystemFileHand)->techLevel;
+                outfitSystem[i].cost = ResRec(OutfRes, outfitSystemFileHand)->cost;
+                outfitSystem[i].mass = ResRec(OutfRes, outfitSystemFileHand)->mass;
+                outfitSystem[i].modType[0] = ResRec(OutfRes, outfitSystemFileHand)->modType;
+                outfitSystem[i].modVal[0] = ResRec(OutfRes, outfitSystemFileHand)->modVal;
+                outfitSystem[i].maxCount = ResRec(OutfRes, outfitSystemFileHand)->max;
+                outfitSystem[i].itemClass = ResRec(OutfRes, outfitSystemFileHand)->itemClass;
+                outfitSystem[i].dispWeight = ResRec(OutfRes, outfitSystemFileHand)->dispWeight;
+                outfitSystem[i].scanMask = ResRec(OutfRes, outfitSystemFileHand)->scanMask;
+                outfitSystem[i].buyRandom = ResRec(OutfRes, outfitSystemFileHand)->buyRandom;
+                if (outfitSystem[i].buyRandom < 0)
+                    outfitSystem[i].buyRandom = 0;
+                if (outfitSystem[i].buyRandom > 100)
+                    outfitSystem[i].buyRandom = 100;
+                outfitSystem[i].govtRestrict = ResRec(OutfRes, outfitSystemFileHand)->require3;
+                if ((outfitSystem[i].govtRestrict < ResClassBase(0)
+                        || outfitSystem[i].govtRestrict >= ResClassBase(0) + kMaxGovts) &&
+                    (outfitSystem[i].govtRestrict < ResClassBase(1)
+                        || outfitSystem[i].govtRestrict >= ResClassBase(1) + kMaxGovts) &&
+                    (outfitSystem[i].govtRestrict < ResClassBase(2)
+                        || outfitSystem[i].govtRestrict >= ResClassBase(2) + kMaxGovts) &&
+                    (outfitSystem[i].govtRestrict < ResClassBase(3)
+                        || outfitSystem[i].govtRestrict >= ResClassBase(3) + kMaxGovts))
+                    outfitSystem[i].govtRestrict = -1;
+                strcpy(outfitSystem[i].availability, ResRec(OutfRes, outfitSystemFileHand)->availability);
+                strcpy(outfitSystem[i].onPurchase, ResRec(OutfRes, outfitSystemFileHand)->onPurchase);
+                strcpy(outfitSystem[i].onSell, ResRec(OutfRes, outfitSystemFileHand)->onSell);
+                AdjustHandleSize(outfitSystemFileHand, 0x404);
+                outfitSystem[i].persistent = 0;
+                outfitSystem[i].flags = ResRec(OutfRes, outfitSystemFileHand)->flags;
+                if (OutfPersistent(&outfitSystem[i]))
+                    outfitSystem[i].persistent = 1;
+                GetResInfo(outfitSystemFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                strncpy((char *)outfitSystem[i].name, (char *)name, 63);
+                outfitSystem[i].modType[1] = ResRec(OutfRes, outfitSystemFileHand)->modType2;
+                outfitSystem[i].modVal[1] = ResRec(OutfRes, outfitSystemFileHand)->modVal2;
+                outfitSystem[i].modType[2] = ResRec(OutfRes, outfitSystemFileHand)->modType3;
+                outfitSystem[i].modVal[2] = ResRec(OutfRes, outfitSystemFileHand)->modVal3;
+                outfitSystem[i].modType[3] = ResRec(OutfRes, outfitSystemFileHand)->modType4;
+                outfitSystem[i].modVal[3] = ResRec(OutfRes, outfitSystemFileHand)->modVal4;
+                for (j = 0; j < kOutfMods; j++) {
+                    if ((outfitSystem[i].modType[j] == kOutfModWeapon || outfitSystem[i].modType[j] == kOutfModAmmo ||
+                         outfitSystem[i].modType[j] == kModTypeFakeID) &&outfitSystem[i].modVal[j] >= kFirstResourceID)
+                        outfitSystem[i].modVal[j] -= kFirstResourceID;
+                }
+                outfitSystem[i].contributes[0] = ResRec(OutfRes, outfitSystemFileHand)->contribute1;
+                outfitSystem[i].contributes[1] = ResRec(OutfRes, outfitSystemFileHand)->contribute2;
+                outfitSystem[i].requires[0] = ResRec(OutfRes, outfitSystemFileHand)->require1;
+                outfitSystem[i].requires[1] = ResRec(OutfRes, outfitSystemFileHand)->require2;
+                strcpy((char *)outfitShortNames[i], ResRec(OutfRes, outfitSystemFileHand)->shortName);
+                strcpy((char *)lcOutfitName[i], ResRec(OutfRes, outfitSystemFileHand)->lcName);
+                strcpy((char *)lcPluralOutfitName[i], ResRec(OutfRes, outfitSystemFileHand)->lcPlural);
+                CtoPstr((char *)outfitShortNames[i]);
+                CtoPstr((char *)lcOutfitName[i]);
+                CtoPstr((char *)lcPluralOutfitName[i]);
+                ResourcePurge(outfitSystemFileHand);
+                ReleaseResource(outfitSystemFileHand);
+                if (outfitSystem[i].buyRandom > 0 && crashlog_isactive()) {
+                    if (!ResourceExists(kPictType, i + 6000)) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(outfitSystem[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") lacks outfit picture\n");
+                    }
+                    if (!ResourceExists(kDescType, i + 3000)) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(outfitSystem[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") lacks description\n");
+                    }
+                }
+                LoadingIntroMusic();
+            } else {
+                strcpy(outfitSystem[i].availability, "");
+                strcpy(outfitSystem[i].onPurchase, "");
+                strcpy(outfitSystem[i].onSell, "");
+                outfitSystem[i].techLevel = kOutfTechAbsent;
+                outfitSystem[i].mass = 0;
+                for (j = 0; j < kOutfMods; j++) {
+                    outfitSystem[i].modType[j] = 0;
+                    outfitSystem[i].modVal[j] = 0;
+                }
+            }
+            if (found >= count)
+                break;
+        }
+
+        /* alias outfits that share a lowercase display name */
+        for (i = 0; i < kMaxOutfits; i++) {
+            outfitSystem[i].sameNameIndex = i;
+            if (outfitSystem[i].techLevel < kOutfTechAbsent) {
+                /* no `i > 0` guard in the original: the for-entry test covers it
+                 * (the exe has a single i-compare here, ours had two) */
+                if (lcOutfitName[i][0] != 0) {
+                    for (j = 0; j < i; j++) {
+                        if (outfitSystem[j].techLevel < kOutfTechAbsent &&
+                            lcOutfitName[j][0] != 0 && lcOutfitName[i][0] == lcOutfitName[j][0]) {
+                            n = 0;
+                            while (n < lcOutfitName[i][0] &&
+                                   lcOutfitName[i][1 + n] == lcOutfitName[j][1 + n])
+                                n++;
+                            if (n == lcOutfitName[i][0]) {
+                                outfitSystem[i].sameNameIndex = j;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+    }
+
+    /* ---------------- wëap: weapons ---------------- */
+    {
+        RGBColor shade;
+        float factor;
+        short g;
+
+        found = 0;
+        n = count = CountResources(kWeapType);
+        for (i = 0; i < kMaxWeapTypes; i++)
+            weaponStats[i].guidance = kResAbsent;
+        for (i = 0; i < kMaxWeapTypes; i++) {
+            weaponFileHand = GetResource(kWeapType, i + kFirstResourceID);
+            if (weaponFileHand != NULL) {
+                found++;
+                LockAHandle(weaponFileHand);
+                ResourceNoPurge(weaponFileHand);
+                weaponStats[i].reload = ResRec(WeapRes, weaponFileHand)->reload;
+                weaponStats[i].lifetime = ResRec(WeapRes, weaponFileHand)->count;
+                weaponStats[i].damage[0] = ResRec(WeapRes, weaponFileHand)->massDmg[0];
+                weaponStats[i].damage[1] = ResRec(WeapRes, weaponFileHand)->massDmg[1];
+                weaponStats[i].guidance = ResRec(WeapRes, weaponFileHand)->guidance;
+                weaponStats[i].speed100 = ResRec(WeapRes, weaponFileHand)->speed / 100.0;
+                weaponStats[i].ammoType = ResRec(WeapRes, weaponFileHand)->ammoType;
+                weaponStats[i].graphic = ResRec(WeapRes, weaponFileHand)->graphic;
+                weaponStats[i].inaccuracy = ResRec(WeapRes, weaponFileHand)->inaccuracy;
+                weaponStats[i].sound = ResRec(WeapRes, weaponFileHand)->sound;
+                weaponStats[i].impact = ResRec(WeapRes, weaponFileHand)->impact;
+                weaponStats[i].recoil = ResRec(WeapRes, weaponFileHand)->recoil;
+                weaponStats[i].explodType = ResRec(WeapRes, weaponFileHand)->explodType;
+                weaponStats[i].proxRadius = ResRec(WeapRes, weaponFileHand)->proxRadius;
+                weaponStats[i].blastRadius = ResRec(WeapRes, weaponFileHand)->blastRadius;
+                weaponStats[i].flags = ResRec(WeapRes, weaponFileHand)->flags;
+                weaponStats[i].flags2 = ResRec(WeapRes, weaponFileHand)->flags2;
+                weaponStats[i].flags3 = ResRec(WeapRes, weaponFileHand)->flags3;
+                weaponStats[i].durability = ResRec(WeapRes, weaponFileHand)->durability;
+                weaponStats[i].maxAmmo = ResRec(WeapRes, weaponFileHand)->maxAmmo;
+                weaponStats[i].seeker = ResRec(WeapRes, weaponFileHand)->seeker;
+                weaponStats[i].ionization = ResRec(WeapRes, weaponFileHand)->ionization;
+                weaponStats[i].exitType = ResRec(WeapRes, weaponFileHand)->exitType;
+                weaponStats[i].burstCount = ResRec(WeapRes, weaponFileHand)->burstCount;
+                weaponStats[i].burstReload = ResRec(WeapRes, weaponFileHand)->burstReload;
+                weaponStats[i].guidedTurn = ResRec(WeapRes, weaponFileHand)->guidedTurn * 0.1;
+                if (weaponStats[i].inaccuracy == -1)
+                    weaponStats[i].inaccuracy = 0;
+                for (j = 0; j < 4; j++) {
+                    weaponStats[i].jamVuln[j] = ResRec(WeapRes, weaponFileHand)->jamVuln[j];
+                    if (weaponStats[i].jamVuln[j] < 0)
+                        weaponStats[i].jamVuln[j] = 0;
+                    if (weaponStats[i].jamVuln[j] > 100)
+                        weaponStats[i].jamVuln[j] = 100;
+                }
+                if (ResRec(WeapRes, weaponFileHand)->liColor == 0) {
+                    rgb.red = rgb.green = 0x200;
+                    rgb.blue = 0xffff;
+                } else {
+                    rgb.red = ((ResRec(WeapRes, weaponFileHand)->liColor >> 16) & 0xff) * 256;
+                    rgb.green = ((ResRec(WeapRes, weaponFileHand)->liColor >> 8) & 0xff) * 256;
+                    rgb.blue = (ResRec(WeapRes, weaponFileHand)->liColor & 0xff) * 256;
+                }
+                ClampRGB(rgb);
+                weaponStats[i].ionizeColor = Color2Index(&rgb);
+                if (weaponStats[i].burstCount <= 0)
+                    weaponStats[i].burstCount = -1;
+                weaponStats[i].beamLength = ResRec(WeapRes, weaponFileHand)->beamLength;
+                weaponStats[i].beamWidth = ResRec(WeapRes, weaponFileHand)->beamWidth;
+                weaponStats[i].coronaFalloff = ResRec(WeapRes, weaponFileHand)->falloff;
+                weaponStats[i].beamColor = ResRec(WeapRes, weaponFileHand)->beamColor;
+                weaponStats[i].coronaColor = ResRec(WeapRes, weaponFileHand)->coronaColor;
+                if (weaponStats[i].beamLength > 0 && weaponStats[i].coronaFalloff <= 0)
+                    weaponStats[i].coronaFalloff = 16;
+                weaponStats[i].lightningDensity = ResRec(WeapRes, weaponFileHand)->liCohesive;
+                weaponStats[i].lightningAmplitude = ResRec(WeapRes, weaponFileHand)->liAmplitude;
+                if (weaponStats[i].lightningDensity > 0) {
+                    if (weaponStats[i].lightningDensity < 2)
+                        weaponStats[i].lightningDensity = 2;
+                    weaponStats[i].coronaFalloff = 0;
+                    if (weaponStats[i].beamWidth < 1)
+                        weaponStats[i].beamWidth = 1;
+                    if (weaponStats[i].lightningAmplitude < 1)
+                        weaponStats[i].lightningAmplitude = 1;
+                }
+                weaponStats[i].subCount = ResRec(WeapRes, weaponFileHand)->subCount;
+                weaponStats[i].subType = ResRec(WeapRes, weaponFileHand)->subType;
+                weaponStats[i].subTheta = ResRec(WeapRes, weaponFileHand)->subTheta;
+                weaponStats[i].subLimit = ResRec(WeapRes, weaponFileHand)->subLimit;
+                if (weaponStats[i].subTheta == -1)
+                    weaponStats[i].subTheta = 0;
+                if (weaponStats[i].subType >= kFirstResourceID && weaponStats[i].subType < kFirstResourceID + kMaxWeapTypes)
+                    weaponStats[i].subType -= kFirstResourceID;
+                else
+                    weaponStats[i].subType = -1;
+                if (weaponStats[i].guidance != kGuidanceBeam && weaponStats[i].guidance != kGuidanceTurretBeam
+                    && weaponStats[i].guidance != kGuidancePDBeam)
+                    weaponStats[i].decayShots = weaponStats[i].coronaFalloff;
+                else
+                    weaponStats[i].decayShots = 0;
+                weaponStats[i].proxSafety = ResRec(WeapRes, weaponFileHand)->proxSafety;
+                if (weaponStats[i].subCount <= 0 || weaponStats[i].subType < 0) {
+                    weaponStats[i].subCount = 0;
+                    weaponStats[i].subType = -1;
+                }
+                if (weaponStats[i].guidance == kGuidanceBeam || weaponStats[i].guidance == kGuidanceTurretBeam
+                    || weaponStats[i].guidance == kGuidancePDBeam) {
+                    weaponStats[i].rgbScratch.red = ((weaponStats[i].beamColor >> 16) & 0xff) * 256;
+                    weaponStats[i].rgbScratch.green = ((weaponStats[i].beamColor >> 8) & 0xff) * 256;
+                    weaponStats[i].rgbScratch.blue = (weaponStats[i].beamColor & 0xff) * 256;
+                    weaponStats[i].beamColor = (weaponStats[i].beamColor >> 9) & 0x7c00 |
+                                      (weaponStats[i].beamColor >> 6) & 0x3e0 |
+                                      (weaponStats[i].beamColor >> 3) & 0x1f;
+                    weaponStats[i].coronaColor = (weaponStats[i].coronaColor >> 9) & 0x7c00 |
+                                        (weaponStats[i].coronaColor >> 6) & 0x3e0 |
+                                        (weaponStats[i].coronaColor >> 3) & 0x1f;
+                }
+                weaponStats[i].hitParticles = ResRec(WeapRes, weaponFileHand)->hitParticles;
+                rgb.red = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 16) & 0xff) * 256;
+                rgb.green = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 8) & 0xff) * 256;
+                rgb.blue = (ResRec(WeapRes, weaponFileHand)->hitPartColor & 0xff) * 256;
+                ClampRGB(rgb);
+                weaponStats[i].hitPartColor = Color2Index(&rgb);
+                weaponStats[i].hitPartLife = ResRec(WeapRes, weaponFileHand)->hitPartLife;
+                weaponStats[i].hitPartVel = ResRec(WeapRes, weaponFileHand)->hitPartVel * 0.01;
+                GetResInfo(weaponFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                pstrcpy(weapName[i], name);
+                weaponStats[i].smokeSet = ResRec(WeapRes, weaponFileHand)->smokeSet;
+                weaponStats[i].decay = ResRec(WeapRes, weaponFileHand)->decay;
+                weaponStats[i].particles = ResRec(WeapRes, weaponFileHand)->particles;
+                weaponStats[i].partLifeMin = ResRec(WeapRes, weaponFileHand)->partLifeMin;
+                weaponStats[i].partLifeMax = ResRec(WeapRes, weaponFileHand)->partLifeMax;
+                base = ResRec(WeapRes, weaponFileHand)->partVel * 0.01;
+                rgb.red = ((ResRec(WeapRes, weaponFileHand)->partColor >> 16) & 0xff) * 256;
+                rgb.green = ((ResRec(WeapRes, weaponFileHand)->partColor >> 8) & 0xff) * 256;
+                rgb.blue = (ResRec(WeapRes, weaponFileHand)->partColor & 0xff) * 256;
+                for (j = 0; j < 8; j++) {
+                    factor = (Rand(0x51) + 60) * 0.01;
+                    shade.red = rgb.red * factor;
+                    shade.green = rgb.green * factor;
+                    shade.blue = rgb.blue * factor;
+                    // BUG (all versions): factor reaches 1.40, so a component above ~0xb6ff wraps when stored in
+                    // the unsigned short -- bright particle colours turn dark (mac 1.0.10 clamped the shade, too late)
+                    weaponStats[i].partColor[j] = Color2Index(&shade);
+                    weaponStats[i].partVel[j] = base * factor;
+                }
+                if (weaponStats[i].smokeSet >= 8)
+                    weaponStats[i].smokeSet = 0;
+                if (weaponStats[i].guidance == 2) {
+                    weaponStats[i].guidance = kGuidanceHoming;
+                    weaponStats[i].seeker = 0x30fe;
+                }
+                AdjustHandleSize(weaponFileHand, 0x86);
+                ResourcePurge(weaponFileHand);
+                ReleaseResource(weaponFileHand);
+                LoadingIntroMusic();
+            }
+            if (found >= n)
+                break;
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+
+        /* ammo-source sanity warnings */
+        if (crashlog_isactive()) {
+            for (i = 0; i < kMaxWeapTypes; i++) {
+                if (weaponStats[i].guidance != kResAbsent) {
+                    short ammo = weaponStats[i].ammoType;
+                    if (ammo >= 0 && ammo < kMaxWeapTypes &&
+                        weaponStats[i].guidance != kGuidanceBay &&
+                        (ammo != weaponStats[ammo].ammoType ||
+                         weaponStats[ammo].guidance == kGuidanceBay)) {
+                        crashlog_print("warning: weapon ");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(" probably shouldn't draw ammo from weapon ");
+                        crashlog_print_num(ammo + kFirstResourceID);
+                        crashlog_print("\n");
+                    }
+                }
+            }
+            for (i = 0; i < kMaxOutfits; i++) {
+                if (outfitSystem[i].techLevel < kOutfTechAbsent) {
+                    for (count = 0; count < kOutfMods; count++) {
+                        if (outfitSystem[i].modType[count] == kOutfModAmmo) {
+                            j = outfitSystem[i].modVal[count];
+                            g = weaponStats[j].guidance;
+                            if (g != kResAbsent) {
+                                if (g != kGuidanceBay && j != weaponStats[j].ammoType) {
+                                    crashlog_print("warning: outfit item ");
+                                    crashlog_print_num(i + kFirstResourceID);
+                                    crashlog_print(" grants ammo to weapon ");
+                                    crashlog_print_num(j + kFirstResourceID);
+                                    if (weaponStats[j].ammoType >= 0 &&
+                                        weaponStats[j].ammoType < kMaxWeapTypes)
+                                        crashlog_print(", which doesn't use its own ammo\n");
+                                    else
+                                        crashlog_print(", which doesn't use ammo\n");
+                                }
+                            } else {
+                                crashlog_print("warning: outfit item ");
+                                crashlog_print_num(i + kFirstResourceID);
+                                crashlog_print(" grants ammo to nonexisent weapon\n");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /* total range: beams use beam length, shots walk the submunition chain */
+        for (i = 0; i < kMaxWeapTypes; i++) {
+            weaponStats[i].totalRange = 0;
+            g = weaponStats[i].guidance;
+            if (weaponStats[i].guidance == kGuidanceUnguided || weaponStats[i].guidance == kGuidanceHoming || weaponStats[i].guidance == kGuidanceTurret || weaponStats[i].guidance == kGuidanceRocket || weaponStats[i].guidance == kGuidanceFrontQuad || weaponStats[i].guidance == kGuidanceRearQuad || weaponStats[i].guidance == kGuidancePointDef) {
+                n = i;
+                do {
+                    weaponStats[i].totalRange += (double)(weaponStats[n].speed100 * weaponStats[n].lifetime);
+                    if (weaponStats[n].subCount > 0) {
+                        short nxt = weaponStats[n].subType;
+                        if (n == nxt) {
+                            if (weaponStats[n].subLimit > 0)
+                                weaponStats[i].totalRange += (double)(weaponStats[n].subLimit *
+                                    weaponStats[n].speed100 * weaponStats[n].lifetime);
+                            n = -1;
+                        } else {
+                            n = nxt;
+                        }
+                    } else {
+                        n = -1;
+                    }
+                } while (n != -1);
+            } else if (g == kGuidanceBeam || g == kGuidanceTurretBeam || g == kGuidancePDBeam) {
+                weaponStats[i].totalRange = weaponStats[i].beamLength;
+            }
+        }
+    }
+
+    /* ---------------- shïp: ship classes ---------------- */
+    {
+        short shipCount;
+        Handle h;
+        char *res;
+        int32_t mass;
+        short j;
+        short weapID;
+
+        shipCount = CountResources(kShipType);
+        if (shipCount == 0)
+            crashlog("warning: no " kShipResName " resources found");
+        for (i = 0; i < kMaxShipTypes;i++) {
+            shipClassFileHand = GetResource(kShipType, i + kFirstResourceID);
+            if (shipClassFileHand != NULL) {
+                LockAHandle(shipClassFileHand);
+                ResourceNoPurge(shipClassFileHand);
+                shipClass[i].cargo = ResRec(ShipRes, shipClassFileHand)->cargo;
+                shipClass[i].shield = ResRec(ShipRes, shipClassFileHand)->shield;
+                shipClass[i].accel = ResRec(ShipRes, shipClassFileHand)->accel / 10000.0;
+                shipClass[i].maxSpeed = ResRec(ShipRes, shipClassFileHand)->speed / 100.0;
+                shipClass[i].turnRate = ResRec(ShipRes, shipClassFileHand)->turn * 0.1;
+                shipClass[i].fuel = ResRec(ShipRes, shipClassFileHand)->energy;
+                shipClass[i].freeMass = ResRec(ShipRes, shipClassFileHand)->freeSpace;
+                shipClass[i].armor = ResRec(ShipRes, shipClassFileHand)->armor;
+                shipClass[i].maxGuns = ResRec(ShipRes, shipClassFileHand)->maxGun;
+                shipClass[i].maxTurrets = ResRec(ShipRes, shipClassFileHand)->maxTur;
+                shipClass[i].techLevel = ResRec(ShipRes, shipClassFileHand)->techLevel;
+                shipClass[i].cost = ResRec(ShipRes, shipClassFileHand)->cost;
+                shipClass[i].deathDelay = ResRec(ShipRes, shipClassFileHand)->deathDelay;
+                shipClass[i].mass = ResRec(ShipRes, shipClassFileHand)->mass;
+                shipClass[i].shipLength = ResRec(ShipRes, shipClassFileHand)->length;
+                shipClass[i].inherentAI = ResRec(ShipRes, shipClassFileHand)->inherentAI;
+                shipClass[i].crew = ResRec(ShipRes, shipClassFileHand)->crew;
+                shipClass[i].strength = ResRec(ShipRes, shipClassFileHand)->strength;
+                shipClass[i].flags = ResRec(ShipRes, shipClassFileHand)->flags;
+                shipClass[i].flags2 = ResRec(ShipRes, shipClassFileHand)->flags2;
+                shipClass[i].flags3 = ResRec(ShipRes, shipClassFileHand)->flags3;
+                shipClass[i].dispWeight = ResRec(ShipRes, shipClassFileHand)->dispWeight;
+                shipClass[i].podCount = ResRec(ShipRes, shipClassFileHand)->podCount;
+                shipClass[i].buyRandom = ResRec(ShipRes, shipClassFileHand)->buyRandom;
+                shipClass[i].hireRandom = ResRec(ShipRes, shipClassFileHand)->hireRandom;
+                if (InGovtClass(ResRec(ShipRes, shipClassFileHand)->inherentGovt, 0)) {
+                    shipClass[i].inherentGovt = ResRec(ShipRes, shipClassFileHand)->inherentGovt - ResClassBase(0);
+                    shipClass[i].inherentGovtB = shipClass[i].inherentGovt;
+                } else if (InGovtClass(ResRec(ShipRes, shipClassFileHand)->inherentGovt, 1)) {
+                    shipClass[i].inherentGovt = -1;
+                    shipClass[i].inherentGovtB = ResRec(ShipRes, shipClassFileHand)->inherentGovt - ResClassBase(1);
+                } else if (InGovtClass(ResRec(ShipRes, shipClassFileHand)->inherentGovt, 2)) {
+                    shipClass[i].inherentGovt = ResRec(ShipRes, shipClassFileHand)->inherentGovt - ResClassBase(2);
+                    shipClass[i].inherentGovtB = -1;
+                } else {
+                    shipClass[i].inherentGovt = -1;
+                    shipClass[i].inherentGovtB = -1;
+                }
+                if (shipClass[i].buyRandom > 100)
+                    shipClass[i].buyRandom = 100;
+                if (shipClass[i].hireRandom > 100)
+                    shipClass[i].hireRandom = 100;
+                if (shipClass[i].strength < 1)
+                    shipClass[i].strength = 1;
+                shipClass[i].upgradeTo = ResRec(ShipRes, shipClassFileHand)->upgradeTo;
+                shipClass[i].escUpgradeCost = ResRec(ShipRes, shipClassFileHand)->escUpgrdCost;
+                shipClass[i].tradeIn = ResRec(ShipRes, shipClassFileHand)->escSellValue;
+                if (shipClass[i].upgradeTo >= kFirstResourceID)
+                    shipClass[i].upgradeTo -= kFirstResourceID;
+                else
+                    shipClass[i].upgradeTo = -1;
+                if (shipClass[i].escUpgradeCost < 0)
+                    shipClass[i].escUpgradeCost = 0;
+                if (shipClass[i].tradeIn <= 0)
+                    shipClass[i].tradeIn = shipClass[i].cost * 0.1;
+                shipClass[i].escortType = ResRec(ShipRes, shipClassFileHand)->escortType;
+                if (shipClass[i].escortType < 0 || shipClass[i].escortType > 3) {
+                    if (shipClass[i].inherentAI >= 3) {
+                        if (shipClass[i].mass < 50)
+                            shipClass[i].escortType = 0;
+                        else if (shipClass[i].mass < 200)
+                            shipClass[i].escortType = 1;
+                        else
+                            shipClass[i].escortType = 2;
+                    } else {
+                        shipClass[i].escortType = 3;
+                    }
+                }
+                if (shipClass[i].escortType == 0)
+                    shipClass[i].aiSkill = 80;
+                else if (shipClass[i].escortType == 1)
+                    shipClass[i].aiSkill = 90;
+                else
+                    shipClass[i].aiSkill = 100;
+                shipClass[i].explode1 = ResRec(ShipRes, shipClassFileHand)->explode[0];
+                shipClass[i].explode2 = ResRec(ShipRes, shipClassFileHand)->explode[1];
+                shipClass[i].shieldRech = ResRec(ShipRes, shipClassFileHand)->shieldRe;
+                shipClass[i].armorRech = ResRec(ShipRes, shipClassFileHand)->armorRe;
+                if (shipClass[i].shieldRech > 0.0f)
+                    shipClass[i].shieldRech *= 0.001;
+                else
+                    shipClass[i].shieldRech = 0;
+                if (shipClass[i].armorRech > 0.0f)
+                    shipClass[i].armorRech *= 0.001;
+                else
+                    shipClass[i].armorRech = 0;
+                shipClass[i].deionize = ResRec(ShipRes, shipClassFileHand)->deionize;
+                shipClass[i].ionizeMax = ResRec(ShipRes, shipClassFileHand)->ionizeMax;
+                if (shipClass[i].deionize > 0.0f)
+                    shipClass[i].deionize *= 0.01;
+                else
+                    shipClass[i].deionize = 1.0f;
+                if (shipClass[i].ionizeMax <= 0)
+                    shipClass[i].ionizeMax = 0;
+                shipClass[i].keyCarried = ResRec(ShipRes, shipClassFileHand)->keyCarried;
+                if (shipClass[i].keyCarried >= kFirstResourceID)
+                    shipClass[i].keyCarried -= kFirstResourceID;
+                else
+                    shipClass[i].keyCarried = -1;
+                if (shipClass[i].strength < 1)
+                    shipClass[i].strength = 1;
+                if (shipClass[i].cargo < 0) {
+                    shipClass[i].cargo *= -1;
+                    shipClass[i].cargoNotFixed = 0;
+                } else {
+                    shipClass[i].cargoNotFixed = 1;
+                }
+                if (shipClass[i].shield < 0)
+                    shipClass[i].shield *= -5;
+                if (shipClass[i].crew < 0)
+                    shipClass[i].crew = 0;
+                for (j = 0; j < 4; j++) {
+                    h = shipClassFileHand;
+                    mountID[j + 4] = -1;
+                    mountID[j] = mountID[j + 4];
+                    weapID = ((ShipRes *)(res = *shipClassFileHand))->wType[j];
+                    if (weapID >= kFirstResourceID && weapID < kFirstResourceID + kMaxWeapTypes) {
+                        char *p = *h;
+
+                        mountID[j] = weapID;
+                        mountCount[j] = ((ShipRes *)p)->wCount[j];
+                        mountAmmo[j] = ((ShipRes *)p)->ammo[j];
+                    } else {
+                        mountID[j] = -1;
+                    }
+                    weapID = ((ShipRes *)res)->wType2[j];
+                    if (weapID >= kFirstResourceID && weapID < kFirstResourceID + kMaxWeapTypes) {
+                        char *p = *h;
+
+                        mountID[j + 4] = weapID;
+                        mountCount[j + 4] = ((ShipRes *)p)->wCount2[j];
+                        mountAmmo[j + 4] = ((ShipRes *)p)->ammo2[j];
+                    } else {
+                        mountID[j + 4] = -1;
+                    }
+                }
+                shipClass[i].defOutfID[0] = ResRec(ShipRes, shipClassFileHand)->defaultItems[0];
+                shipClass[i].defOutfID[1] = ResRec(ShipRes, shipClassFileHand)->defaultItems[1];
+                shipClass[i].defOutfID[2] = ResRec(ShipRes, shipClassFileHand)->defaultItems[2];
+                shipClass[i].defOutfID[3] = ResRec(ShipRes, shipClassFileHand)->defaultItems[3];
+                shipClass[i].defOutfID[4] = ResRec(ShipRes, shipClassFileHand)->defaultItems2[0];
+                shipClass[i].defOutfID[5] = ResRec(ShipRes, shipClassFileHand)->defaultItems2[1];
+                shipClass[i].defOutfID[6] = ResRec(ShipRes, shipClassFileHand)->defaultItems2[2];
+                shipClass[i].defOutfID[7] = ResRec(ShipRes, shipClassFileHand)->defaultItems2[3];
+                shipClass[i].defOutfCount[0] = ResRec(ShipRes, shipClassFileHand)->itemCount[0];
+                shipClass[i].defOutfCount[1] = ResRec(ShipRes, shipClassFileHand)->itemCount[1];
+                shipClass[i].defOutfCount[2] = ResRec(ShipRes, shipClassFileHand)->itemCount[2];
+                shipClass[i].defOutfCount[3] = ResRec(ShipRes, shipClassFileHand)->itemCount[3];
+                shipClass[i].defOutfCount[4] = ResRec(ShipRes, shipClassFileHand)->itemCount2[0];
+                shipClass[i].defOutfCount[5] = ResRec(ShipRes, shipClassFileHand)->itemCount2[1];
+                shipClass[i].defOutfCount[6] = ResRec(ShipRes, shipClassFileHand)->itemCount2[2];
+                shipClass[i].defOutfCount[7] = ResRec(ShipRes, shipClassFileHand)->itemCount2[3];
+                for (count = 0; count < kDefaultOutfitSlots; count++) {
+                    if (shipClass[i].defOutfID[count] >= kFirstResourceID && shipClass[i].defOutfID[count] < kFirstResourceID + kMaxOutfits) {
+                        shipClass[i].defOutfID[count] -= kFirstResourceID;
+                        if (shipClass[i].defOutfCount[count] < 0)
+                            shipClass[i].defOutfCount[count] = 0;
+                    } else {
+                        shipClass[i].defOutfID[count] = -1;
+                        shipClass[i].defOutfCount[count] = 0;
+                    }
+                }
+                shipClass[i].fuelRegen = ResRec(ShipRes, shipClassFileHand)->fuelRegen;
+                shipClass[i].skillVar = ResRec(ShipRes, shipClassFileHand)->skillVar;
+                if (shipClass[i].skillVar < 1)
+                    shipClass[i].skillVar = 1;
+                if (shipClass[i].skillVar > 50)
+                    shipClass[i].skillVar = 50;
+                shipClass[i].contributes[0] = ResRec(ShipRes, shipClassFileHand)->contribute1;
+                shipClass[i].contributes[1] = ResRec(ShipRes, shipClassFileHand)->contribute2;
+                shipClass[i].requires[0] = ResRec(ShipRes, shipClassFileHand)->require1;
+                shipClass[i].requires[1] = ResRec(ShipRes, shipClassFileHand)->require2;
+                tradeEst = shipClass[i].cost * 0.25;
+                gunTally = 0;
+                turretTally = 0;
+                for (count = 0; count < 8; count++) {
+                    if (mountID[count] >= kFirstResourceID && mountID[count] < kFirstResourceID + kMaxWeapTypes) {
+                        shipClass[i].weapCount[mountID[count] - kFirstResourceID] = mountCount[count];
+                        shipClass[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
+                        if (mountCount[count] > 0) {
+                            for (j = 0; j < kMaxOutfits; j++) {
+                                if (outfitSystem[j].modType[0] == kOutfModWeapon &&
+                                    outfitSystem[j].modVal[0] == mountID[count] - kFirstResourceID &&
+                                    outfitSystem[j].techLevel < kOutfTechAbsent) {
+                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountCount[count];
+                                    shipClass[i].freeMass += mass;
+                                    if (!outfitSystem[j].persistent)
+                                        tradeEst = tradeEst +
+                                            (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[count]) * 0.5;
+                                    if (outfitSystem[j].flags & kOutfFixedGun)
+                                        gunTally += mountCount[count];
+                                    if (outfitSystem[j].flags & kOutfTurret)
+                                        turretTally += mountCount[count];
+                                    break;
+                                }
+                            }
+                        }
+                        if (mountAmmo[count] > 0) {
+                            if (weaponStats[mountID[count] - kFirstResourceID].guidance == kGuidanceBay)
+                                n = mountID[count] - kFirstResourceID;
+                            else {
+                                n = weaponStats[mountID[count] - kFirstResourceID].ammoType;
+                                if (n < 0 || n >= kMaxWeapTypes)
+                                    n = -1;
+                            }
+                            if (n != -1) {
+                                for (j = 0; j < kMaxOutfits; j++) {
+                                    if (outfitSystem[j].modType[0] == kOutfModAmmo &&
+                                        outfitSystem[j].modVal[0] == n &&
+                                        outfitSystem[j].techLevel < kOutfTechAbsent) {
+                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountAmmo[count];
+                                    shipClass[i].freeMass += mass;
+                                        // BUG (all versions): ammo priced by mountCount, not mountAmmo; only feeds
+                                        // the crashlog trade-in warning
+                                        if (!outfitSystem[j].persistent)
+                                            tradeEst = tradeEst +
+                                                (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[count]) * 0.5;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                maxGuns = shipClass[i].maxGuns;
+                maxTurrets = shipClass[i].maxTurrets;
+                for (k = 0; k < kDefaultOutfitSlots; k++) {
+                    if (shipClass[i].defOutfID[k] != -1 && shipClass[i].defOutfCount[k] > 0 &&
+                        outfitSystem[shipClass[i].defOutfID[k]].techLevel < kOutfTechAbsent) {
+                        mass = AdjustedItemMass(&outfitSystem[shipClass[i].defOutfID[k]], &shipClass[i]) *
+                               shipClass[i].defOutfCount[k];
+                        shipClass[i].freeMass += mass;
+                        if (!outfitSystem[shipClass[i].defOutfID[k]].persistent)
+                            tradeEst = tradeEst +
+                                (AdjustedItemCost(&outfitSystem[shipClass[i].defOutfID[k]], &shipClass[i]) *
+                                 shipClass[i].defOutfCount[k]) * 0.5;
+                        if (crashlog_isactive()) {
+                            for (j = 0; j < kOutfMods; j++) {
+                                if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == 45)
+                                    maxGuns += outfitSystem[shipClass[i].defOutfID[k]].modVal[j];
+                                if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == 46)
+                                    maxTurrets += outfitSystem[shipClass[i].defOutfID[k]].modVal[j];
+                            }
+                        }
+                    }
+                }
+                if (shipClass[i].flags & kShipSlowJump)
+                    shipClass[i].mobilityFactor = 0.7f;
+                else if (shipClass[i].flags & kShipSemiFastJump)
+                    shipClass[i].mobilityFactor = 1.3f;
+                else if (shipClass[i].flags & kShipFastJump)
+                    shipClass[i].mobilityFactor = 1.6f;
+                else
+                    shipClass[i].mobilityFactor = 1.0f;
+                shipClass[i].mobilityFactor *= 1.3;
+                if (shipClass[i].mobilityFactor < 0.0f)
+                    shipClass[i].mobilityFactor = 0.5f;
+                strcpy(shipClass[i].availability, ResRec(ShipRes, shipClassFileHand)->availability);
+                strcpy(shipClass[i].appearOn, ResRec(ShipRes, shipClassFileHand)->appearOn);
+                strcpy(shipClass[i].onPurchase, ResRec(ShipRes, shipClassFileHand)->onPurchase);
+                strcpy(shipClass[i].onCapture, ResRec(ShipRes, shipClassFileHand)->onCapture);
+                strcpy(shipClass[i].onRetire, ResRec(ShipRes, shipClassFileHand)->onRetire);
+                AdjustHandleSize(shipClassFileHand, 0x744);
+                GetResInfo(shipClassFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                strncpy((char *)shipClass[i].name, (char *)name, 63);
+                strcpy((char *)shipyardShortNames[i], ResRec(ShipRes, shipClassFileHand)->shortName);
+                strcpy((char *)shipyardLongNames[i], ResRec(ShipRes, shipClassFileHand)->longName);
+                strcpy((char *)shipCommNames[i], ResRec(ShipRes, shipClassFileHand)->commName);
+                strcpy((char *)shipMovieFilenames[i], ResRec(ShipRes, shipClassFileHand)->movieName);
+                strcpy((char *)shipClass[i].subtitle, ResRec(ShipRes, shipClassFileHand)->subtitle);
+                CtoPstr((char *)shipyardShortNames[i]);
+                CtoPstr((char *)shipyardLongNames[i]);
+                CtoPstr((char *)shipCommNames[i]);
+                CtoPstr((char *)shipMovieFilenames[i]);
+                CtoPstr((char *)shipClass[i].subtitle);
+                if (crashlog_isactive()) {
+                    if (maxGuns < 0) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(shipClass[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") has a maximum gun count of ");
+                        crashlog_print_num(maxGuns);
+                        crashlog_print("\n");
+                    }
+                    if (maxTurrets < 0) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(shipClass[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") has a maximum turret count of ");
+                        crashlog_print_num(maxTurrets);
+                        crashlog_print("\n");
+                    }
+                    if (gunTally > maxGuns) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(shipClass[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") has ");
+                        crashlog_print_num(gunTally);
+                        crashlog_print(" gun-type weapon");
+                        if (gunTally > 1)
+                            crashlog_print("s");
+                        crashlog_print(" but its maximum is ");
+                        crashlog_print_num(maxGuns);
+                        crashlog_print("\n");
+                    }
+                    if (turretTally > maxTurrets) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(shipClass[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") has ");
+                        crashlog_print_num(turretTally);
+                        crashlog_print(" turreted weapon");
+                        if (turretTally > 1)
+                            crashlog_print("s");
+                        crashlog_print(" but its maximum is ");
+                        crashlog_print_num(maxTurrets);
+                        crashlog_print("\n");
+                    }
+                }
+                if (tradeEst > shipClass[i].cost && shipClass[i].buyRandom != 0) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(shipClass[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") has a trade-in value of ");
+                    crashlog_print_num(tradeEst);
+                    crashlog_print(" but costs only ");
+                    crashlog_print_num(shipClass[i].cost);
+                    crashlog_print("\n");
+                }
+                ResourcePurge(shipClassFileHand);
+                ReleaseResource(shipClassFileHand);
+                if (crashlog_isactive()) {
+                    if (shipClass[i].buyRandom != 0) {
+                        if (!ResourceExists(kDescType, i + 13000)) {
+                            crashlog_print("warning: ");
+                            crashlog_print_pstr(shipClass[i].name);
+                            crashlog_print(" (");
+                            crashlog_print_num(i + kFirstResourceID);
+                            crashlog_print(") lacks purchase description\n");
+                        }
+                        for (count = 0; count < kMaxWeapTypes; count++) {
+                            if (shipClass[i].weapCount[count] > 0) {
+                                short granted = 0;
+
+                                for (j = 0; j < kMaxOutfits; j++) {
+                                    for (k = 0; k < kOutfMods; k++) {
+                                        if (outfitSystem[j].modType[k] == 1 &&
+                                            outfitSystem[j].modVal[k] == count) {
+                                            granted++;
+                                            break;
+                                        }
+                                    }
+                                    if (granted > 0)
+                                        break;
+                                }
+                                if (granted == 0) {
+                                    crashlog_print("warning: weapon ID ");
+                                    crashlog_print_num(count + kFirstResourceID);
+                                    crashlog_print(" on ship type ");
+                                    crashlog_print_num(i + kFirstResourceID);
+                                    crashlog_print(" lacks corresponding " kOutfResName " resource\n");
+                                }
+                            }
+                        }
+                    }
+                    if (shipClass[i].hireRandom != 0 &&
+                        !ResourceExists(kDescType, i + 14000)) {
+                        crashlog_print("warning: ");
+                        crashlog_print_pstr(shipClass[i].name);
+                        crashlog_print(" (");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(") lacks hiring description\n");
+                    }
+                }
+                LoadingIntroMusic();
+            } else {
+                strcpy(shipClass[i].availability, "");
+                strcpy(shipClass[i].appearOn, "");
+                strcpy(shipClass[i].onPurchase, "");
+                strcpy(shipClass[i].onCapture, "");
+                strcpy(shipClass[i].onRetire, "");
+                shipClass[i].techLevel = kResAbsent;
+                shipClass[i].shield = 1;
+            }
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+    }
+
+    /* ---------------- düde: dudes ---------------- */
+    {
+        short i;
+
+        found = 0;
+        count = CountResources(kDudeType);
+        for (i = 0; i < kMaxDudes; i++) {
+            dudeFileHand = GetResource(kDudeType, i + kFirstResourceID);
+            if (dudeFileHand != NULL) {
+                found++;
+                LockAHandle(dudeFileHand);
+                ResourceNoPurge(dudeFileHand);
+                dudeData[i].aiType = ResRec(DudeRes, dudeFileHand)->aiType;
+                dudeData[i].govt = ResRec(DudeRes, dudeFileHand)->govt;
+                dudeData[i].flags = ResRec(DudeRes, dudeFileHand)->booty;
+                dudeData[i].adviceFlags = ResRec(DudeRes, dudeFileHand)->infoTypes;
+                if (dudeData[i].govt >= kFirstResourceID && dudeData[i].govt < kFirstResourceID + kMaxGovts)
+                    dudeData[i].govt -= kFirstResourceID;
+                else
+                    dudeData[i].govt = -1;
+                for (j = 0; j < kDudeShipSlots; j++) {
+                    dudeData[i].shipTypes[j] = ResRec(DudeRes, dudeFileHand)->shipTypes[j];
+                    dudeData[i].shipProbs[j] = ResRec(DudeRes, dudeFileHand)->probs[j];
+                    if (dudeData[i].shipTypes[j] >= kFirstResourceID && dudeData[i].shipTypes[j] < kFirstResourceID + kMaxShipTypes) {
+                        dudeData[i].shipTypes[j] -= kFirstResourceID;
+                        if (shipClass[dudeData[i].shipTypes[j]].techLevel == kResAbsent) {
+                            crashlog_print("warning: " kDudeResName " resource ");
+                            crashlog_print_num(i + kFirstResourceID);
+                            crashlog_print(" refers to nonexistent ship type ");
+                            crashlog_print_num(dudeData[i].shipTypes[j] + kFirstResourceID);
+                            crashlog_print("\n");
+                            dudeData[i].shipTypes[j] = -1;
+                        }
+                    } else {
+                        dudeData[i].shipTypes[j] = -1;
+                        dudeData[i].shipProbs[j] = 0;
+                    }
+                }
+                AdjustHandleSize(dudeFileHand, 0x58);
+                ResourcePurge(dudeFileHand);
+                ReleaseResource(dudeFileHand);
+                dudeData[i].loaded = 1;
+                LoadingIntroMusic();
+            } else {
+                dudeData[i].loaded = 0;
+            }
+            if (found >= count)
+                break;
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+    }
+
+    /* ---------------- gövt: governments ---------------- */
+    {
+        int32_t k;
+
+        found = 0;
+        count = CountResources(kGovtType);
+        for (i = 0; i < kMaxGovts; i++) {
+            govtFileHand = GetResource(kGovtType, i + kFirstResourceID);
+            if (govtFileHand != NULL) {
+                found++;
+                LockAHandle(govtFileHand);
+                ResourceNoPurge(govtFileHand);
+                govtData[i].loaded = 1;
+                govtData[i].flags = ResRec(GovtRes, govtFileHand)->flags;
+                govtData[i].flags2 = ResRec(GovtRes, govtFileHand)->flags2;
+                govtData[i].crimeTol = ResRec(GovtRes, govtFileHand)->crimeTol;
+                govtData[i].scanFine = ResRec(GovtRes, govtFileHand)->scanFine;
+                govtData[i].initialRec = ResRec(GovtRes, govtFileHand)->initialRec;
+                govtData[i].voiceType = ResRec(GovtRes, govtFileHand)->voiceType;
+                if (govtData[i].voiceType >= 0 && govtData[i].voiceType < kVoiceSets) {
+                    govtData[i].voiceClass = -1;
+                } else if (govtData[i].voiceType >= 1000 && govtData[i].voiceType < 1000 + kVoiceSets) {
+                    govtData[i].voiceType -= 1000;
+                    govtData[i].voiceClass = 1;
+                } else if (govtData[i].voiceType >= 2000 && govtData[i].voiceType < 2000 + kVoiceSets) {
+                    govtData[i].voiceType -= 2000;
+                    govtData[i].voiceClass = 0;
+                } else {
+                    govtData[i].voiceType = -1;
+                    govtData[i].voiceClass = -1;
+                }
+                for (j = 0; j < 4; j++) {
+                    govtData[i].inhJam[j] = ResRec(GovtRes, govtFileHand)->inhJam[j];
+                    if (govtData[i].inhJam[j] > 100)
+                        govtData[i].inhJam[j] = 100;
+                    if (govtData[i].inhJam[j] < 0)
+                        govtData[i].inhJam[j] = 0;
+                }
+                if (ResRec(GovtRes, govtFileHand)->skillMult > 0)
+                    govtData[i].skillMult = ResRec(GovtRes, govtFileHand)->skillMult * 0.01;
+                else
+                    govtData[i].skillMult = 1.0f;
+                govtData[i].maxOdds = ResRec(GovtRes, govtFileHand)->maxOdds * 0.01;
+                if (govtData[i].maxOdds < 0.01)
+                    govtData[i].maxOdds = 0.01f;
+                for (j = 0; j <= 4; j++)
+                    govtData[i].penalties[j] = ResRec(GovtRes, govtFileHand)->penalty[j];
+                for (k = 0; k < 4; k++) {
+                    govtData[i].classes[k] = ResRec(GovtRes, govtFileHand)->classes[k];
+                    govtData[i].allies[k] = ResRec(GovtRes, govtFileHand)->allies[k];
+                    govtData[i].enemies[k] = ResRec(GovtRes, govtFileHand)->enemies[k];
+                }
+                govtData[i].scanMask = ResRec(GovtRes, govtFileHand)->scanMask;
+                govtData[i].requires[0] = ResRec(GovtRes, govtFileHand)->require[0];
+                govtData[i].requires[1] = ResRec(GovtRes, govtFileHand)->require[1];
+                govtData[i].rgb.red = ((ResRec(GovtRes, govtFileHand)->color >> 16) & 0xff) * 256;
+                govtData[i].rgb.green = ((ResRec(GovtRes, govtFileHand)->color >> 8) & 0xff) * 256;
+                govtData[i].rgb.blue = (ResRec(GovtRes, govtFileHand)->color & 0xff) * 256;
+                govtData[i].rgb2.red = (ResRec(GovtRes, govtFileHand)->shipColor >> 19) & 0x1f;
+                govtData[i].rgb2.green = (ResRec(GovtRes, govtFileHand)->shipColor >> 11) & 0x1f;
+                govtData[i].rgb2.blue = (ResRec(GovtRes, govtFileHand)->shipColor >> 3) & 0x1f;
+                govtData[i].rgbBytes.red = govtData[i].rgb.red >> 8;
+                govtData[i].rgbBytes.green = govtData[i].rgb.green >> 8;
+                govtData[i].rgbBytes.blue = govtData[i].rgb.blue >> 8;
+                govtData[i].interfaceID = ResRec(GovtRes, govtFileHand)->interfaceID;
+                if (govtData[i].interfaceID < kFirstResourceID)
+                    govtData[i].interfaceID = -1;
+                govtData[i].newsPict = ResRec(GovtRes, govtFileHand)->newsPic;
+                if (govtData[i].newsPict < kFirstResourceID)
+                    govtData[i].newsPict = -1;
+                GetResInfo(govtFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                strncpy((char *)govtData[i].name, (char *)name, 31);
+                strcpy((char *)govtTargStrings[i], ResRec(GovtRes, govtFileHand)->targetCode);
+                strcpy((char *)govtShortNames[i], ResRec(GovtRes, govtFileHand)->commName);
+                strcpy((char *)govtMediumNames[i], ResRec(GovtRes, govtFileHand)->mediumName);
+                CtoPstr((char *)govtTargStrings[i]);
+                CtoPstr((char *)govtShortNames[i]);
+                CtoPstr((char *)govtMediumNames[i]);
+                AdjustHandleSize(govtFileHand, 0xc0);
+                ResourcePurge(govtFileHand);
+                ReleaseResource(govtFileHand);
+                LoadingIntroMusic();
+            } else {
+                govtData[i].loaded = 0;
+            }
+            if (found >= count)
+                break;
+        }
+
+        /* allies/enemies consistency check over all pairs */
+        if (crashlog_isactive()) {
+            for (i = 0; i < kMaxGovts; i++) {
+                if (govtData[i].loaded) {
+                    for (n = i + 1; n < kMaxGovts; n++) {
+                        if (govtData[n].loaded &&
+                            GovtEnemies(i, n) && GovtAllies(i, n)) {
+                            crashlog_print("warning: govts ");
+                            crashlog_print_num(i + kFirstResourceID);
+                            crashlog_print(" and ");
+                            crashlog_print_num(n + kFirstResourceID);
+                            crashlog_print(" are simultaneously allies and enemies\n");
+                        }
+                    }
+                }
+            }
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+    }
+
+    /* ---------------- përs: persons ---------------- */
+    {
+        found = 0;
+        n = count = CountResources(kPersType);
+        for (i = 0; i < kMaxPersons;i++) {
+            personData[i].loaded = 0;
+            personData[i].aiType = -1;
+            personFileHand = GetResource(kPersType, i + kFirstResourceID);
+            if (personFileHand != NULL) {
+                found++;
+                LockAHandle(personFileHand);
+                ResourceNoPurge(personFileHand);
+                personData[i].linkSyst = ResRec(PersRes, personFileHand)->linkSyst;
+                personData[i].govt = ResRec(PersRes, personFileHand)->govt;
+                personData[i].aiType = ResRec(PersRes, personFileHand)->aiType;
+                personData[i].aggression = ResRec(PersRes, personFileHand)->aggress;
+                personData[i].coward = ResRec(PersRes, personFileHand)->coward;
+                personData[i].shipType = ResRec(PersRes, personFileHand)->shipType;
+                if (personData[i].shipType >= kFirstResourceID && personData[i].shipType < kFirstResourceID + kMaxShipTypes) {
+                    personData[i].shipType -= kFirstResourceID;
+                    if (shipClass[personData[i].shipType].techLevel == kResAbsent) {
+                        crashlog_print("warning: p\x91" "rs resource ");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(" refers to nonexistent ship type ");
+                        crashlog_print_num(personData[i].shipType + kFirstResourceID);
+                        crashlog_print("\n");
+                        personData[i].shipType = -1;
+                    }
+                } else {
+                    personData[i].shipType = 0;
+                }
+                personData[i].credits = ResRec(PersRes, personFileHand)->credits;
+                personData[i].shieldMod = ResRec(PersRes, personFileHand)->shieldMod;
+                personData[i].shieldMod = personData[i].shieldMod / 100.0;
+                personData[i].commQuote = ResRec(PersRes, personFileHand)->commQuote;
+                personData[i].hailQuote = ResRec(PersRes, personFileHand)->hailQuote;
+                personData[i].linkMission = ResRec(PersRes, personFileHand)->linkMission;
+                personData[i].flags = ResRec(PersRes, personFileHand)->flags;
+                personData[i].flags2 = ResRec(PersRes, personFileHand)->flags2;
+                personData[i].hailPict = ResRec(PersRes, personFileHand)->hailPict;
+                personData[i].shipColor.red = (ResRec(PersRes, personFileHand)->shipColor >> 19) & 0x1f;
+                personData[i].shipColor.green = (ResRec(PersRes, personFileHand)->shipColor >> 11) & 0x1f;
+                personData[i].shipColor.blue = (ResRec(PersRes, personFileHand)->shipColor >> 3) & 0x1f;
+                if (personData[i].linkMission >= kFirstResourceID)
+                    personData[i].linkMission -= kFirstResourceID;
+                else
+                    personData[i].linkMission = -1;
+                if (personData[i].hailPict < kFirstResourceID)
+                    personData[i].hailPict = -1;
+                if (personData[i].govt >= kFirstResourceID && personData[i].govt < kFirstResourceID + kMaxGovts)
+                    personData[i].govt -= kFirstResourceID;
+                else
+                    personData[i].govt = -1;
+                personData[i].grantClass = ResRec(PersRes, personFileHand)->grantClass;
+                personData[i].grantCount = ResRec(PersRes, personFileHand)->grantCount;
+                personData[i].grantProb = ResRec(PersRes, personFileHand)->grantProb;
+                if (personData[i].grantClass <= 0) {
+                    personData[i].grantClass = -1;
+                    personData[i].grantCount = 0;
+                    personData[i].grantProb = 0;
+                } else {
+                    if (personData[i].grantProb < 0)
+                        personData[i].grantProb = 0;
+                    if (personData[i].grantCount < 0)
+                        personData[i].grantCount = 0;
+                    if (personData[i].grantProb > 100)
+                        personData[i].grantProb = 100;
+                }
+                mountID[1] = ResRec(PersRes, personFileHand)->weapType.left;
+                mountID[0] = ResRec(PersRes, personFileHand)->weapType.top;
+                mountID[3] = ResRec(PersRes, personFileHand)->weapType.right;
+                mountID[2] = ResRec(PersRes, personFileHand)->weapType.bottom;
+                mountCount[1] = ResRec(PersRes, personFileHand)->weapCount.left;
+                mountCount[0] = ResRec(PersRes, personFileHand)->weapCount.top;
+                mountCount[3] = ResRec(PersRes, personFileHand)->weapCount.right;
+                mountCount[2] = ResRec(PersRes, personFileHand)->weapCount.bottom;
+                mountAmmo[1] = ResRec(PersRes, personFileHand)->ammoLoad.left;
+                mountAmmo[0] = ResRec(PersRes, personFileHand)->ammoLoad.top;
+                mountAmmo[3] = ResRec(PersRes, personFileHand)->ammoLoad.right;
+                mountAmmo[2] = ResRec(PersRes, personFileHand)->ammoLoad.bottom;
+                for (j = 0; j < kMaxWeapTypes; j++) {
+                    personData[i].weapCount[j] = 0;
+                    personData[i].weapAmmo[j] = 0;
+                }
+                for (count = 0; count <= 3; count++) {
+                    if (mountID[count] >= kFirstResourceID) {
+                        personData[i].weapCount[mountID[count] - kFirstResourceID] = mountCount[count];
+                        personData[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
+                    }
+                }
+                strcpy(personData[i].subtitle, ResRec(PersRes, personFileHand)->subtitle);
+                strcpy(personData[i].activeOn, ResRec(PersRes, personFileHand)->activateOn);
+                CtoPstr(personData[i].subtitle);
+                AdjustHandleSize(personFileHand, 400);
+                personData[i].loaded = 1;
+                GetResInfo(personFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                strncpy(personData[i].name, (char *)name, 30);
+                ResourcePurge(personFileHand);
+                ReleaseResource(personFileHand);
+                personData[i].prepared = 1;
+                LoadingIntroMusic();
+            } else {
+                strcpy(personData[i].activeOn, "");
+                personData[i].name[0] = 0;
+                personData[i].shipType = 0;
+                personData[i].govt = -1;
+                personData[i].prepared = 0;
+            }
+            if (found >= n)
+                break;
+        }
+
+        /* alias persons that share a name prefix */
+        for (count = 0; count < kMaxPersons;count++)
+            personData[count].sameNameIndex = count;
+        for (i = 0; i < kMaxPersons;i++) {
+            if (personData[i].name[0] > 0) {
+                for (j = 0; j < i; j++) {
+                    if (personData[j].name[0] > 0 &&
+                        j == personData[j].sameNameIndex &&
+                        strncmp(&personData[i].name[1],
+                                &personData[j].name[1],
+                                personData[i].name[0]) == 0) {
+                        personData[i].sameNameIndex = j;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+
+        /* systems must reference existing dudes and persons */
+        for (j = 0; j < kMaxSystems; j++) {
+            if (systemData[j].prepared) {
+                for (n = 0; n < 8; n++) {
+                    if (systemData[j].dudeTypes[n] != -1 && !dudeData[systemData[j].dudeTypes[n]].loaded) {
+                        crashlog_print("warning: system ");
+                        crashlog_print_num(j + kFirstResourceID);
+                        crashlog_print(" makes reference to nonexistent " kDudeResName " resource ");
+                        crashlog_print_num(systemData[j].dudeTypes[n] + kFirstResourceID);
+                        crashlog_print("\n");
+                        systemData[j].dudeTypes[n] = -1;
+                    }
+                }
+                for (n = 0; n < 8; n++) {
+                    if (systemData[j].persons[n] != -1) {
+                    i = systemData[j].persons[n];
+                    if (!personData[i].prepared) {
+                        crashlog_print("warning: system ");
+                        crashlog_print_num(j + kFirstResourceID);
+                        crashlog_print(" makes reference to nonexistent " kPersResName " resource ");
+                        crashlog_print_num(systemData[j].persons[n] + kFirstResourceID);
+                        crashlog_print("\n");
+                        systemData[j].persons[n] = -1;
+                    }
+                    }
+                }
+            }
+        }
+    }
+
+    /* ---------------- öops: news ---------------- */
+    {
+
+        found = 0;
+        count = CountResources(kOopsType);
+        for (i = 0; i < kMaxDisasters; i++) {
+            disasterData[i].freq = -1;
+            disasterData[i].countdown = -1;
+            disasterData[i].duration = -1;
+            disasterData[i].stellarID = -1;
+            disasterData[i].stellar = -32767;
+            disasterData[i].loaded = 0;
+        }
+        for (i = 0; i < kMaxDisasters; i++) {
+            disasterFileHand = GetResource(kOopsType, i + kFirstResourceID);
+            if (disasterFileHand != NULL) {
+                found++;
+                LockAHandle(disasterFileHand);
+                ResourceNoPurge(disasterFileHand);
+                disasterData[i].stellar = ResRec(OopsRes, disasterFileHand)->stellar;
+                disasterData[i].commodity = ResRec(OopsRes, disasterFileHand)->commodity;
+                disasterData[i].amount = ResRec(OopsRes, disasterFileHand)->priceDelta;
+                disasterData[i].duration = ResRec(OopsRes, disasterFileHand)->duration;
+                disasterData[i].freq = ResRec(OopsRes, disasterFileHand)->freq;
+                disasterData[i].countdown = 0;
+                if (disasterData[i].commodity > 5)
+                    disasterData[i].commodity = 5;
+                if (disasterData[i].commodity < 0)
+                    disasterData[i].commodity = -1;
+                strcpy(disasterData[i].text, ResRec(OopsRes, disasterFileHand)->activateOn);
+                disasterData[i].loaded = 1;
+                AdjustHandleSize(disasterFileHand, 0x11a);
+                GetResInfo(disasterFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                pstrcpy(disasterData[i].name, name);
+                ResourcePurge(disasterFileHand);
+                ReleaseResource(disasterFileHand);
+                LoadingIntroMusic();
+            } else {
+                strcpy(disasterData[i].text, "");
+            }
+            if (found >= count)
+                break;
+        }
+    }
+
+    /* ---------------- nëbu: nebulae ---------------- */
+    for (i = 0; i < kMaxNebulae; i++) {
+
+        nebulaData[i].width = nebulaData[i].height = 0;
+        nebulaData[i].explored = 0;
+        nebulaFileHand = GetResource(kNebuType, i + kFirstResourceID);
+        if (nebulaFileHand != NULL) {
+            ResourceNoPurge(nebulaFileHand);
+            nebulaData[i].xPos = ResRec(NebuRes, nebulaFileHand)->xPos;
+            nebulaData[i].yPos = ResRec(NebuRes, nebulaFileHand)->yPos;
+            nebulaData[i].width = ResRec(NebuRes, nebulaFileHand)->xSize;
+            nebulaData[i].height = ResRec(NebuRes, nebulaFileHand)->ySize;
+            strcpy(nebulaData[i].activeOn, ResRec(NebuRes, nebulaFileHand)->activeOn);
+            strcpy(nebulaData[i].onExplore, ResRec(NebuRes, nebulaFileHand)->onExplore);
+            ResourcePurge(nebulaFileHand);
+            ReleaseResource(nebulaFileHand);
+            LoadingIntroMusic();
+        }
+    }
+
+    /* ---------------- bööm: explosions ---------------- */
+    for (i = 0; i < kMaxExplodTypes; i++) {
+        explodType[i].frameRate = 0.25f;
+        explodType[i].sound = -1;
+        explodType[i].graphic = i;
+        boomFileHand = GetResource(kBoomType, i + kFirstResourceID);
+        if (boomFileHand != NULL) {
+            explodType[i].frameRate = ResRec(BoomRes, boomFileHand)->frameAdvance;
+            explodType[i].sound = ResRec(BoomRes, boomFileHand)->soundIndex;
+            explodType[i].graphic = ResRec(BoomRes, boomFileHand)->graphicIndex;
+            explodType[i].frameRate *= 0.01;
+            ReleaseResource(boomFileHand);
+            LoadingIntroMusic();
+        }
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+
+    /* ---------------- flët: fleets ---------------- */
+    {
+
+        found = 0;
+        count = CountResources(kFletType);
+        for (i = 0; i < kMaxFleets; i++) {
+            fleetData[i].leadShipType = -1;
+            fleetFileHand = GetResource(kFletType, i + kFirstResourceID);
+            if (fleetFileHand != NULL) {
+                found++;
+                LockAHandle(fleetFileHand);
+                ResourceNoPurge(fleetFileHand);
+                fleetData[i].leadShipType = ResRec(FletRes, fleetFileHand)->leadShip;
+                if (fleetData[i].leadShipType >= kFirstResourceID)
+                    fleetData[i].leadShipType -= kFirstResourceID;
+                else
+                    fleetData[i].leadShipType = 0;
+                fleetData[i].govt = ResRec(FletRes, fleetFileHand)->govt;
+                fleetData[i].linkSyst = ResRec(FletRes, fleetFileHand)->linkSyst;
+                fleetData[i].quoteStrList = ResRec(FletRes, fleetFileHand)->quote;
+                fleetData[i].flags = ResRec(FletRes, fleetFileHand)->flags;
+                if (fleetData[i].govt >= kFirstResourceID)
+                    fleetData[i].govt -= kFirstResourceID;
+                else
+                    fleetData[i].govt = -1;
+                for (j = 0; j <= 3; j++) {   /* exe's back-edge is `cmp ax,3 / jle` */
+                    fleetData[i].escortTypes[j] = ResRec(FletRes, fleetFileHand)->escortShip[j];
+                    if (fleetData[i].escortTypes[j] >= kFirstResourceID) {
+                        fleetData[i].escortTypes[j] -= kFirstResourceID;
+                        fleetData[i].escortMin[j] = ResRec(FletRes, fleetFileHand)->minCount[j];
+                        fleetData[i].escortMax[j] = ResRec(FletRes, fleetFileHand)->maxCount[j];
+                    } else {
+                        fleetData[i].escortTypes[j] = -1;
+                        fleetData[i].escortMin[j] = 0;
+                        fleetData[i].escortMax[j] = 0;
+                    }
+                }
+                strcpy(fleetData[i].activateOn, ResRec(FletRes, fleetFileHand)->activateOn);
+                AdjustHandleSize(fleetFileHand, 0x132);
+                ResourcePurge(fleetFileHand);
+                ReleaseResource(fleetFileHand);
+                LoadingIntroMusic();
+            } else {
+                strcpy(fleetData[i].activateOn, "");
+            }
+            if (found >= count)
+                break;
+        }
+        if (!gameLoaded)
+            IterateInGameEventLoop(10);
+    }
+
+    /* ---------------- jünk: junk commodities ---------------- */
+    {
+
+        loaded = 0;
+        count = CountResources(kJunkType);
+        for (i = 0; i < kMaxJunks; i++) {
+            for (j = 0; j < 8; j++) {
+                junkData[i].boughtAt[j] = -1;
+                junkData[i].soldAt[j] = -1;
+            }
+            junkData[i].basePrice = -1;
+        }
+        for (i = 0; i < kMaxJunks; i++) {
+            junkData[i].held = 0;
+            junkFileHand = GetResource(kJunkType, i + kFirstResourceID);
+            if (junkFileHand != NULL) {
+                loaded++;
+                LockAHandle(junkFileHand);
+                ResourceNoPurge(junkFileHand);
+                junkData[i].basePrice = ResRec(JunkRes, junkFileHand)->basePrice;
+                junkData[i].flags = ResRec(JunkRes, junkFileHand)->flags;
+                junkData[i].scanMask = ResRec(JunkRes, junkFileHand)->scanMask;
+                if (junkData[i].basePrice < 0) {
+                    crashlog_print("warning: junk type ");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(" has invalid base price\n");
+                    junkData[i].basePrice = 0;
+                }
+                for (j = 0; j < 8; j++) {
+                    junkData[i].boughtAt[j] = ResRec(JunkRes, junkFileHand)->boughtAt[j];
+                    junkData[i].soldAt[j] = ResRec(JunkRes, junkFileHand)->soldAt[j];
+                    if (junkData[i].boughtAt[j] >= kFirstResourceID)
+                        junkData[i].boughtAt[j] -= kFirstResourceID;
+                    else
+                        junkData[i].boughtAt[j] = -1;
+                    if (junkData[i].soldAt[j] >= kFirstResourceID)
+                        junkData[i].soldAt[j] -= kFirstResourceID;
+                    else
+                        junkData[i].soldAt[j] = -1;
+                }
+                GetResInfo(junkFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                strncpy((char *)junkData[i].name, (char *)name, 63);
+                strcpy(junkData[i].lcName, ResRec(JunkRes, junkFileHand)->lcName);
+                strcpy(junkData[i].abbrev, ResRec(JunkRes, junkFileHand)->abbrev);
+                strcpy(junkData[i].buyOn, ResRec(JunkRes, junkFileHand)->buyOn);
+                strcpy(junkData[i].sellOn, ResRec(JunkRes, junkFileHand)->sellOn);
+                ResourcePurge(junkFileHand);
+                ReleaseResource(junkFileHand);
+                LoadingIntroMusic();
+            }
+            if (loaded >= count)
+                break;
+        }
+
+        /* trade centers must trade something */
+        for (i = 0; i < kMaxStellars; i++) {
+                if (stellarData[i].prepared &&
+                (stellarData[i].flags & (kSpobCanLand | kSpobTradeCenter)) ==
+                    (kSpobCanLand | kSpobTradeCenter) &&
+                !SpobIsHyperOrWorm(&stellarData[i]) &&
+                (stellarData[i].flags & kSpobPriceBits) == 0) {
+                n = 0;
+                for (count = 0; count < kMaxJunks; count++) {
+                    for (j = 0; j < 8; j++) {
+                        if (i == junkData[count].boughtAt[j] || i == junkData[count].soldAt[j]) {
+                            n++;
+                            break;
+                        }
+                    }
+                }
+                if (n == 0) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(stellarData[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") has a trade center but trades no goods\n");
+                    stellarData[i].flags = stellarData[i].flags & ~kSpobTradeCenter;
+                }
+            }
+        }
+    }
+
+    /* ---------------- crön: cron events ---------------- */
+    {
+
+        CountResources(kCronType);   /* result unused; the loop walks every slot */
+        for (i = 0; i < kMaxCrons; i++) {
+            cronEvent[i].active = 0;
+            cronEvent[i].loaded = 0;
+            cronEvent[i].random = -1;
+            cronEvent[i].duration = -1;
+            cronEvent[i].daysLeft = 0;
+            cronEvent[i].holdoffLeft = 0;
+            cronFileHand = GetResource(kCronType, i + kFirstResourceID);
+            if (cronFileHand != NULL) {
+                LockAHandle(cronFileHand);
+                cronEvent[i].firstDay = ResRec(CronRes, cronFileHand)->firstDay;
+                cronEvent[i].firstMonth = ResRec(CronRes, cronFileHand)->firstMonth;
+                cronEvent[i].firstYear = ResRec(CronRes, cronFileHand)->firstYear;
+                cronEvent[i].lastDay = ResRec(CronRes, cronFileHand)->lastDay;
+                cronEvent[i].lastMonth = ResRec(CronRes, cronFileHand)->lastMonth;
+                cronEvent[i].lastYear = ResRec(CronRes, cronFileHand)->lastYear;
+                cronEvent[i].random = ResRec(CronRes, cronFileHand)->random;
+                cronEvent[i].duration = ResRec(CronRes, cronFileHand)->duration;
+                cronEvent[i].preHoldoff = ResRec(CronRes, cronFileHand)->preHoldoff;
+                cronEvent[i].postHoldoff = ResRec(CronRes, cronFileHand)->postHoldoff;
+                cronEvent[i].flags = ResRec(CronRes, cronFileHand)->indNewsStr;
+                for (j = 0; j < 4; j++) {
+                    cronEvent[i].govts[j] = ResRec(CronRes, cronFileHand)->newsGovt[j];
+                    cronEvent[i].govtValues[j] = ResRec(CronRes, cronFileHand)->govtNewsStr[j];
+                    if (cronEvent[i].govts[j] >= kFirstResourceID) {
+                        cronEvent[i].govts[j] -= kFirstResourceID;
+                    } else {
+                        cronEvent[i].govts[j] = -1;
+                        cronEvent[i].govtValues[j] = -1;
+                    }
+                    if (cronEvent[i].govtValues[j] < -1)
+                        cronEvent[i].govtValues[j] = -1;
+                }
+                cronEvent[i].indNewsStr = ResRec(CronRes, cronFileHand)->flags;
+                for (j = 0; j <= 1; j++) {
+                    cronEvent[i].contributes[j] = ResRec(CronRes, cronFileHand)->contribute[j];
+                    cronEvent[i].requires[j] = ResRec(CronRes, cronFileHand)->require[j];
+                }
+                strcpy(cronEvent[i].enableOn, ResRec(CronRes, cronFileHand)->enableOn);
+                strcpy(cronEvent[i].onStart, ResRec(CronRes, cronFileHand)->onStart);
+                strcpy(cronEvent[i].onEnd, ResRec(CronRes, cronFileHand)->onEnd);
+                cronEvent[i].loaded = 1;
+                AdjustHandleSize(cronFileHand, 0x336);
+                ResourcePurge(cronFileHand);
+                ReleaseResource(cronFileHand);
+                LoadingIntroMusic();
+            }
+        }
+    }
+
+    /* ---------------- ränk: ranks ---------------- */
+    {
+
+        for (i = 0; i < kMaxRanks; i++) {
+            rankData[i].govt = -1;
+            rankData[i].active = 0;
+            rankFileHand = GetResource(kRankType, i + kFirstResourceID);
+            if (rankFileHand != NULL) {
+                LockAHandle(rankFileHand);
+                rankData[i].loaded = 1;
+                rankData[i].govt = ResRec(RankRes, rankFileHand)->attachTo;
+                if (rankData[i].govt >= kFirstResourceID)
+                    rankData[i].govt -= kFirstResourceID;
+                else
+                    rankData[i].govt = -1;
+                rankData[i].priority = ResRec(RankRes, rankFileHand)->weight;
+                rankData[i].contributes[0] = ResRec(RankRes, rankFileHand)->contribute[0];
+                rankData[i].contributes[1] = ResRec(RankRes, rankFileHand)->contribute[1];
+                rankData[i].flags = ResRec(RankRes, rankFileHand)->priceMod;
+                rankData[i].salary = ResRec(RankRes, rankFileHand)->salary;
+                rankData[i].salaryCap = ResRec(RankRes, rankFileHand)->salaryCap;
+                rankData[i].priceMod = ResRec(RankRes, rankFileHand)->flags;
+                if (rankData[i].priceMod <= 0)
+                    rankData[i].priceMod = 100;
+                GetResInfo(rankFileHand, &resID, &resType, name);
+                TrimResourceName(name);
+                PtoCstr(name);
+                strncpy(rankData[i].name, (char *)name, 127);
+                strcpy(rankData[i].convName, ResRec(RankRes, rankFileHand)->name);
+                strcpy(rankData[i].shortName, ResRec(RankRes, rankFileHand)->shortName);
+                AdjustHandleSize(rankFileHand, 0x98);
+                ResourcePurge(rankFileHand);
+                ReleaseResource(rankFileHand);
+                LoadingIntroMusic();
+            } else {
+                rankData[i].loaded = 0;
+                strcpy(rankData[i].name, "");
+                strcpy(rankData[i].convName, "");
+                strcpy(rankData[i].shortName, "");
+            }
+        }
+    }
+
+    /* ---------------- röid: asteroids ---------------- */
+    {
+
+        for (i = 0; i < kMaxAsteroids; i++) {
+            asteroidFileHand = GetResource(kRoidType, i + kFirstResourceID);
+            if (asteroidFileHand != NULL) {
+                LockAHandle(asteroidFileHand);
+                asteroidType[i].strength = ResRec(RoidRes, asteroidFileHand)->strength;
+                if (asteroidType[i].strength < 1)
+                    asteroidType[i].strength = 1;
+                asteroidType[i].frameRate = (float)ResRec(RoidRes, asteroidFileHand)->spinRate * 0.01;
+                asteroidType[i].yieldType = ResRec(RoidRes, asteroidFileHand)->yieldType;
+                asteroidType[i].yieldQty = ResRec(RoidRes, asteroidFileHand)->yieldQty;
+                if (asteroidType[i].yieldQty < 0) {
+                    asteroidType[i].yieldQty = 0;
+                    asteroidType[i].yieldType = -1;
+                }
+                if (asteroidType[i].yieldType < 0 ||
+                    (asteroidType[i].yieldType > 6 && asteroidType[i].yieldType < 1000) ||
+                    asteroidType[i].yieldType >= 1000 + kMaxJunks) {
+                    asteroidType[i].yieldType = -1;
+                    asteroidType[i].yieldQty = 0;
+                }
+                asteroidType[i].partCount = ResRec(RoidRes, asteroidFileHand)->partCount;
+                if (asteroidType[i].partCount < 0)
+                    asteroidType[i].partCount = 0;
+                asteroidType[i].color = ResRec(RoidRes, asteroidFileHand)->partColor;
+                rgb.red = ((asteroidType[i].color >> 16) & 0xff) * 256;
+                rgb.green = ((asteroidType[i].color >> 8) & 0xff) * 256;
+                rgb.blue = (asteroidType[i].color & 0xff) * 256;
+                asteroidType[i].color = (((rgb.red >> 11) << 10) & 0x7c00) |
+                              (((rgb.green >> 11) << 5) & 0x3e0) |
+                              ((rgb.blue >> 11) & 0x1f);
+                asteroidType[i].fragCount = ResRec(RoidRes, asteroidFileHand)->fragCount;
+                if (asteroidType[i].fragCount < 0)
+                    asteroidType[i].fragCount = 0;
+                for (j = 0; j < 2; j++) {
+                    asteroidType[i].fragType[j] = ResRec(RoidRes, asteroidFileHand)->fragType[j];
+                    if (asteroidType[i].fragType[j] >= kFirstResourceID && asteroidType[i].fragType[j] < kFirstResourceID + kMaxAsteroids)
+                        asteroidType[i].fragType[j] -= kFirstResourceID;
+                    else if (asteroidType[i].fragType[j] < 0 || asteroidType[i].fragType[j] >= kMaxAsteroids)
+                        asteroidType[i].fragType[j] = -1;
+                }
+                asteroidType[i].explodType = ResRec(RoidRes, asteroidFileHand)->explodType;
+                if (asteroidType[i].explodType < 0 ||
+                    (asteroidType[i].explodType >= kMaxExplodTypes && asteroidType[i].explodType < 1000) ||
+                    asteroidType[i].explodType >= 1000 + kMaxExplodTypes)
+                    asteroidType[i].explodType = -1;
+                asteroidType[i].mass = ResRec(RoidRes, asteroidFileHand)->mass;
+                AdjustHandleSize(asteroidFileHand, 0x28);
+                ResourcePurge(asteroidFileHand);
+                ReleaseResource(asteroidFileHand);
+                LoadingIntroMusic();
+            }
+        }
+    }
+
+    /* ---------------- cölr: interface colors ---------------- */
+    colorFileHand = GetIndResource(kColrType, 1);
+    if (colorFileHand != NULL) {
+        short k;
+        int c;
+
+        LockAHandle(colorFileHand);
+        for (c = 0; c < 2; c++) {
+            menuTextColor[c].blue = (ResRec(ColrRes, colorFileHand)->menuColor[c] & 0xff) * 256;
+            menuTextColor[c].green = ((ResRec(ColrRes, colorFileHand)->menuColor[c] >> 8) & 0xff) * 256;
+            menuTextColor[c].red = ((ResRec(ColrRes, colorFileHand)->menuColor[c] >> 16) & 0xff) * 256;
+        }
+        for (c = 0; c < 2; c++) {
+            shopGridColor[c].blue = (ResRec(ColrRes, colorFileHand)->gridColor[c] & 0xff) * 256;
+            shopGridColor[c].green = ((ResRec(ColrRes, colorFileHand)->gridColor[c] >> 8) & 0xff) * 256;
+            shopGridColor[c].red = ((ResRec(ColrRes, colorFileHand)->gridColor[c] >> 16) & 0xff) * 256;
+        }
+        for (k = 0; k < 3; k++) {
+            progressColor[k].blue = (ResRec(ColrRes, colorFileHand)->progressColor[k] & 0xff) * 256;
+            progressColor[k].green = ((ResRec(ColrRes, colorFileHand)->progressColor[k] >> 8) & 0xff) * 256;
+            progressColor[k].red = ((ResRec(ColrRes, colorFileHand)->progressColor[k] >> 16) & 0xff) * 256;
+        }
+        for (k = 0; k < 3; k++) {
+            buttonColor[k].blue = (ResRec(ColrRes, colorFileHand)->buttonColor[k] & 0xff) * 256;
+            buttonColor[k].green = ((ResRec(ColrRes, colorFileHand)->buttonColor[k] >> 8) & 0xff) * 256;
+            buttonColor[k].red = ((ResRec(ColrRes, colorFileHand)->buttonColor[k] >> 16) & 0xff) * 256;
+        }
+        for (k = 0; k < kMainButtons; k++) {
+            menuButtonPos[k].h = ResRec(ColrRes, colorFileHand)->buttonPos[k * 2];
+            menuButtonPos[k].v = ResRec(ColrRes, colorFileHand)->buttonPos[k * 2 + 1];
+        }
+        floatingBorderColor.blue = (ResRec(ColrRes, colorFileHand)->floatingMapColor & 0xff) * 256;
+        floatingBorderColor.green = ((ResRec(ColrRes, colorFileHand)->floatingMapColor >> 8) & 0xff) * 256;
+        floatingBorderColor.red = ((ResRec(ColrRes, colorFileHand)->floatingMapColor >> 16) & 0xff) * 256;
+        escortMenuColor.blue = (ResRec(ColrRes, colorFileHand)->escortHiliteColor & 0xff) * 256;
+        escortMenuColor.green = ((ResRec(ColrRes, colorFileHand)->escortHiliteColor >> 8) & 0xff) * 256;
+        escortMenuColor.red = ((ResRec(ColrRes, colorFileHand)->escortHiliteColor >> 16) & 0xff) * 256;
+        ldefColors[0].blue = (ResRec(ColrRes, colorFileHand)->listColor[0] & 0xff) * 256;
+        ldefColors[0].green = ((ResRec(ColrRes, colorFileHand)->listColor[0] >> 8) & 0xff) * 256;
+        ldefColors[0].red = ((ResRec(ColrRes, colorFileHand)->listColor[0] >> 16) & 0xff) * 256;
+        ldefColors[1].blue = (ResRec(ColrRes, colorFileHand)->listColor[1] & 0xff) * 256;
+        ldefColors[1].green = ((ResRec(ColrRes, colorFileHand)->listColor[1] >> 8) & 0xff) * 256;
+        ldefColors[1].red = ((ResRec(ColrRes, colorFileHand)->listColor[1] >> 16) & 0xff) * 256;
+        ldefColors[2].blue = (ResRec(ColrRes, colorFileHand)->listColor[2] & 0xff) * 256;
+        ldefColors[2].green = ((ResRec(ColrRes, colorFileHand)->listColor[2] >> 8) & 0xff) * 256;
+        ldefColors[2].red = ((ResRec(ColrRes, colorFileHand)->listColor[2] >> 16) & 0xff) * 256;
+        progressDefRect.top = ResRec(ColrRes, colorFileHand)->progressBar.top;
+        progressDefRect.left = ResRec(ColrRes, colorFileHand)->progressBar.left;
+        progressDefRect.bottom = ResRec(ColrRes, colorFileHand)->progressBar.bottom;
+        progressDefRect.right = ResRec(ColrRes, colorFileHand)->progressBar.right;
+        strcpy((char *)name, ResRec(ColrRes, colorFileHand)->menuFont);
+        CtoPstr((char *)name);
+        GetFNum(name, &menuFontID);
+        menuTextSize = ResRec(ColrRes, colorFileHand)->menuFontSize;
+        strcpy((char *)name, ResRec(ColrRes, colorFileHand)->buttonFont);
+        CtoPstr((char *)name);
+        GetFNum(name, &buttonFontID);
+        buttonFontSize = ResRec(ColrRes, colorFileHand)->buttonFontSize;
+        logoDestPoint.h = ResRec(ColrRes, colorFileHand)->logoPos[0];
+        logoDestPoint.v = ResRec(ColrRes, colorFileHand)->logoPos[1];
+        rolloverDestPoint.h = ResRec(ColrRes, colorFileHand)->rolloverPos[0];
+        rolloverDestPoint.v = ResRec(ColrRes, colorFileHand)->rolloverPos[1];
+        for (k = 0; k < 3; k++) {
+            slideDestPoint[k].h = ResRec(ColrRes, colorFileHand)->slidePos[k * 2];
+            slideDestPoint[k].v = ResRec(ColrRes, colorFileHand)->slidePos[k * 2 + 1];
+        }
+        AdjustHandleSize(colorFileHand, 0xf4);
+        ResourcePurge(colorFileHand);
+        ReleaseResource(colorFileHand);
+        LoadingIntroMusic();
+    }
+
+    /* ---------------- l33t: easter egg ---------------- */
+    if (CountResources(kLeetType) > 0)
+        leetMode = 1;
+}
+
+
+// FUNCTION: EVNOVA 0x004c6d50
+// MAC: _LoadDescription i386 0x000717fe ppc 0x0007a284
+void LoadDescription(char *dst, short id)
+{
+    short size;
+    short count;
+
+    textFileHand = GetResource(kDescType, id);
+    if (textFileHand != NULL) {
+        strcpy(parseBuffer, *textFileHand);
+        size = strlen(*textFileHand);
+        if (GetAHandleSize(textFileHand) > size) {
+            descResourcePictId = ResRec(DescRes, textFileHand)->text[size + 1] << 8;
+            descResourcePictId += ResRec(DescRes, textFileHand)->text[size + 2];
+
+            descMovieName[0] = 0;
+            for (count = 0; count < 0x20; count++) {
+                if ((char)ResRec(DescRes, textFileHand)->text[size + 3 + count] == 0)
+                    break;
+                descMovieName[0]++;
+                descMovieName[count + 1] = ResRec(DescRes, textFileHand)->text[size + 3 + count];
+            }
+
+            descFlags = ResRec(DescRes, textFileHand)->text[size + 0x23] << 8;
+            descFlags += ResRec(DescRes, textFileHand)->text[size + 0x24];
+        } else {
+            pstrcpy(descMovieName, (unsigned char *)"");
+            descResourcePictId = 0;
+            descFlags = 0;
+        }
+
+        ReleaseResource(textFileHand);
+        descRankGovt[0] = -1;
+        descRankGovt[1] = -1;
+
+        ParseTextDescription();
+        strcpy(dst, parseBuffer);
+
+        if (leetMode) {
+            for (count = 0; count < size; count++) {
+                if (dst[count] == 'a' || dst[count] == 'A') {
+                    if (Rand(3) < 2)
+                        dst[count] = '4';
+                }
+                if (dst[count] == 'e' || dst[count] == 'E') {
+                    if (Rand(3) < 2)
+                        dst[count] = '3';
+                }
+                if (dst[count] == 'i' || dst[count] == 'I') {
+                    if (Rand(3) < 2)
+                        dst[count] = '1';
+                }
+                if (dst[count] == 'o' || dst[count] == 'O') {
+                    if (Rand(3) < 2)
+                        dst[count] = '0';
+                }
+                if (count < size - 4 && (dst[count] == 'y' || dst[count] == 'Y')
+                        && dst[count + 1] == 'o' && dst[count + 2] == 'u') {
+                    dst[count] = 'j';
+                    dst[count + 1] = '0';
+                    dst[count + 2] = '0';
+                }
+            }
+        }
+    } else {
+        strcpy(dst, "");
+        pstrcpy(descMovieName, (unsigned char *)"");
+        descResourcePictId = 0;
+    }
+}
+
+/*
+ * Every table is 256-byte Pascal string slots. The `<` and `<=` loop bounds are
+ * transcribed as the exe spells them (`jl` against `jle`); they are not
+ * interchangeable to mwcc and the difference is per-site.
+ */
+#define kCargoPluginBase  0x2328
+#define kCargoFallback     0xfa0
+#define kCargoCount       0x100
+
+#define kGovtPluginBase   0x24b8
+#define kGovtFallback      0xfa3
+#define kGovtLast              5
+
+#define kLcCargoPluginBase 0x238c
+#define kLcCargoFallback    0xfa1
+#define kLcCargoCount      0x100
+
+#define kMiscPluginBase   0x23f0
+#define kMiscFallback      0xfa2
+#define kMiscCount        0x100
+
+#define kHelpList        0x138b
+#define kHelpCount        0x14
+#define kLegalList          0x86
+#define kLegalLast          0x11
+#define kRatingList         0x8a
+#define kRatingLast          0xa
+
+#define kStrTon                1
+#define kStrTons               2
+#define kStrCredit          0x20
+#define kStrCredits         0x21
+#define kFuelFirst             3
+#define kFuelCount             8
+#define kSecondFirst         0xb
+#define kSecondCount           6
+#define kThirdFirst         0x10
+#define kThirdCount            3
+#define kFourthFirst        0x16
+#define kFourthCount         0xa
+
+// FUNCTION: EVNOVA 0x004c7040
+// MAC: _LoadStrings i386 0x00071af5 ppc 0x0007a634
+void LoadStrings(void)
+{
+    Str255 buf;
+    short i;
+
+    for (i = 0; i < kCargoCount; i++)
+        if (LoadPluginString((i + kCargoPluginBase), cargoName[i]) == 0) {
+            GetIndString(buf, kCargoFallback, i + 1);
+            pstrcpy(cargoName[i], buf);
+        }
+
+    for (i = 0; i <= kGovtLast; i++)
+        if (LoadPluginString((i + kGovtPluginBase), statusCargoName[i]) == 0) {
+            GetIndString(buf, kGovtFallback, i + 1);
+            pstrcpy(statusCargoName[i], buf);
+        }
+
+    for (i = 0; i < kLcCargoCount; i++)
+        if (LoadPluginString((i + kLcCargoPluginBase), lcCargoName[i]) == 0) {
+            GetIndString(buf, kLcCargoFallback, i + 1);
+            pstrcpy(lcCargoName[i], buf);
+        }
+
+    for (i = 0; i < kHelpCount; i++) {
+        GetIndString(buf, kHelpList, i + 1);
+        pstrcpy(shipHelpRequests[i], buf);
+    }
+
+    for (i = 0; i <= kLegalLast; i++) {
+        GetIndString(buf, kLegalList, i + 1);
+        pstrcpy(legalStatusStrings[i], buf);
+    }
+
+    for (i = 0; i <= kRatingLast; i++) {
+        GetIndString(buf, kRatingList, i + 1);
+        pstrcpy(ratingStrings[i], buf);
+    }
+
+    for (i = 0; i < kMiscCount; i++)
+        if (LoadPluginString((i + kMiscPluginBase), cargoAbbrev[i]) == 0) {
+            GetIndString(buf, kMiscFallback, i + 1);
+            pstrcpy(cargoAbbrev[i], buf);
+        }
+
+    GetIndString(tonString, kGameStrList, kStrTon);
+    GetIndString(tonsString, kGameStrList, kStrTons);
+    GetIndString(creditString, kGameStrList, kStrCredit);
+    GetIndString(creditsString, kGameStrList, kStrCredits);
+    strcpy(creditCString, (char *)creditString);
+    strcpy(creditsCString, (char *)creditsString);
+    PtoCstr((unsigned char *)creditCString);
+    PtoCstr((unsigned char *)creditsCString);
+
+    for (i = 0; i < kFuelCount; i++)
+        GetIndString(fuelString[i], kGameStrList, i + kFuelFirst);
+
+    for (i = 0; i < kSecondCount; i++)
+        GetIndString(shieldString[i], kGameStrList, i + kSecondFirst);
+
+    for (i = 0; i < kThirdCount; i++)
+        GetIndString(armorString[i], kGameStrList, i + kThirdFirst);
+
+    for (i = 0; i < kFourthCount; i++)
+        GetIndString(newbieString[i], kGameStrList, i + kFourthFirst);
+}
+
+// FUNCTION: EVNOVA 0x004c73b0
+// MAC: _LoadPluginString i386 0x00071a8e ppc 0x0007a5b0
+Boolean LoadPluginString(short id, void *dst)
+{
+    Handle h;
+
+    h = GetResource(kStringType, id);
+    if (h != NULL) {
+        memcpy(dst, *h, GetAHandleSize(h));
+        ReleaseResource(h);
+        return 1;
+    }
+    return 0;
+}
+
+/* The preferences file: the name from EVNova.ini, in the preferences folder, as JSON. */
+static void PrefsPath(char *path)
+{
+    char name[256];
+
+    GetIniIndString(name, kPrefsStrList, 1);
+    strcpy(path, gPrefsDirectory);
+    strcat(path, name);
+    strcat(path, ".json");
+}
+
+/* The settings and key bindings into a PrefsRecord. */
+static void PrefsToRecord(PrefsRecord *rec)
+{
+    short i;
+
+    rec->introMusic = settings.introMusic != 0;
+    rec->voicesOn = settings.voicesOn != 0;
+    rec->noMovies = settings.noMovies != 0;
+    rec->noDebris = settings.noDebris != 0;
+    rec->shipAnimations = settings.shipAnimations != 0;
+    rec->engineGlows = settings.engineGlows != 0;
+    rec->weaponGlows = settings.weaponGlows != 0;
+    rec->runningLights = settings.runningLights != 0;
+    rec->parallaxStars = settings.parallaxStars != 0;
+    rec->ambientSounds = settings.ambientSounds != 0;
+    rec->showMapBorders = settings.showMapBorders != 0;
+    rec->noHyperGamma = settings.noHyperGamma != 0;
+    rec->yieldEvents = settings.yieldEvents != 0;
+    rec->volume = settings.volume;
+    rec->gamma = settings.gamma;
+    rec->gameWidth = settings.gameWidth;
+    rec->gameHeight = settings.gameHeight;
+    rec->scaleFilter = settings.scaleFilter;
+    rec->wholePixelScaling = settings.wholePixelScaling != 0;
+    rec->uiScale = settings.uiScale;
+    KeyPrefsToSlotTable();
+    for (i = 0; i <= 35; i++)
+        rec->keys[i] = (short)newKeyPrefs[i];
+}
+
+/* A PrefsRecord into the settings and key bindings. */
+static void RecordToPrefs(const PrefsRecord *rec)
+{
+    short i;
+
+    settings.introMusic = rec->introMusic != 0;
+    settings.voicesOn = rec->voicesOn != 0;
+    settings.clipping = 0;
+    settings.noMovies = rec->noMovies != 0;
+    settings.noDebris = rec->noDebris != 0;
+    settings.parallaxStars = rec->parallaxStars != 0;
+    settings.yieldEvents = rec->yieldEvents != 0;
+    settings.windowed = 0;
+    settings.ambientSounds = rec->ambientSounds != 0;
+    settings.showMapBorders = rec->showMapBorders != 0;
+    settings.noHyperGamma = rec->noHyperGamma != 0;
+    settings.shipAnimations = rec->shipAnimations != 0;
+    settings.engineGlows = rec->engineGlows != 0;
+    settings.weaponGlows = rec->weaponGlows != 0;
+    settings.runningLights = rec->runningLights != 0;
+    settings.volume = rec->volume;
+    settings.gamma = rec->gamma;
+    if (settings.gamma > 6)
+        settings.gamma = 3;
+    settings.gameWidth = rec->gameWidth;
+    settings.gameHeight = rec->gameHeight;
+    settings.scaleFilter = rec->scaleFilter;
+    if (settings.scaleFilter < 0 || settings.scaleFilter >= kScaleFilterCount)
+        settings.scaleFilter = kScaleFilterLinear;
+    settings.wholePixelScaling = rec->wholePixelScaling != 0;
+    settings.uiScale = rec->uiScale > 0 ? rec->uiScale : 1.0;
+    settings.windowedPending = settings.windowed;
+    SetDefaultKeys();
+    for (i = 0; i <= 35; i++)
+        newKeyPrefs[i] = ScanCode(rec->keys[i]);
+    SlotTableToKeyPrefs();
+}
+
+/* The defaults, with whatever the preferences file holds on top. */
+// FUNCTION: EVNOVA 0x004c7400
+void LoadPrefs(void)
+{
+    PrefsRecord rec;
+    char path[2048];
+
+    SetDefaultPrefs();
+    SetDefaultKeys();
+    PrefsToRecord(&rec);
+    PrefsPath(path);
+    PrefsJsonLoad(path, &rec);
+    RecordToPrefs(&rec);
+}
+
+// FUNCTION: EVNOVA 0x004c7820
+void SavePrefs(void)
+{
+    PrefsRecord rec;
+    char path[2048];
+
+    PrefsToRecord(&rec);
+    PrefsPath(path);
+    PrefsJsonSave(path, &rec);
+}
+
+// FUNCTION: EVNOVA 0x004c7d40
+// MAC: _MakeAlias i386 0x00071e36 ppc 0x0007a9bc
+void MakeAlias(char *name)
+{
+    char base[0x100];
+    char path[0x800];
+
+    GetIniIndString(base, kPilotDirList, 4);
+    strcpy(path, pilotsFolder);
+    strcat(path, base);
+    SaveAFile(path, name, strlen(name) + 1);
+}
+
+/* mac twin _SavePilotFile. 0x004c7dd0 demonstrably WRITES the .plt (see
+   WritePilotData), so the older `LoadPilot' / `LoadPilotFile' names were
+   both wrong. */
+
+// FUNCTION: EVNOVA 0x004c7db0
+// MAC: _SavePilotFile i386 0x00076876 ppc 0x0007f6b4
+short SavePilotFile(short stellar)
+{
+    if (noSavePilotFiles != 0)
+        return 0;
+    return WritePilotData(stellar);
+}
+
+
+// FUNCTION: EVNOVA 0x004c7dd0
+// MAC: _WritePilotData i386 0x00071ffb ppc 0x0007ab1c
+short WritePilotData(short stellar)
+{
+    char name[0x100];
+    char path[0x800];
+    FILE *f;
+    short j;
+    short i;
+
+    if (noUpdatePilotData != 0)
+        return 0;
+
+    playerFileHand = NULL;
+    altPlayerFileHand = NULL;
+    strcpy(path, pilotsFolder);
+    PStr2CStr(name, playerName);
+    TextToUtf8(path + strlen(path), name, sizeof(path) - strlen(path));
+    strcat(path, ".plt");
+    playerFileHand = (PilotRec **)AllocAHandle2(sizeof(PilotRec), 0);
+    altPlayerFileHand = (PilotRec2 **)AllocAHandle2(sizeof(PilotRec2), 0);
+    f = FOpenExpandedPath(path, "wb");
+    if (f != NULL && playerFileHand != NULL && altPlayerFileHand != NULL) {
+        LockAHandle((Handle)playerFileHand);
+        LockAHandle((Handle)altPlayerFileHand);
+
+        (*playerFileHand)->stellar = stellar;
+        (*playerFileHand)->shipType = shipData[0].type;
+
+        i = 0;
+        do {
+            (*playerFileHand)->cargo[i] = shipData[0].cargo[i];
+        } while (++i < kCargoTypes);
+        (*playerFileHand)->shield = shipData[0].shield;
+        (*playerFileHand)->fuel = shipData[0].fuel;
+        (*playerFileHand)->month = gameTime.month;
+        (*playerFileHand)->day = gameTime.day;
+        (*playerFileHand)->year = gameTime.year;
+        for (i = 0; i < kMaxSystems; i++)
+            (*playerFileHand)->explore[i] = systemData[i].exploreLevel;
+        for (i = 0; i < kMaxOutfits; i++)
+            (*playerFileHand)->outfits[i] = shipSystems[i];
+        for (i = 0; i < kMaxSystems; i++)
+            (*playerFileHand)->legalStatus[i] = playerRecord[i];
+        for (i = 0; i < kMaxWeapTypes; i++) {
+            (*playerFileHand)->weapCount[i] = shipData[0].weap[i].count;
+            (*playerFileHand)->weapAmmo[i] = shipData[0].weap[i].ammo;
+        }
+        (*playerFileHand)->credits = shipData[0].credits;
+        for (j = 0; j < kMaxActiveMissions; j++) {
+            (*playerFileHand)->objectives[j] = currentMissionObjectives[j];
+            (*playerFileHand)->missions[j] = currentMissions[j];
+        }
+        for (i = 0; i < kMaxMissionBits; i++)
+            (*playerFileHand)->missionBits[i] = missionBit[i];
+        for (i = 0; i < kMaxStellars; i++) {
+            if (stellarData[i].prepared != 0)
+                (*playerFileHand)->spobFlag[i] = stellarData[i].dominated;
+            else
+                (*playerFileHand)->spobFlag[i] = 0;
+        }
+        for (i = 0; i < kMaxShips; i++) {
+            (*playerFileHand)->escortType[i] = -1;
+            (*playerFileHand)->fighterType[i] = -1;
+            (*playerFileHand)->fighterVoice[i] = -1;
+            (*playerFileHand)->escortB[i] = 0;
+            (*playerFileHand)->escortA[i] = 0;
+        }
+        for (i = 0; i < kMaxShips; i++) {
+            if (shipData[i].active != 0 && shipData[i].parentShip == 0
+                && shipData[i].aiType == 5)
+                (*playerFileHand)->fighterType[i] = shipData[i].type;
+            else
+                (*playerFileHand)->fighterType[i] = -1;
+        }
+        for (i = 0; i < kMaxShips; i++) {
+            if (shipData[i].active != 0 && shipData[i].parentShip == 0
+                && shipData[i].aiType == kShipTypeEscort && shipData[i].specialMission == -1) {
+                (*playerFileHand)->escortType[i] = shipData[i].type;
+                if (shipData[i].hired != 0)
+                    (*playerFileHand)->escortType[i] += 1000;
+                if (shipData[i].sellOnLanding != 0)
+                    (*playerFileHand)->escortB[i] = 1;
+                if (shipData[i].upgradeOnLanding != 0)
+                    (*playerFileHand)->escortA[i] = 1;
+            } else {
+                (*playerFileHand)->escortType[i] = -1;
+            }
+        }
+        for (i = 0; i < kMaxShips; i++) {
+            if (shipData[i].active != 0 && shipData[i].parentShip == 0
+                && shipData[i].aiType >= 5 && shipData[i].specialMission == -1)
+                (*playerFileHand)->fighterVoice[i] = shipData[i].voiceClass;
+        }
+        (*playerFileHand)->kills = playerKills;
+
+        (*altPlayerFileHand)->version = 300;
+        if (strictPlay != 0)
+            (*altPlayerFileHand)->strict = 1;
+        else
+            (*altPlayerFileHand)->strict = 0;
+        (*altPlayerFileHand)->gender = playerGender;
+        strncpy((*altPlayerFileHand)->nickname, (char *)playerNickname, 0x40);
+        (*altPlayerFileHand)->paint = playerPaint;
+        for (i = 0; i < kMaxStellars; i++) {
+            if (stellarData[i].loaded != 0 && stellarData[i].dominated != 0) {
+                (*altPlayerFileHand)->defWave[i] = stellarData[i].defWaveSize;
+                (*altPlayerFileHand)->tribute[i] = stellarData[i].daysDominated;
+            } else {
+                (*altPlayerFileHand)->defWave[i] = stellarData[i].defWaveSize;
+                (*altPlayerFileHand)->tribute[i] = 0;
+            }
+        }
+        for (i = 0; i < kMaxPersons; i++) {
+            if (personData[i].loaded != 0 && personData[i].aiType >= 1) {
+                (*altPlayerFileHand)->persActive[i] = 1;
+                if (personData[i].grudge != 0)
+                    (*altPlayerFileHand)->persB[i] = 1;
+                else
+                    (*altPlayerFileHand)->persB[i] = 0;
+            } else {
+                (*altPlayerFileHand)->persActive[i] = 0;
+                (*altPlayerFileHand)->persB[i] = 0;
+            }
+        }
+        for (i = 0; i < kMaxRanks; i++) {
+            if (rankData[i].active != 0)
+                (*altPlayerFileHand)->rankOwned[i] = 1;
+            else
+                (*altPlayerFileHand)->rankOwned[i] = 0;
+        }
+        (*altPlayerFileHand)->seenIntro = seenIntroScreen;
+        for (i = 0; i < kMaxDisasters; i++) {
+            if (disasterData[i].loaded != 0) {
+                (*altPlayerFileHand)->newsC[i] = disasterData[i].countdown;
+                (*altPlayerFileHand)->newsB[i] = disasterData[i].stellarID;
+            } else {
+                (*altPlayerFileHand)->newsC[i] = 0;
+                (*altPlayerFileHand)->newsB[i] = -1;
+            }
+        }
+        for (i = 0; i < kMaxJunks; i++)
+            (*altPlayerFileHand)->junkHeld[i] = junkData[i].held;
+        for (i = 0; i < kMaxCrons; i++) {
+            if (cronEvent[i].active != 0) {
+                (*altPlayerFileHand)->cronA[i] = cronEvent[i].daysLeft;
+                (*altPlayerFileHand)->cronB[i] = cronEvent[i].holdoffLeft;
+            } else {
+                (*altPlayerFileHand)->cronA[i] = -1;
+                (*altPlayerFileHand)->cronB[i] = -1;
+            }
+        }
+        for (i = 0; i < kMaxSystems; i++)
+            (*altPlayerFileHand)->systState[i] = systemData[i].reinforceDaysLeft;
+        for (i = 0; i < kMaxStellars; i++)
+            (*altPlayerFileHand)->spobDead[i] = stellarData[i].deadDaysLeft;
+        for (i = 0; i < 4; i++)
+            (*altPlayerFileHand)->escortOrders[i] = playerEscortOrders[i];
+        for (i = 0; i <= 1; i++) {
+            (*altPlayerFileHand)->priceFlux[0][i] = globalPriceFlux[i];
+            (*altPlayerFileHand)->priceFlux[1][i] = localPriceFlux[i];
+        }
+        strncpy((*altPlayerFileHand)->datePrefix, datePrefix, 0xf);
+        strncpy((*altPlayerFileHand)->dateSuffix, dateSuffix, 0xf);
+        (*altPlayerFileHand)->datePrefix[0xf] = 0;
+        (*altPlayerFileHand)->dateSuffix[0xf] = 0;
+        for (i = 0; i < 0x40; i++)
+            (*altPlayerFileHand)->unk2006[i] = 0;
+        for (i = 0; i < 0x400; i++)
+            (*altPlayerFileHand)->unk5efe[i] = 0;
+
+        PStr2CStr(name, shipName);
+        LockAHandle((Handle)playerFileHand);
+        LockAHandle((Handle)altPlayerFileHand);
+        fwritelong(GetAHandleSize((Handle)playerFileHand), f);
+        fwrite(*playerFileHand, GetAHandleSize((Handle)playerFileHand), 1, f);
+        fwritelong(GetAHandleSize((Handle)altPlayerFileHand), f);
+        fwrite(*altPlayerFileHand, GetAHandleSize((Handle)altPlayerFileHand), 1, f);
+        fwritestr(name, f);
+        DeallocAHandle(playerFileHand);
+        DeallocAHandle(altPlayerFileHand);
+        fclose(f);
+    }
+    MakeAlias(path);
+    return 0;
+}
+
+
+// FUNCTION: EVNOVA 0x004c9e90
+// MAC: _OpenPilotFile i386 0x00076644 ppc 0x0007f498
+Boolean OpenPilotFile(char *missingResource)
+{
+    char initDir[0x800];
+    char path[0x800];
+    unsigned char text[256];
+    int32_t result;
+    char *data;
+    int gotFile;
+
+    *missingResource = 0;
+
+    /* the exe: GetOpenFileName, for a file that exists, "PLT" added to a name typed without one */
+    path[0] = 0;
+    ExpandAPathToBufferNative(initDir, pilotsFolder);
+    gotFile = PlatOpenFileDialog("EV Nova Pilot", "plt", initDir, path, sizeof(path));
+
+    while (Win95ApplsActive == 0) {
+        PlatSleep(0);
+        KeyboardKbhit();
+    }
+
+
+    if (gotFile != 0) {
+
+        crashlog("open file setup 1");
+        DeleteAllComputerShips(1, 1);
+        ResetPlayer(1);
+        ResetPlayerRecord(1);
+        DeleteAllComputerShips(1, 1);
+        crashlog("loading pilot data");
+        data = ConvertNativePathToPath(path);
+        result = data != NULL ? LoadPilotData(data) : kPilotUnreadable;
+        if (data != NULL)
+            DeallocAPointer(data);
+        OSCursorReset();
+        ShowTheCursor();
+        crashlog("open file setup 2");
+
+        if (result == 0) {
+            shipData[0].deathTimer = -1.0f;
+            shipData[0].escapePods = -1;
+            return 1;
+        }
+        if (result == -0x2a) {
+            GetIndString(text, kAlertStrList, 0x22);
+            EVNoteAlert(text);
+        } else if (result == -0x2e) {
+            *missingResource = 1;
+            return 1;
+        }
+        return 0;
+    } else {
+        OSCursorReset();
+        ShowTheCursor();
+        return 0;
+    }
+}
+
+// FUNCTION: EVNOVA 0x004ca120
+// MAC: _OpenLastPilotFile i386 0x000764ad ppc 0x0007f2fc
+void OpenLastPilotFile(void)
+{
+    char name[256];
+    char path[0x800];
+    uint32_t len;
+    char *data;
+    short i;
+    short j;
+
+    GetIniIndString(name, kPilotDirList, 4);
+    strcpy(path, pilotsFolder);
+    strcat(path, name);
+    data = (char *)LoadAFile(path, &len);
+    // BUG: reads data[-1] when the last-pilot file is empty (len == 0)
+    if (data != NULL && data[len - 1] != 0) {
+        data = (char *)ResizeAPointer(data, len + 1);
+        data[len] = 0;
+    }
+    if (data != NULL && DoesPilotExist(data) != 0) {
+        DeleteAllComputerShips(1, 1);
+        ResetPlayer(1);
+        ResetPlayerRecord(1);
+        if (LoadPilotData(data) == 0) {
+            gameInProgress = 1;
+            for (i = 0; i < kMaxSystems; i++) {
+                if (systemData[i].loaded != 0 && systemData[i].exploreLevel > 0)
+                    ExploreNebulaeFromSystem(i);
+            }
+            for (j = 0; j < kMaxActiveMissions; j++) {
+                if (currentMissionObjectives[j].active != 0) {
+                    if ((currentMissions[j].flags & kMissionInfiniteAuxShips) != 0)
+                        currentMissions[j].auxShipsLeft = currentMissions[j].auxShipCount;
+                    currentMissions[j].auxShipDelay = (Rand(0x46) + 0x46);
+                    currentMissions[j].auxShipsSpawned = 0;
+                }
+            }
+        }
+    }
+    if (data != NULL)
+        DeallocAPointer(data);
+}
+
+/* CountEVPlugins counts+logs files of one extension in a directory (filescan.cpp) */
+
+// FUNCTION: EVNOVA 0x004ca2c0
+// MAC: _DumpPilotLog i386 0x000739dc ppc 0x0007c8b0
+void DumpPilotLog(void)
+{
+    FILE *log;
+    DateTimeRec dtr;
+    PStrChar name[255];
+    short i;
+    short mi;
+    short found;
+    uint32_t contribute[2];
+
+    log = fopen("pilotlog.txt", "r");
+    if (log == NULL)
+        return;
+    fclose(log);
+    log = fopen("pilotlog.txt", "w");
+    if (log == NULL)
+        return;
+
+    fprintf(log, "EV Nova pilot data dump\n\n");
+    GetTime(&dtr);
+    fprintf(log, "Output on %i/%i/%i at ", dtr.month, dtr.day, dtr.year);
+    if (dtr.hour < 12)
+        fprintf(log, "%i:%02i AM", dtr.hour, dtr.minute);
+    else if (dtr.hour == 12)
+        fprintf(log, "%i:%02i PM", dtr.hour, dtr.minute);
+    else
+        fprintf(log, "%i:%02i PM", dtr.hour - 12, dtr.minute);
+    fprintf(log, "\n\n");
+    fprintf(log, "Game version:      %s", "1.0.A");
+    fprintf(log, "\n\n");
+
+    fprintf(log, "Plugins loaded:\n");
+    if (CountEVPlugins("Nova Plug-Ins", ".rez", log) == 0)
+        fprintf(log, "  none\n");
+    fprintf(log, "\n");
+
+    pstrcpy((StringPtr)name, playerName);
+    PtoCstr((StringPtr)name);
+    fprintf(log, "Pilot name:        %s\n", name);
+    pstrcpy((StringPtr)name, playerNickname);
+    PtoCstr((StringPtr)name);
+    fprintf(log, "Pilot nickname:    %s\n", name);
+    fprintf(log, "Pilot gender:      %s\n", playerGender != 0 ? "male" : "female");
+    fprintf(log, "Strict play:       %s\n", strictPlay != 0 ? "yes" : "no");
+    fprintf(log, "Seen intro screen: %s\n", seenIntroScreen != 0 ? "yes" : "no");
+
+    pstrcpy((StringPtr)name, shipName);
+    PtoCstr((StringPtr)name);
+    fprintf(log, "Ship name:         %s\n", name);
+
+    pstrcpy((StringPtr)name, shipClass[shipData->type].name);
+    PtoCstr((StringPtr)name);
+    fprintf(log, "Ship type:         %s (%i)\n", name, shipData->type + 0x80);
+
+    pstrcpy((StringPtr)name, systemData[shipData->curSystem].name);
+    PtoCstr((StringPtr)name);
+    fprintf(log, "Current system:    %s (%i)\n", name, shipData->curSystem + 0x80);
+
+    fprintf(log, "Legal status:      %i (in system %i)\n",
+            playerRecord[shipData->curSystem], shipData->curSystem + 0x80);
+
+    fprintf(log, "Game date:         %i/%i/%i\n",
+            gameTime.month, gameTime.day, gameTime.year);
+
+    fprintf(log, "Fuel:              %0.2f\n", shipData->fuel);
+    fprintf(log, "Cash:              %i\n", shipData->credits);
+    fprintf(log, "Kills:             %i\n", playerKills);
+
+    fprintf(log, "\nCurrent cargo:\n");
+    found = 0;
+    for (i = 0; i < kFirstJunkItem; i++) {
+        if (shipData->cargo[i] > 0) {
+            fprintf(log, "  commodity %i: %i\n", i, shipData->cargo[i]);
+            found++;
+        }
+    }
+    for (i = 0; i < kMaxJunks; i++) {
+        if (junkData[i].held > 0) {
+            fprintf(log, "  junk type %i: %i\n", i + 0x80, junkData[i].held);
+            found++;
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nActive missions:\n");
+    found = 0;
+    for (mi = 0; mi < kMaxActiveMissions; mi++) {
+        if (currentMissionObjectives[mi].active != 0) {
+            found++;
+            pstrcpy((StringPtr)name, (unsigned char *)currentMissions[mi].name);
+            PtoCstr((StringPtr)name);
+            fprintf(log, "  %s (%i):\n", name, currentMissions[mi].misnIndex + 0x80);
+            fprintf(log, "    travelObjComplete:        %s\n",
+                    currentMissionObjectives[mi].returnDone != 0 ? "yes" : "no");
+            fprintf(log, "    shipObjComplete:          %s\n",
+                    currentMissionObjectives[mi].objectivesDone != 0 ? "yes" : "no");
+            fprintf(log, "    missionFailed:            %s\n",
+                    currentMissionObjectives[mi].failed != 0 ? "yes" : "no");
+            fprintf(log, "    flags:                    %04X\n", currentMissions[mi].flags);
+            fprintf(log, "    flags2:                   %04X\n", currentMissions[mi].flags2);
+            fprintf(log, "    canAbort:                 %s\n",
+                    currentMissions[mi].canAbort != 0 ? "yes" : "no");
+            fprintf(log, "    timeLeft:                 %i\n", currentMissions[mi].timeLimit);
+            fprintf(log, "    destStellar:              %i\n",
+                    currentMissions[mi].travelStellar == -1 ? -1 : currentMissions[mi].travelStellar + 0x80);
+            fprintf(log, "    returnStellar:            %i\n",
+                    currentMissions[mi].returnStellar == -1 ? -1 : currentMissions[mi].returnStellar + 0x80);
+            fprintf(log, "    initialShipCount:         %i\n", currentMissions[mi].initialShipCount);
+            fprintf(log, "    specialShipCount:         %i\n", currentMissions[mi].shipCount);
+            fprintf(log, "    specialShipDude:          %i\n",
+                    currentMissions[mi].shipDude == -1 ? -1 : currentMissions[mi].shipDude + 0x80);
+            fprintf(log, "    specialShipGoal:          %i\n", currentMissions[mi].shipGoal);
+            fprintf(log, "    specialShipBehavior:      %i\n", currentMissions[mi].shipBehav);
+            fprintf(log, "    specialShipStart:         %i\n", currentMissions[mi].shipStart);
+            fprintf(log, "    specialShipSyst:          %i\n", currentMissions[mi].shipSyst);
+            fprintf(log, "    specialShipsKilled:       %i\n", currentMissions[mi].specialShipsKilled);
+            fprintf(log, "    specialShipsBoarded:      %i\n", currentMissions[mi].specialShipsBoarded);
+            fprintf(log, "    specialShipsDisabled:     %i\n", currentMissions[mi].specialShipsDisabled);
+            fprintf(log, "    specialShipsJumpedIn:     %i\n", currentMissions[mi].specialShipsJumpedIn);
+            fprintf(log, "    specialShipsJumpedOut:    %i\n", currentMissions[mi].specialShipsJumpedOut);
+            fprintf(log, "    specialShipNameIndex:     %i\n", currentMissions[mi].destStrIndex);
+            fprintf(log, "    specialShipSubtitleIndex: %i\n", currentMissions[mi].shipStrIndex);
+            fprintf(log, "    specialShipPreselectType: %i\n", currentMissions[mi].shipTypeIndex);
+            fprintf(log, "    auxShipCount:             %i\n", currentMissions[mi].auxShipCount);
+            fprintf(log, "    auxShipsLeft:             %i\n", currentMissions[mi].auxShipsLeft);
+            fprintf(log, "    auxShipDude:              %i\n",
+                    currentMissions[mi].auxShipDude == -1 ? -1 : currentMissions[mi].auxShipDude + 0x80);
+            fprintf(log, "    auxShipSyst:              %i\n", currentMissions[mi].auxShipSyst);
+            fprintf(log, "    cargoType:                %i\n", currentMissions[mi].cargoType);
+            fprintf(log, "    cargoQty:                 %i\n", currentMissions[mi].cargoQty);
+            fprintf(log, "    pickupMode:               %i\n", currentMissions[mi].pickupMode);
+            fprintf(log, "    dropoffMode:              %i\n", currentMissions[mi].dropoffMode);
+            fprintf(log, "    cargoLoaded:              %s\n",
+                    currentMissions[mi].hasCargo != 0 ? "yes" : "no");
+            fprintf(log, "    scanMask:                 %04X\n", currentMissions[mi].scanMask);
+            fprintf(log, "    compGovt:                 %i\n",
+                    currentMissions[mi].compGovt == -1 ? -1 : currentMissions[mi].compGovt + 0x80);
+            fprintf(log, "    compReward:               %i\n", currentMissions[mi].compReward);
+            fprintf(log, "    datePostIncrement:        %i\n", currentMissions[mi].datePostIncrement);
+            fprintf(log, "    pay:                      %i\n", currentMissions[mi].payment);
+            fprintf(log, "\n");
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nMission bits currently set:\n");
+    found = 0;
+    for (i = 0; i < kMaxMissionBits; i++) {
+        if (missionBit[i] != 0) {
+            fprintf(log, "  b%i\n", i);
+            found++;
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nContribute bits:\n");
+    GetPlayerContributeBits(&contribute[0], &contribute[1]);
+    fprintf(log, "  0x%08X\n", contribute[0]);
+    fprintf(log, "  0x%08X\n", contribute[1]);
+
+    fprintf(log, "\nEscorts:\n");
+    found = 0;
+    for (i = 1; i < kMaxShips; i++) {
+        if (shipData[i].active != 0 && shipData[i].parentShip == 0) {
+            found++;
+            pstrcpy((StringPtr)name, shipClass[shipData[i].type].name);
+            PtoCstr((StringPtr)name);
+            fprintf(log, "  %s (%i) - ", name, shipData[i].type + 0x80);
+            if (shipData[i].aiType == 5)
+                fprintf(log, "fighter");
+            else if (shipData[i].specialMission != -1)
+                fprintf(log, "mission escort");
+            else if (shipData[i].hired != 0)
+                fprintf(log, "hired");
+            else
+                fprintf(log, "captured");
+            if (shipData[i].upgradeOnLanding != 0)
+                fprintf(log, ", marked for upgrade");
+            if (shipData[i].sellOnLanding != 0)
+                fprintf(log, ", marked for sale");
+            fprintf(log, "\n");
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nItems currently owned:\n");
+    found = 0;
+    for (i = 0; i < kMaxOutfits; i++) {
+        if (shipSystems[i] > 0) {
+            pstrcpy((StringPtr)name, outfitSystem[i].name);
+            PtoCstr((StringPtr)name);
+            fprintf(log, "  %i %s (%i)\n", shipSystems[i], name, i + 0x80);
+            found++;
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nStellars currently dominated:\n");
+    found = 0;
+    for (i = 0; i < kMaxStellars; i++) {
+        if (stellarData[i].prepared != 0 && stellarData[i].dominated != 0) {
+            pstrcpy((StringPtr)name, stellarData[i].name);
+            PtoCstr((StringPtr)name);
+            fprintf(log, "  %s (%i)\n", name, i + 0x80);
+            found++;
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nStellars currently destroyed:\n");
+    found = 0;
+    for (i = 0; i < kMaxStellars; i++) {
+        if (stellarData[i].prepared != 0 && StellarIsDestroyed(&stellarData[i])) {
+            pstrcpy((StringPtr)name, stellarData[i].name);
+            PtoCstr((StringPtr)name);
+            fprintf(log, "  %s (%i)\n", name, i + 0x80);
+            found++;
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nActive ranks:\n");
+    found = 0;
+    for (i = 0; i < kMaxRanks; i++) {
+        if (rankData[i].loaded != 0 && rankData[i].active != 0) {
+            /* the exe passes the PASCAL string straight to %s here, with no
+               pstrcpy/PtoCstr conversion (unlike every other name section) -
+               read directly off the call site, not a guess */
+            fprintf(log, "  %s (%i)\n", rankData[i].name, i + 0x80);
+            found++;
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nActive disasters:\n");
+    found = 0;
+    for (i = 0; i < kMaxDisasters; i++) {
+        if (disasterData[i].loaded != 0 && disasterData[i].stellarID != -1) {
+            pstrcpy((StringPtr)name, disasterData[i].name);
+            PtoCstr((StringPtr)name);
+            fprintf(log, "  %s (%i) on ", name, i + 0x80);
+            pstrcpy((StringPtr)name, stellarData[disasterData[i].stellarID].name);
+            PtoCstr((StringPtr)name);
+            fprintf(log, "%s (%i) - %i days left\n",
+                    name, disasterData[i].stellarID + 0x80, disasterData[i].countdown);
+            found++;
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\nActive cron events:\n");
+    found = 0;
+    for (i = 0; i < kMaxCrons; i++) {
+        if (cronEvent[i].loaded != 0 && cronEvent[i].active != 0) {
+            fprintf(log, "  %i - durationCounter: %i\tholdoffCounter: %i\n",
+                    i + 0x80, cronEvent[i].daysLeft, cronEvent[i].holdoffLeft);
+            found++;
+        }
+    }
+    if (found == 0)
+        fprintf(log, "  none\n");
+
+    fprintf(log, "\n\n- end of log -\n");
+    fflush(log);
+    fclose(log);
+}
+
+// FUNCTION: EVNOVA 0x004cb260
+// MAC: _LoadPilotData i386 0x000750b5 ppc 0x0007dd04
+short LoadPilotData(char *path)
+{
+    char buf[0x40];
+    char fileText[0x100];
+    Str255 text;
+    FILE *f;
+    char *tail;
+    short i;
+    short j;
+    short k;
+    short n;
+    short err;
+    uint32_t len;
+    Boolean junk;
+    int32_t parID;
+
+    playerFileHand = NULL;
+    altPlayerFileHand = NULL;
+    junk = 0;
+
+    f = FOpenExpandedPath(path, "rb");
+    if (f == NULL)
+        goto badFile;
+
+    crashlog("load pilot data 1");
+    len = fgetlong(f);
+    if (len > 0) {
+        playerFileHand = (PilotRec **)AllocAHandle2(len, 0);
+        LockAHandle((Handle)playerFileHand);
+        fread(*playerFileHand, len, 1, f);
+    }
+    if (playerFileHand != NULL) {
+        LockAHandle((Handle)playerFileHand);
+        err = CE_DecryptIfNecessary(*playerFileHand, GetAHandleSize((Handle)playerFileHand),
+                                    kPilotCryptKey);
+
+        if (err == 0) {
+            crashlog("load pilot data 2");
+            PropagateMissionBitEffects();
+            HandleStellarSystemVisibility();
+
+            k = (*playerFileHand)->stellar;
+            shipData[0].lastStellar = k;
+            if (k == -1) {
+                junk = 1;
+                crashlog("warning: pilot file stellar ID out of range");
+                k = 0;
+                for (i = 0; i < kMaxStellars; i++) {
+                    if (stellarData[i].prepared != 0) {
+                        k = i;
+                        break;
+                    }
+                }
+            }
+            shipData[0].curSystem = stellarData[k].system;
+            if (shipData[0].curSystem < 0 || shipData[0].curSystem >= kMaxSystems)
+                shipData[0].curSystem = FindSystemFromStellar(k);
+            else if (systemData[shipData[0].curSystem].prepared == 0)
+                shipData[0].curSystem = -1;
+            if (shipData[0].curSystem < 0 || shipData[0].curSystem > kMaxSystems) {
+                junk = 1;
+                crashlog("warning: pilot file system ID out of range");
+                shipData[0].curSystem = 0;
+                for (i = 0; i < kMaxSystems; i++) {
+                    if (systemData[i].prepared != 0) {
+                        shipData[0].curSystem = i;
+                        break;
+                    }
+                }
+            }
+            PropagateMissionBitEffects();
+            HandleStellarSystemVisibility();
+
+            shipData[0].pos.x = stellarData[k].pos.h;
+            shipData[0].pos.y = stellarData[k].pos.v;
+            shipData[0].heading = Rand(kFullCircle);
+            mapScroll.h = systemData[shipData[0].curSystem].pos.h;
+            mapScroll.v = systemData[shipData[0].curSystem].pos.v;
+
+            shipData[0].type = (*playerFileHand)->shipType;
+            if (shipClass[shipData[0].type].techLevel == kResAbsent) {
+                junk = 1;
+                crashlog("warning: pilot file ship class out of range");
+                shipData[0].type = 0;
+                for (i = 0; i < kMaxShipTypes; i++) {
+                    if (shipClass[i].techLevel != kResAbsent) {
+                        shipData[0].type = i;
+                        break;
+                    }
+                }
+            }
+
+            for (i = 0; i <= 5; i++)
+                shipData[0].cargo[i] = (*playerFileHand)->cargo[i];
+
+            for (i = 0; i < kMaxOutfits; i++) {
+                shipSystems[i] = (*playerFileHand)->outfits[i];
+                if (shipSystems[i] > 0 && outfitSystem[i].techLevel == kOutfTechAbsent) {
+                    junk = 1;
+                    crashlog_print("warning: pilot file has invalid outfit item ID ");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print("\n");
+                    shipSystems[i] = 0;
+                }
+            }
+
+            shipData[0].shield = ShipShieldCapacity(shipData);
+            shipData[0].armor = ShipArmorCapacity(shipData);
+            shipData[0].fuel = (*playerFileHand)->fuel;
+            gameTime.month = (*playerFileHand)->month;
+            gameTime.day = (*playerFileHand)->day;
+            gameTime.year = (*playerFileHand)->year;
+
+            for (i = 0; i < kMaxSystems; i++)
+                systemData[i].exploreLevel = (*playerFileHand)->explore[i];
+            for (i = 0; i < kMaxSystems; i++)
+                playerRecord[i] = (*playerFileHand)->legalStatus[i];
+
+            for (i = 0; i < kMaxWeapTypes; i++) {
+                shipData[0].weap[i].count = (*playerFileHand)->weapCount[i];
+                shipData[0].weap[i].ammo = (*playerFileHand)->weapAmmo[i];
+                if (shipData[0].weap[i].count > 0 && weaponStats[i].guidance == kResAbsent) {
+                    junk = 1;
+                    crashlog_print("warning: pilot file has invalid weapon ID ");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print("\n");
+                    shipData[0].weap[i].count = 0;
+                }
+                if (shipData[0].weap[i].ammo > 0 && weaponStats[i].guidance == kResAbsent) {
+                    junk = 1;
+                    crashlog_print("warning: pilot file has invalid weapon ammo ID ");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print("\n");
+                    shipData[0].weap[i].ammo = 0;
+                }
+            }
+
+            shipData[0].credits = (*playerFileHand)->credits;
+            playerKills = (*playerFileHand)->kills;
+
+            crashlog("load pilot data 3");
+            for (i = 0; i < kMaxActiveMissions; i++) {
+                currentMissionObjectives[i] = (*playerFileHand)->objectives[i];
+                currentMissions[i] = (*playerFileHand)->missions[i];
+                if (currentMissionObjectives[i].active != 0) {
+                    SetMissionDeadline(&currentMissionObjectives[i].dueDate,
+                                  currentMissions[i].timeLimit);
+                    currentMissions[i].shipName[0] = 0;
+                    currentMissions[i].shipSubtitle[0] = 0;
+                    if (currentMissions[i].destStrList >= kFirstResourceID &&
+                        currentMissions[i].destStrIndex >= 1) {
+                        GetIndString(text, currentMissions[i].destStrList,
+                                     currentMissions[i].destStrIndex);
+                        strncpy(currentMissions[i].shipName, (char *)text, 0x3f);
+                    }
+                    if (currentMissions[i].shipStrList >= kFirstResourceID &&
+                        currentMissions[i].shipStrIndex >= 1) {
+                        GetIndString(text, currentMissions[i].shipStrList,
+                                     currentMissions[i].shipStrIndex);
+                        strncpy(currentMissions[i].shipSubtitle, (char *)text, 0x3f);
+                    }
+                    if ((currentMissions[i].flags & kMissionInfiniteAuxShips) != 0)
+                        currentMissions[i].auxShipsLeft = currentMissions[i].auxShipCount;
+                    currentMissions[i].auxShipDelay = (Rand(0x46) + 0x46);
+                    currentMissions[i].auxShipsSpawned = 0;
+                }
+            }
+
+            i = 0;
+            do {
+                missionBit[i] = (*playerFileHand)->missionBits[i];
+            } while (++i < kMaxMissionBits);
+
+            for (i = 0; i < kMaxStellars; i++) {
+                if (stellarData[i].prepared != 0)
+                    stellarData[i].dominated = (*playerFileHand)->spobFlag[i];
+                else
+                    stellarData[i].dominated = 0;
+            }
+
+            DeleteAllComputerShips(1, 1);
+
+            for (i = 0; i < kMaxShips; i++) {
+                if ((*playerFileHand)->escortType[i] >= 0) {
+                    n = ((*playerFileHand)->escortType[i] % 1000);
+                    if (shipClass[n].techLevel == kResAbsent) {
+                        junk = 1;
+                        crashlog("warning: pilot file has invalid escort ship type");
+                    } else {
+                        j = SpawnEscort(n, -1);
+                        if (j != -1) {
+                            if ((*playerFileHand)->escortType[i] < 1000) {
+                                shipData[j].hired = 0;
+                                if ((*playerFileHand)->escortB[i] != 0)
+                                    shipData[j].sellOnLanding = 1;
+                            } else {
+                                shipData[j].hired = 1;
+                            }
+                            if ((*playerFileHand)->escortA[i] != 0)
+                                shipData[j].upgradeOnLanding = 1;
+                        }
+                    }
+                }
+                if ((*playerFileHand)->fighterType[i] >= 0 &&
+                    (*playerFileHand)->fighterType[i] < kMaxShipTypes) {
+                    n = (*playerFileHand)->fighterType[i];
+                    if (shipClass[n].techLevel == kResAbsent) {
+                        junk = 1;
+                        crashlog("warning: pilot file has invalid fighter ship type");
+                    } else {
+                        j = SpawnEscort(n, -1);
+                        if (j != -1) {
+                            shipData[j].aiType = 5;
+                            shipData[j].hired = 0;
+                            AISetup(&shipData[j]);
+                            if ((*playerFileHand)->fighterVoice[i] != -1)
+                                shipData[j].voiceClass = (*playerFileHand)->fighterVoice[i];
+                        }
+                    }
+                }
+            }
+
+            DeallocAHandle(playerFileHand);
+            crashlog("load pilot data 4");
+        }
+    } else {
+        fclose(f);
+        return kPilotUnreadable;
+    }
+
+    crashlog("load pilot data 5");
+    len = fgetlong(f);
+    if (len > 0) {
+        altPlayerFileHand = (PilotRec2 **)AllocAHandle2(len, 0);
+        LockAHandle((Handle)altPlayerFileHand);
+        fread(*altPlayerFileHand, len, 1, f);
+    }
+    if (altPlayerFileHand != NULL) {
+        LockAHandle((Handle)altPlayerFileHand);
+        err = CE_DecryptIfNecessary(*altPlayerFileHand,
+                                    GetAHandleSize((Handle)altPlayerFileHand), kPilotCryptKey);
+
+        if (err == 0) {
+            crashlog("load pilot data 6");
+            if ((*altPlayerFileHand)->version == kBetaPilotVersion) {
+                DeallocAHandle(altPlayerFileHand);
+                fclose(f);
+                return kPilotBetaFile;
+            }
+            if ((*altPlayerFileHand)->version < kMinPilotVersion) {
+                DeallocAHandle(altPlayerFileHand);
+                fclose(f);
+                return kPilotWrongVersion;
+            }
+
+            if ((*altPlayerFileHand)->strict == 1)
+                strictPlay = 1;
+            else
+                strictPlay = 0;
+            if ((*altPlayerFileHand)->gender == 1)
+                playerGender = 1;
+            else
+                playerGender = 0;
+
+            strncpy((char *)playerNickname, (*altPlayerFileHand)->nickname, 0x40);
+            playerPaint = (*altPlayerFileHand)->paint;
+
+            for (i = 0; i < kMaxStellars; i++) {
+                if (stellarData[i].prepared != 0 && stellarData[i].dominated == 0) {
+                    stellarData[i].defWaveSize = (*altPlayerFileHand)->defWave[i];
+                    stellarData[i].daysDominated = (*altPlayerFileHand)->tribute[i];
+                } else {
+                    stellarData[i].defWaveSize = 0;
+                    stellarData[i].daysDominated = 0;
+                }
+            }
+
+            for (i = 0; i < kMaxPersons; i++) {
+                if (personData[i].aiType >= 1) {
+                    if (personData[i].prepared != 0 &&
+                        (*altPlayerFileHand)->persActive[i] != 0) {
+                        personData[i].loaded = 1;
+                        if ((*altPlayerFileHand)->persB[i] != 0)
+                            personData[i].grudge = 1;
+                        else
+                            personData[i].grudge = 0;
+                    } else {
+                        personData[i].loaded = 0;
+                        personData[i].grudge = 0;
+                    }
+                } else {
+                    personData[i].loaded = 0;
+                }
+            }
+
+            for (i = 0; i < kMaxRanks; i++) {
+                if ((*altPlayerFileHand)->rankOwned[i] == 0) {
+                    rankData[i].active = 0;
+                } else if (rankData[i].loaded != 0) {
+                    rankData[i].active = 1;
+                } else {
+                    junk = 1;
+                    crashlog("warning: pilot file contains invalid rank");
+                    rankData[i].active = 0;
+                }
+            }
+
+            crashlog("load pilot data 7");
+            seenIntroScreen = (*altPlayerFileHand)->seenIntro;
+            lastMissionStellar = -1;
+
+            for (i = 0; i < kMaxDisasters; i++) {
+                if (disasterData[i].loaded != 0) {
+                    disasterData[i].countdown = (*altPlayerFileHand)->newsC[i];
+                    disasterData[i].stellarID = (*altPlayerFileHand)->newsB[i];
+                } else {
+                    disasterData[i].countdown = 0;
+                    disasterData[i].stellarID = -1;
+                }
+            }
+
+            for (i = 0; i < kMaxJunks; i++) {
+                junkData[i].held = (*altPlayerFileHand)->junkHeld[i];
+                if (junkData[i].held > 0 && junkData[i].basePrice < 0) {
+                    junk = 1;
+                    crashlog("warning: pilot file contains invalid junk type");
+                    junkData[i].held = 0;
+                }
+            }
+
+            for (i = 0; i < kMaxCrons; i++) {
+                if (cronEvent[i].loaded != 0) {
+                    cronEvent[i].daysLeft = (*altPlayerFileHand)->cronA[i];
+                    cronEvent[i].holdoffLeft = (*altPlayerFileHand)->cronB[i];
+                    if (cronEvent[i].daysLeft >= 0 || cronEvent[i].holdoffLeft >= 0)
+                        cronEvent[i].active = 1;
+                    else
+                        cronEvent[i].active = 0;
+                } else {
+                    cronEvent[i].active = 0;
+                }
+            }
+
+            i = 0;
+            do {
+                systemData[i].reinforceDaysLeft = (*altPlayerFileHand)->systState[i];
+            } while (++i < kMaxSystems);
+
+            for (i = 0; i < kMaxStellars; i++) {
+                if ((*altPlayerFileHand)->spobDead[i] > 0) {
+                    stellarData[i].deadDaysLeft = (*altPlayerFileHand)->spobDead[i];
+                    stellarData[i].deadCounter = -1;
+                } else {
+                    stellarData[i].deadDaysLeft = -1;
+                    stellarData[i].deadCounter = stellarData[i].strength;
+                }
+            }
+
+            for (i = 0; i < 4; i++) {
+                playerEscortOrders[i] = -1;
+                if ((*altPlayerFileHand)->escortOrders[i] >= 0)
+                    playerEscortOrders[i] = (*altPlayerFileHand)->escortOrders[i];
+            }
+
+            for (i = 1; i < kMaxShips; i++) {
+                if (shipData[i].active != 0 && shipData[i].parentShip == 0)
+                    shipData[i].escortOrder =
+                        playerEscortOrders[shipClass[shipData[i].type].escortType];
+            }
+
+            i = 0;
+            do {
+                globalPriceFlux[i] = (*altPlayerFileHand)->priceFlux[0][i];
+                localPriceFlux[i] = (*altPlayerFileHand)->priceFlux[1][i];
+            } while (++i < 2);
+
+            strncpy(datePrefix, (*altPlayerFileHand)->datePrefix, 0xf);
+            strncpy(dateSuffix, (*altPlayerFileHand)->dateSuffix, 0xf);
+            datePrefix[0xf] = 0;
+            dateSuffix[0xf] = 0;
+
+            DeallocAHandle(altPlayerFileHand);
+            crashlog("load pilot data 8");
+        }
+    } else {
+        fclose(f);
+        return kPilotUnreadable;
+    }
+
+    crashlog("load pilot data 9");
+    fgetstr(buf, 0x40, f);
+    CStr2PStr((char *)shipName, buf);
+
+    if (path[strlen(path) - 1] == ':')
+        path[strlen(path) - 1] = 0;
+    tail = strrchr(path, ':');
+    Utf8ToText(fileText, tail + 1, sizeof(fileText));
+    strncpy((char *)playerName, fileText, 0x1f);
+    if (strrchr((char *)playerName, '.'))
+        *strrchr((char *)playerName, '.') = 0;
+    CStr2PStr((char *)playerName, (char *)playerName);
+
+    crashlog("making alias");
+    MakeAlias(path);
+
+    shipData[0].foldDir = 0;
+    shipData[0].frameTimer = 0;
+    shipData[0].foldSet = shipClass[shipData[0].type].baseSets - 1;
+    shipData[0].shieldGlow = 0;
+    shipData[0].weapGlow = 0;
+    shipData[0].annoyance = 0;
+
+    for (i = 1; i < kMaxShips; i++) {
+        if (shipData[i].active != 0 && shipData[i].parentShip == 0) {
+            if ((shipClass[shipData[i].type].shanFlags & kShanUnfoldsWhenFiring) != 0)
+                shipData[i].foldSet =
+                    shipClass[shipData[0].type].baseSets - 1;
+            else
+                shipData[i].foldSet = 0;
+        }
+    }
+
+    for (i = 0; i < kMaxShipTypes; i++) {
+        shipClass[i].dailyHireRoll = (Rand(kDailyRollRange) + 1);
+        shipClass[i].dailySaleRoll = (Rand(kDailyRollRange) + 1);
+    }
+    for (i = 0; i < kMaxOutfits; i++)
+        outfitSystem[i].dailyRoll = (Rand(kDailyRollRange) + 1);
+
+    crashlog("dumping pilot log");
+    DumpPilotLog();
+
+    if (junk == 0)
+        goto ok;
+    return kPilotHasJunk; /* BUG: f is not closed on this path, only the junk == 0 path reaches fclose */
+
+badFile:
+    return kPilotUnreadable;
+
+ok:
+    fclose(f);
+    return kPilotOK;
+}
+
+// FUNCTION: EVNOVA 0x004cd030
+// MAC: _DoesPilotExist i386 0x00072def ppc 0x0007bc7c
+Boolean DoesPilotExist(const char *path)
+{
+    return DoesFileExist(path);
+}
+
+// FUNCTION: EVNOVA 0x004cd040
+// MAC: _DeletePilotFile i386 0x00072e6b ppc 0x0007bcec
+void DeletePilotFile(const char *name)
+{
+    char path[2048];
+
+    strcpy(path, pilotsFolder);
+    TextToUtf8(path + strlen(path), name, sizeof(path) - strlen(path));
+    strcat(path, ".plt");
+    if (!DoesPilotExist(path))
+        return;
+    DeleteAFile(path);
+}
+
+#define kEBugLastField 0x1f
+typedef struct {
+    short flag[kEBugLastField + 1];
+} EBugRec;
+
+#define kCharRecordSize 0x16a
+
+/* one debug switch per field index; absent resource or out-of-range index = off */
+// FUNCTION: EVNOVA 0x004cd0b0
+// MAC: _EVBugResourceFieldTest i386 0x0007132c ppc 0x00079d48
+Boolean EVBugResourceFieldTest(short field)
+{
+    Handle h;
+    Boolean on;
+
+    on = 0;
+    if (field < 0 || field > kEBugLastField)
+        return 0;
+    h = GetResource(kEBugType, 128);
+    if (h != NULL) {
+        if ((*(EBugRec **)h)->flag[field] != 0)
+            on = 1;
+        ReleaseResource(h);
+    }
+    return on;
+}
+
+/* The memset is inlined by mwcc (rep stosb): it needs -opt level=4,intrinsics with <string.h>
+   included. */
+
+// FUNCTION: EVNOVA 0x004cd100
+// MAC: _AdjustHandleSize i386 0x00076bca ppc 0x0007f9fc
+void AdjustHandleSize(Handle h, int32_t newSize)
+{
+    int32_t size;
+
+    if (h == NULL)
+        return;
+    size = GetAHandleSize(h);
+    if (size != newSize) {
+        ResizeAHandle(h, newSize);
+        if (size < newSize)
+            memset(*h + size, 0, newSize - size);
+    }
+}
+
+/* leaves the buffer empty if the list is missing or has no entries */
+// FUNCTION: EVNOVA 0x004cd140
+// MAC: _GetRandomIndString i386 0x00072ef7 ppc 0x0007bd74
+void GetRandomIndString(unsigned char *str, short strListID)
+{
+    Handle h;
+    short count;
+
+    str[0] = 0;
+    h = GetResource(kStringListType, strListID);
+    if (h != NULL) {
+        count = SwapEndianShort(&ResRec(StringListRec, h)->count);
+        ReleaseResource(h);
+        if (count > 0)
+            GetIndString(str, strListID, Rand(count) + 1);
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cd1a0
+// MAC: _StrcatIndCString i386 0x00072f90 ppc 0x0007be0c
+void StrcatIndCString(char *dst, short strListID, short index)
+{
+    unsigned char str[256];
+
+    GetIndString(str, strListID, index);
+    PtoCstr(str);
+    strcat(dst, (char *)str);
+}
+
+// FUNCTION: EVNOVA 0x004cd1f0
+// MAC: _DrawIndString i386 0x00072fd8 ppc 0x0007be50
+void DrawIndString(short strListID, short index)
+{
+    unsigned char str[256];
+
+    GetIndString(str, strListID, index);
+    DrawString(str);
+}
+
+
+/*
+ * Pascal resource names carry a ';'-introduced comment (Nova Bible
+ * convention); truncate at the last one and trim the spaces before it.
+ */
+// FUNCTION: EVNOVA 0x004cd230
+// MAC: _TrimResourceName i386 0x000717ac ppc 0x0007a208
+void TrimResourceName(unsigned char *name)
+{
+    short i;
+    short len;
+    Boolean seen;
+    int c;
+
+    seen = 0;
+    len = *name;
+    for (i = *name; i >= 1; i--) {
+        if (seen == 0) {
+            c = name[i];
+            if ((unsigned)c == ';') {
+                seen = 1;
+                len = i - 1;
+            }
+        } else {
+            c = name[i];
+            if ((unsigned)c == ' ') {
+                len = i - 1;
+            } else if ((unsigned)c != ';') {
+                len = i;
+                break;
+            }
+        }
+    }
+    *name = len;
+}
+
+/* the New Pilot screen starts on whichever character carries the flag */
+// FUNCTION: EVNOVA 0x004cd290
+// MAC: _GetDefaultCharResourceName i386 0x00077100 ppc 0x00080030
+void GetDefaultCharResourceName(unsigned char *name)
+{
+    short i;
+    short count;
+    short id;
+    uint32_t type;
+
+    count = CountResources(kCharType);
+    pstrcpy(name, (unsigned char *)"");
+    for (i = 0; i < count; i++) {
+        if (name[0] == 0) {
+            /* cleared first so a failed load leaves no stale handle behind */
+            charFileHand = NULL;
+            charFileHand = GetIndResource(kCharType, (i + 1));
+            if (charFileHand != NULL) {
+                if ((ResRec(CharRecord, charFileHand)->flags & kCharIsDefault) != 0)
+                    GetResInfo(charFileHand, &id, &type, name);
+                AdjustHandleSize(charFileHand, kCharRecordSize);
+                ReleaseResource(charFileHand);
+            }
+        }
+    }
+}
+
+#define kIntroSlides    4
+#define kMaxIntroDelay  300
+
+// FUNCTION: EVNOVA 0x004cd350
+// MAC: _GetCharResourceShipType i386 0x000770a1 ppc 0x0007ffb4
+short GetCharResourceShipType(const unsigned char *name)
+{
+    short index;
+
+    charFileHand = GetNamedResource(kCharType, name);
+    if (charFileHand != NULL) {
+        index = ResRec(CharRecord, charFileHand)->shipType;
+        if (index >= kFirstResourceID)
+            index -= kFirstResourceID;
+        else
+            index = 0;
+        AdjustHandleSize(charFileHand, kCharRecordSize);
+        ReleaseResource(charFileHand);
+    } else {
+        index = 0;
+    }
+    return index;
+}
+
+// FUNCTION: EVNOVA 0x004cd3b0
+// MAC: _GetCharResourceIntroIDs i386 0x00076fa9 ppc 0x0007fe5c
+void GetCharResourceIntroIDs(const unsigned char *name, short *introText, short *pics,
+                  short *delays)
+{
+    short i;
+
+    charFileHand = GetNamedResource(kCharType, name);
+    if (charFileHand != NULL) {
+        *introText = ResRec(CharRecord, charFileHand)->introTextID;
+        for (i = 0; i < kIntroSlides; i++) {
+            pics[i] = ResRec(CharRecord, charFileHand)->introPICT[i];
+            delays[i] = ResRec(CharRecord, charFileHand)->introDelay[i];
+            if (pics[i] >= kFirstResourceID) {
+                if (delays[i] < 0)
+                    delays[i] = 0;
+                if (delays[i] > kMaxIntroDelay)
+                    delays[i] = kMaxIntroDelay;
+            } else {
+                pics[i] = -1;
+                delays[i] = 0;
+            }
+        }
+        AdjustHandleSize(charFileHand, kCharRecordSize);
+        ReleaseResource(charFileHand);
+    } else {
+        *introText = 0x7ffd;
+        pics[0] = 0x2008;
+        delays[0] = 10;
+        for (i = 1; i < kIntroSlides; i++) {
+            pics[i] = -1;
+            delays[i] = 0;
+        }
+    }
+}
+
+#define kStartSystSlots       4
+#define kGovtSlots            4
+#define kFallbackCredits 0x2710
+#define kFallbackDate     0x8ca
+
+// FUNCTION: EVNOVA 0x004cd4b0
+// MAC: _ActivateCharResource i386 0x00076cb6 ppc 0x0007faf0
+void ActivateCharResource(const unsigned char *name, Boolean applyStats)
+{
+    short i;
+    short n;
+    short pick;
+    short govt;
+    CharRecord **cr;
+    CharRecord **startInfo;
+    short filled;
+
+    charFileHand = GetNamedResource(kCharType, name);
+    if (charFileHand != NULL) {
+    LockAHandle(charFileHand);
+    if (applyStats != 0) {
+        shipData->credits = ResRec(CharRecord, charFileHand)->cash;
+        if (shipData->credits < 0)
+            shipData->credits = 0;
+        shipData->type = ResRec(CharRecord, charFileHand)->shipType;
+        if (shipData->type >= kFirstResourceID)
+            shipData->type -= kFirstResourceID;
+        else
+            shipData->type = 0;
+        cr = (CharRecord **)charFileHand;
+        playerKills = (*cr)->kills;
+
+        filled = 0;
+        for (i = 0; i < kStartSystSlots; i++)
+            if ((*cr)->startSyst[i] >= kFirstResourceID)
+                filled++;
+        if (filled > 0) {
+            do {
+                pick = Rand(kStartSystSlots);
+            } while (ResRec(CharRecord, charFileHand)->startSyst[pick] < kFirstResourceID);
+            shipData->curSystem =
+                (ResRec(CharRecord, charFileHand)->startSyst[pick] - kFirstResourceID);
+        } else {
+            shipData->curSystem = 0;
+        }
+
+        for (i = 0; i < kGovtSlots; i++) {
+            govt = ResRec(CharRecord, charFileHand)->govt[i];
+            if (govt >= kFirstResourceID) {
+                govt -= kFirstResourceID;
+                for (n = 0; n < kMaxSystems; n++) {
+                    if (GovtAllies(systemData[n].govt, govt))
+                        playerRecord[n] =
+                            ResRec(CharRecord, charFileHand)->standing[i];
+                    else if (GovtEnemies(systemData[n].govt, govt))
+                        playerRecord[n] =
+                            -ResRec(CharRecord, charFileHand)->standing[i];
+                }
+            }
+        }
+
+        startInfo = (CharRecord **)charFileHand;
+        scenarioStartDate.day = (*startInfo)->startDay;
+        scenarioStartDate.month = (*startInfo)->startMonth;
+        scenarioStartDate.year = (*startInfo)->startYear;
+        strcpy(datePrefix, (*startInfo)->prefix);
+        strcpy(dateSuffix, ResRec(CharRecord, charFileHand)->suffix);
+    } else {
+        crashlog_mission_bit_set("starting character", (char *)name, 1, -1,
+                                 ResRec(CharRecord, charFileHand)->onStart);
+        EvalMissionBitSetString(ResRec(CharRecord, charFileHand)->onStart);
+    }
+
+    AdjustHandleSize(charFileHand, kCharRecordSize);
+    ReleaseResource(charFileHand);
+    } else {
+        shipData->credits = kFallbackCredits;
+        shipData->type = 0;
+        shipData->curSystem = 0;
+        playerKills = 0;
+        scenarioStartDate.day = 1;
+        scenarioStartDate.month = 1;
+        scenarioStartDate.year = kFallbackDate;
+        strcpy(datePrefix, "");
+        strcpy(dateSuffix, "");
+    }
+}

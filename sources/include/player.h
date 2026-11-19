@@ -76,7 +76,7 @@ extern Boolean HasAfterburner(ShipObj *ship);
 extern Boolean HasDensityScanner(ShipObj *ship);
 extern Boolean HasIFF(ShipObj *ship);
 extern void LoadPrefs(void);
-extern void PrefsJsonLoad(const char *path, PrefsRecord *rec);    /* prefsjson.c */
+extern void PrefsJsonLoad(const char *path, PrefsRecord *rec);    /* prefsjson.cpp */
 extern void PrefsJsonSave(const char *path, PrefsRecord *rec);
 extern void LoadResponse(short which);
 extern int32_t DoEncryption(void *buf, uint32_t len, uint32_t key);

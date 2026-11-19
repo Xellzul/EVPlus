@@ -1,4 +1,4 @@
-/* fontraster.h -- glyphs out of font files (port/fontraster.c, on FreeType). Plain C types only: the file
+/* fontraster.h -- glyphs out of font files (port/fontraster.cpp, on FreeType). Plain C types only: the file
    that sees FreeType's headers includes no game header. */
 #ifndef FONTRASTER_H
 #define FONTRASTER_H

@@ -196,19 +196,9 @@ add_library(yyjson STATIC ${YYJSON_DIR}/src/yyjson.c)
 target_compile_definitions(yyjson PRIVATE ${YYJSON_DEFS})
 target_compile_options(yyjson PRIVATE -O2 -ffunction-sections -fdata-sections -w)
 
-# -- the sources, C or C++ by each file's `// COMPILE: -lang c++` marker ----------------------------
-file(GLOB_RECURSE ALL_C CONFIGURE_DEPENDS ${SRC}/*.c)
-set(GAME_SRC "")
-foreach(f ${ALL_C})
-  file(STRINGS ${f} marker LIMIT_COUNT 30 REGEX "^[ \t]*//[ \t]*COMPILE:.*-lang c\\+\\+")
-  if(marker)
-    set_source_files_properties(${f} PROPERTIES LANGUAGE CXX)
-  endif()
-  list(APPEND GAME_SRC ${f})
-endforeach()
+file(GLOB_RECURSE GAME_SRC CONFIGURE_DEPENDS ${SRC}/*.cpp)
 
 # signed plain char (as MW), its FP evaluation in double; the decompile's pointer/aliasing habits;
-# one section per function so the link drops what nothing uses (as MW's linker does)
 set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fno-strict-aliasing
     -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double
     -Wno-everything -Werror=pointer-to-int-cast -Werror=int-to-pointer-cast -Werror=void-pointer-to-int-cast
@@ -221,9 +211,9 @@ add_executable(evnova_ce WIN32 ${GAME_SRC} ${SRC}/rsrc/evnova.rc)
 target_include_directories(evnova_ce PRIVATE ${SRC}/include)
 target_compile_options(evnova_ce PRIVATE ${EVNOVA_FLAGS})
 target_include_directories(evnova_ce PRIVATE ${FFMPEG_ROOT}/include)
-set_source_files_properties(${SRC}/port/fontraster.c PROPERTIES
+set_source_files_properties(${SRC}/port/fontraster.cpp PROPERTIES
     INCLUDE_DIRECTORIES ${FREETYPE_ROOT}/include/freetype2)
-set_source_files_properties(${SRC}/port/prefsjson.c PROPERTIES
+set_source_files_properties(${SRC}/port/prefsjson.cpp PROPERTIES
     COMPILE_DEFINITIONS "${YYJSON_DEFS}" INCLUDE_DIRECTORIES ${YYJSON_DIR}/src)
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "evnova64" LINKER_LANGUAGE CXX)
 target_link_libraries(evnova_ce PRIVATE ${FFMPEG_IMPORT} SDL3::SDL3-static ${FREETYPE_ROOT}/lib/libfreetype.a yyjson

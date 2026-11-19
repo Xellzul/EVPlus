@@ -18,17 +18,17 @@ extern "C" {
 /* --- one declaration per name --- */
 extern Boolean PlaySoundDistance(int32_t unused, void *sound, short flags,
                               FloatPoint *pos, FloatPoint *listener);
-                                                      /* 0x004692e0 (engineutils.c) */
+                                                      /* 0x004692e0 (engineutils.cpp) */
 extern void AdjustSoundVolume(void);                  /* 0x0046ab60 (mac _AdjustSoundVolume) */
 extern void HandleVoiceSound(void);              /* 0x004311f0 */
 extern void LoadSounds(void);                            /* 0x004b0740 */
 extern void PlaySound(void *snd, short id, short leftVol, short rightVol);      /* 0x0046aad0 */
 EXTERN_CPP_BEGIN
 extern uint32_t lastMoviesTaskTime;
-extern short pendingVoiceGovt;          /* 0x00735400 (globaldefs.c) */
-extern short voiceResourceCount[kVoiceSets][kVoiceMessages]; /* 0x005979da gameloop.c */
-extern short pendingVoiceMsg;           /* 0x007353fe (globaldefs.c) */
-extern short pendingVoiceParity;        /* 0x00735402 (globaldefs.c) */
+extern short pendingVoiceGovt;          /* 0x00735400 (globaldefs.cpp) */
+extern short voiceResourceCount[kVoiceSets][kVoiceMessages]; /* 0x005979da gameloop.cpp */
+extern short pendingVoiceMsg;           /* 0x007353fe (globaldefs.cpp) */
+extern short pendingVoiceParity;        /* 0x00735402 (globaldefs.cpp) */
 EXTERN_CPP_END
 
 extern void SetupIntroMusic(void);                   /* 0x004ab5d0 */

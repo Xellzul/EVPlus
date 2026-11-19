@@ -19,12 +19,12 @@ extern void AdjustInertialessShipVelocity(ShipObj *ship);                    /* 
 extern void AdjustedAccel(short angle, float accel, FloatPoint *vel,
                           float maxSpeed);                                  /* 0x0043b4e0 */
 extern void ApplyGravity(FloatPoint *a, FloatPoint *b, float force,
-                         FloatPoint *out);           /* 0x0046e2f0 (engineutils.c) */
+                         FloatPoint *out);           /* 0x0046e2f0 (engineutils.cpp) */
 extern short CalcSpobLeadAngle(SpobRecord *spob, ShipObj *target); /* 0x0043ba30 */
 extern void CheckShotProximities(void);          /* 0x00437e20 */
-extern void CreateAsteroids(void);                      /* 0x004216b0 initevnova.c */
-extern void DestroyPartialFleetCargo(short shipIndex);    /* 0x00469810 mac _DestroyPartialFleetCargo (engineutils.c) */
-extern void WrapObject(FloatPoint *pos);           /* 0x0045c6d0 (handleplayer.c) */
+extern void CreateAsteroids(void);                      /* 0x004216b0 initevnova.cpp */
+extern void DestroyPartialFleetCargo(short shipIndex);    /* 0x00469810 mac _DestroyPartialFleetCargo (engineutils.cpp) */
+extern void WrapObject(FloatPoint *pos);           /* 0x0045c6d0 (handleplayer.cpp) */
 extern void BuildTrigTable(void);                          /* 0x00461830 trig tables */
 extern void DestroyAsteroid(AsteroidObj *roid);                                /* 0x00462550 (mac _DestroyAsteroid) */
 extern void ClearStarfield(void);                                 /* 0x0046ede0 */
@@ -38,14 +38,14 @@ extern void HandleShipPointDefense(ShipObj *ship);                    /* 0x0043a
 extern void HandleSmoke(void);                   /* 0x0042c660 */
 extern void HandleStars(void);                   /* 0x0042e590 */
 extern void HandleStellarWeapons(void);          /* 0x0042d890 */
-extern short PickEmergeStellar(ShipObj *ship);   /* 0x0046e9e0 (engineutils.c) */
+extern short PickEmergeStellar(ShipObj *ship);   /* 0x0046e9e0 (engineutils.cpp) */
 extern void ModifyShotStartPosition2(ShipObj *ship, FloatPoint *pos, short weapType,
                                       short mount, short lane); /* 0x0046c5c0 */
 extern void NewParticle(int32_t color, int32_t horizLoc, int32_t vertLoc,
                         int32_t horizSpeed, int32_t vertSpeed,
                         short shade, short lifeCount);      /* 0x0047b960 */
 extern void RandomizeStars(void);                           /* 0x0046ebf0 */
-extern void ScrollStarfield(float dx, float dy);         /* 0x0046ee50 (engineutils.c FUN_) */
+extern void ScrollStarfield(float dx, float dy);         /* 0x0046ee50 (engineutils.cpp FUN_) */
 extern void SpawnBeam(short ship, short target, short weapType, short angle, short mount,
                       short flag);                           /* 0x00427a90 */
 extern short TableArcTan(float dx, float dy);    /* 0x004619b0 */

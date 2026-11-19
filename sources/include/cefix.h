@@ -15,7 +15,7 @@ extern "C" {
 struct Rect;
 struct DialogRecord;
 
-/* cestartup.c */
+/* cestartup.cpp */
 #define kCEIniSection       "EV Nova"
 
 extern int ceX2Hotkey;
@@ -26,7 +26,7 @@ void CE_ReadX2Hotkey(void);
 unsigned char CE_IsWindowed(void);
 void CE_ToggleFullscreen(void);
 
-/* cescale.c */
+/* cescale.cpp */
 extern double ceScaleFactor;
 extern unsigned char ceScaleEnabled;
 extern int ceGridCellWidth;
@@ -45,7 +45,7 @@ void CE_ScaleOffsetRect(struct Rect *r, int dh, int dv);
 void CE_ScaleOffsetRectBottom(struct Rect *r, int dh, int dv);
 int32_t CE_SetDialogTemplateBounds(struct DialogRecord *dlg, const unsigned short *tmpl);
 
-/* cepaths.c */
+/* cepaths.cpp */
 #ifndef __cplusplus
 #endif
 
@@ -55,15 +55,15 @@ short CE_OpenPlugInsFallback(const char *path, const char *ext, FILE *log);
 void CE_ExpandFilesPath(char *dst, const char *path);
 void CE_ExpandPlugInsPath(char *dst, const char *path);
 
-/* cetext.c */
+/* cetext.cpp */
 
 void CE_DrawVersion(void);
 
-/* cedialog.c */
+/* cedialog.cpp */
 int32_t CE_TruncF32(float value);
 int32_t CE_RoundD(double value);
 
-/* ceblit.c */
+/* ceblit.cpp */
 struct PixMap;
 struct CGrafPort;
 
@@ -74,7 +74,7 @@ void CE_Blit16Mask(struct PixMap *src, struct PixMap *mask, struct PixMap *dst,
                    struct Rect *srcRect, struct Rect *maskRect, struct Rect *dstRect);
 short CE_NewGWorld(struct CGrafPort **out, int depth, const struct Rect *bounds, void *theGDH);
 
-/* cedebug.c */
+/* cedebug.cpp */
 
 struct RGBColor;
 
@@ -82,12 +82,12 @@ unsigned char CE_CheckDebugKeys(ScanCode scanCode);
 char *CE_NumberToAscii(char *dst, int32_t value, uint32_t flags);
 void CE_SetFlashColor(const struct RGBColor *color);
 
-/* ceppat.c */
+/* ceppat.cpp */
 struct Image_t;
 
 int CE_ImageParsePPat(struct Image_t *image, const void *ppat);
 
-/* cemap.c */
+/* cemap.cpp */
 #define kCEBordersWidth     860         /* the border grid in 2 px cells: maps up to 1720x1024 */
 #define kCEBordersHeight    512
 
@@ -96,7 +96,7 @@ extern int ceMapBordersVisibleHeight;
 
 void CE_RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom, struct Rect *r);
 
-/* cehud.c */
+/* cehud.cpp */
 void CE_ScaleStatusRects(void);
 void CE_MoveTo(short h, short v);
 

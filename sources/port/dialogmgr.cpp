@@ -1,0 +1,2302 @@
+/* dialogmgr.cpp -- the port's Dialog, Control and List Manager (win 0x004cea90..0x004d2950, in exe order). Notes: Research/notes/dialogmgr.md */
+#include "burgerplat.h"
+#include <stddef.h>
+#include <string.h>   /* strcpy 0x004d6010, strlen 0x004eedb0 */
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "macport.h"
+#include "gametypes.h"
+#include "game.h"
+#include "burger.h"
+#include "render.h"
+#include "sound.h"
+#include "dialogs.h"
+#include "prototypes.h"
+#include "cefix.h"
+#include "platform.h"
+#include "endianswap.h"
+
+/* A control points back at the dialog that owns it so that changing a value
+   can mark the dialog dirty. */
+
+#define kEditTextItem 0x10
+
+/* the dialog manager's globals */
+DialogPtr gCurDialog;
+int32_t gDialogCount;
+DialogPtr gDialogStack[16];
+int32_t gBlinkTick;
+int32_t gLastModifiers;
+uint32_t gClickTime;
+void *gClickDialog;
+void *gClickItem;
+int32_t gRezOpenPending;
+
+/* the port has exactly one window, so there is nothing to search */
+
+/* the Toolbox GetMouse answers in port-local coordinates, so the port's
+   raw global reading has the current dialog's top left taken off it */
+
+/* a dialog record starts with the GWorldContainer it draws into */
+
+/* clamps into the control's own range, then marks its dialog for redraw */
+
+/* the GetWindowPortRect of the port's own dialog record */
+
+/* Three Toolbox entry points that collapsed to the same store: the item and
+   the rect saying WHAT to invalidate are discarded and the dialog is redrawn. */
+
+/* an item with no text of its own answers the empty string */
+
+/* only the three editable item kinds carry text */
+
+/*
+ * Resize a dialog and the offscreen world behind it (win 0x004d18b0). The DIB
+ * section is rebuilt at the new size, so the old bitmap is deleted first and
+ * the port's baseAddr is re-pointed by CreateDIBSection.
+ */
+
+/*
+ * Replaces an item's text, reallocating to fit. An editable item also has its
+ * selection reset to the whole string, which is what reuses minValue/maxValue.
+ * The dialog is only marked dirty when text was actually installed.
+ */
+
+/* the pascal-string entry point SetControlTitle dispatches to */
+
+/* and the pascal-string reader that mirrors it */
+
+/* set the text back without disturbing the caret or the selection */
+
+/*
+ * A list item's data block: the MENU's title, then fixed-width C-string
+ * entries, each with its flag byte at [0x100]. Indices are 1-based.
+ */
+#define kListItem 0x80
+
+typedef struct DlgListEntry {
+    char text[0x100];
+    char flag;
+} DlgListEntry;
+
+typedef struct DlgListRec {
+    char title[0x100];          /* +0x000 */
+    int32_t count;                 /* +0x100 */
+    DlgListEntry item[256];     /* +0x104 */
+} DlgListRec;
+
+/*
+ * The scroll state behind a list; a separate record from the dialog, sharing
+ * only the convention of being reached through a handle.
+ */
+
+/* The two "no such item" stores load their zero byte from a pooled empty string, so
+   they are an inlined strcpy: this file takes <string.h> and intrinsics. */
+
+/* scroll by `delta`, then clamp to the last full page and to zero */
+
+/* The bevel the port draws round a control: an optional fill, then a highlight
+   down the top and left edges and a shadow up the bottom and right. Each edge is
+   drawn as its own move/line pair rather than a polyline, so the corner pixel is
+   painted twice and both diagonals start from the same inset corner. */
+
+/* The vertical run's `if (n == 9) n = 0;' can never fire and is in the original. The
+   corner goes through the botRight Point view of the Rect: spelled r->bottom/r->right
+   it value-numbers into the loop bounds. */
+
+/* scroll the selected row into view, doing nothing when the whole list already
+   fits or when the row is already on screen */
+
+/* the box a run of wrapped text will occupy, sat on its baseline */
+
+/*
+ * The item list is a plain ControlRecord array (0x28 stride on 32-bit) hanging off the dialog, and
+ * item numbers are 1-based as the Toolbox has them. Every Dialog Manager
+ * entry point that takes an item number funnels through this.
+ */
+#define kDialogItemSize sizeof(ControlRecord)
+
+/* An absent item answers zero in each out-parameter except the handle, which
+   gets the null record itself. */
+
+/*
+ * The Toolbox signature carries the type and handle too, but the port stores
+ * only the box — the other two are set when the item is built. Marking the
+ * owning dialog for update is what makes a moved item repaint.
+ */
+
+/* The three resource-backed item kinds load their resource here; the three longs ahead
+   of the box are the control's value and its range. The length is unsigned and the
+   guard casts it signed, so a negative count means "no data". */
+#define kResourceControlItem 7
+#define kIconItem         0x20
+#define kPictureItem      0x40
+
+#define kHelpItem         1
+#define kButtonItem       4
+#define kCheckBoxItem     5
+#define kRadioButtonItem  6
+#define kStaticTextItem   8
+
+int32_t gCaretPhase = 1;                             /* 0x00576130 (name invented) */
+
+/* 0x0056f118 / 11e / 124 / 12a (names invented) */
+static const RGBColor bevelGray1 = { 50000, 50000, 50000 };
+static const RGBColor bevelGray2 = { 35000, 35000, 35000 };
+static const RGBColor bevelGray3 = { 25000, 25000, 25000 };
+static const RGBColor bevelGray4 = { 15000, 15000, 15000 };
+
+EXTERN_C_BEGIN
+
+/* A CNTL resource, big-endian as it comes off the rez file. Only min, procID
+   and the title survive; bounds/value/max are swapped and dropped. */
+#pragma pack(push, 1)
+typedef struct CntlTemplate {
+    Rect bounds;                     /* +0x00, discarded */
+    short value;                     /* +0x08, discarded */
+    char visible;                    /* +0x0a, discarded */
+    char filler;                     /* +0x0b, discarded */
+    short max;                       /* +0x0c, discarded */
+    short min;                       /* +0x0e */
+    short procID;                    /* +0x10 */
+    int32_t refCon;                     /* +0x12 */
+    unsigned char title[1];          /* +0x16, Str255 */
+} CntlTemplate;
+#pragma pack(pop)
+
+#define kCNTLType 0x434e544c
+
+#define kResourceSliderProc  1008
+#define kResourceRangeProc   1012
+
+#define kMENUType 0x4d454e55
+
+/*
+ * Put the selection on an editable item's text (win 0x004cfca0). The range is
+ * clamped to the text that is actually there, an item with no text gets an
+ * empty selection, and the dialog remembers which item owns the caret.
+ */
+
+/*
+ * Redraw the dialog stack (win 0x004d1810). Screen updates are suspended for
+ * the duration and the previous suspend state restored, the game's own screen
+ * is refreshed underneath first, and `all` says whether the frontmost dialog
+ * is included or left for its own update proc.
+ */
+
+/*
+ * Blit the dialogs' offscreen worlds to the screen (win 0x004d16f0). `all`
+ * walks the whole stack; otherwise only the current dialog goes up. A dialog
+ * with visible clear has nothing on screen yet and is skipped either way.
+ */
+
+/* a control's storage is the item array itself, so there is nothing to free */
+static __inline void DisposeControl(void *ctl)
+{
+}
+
+/* Dialog Manager item types, as far as the port distinguishes them */
+#define kResCtrlItem 7                  /* ctrlItem + resCtrl */
+#define kPicItem    64
+
+#define kDLOGType 0x444c4f47
+#define kDITLType 0x4449544c
+#define kDlogDitlWord 9                 /* the DLOG template's word with its DITL's id */
+
+/* keys come back from KeyboardGet2 as BurgerLib ASCII codes */
+#define ASCII_BACKSPACE  0x08
+#define ASCII_TAB        0x09
+#define ASCII_DOWNARROW  0x0a
+#define ASCII_UPARROW    0x0b
+#define ASCII_RETURN     0x0d
+#define ASCII_ESCAPE     0x1b
+#define ASCII_RIGHTARROW 0x15
+#define ASCII_LEFTARROW  0x96
+#define ASCII_DELETE     0x97
+
+/*
+ * Build a dialog from its DLOG and DITL (win 0x004cf760) and make it current.
+ * The DLOG parser answers the DITL's id. The window rect starts as a copy of
+ * the screen bounds moved to the origin, because the dialog draws into its own
+ * offscreen world and is blitted into place later.
+ */
+
+/*
+ * The rest of the window plumbing: the list scrollbar pair the dialog list
+ * accessors above reach through nv_NewDialog records, the main window proc CreateGameWindow registers, and
+ * the atexit handler winmain.cpp installs by pointer.
+ */
+
+typedef struct WinPoint {
+    int32_t x;
+    int32_t y;
+} WinPoint;
+
+typedef struct MINMAXINFO {
+    WinPoint ptReserved;        /* +0x00 */
+    WinPoint ptMaxSize;         /* +0x08 */
+    WinPoint ptMaxPosition;     /* +0x10 */
+    WinPoint ptMinTrackSize;    /* +0x18 */
+    WinPoint ptMaxTrackSize;    /* +0x20 */
+} MINMAXINFO;
+
+                                                         /* IAT 0x0058f8f8 */
+                                                         /* IAT 0x0058f8e4 */
+                                                         /* IAT 0x0058f8e8 */
+                                                         /* IAT 0x0058f8ec */
+
+/*
+ * A click in one of the lists behind an nv_NewDialog record: either drives
+ * the scrollbar (arrows scroll one row, the shaft pages by a screenful,
+ * against the same 15-wide geometry LUpdate draws) or picks the row
+ * under the point. Both paths timestamp the click for the callers that
+ * detect double clicks.
+ */
+
+// FUNCTION: EVNOVA 0x004cea90
+void *nv_GetDialogItemRecord(DialogPtr dlg, int32_t item)
+{
+    void *rec;
+
+    if (item < 1 || item > dlg->itemCount)
+        rec = NULL;
+    else
+        rec = (char *)dlg->items + (item - 1) * kDialogItemSize;
+    return rec;
+}
+
+// FUNCTION: EVNOVA 0x004ceac0
+void LoadMenuListItem(ControlRecord *rec, int32_t menuID, unsigned char *promptTitle,
+                  int32_t resType)
+{
+    DlgListRec *list;
+    Handle h;
+    unsigned char *scratch;
+    int32_t i, idx;
+    int32_t count;
+    Handle rh;
+    unsigned char *p;
+    char *dest;
+    unsigned char entry[256];
+    unsigned char name[256];
+    short id;
+    uint32_t type;
+    unsigned char title[256];
+    int32_t slot;
+    char *line;
+    unsigned char flag;
+
+    h = GetResource(kMENUType, menuID);
+    if (h == NULL)
+        return;
+    LockAHandle(h);
+    p = (unsigned char *)*h;
+    rec->kind = kListItem;
+    rec->data = AllocAPointer(sizeof(DlgListRec));
+    rec->value = 1;
+    list = (DlgListRec *)rec->data;
+    SwapEndianShort((unsigned short *)p);
+    SwapEndianShort((unsigned short *)(p + 6));
+    SwapEndianLong((uint32_t *)(p + 0xa));
+    title[0] = p[0xe];
+    p += 0xf;
+    memcpy(&title[1], p, title[0]);
+    p += title[0];
+    PStr2CStr(list->title, title);
+    list->count = 0;
+    scratch = &entry[1];
+    while (*p != 0 && list->count < 256) {
+        idx = list->count++;
+        dest = list->item[idx].text;
+        entry[0] = *p;
+        p += 1;
+        memcpy(scratch, p, entry[0]);
+        p += entry[0];
+        PStr2CStr(dest, entry);
+        flag = p[1];
+        p += 4;
+        dest[0x100] = flag;
+    }
+    if (resType != 0) {
+        count = CountResources(resType);
+        i = 0;
+        while (i < count && list->count < 256) {
+            rh = GetIndResource(resType, (i + 1));
+            if (rh != NULL) {
+                GetResInfo(rh, &id, &type, name);
+                if (name[1] != '.') {
+                    slot = list->count++;
+                    line = list->item[slot].text;
+                    PStr2CStr(line, name);
+                    line[0x100] = 0;
+                }
+                ReleaseResource(rh);
+            }
+            i += 1;
+        }
+    }
+    ReleaseResource(h);
+}
+
+// FUNCTION: EVNOVA 0x004cecf0
+void LoadControlResource(ControlRecord *rec, uint32_t resID)
+{
+    int32_t min;
+    uint32_t refCon;
+    short procID;
+    unsigned char title[256];
+    CntlTemplate *t;
+    Handle h;
+
+    h = GetResource(kCNTLType, resID);
+    if (h == NULL)
+        return;
+    LockAHandle(h);
+    t = (CntlTemplate *)*h;
+    SwapEndianShort((unsigned short *)&t->bounds.top);
+    SwapEndianShort((unsigned short *)&t->bounds.left);
+    SwapEndianShort((unsigned short *)&t->bounds.bottom);
+    SwapEndianShort((unsigned short *)&t->bounds.right);
+    SwapEndianShort((unsigned short *)&t->value);
+    SwapEndianShort((unsigned short *)&t->max);
+    min = SwapEndianShort((unsigned short *)&t->min);
+    procID = SwapEndianShort((unsigned short *)&t->procID);
+    refCon = SwapEndianLong((uint32_t *)&t->refCon);
+    title[0] = t->title[0];
+    memcpy(&title[1], &t->title[1], title[0]);
+    ReleaseResource(h);
+    switch (procID) {
+    case kResourceSliderProc:
+        LoadMenuListItem(rec, min, title, 0);
+        break;
+    case kResourceRangeProc:
+        LoadMenuListItem(rec, min, title, refCon);
+        break;
+    default:
+        break;
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cede0
+ControlRecord *nv_AppendDialogItem(int32_t kind, int32_t value, int32_t minValue,
+                                   int32_t maxValue, const Rect *box,
+                                   const void *data, uint32_t dataLen,
+                                   DialogPtr dlg)
+{
+    int32_t index;
+    ControlRecord *rec;
+
+    index = dlg->itemCount;
+    dlg->itemCount = dlg->itemCount + 1;
+    rec = (ControlRecord *)((char *)dlg->items + index * kDialogItemSize);
+    rec->kind = kind;
+    rec->itemNo = index + 1;
+    rec->value = value;
+    rec->minValue = minValue;
+    rec->maxValue = maxValue;
+    rec->box.top = box->top;
+    rec->box.left = box->left;
+    rec->box.bottom = box->bottom;
+    rec->box.right = box->right;
+    rec->data = NULL;
+    rec->owner = dlg;
+    rec->enabled = 1;
+    switch (kind) {
+    case kResourceControlItem:
+        LoadControlResource(rec, value);
+        break;
+    case kIconItem:
+        rec->data = GetCIcon(value);
+        if (rec->data != NULL)
+            goto done;
+        break;
+    case kPictureItem:
+        rec->data = GetPicture(value);
+        if (rec->data != NULL)
+            goto done;
+        break;
+    default:
+        if ((int32_t)dataLen > 0) {
+            rec->data = AllocAPointer(dataLen);
+            memcpy(rec->data, data, dataLen);
+        }
+    }
+done:
+    return rec;
+}
+
+// FUNCTION: EVNOVA 0x004cef50
+void ParseDITL(DialogPtr dlg, unsigned char *p)
+{
+    int32_t lastIndex;
+    int32_t i;
+    int32_t type;
+    unsigned char rawType;
+    int32_t value;
+    int32_t dataLen;
+    int32_t len0;
+    Rect box;
+    unsigned char text[256];
+    ControlRecord *item;
+
+    lastIndex = SwapEndianShort((unsigned short *)p);
+    p += 2;
+    if (lastIndex >= 0)
+        dlg->items = AllocAPointer((lastIndex + 1) * kDialogItemSize);
+    else
+        dlg->items = NULL;
+
+    for (i = 1; i <= lastIndex + 1; i++) {
+        box.top = SwapEndianShort((unsigned short *)(p + 4));
+        box.left = SwapEndianShort((unsigned short *)(p + 6));
+        box.bottom = SwapEndianShort((unsigned short *)(p + 8));
+        box.right = SwapEndianShort((unsigned short *)(p + 10));
+        rawType = p[12];
+        p += 13;
+        type = rawType & 0x7f;
+
+        if (type == kButtonItem || type == kCheckBoxItem ||
+            type == kRadioButtonItem || type == kStaticTextItem ||
+            type == kEditTextItem) {
+            len0 = p[0];
+            PStr2CStr((char *)text, p);
+            dataLen = strlen((char *)text) + 1;
+            p += (unsigned char)len0 + 1;
+        } else if (type == kResourceControlItem || type == kIconItem ||
+                   type == kPictureItem) {
+            value = SwapEndianShort((unsigned short *)(p + 1));
+            p += 3;
+        } else {
+            p += 1;
+        }
+
+        CE_ScaleRect(&box);
+        switch (type) {
+        case 0:
+            item = nv_AppendDialogItem(0, 0, 0, 1, &box, NULL, 0, dlg);
+            break;
+        case kHelpItem:
+            break;
+        case kButtonItem:
+            item = nv_AppendDialogItem(kButtonItem, 0, 0, 1, &box, text, dataLen, dlg);
+            break;
+        case kCheckBoxItem:
+        case kRadioButtonItem:
+            item = nv_AppendDialogItem(kCheckBoxItem, 0, 0, 1, &box, text, dataLen, dlg);
+            break;
+        case kResourceControlItem:
+            item = nv_AppendDialogItem(kResourceControlItem, value, 0, 1, &box, NULL, 0, dlg);
+            break;
+        case kStaticTextItem:
+            item = nv_AppendDialogItem(kStaticTextItem, 0, 0, 1, &box, text, dataLen, dlg);
+            break;
+        case kEditTextItem:
+            item = nv_AppendDialogItem(kEditTextItem, 0, 0, 0, &box, text, dataLen, dlg);
+            break;
+        case kIconItem:
+            item = nv_AppendDialogItem(kIconItem, value, 0, 1, &box, NULL, 0, dlg);
+            break;
+        case kPictureItem:
+            item = nv_AppendDialogItem(kPictureItem, value, 0, 1, &box, NULL, 0, dlg);
+            break;
+        }
+
+        if (dlg->editItem == 0) {
+            if (item->kind != kPictureItem && item->kind != kIconItem &&
+                item->kind != 0 && item->kind != kStaticTextItem &&
+                item->kind != 1)
+                dlg->editItem = item->itemNo;
+        }
+        if (((intptr_t)p & 1) != 0)
+            p += 1;
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cf1c0
+int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
+{
+    GWorldContainer gw;
+    Rect box;
+    Rect hilite;
+    Point pt;
+    Rect *portRect;
+    int32_t result;
+    int32_t scroll;
+    int32_t maxScroll;
+    CGrafPtr savedPort;
+    DlgListRec *list;
+    int32_t w;
+    int32_t i;
+    short lastV;
+    short lastH;
+    short h;
+    int32_t v;
+    int32_t x;
+
+    list = (DlgListRec *)rec->data;
+    result = 0;
+    scroll = 0;
+    maxScroll = 0;
+    box.top = rec->box.top;
+    box.left = rec->box.left;
+    box.bottom = rec->box.bottom;
+    box.right = rec->box.right;
+    box.left += 100;
+    GetGlobalMouse(&pt);
+    if (PtInRect(pt.h - dlg->bounds.left, pt.v - dlg->bounds.top, &box)) {
+        portRect = GetCWindowPortRect(gWind);
+        CreateGWorldContainer(&gw, 0, 0, &box);
+        SetGWorldContainer(&gw);
+        for (i = 0; i < list->count; i++) {
+            w = MeasureCString(list->item[i].text) + 3;
+            if (w > box.right - box.left + 8)
+                box.right = box.left + w + 8;
+        }
+        UnsetGWorldContainer(&gw);
+        DisposeGWorldContainer(&gw);
+        if ((box.right - box.left) % 2 != 0)
+            box.right += 1;
+        box.bottom = box.top + list->count * 20;
+        OffsetRect(&box, dlg->bounds.left, dlg->bounds.top);
+        if (list->count * 20 > portRect->bottom - portRect->top) {
+            box.top = portRect->top;
+            box.bottom = portRect->bottom;
+            maxScroll = list->count * 20 - (portRect->bottom - portRect->top);
+        } else if (box.bottom > portRect->bottom) {
+            OffsetRect(&box, 0, portRect->bottom - box.bottom);
+        } else if (box.top < portRect->top) {
+            OffsetRect(&box, 0, portRect->top - box.top);
+        }
+        CreateGWorldContainer(&gw, 0, 0, &box);
+        SetGWorldContainer(&gw);
+        EraseRect(&box);
+        UnsetGWorldContainer(&gw);
+        lastH = lastV = -1;
+        do {
+            GetGlobalMouse(&pt);
+            h = pt.h;
+            x = h;
+            v = pt.v;
+            if (maxScroll != 0 && scroll > 0 && pt.v < 20) {
+                scroll -= 20;
+                if (scroll < 0)
+                    scroll = 0;
+                lastH = lastV = -1;
+            } else if (maxScroll != 0 && scroll < maxScroll &&
+                       pt.v > portRect->bottom - portRect->top - 20) {
+                scroll += 20;
+                if (scroll > maxScroll)
+                    scroll = maxScroll;
+                lastH = lastV = -1;
+            }
+            if (h != lastH || pt.v != lastV) {
+                if (PtInRect(x, v, &box))
+                    result = (v - (box.top - scroll)) / 20 + 1;
+                else
+                    result = 0;
+                GetPort(&savedPort);
+                SetPort(gw.world);
+                DrawBevel(&box, &bevelGray2, &bevelGray1,
+                             &bevelGray4);
+                RGBForeColor(&rgbBlack);
+                for (i = 0; i < list->count; i++) {
+                    w = MeasureCString(list->item[i].text) + 4;
+                    MoveTo(box.right - w,
+                           box.top - scroll + i * 20 +
+                               (CurrentGrafPort->txSize + 20) / 2 - 1);
+                    DrawCString((char *)&list->item[i]);
+                    if (i == result - 1) {
+                        hilite.left = box.left + 2;
+                        hilite.right = box.right - 2;
+                        hilite.top = box.top - scroll + i * 20 + 2;
+                        hilite.bottom = hilite.top + 0x12;
+                        InvertRect(&hilite);
+                    }
+                }
+                DrawBevel(&box, NULL, &bevelGray1, &bevelGray4);
+                CopyBits((BitMapPtr)GetGWCPixMap(&gw),
+                         GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
+                         &box, &box, 0, NULL);
+                SetPort(savedPort);
+                ScreenEndScene();
+                lastV = pt.v;
+                lastH = pt.h;
+            }
+            HandleIntroMusic(0);
+            KeyboardKbhit();
+        } while (MouseReadButtons() != 0);
+        DisposeGWorldContainer(&gw);
+        dlg->needsUpdate = 1;
+        RedrawDialogs(1);
+        ScreenEndScene();
+    }
+    return result;
+}
+
+/* A dialog from a DLOG template and its DITL, both as they come off a rez file (big-endian). */
+static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsigned char *ditl,
+                                       DialogUpdateProc updateProc, DialogEventProc eventProc)
+{
+    DialogPtr dlg;
+
+    dlg = (DialogPtr)AllocAPointerClear(sizeof(DialogRecord));
+    dlg->itemCount = 0;
+    dlg->editItem = 0;
+    dlg->defaultItem = 0;
+    dlg->cancelItem = 0;
+    dlg->updateProc = (void *)updateProc;
+    dlg->eventProc = (void *)eventProc;
+    dlg->needsUpdate = 1;
+    dlg->visible = 1;
+    CE_SetDialogTemplateBounds(dlg, dlogTemplate);
+    ParseDITL(dlg, ditl);
+    dlg->portRect.top = dlg->bounds.top;
+    dlg->portRect.left = dlg->bounds.left;
+    dlg->portRect.bottom = dlg->bounds.bottom;
+    dlg->portRect.right = dlg->bounds.right;
+    OffsetRect(&dlg->portRect, -dlg->bounds.left, -dlg->bounds.top);
+    CreateGWorldContainer((GWorldContainer *)dlg, 0, 0, &dlg->portRect);
+    SetGWorldContainer((GWorldContainer *)dlg);
+    EraseRect(&dlg->portRect);
+    UnsetGWorldContainer((GWorldContainer *)dlg);
+    gDialogStack[gDialogCount] = dlg;
+    gDialogCount += 1;
+    gCurDialog = dlg;
+    MouseClicked = 0;
+    return dlg;
+}
+
+// FUNCTION: EVNOVA 0x004cf760
+DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventProc eventProc)
+{
+    DialogPtr dlg;
+    Handle dlogRes;
+    Handle ditlRes;
+    short ditlID;
+
+    dlogRes = GetResource(kDLOGType, dlogID);
+    LockAHandle(dlogRes);
+    ditlID = SwapEndianShort((const unsigned short *)*dlogRes + kDlogDitlWord);
+    ditlRes = GetResource(kDITLType, ditlID);
+    LockAHandle(ditlRes);
+    dlg = NewDialogFromTemplate((const unsigned short *)*dlogRes, (unsigned char *)*ditlRes, updateProc,
+                                eventProc);
+    ReleaseResource(ditlRes);
+    ReleaseResource(dlogRes);
+    return dlg;
+}
+
+static void PutBigShort(unsigned char *p, int value)
+{
+    p[0] = (unsigned char)(value >> 8);
+    p[1] = (unsigned char)value;
+}
+
+/* A dialog of width x height made from a list of items instead of a DLOG and DITL resource: the
+   items become a DITL in memory, item 1 the first of the list. */
+DialogPtr NewDialogFromItems(short width, short height, const DialogItemSpec *items, short count,
+                             DialogUpdateProc updateProc, DialogEventProc eventProc)
+{
+    unsigned short dlogTemplate[kDlogDitlWord + 1];
+    unsigned char *ditl;
+    unsigned char *p;
+    size_t size;
+    size_t length;
+    DialogPtr dlg;
+    short i;
+
+    size = 2;
+    for (i = 0; i < count; i++) {
+        length = items[i].text != NULL ? strlen(items[i].text) : 0;
+        if (length > 255)
+            length = 255;
+        size += 14 + length + 2;
+    }
+    ditl = (unsigned char *)AllocAPointerClear(size);
+    PutBigShort(ditl, count - 1);
+    p = ditl + 2;
+    for (i = 0; i < count; i++) {
+        PutBigShort(p + 4, items[i].top);
+        PutBigShort(p + 6, items[i].left);
+        PutBigShort(p + 8, items[i].bottom);
+        PutBigShort(p + 10, items[i].right);
+        p[12] = items[i].kind;
+        if (items[i].kind == kPictureItem || items[i].kind == kIconItem) {
+            p[13] = 2;
+            PutBigShort(p + 14, items[i].resID);
+            p += 16;
+        } else {
+            length = items[i].text != NULL ? strlen(items[i].text) : 0;
+            if (length > 255)
+                length = 255;
+            p[13] = (unsigned char)length;
+            memcpy(p + 14, items[i].text, length);
+            p += 14 + length;
+        }
+        if (((p - ditl) & 1) != 0)
+            p += 1;
+    }
+    memset(dlogTemplate, 0, sizeof(dlogTemplate));
+    PutBigShort((unsigned char *)&dlogTemplate[2], height);
+    PutBigShort((unsigned char *)&dlogTemplate[3], width);
+    dlg = NewDialogFromTemplate(dlogTemplate, ditl, updateProc, eventProc);
+    DeallocAPointer(ditl);
+    return dlg;
+}
+
+// FUNCTION: EVNOVA 0x004cf890
+void DisposeDialog(DialogPtr dlg)
+{
+    ControlPtr item;
+    int32_t i;
+
+    if (dlg->items != NULL) {
+        for (i = 0; i < dlg->itemCount; i++) {
+            item = &((ControlPtr)dlg->items)[i];
+            if (item->data != NULL) {
+                switch (item->kind) {
+                case kResCtrlItem:
+                    if (item->data != NULL)
+                        DisposeControl(item->data);
+                    break;
+                case kIconItem:
+                    DisposeCIcon((Image_t *)item->data);
+                    break;
+                case kPicItem:
+                    QDReleaseResource((PicHandle)item->data);
+                    break;
+                default:
+                    if (item->data != NULL)
+                        DeallocAPointer(item->data);
+                    break;
+                }
+            }
+        }
+    }
+    DisposeGWorldContainer((GWorldContainer *)dlg);
+    if (dlg->items != NULL)
+        DeallocAPointer(dlg->items);
+    DeallocAPointer(dlg);
+    gDialogCount -= 1;
+    gDialogStack[gDialogCount] = NULL;
+    if (gDialogCount > 0) {
+        i = gDialogCount - 1;
+        gCurDialog = gDialogStack[i];
+    } else {
+        gCurDialog = NULL;
+    }
+    RedrawDialogs(1);
+    ScreenEndScene();
+}
+
+// FUNCTION: EVNOVA 0x004cf960
+void GetDialogItem(DialogPtr dlg, int32_t item, short *type, Handle *handle,
+                   Rect *box)
+{
+    ControlRecord *rec;
+
+    rec = (ControlRecord *)nv_GetDialogItemRecord(dlg, item);
+    if (type != NULL)
+        *type = rec != NULL ? rec->kind : 0;
+    if (handle != NULL)
+        *handle = (Handle)rec;
+    if (box != NULL) {
+        box->top = rec != NULL ? rec->box.top : 0;
+        box->left = rec != NULL ? rec->box.left : 0;
+        box->bottom = rec != NULL ? rec->box.bottom : 0;
+        box->right = rec != NULL ? rec->box.right : 0;
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cf9f0
+void SetDialogItem(DialogPtr dlg, int32_t item, short type, void *handle,
+                   const Rect *box)
+{
+    ControlRecord *rec;
+
+    rec = (ControlRecord *)nv_GetDialogItemRecord(dlg, item);
+    if (rec == NULL)
+        return;
+    if (box != NULL) {
+        rec->box.top = box->top;
+        rec->box.left = box->left;
+        rec->box.bottom = box->bottom;
+        rec->box.right = box->right;
+        rec->owner->needsUpdate = 1;
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cfa40
+void SetDialogDefaultItem(DialogPtr dlg, int32_t value)
+{
+    dlg->defaultItem = value;
+    dlg->needsUpdate = 1;
+}
+
+// FUNCTION: EVNOVA 0x004cfa60
+void GetMenuItemCText(ControlPtr ctl, int index, char *text)
+{
+    DlgListRec *list;
+
+    if (ctl->kind != kListItem) {
+        strcpy(text, "");
+    } else {
+        list = (DlgListRec *)ctl->data;
+        if (list->count <= 0 || index < 1 || index > list->count)
+            strcpy(text, "");
+        else
+            strcpy(text, list->item[index - 1].text);
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cfac0
+void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text)
+{
+    char buf[256];
+
+    GetMenuItemCText(ctl, index, buf);
+    text[0] = strlen(buf);
+    memcpy(text + 1, buf, text[0]);
+}
+
+// FUNCTION: EVNOVA 0x004cfb10
+void SetControlText(ControlPtr ctl, const char *text)
+{
+    char changed;
+    int32_t len;
+
+    changed = 0;
+    if (ctl->data != NULL) {
+        DeallocAPointer(ctl->data);
+        ctl->data = NULL;
+    }
+    if (text != NULL) {
+        len = strlen(text);
+        ctl->data = AllocAPointer(len + 1);
+        strcpy((char *)ctl->data, text);
+        if (ctl->kind == kEditTextItem) {
+            ctl->minValue = 0;
+            ctl->maxValue = strlen((char *)ctl->data);
+        }
+        changed = 1;
+    }
+    if (changed)
+        ctl->owner->needsUpdate = 1;
+}
+
+// FUNCTION: EVNOVA 0x004cfb90
+void SetDialogItemText(Handle item, const unsigned char *text)
+{
+    char buf[256];
+
+    memcpy(buf, text + 1, text[0]);
+    buf[text[0]] = 0;
+    SetControlText((ControlPtr)item, buf);
+}
+
+// FUNCTION: EVNOVA 0x004cfbe0
+void GetControlText(ControlPtr ctl, char *text)
+{
+    char *src;
+
+    src = (char *)ctl->data;
+    if (src != NULL)
+        strcpy(text, src);
+    else
+        *text = 0;
+}
+
+// FUNCTION: EVNOVA 0x004cfc10
+void GetDialogItemText(Handle item, unsigned char *text)
+{
+    char buf[256];
+
+    GetControlText((ControlPtr)item, buf);
+    text[0] = strlen(buf);
+    memcpy(text + 1, buf, text[0]);
+}
+
+// FUNCTION: EVNOVA 0x004cfc60
+void InvalDialogItem(DialogPtr dlg, int32_t item)
+{
+    dlg->needsUpdate = 1;
+}
+
+// FUNCTION: EVNOVA 0x004cfc70
+void SetControlTitle(ControlPtr ctl, const unsigned char *text)
+{
+    switch (ctl->kind) {
+    case 4:
+    case 5:
+    case 6:
+        SetDialogItemText((Handle)ctl, text);
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cfca0
+void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t end)
+{
+    ControlRecord *rec;
+    int32_t len;
+
+    rec = (ControlRecord *)nv_GetDialogItemRecord(dlg, item);
+    if (rec != NULL) {
+        rec->minValue = start;
+        rec->maxValue = end;
+        if (rec->data != NULL) {
+            len = strlen((char *)rec->data);
+            if (rec->minValue < 0)
+                rec->minValue = 0;
+            if (rec->maxValue > len)
+                rec->maxValue = len;
+            if (rec->minValue > rec->maxValue)
+                rec->minValue = rec->maxValue;
+        } else {
+            rec->minValue = 0;
+            rec->maxValue = 0;
+        }
+        dlg->editItem = rec->itemNo;
+        dlg->needsUpdate = 1;
+    }
+}
+
+
+// FUNCTION: EVNOVA 0x004cfd30
+Rect *GetDialogPortRect(DialogPtr dlg)
+{
+    return &dlg->portRect;
+}
+
+// FUNCTION: EVNOVA 0x004cfd40
+void SetControlValue(ControlPtr ctl, int32_t value)
+{
+    int32_t lo;
+    int32_t hi;
+
+    if (ctl != NULL) {
+        lo = ctl->minValue;
+        hi = ctl->maxValue;
+        if (value < lo)
+            value = lo;
+        else if (value > hi)
+            value = hi;
+        ctl->value = value;
+        ctl->owner->needsUpdate = 1;
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cfd80
+int32_t GetControlValue(ControlPtr ctl)
+{
+    int32_t value;
+
+    value = 0;
+    if (ctl != NULL)
+        value = ctl->value;
+    return value;
+}
+
+// FUNCTION: EVNOVA 0x004cfd90
+void DisableControl(ControlPtr ctl)
+{
+    if (ctl != NULL) {
+        ctl->enabled = 0;
+        ctl->owner->needsUpdate = 1;
+    }
+}
+
+// FUNCTION: EVNOVA 0x004cfdb0
+void RedrawDialog(DialogPtr dlg)
+{
+    dlg->needsUpdate = 1;
+}
+
+/* InvalDialogRect (the InvalWindowRect twin). */
+// FUNCTION: EVNOVA 0x004cfdc0
+void InvalDialogRect(DialogPtr dlg, Rect *box)
+{
+    dlg->needsUpdate = 1;
+}
+// FUNCTION: EVNOVA 0x004cfdd0
+void ModalDialog(void *filterProc, short *itemHitPtr)
+{
+    extern int PtInRect(int32_t h, int32_t v, Rect *r);
+    char handled;
+    int32_t mods;
+    uint32_t saved;    /* the tick rate, then the eventProc's itemHit save: one register */
+    int32_t temp;
+    char *text;
+    int32_t doubleClick;
+    int32_t clicked;
+    int32_t localH;
+    int32_t keyChar;
+    short itemHit;
+    int32_t tick;
+    Point pt;
+    ControlRecord *esc;
+    uint32_t list;     /* the double-click threshold, then the DOWN arm's DlgListRec */
+    int32_t val;
+    char res;
+    ControlRecord *next;
+    DialogPtr dlg;
+    int32_t keyItem;
+    ControlRecord *rec;
+    short lastV;
+    short boxTop;
+    int32_t key;
+    short boxLeft;
+    int32_t shift;
+    int32_t item;
+    int32_t i;
+    short lastH;
+    short boxBottom;
+    int32_t cur;
+    ControlRecord *editRec;
+    int32_t found;
+    int32_t j;
+    int32_t w;
+    int32_t n;
+    int32_t clickKind;
+    int32_t pos;
+    int32_t located;
+    int32_t editKind;
+    EventRecord event;
+    Point pt2;
+
+    handled = 0;
+    doubleClick = 0;
+    dlg = gCurDialog;
+    mods = GetKeyModifiers();
+    HandleIntroMusic(0);
+    key = KeyboardGet2();
+    if (key != 0) {
+        keyChar = key;
+        keyChar &= 0xff;
+    }
+    MouseReadButtons();
+    if (MouseClicked != 0) {
+        MouseClicked = 0;
+        clicked = 1;
+    } else {
+        clicked = 0;
+    }
+    tick = ReadTick();
+    if (tick > gBlinkTick) {
+        gBlinkTick = tick + 15;
+        gCaretPhase = (gCaretPhase == 0);
+        if (gCurDialog != NULL)
+            gCurDialog->needsUpdate = 1;
+    }
+    itemHit = 0;
+    if (clicked != 0) {
+        GetGlobalMouse(&pt2);
+        localH = pt2.h - dlg->bounds.left;
+        clicked = pt2.v - dlg->bounds.top;
+        for (j = 0; j < dlg->itemCount; j++) {
+            rec = &((ControlRecord *)dlg->items)[j];
+            if (PtInRect(localH, clicked, &rec->box)) {
+                itemHit = rec->itemNo;
+                if (rec->kind != kPicItem && rec->kind != kIconItem &&
+                    rec->kind != 0 && rec->kind != 8 && rec->kind != 1) {
+                    dlg->editItem = rec->itemNo;
+                    dlg->needsUpdate = 1;
+                }
+                break;
+            }
+        }
+        saved = TimerGetTickRate();
+        list = saved / 2;
+        list = (int32_t)list;  /* code-free signedness round trip: the exe's EBX colouring */
+        if (TimerGetTicks() - gClickTime < list) {
+            if (gClickItem == rec && gClickDialog == dlg)
+                doubleClick = 1;
+        }
+        gClickTime = TimerGetTicks();
+        gClickItem = rec;
+        gClickDialog = dlg;
+        if (dlg->eventProc != NULL) {
+            event.where.h = localH;
+            event.where.v = clicked;
+            event.modifiers = mods;
+            saved = *(uint32_t *)&itemHit;   /* the exe's dword load; `= itemHit' is movsx */
+            event.what = kMouseDown;
+            res = ((DialogEventProc)dlg->eventProc)(dlg, &event, &itemHit);
+            if (res != 0)
+                dlg->needsUpdate = 1;
+            else
+                itemHit = saved;
+        } else {
+            res = 0;
+        }
+        if (itemHit != 0 && res == 0) {
+            switch (rec->kind) {
+            case kEditTextItem:
+                clickKind = 3;
+                break;
+            case kListItem:
+                clickKind = 2;
+                break;
+            case 4:
+            case 5:
+            case 6:
+                clickKind = 1;
+                break;
+            default:
+                clickKind = 0;
+                break;
+            }
+            if (clickKind == 1) {
+                keyChar = doubleClick = rec->value;
+                lastV = pt2.v;
+                lastH = pt2.h;
+                switch (rec->kind) {
+                case 4:
+                    temp = 1;
+                    break;
+                case 5:
+                case 6:
+                    temp = (doubleClick == 0);
+                    break;
+                }
+                rec->value = temp;
+                DrawDialog(dlg);
+                do {
+                    GetGlobalMouse(&pt2);
+                    if (pt2.h != lastH || pt2.v != lastV) {
+                        if (PtInRect(pt2.h - dlg->bounds.left,
+                                     pt2.v - dlg->bounds.top, &rec->box))
+                            rec->value = temp;
+                        else
+                            rec->value = keyChar;
+                        DrawDialog(dlg);
+                        lastV = pt2.v;
+                        lastH = pt2.h;
+                    }
+                    KeyboardKbhit();
+                } while (MouseReadButtons() != 0);
+                if (rec->value != doubleClick) {
+                    switch (rec->kind) {
+                    case 4:
+                        rec->value = 0;
+                    }
+                } else {
+                    itemHit = 0;
+                }
+            } else if (clickKind == 2) {
+                val = PopUpListSelect(dlg, rec);
+                if (val != 0)
+                    rec->value = val;
+                else
+                    itemHit = 0;
+                dlg->needsUpdate = 1;
+            } else if (clickKind == 3) {
+                if (rec->data != NULL) {
+                    keyChar = localH - (rec->box.left + 2);
+                    localH = strlen((char *)rec->data);
+                    located = 0;
+                    text = (char *)rec->data;
+                    if (doubleClick != 0) {
+                        rec->minValue = 0;
+                        rec->maxValue = localH;
+                    } else {
+                        for (pos = 0; pos < localH; pos++) {
+                            w = TextWidth(text, pos + 1);
+                            if (keyChar < w) {
+                                located = 1;
+                                rec->maxValue = pos;
+                                rec->minValue = pos;
+                                break;
+                            }
+                        }
+                        if (located == 0) {
+                            rec->maxValue = localH;
+                            rec->minValue = rec->maxValue;
+                        }
+                    }
+                }
+            }
+            if (itemHit != 0) {
+                dlg->editItem = rec->itemNo;
+                dlg->needsUpdate = 1;
+            }
+        }
+    } else {
+        if (key != 0) {
+            if (dlg->eventProc != NULL) {
+                GetGlobalMouse(&pt);
+                event.where.h = pt.h - dlg->bounds.left;
+                event.where.v = pt.v - dlg->bounds.top;
+                event.what = kKeyDown;
+                event.message = key;
+                event.modifiers = mods;
+                handled = ((DialogEventProc)dlg->eventProc)(dlg, &event,
+                                                            &itemHit);
+                if (handled != 0)
+                    dlg->needsUpdate = 1;
+                else
+                    itemHit = 0;
+            }
+            if (handled == 0 && keyChar != 0) {
+                switch (keyChar) {
+                case ASCII_TAB:
+                    shift = KeyIsDown(kScanLShift) || KeyIsDown(kScanRShift);
+                    item = dlg->editItem;
+                    clicked = item;
+                    if (item == 0)
+                        break;
+                    for (;;) {
+                        if (shift == 0) {
+                            if (item <= dlg->itemCount)
+                                dlg->editItem += 1;
+                            else
+                                dlg->editItem = 1;
+                        } else {
+                            if (item > 1)
+                                dlg->editItem -= 1;
+                            else
+                                dlg->editItem = dlg->itemCount;
+                        }
+                        item = dlg->editItem;
+                        if (item == clicked)
+                            break;
+                        next = &((ControlRecord *)dlg->items)[item - 1];
+                        switch (next->kind) {
+                        case 0:
+                        case 1:
+                        case 8:
+                        case kIconItem:
+                        case kPicItem:
+                            continue;
+                        }
+                        boxTop = next->box.top;
+                        boxLeft = next->box.left;
+                        boxBottom = next->box.bottom;
+                        if (next->box.right < 0)
+                            continue;
+                        if (boxLeft > dlg->portRect.right)
+                            continue;
+                        if (boxBottom < 0)
+                            continue;
+                        if (boxTop > dlg->portRect.bottom)
+                            continue;
+                        break;
+                    }
+                    dlg->needsUpdate = 1;
+                    break;
+                case ASCII_RETURN:
+                    keyItem = dlg->defaultItem;
+                    if (keyItem == 0)
+                        break;
+                    rec = (ControlRecord *)nv_GetDialogItemRecord(dlg, keyItem);
+                    itemHit = rec->itemNo;
+                    dlg->needsUpdate = 1;
+                    break;
+                case ASCII_ESCAPE:
+                    tick = dlg->cancelItem;
+                    if (tick == 0)
+                        break;
+                    esc = (ControlRecord *)nv_GetDialogItemRecord(dlg, tick);
+                    itemHit = esc->itemNo;
+                    dlg->needsUpdate = 1;
+                    break;
+                default:
+                    cur = dlg->editItem;
+                    if (cur == 0)
+                        break;
+                    editRec = (ControlRecord *)nv_GetDialogItemRecord(dlg, cur);
+                    editKind = editRec->kind;
+                    if (editKind == kEditTextItem) {
+                        EditTextKey(editRec, keyChar, mods);
+                        itemHit = editRec->itemNo;
+                        dlg->needsUpdate = 1;
+                    } else if (keyChar == 0x20) {
+                        switch (editKind) {
+                        case 4:
+                            itemHit = editRec->itemNo;
+                            break;
+                        case 5:
+                        case 6:
+                            editRec->value = (editRec->value == 0);
+                            break;
+                        }
+                        dlg->needsUpdate = 1;
+                    } else if (keyChar == ASCII_UPARROW) {
+                        if (editKind == kListItem && editRec->value > 1) {
+                            editRec->value -= 1;
+                            dlg->needsUpdate = 1;
+                        }
+                    } else if (keyChar == ASCII_DOWNARROW) {
+                        if (editKind == kListItem) {
+                            if (editRec->value < ((DlgListRec *)editRec->data)->count) {
+                                editRec->value += 1;
+                                dlg->needsUpdate = 1;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        } else {
+            if (dlg->eventProc != NULL) {
+                GetGlobalMouse(&pt);
+                event.what = kNullEvent;
+                event.where.h = pt.h - dlg->bounds.left;
+                event.where.v = pt.v - dlg->bounds.top;
+                event.modifiers = mods;
+                res = ((DialogEventProc)dlg->eventProc)(dlg, &event,
+                                                        &itemHit);
+                if (res != 0)
+                    dlg->needsUpdate = 1;
+                else
+                    itemHit = 0;
+            }
+        }
+    }
+    *itemHitPtr = itemHit;
+    gLastModifiers = mods;
+    found = 0;
+    for (i = 0; i < gDialogCount; i++)
+        found = found || gDialogStack[i]->needsUpdate;
+    if (found != 0) {
+        gDisableUpdatesMode = 1;
+        for (n = 0; n < gDialogCount; n++)
+            DrawDialog(gDialogStack[n]);
+        gDisableUpdatesMode = 0;
+        ScreenEndScene();
+    }
+}
+
+// FUNCTION: EVNOVA 0x004d0610
+void SetControlTextKeepSelection(ControlPtr ctl, const char *text)
+{
+    int32_t selStart;
+    int32_t selEnd;
+    int32_t caret;
+
+    selStart = ctl->minValue;
+    selEnd = ctl->maxValue;
+    caret = ctl->value;
+    SetControlText(ctl, text);
+    ctl->minValue = selStart;
+    ctl->maxValue = selEnd;
+    ctl->value = caret;
+}
+
+// FUNCTION: EVNOVA 0x004d0640
+void EditTextKey(ControlRecord *rec, int32_t key, int32_t mods)
+{
+    char buf[256];
+    char prefix[256];
+    char prefix3[256];
+    char prefix2[256];
+    char dest2[256];
+    char dest[256];
+    char dest3[256];
+    int32_t len;
+    int32_t pos;
+
+    GetControlText(rec, buf);
+    len = strlen(buf);
+    switch (key) {
+    case ASCII_UPARROW:
+        rec->minValue = 0;
+        if ((mods & shiftKey) == 0)
+            rec->maxValue = rec->minValue;
+        break;
+    case ASCII_LEFTARROW:
+        if (rec->minValue > 0)
+            rec->minValue -= 1;
+        if ((mods & shiftKey) == 0)
+            rec->maxValue = rec->minValue;
+        break;
+    case ASCII_DOWNARROW:
+        rec->maxValue = len;
+        if ((mods & shiftKey) == 0)
+            rec->minValue = rec->maxValue;
+        break;
+    case ASCII_RIGHTARROW:
+        if (rec->maxValue < len)
+            rec->maxValue += 1;
+        if ((mods & shiftKey) == 0)
+            rec->minValue = rec->maxValue;
+        break;
+    case ASCII_BACKSPACE:
+        if (rec->maxValue != rec->minValue) {
+            memmove(buf + rec->minValue, buf + rec->maxValue,
+                    len - rec->maxValue + 1);
+            SetControlTextKeepSelection(rec, buf);
+            rec->maxValue = rec->minValue;
+        } else if (rec->minValue > 0) {
+            if (rec->minValue > len)
+                rec->minValue = len;
+            if (rec->minValue == len) {
+                len -= 1;
+                buf[len] = 0;
+                SetControlTextKeepSelection(rec, buf);
+            } else {
+                strcpy(prefix, buf);
+                pos = rec->minValue - 1;
+                prefix[pos] = 0;
+                sprintf(dest, "%s%s", prefix, buf + rec->minValue);
+                SetControlTextKeepSelection(rec, dest);
+            }
+            rec->minValue -= 1;
+            rec->maxValue = rec->minValue;
+        }
+        break;
+    case ASCII_DELETE:
+        if (rec->maxValue != rec->minValue) {
+            memmove(buf + rec->minValue, buf + rec->maxValue,
+                    len - rec->maxValue + 1);
+            SetControlTextKeepSelection(rec, buf);
+            rec->maxValue = rec->minValue;
+        } else if (rec->minValue < len) {
+            if (rec->minValue < 0)
+                rec->minValue = 0;
+            if (rec->minValue == len - 1) {
+                len -= 1;
+                buf[len] = 0;
+                SetControlTextKeepSelection(rec, buf);
+            } else {
+                strcpy(prefix2, buf);
+                prefix2[rec->minValue] = 0;
+                sprintf(dest2, "%s%s", prefix2, buf + (rec->minValue + 1));
+                SetControlTextKeepSelection(rec, dest2);
+            }
+            rec->maxValue = rec->minValue;
+        }
+        break;
+    default:
+        if (!isprint(key))
+            break;
+        if (len >= 0xff)
+            break;
+        if (rec->maxValue != rec->minValue) {
+            memmove(buf + rec->minValue, buf + rec->maxValue,
+                    len - rec->maxValue + 1);
+            rec->maxValue = rec->minValue;
+        }
+        if (rec->minValue == 0) {
+            sprintf(dest3, "%c%s", key, buf);
+            SetControlTextKeepSelection(rec, dest3);
+        } else if (rec->minValue <= len) {
+            strcpy(prefix3, buf);
+            prefix3[rec->minValue] = 0;
+            sprintf(dest3, "%s%c%s", prefix3, key, buf + rec->minValue);
+            SetControlTextKeepSelection(rec, dest3);
+        } else {
+            sprintf(dest3, "%s%c", buf, key);
+            SetControlTextKeepSelection(rec, dest3);
+        }
+        rec->minValue += 1;
+        rec->maxValue = rec->minValue;
+        break;
+    }
+}
+
+// FUNCTION: EVNOVA 0x004d0a50
+void DrawBevel(Rect *r, const RGBColor *fill, const RGBColor *light,
+                  const RGBColor *dark)
+{
+    if (fill != NULL) {
+        RGBForeColor(fill);
+        PaintRect(r);
+    }
+    RGBForeColor(light);
+    MoveTo(r->left + 1, r->top + 1);
+    LineTo(r->right - 1, r->top + 1);
+    MoveTo(r->left + 1, r->top + 1);
+    LineTo(r->left + 1, r->bottom - 1);
+    RGBForeColor(dark);
+    MoveTo(r->right - 2, r->bottom - 2);
+    LineTo(r->left + 1, r->bottom - 1);
+    MoveTo(r->right - 2, r->bottom - 2);
+    LineTo(r->right - 1, r->top + 1);
+}
+
+// FUNCTION: EVNOVA 0x004d0b70
+void MeasureTextBox(const char *text, int left, int bottom, Rect *box)
+{
+    int32_t width;
+    int32_t height;
+
+    width = MeasureCString(text);
+    height = MeasureWrappedText(text, strlen(text), width);
+    box->top = (bottom + 3) - height;
+    box->left = left;
+    box->bottom = bottom + 3;
+    box->right = left + width;
+}
+
+// FUNCTION: EVNOVA 0x004d0bd0
+void DrawDottedFrame(Rect *r)
+{
+    int at;
+    unsigned int n;
+
+    at = r->left;
+    n = 0;
+    if (at < r->right) {
+        do {
+            if ((n & 1) != 0) {
+                MoveTo(at, r->top);
+                LineTo(at + 1, r->top);
+                MoveTo(at, r->bottom);
+                LineTo(at + 1, r->bottom);
+            }
+            at = at + 1;
+            n = n + 1;
+        } while (at < r->right);
+    }
+    at = r->top;
+    n = 0;
+    if (at < r->bottom) {
+        do {
+            if ((n & 1) == 0) {
+                if (n == 9)
+                    n = 0;
+            } else {
+                MoveTo(r->left, at);
+                LineTo(r->left, at + 1);
+                MoveTo(r->right, at);
+                LineTo(r->right, at + 1);
+            }
+            at = at + 1;
+            n = n + 1;
+        } while (at < r->bottom);
+    }
+    MoveTo(((Point *) r)[1].h - 1, ((Point *) r)[1].v - 1);
+    LineTo(((Point *) r)[1].h, ((Point *) r)[1].v);
+}
+
+// FUNCTION: EVNOVA 0x004d0d00
+void DrawDialog(DialogPtr dlg)
+{
+    int32_t x;
+    int32_t i;
+    int32_t y;
+    char *shown;
+    int32_t caretX;
+    void (*updateProc)(void);
+    int32_t rightBound;
+    int32_t width;
+    int32_t rowWidth;
+    int32_t titleWidth;
+    short maxW;
+    ControlRecord *item;
+    DlgListRec *list;
+    int32_t row;
+    int32_t count;
+    int32_t rowY;
+    char *entry;
+    int32_t prefix;
+    int32_t titleX;
+    int32_t titleY;
+    CGrafPtr savedPort;
+    Rect sel;
+    Rect focus;
+    Rect bevel;
+    Rect focus2;
+
+    if (dlg->visible != 0) {
+        if (gWind == NULL)
+            SetupWind();
+        GetPort(&savedPort);
+        SetPort(dlg->port);
+        dlg->needsUpdate = 0;
+        RGBForeColor(&rgbBlack);
+        BackColor(&rgbWhite);
+        EraseRect(&dlg->portRect);
+        FrameRect(&dlg->portRect);
+
+        for (i = 0; i < dlg->itemCount; i++) {
+            item = (ControlRecord *)((char *)dlg->items + i * kDialogItemSize);
+            Rect box = item->box;
+            if (item->enabled == 0)
+                continue;
+            TextFace(1);
+            TextSize(0xc);
+            TextFont(0);
+            switch (item->kind) {
+            case kListItem: {
+                Rect label;
+                Rect value;
+
+                list = (DlgListRec *)item->data;
+                label.top = box.top;
+                label.left = box.left;
+                label.bottom = box.bottom;
+                label.right = box.right;
+                value.top = box.top;
+                value.left = box.left;
+                value.bottom = box.bottom;
+                value.right = box.right;
+                label.left += 100;
+                value.left += 5;
+                value.right = label.left;
+                EraseRect(&value);
+                RGBForeColor(&rgbBlack);
+                MoveTo(value.left, value.top + (CurrentGrafPort->txSize + 20) / 2 - 1);
+                DrawCString(list->title);
+
+                if (item->minValue == 0) {
+                    if (list->count <= 0) {
+                        shown = list->title;
+                    } else {
+                        shown = list->item[item->value - 1].text;
+                    }
+                    DrawBevel(&label, &bevelGray2, &bevelGray1, &bevelGray4);
+                    RGBForeColor(&rgbBlack);
+                    width = MeasureCString(shown) + 3;
+                    MoveTo(label.right - width,
+                           label.top + (CurrentGrafPort->txSize + 20) / 2 - 1);
+                    DrawCString(shown);
+                    if (dlg->editItem == item->itemNo) {
+                        focus.top = label.top;
+                        focus.left = label.left;
+                        focus.bottom = label.bottom;
+                        focus.right = label.right;
+                        InsetRect(&focus, 3, 3);
+                        focus.right -= 1;
+                        focus.bottom -= 1;
+                        DrawDottedFrame(&focus);
+                    }
+                } else {
+                    count = list->count;
+                    label.bottom = label.top + (count * 20);
+                    EraseRect(&label);
+                    DrawBevel(&label, &bevelGray2, &bevelGray1, &bevelGray4);
+                    RGBForeColor(&rgbBlack);
+                    for (row = 0; row < list->count; row++) {
+                        entry = list->item[row].text;
+                        rowWidth = MeasureCString(entry) + 3;
+                        rowY = row * 20;
+                        MoveTo(label.right - rowWidth,
+                               label.top + rowY + (CurrentGrafPort->txSize + 20) / 2 - 1);
+                        DrawCString(list->item[row].text);
+                        if (row == item->value - 1) {
+                            Rect hilite;
+
+                            hilite.left = label.left + 2;
+                            hilite.right = label.right - 2;
+                            hilite.top = label.top + rowY + 2;
+                            hilite.bottom = hilite.top + 0x12;
+                            InvertRect(&hilite);
+                        }
+                    }
+                }
+                break;
+            }
+            case kCheckBoxItem:
+            case kRadioButtonItem: {
+                bevel.top = box.top;
+                bevel.left = box.left;
+                bevel.bottom = box.bottom;
+                bevel.right = box.right;
+                bevel.right = bevel.left + 17;
+                bevel.bottom = bevel.top + 17;
+                if (item->value != 0) {
+                    DrawBevel(&bevel, &bevelGray2, &bevelGray4, &bevelGray1);
+                    RGBForeColor(&rgbWhite);
+                    MoveTo(bevel.left + 3, bevel.top + 3);
+                    LineTo(bevel.right - 3, bevel.bottom - 3);
+                    MoveTo(bevel.right - 3, bevel.top + 3);
+                    LineTo(bevel.left + 3, bevel.bottom - 3);
+                } else {
+                    DrawBevel(&bevel, &bevelGray2, &bevelGray1, &bevelGray4);
+                }
+                RGBForeColor(&rgbBlack);
+                FrameRect(&bevel);
+                if (item->data != NULL) {
+                    x = bevel.left + 20;
+                    y = (box.top + box.bottom) / 2 + 5;
+                    MoveTo(x, y);
+                    DrawCString((char *)item->data);
+                    if (item->itemNo == dlg->editItem) {
+                        Rect label;
+
+                        MeasureTextBox((char *)item->data, x, y, &label);
+                        DrawDottedFrame(&label);
+                    }
+                }
+                break;
+            }
+            case kButtonItem: {
+                if (item->value != 0) {
+                    DrawBevel(&box, &bevelGray3, &bevelGray4, &bevelGray1);
+                    RGBForeColor(&rgbBlack);
+                    FrameRect(&box);
+                    RGBForeColor(&rgbWhite);
+                } else {
+                    DrawBevel(&box, &bevelGray2, &bevelGray1, &bevelGray4);
+                    RGBForeColor(&rgbBlack);
+                    FrameRect(&box);
+                }
+                if (item->data != NULL) {
+                    titleWidth = MeasureCString((char *)item->data);
+                    titleY = (box.bottom + box.top + CurrentGrafPort->txSize) / 2 - 1;
+                    titleX = (box.right + box.left) / 2 - titleWidth / 2;
+                    MoveTo(titleX, titleY);
+                    DrawCString((char *)item->data);
+                    if (item->itemNo == dlg->editItem) {
+                        focus2.top = box.top;
+                        focus2.left = box.left;
+                        focus2.bottom = box.bottom;
+                        focus2.right = box.right;
+                        InsetRect(&focus2, 3, 3);
+                        focus2.right -= 1;
+                        focus2.bottom -= 1;
+                        DrawDottedFrame(&focus2);
+                    }
+                }
+                RGBForeColor(&rgbBlack);
+                break;
+            }
+            case kResourceControlItem:
+                break;
+            case kStaticTextItem:
+                if (item->data != NULL) {
+                    TETextBox(item->data, strlen((char *)item->data), &box, 0);
+                    if (item->itemNo == dlg->editItem)
+                        DrawDottedFrame(&box);
+                }
+                break;
+            case kEditTextItem: {
+                bevel.top = box.top;
+                bevel.left = box.left;
+                bevel.bottom = box.bottom;
+                bevel.right = box.right;
+                InsetRect(&bevel, -1, -1);
+                DrawBevel(&bevel, &rgbWhite, &bevelGray1, &rgbWhite);
+                RGBForeColor(&rgbBlack);
+                FrameRect(&box);
+                if (item->data != NULL) {
+                    Rect inner;
+
+                    MoveTo(box.left + 3, box.bottom - 3);
+                    inner.left = box.left + 3;
+                    inner.right = box.right - 3;
+                    inner.top = box.top + 3;
+                    inner.bottom = box.bottom;
+                    DrawTextRun(item->data, strlen((char *)item->data), &inner, 0, 0);
+                }
+                if (dlg->editItem == item->itemNo) {
+                    if (item->minValue < item->maxValue) {
+                        sel.top = box.top + 1;
+                        sel.left = box.left + 1;
+                        sel.bottom = box.bottom - 1;
+                        sel.right = box.right - 1;
+                        if (item->maxValue < strlen((char *)item->data)) {
+                            maxW = TextWidth((char *)item->data, item->maxValue);
+                            rightBound = sel.left + maxW;
+                            if (sel.right > rightBound)
+                                sel.right = rightBound;
+                        }
+                        if (item->minValue > 0)
+                            sel.left += TextWidth((char *)item->data, item->minValue);
+                        InvertRect(&sel);
+                    } else if (gCaretPhase != 0) {
+                        caretX = box.left + 2;
+                        prefix = item->minValue > 0
+                            ? TextWidth((char *)item->data, item->minValue) : 0;
+                        caretX += prefix;
+                        if (caretX < box.right - 3) {
+                            MoveTo(caretX, box.bottom - 3);
+                            LineTo(caretX, box.top + 3);
+                        }
+                    }
+                }
+                break;
+            }
+            case kIconItem:
+                nv_BlitImageOr(&box, (Image_t *)item->data);
+                break;
+            case kPictureItem:
+                DrawPicHandle((PicHandle)item->data, &box);
+                break;
+            }
+        }
+
+        updateProc = (void (*)(void))dlg->updateProc;
+        if (updateProc != NULL)
+            updateProc();
+
+        CopyBits((BitMapPtr)GetGWCPixMap((GWorldContainer *)dlg),
+                 GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
+                 &dlg->portRect, &dlg->bounds, 0, 0);
+        SetPort(savedPort);
+        ScreenEndScene();
+    }
+}
+
+// FUNCTION: EVNOVA 0x004d16f0
+void nv_UpdateDialogWindow(int all)
+{
+    DialogPtr dlg;
+    int i;
+    DialogPtr cur;
+
+    if (all != 0) {
+        for (i = 0; i < gDialogCount; i++) {
+            dlg = gDialogStack[i];
+            if (dlg->visible != 0)
+                CopyBits((BitMapPtr)GetGWCPixMap((GWorldContainer *)dlg),
+                         GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
+                         &dlg->portRect, &dlg->bounds, 0, 0);
+        }
+    } else {
+        cur = gCurDialog;
+        if (cur->visible != 0)
+            CopyBits((BitMapPtr)GetGWCPixMap((GWorldContainer *)cur),
+                     GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
+                     &cur->portRect, &cur->bounds, 0, 0);
+    }
+    ScreenEndScene();
+}
+
+// FUNCTION: EVNOVA 0x004d17a0
+void SetDialogGWorld(DialogPtr dlg)
+{
+    SetGWorldContainer((GWorldContainer *)dlg);
+}
+
+// FUNCTION: EVNOVA 0x004d17b0
+CWindowPtr FrontWindow(void *window)
+{
+    return gWind;
+}
+
+// FUNCTION: EVNOVA 0x004d17c0
+CGrafPtr GetDialogPort(DialogPtr dlg)
+{
+    CGrafPtr port;
+
+    if (dlg == NULL)
+        port = NULL;
+    else
+        port = dlg->port;
+    return port;
+}
+
+// FUNCTION: EVNOVA 0x004d17e0
+void GetMouse(Point *pt)
+{
+    GetGlobalMouse(pt);
+    pt->h -= gCurDialog->bounds.left;
+    pt->v -= gCurDialog->bounds.top;
+}
+
+// FUNCTION: EVNOVA 0x004d1810
+void RedrawDialogs(int all)
+{
+    int i;
+    int n;
+    int saved;
+
+    saved = gDisableUpdatesMode;
+    gDisableUpdatesMode = 1;
+    if (gPause != 0)
+        MainScreenUpdate(1);
+    else if (gSpriteWorld != NULL)
+        RefreshSAT();
+    n = gDialogCount;
+    if (n > 0) {
+        if (all == 0)
+            n -= 1;
+        for (i = 0; i < n; i++)
+            DrawDialog(gDialogStack[i]);
+    }
+    gDisableUpdatesMode = saved;
+}
+
+// FUNCTION: EVNOVA 0x004d1890
+void SetDialogVisible(DialogPtr dlg, unsigned char value)
+{
+    dlg->visible = value;
+    RedrawDialogs(1);
+    ScreenEndScene();
+}
+
+// FUNCTION: EVNOVA 0x004d18b0
+void SizeDialogWindow(DialogPtr dlg, short width, short height, char update)
+{
+    CGrafPtr gw;
+
+    if (dlg->portRect.right == width && dlg->portRect.bottom == height)
+        return;
+    dlg->bounds.right = dlg->bounds.left + width;
+    dlg->bounds.bottom = dlg->bounds.top + height;
+    dlg->portRect.top = dlg->bounds.top;
+    dlg->portRect.left = dlg->bounds.left;
+    dlg->portRect.bottom = dlg->bounds.bottom;
+    dlg->portRect.right = dlg->bounds.right;
+    OffsetRect(&dlg->portRect, -dlg->bounds.left, -dlg->bounds.top);
+    gw = dlg->port;
+    gw->pix.width = width;
+    gw->pix.height = height;
+    free(gw->pixels);
+    gw->pixels = NewPortPixels(gw->pix.width, gw->pix.height, gw->pix.pixelSize);
+    gw->pix.baseAddr = gw->pixels;
+    gw->pix.rowBytes = gw->pix.pixelSize / 8 * gw->pix.width;
+    dlg->port->pix.bounds.right = dlg->port->pix.bounds.left + width;
+    dlg->port->pix.bounds.bottom = dlg->port->pix.bounds.top + height;
+    dlg->port->pix.width = width;
+    dlg->port->pix.height = height;
+    dlg->gwBounds.right = dlg->gwBounds.left + width;
+    dlg->gwBounds.bottom = dlg->gwBounds.top + height;
+    if (update)
+        dlg->needsUpdate = 1;
+}
+
+// FUNCTION: EVNOVA 0x004d1a30
+void OffsetDialogWindow(DialogPtr dlg, short dh, short dv, char redraw)
+{
+    OffsetRect(&dlg->bounds, dh, dv);
+    dlg->needsUpdate = 1;
+}
+
+// FUNCTION: EVNOVA 0x004d1a60
+ScrollRec **nv_NewDialog(const Rect *rView, const Rect *dataBounds,
+                         Point cellSize, ListDrawProcPtr drawProc, CGrafPtr port,
+                         unsigned char hasScrollBar)
+{
+    ScrollRec **list;
+    Rect *r;
+    Point *p;
+
+    list = (ScrollRec **)AllocAHandle2(sizeof(ScrollRec), 0);
+    memset(*list, 0, sizeof(ScrollRec));
+    (*list)->port = port;
+    r = &(*list)->rView;
+    r->top = rView->top;
+    r->left = rView->left;
+    r->bottom = rView->bottom;
+    r->right = rView->right;
+    r = &(*list)->dataBounds;
+    r->top = dataBounds->top;
+    r->left = dataBounds->left;
+    r->bottom = dataBounds->bottom;
+    r->right = dataBounds->right;
+    /* the exe writes the cell size through a Point pointer: any other
+       spelling costs 3.9 points */
+    p = &(*list)->cellSize;
+    p->v = cellSize.v;
+    p->h = cellSize.h;
+    (*list)->drawProc = drawProc;
+    (*list)->hasScrollBar = hasScrollBar;
+    (*list)->drawIt = 0;
+    (*list)->cells = (char **)AllocAHandle2(1, 0);
+    (*list)->cellArray = (short *)AllocAPointerClear(((*list)->dataBounds.bottom + 1) * 2);
+    (*list)->maxIndex = 0;
+    return list;
+}
+
+// FUNCTION: EVNOVA 0x004d1b40
+void LDispose(ScrollRec **list)
+{
+    if ((*list)->cells != NULL)
+        DeallocAHandle((*list)->cells);
+    if ((*list)->cellArray != NULL)
+        DeallocAPointer((*list)->cellArray);
+    DeallocAHandle(list);
+}
+
+// FUNCTION: EVNOVA 0x004d1b70
+void LSetDrawingMode(char value, ScrollRec **list)
+{
+    (*list)->drawIt = value;
+}
+
+/* LSetCell (mac _LSetCell, a Carbon import). */
+// FUNCTION: EVNOVA 0x004d1b80
+void LSetCell(void *text, int32_t length, Point cell, ScrollRec **rec)
+{
+    int32_t lineNo;
+    short start;
+    int32_t delta;
+    int32_t k;
+    int32_t next;
+
+    start = (*rec)->cellArray[lineNo = cell.v];
+    next = cell.v + 1;
+    delta = length - ((*rec)->cellArray[next] - start);
+    if (delta == 0) {
+        memcpy(*(*rec)->cells + start, text, length);
+        return;
+    }
+    (*rec)->maxIndex += delta;
+    if (delta > 0)
+        (*rec)->cells = ResizeAHandle((*rec)->cells, (*rec)->maxIndex);
+    if (cell.v != (*rec)->dataBounds.bottom - 1) {
+        char *tail;
+
+        tail = *(*rec)->cells + (*rec)->cellArray[cell.v + 1];
+        memmove(tail + delta, tail,
+                (*rec)->maxIndex - delta - (*rec)->cellArray[cell.v + 1]);
+    }
+    if (delta < 0)
+        (*rec)->cells = ResizeAHandle((*rec)->cells, (*rec)->maxIndex);
+    memcpy(*(*rec)->cells + (*rec)->cellArray[lineNo], text, length);
+    for (k = next; k <= (*rec)->dataBounds.bottom; k++)
+        (*rec)->cellArray[k] += delta;
+}
+
+// FUNCTION: EVNOVA 0x004d1cd0
+void LSetSelect(int track, Point pt, ScrollRec **list)
+{
+    Point *hp;
+
+    if (track == 0) {
+        (*list)->lastClick.h = (*list)->lastClick.v = -1;
+    } else {
+        hp = &(*list)->lastClick;
+        hp->v = pt.v;
+        hp->h = pt.h;
+    }
+    LUpdate(list);
+}
+
+// FUNCTION: EVNOVA 0x004d1d10
+char LGetSelect(int32_t unused, Point *pt, ScrollRec **list)
+{
+    int same;
+
+    same = 0;
+    if (pt->h == (*list)->lastClick.h && pt->v == (*list)->lastClick.v)
+        same = 1;
+    return same;
+}
+
+// FUNCTION: EVNOVA 0x004d1d40
+void LAutoScroll(ScrollRec **h)
+{
+    int32_t page;
+    int32_t sel;
+    ScrollRec *sc;
+    int32_t scroll;
+
+    sc = *h;
+    page = (sc->rView.bottom - sc->rView.top) / sc->cellSize.v;
+    sel = sc->lastClick.v;
+    if (page >= sc->dataBounds.bottom)
+        return;
+    if (sel == -1)
+        return;
+    scroll = sc->scroll;
+    if (sel >= scroll && sel < scroll + page)
+        return;
+    LScroll(0, (sel - scroll), h);
+}
+
+// FUNCTION: EVNOVA 0x004d1db0
+char LClick(Point where, short modifiers, ScrollRec **h)
+{
+    Rect r;
+    int32_t t;
+    int32_t line;
+    int32_t thumb;
+
+    SetRect(&r, 0, 0, 15, (*h)->rView.bottom - (*h)->rView.top);
+    OffsetRect(&r, (*h)->rView.right, (*h)->rView.top);
+    if ((*h)->hasScrollBar == 0 || PtInRect(where.h, where.v, &r) == 0) {
+        line = (where.v - (*h)->rView.top) / (*h)->cellSize.v + (*h)->scroll;
+        (*h)->lastClick.h = 0;
+        (*h)->lastClick.v = line;
+    } else {
+        t = ((*h)->rView.bottom - (*h)->rView.top) / (*h)->cellSize.v;
+        if (where.v < r.top + 15) {
+            (*h)->scroll -= 1;
+        } else if (where.v > r.bottom - 15) {
+            (*h)->scroll += 1;
+        } else {
+            thumb = ((*h)->scroll
+                    * (((*h)->rView.bottom - (*h)->rView.top - 45)
+                       / (float)((*h)->dataBounds.bottom - t))
+                    + 15.0f + (*h)->rView.top);
+            if (where.v < thumb)
+                (*h)->scroll -= t;
+            else if (where.v > thumb + 15)
+                (*h)->scroll += t;
+        }
+        if ((*h)->scroll > (*h)->dataBounds.bottom - t)
+            (*h)->scroll = (*h)->dataBounds.bottom - t;
+        if ((*h)->scroll < 0)
+            (*h)->scroll = 0;
+    }
+    (*h)->clikTime = ReadTick();
+    return 0;
+}
+
+// FUNCTION: EVNOVA 0x004d1f50
+void GetListCellRect(Rect *box, Point cell, ScrollRec **h)
+{
+    SetRect(box, 0, (*h)->cellSize.v * cell.v, (*h)->cellSize.h, (*h)->cellSize.v * (cell.v + 1));
+    OffsetRect(box, 0, (*h)->cellSize.v * (*h)->scroll);
+    OffsetRect(box, (*h)->rView.left, (*h)->rView.top);
+}
+
+// FUNCTION: EVNOVA 0x004d1fb0
+void LScroll(int32_t unused, short delta, ScrollRec **h)
+{
+    ScrollRec *sc;
+    int32_t limit;
+
+    if ((*h)->hasScrollBar == 0)
+        return;
+    (*h)->scroll += delta;
+    limit = (*h)->dataBounds.bottom - ((*h)->rView.bottom - (*h)->rView.top) / (*h)->cellSize.v;
+    if ((*h)->scroll > limit)
+        (*h)->scroll = limit;
+    sc = *h;
+    if (sc->scroll < 0)
+        sc->scroll = 0;
+}
+
+// FUNCTION: EVNOVA 0x004d2010
+void LUpdate(void *list)
+{
+    Rect *vr;
+    int32_t i;
+    short penV;
+    int32_t t;
+    Point *pen;
+    short penH;
+    ScrollRec **h;
+    int32_t last;
+    int32_t line;
+    ScrollRec *lp;
+    int32_t j;
+    int32_t cellH;
+    short start;
+    Point cell;
+    CGrafPtr port;
+    Rect r;
+    Rect r2;
+    short len;
+    int nextRow;
+    float scale;
+
+    h = (ScrollRec **)list;
+    if ((*h)->drawIt == 0 || (*h)->drawProc == NULL)
+        return;
+    cellH = (unsigned short)(*h)->cellSize.v;
+    t = ((*h)->rView.bottom - (*h)->rView.top) / (short)cellH;
+    line = (*h)->scroll;
+    last = line + t;
+    if (last > (*h)->dataBounds.bottom)
+        last = (*h)->dataBounds.bottom;
+    SetRect(&r, 0, 0, (*h)->cellSize.h, (short)cellH);
+    OffsetRect(&r, (*h)->rView.left, (*h)->rView.top);
+    while (line < last) {
+        nextRow = line + 1;
+        cell.h = 0;
+        cell.v = line;
+        lp = *h;
+        start = lp->cellArray[line];
+        len = -start + lp->cellArray[nextRow];
+        lp->drawProc(1, lp->lastClick.v == line, &r, &cell, start, len, h);
+        line++;
+        OffsetRect(&r, 0, (*h)->cellSize.v);
+    }
+    if ((*h)->hasScrollBar != 0) {
+        vr = &(*h)->rView;
+        CopyRect(&r, vr);
+        r.left = r.right;
+        r.right = r.left + 15;
+        GetPort(&port);
+        pen = &port->pnSize;
+        penV = pen->v;
+        penH = pen->h;
+        PenSize(1, 1);
+        RGBForeColor(&redRGB);
+        FrameRect(&r);
+        CopyRect(&r2, &r);
+        r2.top += 15;
+        r2.bottom -= 15;
+        FrameRect(&r2);
+        scale = (r2.bottom - r2.top - 15) / (float)((*h)->dataBounds.bottom - t);
+        r2.bottom = r2.top + 15;
+        InsetRect(&r2, 1, 1);
+        OffsetRect(&r2, 0, ((*h)->scroll * scale));
+        FrameRect(&r2);
+        for (i = 0, j = 0; i < 4; i++, j += 2) {
+            MoveTo(r2.left + 3, r2.top + 3 + j);
+            Line(7, 0);
+        }
+        CopyRect(&r2, &r);
+        r2.bottom = r2.top + 15;
+        InsetRect(&r2, 1, 1);
+        MoveTo(r2.left, r2.bottom);
+        LineTo((r2.left + r2.right) / 2, r2.top);
+        LineTo(r2.right, r2.bottom);
+        CopyRect(&r2, &r);
+        r2.top = r2.bottom - 15;
+        InsetRect(&r2, 1, 1);
+        MoveTo(r2.left, r2.top);
+        LineTo((r2.left + r2.right) / 2, r2.bottom);
+        LineTo(r2.right, r2.top);
+        PenSize(penH, penV);
+    }
+}
+
+/* The window procedure (win 0x004d2440, WinGameWndProc), its part of the events (runtime/burgerkbwin.cpp has
+   the rest). Gone with the Win32 window: the fixed window size (WM_GETMINMAXINFO), the palette, and WM_PAINT's
+   redraw -- the platform shows the last frame again. */
+
+/* the window gained (1) or lost (0) the keyboard */
+void WinGameActivate(int on)
+{
+    Win95ApplsActive = on;
+    KeyboardFlush();
+    if (Win95ApplsActive != 0 && gWind != NULL)
+        gNeedUpdateFlag = 1;
+    if (Win95ApplsActive != 0)
+        SwitchedIn(0);
+    else
+        SwitchedOut(0);
+    HandleIntroMusic(0);
+}
+
+void WinGameMinimized(void)
+{
+    Win95ApplsActive = 0;
+    HandleIntroMusic(0);
+}
+
+/* the user asked to close the window or quit */
+void WinGameClose(void)
+{
+    if (gameLoaded != 0 && screenFaded == 0)
+        closeRequested = 1;
+}
+
+/* a key went down or up, or the mouse did something */
+void WinGameInputSeen(void)
+{
+    HandleIntroMusic(0);
+}
+
+// FUNCTION: EVNOVA 0x004d28b0
+void ShutdownWinGame(void)
+{
+    if (VideoWidth != 0) {
+        LockVideoPage();
+        DrawARect16(0, 0, gVideoWidth, gVideoHeight, 0);
+        UpdateAndPageFlip();
+        ReleaseVideo();
+    }
+}
+
+/* The platform layer comes up and makes the window, hidden until the display mode is set. */
+// FUNCTION: EVNOVA 0x004d2950
+void CreateGameWindow(void)
+{
+    if (PlatInit() != 0)
+        Fatal("Can't register my game class");
+    atexit(PlatQuit);
+    if (PlatVideoCreateWindow("EV Nova") != 0)
+        Fatal("Can't allocate my window");
+}
+
+EXTERN_C_END
