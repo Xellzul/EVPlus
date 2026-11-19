@@ -1751,7 +1751,7 @@ void DrawDialog(DialogPtr dlg)
                 }
                 if (item->data != NULL) {
                     titleWidth = MeasureCString((char *)item->data);
-                    titleY = (box.bottom + box.top + CurrentGrafPort->txSize) / 2 - 1;
+                    titleY = CapsCenteredPenV(box.top, box.bottom);
                     titleX = (box.right + box.left) / 2 - titleWidth / 2;
                     MoveTo(titleX, titleY);
                     DrawCString((char *)item->data);

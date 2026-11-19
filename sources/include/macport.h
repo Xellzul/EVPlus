@@ -665,6 +665,7 @@ extern void Line(short dh, short dv);
 extern void LineTo(short h, short v);
 extern void *ST_LoadSndResource(short id);
 extern short MeasureCString(const char *text);
+extern short CapsCenteredPenV(short top, short bottom);
 extern void MoveTo(short h, short v);
 extern void OffsetRect(Rect *r, int dh, int dv);
 extern void OpenDataFiles(void);

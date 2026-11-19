@@ -530,6 +530,21 @@ short TextWidth(const char *text, int byteCount)
     return MeasureAnsi(text, byteCount);
 }
 
+/* The pen's v for DrawCString that puts the port font's capitals in the middle of the rows top..bottom - 1. */
+short CapsCenteredPenV(short top, short bottom)
+{
+    TextStyle style;
+    TextUnit capital = { 'H', 'H' };
+    const RasterGlyph *glyph;
+    int capHeight;
+
+    if (CurrentGrafPort == NULL || !CurrentStyle(&style))
+        return (short)((top + bottom) / 2);
+    glyph = GlyphOf(&style, &capital);
+    capHeight = glyph != NULL ? glyph->top : style.ascent;
+    return (short)((top + bottom + capHeight) / 2 + CurrentGrafPort->txSize - style.ascent);
+}
+
 /* TextWidth measured the way DrawTextRun draws: as Mac Roman (TextWidth measures the bytes as ANSI, so
    characters such as the ellipsis come out wrong) */
 short TextWidthMacRoman(const char *text, int byteCount)
