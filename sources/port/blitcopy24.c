@@ -1835,16 +1835,12 @@ short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
     int bitCount;
     CGrafPtr gw;
 
-    /* BUG: no default, so any other depth stores an uninitialised bitCount */
     switch (depth) {
-    case 8:
-        bitCount = 8;
-        break;
     case 16:
         bitCount = 15;
         break;
-    case 32:
-        bitCount = 32;
+    default:
+        bitCount = depth;
         break;
     }
     gw = (CGrafPtr)AllocAPointerClear(sizeof(CGrafPort));

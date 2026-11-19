@@ -109,7 +109,7 @@ void crashlog_print_ostype(OSType type)
 // MAC: _crashlog_mission_bit_set i386 0x000a4ab9 ppc 0x000b06f0
 void crashlog_mission_bit_set(char *str, char *pstr, short num, short num2, char *setString)
 {
-    char buf[255];
+    char buf[256];
 
     if (logfile && setString) {
         if (strlen(setString))
@@ -122,7 +122,7 @@ void crashlog_mission_bit_set(char *str, char *pstr, short num, short num2, char
                     fprintf(logfile, "%s", str);
                 if (pstr != NULL) {
                     if (strlen(pstr)) {
-                        strcpy(buf, pstr); // BUG (all versions): no length bound on buf
+                        strcpy(buf, pstr);
                         if (num)
                             PtoCstr((unsigned char *)buf);
                         fprintf(logfile, " %s", buf);

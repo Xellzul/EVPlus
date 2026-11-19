@@ -2260,7 +2260,7 @@ unsigned char LaunchFighter(ShipObj *parent, short fighterType)
     short n;
     short inacc;
 
-    if (fighterType < 0 || fighterType > kMaxWeapTypes) /* BUG: admits kMaxWeapTypes, one past weaponStats */
+    if (fighterType < 0 || fighterType >= kMaxWeapTypes)
         return 0;
     slot = GenericRandomShipSpawn(parent->curSystem, kSpawnReserve);
     if (slot == -1)

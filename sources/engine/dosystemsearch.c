@@ -135,8 +135,7 @@ void DoSystemSearch(void)
 
         runLen = 0;
         for (c = 0; c < typedText[0]; c++) {
-            /* BUG: off by one, the run compare reads one character past the candidate's length */
-            if (c > candText[0])
+            if (c >= candText[0])
                 break;
             if (typedText[c + 1] != candText[c + 1])
                 break;

@@ -360,11 +360,11 @@ void SWCloseSprite(SpritePtr deadSpriteP)
             deadSpriteP->rleDataH = 0;
         }
 
+        framesDisposed = 1;
         for (frame = 0; frame < deadSpriteP->numFrames; frame++) {
             framesDisposed = SWDisposeFrame(&deadSpriteP->frameArray[frame]);
         }
 
-        /* BUG: read uninitialised when numFrames is 0 */
         if (framesDisposed) {
             if (deadSpriteP->sharedPictGWorld != 0) {
                 DisposeGWorld(deadSpriteP->sharedPictGWorld);

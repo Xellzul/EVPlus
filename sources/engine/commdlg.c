@@ -539,7 +539,7 @@ Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 void CommDialogUpdate(void)
 {
     Handle item;
-    unsigned char text[255]; /* BUG: a 255-character commResponseString overruns text by one */
+    unsigned char text[256];
     short itemType;
     Rect box;
     Rect textBox;
@@ -995,7 +995,7 @@ Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 void PlanetCommDialogUpdate(void)
 {
     Handle item;
-    unsigned char text[255]; /* BUG: a 255-character commResponseString overruns text by one */
+    unsigned char text[256];
     short itemType;
     Rect box;
     Rect textBox;
@@ -1015,7 +1015,7 @@ void PlanetCommDialogUpdate(void)
     DrawPlanetCommDialogButtons(-1);
     GetDialogItem(commDialog, 4, &itemType, &item, &box);
     if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
-        strncpy((char *)text, (char *)commResponseString, 0xfe);
+        pstrcpy(text, commResponseString);
         PtoCstr(text);
         TextFont(smallTextFont);
         TextSize(smallTextSize);

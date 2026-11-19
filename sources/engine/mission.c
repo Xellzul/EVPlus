@@ -575,9 +575,8 @@ void RandomizeMissionData(void)
             if (dockedPortMissions[venue][i] != -1) {
                 tempMissions[n] = dockedPortMissions[venue][i];
                 dockedPortMissions[venue][i] = -1;
-                /* BUG: the slot was just set to -1, so this reads missionAvailData[-1] */
-                if (missionAvailData[dockedPortMissions[venue][i]].dispWeight > best || n == 0)
-                    best = missionAvailData[dockedPortMissions[venue][i]].dispWeight;
+                if (missionAvailData[tempMissions[n]].dispWeight > best || n == 0)
+                    best = missionAvailData[tempMissions[n]].dispWeight;
                 n++;
             }
         }
@@ -1956,9 +1955,9 @@ Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                     LScroll(0, 1, missionList);
             }
             old = selMissionListItem;
-            // BUG (all versions, theoretical): no `< kMaxMissions' bound, unlike the down-arrow path
             selMissionListItem++;
-            if (dockedPortMissions[missionsOutside][selMissionListItem] == -1)
+            if (selMissionListItem >= kMaxMissions
+                    || dockedPortMissions[missionsOutside][selMissionListItem] == -1)
                 selMissionListItem = 0;
             strncpy(briefingTextPtr, "", 3);
             if (selMissionListItem != -1) {
@@ -3652,8 +3651,8 @@ void SetupMissionInfoList(void)
         PtoCstr((unsigned char *)nameBuf);
         strncpy(briefingTextPtr, nameBuf, kMissionInfoTextSize);
         MungeBriefing(0, i);
-        // BUG: no NUL when the expanded name is kMissionInfoTextSize or longer; the strcat below then overruns
         strncpy(nameBuf, briefingTextPtr, kMissionInfoTextSize);
+        nameBuf[kMissionInfoTextSize] = 0;
         strcat(marker, nameBuf);
         len = strlen(marker);
         LSetCell(marker, len, rowPt, missionInfoList);

@@ -294,7 +294,7 @@ void DoTradeDialog(void)
         }
         if (itemHit == kSellItem) {
             RedrawDialog(tradeDialog);
-            /* BUG: an empty junk row leaves qty unset, so maxSell comes from garbage */
+            qty = 0;
             if (selTradeItem <= kLastCommodity)
                 qty = shipData->cargo[selTradeItem];
             else if (junkType[selTradeItem - kFirstJunkItem] != -1)
