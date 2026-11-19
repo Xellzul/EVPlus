@@ -1248,7 +1248,6 @@ EXTERN_CPP_END
 #define kKeyNameStrList     129     /* STR# 129: the key names */
 #define kAlertStrList       140
 #define kSpecialValueStrList 141   /* STR# 141: the words a preference shows for its special values */
-#define kHintStrList        7000
 #define kHackedStrList      30000   /* STR# 30000: what the ships say to a hacked copy */
 #define kFirstJunkItem     6
 #define kFirstResourceID 128

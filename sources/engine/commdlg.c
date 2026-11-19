@@ -2003,32 +2003,6 @@ void DoPlunderDialog(void)
 #undef space
 }
 
-#ifdef MACBUILD
-// KEPT: a cut feature (nothing calls it, even on mac) -- rates the hailed ship's view of the player
-// (legal record in its system, kill count) into playerStudliness 0..6; possible future use, not enabled on win
-short playerStudliness;
-
-/* EvalPlayerStudliness (mac-only, no caller in 1.1.1) */
-// MAC: _EvalPlayerStudliness i386 0x00092190 ppc 0x0009ddf0
-void EvalPlayerStudliness(void)
-{
-    ShipObj *ship;
-
-    ship = commShip;
-    playerStudliness = 0;
-    if (ship->govt == systemData[ship->curSystem].govt) {
-        if (playerRecord[ship->curSystem] > 0)
-            playerStudliness = 1;
-        if (playerRecord[ship->curSystem] >= 120)
-            playerStudliness += 2;
-    }
-    if (playerKills > 0)
-        playerStudliness++;
-    if (playerKills >= 500)
-        playerStudliness += 2;
-}
-#endif
-
 // FUNCTION: EVNOVA 0x00484230
 // MAC: _SetPlunderValues i386 0x00092219 ppc 0x0009debc
 void SetPlunderValues(void)

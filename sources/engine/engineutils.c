@@ -2608,29 +2608,6 @@ void ExploreNebulaeFromSystem(short sys)
     }
 }
 
-#ifdef MACBUILD
-// KEPT: a cut feature (nothing calls it, even on mac) -- a random STR# 7000 hint shown as a comm
-// message; possible future use, not enabled on win
-// MAC: _ShowHint i386 0x000051be ppc 0x00006724
-void ShowHint(void)
-{
-    Handle h;
-    short count;
-    Str255 hint;
-
-    h = GetResource('STR#', kHintStrList);
-    if (h == NULL)
-        return;
-    HLock(h);
-    BlockMoveData(*h, &count, 2);
-    HUnlock(h);
-    HPurge(h);
-    ReleaseResource(h);
-    GetIndString(hint, kHintStrList, Rand(count) + 1);
-    DisplayComm((PStrChar *)hint, 250, 0, kCommTextSize, &rgbWhite, 0, 0);
-}
-#endif
-
 /* Show numbered message `index`, letting a plug-in override the built-in text. */
 // FUNCTION: EVNOVA 0x00467cf0
 // MAC: _DisplayMessage i386 0x00005289 ppc 0x000067d0
@@ -3372,47 +3349,6 @@ void SpeakIt(char *msg, short flag)
 {
 }
 
-#ifdef MACBUILD
-// KEPT: unfinished (nothing calls it, even on mac) -- true when the player's fighter bay for
-// shipType is full or has no bay outfit; possible future use, not enabled on win
-// MAC: _HasMaxFightersOnBoard i386 0x00005986 ppc 0x00007080
-Boolean HasMaxFightersOnBoard(short shipType)
-{
-    short j;
-    short i;
-    short k;
-    short bay;
-    short outf;
-
-    bay = -1;
-    outf = -1;
-    for (j = 0; j < kMaxWeapTypes; j++) {
-        if (weaponStats[j].guidance == kGuidanceBay
-                && weaponStats[j].ammoType == shipType + kFirstResourceID
-                && shipData[0].weap[j].count > 0) {
-            bay = j;
-            break;
-        }
-    }
-    if (bay != -1) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            for (k = 0; k < kOutfMods; k++) {
-                if (outfitSystem[i].techLevel != kOutfTechAbsent && outfitSystem[i].modType[k] == 3
-                        && outfitSystem[i].modVal[k] == bay) {
-                    outf = i;
-                    break;
-                }
-            }
-        }
-    }
-    if (outf == -1)
-        return true;
-    if (shipData[0].weap[bay].ammo >= outfitSystem[outf].maxCount)
-        return true;
-    return false;
-}
-#endif
-
 // FUNCTION: EVNOVA 0x004694a0
 // MAC: _CanBuyFighter i386 0x00005a82 ppc 0x00007190
 Boolean CanBuyFighter(short shipType, short outfitIndex, short weapIndex)
@@ -3921,30 +3857,6 @@ Boolean PlayerHasAnyCargo(void)
     }
     return 0;
 }
-
-#ifdef MACBUILD
-// KEPT: unfinished (nothing calls it, even on mac) -- puts every launched fighter of the player
-// straight back into its bay as ammo; possible future use, not enabled on win
-// MAC: _InstantFighterRecall i386 0x00005df3 ppc 0x000075ac
-void InstantFighterRecall(void)
-{
-    short i;
-    short j;
-
-    for (i = 1; i < kMaxShips; i++) {
-        if (shipData[i].active && shipData[i].parentShip == 0 && shipData[i].aiType == kShipTypeFighter
-                && shipData[i].specialMission == -1) {
-            for (j = 0; j < kMaxWeapTypes; j++) {
-                if (weaponStats[j].ammoType == shipData[i].type + kFirstResourceID && weaponStats[j].guidance == kGuidanceBay) {
-                    shipData[0].weap[j].ammo++;
-                    statusRedraw[kRedrawWeap] = 1;
-                    break;
-                }
-            }
-        }
-    }
-}
-#endif
 
 /* the player's own hold capacity, outfit modifiers included */
 // FUNCTION: EVNOVA 0x0046a730

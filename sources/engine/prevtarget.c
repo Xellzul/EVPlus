@@ -91,26 +91,3 @@ short FindPrevShipInSystem(short cur, short system)
     }
     return cur;
 }
-
-#ifdef MACBUILD
-// KEPT: unfinished feature -- next planet/station in a system, wrapping; no caller in any version
-// MAC: _FindNextStellarInSystem i386 0x000025a2 ppc 0x00002f80
-short FindNextStellarInSystem(short cur, short system)
-{
-    short i;
-
-    if (cur != -1) {
-        for (i = cur + 1; i < kMaxStellars; i++)
-            if (stellarData[i].loaded && system == stellarData[i].system)
-                return i;
-        for (i = 0; i < cur; i++)
-            if (stellarData[i].loaded && system == stellarData[i].system)
-                return i;
-    } else {
-        for (i = 0; i < kMaxStellars; i++)
-            if (stellarData[i].loaded && stellarData[i].system == system)
-                return i;
-    }
-    return cur;
-}
-#endif

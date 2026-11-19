@@ -3264,26 +3264,6 @@ void MakeEscortsHyperWithParent(ShipObj *ship)
     }
 }
 
-#ifdef MACBUILD
-// KEPT: unfinished, new in 1.1.1 (nothing calls it, even on mac) -- the escorts of `ship' cancel
-// their jump and fly back into formation; possible future use, not enabled on win
-/* MakeEscortsCancelJump (mac _MakeEscortsCancelJump, mac-only: new in 1.1.1). */
-// MAC: _MakeEscortsCancelJump i386 0x0003fdeb ppc 0x00047218
-void MakeEscortsCancelJump(ShipObj *ship)
-{
-    short i;
-
-    for (i = 1; i < kMaxShips; i++) {
-        if (shipData[i].active != 0 && shipData[i].parentShip == ship->index &&
-            shipData[i].defenseStellar == -1) {
-            shipData[i].jumpTimer = 0;
-            shipData[i].targetShip = -2;
-            AIMakeEscortFlyInForm(&shipData[i]);
-        }
-    }
-}
-#endif
-
 // FUNCTION: EVNOVA 0x00422400
 // MAC: _SpawnEscort i386 0x0003fe5b ppc 0x000472bc
 short SpawnEscort(short shipType, short fromSpob)
