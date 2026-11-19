@@ -1453,39 +1453,22 @@ Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     short button;
+    EventKey key;
 
     if ((int)ev->what == kKeyDown) {
-#if V111
-        short key;
-
-        key = (ev->message & kKeyCodeMask) >> 8;
-        if (key == kReturnKeyCode || key == kEnterKeyCode) {
+        key = tolower(EventCharOf(ev));
+        if (IsReturnChar(key)) {
             *itemHit = 1;
             return 1;
         }
-        if (key == kAKeyCode) {
+        if (key == 'a') {
             *itemHit = 1;
             return 1;
         }
-        if (key == kLKeyCode) {
+        if (key == 'l') {
             *itemHit = 2;
             return 1;
         }
-#else
-        if (IsReturnChar(EventCharOf(ev))) {
-            *itemHit = 1;
-            return 1;
-        }
-        // BUG: no tolower here (every other filter has one), so Shift+A/L and Caps Lock do nothing
-        if (EventCharOf(ev) == 'a') {
-            *itemHit = 1;
-            return 1;
-        }
-        if (EventCharOf(ev) == 'l') {
-            *itemHit = 2;
-            return 1;
-        }
-#endif
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;

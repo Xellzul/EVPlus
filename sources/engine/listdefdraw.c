@@ -89,62 +89,6 @@ void MissionHandlePlayerEnteredNewSystem(void)
 void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t lCell,
                    short lDataOffset, short lDataLen, ScrollRec **lHandle)
 {
-#ifdef MACBUILD
-    SInt32 penMode;
-    short h;
-    void *text;
-    short v;
-    FontInfo fontInfo;
-    GrafPtr port;
-
-    text = *(*lHandle)->cells;
-    switch (lMessage) {
-    case lDrawMsg:
-        GetFontInfo(&fontInfo);
-        if (lSelect)
-            RGBForeColor((RGBColor *)&ldefColors[2]);
-        else
-            RGBForeColor((RGBColor *)&ldefColors[1]);
-        PaintRect(lRect);
-        ForeColor(blackColor);
-        if (lDataLen <= 0)
-            break;
-        h = lRect->left + (*lHandle)->indent.h + 4;
-        v = lRect->top + (*lHandle)->indent.v;
-        GetFontInfo(&fontInfo);
-        MoveTo(h, v + fontInfo.ascent);
-        TextFace(0);
-        if (TextWidth(text, lDataOffset, lDataLen) > lRect->right - h)
-            TextFace(condense);
-        RGBForeColor((RGBColor *)&ldefColors[0]);
-        DrawText(text, lDataOffset, lDataLen);
-        ForeColor(blackColor);
-        break;
-    case lHiliteMsg:
-        GetPort(&port);
-        penMode = GetPortPenMode((CGrafPtr)port);
-        if (lSelect)
-            RGBForeColor((RGBColor *)&ldefColors[2]);
-        else
-            RGBForeColor((RGBColor *)&ldefColors[1]);
-        PaintRect(lRect);
-        ForeColor(blackColor);
-        if (lDataLen > 0) {
-            h = lRect->left + (*lHandle)->indent.h + 4;
-            v = lRect->top + (*lHandle)->indent.v;
-            GetFontInfo(&fontInfo);
-            MoveTo(h, v + fontInfo.ascent);
-            TextFace(0);
-            if (TextWidth(text, lDataOffset, lDataLen) > lRect->right - h)
-                TextFace(condense);
-            RGBForeColor((RGBColor *)&ldefColors[0]);
-            DrawText(text, lDataOffset, lDataLen);
-            ForeColor(blackColor);
-        }
-        SetPortPenMode((CGrafPtr)port, penMode);
-        break;
-    }
-#else
     void *text;
     short v;
 
@@ -185,5 +129,4 @@ void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t
         ForeColor(blackColor);
         break;
     }
-#endif
 }
