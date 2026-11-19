@@ -471,27 +471,6 @@ void AISetup(ShipObj *ship)
     ship->formLeader = -1;
 }
 
-/* RecentlyVisitedStellarInSystem (mac _RecentlyVisitedStellarInSystem, dead on win: uncalled, the linker strips it). */
-// MAC: _RecentlyVisitedStellarInSystem i386 0x0007f429 ppc 0x00088ee8
-Boolean RecentlyVisitedStellarInSystem(ShipObj *ship, short sys)
-{
-    short i;
-    short count;
-
-    count = 0;
-    for (i = 0; i < kNavSlots; i++) {
-        if (systemData[sys].navDefault[i] != -1)
-            count++;
-    }
-    if (count == 0)
-        return 1;
-    for (i = 0; i < kNavSlots; i++) {
-        if (ship->lastStellar == systemData[sys].navDefault[i] && ship->lastStellar != -1)
-            return 1;
-    }
-    return 0;
-}
-
 // FUNCTION: EVNOVA 0x00402860
 // MAC: _WimpyTraderAI i386 0x0008b029 ppc 0x00096590
 void WimpyTraderAI(ShipObj *ship)
@@ -3131,15 +3110,6 @@ noRoom:
     goto doneFollow;
 }
 
-/* SelectRandomJumpDest (mac _SelectRandomJumpDest, uncalled there too): not linked, dead-stripped
-   in the exe; it stays because SelectRandomStellarDest's frame is laid out after it (notes) */
-// MAC: _SelectRandomJumpDest i386 0x000805ca ppc 0x0008a394
-void SelectRandomJumpDest(ShipObj *ship)
-{
-    ship->navTargetKind = kNavTargetLink;
-    ship->targetStellar = 1;
-}
-
 #define kPlayFieldLimit     0x3e8
 
 // FUNCTION: EVNOVA 0x0040c790
@@ -4232,26 +4202,6 @@ Boolean ExtendedIsThreatToShip(ShipObj *self, ShipObj *other)
     return 0;
 }
 
-/* IsThreatToShip (mac _IsThreatToShip, dead on win: uncalled, the linker strips it). */
-// MAC: _IsThreatToShip i386 0x00081faf ppc 0x0008c0c8
-Boolean IsThreatToShip(ShipObj *self, ShipObj *other)
-{
-    if (other->active != 0 && !IsDisabled(other) && other->parentShip != self->index) {
-        if (other->index == 0) {
-            if (PlayerBlessedByGovt(self->govt, 0))
-                return 0;
-            return IsThreatToPlayer(self);
-        }
-        if (other->targetShip == self->index
-                && other->aiState != kAIStateInspect && other->aiState != kAIStateRefuel
-                && other->aiState != kAIStateRepair && other->aiState != kAIStateFlyPr
-                && other->aiState != kAIStateHypPr && other->aiState != kAIStateGoHome
-                && other->aiState != kAIStateProtect && other->aiState != kAIStateDestStel)
-            return 1;
-    }
-    return 0;
-}
-
 // FUNCTION: EVNOVA 0x0040fc00
 // MAC: _IsShipThreatened i386 0x00082068 ppc 0x0008c1ac
 Boolean IsShipThreatened(ShipObj *ship)
@@ -4682,23 +4632,6 @@ void AIFightThreatToParent(ShipObj *ship)
     }
 }
 
-/* AIMakeShipAttackShip (mac _AIMakeShipAttackShip, dead on win: uncalled, the linker strips it). */
-// MAC: _AIMakeShipAttackShip i386 0x00082c44 ppc 0x0008cf84
-void AIMakeShipAttackShip(ShipObj *ship, ShipObj *target)
-{
-    ship->aiState = kAIStateFightSh;
-    ship->targetShip = target->index;
-}
-
-/* AIMakeShipWait (mac _AIMakeShipWait, dead on win: uncalled, the linker strips it). */
-// MAC: _AIMakeShipWait i386 0x00082c63 ppc 0x0008cf9c
-void AIMakeShipWait(ShipObj *ship)
-{
-    ship->aiState = kAIStateWait;
-    ship->targetShip = -1;
-    ship->targetStellar = -1;
-}
-
 // FUNCTION: EVNOVA 0x00410b00
 // MAC: _AIFightEnemyThreatToPlayer i386 0x00082c80 ppc 0x0008cfb8
 void AIFightEnemyThreatToPlayer(ShipObj *ship)
@@ -4845,20 +4778,6 @@ Boolean AIIsShipJumpingIn(ShipObj *ship)
     return 0;
 }
 
-/* IsShipDocking (mac _IsShipDocking, dead on win: uncalled, the linker strips it). */
-// MAC: _IsShipDocking i386 0x00082f28 ppc 0x0008d2ec
-Boolean IsShipDocking(ShipObj *ship)
-{
-    return ship->aiState == kAIStateGoHome;
-}
-
-/* IsShipInForm (mac _IsShipInForm, dead on win: uncalled, the linker strips it). */
-// MAC: _IsShipInForm i386 0x00082f3e ppc 0x0008d304
-Boolean IsShipInForm(ShipObj *ship)
-{
-    return ship->aiState == kAIStateFlyPr;
-}
-
 // FUNCTION: EVNOVA 0x00410ee0
 // MAC: _IsShipInCloseForm i386 0x00082f54 ppc 0x0008d31c
 Boolean IsShipInCloseForm(ShipObj *ship)
@@ -4875,20 +4794,6 @@ Boolean IsShipAttacking(ShipObj *ship)
     if (ship->aiState == kAIStateFightSh)
         return 1;
     return 0;
-}
-
-/* IsShipRetreating (mac _IsShipRetreating, dead on win: uncalled, the linker strips it). */
-// MAC: _IsShipRetreating i386 0x00082f80 ppc 0x0008d34c
-Boolean IsShipRetreating(ShipObj *ship)
-{
-    return ship->aiState == kAIStateDefRet;
-}
-
-/* IsShipWaiting (mac _IsShipWaiting, dead on win: uncalled, the linker strips it). */
-// MAC: _IsShipWaiting i386 0x00082f96 ppc 0x0008d364
-Boolean IsShipWaiting(ShipObj *ship)
-{
-    return ship->aiState == kAIStateWait;
 }
 
 // FUNCTION: EVNOVA 0x00410f20
@@ -5019,17 +4924,6 @@ void AICallForHelp(ShipObj *ship)
     }
 }
 
-/* IsShipScanningPlayer (mac _IsShipScanningPlayer, dead on win: uncalled, the linker strips it). */
-// MAC: _IsShipScanningPlayer i386 0x00083258 ppc 0x0008d638
-Boolean IsShipScanningPlayer(ShipObj *ship)
-{
-    if (ship->active != 0 && ship->aiState == kAIStateInspect && ship->targetShip == 0
-            && FloatAbs(ship->pos.x - shipData->pos.x) <= kScanRange
-            && FloatAbs(ship->pos.y - shipData->pos.y) <= kScanRange)
-        return 1;
-    return 0;
-}
-
 // FUNCTION: EVNOVA 0x00411540
 // MAC: _AIEscortFireUnprovoked i386 0x00080e4f ppc 0x0008ac68
 void AIEscortFireUnprovoked(ShipObj *ship)
@@ -5054,22 +4948,6 @@ Boolean AIIsShipAttemptingDisable(ShipObj *ship)
     if (ship->aiState == kAIStatePlunder)
         return 1;
     return 0;
-}
-
-/* AIPlunderIfPossible (mac _AIPlunderIfPossible, dead on win: uncalled, the linker strips it). */
-// MAC: _AIPlunderIfPossible i386 0x000832fc ppc 0x0008d704
-void AIPlunderIfPossible(ShipObj *ship)
-{
-    short target;
-
-    target = ship->targetShip;
-    if (target >= 0 && ship->govt != -1
-            && (govtData[ship->govt].flags & kGovtPlunders) != 0
-            && shipClass[ship->type].crew > 0
-            && (target == 0 || (shipData[target].aiType <= kShipTypeBraveTrader
-                                && shipData[target].specialMission == -1
-                                && shipData[target].boarded == 0)))
-        ship->aiState = kAIStatePlunder;
 }
 
 // FUNCTION: EVNOVA 0x004115c0
