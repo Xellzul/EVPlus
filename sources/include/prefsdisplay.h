@@ -1,30 +1,45 @@
 /* prefsdisplay.h -- the Display group of Preferences: the resolutions it offers, their names, the UI scale
    range. */
-#ifndef PREFSDISPLAY_H
-#define PREFSDISPLAY_H
+#pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <array>
 
-#define kResolutionChoiceMax    12
-#define kDisplayTextMax         40
+constexpr int kDisplayTextMax = 40;
 
 /* a resolution as the preferences keep it: 0 x 0 = the desktop's */
-typedef struct ResolutionChoice {
+struct Resolution {
     short width;
     short height;
-} ResolutionChoice;
 
-short ResolutionChoices(ResolutionChoice *out);
-short FindResolutionChoice(const ResolutionChoice *list, short count, short width, short height);
-void ResolutionSizeText(short width, short height, char *out);
-void ResolutionAspectText(const ResolutionChoice *list, short count, short width, short height, char *out);
-double MaxUIScale(short width, short height, short ownWidth, short ownHeight);
+    bool operator==(const Resolution &other) const
+    {
+        return width == other.width && height == other.height;
+    }
+};
+
+/* The resolutions offered, for the desktop as it is: each aspect ratio no wider than the desktop (4:3, 16:9,
+   the desktop's own) at 600 lines, 768 lines (the original game's 1024 x 768) and the desktop's height. */
+class ResolutionList {
+public:
+    ResolutionList();
+
+    int size() const { return count; }
+    const Resolution &operator[](int i) const { return list[i]; }
+    int find(Resolution r) const;                       /* -1: not offered (set by hand in the file) */
+    Resolution step(Resolution r, int direction) const; /* the next one up (+1) or down (-1) */
+    void sizeText(Resolution r, char *out) const;       /* "1024 x 768" */
+    void aspectText(Resolution r, char *out) const;     /* "4:3 (original)" */
+
+private:
+    void add(int width, int height);
+
+    std::array<Resolution, 12> list;
+    int count;
+};
+
+/* the largest UI scale at which every dialog still fits the resolution (one of ownWidth x ownHeight too) */
+double MaxUIScale(Resolution r, short ownWidth, short ownHeight);
+/* the UI scale one step (0.1) up or down, kept between 1.0 and max */
+double StepUIScale(double scale, int direction, double max);
 void UIScaleText(double scale, char *out);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* PREFSDISPLAY_H */

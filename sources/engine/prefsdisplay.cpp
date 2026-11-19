@@ -1,211 +1,215 @@
 /* prefsdisplay.cpp -- the Display group of Preferences: the resolutions it offers, their names, the UI scale
-   range. The resolution list: each aspect ratio no wider than the desktop (4:3, 16:9, the desktop's own)
-   at 600 lines, 768 lines (the original game's 1024 x 768) and the desktop's height. */
+   range. */
 #include <math.h>
 #include <stdio.h>
-#include <string.h>
 #include "macport.h"
 #include "burger.h"
 #include "platform.h"
 #include "prefsdisplay.h"
 
-#define kDLOGType           0x444c4f47
-#define kOriginalWidth      1024
-#define kOriginalHeight     768
-#define kSmallHeight        600
-#define kRatioTolerance     0.01        /* two ratios this close are the same */
-#define kUIScaleMin         1.0
+namespace {
 
-typedef struct AspectName {
+constexpr uint32_t kDLOGType = 0x444c4f47;
+constexpr short kOriginalWidth = 1024;
+constexpr short kOriginalHeight = 768;
+constexpr short kSmallHeight = 600;
+constexpr double kRatioTolerance = 0.01;        /* two ratios this close are the same */
+constexpr double kUIScaleMin = 1.0;
+constexpr double kUIScaleStep = 0.1;
+
+struct AspectName {
     double ratio;
     double tolerance;
     const char *name;
-} AspectName;
+};
 
-static const AspectName kAspectNames[] = {
+constexpr AspectName kAspectNames[] = {
     { 4.0 / 3.0,   kRatioTolerance, "4:3" },
     { 5.0 / 4.0,   kRatioTolerance, "5:4" },
     { 16.0 / 10.0, kRatioTolerance, "16:10" },
     { 16.0 / 9.0,  kRatioTolerance, "16:9" },
-    { 2.36,        0.03,            "21:9" },
+    { 2.36,        0.03,            "21:9" },       /* sold as 21:9: 2560 x 1080, 3440 x 1440, ... */
     { 32.0 / 9.0,  kRatioTolerance, "32:9" },
 };
-#define kAspectNameCount (sizeof(kAspectNames) / sizeof(kAspectNames[0]))
 
-static int SameRatio(double a, double b)
+bool SameRatio(double a, double b)
 {
     return fabs(a - b) <= b * kRatioTolerance;
 }
 
-static void DesktopSize(int *width, int *height)
-{
-    PlatDesktopSize(width, height);
-    if (*width <= 0 || *height <= 0) {
-        *width = kOriginalWidth;
-        *height = kOriginalHeight;
-    }
-}
-
-/* the size shown for a kept resolution: 0 stands for the desktop's */
-static void ShownSize(short width, short height, int *w, int *h)
-{
-    int desktopWidth;
-    int desktopHeight;
-
-    DesktopSize(&desktopWidth, &desktopHeight);
-    *w = width != 0 ? width : desktopWidth;
-    *h = height != 0 ? height : desktopHeight;
-}
-
-static void AddChoice(ResolutionChoice *out, short *count, int width, int height)
-{
-    short i;
-
-    if (*count >= kResolutionChoiceMax)
-        return;
-    for (i = 0; i < *count; i++)
-        if (out[i].width == width && out[i].height == height)
-            return;
-    out[*count].width = (short)width;
-    out[*count].height = (short)height;
-    *count += 1;
-}
-
-short ResolutionChoices(ResolutionChoice *out)
-{
-    double ratios[3];
-    int heights[3];
-    int desktopWidth;
-    int desktopHeight;
-    double desktopRatio;
-    short ratioCount;
-    short count;
-    short r;
-    short h;
+struct Size {
     int width;
+    int height;
+};
 
-    DesktopSize(&desktopWidth, &desktopHeight);
-    desktopRatio = (double)desktopWidth / desktopHeight;
-    ratioCount = 0;
+Size DesktopSize()
+{
+    Size s;
+
+    PlatDesktopSize(&s.width, &s.height);
+    if (s.width <= 0 || s.height <= 0)
+        s = { kOriginalWidth, kOriginalHeight };
+    return s;
+}
+
+/* the size a kept resolution stands for: 0 is the desktop's */
+Size ShownSize(Resolution r)
+{
+    Size desktop = DesktopSize();
+
+    return { r.width != 0 ? r.width : desktop.width, r.height != 0 ? r.height : desktop.height };
+}
+
+/* the largest dialog the game and the plug-ins have (DLOG bounds), measured once */
+Size LargestDialog()
+{
+    static Size largest;
+
+    if (largest.width == 0) {
+        largest = { 1, 1 };
+        int32_t count = CountResources(kDLOGType);
+        for (int32_t i = 1; i <= count; i++) {
+            Handle h = GetIndResource(kDLOGType, (short)i);
+            if (h == NULL)
+                continue;
+            if (GetAHandleSize(h) >= 8) {
+                const unsigned char *t = (const unsigned char *)*h;
+                short height = (short)((t[4] << 8 | t[5]) - (t[0] << 8 | t[1]));
+                short width = (short)((t[6] << 8 | t[7]) - (t[2] << 8 | t[3]));
+                if (width > largest.width)
+                    largest.width = width;
+                if (height > largest.height)
+                    largest.height = height;
+            }
+            ReleaseResource(h);
+        }
+    }
+    return largest;
+}
+
+} // namespace
+
+ResolutionList::ResolutionList() : count(0)
+{
+    Size desktop = DesktopSize();
+    double desktopRatio = (double)desktop.width / desktop.height;
+    std::array<double, 3> ratios;
+    int ratioCount = 0;
+
     if (4.0 / 3.0 <= desktopRatio * (1 + kRatioTolerance))
         ratios[ratioCount++] = 4.0 / 3.0;
     if (16.0 / 9.0 <= desktopRatio * (1 + kRatioTolerance))
         ratios[ratioCount++] = 16.0 / 9.0;
     if (ratioCount == 0 || !SameRatio(desktopRatio, ratios[ratioCount - 1]))
         ratios[ratioCount++] = desktopRatio;
-    heights[0] = kSmallHeight;
-    heights[1] = kOriginalHeight;
-    heights[2] = desktopHeight;
 
-    count = 0;
-    for (r = 0; r < ratioCount; r++) {
-        for (h = 0; h < 3; h++) {
-            if (heights[h] > desktopHeight)
+    const int heights[] = { kSmallHeight, kOriginalHeight, desktop.height };
+    for (int r = 0; r < ratioCount; r++) {
+        for (int height : heights) {
+            if (height > desktop.height)
                 continue;
-            if (heights[h] == desktopHeight && SameRatio(ratios[r], desktopRatio)) {
-                AddChoice(out, &count, 0, 0);
+            if (height == desktop.height && SameRatio(ratios[r], desktopRatio)) {
+                add(0, 0);
                 continue;
             }
-            width = 2 * (int)floor(heights[h] * ratios[r] / 2 + 0.5);
-            if (width <= desktopWidth)
-                AddChoice(out, &count, width, heights[h]);
+            int width = 2 * (int)floor(height * ratios[r] / 2 + 0.5);
+            if (width <= desktop.width)
+                add(width, height);
         }
     }
-    return count;
 }
 
-/* the entry of the list, -1 = none (a size set by hand in the preferences file) */
-short FindResolutionChoice(const ResolutionChoice *list, short count, short width, short height)
+void ResolutionList::add(int width, int height)
 {
-    short i;
+    Resolution r = { (short)width, (short)height };
 
-    for (i = 0; i < count; i++)
-        if (list[i].width == width && list[i].height == height)
+    if (count < (int)list.size() && find(r) < 0)
+        list[count++] = r;
+}
+
+int ResolutionList::find(Resolution r) const
+{
+    for (int i = 0; i < count; i++)
+        if (list[i] == r)
             return i;
     return -1;
 }
 
-void ResolutionSizeText(short width, short height, char *out)
+/* from a resolution not in the list, up goes to the first, down to the last */
+Resolution ResolutionList::step(Resolution r, int direction) const
 {
-    int w;
-    int h;
-
-    ShownSize(width, height, &w, &h);
-    snprintf(out, kDisplayTextMax, "%d x %d", w, h);
+    if (count == 0)
+        return r;
+    int i = find(r);
+    if (i < 0)
+        i = direction > 0 ? 0 : count - 1;
+    else if (i + direction >= 0 && i + direction < count)
+        i += direction;
+    return list[i];
 }
 
-void ResolutionAspectText(const ResolutionChoice *list, short count, short width, short height, char *out)
+void ResolutionList::sizeText(Resolution r, char *out) const
 {
-    const char *name;
-    const char *note;
-    char ratio[16];
-    double value;
-    size_t i;
-    int w;
-    int h;
+    Size s = ShownSize(r);
 
-    ShownSize(width, height, &w, &h);
-    value = (double)w / h;
-    name = NULL;
-    for (i = 0; i < kAspectNameCount && name == NULL; i++)
-        if (fabs(value - kAspectNames[i].ratio) <= kAspectNames[i].ratio * kAspectNames[i].tolerance)
-            name = kAspectNames[i].name;
+    snprintf(out, kDisplayTextMax, "%d x %d", s.width, s.height);
+}
+
+void ResolutionList::aspectText(Resolution r, char *out) const
+{
+    Size s = ShownSize(r);
+    double value = (double)s.width / s.height;
+    char ratio[16];
+    const char *name = NULL;
+
+    for (const AspectName &a : kAspectNames)
+        if (name == NULL && fabs(value - a.ratio) <= a.ratio * a.tolerance)
+            name = a.name;
     if (name == NULL) {
         snprintf(ratio, sizeof(ratio), "%.2f:1", value);
         name = ratio;
     }
-    note = "";
-    if (FindResolutionChoice(list, count, width, height) < 0)
+    const char *note = "";
+    if (find(r) < 0)
         note = " (custom)";
-    else if (width == 0 && height == 0)
+    else if (r.width == 0 && r.height == 0)
         note = " (native)";
-    else if (width == kOriginalWidth && height == kOriginalHeight)
+    else if (r.width == kOriginalWidth && r.height == kOriginalHeight)
         note = " (original)";
     snprintf(out, kDisplayTextMax, "%s%s", name, note);
 }
 
-/* The largest UI scale at which every dialog (the game's and plug-ins' DLOGs, and one of ownWidth x
-   ownHeight) still fits a screen of the resolution, in steps of 0.1; never below 1.0. */
-double MaxUIScale(short width, short height, short ownWidth, short ownHeight)
+/* every dialog = the game's and the plug-ins' DLOGs and one of ownWidth x ownHeight; in steps of 0.1, never
+   below 1.0 */
+double MaxUIScale(Resolution r, short ownWidth, short ownHeight)
 {
-    static short largestWidth;
-    static short largestHeight;
-    const unsigned char *t;
-    Handle h;
-    int32_t count;
-    int32_t i;
-    short w;
-    short v;
-    int screenWidth;
-    int screenHeight;
-    double scale;
+    Size screen = ShownSize(r);
+    Size largest = LargestDialog();
+    int width = largest.width > ownWidth ? largest.width : ownWidth;
+    int height = largest.height > ownHeight ? largest.height : ownHeight;
+    double scale = (double)screen.width / width;
 
-    if (largestWidth == 0) {
-        largestWidth = ownWidth;
-        largestHeight = ownHeight;
-        count = CountResources(kDLOGType);
-        for (i = 1; i <= count; i++) {
-            h = GetIndResource(kDLOGType, (short)i);
-            if (h == NULL)
-                continue;
-            if (GetAHandleSize(h) >= 8) {
-                t = (const unsigned char *)*h;
-                v = (short)((t[4] << 8 | t[5]) - (t[0] << 8 | t[1]));
-                w = (short)((t[6] << 8 | t[7]) - (t[2] << 8 | t[3]));
-                if (w > largestWidth)
-                    largestWidth = w;
-                if (v > largestHeight)
-                    largestHeight = v;
-            }
-            ReleaseResource(h);
-        }
-    }
-    ShownSize(width, height, &screenWidth, &screenHeight);
-    scale = (double)screenWidth / largestWidth;
-    if ((double)screenHeight / largestHeight < scale)
-        scale = (double)screenHeight / largestHeight;
+    if ((double)screen.height / height < scale)
+        scale = (double)screen.height / height;
     scale = floor(scale * 10 + 1e-6) / 10;
     return scale < kUIScaleMin ? kUIScaleMin : scale;
+}
+
+/* a scale between two steps (one set by hand in the file) goes to the next step */
+double StepUIScale(double scale, int direction, double max)
+{
+    double steps;
+
+    if (direction > 0)
+        steps = floor(scale / kUIScaleStep + 1e-6) + 1;
+    else
+        steps = ceil(scale / kUIScaleStep - 1e-6) - 1;
+    scale = steps * kUIScaleStep;
+    if (scale > max)
+        scale = max;
+    if (scale < kUIScaleMin)
+        scale = kUIScaleMin;
+    return floor(scale * 10 + 0.5) / 10;
 }
 
 void UIScaleText(double scale, char *out)
