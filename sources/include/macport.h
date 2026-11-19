@@ -2,6 +2,7 @@
 #include "gametypes.h"
 #include "int32.h"
 #include "burgertypes.h"
+#include "keycodes.h"
 
 #ifndef MACPORT_H
 #define MACPORT_H
@@ -565,12 +566,6 @@ extern unsigned char *CtoPstr(char *str);
 #define kUpArrowChar    0x0b
 #define kUpdateEvt     6
 
-#define kScanLShift 0x2a
-#define kScanRShift 0x36
-#define kScanLCtrl  0x1d
-#define kScanRCtrl  0x6b
-#define kScanLAlt   0x38
-#define kScanRAlt   0x6f
 
 
 

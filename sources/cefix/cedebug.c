@@ -12,8 +12,8 @@
 #include "burger.h"
 #include "cefix.h"
 
-#define kScanNCBTest        0x0a                /* the 9 key */
-#define kScanNCBSet         0x0b                /* the 0 key */
+#define kScanNCBTest        kScan9
+#define kScanNCBSet         kScan0
 #define kNCBExpressionMax   0x40
 
 /* Alt+Home turns debug mode on. In debug mode Alt+9 evaluates a mission bit test
@@ -23,7 +23,7 @@ unsigned char CE_CheckDebugKeys(short scanCode)
     unsigned char len;
 
     if (!cheatsActive && (QuickKeyCheck(kScanLAlt) || QuickKeyCheck(kScanRAlt))
-            && QuickKeyCheck(kCEScanHome)) {
+            && QuickKeyCheck(kScanHome)) {
         PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
         cheatsActive = 1;
     } else if (cheatsActive && (QuickKeyCheck(kScanLAlt) || QuickKeyCheck(kScanRAlt))) {

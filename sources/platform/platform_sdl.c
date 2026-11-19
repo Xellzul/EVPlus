@@ -10,7 +10,6 @@
 #include "platform.h"
 
 #define kScanCount      256             /* SDL's keyboard scan codes all lie below this */
-#define kExtended       0x80            /* PlatEvent.scan: an E0-prefixed key */
 #define kQueueSize      64              /* events waiting, a power of 2 */
 #define kFocusNotes     16              /* focus losses waiting in SDL's queue, a power of 2 */
 #define kWheelNotch     120
@@ -71,56 +70,6 @@ static PlatAudio *gAudioOutputs;        /* the open ones, for PlatQuit */
 static bool gFocusNote[kFocusNotes];
 static unsigned gFocusNoteHead;
 static unsigned gFocusNoteTail;
-
-/* SDL scan code (USB usage) to PC set 1 scan code, | kExtended for the E0 keys. Pause and Num Lock as
-   Windows reports them: Pause 45, Num Lock E0 45. */
-static const unsigned char kPCScan[kScanCount] = {
-    [SDL_SCANCODE_A] = 0x1e, [SDL_SCANCODE_B] = 0x30, [SDL_SCANCODE_C] = 0x2e, [SDL_SCANCODE_D] = 0x20,
-    [SDL_SCANCODE_E] = 0x12, [SDL_SCANCODE_F] = 0x21, [SDL_SCANCODE_G] = 0x22, [SDL_SCANCODE_H] = 0x23,
-    [SDL_SCANCODE_I] = 0x17, [SDL_SCANCODE_J] = 0x24, [SDL_SCANCODE_K] = 0x25, [SDL_SCANCODE_L] = 0x26,
-    [SDL_SCANCODE_M] = 0x32, [SDL_SCANCODE_N] = 0x31, [SDL_SCANCODE_O] = 0x18, [SDL_SCANCODE_P] = 0x19,
-    [SDL_SCANCODE_Q] = 0x10, [SDL_SCANCODE_R] = 0x13, [SDL_SCANCODE_S] = 0x1f, [SDL_SCANCODE_T] = 0x14,
-    [SDL_SCANCODE_U] = 0x16, [SDL_SCANCODE_V] = 0x2f, [SDL_SCANCODE_W] = 0x11, [SDL_SCANCODE_X] = 0x2d,
-    [SDL_SCANCODE_Y] = 0x15, [SDL_SCANCODE_Z] = 0x2c,
-    [SDL_SCANCODE_1] = 0x02, [SDL_SCANCODE_2] = 0x03, [SDL_SCANCODE_3] = 0x04, [SDL_SCANCODE_4] = 0x05,
-    [SDL_SCANCODE_5] = 0x06, [SDL_SCANCODE_6] = 0x07, [SDL_SCANCODE_7] = 0x08, [SDL_SCANCODE_8] = 0x09,
-    [SDL_SCANCODE_9] = 0x0a, [SDL_SCANCODE_0] = 0x0b,
-    [SDL_SCANCODE_RETURN] = 0x1c, [SDL_SCANCODE_ESCAPE] = 0x01, [SDL_SCANCODE_BACKSPACE] = 0x0e,
-    [SDL_SCANCODE_TAB] = 0x0f, [SDL_SCANCODE_SPACE] = 0x39, [SDL_SCANCODE_MINUS] = 0x0c,
-    [SDL_SCANCODE_EQUALS] = 0x0d, [SDL_SCANCODE_LEFTBRACKET] = 0x1a, [SDL_SCANCODE_RIGHTBRACKET] = 0x1b,
-    [SDL_SCANCODE_BACKSLASH] = 0x2b, [SDL_SCANCODE_NONUSHASH] = 0x2b, [SDL_SCANCODE_SEMICOLON] = 0x27,
-    [SDL_SCANCODE_APOSTROPHE] = 0x28, [SDL_SCANCODE_GRAVE] = 0x29, [SDL_SCANCODE_COMMA] = 0x33,
-    [SDL_SCANCODE_PERIOD] = 0x34, [SDL_SCANCODE_SLASH] = 0x35, [SDL_SCANCODE_CAPSLOCK] = 0x3a,
-    [SDL_SCANCODE_F1] = 0x3b, [SDL_SCANCODE_F2] = 0x3c, [SDL_SCANCODE_F3] = 0x3d, [SDL_SCANCODE_F4] = 0x3e,
-    [SDL_SCANCODE_F5] = 0x3f, [SDL_SCANCODE_F6] = 0x40, [SDL_SCANCODE_F7] = 0x41, [SDL_SCANCODE_F8] = 0x42,
-    [SDL_SCANCODE_F9] = 0x43, [SDL_SCANCODE_F10] = 0x44, [SDL_SCANCODE_F11] = 0x57, [SDL_SCANCODE_F12] = 0x58,
-    [SDL_SCANCODE_PRINTSCREEN] = 0x37 | kExtended, [SDL_SCANCODE_SCROLLLOCK] = 0x46,
-    [SDL_SCANCODE_PAUSE] = 0x45,
-    [SDL_SCANCODE_INSERT] = 0x52 | kExtended, [SDL_SCANCODE_HOME] = 0x47 | kExtended,
-    [SDL_SCANCODE_PAGEUP] = 0x49 | kExtended, [SDL_SCANCODE_DELETE] = 0x53 | kExtended,
-    [SDL_SCANCODE_END] = 0x4f | kExtended, [SDL_SCANCODE_PAGEDOWN] = 0x51 | kExtended,
-    [SDL_SCANCODE_RIGHT] = 0x4d | kExtended, [SDL_SCANCODE_LEFT] = 0x4b | kExtended,
-    [SDL_SCANCODE_DOWN] = 0x50 | kExtended, [SDL_SCANCODE_UP] = 0x48 | kExtended,
-    [SDL_SCANCODE_NUMLOCKCLEAR] = 0x45 | kExtended, [SDL_SCANCODE_KP_DIVIDE] = 0x35 | kExtended,
-    [SDL_SCANCODE_KP_MULTIPLY] = 0x37, [SDL_SCANCODE_KP_MINUS] = 0x4a, [SDL_SCANCODE_KP_PLUS] = 0x4e,
-    [SDL_SCANCODE_KP_ENTER] = 0x1c | kExtended,
-    [SDL_SCANCODE_KP_1] = 0x4f, [SDL_SCANCODE_KP_2] = 0x50, [SDL_SCANCODE_KP_3] = 0x51,
-    [SDL_SCANCODE_KP_4] = 0x4b, [SDL_SCANCODE_KP_5] = 0x4c, [SDL_SCANCODE_KP_6] = 0x4d,
-    [SDL_SCANCODE_KP_7] = 0x47, [SDL_SCANCODE_KP_8] = 0x48, [SDL_SCANCODE_KP_9] = 0x49,
-    [SDL_SCANCODE_KP_0] = 0x52, [SDL_SCANCODE_KP_PERIOD] = 0x53,
-    [SDL_SCANCODE_NONUSBACKSLASH] = 0x56, [SDL_SCANCODE_APPLICATION] = 0x5d | kExtended,
-    [SDL_SCANCODE_LCTRL] = 0x1d, [SDL_SCANCODE_LSHIFT] = 0x2a, [SDL_SCANCODE_LALT] = 0x38,
-    [SDL_SCANCODE_LGUI] = 0x5b | kExtended, [SDL_SCANCODE_RCTRL] = 0x1d | kExtended,
-    [SDL_SCANCODE_RSHIFT] = 0x36, [SDL_SCANCODE_RALT] = 0x38 | kExtended,
-    [SDL_SCANCODE_RGUI] = 0x5c | kExtended,
-    [SDL_SCANCODE_KP_EQUALS] = 0x59, [SDL_SCANCODE_KP_COMMA] = 0x7e,
-    [SDL_SCANCODE_F13] = 0x64, [SDL_SCANCODE_F14] = 0x65, [SDL_SCANCODE_F15] = 0x66, [SDL_SCANCODE_F16] = 0x67,
-    [SDL_SCANCODE_F17] = 0x68, [SDL_SCANCODE_F18] = 0x69, [SDL_SCANCODE_F19] = 0x6a, [SDL_SCANCODE_F20] = 0x6b,
-    [SDL_SCANCODE_F21] = 0x6c, [SDL_SCANCODE_F22] = 0x6d, [SDL_SCANCODE_F23] = 0x6e, [SDL_SCANCODE_F24] = 0x76,
-    [SDL_SCANCODE_INTERNATIONAL1] = 0x73, [SDL_SCANCODE_INTERNATIONAL2] = 0x70,
-    [SDL_SCANCODE_INTERNATIONAL3] = 0x7d, [SDL_SCANCODE_INTERNATIONAL4] = 0x79,
-    [SDL_SCANCODE_INTERNATIONAL5] = 0x7b, [SDL_SCANCODE_LANG1] = 0x72, [SDL_SCANCODE_LANG2] = 0x71
-};
 
 /* -- start-up ------------------------------------------------------------------------------------- */
 
@@ -469,7 +418,7 @@ static void PushType(int type, int on)
 
 static int ScanOf(SDL_Scancode code)
 {
-    return (unsigned)code < kScanCount ? kPCScan[code] : 0;
+    return (unsigned)code < SDL_SCANCODE_COUNT ? (int)code : 0;
 }
 
 static int SpecialKeyOf(SDL_Scancode code, SDL_Keymod mod)

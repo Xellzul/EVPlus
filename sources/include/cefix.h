@@ -77,16 +77,6 @@ void CE_Blit16Mask(struct PixMap *src, struct PixMap *mask, struct PixMap *dst,
 short CE_NewGWorld(struct CGrafPort **out, int depth, const struct Rect *bounds, void *theGDH);
 
 /* cedebug.c */
-#define kCEScanF6           0x40
-#define kCEScanF7           0x41
-#define kCEScanF10          0x44
-#define kCEScanBackspace    0x0e
-#define kCEScanHome         0x60
-#define kCEScanPageUp       0x62
-#define kCEScanEnd          0x65
-#define kCEScanPageDown     0x67
-#define kCEScanNumEnter     0x6a
-#define kCEScanNone         0xff        /* no key: KeyIsDown is false from 0x80 up */
 
 struct RGBColor;
 

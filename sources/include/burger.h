@@ -3,6 +3,7 @@
 #define BURGER_H
 
 #include "burgertypes.h"
+#include "keycodes.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -150,7 +151,6 @@ extern void WaitTicks(Word tickCount);
 #define kOutOfMemory    -7004
 #define kNoDevice       -7401      /* sound: no output device */
 #define kMillisPerSecond 1000
-#define kKeyTableSize   0x80
 #define kPathBufferSize 0x800
 
 
@@ -288,7 +288,7 @@ extern void CStr2PStr(char *dst, const char *src);
 extern int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level);
 extern ULong ST_PlaySoundParam(SoundRequest *req);
 
-extern unsigned char KeyArray[128];
+extern unsigned char KeyArray[kScanCount];
 
 #ifdef __cplusplus
 }

@@ -230,9 +230,6 @@ void DoBarDialog(void)
 #define kRacePayoutOdds      4
 #define kMaxRaceBet          10000
 #define kQuickRaceBet        1000
-#define kKeyLeftAlt          0x38
-#define kKeyRightAlt         0x6f    /* by the 0x1d/0x6b left/right control
-                                        precedent elsewhere in the tree */
 #define kTitleTop     0x8c
 #define kTitleBottom  0xb4
 #define kBodyTop      0xaa
@@ -657,7 +654,7 @@ void DoRaceDialog(void)
         }
         if (itemHit >= kRaceFirstButton &&
             itemHit < kRaceFirstButton + kRacerCount) {
-            if (KeyCheck(kKeyLeftAlt) != 0 || KeyCheck(kKeyRightAlt) != 0)
+            if (KeyCheck(kScanLAlt) != 0 || KeyCheck(kScanRAlt) != 0)
             {
                 if (shipData[0].credits > kMaxRaceBet)
                     credits = kMaxRaceBet;

@@ -126,10 +126,6 @@ void DrawIntroProgressBar(void)
 #define kMaxScrollLines     128
 #define kScrollLineHeight   30
 #define kScrollFadeRange    32
-#define kScanReturn         MacKey(0x24)
-#define kScanSpace          MacKey(0x31)
-#define kScanDown           MacKey(0x7d)
-#define kScanUp             MacKey(0x7e)
 
 /* ShowScrollingText (mac _ShowScrollingText): mac only. */
 // MAC: _ShowScrollingText i386 0x0006140f ppc 0x0006921c

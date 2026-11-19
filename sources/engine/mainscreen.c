@@ -15,9 +15,6 @@
 #define kMainScreenPrefs    4
 #define kMainScreenAbout    5
 
-#define kKeyS               0x1f
-#define kKeyL               0x26
-#define kKeyE               0x12
 #define kCreditsTextID      0x7ffe
 
 #include "resources.h"
@@ -330,7 +327,7 @@ void MainScreenKey(char key, int32_t a, int32_t b)
         MainScreenChoice(kMainScreenNew);
     }
     if (key == 'o') {
-        if (KeyCheck(kKeyS) == 0 && KeyCheck(kKeyL) == 0) {
+        if (KeyCheck(kScanS) == 0 && KeyCheck(kScanL) == 0) {
             PlayMainScreenClickSound();
             MainScreenChoice(kMainScreenOpen);
         }
@@ -340,7 +337,7 @@ void MainScreenKey(char key, int32_t a, int32_t b)
         MainScreenChoice(kMainScreenQuit);
     }
     if (key == 'e') {
-        while (KeyCheck(kKeyE))
+        while (KeyCheck(kScanE))
             ;
         PlayMainScreenClickSound();
         MainScreenChoice(kMainScreenEnter);

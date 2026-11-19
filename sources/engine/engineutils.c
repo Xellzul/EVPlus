@@ -2069,9 +2069,9 @@ short FirstKeyDown(void)
     code = 0;
     do {
         switch (code) {
-        case 2: case 3: case 4: case 5:
-        case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
-        case 0x70: case 0x71:
+        case kScan1: case kScan2: case kScan3: case kScan4:
+        case kScanCapsLock: case kScanF1: case kScanF2: case kScanF3: case kScanF4: case kScanF5:
+        case kScanLGui: case kScanRGui:
             break;
         default:
             if (KeyIsDown(code) != 0)
@@ -2079,7 +2079,7 @@ short FirstKeyDown(void)
             break;
         }
         code = code + 1;
-    } while (code <= 0x7f);
+    } while (code < kScanCount);
     return -1;
 }
 

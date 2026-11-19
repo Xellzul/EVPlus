@@ -24,8 +24,6 @@
 #include "game.h"
 
 #define kIntroPictSlots 4
-#define kKeyReturn 0x1c
-#define kKeySpace  0x39
 
 
 
@@ -90,7 +88,7 @@ void ShowIntroScreen(void)
             HandleIntroMusic(1);
             FadeScreenIn();
 
-            while (Button() || KeyCheck(kKeyReturn) || KeyCheck(kKeySpace) || KeyCheck(keyPrefs.pause)) {
+            while (Button() || KeyCheck(kScanReturn) || KeyCheck(kScanSpace) || KeyCheck(keyPrefs.pause)) {
                 BusyIdle();
                 HandleIntroMusic(0);
             }
@@ -99,7 +97,7 @@ void ShowIntroScreen(void)
             startTick = ReadTick();
 
             while (ReadTick() - startTick < (introPictDelay[i] * 0x3c)
-                   && !hit && !KeyCheck(kKeyReturn) && !KeyCheck(kKeySpace) && !pictSkipped) {
+                   && !hit && !KeyCheck(kScanReturn) && !KeyCheck(kScanSpace) && !pictSkipped) {
                 BusyIdle();
                 HandleIntroMusic(0);
                 if (Button()) {
@@ -113,7 +111,7 @@ void ShowIntroScreen(void)
                             HandleIntroMusic(0);
                             if (ReadTick() - startTick > (introPictDelay[i] * 0x3c))
                                 break;
-                            if (KeyCheck(kKeyReturn) || KeyCheck(kKeySpace))
+                            if (KeyCheck(kScanReturn) || KeyCheck(kScanSpace))
                                 break;
                             if (KeyCheck(keyPrefs.pause)) {
                                 pictSkipped = 1;

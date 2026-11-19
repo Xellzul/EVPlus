@@ -1028,9 +1028,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     dlg = gCurDialog;
     mods = GetKeyModifiers();
     HandleIntroMusic(0);
-    do {
-        key = KeyboardGet2();
-    } while (key != 0 && (key & 0x8000) != 0);
+    key = KeyboardGet2();
     if (key != 0) {
         keyChar = key;
         keyChar &= 0xff;

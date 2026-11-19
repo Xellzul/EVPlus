@@ -16,12 +16,11 @@ typedef struct PollProcs_t {
     void *Data;                                  /* +0x08 */
 } PollProcs_t;
 
-unsigned char KeyArray[128];                     /* 0x0086e098 */
+unsigned char KeyArray[kScanCount];             /* 0x0086e098 */
 
 static Word PollingRecurse;                      /* 0x00867480 */
 static PollProcs_t **MasterKbHitProcList;        /* 0x00867484 */
 
-#define kKeyCodeLimit 0x80
 #define kKeyDownBit   1
 
 /* KeyboardCallPollingProcs (BurgerLib InKeyboard). */
@@ -51,7 +50,7 @@ void KeyboardCallPollingProcs(void)
 // FUNCTION: EVNOVA 0x004f1900
 unsigned int KeyIsDown(unsigned int scanCode)
 {
-    if (scanCode >= kKeyCodeLimit)
+    if (scanCode >= kScanCount)
         return 0;
     return KeyArray[scanCode] & kKeyDownBit;
 }
@@ -72,7 +71,7 @@ void KeyboardFlush(void)
 {
     while (KeyboardKbhit() != 0)
         KeyboardGetch();
-    memset(KeyArray, 0, kKeyTableSize);
+    memset(KeyArray, 0, sizeof(KeyArray));
     MouseClicked = 0;
 }
 

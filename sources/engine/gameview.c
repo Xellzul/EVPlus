@@ -15,8 +15,6 @@
 #define kViewSlots  5
 
 
-#define kKeyShift      0x2a
-#define kKeyRightShift 0x36
 #define kIntroDescID   0x7fff
 
 /*
@@ -28,7 +26,7 @@
 void DoAboutBox(void)
 {
     StopIntroMusic(1);
-    if ((KeyCheck(kKeyShift) != 0 || KeyCheck(kKeyRightShift) != 0)
+    if ((KeyCheck(kScanLShift) != 0 || KeyCheck(kScanRShift) != 0)
         && didSpeak == 0 && gPause == 0) {
         CheckSpeechMgr();
         SpeakIt("Greetings professor Follkinn. Would you like to play a game?", 1);

@@ -89,8 +89,8 @@ extern void PlatAlert(const char *title, const char *message);
 
 typedef struct PlatEvent {
     int type;                       /* PLAT_EV_* */
-    /* a key's position: its PC (set 1) scan code, | 0x80 for the extended (E0) keys, as a PC keyboard
-       sends it whatever the layout; 0 when the key has none */
+    /* a key's position: SDL's scan code (a USB HID usage, keycodes.h), the same whatever the layout and the
+       system; 0 when the key has none */
     int scan;
     int key;                        /* PLAT_KEY_* or 0. The keypad's keys are the navigation keys with Num Lock off */
     int repeat;                     /* key down: sent by auto-repeat */

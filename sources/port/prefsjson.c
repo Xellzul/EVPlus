@@ -1,6 +1,6 @@
 // COMPILE: -lang c++ -bool off
 /* prefsjson.c -- the preferences file as JSON: a PrefsRecord's fields by name, the key bindings as an array of
-   scan codes. Fields missing from the file, or not whole numbers, keep the record's value. */
+   scan codes (keycodes.h). Fields missing from the file, or not whole numbers, keep the record's value. */
 #include "yyjson.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -8,7 +8,6 @@
 #include "burger.h"
 #include "player.h"
 
-#define kPrefsJsonVersion   1
 #define kPrefsKeyCount      34          /* the bindings in use; the record holds 36 slots */
 
 typedef struct PrefsJsonField {
@@ -92,7 +91,6 @@ void PrefsJsonSave(const char *path, PrefsRecord *rec)
         return;
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
-    yyjson_mut_obj_add_int(doc, root, "version", kPrefsJsonVersion);
     for (i = 0; i < kPrefsJsonFieldCount; i++)
         yyjson_mut_obj_add_int(doc, root, kPrefsJsonFields[i].name, *FieldOf(rec, i));
     keys = yyjson_mut_arr_with_sint16(doc, rec->keys, kPrefsKeyCount);

@@ -27,21 +27,11 @@
 #include "crashlog.h"
 #include "cefix.h"
 
-/* keys HandlePlayer reads by code (win scan codes) */
-#define kScanKey1           0x02
-#define kScanKey2           0x03
-#define kScanKey3           0x04
-#define kScanKey4           0x05
-#define kScanKey5           0x06
-#define kScanF5             0x3f
-#define kScanExploreCheat   0x72
-#define kScanArmorCheat     0x42
-#define kScanDamageCheat    0x43
-#define kScanInfoCheat      0x57 /* F11: the mac's F10 is CE's explore cheat here */
-#define kScanMinus          0x0c
-#define kScanPadMinus       0x4a
-#define kScanEquals         0x0d
-#define kScanPadPlus        0x4e
+/* the cheat keys HandlePlayer reads by code */
+#define kScanExploreCheat   kScanLang1
+#define kScanArmorCheat     kScanF8
+#define kScanDamageCheat    kScanF9
+#define kScanInfoCheat      kScanF11 /* the mac's F10 is CE's explore cheat here */
 #define AltKeyQuick()       (QuickKeyCheck(kScanLAlt) || QuickKeyCheck(kScanRAlt))
 #define CmdKeyQuick()       (QuickKeyCheck(kScanLAlt) || QuickKeyCheck(kScanRAlt))
 #define ShiftKeyQuick()     (QuickKeyCheck(kScanLShift) || QuickKeyCheck(kScanRShift))
@@ -639,20 +629,20 @@ void HandlePlayer(ShipObj *player)
 
     if (player->jumpTimer <= 0.0f) {
         j = -1;
-        if (QuickKeyCheck(kScanKey1))
+        if (QuickKeyCheck(kScan1))
             j = 0;
-        if (QuickKeyCheck(kScanKey2))
+        if (QuickKeyCheck(kScan2))
             j = 1;
-        if (QuickKeyCheck(kScanKey3))
+        if (QuickKeyCheck(kScan3))
             j = 2;
-        if (QuickKeyCheck(kScanKey4))
+        if (QuickKeyCheck(kScan4))
             j = 3;
         for (i = 0; i <= 3; i++) {
             if (QuickKeyCheck(keyPrefs.navPreset[i]))
                 j = i;
         }
         if (QuickKeyCheck(kScanF5)
-                || (CmdKeyQuick() && QuickKeyCheck(kScanKey5)))
+                || (CmdKeyQuick() && QuickKeyCheck(kScan5)))
             j = 0x10;
         if (j != -1) {
             keyPressedThisFrame = 1;
@@ -1722,7 +1712,7 @@ void HandlePlayer(ShipObj *player)
     if (player->fuel < 0.0f)
         player->fuel = 0;
 
-    if (CE_CheckDebugKeys(kCEScanF10) && cheatsActive) {
+    if (CE_CheckDebugKeys(kScanF10) && cheatsActive) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         if (AltKeyQuick()) {
             for (i = 0; i < kMaxSystems; i++)
@@ -1776,7 +1766,7 @@ void HandlePlayer(ShipObj *player)
         ResetPlayerPrecalcedValues();
     }
 
-    if (cheatsActive && QuickKeyCheck(kCEScanF7) && player->targetShip != -1
+    if (cheatsActive && QuickKeyCheck(kScanF7) && player->targetShip != -1
             && shipData[player->targetShip].active) {
         if (AltKeyQuick())
             AIMakeShipLeave(&shipData[player->targetShip]);
@@ -1982,7 +1972,7 @@ void HandlePlayer(ShipObj *player)
     }
 
     if (cheatsActive) {
-        if (QuickKeyCheck(kCEScanBackspace)) {
+        if (QuickKeyCheck(kScanBackspace)) {
             if (ST_IsSoundPlaying(warpUpSnd[0])) {
                 ST_HaltSound(warpUpSnd[0]);
                 WarpUpCallback(1, 0, 0);
@@ -2010,7 +2000,7 @@ void HandlePlayer(ShipObj *player)
             DisplayComm((PStrChar *)msg, 0x3c, 0, kCommTextSize, &rgbWhite, 0, 0);
         }
 
-        if (QuickKeyCheck(keyPrefs.cheatSpawn) || QuickKeyCheck(kCEScanNumEnter)) {
+        if (QuickKeyCheck(keyPrefs.cheatSpawn) || QuickKeyCheck(kScanPadEnter)) {
             if (!spawnShipFlag) {
                 spawnShipFlag = 1;
                 if (AltKeyQuick()) {
@@ -2198,7 +2188,7 @@ void HandlePlayer(ShipObj *player)
             statusRedraw[kRedrawCargo] = 1;
         }
 
-        if (QuickKeyCheck(kCEScanEnd)) {
+        if (QuickKeyCheck(kScanEnd)) {
             PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
             cheatsActive = 0;
         }
