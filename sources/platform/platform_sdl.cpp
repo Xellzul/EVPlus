@@ -127,34 +127,51 @@ static Uint64 FrameDueIn(void)
     return due > now ? due - now : 0;
 }
 
+/* every x1r5g5b5 pixel as the texture's ARGB8888, with the brightness */
+#define kColorCount     0x8000
+#define kChannelSteps   32
+#define kChannelTop     31
+
+static Uint32 gColors[kColorCount];
+static bool gColorsMade;
+
+void PlatVideoSetBrightness(double exponent)
+{
+    Uint32 channel[kChannelSteps];
+    Uint32 c;
+
+    for (c = 0; c < kChannelSteps; c++) {
+        if (exponent == 1.0)
+            channel[c] = (c << 3) | (c >> 2);           /* the top bits repeated, as a GPU widens 5 bits */
+        else
+            channel[c] = (Uint32)(SDL_pow((double)c / kChannelTop, exponent) * 255.0 + 0.5);
+    }
+    for (c = 0; c < kColorCount; c++)
+        gColors[c] = 0xff000000u | channel[c >> 10] << 16 | channel[(c >> 5) & 0x1f] << 8 | channel[c & 0x1f];
+    gColorsMade = true;
+}
+
 /* Rows of 16-bit x1r5g5b5 pixels into the texture, which is 32-bit: only the software renderer takes 5-5-5
    pixels as they are, and SDL's own conversion of a whole frame takes several times as long as this one
-   pass. A 5-bit channel becomes 8 bits by repeating its top bits, which is what a GPU makes of it. */
+   pass. */
 static bool UploadFrame(const void *pixels, int pitch)
 {
     const Uint16 *src;
     Uint32 *dst;
-    Uint32 p;
-    Uint32 rb;
-    Uint32 g;
     void *texels;
     int texelPitch;
     int x;
     int y;
 
+    if (!gColorsMade)
+        PlatVideoSetBrightness(1.0);
     if (!SDL_LockTexture(gTexture, NULL, &texels, &texelPitch))
         return false;
     for (y = 0; y < gFrameHeight; y++) {
         src = (const Uint16 *)((const char *)pixels + (size_t)y * pitch);
         dst = (Uint32 *)((char *)texels + (size_t)y * texelPitch);
-        for (x = 0; x < gFrameWidth; x++) {
-            p = src[x];
-            rb = ((p & 0x7c00) << 9) | ((p & 0x001f) << 3);
-            g = (p & 0x03e0) << 6;
-            rb |= (rb >> 5) & 0x070007;
-            g |= (g >> 5) & 0x000700;
-            dst[x] = 0xff000000u | rb | g;
-        }
+        for (x = 0; x < gFrameWidth; x++)
+            dst[x] = gColors[src[x] & (kColorCount - 1)];
     }
     SDL_UnlockTexture(gTexture);
     return true;

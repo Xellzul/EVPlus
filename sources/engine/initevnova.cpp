@@ -381,7 +381,8 @@ void InitEVNova(void)
     BuildTrigTable();
     if (settings.gamma > kMaxGamma)
         settings.gamma = kDefaultGamma;
-    BuildGammaRamp((settings.gamma * 10.0 + 70.0));
+    BuildGammaRamp(100.0);                      /* neutral: the brightness is the whole frame's */
+    ApplyBrightness();
     gWind = 0;
 
     crashlog("initializing arrays");

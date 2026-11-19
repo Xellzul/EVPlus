@@ -2403,6 +2403,11 @@ void SetupMonitor(void)
     SetDisplayToSize(drawW, drawH, kVideoDepth, kVideoFullScreen | kVideoAlways);
 }
 
+void ApplyBrightness(void)
+{
+    PlatVideoSetBrightness(100.0 / (settings.gamma * 10.0 + 70.0));
+}
+
 /* The preferences' upscaling filter and whole-pixel scaling, to the window. */
 void ApplyDisplayScaling(void)
 {

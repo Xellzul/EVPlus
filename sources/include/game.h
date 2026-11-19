@@ -199,6 +199,7 @@ extern GWorldContainer *MenuArt(void);
 extern void ShowMenuArt(const Rect &area, bool onlyChanged = false);
 extern void SetupMonitor(void);
 extern void ApplyDisplayScaling(void);
+extern void ApplyBrightness(void);
 extern short menuFontID;
 extern RGBColor menuTextColor[2];
 extern void *missionSnd;

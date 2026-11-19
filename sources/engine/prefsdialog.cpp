@@ -142,17 +142,15 @@ struct SpriteSettings {
     unsigned char engineGlows;
     unsigned char runningLights;
     unsigned char weaponGlows;
-    short gamma;
 
     static SpriteSettings Now()
     {
-        return { settings.shipAnimations, settings.engineGlows, settings.runningLights, settings.weaponGlows,
-                 settings.gamma };
+        return { settings.shipAnimations, settings.engineGlows, settings.runningLights, settings.weaponGlows };
     }
     bool operator!=(const SpriteSettings &o) const
     {
         return shipAnimations != o.shipAnimations || engineGlows != o.engineGlows
-               || runningLights != o.runningLights || weaponGlows != o.weaponGlows || gamma != o.gamma;
+               || runningLights != o.runningLights || weaponGlows != o.weaponGlows;
     }
 };
 
@@ -212,6 +210,7 @@ PrefsDialog::PrefsDialog()
         [](PrefsDialog &, int direction) {
             short gamma = settings.gamma + direction;
             settings.gamma = gamma < 0 ? 0 : gamma > kMaxGamma ? kMaxGamma : gamma;
+            ApplyBrightness();
         },
         [](const PrefsDialog &, char *value, char *) {
             ListText(kGammaStrList, settings.gamma, kMaxGamma, value);

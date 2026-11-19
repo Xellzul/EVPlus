@@ -36,6 +36,9 @@ extern void PlatVideoSetFullScreen(int on);
 #define kPlatFilterLinear       1
 #define kPlatFilterPixelArt     2
 extern void PlatVideoSetScaling(int filter, int wholePixel);
+/* The frame's brightness: a colour channel c (0..1) is shown as c to the power `exponent'; 1 = as drawn.
+   Can be called before PlatVideoOpen. */
+extern void PlatVideoSetBrightness(double exponent);
 extern int PlatVideoIsFullScreen(void);
 extern void PlatDesktopSize(int *width, int *height);      /* the main display, in pixels */
 /* The program starts in the platform layer, which calls the game (port/winmain.cpp) with the arguments
