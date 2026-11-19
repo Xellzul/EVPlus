@@ -44,16 +44,27 @@ Mapping::Mapping(const PixMap &pix)
         logicalWidth = deviceWidth = 1;
     if (logicalHeight <= 0 || deviceHeight <= 0)
         logicalHeight = deviceHeight = 1;
+    deviceX = deviceWidth;
+    logicalX = logicalWidth;
+    deviceY = deviceHeight;
+    logicalY = logicalHeight;
+    if (Scaled() && gScreenWidth > 0 && gScreenHeight > 0 && deviceWidth == ScreenDeviceX(logicalWidth)
+            && deviceHeight == ScreenDeviceY(logicalHeight)) {
+        deviceX = gDeviceWidth;
+        logicalX = gScreenWidth;
+        deviceY = gDeviceHeight;
+        logicalY = gScreenHeight;
+    }
 }
 
 int Mapping::X(int logical) const
 {
-    return MulDivRound(logical - left, deviceWidth, logicalWidth);
+    return MulDivRound(logical - left, deviceX, logicalX);
 }
 
 int Mapping::Y(int logical) const
 {
-    return MulDivRound(logical - top, deviceHeight, logicalHeight);
+    return MulDivRound(logical - top, deviceY, logicalY);
 }
 
 Rect Mapping::DeviceRect(const Rect &logical) const
@@ -69,12 +80,12 @@ Rect Mapping::DeviceRect(const Rect &logical) const
 
 int Mapping::LogicalX(int device) const
 {
-    return left + MulDivFloor(device, logicalWidth, deviceWidth);
+    return left + MulDivFloor(device, logicalX, deviceX);
 }
 
 int Mapping::LogicalY(int device) const
 {
-    return top + MulDivFloor(device, logicalHeight, deviceHeight);
+    return top + MulDivFloor(device, logicalY, deviceY);
 }
 
 namespace {

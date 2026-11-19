@@ -1,6 +1,8 @@
 /* uiscale.h -- UI scaling: the UI is laid out in logical pixels (the game's own coordinates) and drawn in
    device pixels. A scaled pixel map holds more device pixels than its logical bounds span; Mapping converts
-   between the two, one axis at a time. A pixel map whose size equals its bounds is not scaled. */
+   between the two, one axis at a time. A pixel map whose size equals its bounds is not scaled. UI pixel maps
+   (sized as ScaleUIPort sizes them) all map with the screen's own proportion, so a logical edge falls on the
+   same device pixel in each of them. */
 #pragma once
 
 #include "macport.h"
@@ -23,8 +25,8 @@ public:
     int LogicalX(int device) const;
     int LogicalY(int device) const;
 
-    double ScaleX() const { return (double)deviceWidth / logicalWidth; }
-    double ScaleY() const { return (double)deviceHeight / logicalHeight; }
+    double ScaleX() const { return (double)deviceX / logicalX; }
+    double ScaleY() const { return (double)deviceY / logicalY; }
 
 private:
     int left;
@@ -33,6 +35,11 @@ private:
     int logicalHeight;
     int deviceWidth;
     int deviceHeight;
+    /* the proportion: device pixels per logical ones, as a fraction */
+    int deviceX;
+    int logicalX;
+    int deviceY;
+    int logicalY;
 };
 
 /* An offscreen port made at its logical size (NewGWorld) gets device pixels for the scale; its bounds stay
