@@ -5,6 +5,7 @@
 
 #include "int32.h"
 #include "burgertypes.h"
+#include "keycodes.h"
 
 #include <stdio.h>
 #ifdef __cplusplus
@@ -80,7 +81,7 @@ short CE_NewGWorld(struct CGrafPort **out, int depth, const struct Rect *bounds,
 
 struct RGBColor;
 
-unsigned char CE_CheckDebugKeys(short scanCode);
+unsigned char CE_CheckDebugKeys(ScanCode scanCode);
 char *CE_NumberToAscii(char *dst, int32_t value, uint32_t flags);
 void CE_SetFlashColor(const struct RGBColor *color);
 

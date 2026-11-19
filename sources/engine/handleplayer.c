@@ -4712,7 +4712,7 @@ void SetAllKeyCmdFlags(void)
     for (i = 0; i < 5; i++)
         escortGroupFlag[i] = 1;
     for (i = 0; i < 4; i++)
-        escortGroupFlag[i] = 1;
+        escortCommandFlag[i] = 1;
 }
 
 #define kStrEscortPrefix    0x86   /* + the AI-type filter's own name */

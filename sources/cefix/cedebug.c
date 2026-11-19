@@ -18,7 +18,7 @@
 
 /* Alt+Home turns debug mode on. In debug mode Alt+9 evaluates a mission bit test
    expression and Alt+0 executes a set expression. Then the key check it replaces. */
-unsigned char CE_CheckDebugKeys(short scanCode)
+unsigned char CE_CheckDebugKeys(ScanCode scanCode)
 {
     unsigned char len;
 

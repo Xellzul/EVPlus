@@ -85,9 +85,9 @@ extern int32_t SaveAFile(const char *path, const void *data, uint32_t length);
 extern short LoadPilotData(char *path);
 extern void OpenLastPilotFile(void);
 extern Boolean OpenPilotFile(char *missingResource);
-extern unsigned char QuickKeyCheck(short scanCode);
+extern unsigned char QuickKeyCheck(ScanCode scanCode);
 extern void QuickKeyCheckHandler(void);
-extern unsigned char RawKeyCheck(short scanCode);
+extern unsigned char RawKeyCheck(ScanCode scanCode);
 extern void RecursivePenaltySlap(short sys, short govt, short type,
                                  double amount);
 extern void ResetPlayerPrecalcedValues(void);
@@ -167,7 +167,7 @@ extern Boolean weapLawFlag;
 extern float weapTargetExpand;
 
 extern Boolean escortGroupFlag[5];
-extern short newKeyPrefs[40];
+extern ScanCode newKeyPrefs[40];
 EXTERN_CPP_END
 
 extern Boolean ShipIsInertialess(ShipObj *ship);

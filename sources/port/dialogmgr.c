@@ -2199,40 +2199,46 @@ void LUpdate(void *list)
     }
 }
 
-/* The window procedure (win 0x004d2440, WinGameWndProc) on the platform's events, called for every event
-   after the key queue and the mouse state have had it. Gone with the Win32 window: the fixed window size
-   (WM_GETMINMAXINFO), the palette, and WM_PAINT's redraw -- the platform shows the last frame again. */
-void WinGameEvent(const PlatEvent *ev)
+/* The window procedure (win 0x004d2440, WinGameWndProc), its part of the events (runtime/burgerkbwin.c has
+   the rest). Gone with the Win32 window: the fixed window size (WM_GETMINMAXINFO), the palette, and WM_PAINT's
+   redraw -- the platform shows the last frame again. */
+
+/* the window gained (1) or lost (0) the keyboard */
+void WinGameActivate(int on)
 {
-    switch (ev->type) {
-    case PLAT_EV_ACTIVATE:
-        Win95ApplsActive = ev->on;
-        KeyboardFlush();
-        if (Win95ApplsActive != 0 && gWind != NULL)
-            gNeedUpdateFlag = 1;
-        if (Win95ApplsActive != 0)
-            SwitchedIn(0);
-        else
-            SwitchedOut(0);
-        break;
-    case PLAT_EV_MINIMIZED:
-        Win95ApplsActive = 0;
-        break;
-    case PLAT_EV_CHAR:
-        return;
-    case PLAT_EV_CLOSE:
-        if (gameLoaded != 0 && screenFaded == 0)
-            closeRequested = 1;
-        return;
-    }
+    Win95ApplsActive = on;
+    KeyboardFlush();
+    if (Win95ApplsActive != 0 && gWind != NULL)
+        gNeedUpdateFlag = 1;
+    if (Win95ApplsActive != 0)
+        SwitchedIn(0);
+    else
+        SwitchedOut(0);
+    HandleIntroMusic(0);
+}
+
+void WinGameMinimized(void)
+{
+    Win95ApplsActive = 0;
+    HandleIntroMusic(0);
+}
+
+/* the user asked to close the window or quit */
+void WinGameClose(void)
+{
+    if (gameLoaded != 0 && screenFaded == 0)
+        closeRequested = 1;
+}
+
+/* a key went down or up, or the mouse did something */
+void WinGameInputSeen(void)
+{
     HandleIntroMusic(0);
 }
 
 // FUNCTION: EVNOVA 0x004d28b0
 void ShutdownWinGame(void)
 {
-    KeyboardDestroy();
-    MouseDestroy();
     if (VideoWidth != 0) {
         LockVideoPage();
         DrawARect16(0, 0, gVideoWidth, gVideoHeight, 0);

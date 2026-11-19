@@ -39,8 +39,6 @@ EXTERN_C_BEGIN
 #define kMapDlogID     2000
 #define kMapPictID     0x213d
 #define kNebulaPictBase 0x251c
-#define kShiftScanCode  0x2a
-#define kRShiftScanCode 0x36
 #define kMacShiftKey    MacKey(0x38)    /* the mac KeyMap's one shift key */
 
 /* DLOG 2000's items; 1 is kItemAccept and 3 kMapPictItem */
@@ -269,8 +267,8 @@ void DoSystemMap(void)
                             found = sys;
                             break;
                         }
-                        if ((KeyCheck(kShiftScanCode) == 0
-                             && KeyCheck(kRShiftScanCode) == 0)
+                        if ((KeyCheck(kScanLShift) == 0
+                             && KeyCheck(kScanRShift) == 0)
                             || routeLen <= 1) {
                             prev = shipData->curSystem;
                         } else {
@@ -304,8 +302,8 @@ void DoSystemMap(void)
                 InvalDialogItem(mapDialog, kMapInfoItem);
                 InvalDialogItem(mapDialog, kMapPictItem);
                 InvalDialogItem(mapDialog, kMapRouteItem);
-                if ((KeyCheck(kShiftScanCode) != 0
-                     || KeyCheck(kRShiftScanCode) != 0)
+                if ((KeyCheck(kScanLShift) != 0
+                     || KeyCheck(kScanRShift) != 0)
                     && hypergateMapMode == 0) {
                     CompactHyperRoute();
                     routeLen = -1;

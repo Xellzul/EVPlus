@@ -114,8 +114,6 @@ extern int32_t GetTimeBaseFlags(void *timeBase);
 extern void SetTimeBaseFlags(void *timeBase, int32_t flags);
 
 extern void KeyboardInit(void);
-extern void KeyboardDestroy(void);
-extern void MouseDestroy(void);
 extern void SetDefaultPrefixs(void);
 extern void ST_DisposeSound(void *snd);
 extern unsigned short ST_IsSoundPlaying(void *snd);
@@ -208,10 +206,6 @@ extern char *VideoOffscreen;
 #define gVideoWidth ScreenWidth
 #define gVideoHeight ScreenHeight
 
-/* input globals (burgerinput.c) */
-extern int32_t Win95MouseX;
-extern int32_t Win95MouseY;
-extern Word32 Win95MouseButton;                  /* burgerkbwin.c */
 /* the hyperspace white-out (port addition, burgervideomode.c): blend from..to of 256 over 60 Hz ticks */
 #define kWhiteNone          0
 #define kWhiteSolid         256
@@ -281,7 +275,6 @@ extern void ImageDestroy(struct Image_t *ImagePtr);
 extern void ImageDelete(struct Image_t *ImagePtr);
 extern unsigned int KeyboardKbhit(void);
 extern unsigned int KeyboardGetch(void);
-extern void KeyboardCallPollingProcs(void);
 extern void ProcessSystemEvents(void);
 extern unsigned int OSCursorIsVisible(void);
 extern void CStr2PStr(char *dst, const char *src);

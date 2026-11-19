@@ -1,6 +1,5 @@
 /* platform_sdl.c -- platform.h on SDL3, the same on every platform: start-up, the window and its frame, the
-   events, the cursor, the audio outputs, the clocks, the debug log. Built with SDL's enum size
-   (-fno-short-enums, CMakeLists.txt) and without any game header. */
+   events, the cursor, the audio outputs, the clocks, the debug log. Built without any game header. */
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>          /* makes `main' below the program's entry on every system */
@@ -9,10 +8,8 @@
 #endif
 #include "platform.h"
 
-#define kScanCount      256             /* SDL's keyboard scan codes all lie below this */
-#define kQueueSize      64              /* events waiting, a power of 2 */
+#define kToggleCount    256             /* the keys key_x2mode can name all lie below this */
 #define kFocusNotes     16              /* focus losses waiting in SDL's queue, a power of 2 */
-#define kWheelNotch     120
 #define kBytesPerPixel  2
 #define kDefaultRefresh 60              /* Hz, when the display does not tell */
 /* two frames are never held apart longer than this, whatever the display: the game's own frames in flight
@@ -43,13 +40,9 @@ static Uint64 gShowEnd;                 /* and when it was done */
 static Uint64 gShowRest;                /* ns after gShowEnd in which nothing more is shown; 0 outside a burst */
 static Uint64 gPresentEnd;              /* when the game's last present returned */
 
-static PlatEvent gQueue[kQueueSize];
-static unsigned gQueueHead;
-static unsigned gQueueTail;
-static int gLastScan;                   /* the last key pressed: the key a typed character came from */
-static int gButtons;                    /* PLAT_BUTTON_* held */
-static SDL_Scancode gSwallowedKey;      /* its release is not reported: the Enter of Alt+Enter */
-static unsigned char gToggled[kScanCount];
+static int gButtons;                    /* mouse buttons held, a bit each */
+static SDL_Scancode gSwallowedKey;      /* the Enter of Alt+Enter: the game sees neither its press nor its release */
+static unsigned char gToggled[kToggleCount];
 static bool gActive;                    /* the game was last told the window has the keyboard */
 
 #define kPullFrames     1024            /* asked of a pull function at a time */
@@ -395,259 +388,110 @@ void PlatAlert(const char *title, const char *message)
 
 /* -- events --------------------------------------------------------------------------------------- */
 
-static void Push(const PlatEvent *ev)
+/* The keyboard's one key the game knows under two codes: an ISO keyboard's key left of Enter. */
+static SDL_Scancode OneKey(SDL_Scancode code)
 {
-    unsigned next;
-
-    next = (gQueueTail + 1) & (kQueueSize - 1);
-    if (next == gQueueHead)
-        return;                                 /* full: the event is lost */
-    gQueue[gQueueTail] = *ev;
-    gQueueTail = next;
+    return code == SDL_SCANCODE_NONUSHASH ? SDL_SCANCODE_BACKSLASH : code;
 }
 
-static void PushType(int type, int on)
+static int ButtonBit(Uint8 button)
 {
-    PlatEvent ev;
-
-    SDL_zero(ev);
-    ev.type = type;
-    ev.on = on;
-    Push(&ev);
-}
-
-static int ScanOf(SDL_Scancode code)
-{
-    return (unsigned)code < SDL_SCANCODE_COUNT ? (int)code : 0;
-}
-
-static int SpecialKeyOf(SDL_Scancode code, SDL_Keymod mod)
-{
-    int numLock;
-
-    if (code >= SDL_SCANCODE_F1 && code <= SDL_SCANCODE_F12)
-        return PLAT_KEY_F1 + (code - SDL_SCANCODE_F1);
-    numLock = (mod & SDL_KMOD_NUM) != 0;
-    switch (code) {
-    case SDL_SCANCODE_HOME:         return PLAT_KEY_HOME;
-    case SDL_SCANCODE_UP:           return PLAT_KEY_UP;
-    case SDL_SCANCODE_PAGEUP:       return PLAT_KEY_PAGEUP;
-    case SDL_SCANCODE_LEFT:         return PLAT_KEY_LEFT;
-    case SDL_SCANCODE_RIGHT:        return PLAT_KEY_RIGHT;
-    case SDL_SCANCODE_END:          return PLAT_KEY_END;
-    case SDL_SCANCODE_DOWN:         return PLAT_KEY_DOWN;
-    case SDL_SCANCODE_PAGEDOWN:     return PLAT_KEY_PAGEDOWN;
-    case SDL_SCANCODE_INSERT:       return PLAT_KEY_INSERT;
-    case SDL_SCANCODE_DELETE:       return PLAT_KEY_DELETE;
-    case SDL_SCANCODE_KP_7:         return numLock ? 0 : PLAT_KEY_HOME;
-    case SDL_SCANCODE_KP_8:         return numLock ? 0 : PLAT_KEY_UP;
-    case SDL_SCANCODE_KP_9:         return numLock ? 0 : PLAT_KEY_PAGEUP;
-    case SDL_SCANCODE_KP_4:         return numLock ? 0 : PLAT_KEY_LEFT;
-    case SDL_SCANCODE_KP_6:         return numLock ? 0 : PLAT_KEY_RIGHT;
-    case SDL_SCANCODE_KP_1:         return numLock ? 0 : PLAT_KEY_END;
-    case SDL_SCANCODE_KP_2:         return numLock ? 0 : PLAT_KEY_DOWN;
-    case SDL_SCANCODE_KP_3:         return numLock ? 0 : PLAT_KEY_PAGEDOWN;
-    case SDL_SCANCODE_KP_0:         return numLock ? 0 : PLAT_KEY_INSERT;
-    case SDL_SCANCODE_KP_PERIOD:    return numLock ? 0 : PLAT_KEY_DELETE;
-    case SDL_SCANCODE_PAUSE:        return PLAT_KEY_PAUSE;
-    case SDL_SCANCODE_SCROLLLOCK:   return PLAT_KEY_SCROLLLOCK;
-    case SDL_SCANCODE_LCTRL:        return PLAT_KEY_LCTRL;
-    case SDL_SCANCODE_RCTRL:        return PLAT_KEY_RCTRL;
-    case SDL_SCANCODE_LSHIFT:       return PLAT_KEY_LSHIFT;
-    case SDL_SCANCODE_RSHIFT:       return PLAT_KEY_RSHIFT;
-    case SDL_SCANCODE_LALT:         return PLAT_KEY_LALT;
-    case SDL_SCANCODE_RALT:         return PLAT_KEY_RALT;
-    default:                        return 0;
-    }
-}
-
-/* The characters a key press types that SDL's text input leaves out: it reports printable text only. */
-static int ControlCharOf(SDL_Scancode code, SDL_Keymod mod)
-{
-    SDL_Keycode key;
-
-    switch (code) {
-    case SDL_SCANCODE_RETURN:
-    case SDL_SCANCODE_KP_ENTER:     return '\r';
-    case SDL_SCANCODE_BACKSPACE:    return '\b';
-    case SDL_SCANCODE_TAB:          return '\t';
-    case SDL_SCANCODE_ESCAPE:       return 0x1b;
-    default:                        break;
-    }
-    if ((mod & SDL_KMOD_CTRL) != 0 && (mod & SDL_KMOD_ALT) == 0) {
-        key = SDL_GetKeyFromScancode(code, SDL_KMOD_NONE, false);
-        if (key >= 'a' && key <= 'z')
-            return (int)(key - 'a' + 1);
-    }
-#ifdef SDL_PLATFORM_WIN32
-    /* Alt+key: Windows types the key's character (WM_SYSCHAR), which SDL does not pass on. Left Alt
-       only: the right one is AltGr on many layouts, and what that types does arrive as text. */
-    if ((mod & SDL_KMOD_LALT) != 0 && (mod & (SDL_KMOD_RALT | SDL_KMOD_CTRL | SDL_KMOD_GUI)) == 0) {
-        key = SDL_GetKeyFromScancode(code, (SDL_Keymod)(mod & (SDL_KMOD_SHIFT | SDL_KMOD_CAPS)), false);
-        if (key >= 0x20 && key < 0x7f)
-            return (int)key;
-    }
-#endif
-    return 0;
-}
-
-static int ButtonOf(int sdlButton)
-{
-    switch (sdlButton) {
-    case SDL_BUTTON_LEFT:   return PLAT_BUTTON_LEFT;
-    case SDL_BUTTON_RIGHT:  return PLAT_BUTTON_RIGHT;
-    case SDL_BUTTON_MIDDLE: return PLAT_BUTTON_MIDDLE;
+    switch (button) {
+    case SDL_BUTTON_LEFT:   return 1;
+    case SDL_BUTTON_RIGHT:  return 2;
+    case SDL_BUTTON_MIDDLE: return 4;
     default:                return 0;
     }
 }
 
-/* one SDL event as the platform events it stands for (none, one or several) */
-static void Translate(SDL_Event *e)
+/* The platform's own part of an event; 0 when the event is the platform's alone. */
+static bool OwnPart(SDL_Event *e)
 {
-    PlatEvent ev;
     SDL_Scancode code;
     SDL_Keymod mod;
-    const char *text;
-    Uint32 ch;
     bool staysInProgram;
 
-    SDL_zero(ev);
     switch (e->type) {
     case SDL_EVENT_KEY_DOWN:
-        code = e->key.scancode;
+        code = OneKey(e->key.scancode);
+        e->key.scancode = code;
         mod = e->key.mod;
         if ((code == SDL_SCANCODE_RETURN || code == SDL_SCANCODE_KP_ENTER) && (mod & SDL_KMOD_ALT) != 0
             && (mod & (SDL_KMOD_CTRL | SDL_KMOD_GUI)) == 0) {
             if (!e->key.repeat)
                 PlatVideoSetFullScreen(!PlatVideoIsFullScreen());
             gSwallowedKey = code;
-            break;
+            return false;
         }
-        if (!e->key.repeat && (unsigned)code < kScanCount)
+        if (!e->key.repeat && (unsigned)code < kToggleCount)
             gToggled[code] ^= 1;
-        ev.type = PLAT_EV_KEY_DOWN;
-        ev.scan = ScanOf(code);
-        ev.key = SpecialKeyOf(code, mod);
-        ev.repeat = e->key.repeat;
-        Push(&ev);
-        gLastScan = ev.scan;
-        ev.ch = ControlCharOf(code, mod);
-        if (ev.ch != 0) {
-            ev.type = PLAT_EV_CHAR;
-            ev.key = 0;
-            ev.repeat = 0;
-            Push(&ev);
-        }
-        break;
+        return true;
     case SDL_EVENT_KEY_UP:
-        code = e->key.scancode;
+        code = OneKey(e->key.scancode);
+        e->key.scancode = code;
         if (code == gSwallowedKey) {
             gSwallowedKey = SDL_SCANCODE_UNKNOWN;
-            break;
+            return false;
         }
-        ev.type = PLAT_EV_KEY_UP;
-        ev.scan = ScanOf(code);
-        ev.key = SpecialKeyOf(code, e->key.mod);
-        Push(&ev);
-        break;
-    case SDL_EVENT_TEXT_INPUT:
-        text = e->text.text;
-        ev.type = PLAT_EV_CHAR;
-        ev.scan = gLastScan;
-        while ((ch = SDL_StepUTF8(&text, NULL)) != 0) {
-            ev.ch = (int)ch;
-            Push(&ev);
-        }
-        break;
+        return true;
     case SDL_EVENT_MOUSE_MOTION:
         if (gRenderer == NULL)
-            break;
+            return false;
         SDL_ConvertEventToRenderCoordinates(gRenderer, e);
-        ev.type = PLAT_EV_MOUSE_MOVE;
-        ev.x = (int)SDL_floorf(e->motion.x);
-        ev.y = (int)SDL_floorf(e->motion.y);
-        Push(&ev);
-        break;
+        return true;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
-        ev.button = ButtonOf(e->button.button);
-        if (ev.button == 0)
-            break;
-        if (e->button.down) {
-            ev.type = PLAT_EV_MOUSE_DOWN;
-            gButtons |= ev.button;
-        } else {
-            ev.type = PLAT_EV_MOUSE_UP;
-            gButtons &= ~ev.button;
-        }
+        if (e->button.down)
+            gButtons |= ButtonBit(e->button.button);
+        else
+            gButtons &= ~ButtonBit(e->button.button);
         SDL_CaptureMouse(gButtons != 0);        /* a drag goes on outside the window */
-        Push(&ev);
-        break;
-    case SDL_EVENT_MOUSE_WHEEL:
-        ev.type = PLAT_EV_MOUSE_WHEEL;
-        ev.wheel = (int)(e->wheel.y * kWheelNotch);
-        if (e->wheel.direction == SDL_MOUSEWHEEL_FLIPPED)
-            ev.wheel = -ev.wheel;
-        Push(&ev);
-        break;
+        return true;
     case SDL_EVENT_WINDOW_FOCUS_GAINED:
-        if (!gActive) {
-            gActive = true;
-            PushType(PLAT_EV_ACTIVATE, 1);
-        }
-        break;
+        if (gActive)
+            return false;
+        gActive = true;
+        return true;
     case SDL_EVENT_WINDOW_FOCUS_LOST:
         /* EventWatch's note for this loss; without one (more losses queued than notes) it counts */
         if (gFocusNoteHead != gFocusNoteTail) {
             staysInProgram = gFocusNote[gFocusNoteHead];
             gFocusNoteHead = (gFocusNoteHead + 1) & (kFocusNotes - 1);
             if (staysInProgram)
-                break;
+                return false;
         }
-        if (gActive) {
-            gActive = false;
-            PushType(PLAT_EV_ACTIVATE, 0);
-        }
-        break;
-    case SDL_EVENT_WINDOW_MINIMIZED:
-        PushType(PLAT_EV_MINIMIZED, 0);
-        break;
-    case SDL_EVENT_QUIT:
-        PushType(PLAT_EV_CLOSE, 0);
-        break;
+        if (!gActive)
+            return false;
+        gActive = false;
+        return true;
     case SDL_EVENT_WINDOW_EXPOSED:
         Redraw();
-        break;
+        return false;
     case SDL_EVENT_RENDER_DEVICE_RESET:
         /* the textures are gone */
         if (gRenderer != NULL && gFrame != NULL)
             MakeFrameTexture();
-        break;
+        return false;
     default:
-        break;
+        return true;
     }
 }
 
-int PlatPollEvent(PlatEvent *ev)
+int PlatPollEvent(SDL_Event *e)
 {
-    SDL_Event e;
-
     ShowWaitingFrame();
-    while (gQueueHead == gQueueTail) {
-        if (!SDL_PollEvent(&e))
-            return 0;
-        Translate(&e);
+    while (SDL_PollEvent(e)) {
+        if (OwnPart(e))
+            return 1;
     }
-    *ev = gQueue[gQueueHead];
-    gQueueHead = (gQueueHead + 1) & (kQueueSize - 1);
-    return 1;
+    return 0;
 }
 
 void PlatWaitEvent(int ms)
 {
     Uint64 due;
 
-    if (gQueueHead != gQueueTail)
+    if (SDL_HasEvents(SDL_EVENT_FIRST, SDL_EVENT_LAST))
         return;
     ShowWaitingFrame();
     if (gFrameFresh) {
@@ -667,8 +511,12 @@ int PlatKeyIsDown(int scan)
     int count;
     const bool *state;
 
+    if (scan <= 0 || scan == gSwallowedKey)
+        return 0;
     state = SDL_GetKeyboardState(&count);
-    return scan > 0 && scan < count && state[scan];
+    if (scan == SDL_SCANCODE_BACKSLASH && state[SDL_SCANCODE_NONUSHASH])
+        return 1;
+    return scan < count && state[scan];
 }
 
 int PlatKeyToggled(int winKey)
@@ -690,7 +538,7 @@ int PlatKeyToggled(int winKey)
         code = (SDL_Scancode)(SDL_SCANCODE_F1 + (winKey - 0x70));
     else
         return 0;
-    return (unsigned)code < kScanCount ? gToggled[code] : 0;
+    return (unsigned)code < kToggleCount ? gToggled[code] : 0;
 }
 
 /* -- cursor --------------------------------------------------------------------------------------- */

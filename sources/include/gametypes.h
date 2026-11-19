@@ -1,6 +1,7 @@
 /* gametypes.h -- shared record and runtime-object layouts; types only. Notes: Research/notes/gametypes.md */
 #ifndef GAMETYPES_H
 #define GAMETYPES_H
+#include "keycodes.h"
 #include "int32.h"
 
 /* the C++-linkage declarations of the win build's C++ TUs (a C file cannot say extern "C++"); the mac build is C only */
@@ -675,49 +676,49 @@ extern DialogPtr alertDialog;
 EXTERN_CPP_END
 
 typedef struct KeyPrefs {
-    short                  selectSecondary;
-    short                  deselectSecondary;
-    short                  firePrimary;
-    short                  fireSecondary;
-    short                  hail;
-    short                  land;
-    short                  dismiss;
-    short                  faceTarget;
-    short                  clearTarget;
-    short                  map;
-    short                  targetNext;
-    short                  targetNearest;
-    short                  hyperspace;
-    short                  nextSystem;
-    short                  jump;
-    short                  jettison;
-    short                  board;
-    short                  eject;
-    short                  selfDestruct;
-    short                  turnLeft;
-    short                  turnRight;
-    short                  accelerate;
-    short                  reverse;
-    short                  pause;
-    short                  afterburner;
-    short                  playerInfo;
-    short                  navPreset[4];
-    short                  cheatSpawn;
-    short                  cheatKill;
-    short                  cheatRevive;
-    short                  cheatArmor;
-    short                  cheatDamage;
-    short                  cheatAmmo;
-    short                  cheatCredits;
-    short                  cheatSpare;
-    short                  cheatShipNext;
-    short                  cheatShipPrev;
-    short                  missions;
-    short                  cloak;
-    short                  escortMenu;
-    short                  quickKey[5];
-    short                  escortOrder[4];
-    short                  toggleFPS;
+    ScanCode               selectSecondary;
+    ScanCode               deselectSecondary;
+    ScanCode               firePrimary;
+    ScanCode               fireSecondary;
+    ScanCode               hail;
+    ScanCode               land;
+    ScanCode               dismiss;
+    ScanCode               faceTarget;
+    ScanCode               clearTarget;
+    ScanCode               map;
+    ScanCode               targetNext;
+    ScanCode               targetNearest;
+    ScanCode               hyperspace;
+    ScanCode               nextSystem;
+    ScanCode               jump;
+    ScanCode               jettison;
+    ScanCode               board;
+    ScanCode               eject;
+    ScanCode               selfDestruct;
+    ScanCode               turnLeft;
+    ScanCode               turnRight;
+    ScanCode               accelerate;
+    ScanCode               reverse;
+    ScanCode               pause;
+    ScanCode               afterburner;
+    ScanCode               playerInfo;
+    ScanCode               navPreset[4];
+    ScanCode               cheatSpawn;
+    ScanCode               cheatKill;
+    ScanCode               cheatRevive;
+    ScanCode               cheatArmor;
+    ScanCode               cheatDamage;
+    ScanCode               cheatAmmo;
+    ScanCode               cheatCredits;
+    ScanCode               cheatSpare;
+    ScanCode               cheatShipNext;
+    ScanCode               cheatShipPrev;
+    ScanCode               missions;
+    ScanCode               cloak;
+    ScanCode               escortMenu;
+    ScanCode               quickKey[5];
+    ScanCode               escortOrder[4];
+    ScanCode               toggleFPS;
 } KeyPrefs;
 
 #ifdef __cplusplus

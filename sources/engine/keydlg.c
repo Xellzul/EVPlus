@@ -27,8 +27,8 @@ void DoKeyDialog(void)
     short i;
     short j;
     Boolean matched;
-    short localBuf[kBindingCount];
-    short defaultBuf[kBindingCount];
+    ScanCode localBuf[kBindingCount];
+    ScanCode defaultBuf[kBindingCount];
 
     keyDialog = NULL;
     keyDialog = GetNewDialog(0xfa2, KeyDialogUpdate, KeyFilter);
@@ -120,7 +120,7 @@ Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     short v;
     short h;
     int i;
-    short code;
+    ScanCode code;
     short sel;
 
     SetDialogGWorld(keyDialog);
@@ -142,7 +142,7 @@ Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return 0;
     }
     code = FirstKeyDown();
-    if (code != -1 && keyDialogSel != -1) {
+    if (code != kScanNone && keyDialogSel != -1) {
         newKeyPrefs[keyDialogSel] = code;
         sel = keyDialogSel;
         keyDialogSel = (keyDialogSel + 1) % kBindingCount;

@@ -239,7 +239,7 @@ Rect spriteClipRect;
 Rect floatingMapRect;
 Rect escortMenuRect;
 short playerRecord[kMaxSystems];
-short newKeyPrefs[40];
+ScanCode newKeyPrefs[40];
 short alertSpritePending;
 short missionSoundID;
 short playerGender;
@@ -360,7 +360,6 @@ void InitEVNova(void)
 
     RandSeedFromClock();
     KeyboardInit();
-    MouseInit();
     SetDefaultPrefixs();
     OpenPrefs();
 
@@ -513,8 +512,6 @@ void InitEVNova(void)
 
     FadeScreenOut();
     ShowTheCursor();
-    KeyboardDestroy();
-    MouseDestroy();
     Bye();
     ClosePrefs();
 }

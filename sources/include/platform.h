@@ -1,6 +1,5 @@
-/* platform.h -- the operating-system services the game runs on. Only plain C types cross this header: the
-   files behind it see their library's own headers and are built with that library's enum size, the game with
-   -fshort-enums.
+/* platform.h -- the operating-system services the game runs on. Plain C types cross this header, and SDL's
+   events (the game's event pump, runtime/burgerkbwin.c, reads them).
    On SDL (platform/platform_sdl.c, every platform): start-up, the window and its frame, the events, the cursor,
    the audio outputs, the clocks, the debug log. Still Windows (platform/platform_win.c): path conversion;
    another platform supplies its own. */
@@ -49,61 +48,14 @@ extern void PlatRegisterFileType(const char *programName, const char *extension,
 extern void PlatAlert(const char *title, const char *message);
 
 /* -- events --------------------------------------------------------------------------------------- */
-#define PLAT_EV_KEY_DOWN    1       /* scan, key, repeat */
-#define PLAT_EV_KEY_UP      2       /* scan, key */
-#define PLAT_EV_CHAR        3       /* ch, scan (the key that typed it) */
-#define PLAT_EV_MOUSE_MOVE  4       /* x, y */
-#define PLAT_EV_MOUSE_DOWN  5       /* button (where: the last PLAT_EV_MOUSE_MOVE) */
-#define PLAT_EV_MOUSE_UP    6       /* button */
-#define PLAT_EV_MOUSE_WHEEL 7       /* wheel */
-/* on: the window gained (1) or lost (0) the keyboard. On Windows a loss to another window of this program
-   (a Win32 dialog the game opened) is not reported, nor the gain after it. */
-#define PLAT_EV_ACTIVATE    8
-#define PLAT_EV_MINIMIZED   9
-#define PLAT_EV_CLOSE       10      /* the user asked to close the window or quit */
-
-#define PLAT_BUTTON_LEFT    1
-#define PLAT_BUTTON_RIGHT   2
-#define PLAT_BUTTON_MIDDLE  4
-
-/* the keys with a meaning beyond their position (PlatEvent.key); 0 for every other key */
-#define PLAT_KEY_HOME       1
-#define PLAT_KEY_UP         2
-#define PLAT_KEY_PAGEUP     3
-#define PLAT_KEY_LEFT       4
-#define PLAT_KEY_RIGHT      5
-#define PLAT_KEY_END        6
-#define PLAT_KEY_DOWN       7
-#define PLAT_KEY_PAGEDOWN   8
-#define PLAT_KEY_INSERT     9
-#define PLAT_KEY_DELETE     10
-#define PLAT_KEY_PAUSE      11
-#define PLAT_KEY_SCROLLLOCK 12
-#define PLAT_KEY_LCTRL      13
-#define PLAT_KEY_RCTRL      14
-#define PLAT_KEY_LSHIFT     15
-#define PLAT_KEY_RSHIFT     16
-#define PLAT_KEY_LALT       17
-#define PLAT_KEY_RALT       18
-#define PLAT_KEY_F1         19      /* F1..F12 = PLAT_KEY_F1 .. PLAT_KEY_F1 + 11 */
-
-typedef struct PlatEvent {
-    int type;                       /* PLAT_EV_* */
-    /* a key's position: SDL's scan code (a USB HID usage, keycodes.h), the same whatever the layout and the
-       system; 0 when the key has none */
-    int scan;
-    int key;                        /* PLAT_KEY_* or 0. The keypad's keys are the navigation keys with Num Lock off */
-    int repeat;                     /* key down: sent by auto-repeat */
-    /* a typed character as a Unicode code point. Also 8, 9, 13 and 27 for Backspace, Tab, Enter and
-       Escape, and 1..26 for Ctrl+A..Z */
-    int ch;
-    int x, y;                       /* mouse move: in frame pixels; outside 0..size-1 when over the bars */
-    int button;                     /* PLAT_BUTTON_* */
-    int wheel;                      /* 120 a notch, positive away from the user */
-    int on;
-} PlatEvent;
-
-extern int PlatPollEvent(PlatEvent *ev);                   /* 0 = no event waiting */
+union SDL_Event;
+/* The next SDL event for the game, after the platform's own part: 0 when none waits. Some events never
+   reach the game: Alt+Enter (full screen; neither the Enter's press nor its release), redraws and render
+   resets, a second focus gain or loss in a row, and on Windows a focus loss to another window of this
+   program (a Win32 dialog the game opened) with the gain after it. Mouse motion arrives in frame pixels
+   (outside 0..size-1 when over the bars); an ISO keyboard's key left of Enter as the backslash key. Also
+   shows a frame that is waiting. */
+extern int PlatPollEvent(union SDL_Event *e);
 extern void PlatWaitEvent(int ms);                         /* returns once an event waits, or after ms */
 /* 1 while the key with this scan code (kScan*) is held, as of the events read so far */
 extern int PlatKeyIsDown(int scan);

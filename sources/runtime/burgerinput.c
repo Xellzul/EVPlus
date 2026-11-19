@@ -11,10 +11,6 @@ extern "C" {
 #endif
 
 
-int32_t Win95MouseX;                                /* 0x0087001c */
-int32_t Win95MouseY;                                /* 0x00870020 */
-int32_t MouseClicked;                               /* 0x0087017c */
-
 #define kAlertTitleMax      0x300
 #define kAlertTextMax       0x1000               /* Alert's 1024 bytes, each up to three in UTF-8 */
 

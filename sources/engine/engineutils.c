@@ -2061,26 +2061,33 @@ void CullNameString(unsigned char *name)
 
 
 // FUNCTION: EVNOVA 0x00466810
-short FirstKeyDown(void)
+ScanCode FirstKeyDown(void)
 {
-    int32_t code;
+    ScanCode code;
+    char name[16];
+    int32_t i;
 
     KeyboardKbhit();
-    code = 0;
+    i = 0;
     do {
+        code = ScanCode(i);
         switch (code) {
         case kScan1: case kScan2: case kScan3: case kScan4:
         case kScanCapsLock: case kScanF1: case kScanF2: case kScanF3: case kScanF4: case kScanF5:
         case kScanLGui: case kScanRGui:
             break;
         default:
-            if (KeyIsDown(code) != 0)
-                return code;
+            if (KeyIsDown(code) != 0) {
+                /* refused: a key without a name should not be shown in Key Settings */
+                KeyboardScanCodeToString(name, sizeof(name), code);
+                if (name[0] != 0)
+                    return code;
+            }
             break;
         }
-        code = code + 1;
-    } while (code < kScanCount);
-    return -1;
+        i = i + 1;
+    } while (i < kScanCount);
+    return kScanNone;
 }
 
 // FUNCTION: EVNOVA 0x00466850
@@ -2164,7 +2171,7 @@ void SlotTableToKeyPrefs(void)
 
 // FUNCTION: EVNOVA 0x00466c10
 // MAC: _DupKeyCheck i386 0x00004d69 ppc 0x00006284
-Boolean DupKeyCheck(short value, short skip)
+Boolean DupKeyCheck(ScanCode value, short skip)
 {
     short i;
 
@@ -3570,7 +3577,7 @@ void QuickKeyCheckHandler(void)
 
 // FUNCTION: EVNOVA 0x00469ca0
 // MAC: _QuickKeyCheck i386 0x0000a0f5 ppc 0x0000c6e4
-unsigned char QuickKeyCheck(short scanCode)
+unsigned char QuickKeyCheck(ScanCode scanCode)
 {
     short i;
 
@@ -3586,7 +3593,7 @@ unsigned char QuickKeyCheck(short scanCode)
 }
 
 // FUNCTION: EVNOVA 0x00469cf0
-unsigned char RawKeyCheck(short scanCode)
+unsigned char RawKeyCheck(ScanCode scanCode)
 {
     if (ignoreKeys)
         return 0;
@@ -3595,7 +3602,7 @@ unsigned char RawKeyCheck(short scanCode)
 
 // FUNCTION: EVNOVA 0x00469d10
 // MAC: _KeyCheck i386 0x0000a19b ppc 0x0000c7c8
-unsigned char KeyCheck(short scanCode)
+unsigned char KeyCheck(ScanCode scanCode)
 {
     KeyboardKbhit();
     return KeyIsDown(scanCode);

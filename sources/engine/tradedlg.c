@@ -6305,14 +6305,19 @@ typedef struct FileSpec {
 #pragma pack(pop)
 
 
-#define SC_SPACE        0x39
-#define SC_RETURN       0x1c
-#define SC_KEYPADENTER  0x6a
+/* The inputs that skip a movie, a bit each: any mouse button, Space, Return, keypad Enter. */
+static unsigned MovieSkipInputs(void)
+{
+    return (MouseReadButtons() != 0 ? 1u : 0u) | (KeyIsDown(kScanSpace) != 0 ? 2u : 0u)
+        | (KeyIsDown(kScanReturn) != 0 ? 4u : 0u) | (KeyIsDown(kScanPadEnter) != 0 ? 8u : 0u);
+}
 
 // FUNCTION: EVNOVA 0x0049db00
 // MAC: _PlayQTMovie i386 0x00055957 ppc 0x0005dbc4
 void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
 {
+    unsigned held;
+    unsigned down;
     char nameBuf[256];
     FileSpec spec;
     short dw, dh;
@@ -6433,11 +6438,16 @@ found:
         if (fade != 0)
             FadeScreenIn();
         StartMovie(movie);
+        /* only a new press skips: an input still down from before (the Return that confirmed a jump,
+           the click on OK) counts once it has been let go */
+        KeyboardKbhit();
+        held = MovieSkipInputs();
         while (IsMovieDone(movie) == 0) {
             MoviesTask(movie, 0);
             KeyboardKbhit();
-            if (MouseReadButtons() != 0 || KeyIsDown(SC_SPACE) != 0 ||
-                KeyIsDown(SC_RETURN) != 0 || KeyIsDown(SC_KEYPADENTER) != 0) {
+            down = MovieSkipInputs();
+            held &= down;
+            if ((down & ~held) != 0) {
                 FlushEvents(0xf, 0);
                 break;
             }

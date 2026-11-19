@@ -2466,7 +2466,7 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->gamma = settings.gamma;
     KeyPrefsToSlotTable();
     for (i = 0; i <= 35; i++)
-        rec->keys[i] = newKeyPrefs[i];
+        rec->keys[i] = (short)newKeyPrefs[i];
 }
 
 /* A PrefsRecord into the settings and key bindings. */
@@ -2496,7 +2496,7 @@ static void RecordToPrefs(const PrefsRecord *rec)
     settings.windowedPending = settings.windowed;
     SetDefaultKeys();
     for (i = 0; i <= 35; i++)
-        newKeyPrefs[i] = rec->keys[i];
+        newKeyPrefs[i] = ScanCode(rec->keys[i]);
     SlotTableToKeyPrefs();
 }
 

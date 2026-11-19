@@ -1,5 +1,5 @@
 /* fontraster.h -- glyphs out of font files (port/fontraster.c, on FreeType). Plain C types only: the file
-   that sees FreeType's headers is built with the library's enum sizes and includes no game header. */
+   that sees FreeType's headers includes no game header. */
 #ifndef FONTRASTER_H
 #define FONTRASTER_H
 

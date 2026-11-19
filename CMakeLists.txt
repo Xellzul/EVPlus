@@ -207,9 +207,9 @@ foreach(f ${ALL_C})
   list(APPEND GAME_SRC ${f})
 endforeach()
 
-# MW's -enum min, signed plain char, its FP evaluation in double; the decompile's pointer/aliasing habits;
+# signed plain char (as MW), its FP evaluation in double; the decompile's pointer/aliasing habits;
 # one section per function so the link drops what nothing uses (as MW's linker does)
-set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fshort-enums -fno-strict-aliasing
+set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fno-strict-aliasing
     -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double
     -Wno-everything -Werror=pointer-to-int-cast -Werror=int-to-pointer-cast -Werror=void-pointer-to-int-cast
     -Werror=int-to-void-pointer-cast
@@ -220,15 +220,9 @@ set(WIN_LIBS kernel32 user32 gdi32 advapi32 shell32 comdlg32)
 add_executable(evnova_ce WIN32 ${GAME_SRC} ${SRC}/rsrc/evnova.rc)
 target_include_directories(evnova_ce PRIVATE ${SRC}/include)
 target_compile_options(evnova_ce PRIVATE ${EVNOVA_FLAGS})
-# the only file that sees FFmpeg's headers: their structs must keep FFmpeg's enum sizes
 target_include_directories(evnova_ce PRIVATE ${FFMPEG_ROOT}/include)
-set_source_files_properties(${SRC}/media/media.c PROPERTIES COMPILE_OPTIONS -fno-short-enums)
-# the same for SDL's headers: only the platform layer sees them
-set_source_files_properties(${SRC}/platform/platform_sdl.c PROPERTIES COMPILE_OPTIONS -fno-short-enums)
-# and for FreeType's: only the glyph renderer sees them
 set_source_files_properties(${SRC}/port/fontraster.c PROPERTIES
-    COMPILE_OPTIONS -fno-short-enums INCLUDE_DIRECTORIES ${FREETYPE_ROOT}/include/freetype2)
-# and yyjson's: only the JSON preferences see them (plain game flags: the header has no enums)
+    INCLUDE_DIRECTORIES ${FREETYPE_ROOT}/include/freetype2)
 set_source_files_properties(${SRC}/port/prefsjson.c PROPERTIES
     COMPILE_DEFINITIONS "${YYJSON_DEFS}" INCLUDE_DIRECTORIES ${YYJSON_DIR}/src)
 set_target_properties(evnova_ce PROPERTIES OUTPUT_NAME "evnova64" LINKER_LANGUAGE CXX)

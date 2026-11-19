@@ -1,6 +1,8 @@
 // COMPILE: -lang c++ -bool off
-/* burgerkbwin.c -- BurgerLib InKeyboardWin95: the key queue, and the event pump (platform.h's events) that fills it and the mouse state. Notes: Research/notes/burgerkbwin.md */
+/* burgerkbwin.c -- BurgerLib's keyboard and mouse (InKeyboard, InKeyboardWin95, InMouseWin95) on SDL's
+   events: the event pump, the key queue, the held keys, the mouse buttons and position. */
 
+#include <SDL3/SDL.h>
 #include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
@@ -9,20 +11,21 @@
 extern "C" {
 #endif
 
-extern void WinGameEvent(const PlatEvent *ev);   /* port/dialogmgr.c: the window's own events */
+/* port/dialogmgr.c: the window's own events */
+extern void WinGameActivate(int on);
+extern void WinGameMinimized(void);
+extern void WinGameClose(void);
+extern void WinGameInputSeen(void);
 
-static int32_t BurgerKeyStart;                      /* 0x008658a4 */
-static int32_t BurgerKeyEnd;                        /* 0x008658a8 */
+static int32_t BurgerKeyStart;                   /* 0x008658a4 */
+static int32_t BurgerKeyEnd;                     /* 0x008658a8 */
 static Word32 BurgerKeyBuffer[128];              /* 0x008658ac */
-Word (*KeyboardGetchCallBack)(Word key);         /* 0x0087070c */
-Word Win95NoProcess;                             /* 0x00870de0 */
 static Word Recurse;                             /* 0x00865aac */
-Word32 Win95MouseButton;                         /* 0x008701a0 */
-int32_t Win95MouseWheel;                            /* 0x008700a8 */
-int32_t Win95LastMouseX;                            /* 0x008700b0 */
-int32_t Win95LastMouseY;                            /* 0x008700b4 */
-int32_t Win95MouseXDelta;                           /* 0x00870190 */
-int32_t Win95MouseYDelta;                           /* 0x00870180 */
+static Word32 Win95MouseButton;                  /* 0x008701a0 */
+static int32_t Win95MouseX;                      /* 0x0087001c */
+static int32_t Win95MouseY;                      /* 0x00870020 */
+static int LastScan;                             /* the last key pressed: the key a typed character came from */
+int32_t MouseClicked;                            /* 0x0087017c */
 
 #define kKeyQueueMask   0x7f
 #define kKeyAsciiMask   0xff
@@ -42,41 +45,83 @@ static void BurgerPostKey(Word32 key)
     }
 }
 
-/* A queue entry: the scan code << 8, then the character (or the special key's code below). */
+/* A queue entry: the scan code << 8, then the character (or the special key's code below). Every non-zero
+   entry reaches a dialog as a key press, so a binding on a key that types nothing (an F key, Ctrl) works in
+   the dialogs that check the bindings on a key press. */
 #define QueueEntry(scan, ch)    (((Word32)(scan) << 8) | (ch))
 
-/* The keys that post a code of their own rather than a character, by PLAT_KEY_*. */
-static const Word32 SpecialKeys[PLAT_KEY_F1 + 12] = {
-    0,
-    QueueEntry(kScanHome, 0x91),                 /* PLAT_KEY_HOME */
-    QueueEntry(kScanUp, 0x0b),                   /* PLAT_KEY_UP */
-    QueueEntry(kScanPageUp, 0x92),               /* PLAT_KEY_PAGEUP */
-    QueueEntry(kScanLeft, 0x96),                 /* PLAT_KEY_LEFT */
-    QueueEntry(kScanRight, 0x15),                /* PLAT_KEY_RIGHT */
-    QueueEntry(kScanEnd, 0x93),                  /* PLAT_KEY_END */
-    QueueEntry(kScanDown, 0x0a),                 /* PLAT_KEY_DOWN */
-    QueueEntry(kScanPageDown, 0x94),             /* PLAT_KEY_PAGEDOWN */
-    QueueEntry(kScanInsert, 0x95),               /* PLAT_KEY_INSERT */
-    QueueEntry(kScanDelete, 0x97),               /* PLAT_KEY_DELETE */
-    QueueEntry(kScanPause, 0x80),                /* PLAT_KEY_PAUSE */
-    QueueEntry(kScanScrollLock, 0x8d),           /* PLAT_KEY_SCROLLLOCK */
-    QueueEntry(kScanLCtrl, 0),                   /* PLAT_KEY_LCTRL */
-    QueueEntry(kScanRCtrl, 0),                   /* PLAT_KEY_RCTRL */
-    QueueEntry(kScanLShift, 0),                  /* PLAT_KEY_LSHIFT */
-    QueueEntry(kScanRShift, 0),                  /* PLAT_KEY_RSHIFT */
-    QueueEntry(kScanLAlt, 0),                    /* PLAT_KEY_LALT */
-    QueueEntry(kScanRAlt, 0),                    /* PLAT_KEY_RALT */
-    QueueEntry(kScanF1, 0x81), QueueEntry(kScanF2, 0x82), QueueEntry(kScanF3, 0x83),   /* PLAT_KEY_F1.. */
-    QueueEntry(kScanF4, 0x84), QueueEntry(kScanF5, 0x85), QueueEntry(kScanF6, 0x86),
-    QueueEntry(kScanF7, 0x87), QueueEntry(kScanF8, 0x88), QueueEntry(kScanF9, 0x89),
-    QueueEntry(kScanF10, 0x8a), QueueEntry(kScanF11, 0x8b), QueueEntry(kScanF12, 0x8c)  /* ..F12 */
-};
-
-static inline Word32 SpecialKey(int key)
+/* The entry of a key that posts a code of its own rather than a character; 0 for the other keys. The
+   keypad's keys are the navigation keys with Num Lock off. */
+static Word32 SpecialKey(SDL_Scancode code, SDL_Keymod mod)
 {
-    if (key <= 0 || key >= (int)(sizeof(SpecialKeys) / sizeof(SpecialKeys[0])))
-        return 0;
-    return SpecialKeys[key];
+    if (code >= SDL_SCANCODE_F1 && code <= SDL_SCANCODE_F12)
+        return QueueEntry(code, 0x81 + (code - SDL_SCANCODE_F1));
+    if ((mod & SDL_KMOD_NUM) == 0) {
+        switch (code) {
+        case SDL_SCANCODE_KP_7:         code = SDL_SCANCODE_HOME; break;
+        case SDL_SCANCODE_KP_8:         code = SDL_SCANCODE_UP; break;
+        case SDL_SCANCODE_KP_9:         code = SDL_SCANCODE_PAGEUP; break;
+        case SDL_SCANCODE_KP_4:         code = SDL_SCANCODE_LEFT; break;
+        case SDL_SCANCODE_KP_6:         code = SDL_SCANCODE_RIGHT; break;
+        case SDL_SCANCODE_KP_1:         code = SDL_SCANCODE_END; break;
+        case SDL_SCANCODE_KP_2:         code = SDL_SCANCODE_DOWN; break;
+        case SDL_SCANCODE_KP_3:         code = SDL_SCANCODE_PAGEDOWN; break;
+        case SDL_SCANCODE_KP_0:         code = SDL_SCANCODE_INSERT; break;
+        case SDL_SCANCODE_KP_PERIOD:    code = SDL_SCANCODE_DELETE; break;
+        default:                        break;
+        }
+    }
+    switch (code) {
+    case SDL_SCANCODE_HOME:         return QueueEntry(code, 0x91);
+    case SDL_SCANCODE_UP:           return QueueEntry(code, 0x0b);
+    case SDL_SCANCODE_PAGEUP:       return QueueEntry(code, 0x92);
+    case SDL_SCANCODE_LEFT:         return QueueEntry(code, 0x96);
+    case SDL_SCANCODE_RIGHT:        return QueueEntry(code, 0x15);
+    case SDL_SCANCODE_END:          return QueueEntry(code, 0x93);
+    case SDL_SCANCODE_DOWN:         return QueueEntry(code, 0x0a);
+    case SDL_SCANCODE_PAGEDOWN:     return QueueEntry(code, 0x94);
+    case SDL_SCANCODE_INSERT:       return QueueEntry(code, 0x95);
+    case SDL_SCANCODE_DELETE:       return QueueEntry(code, 0x97);
+    case SDL_SCANCODE_PAUSE:        return QueueEntry(code, 0x80);
+    case SDL_SCANCODE_SCROLLLOCK:   return QueueEntry(code, 0x8d);
+    case SDL_SCANCODE_LCTRL:
+    case SDL_SCANCODE_RCTRL:
+    case SDL_SCANCODE_LSHIFT:
+    case SDL_SCANCODE_RSHIFT:
+    case SDL_SCANCODE_LALT:
+    case SDL_SCANCODE_RALT:         return QueueEntry(code, 0);
+    default:                        return 0;
+    }
+}
+
+/* The characters a key press types that SDL's text input leaves out: it reports printable text only. */
+static int ControlChar(SDL_Scancode code, SDL_Keymod mod)
+{
+    SDL_Keycode key;
+
+    switch (code) {
+    case SDL_SCANCODE_RETURN:
+    case SDL_SCANCODE_KP_ENTER:     return '\r';
+    case SDL_SCANCODE_BACKSPACE:    return '\b';
+    case SDL_SCANCODE_TAB:          return '\t';
+    case SDL_SCANCODE_ESCAPE:       return 0x1b;
+    default:                        break;
+    }
+    if ((mod & SDL_KMOD_CTRL) != 0 && (mod & SDL_KMOD_ALT) == 0) {
+        key = SDL_GetKeyFromScancode(code, SDL_KMOD_NONE, false);
+        if (key >= 'a' && key <= 'z')
+            return (int)(key - 'a' + 1);
+    }
+#ifdef SDL_PLATFORM_WIN32
+    /* Alt+key: Windows types the key's character (WM_SYSCHAR), which SDL does not pass on. Left Alt
+       only: the right one is AltGr on many layouts, and what that types does arrive as text. */
+    if ((mod & SDL_KMOD_LALT) != 0 && (mod & (SDL_KMOD_RALT | SDL_KMOD_CTRL | SDL_KMOD_GUI)) == 0) {
+        key = SDL_GetKeyFromScancode(code, (SDL_Keymod)(mod & (SDL_KMOD_SHIFT | SDL_KMOD_CAPS)), false);
+        if (key >= 0x20 && key < 0x7f)
+            return (int)key;
+    }
+#endif
+    return 0;
 }
 
 /* code page 1252's 0x80..0x9f, the characters that are not their own Unicode code point */
@@ -87,7 +132,7 @@ static const Word16 Ansi80[32] = {
 
 /* A typed character as the byte the game's Win32 window received in its WM_CHAR: the Western ANSI code
    page, 1252. 0 for a character it does not have. */
-static Word AnsiChar(int ch)
+static Word AnsiChar(Uint32 ch)
 {
     Word i;
 
@@ -98,6 +143,16 @@ static Word AnsiChar(int ch)
             return 0x80 + i;
     }
     return 0;
+}
+
+static Word32 ButtonBit(Uint8 button)
+{
+    switch (button) {
+    case SDL_BUTTON_LEFT:   return 1;
+    case SDL_BUTTON_RIGHT:  return 2;
+    case SDL_BUTTON_MIDDLE: return 4;
+    default:                return 0;
+    }
 }
 
 /* KeyboardGetch (BurgerLib InKeyboardWin95). */
@@ -114,10 +169,7 @@ unsigned int KeyboardGetch(void)
     i = BurgerKeyStart;
     key = BurgerKeyBuffer[i];
     BurgerKeyStart = (i + 1) & kKeyQueueMask;
-    key &= kKeyAsciiMask;
-    if (KeyboardGetchCallBack != 0)
-        key = KeyboardGetchCallBack(key);
-    return key;
+    return key & kKeyAsciiMask;
 }
 
 /* KeyboardKbhit (BurgerLib InKeyboardWin95). */
@@ -128,7 +180,6 @@ unsigned int KeyboardKbhit(void)
     Word32 key;
 
     ProcessSystemEvents();
-    KeyboardCallPollingProcs();
     for (i = BurgerKeyStart; i != BurgerKeyEnd; i = (i + 1) & kKeyQueueMask) {
         key = BurgerKeyBuffer[i] & kKeyAsciiMask;
         if (key != 0)
@@ -144,7 +195,6 @@ int32_t KeyboardGet2(void)
     int32_t i;
 
     ProcessSystemEvents();
-    KeyboardCallPollingProcs();
     i = BurgerKeyStart;
     if (i != BurgerKeyEnd) {
         BurgerKeyStart = (i + 1) & kKeyQueueMask;
@@ -153,58 +203,132 @@ int32_t KeyboardGet2(void)
     return 0;
 }
 
-/* Win95ProcessMessage (BurgerLib InKeyboardWin95, 0x004d7330), on a platform event in place of a Win32
-   message: the key queue, the key-down table and the mouse state. */
-static void Win95ProcessEvent(const PlatEvent *ev)
+/* KeyIsDown (BurgerLib KeyboardIsPressed). */
+// FUNCTION: EVNOVA 0x004f1900
+unsigned int KeyIsDown(ScanCode scanCode)
 {
-    Word32 key;
-    Word scan;
+    if ((unsigned)scanCode >= kScanCount)
+        return 0;
+    return PlatKeyIsDown((int)scanCode);
+}
 
-    scan = (unsigned)ev->scan < kScanCount ? ev->scan : kScanNone;
-    switch (ev->type) {
-    case PLAT_EV_KEY_DOWN:
-        key = SpecialKey(ev->key);
-        if (key != 0)
-            BurgerPostKey(key);
-        break;
-    case PLAT_EV_CHAR:
-        key = AnsiChar(ev->ch);
-        if (key != 0)
-            BurgerPostKey(QueueEntry(scan, key));
-        break;
-    case PLAT_EV_MOUSE_DOWN:
-        Win95MouseButton |= ev->button;
-        MouseClicked |= ev->button;
-        break;
-    case PLAT_EV_MOUSE_UP:
-        Win95MouseButton &= ~ev->button;
-        break;
-    case PLAT_EV_MOUSE_WHEEL:
-        Win95MouseWheel += ev->wheel;
-        break;
-    case PLAT_EV_MOUSE_MOVE:
-        Win95MouseX = ev->x;
-        Win95MouseY = ev->y;
-        Win95MouseXDelta += Win95MouseX - Win95LastMouseX;
-        Win95MouseYDelta += Win95MouseY - Win95LastMouseY;
-        Win95LastMouseX = Win95MouseX;
-        Win95LastMouseY = Win95MouseY;
-        break;
+/* KeyboardGet (BurgerLib InKeyboard). */
+// FUNCTION: EVNOVA 0x004f1920
+int KeyboardGet(void)
+{
+    if (KeyboardKbhit() == 0)
+        return 0;
+    return KeyboardGetch();
+}
+
+/* Drain whatever is queued and forget every click. */
+/* KeyboardFlush (BurgerLib KeyboardFlush). */
+// FUNCTION: EVNOVA 0x004f1940
+void KeyboardFlush(void)
+{
+    while (KeyboardKbhit() != 0)
+        KeyboardGetch();
+    MouseClicked = 0;
+}
+
+/* MouseReadButtons (BurgerLib InMouseWin95). */
+// FUNCTION: EVNOVA 0x004d7b10
+int MouseReadButtons(void)
+{
+    return Win95MouseButton;
+}
+
+/* Both axes are clamped to [0, extent-1]; a negative reads as 0. */
+/* MouseReadPosition (BurgerLib MouseReadAbs). */
+// FUNCTION: EVNOVA 0x004d7b20
+void MouseReadPosition(int32_t *h, int32_t *v)
+{
+    int32_t p;
+
+    if (h != 0) {
+        p = Win95MouseX;
+        if (p < 0)
+            p = 0;
+        if (p >= (int32_t)ScreenWidth)
+            p = ScreenWidth - 1;
+        *h = p;
     }
+    if (v != 0) {
+        p = Win95MouseY;
+        if (p < 0)
+            p = 0;
+        if (p >= (int32_t)ScreenHeight)
+            p = ScreenHeight - 1;
+        *v = p;
+    }
+}
+
+/* Win95ProcessMessage (BurgerLib InKeyboardWin95, 0x004d7330) and the window procedure's part
+   (WinGameWndProc, port/dialogmgr.c), on an SDL event in place of a Win32 message. */
+static void Win95ProcessEvent(const SDL_Event *e)
+{
+    const char *text;
+    Uint32 ch;
+    Word key;
+
+    switch (e->type) {
+    case SDL_EVENT_KEY_DOWN:
+        LastScan = (unsigned)e->key.scancode < kScanCount ? (int)e->key.scancode : (int)kScanNone;
+        BurgerPostKey(SpecialKey(e->key.scancode, e->key.mod));
+        key = AnsiChar(ControlChar(e->key.scancode, e->key.mod));
+        if (key != 0)
+            BurgerPostKey(QueueEntry(LastScan, key));
+        break;
+    case SDL_EVENT_TEXT_INPUT:
+        text = e->text.text;
+        while ((ch = SDL_StepUTF8(&text, NULL)) != 0) {
+            key = AnsiChar(ch);
+            if (key != 0)
+                BurgerPostKey(QueueEntry(LastScan, key));
+        }
+        return;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        Win95MouseButton |= ButtonBit(e->button.button);
+        MouseClicked |= ButtonBit(e->button.button);
+        break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        Win95MouseButton &= ~ButtonBit(e->button.button);
+        break;
+    case SDL_EVENT_MOUSE_MOTION:
+        Win95MouseX = (int32_t)SDL_floorf(e->motion.x);
+        Win95MouseY = (int32_t)SDL_floorf(e->motion.y);
+        break;
+    case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        WinGameActivate(1);
+        break;
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+        WinGameActivate(0);
+        break;
+    case SDL_EVENT_WINDOW_MINIMIZED:
+        WinGameMinimized();
+        break;
+    case SDL_EVENT_QUIT:
+        WinGameClose();
+        return;
+    case SDL_EVENT_KEY_UP:
+    case SDL_EVENT_MOUSE_WHEEL:
+        break;
+    default:
+        return;
+    }
+    WinGameInputSeen();
 }
 
 /* ProcessSystemEvents (BurgerLib InKeyboardWin95). */
 // FUNCTION: EVNOVA 0x004d79a0
 void ProcessSystemEvents(void)
 {
-    PlatEvent ev;
+    SDL_Event e;
 
-    if (Win95NoProcess == 0 && Recurse == 0) {
+    if (Recurse == 0) {
         Recurse = 1;
-        while (PlatPollEvent(&ev) != 0) {
-            Win95ProcessEvent(&ev);
-            WinGameEvent(&ev);
-        }
+        while (PlatPollEvent(&e) != 0)
+            Win95ProcessEvent(&e);
         Recurse = 0;
     }
 }
@@ -217,12 +341,6 @@ void KeyboardInit(void)
     BurgerKeyStart = 0;
     BurgerKeyEnd = 0;
     MouseClicked = 0;
-}
-
-/* KeyboardDestroy (BurgerLib KeyboardDestroy). */
-// FUNCTION: EVNOVA 0x004d7ae0
-void KeyboardDestroy(void)
-{
 }
 
 #ifdef __cplusplus

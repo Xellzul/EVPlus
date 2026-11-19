@@ -17,7 +17,7 @@ Word BombFlag;                                   /* 0x008701bc */
 
 typedef struct KeyName {
     const char *name;
-    int32_t code;
+    ScanCode code;
 } KeyName;
 
 /* 0x005776dc */
@@ -72,6 +72,18 @@ static KeyName kKeyNames[] = {
     { "F10",        kScanF10 },
     { "F11",        kScanF11 },
     { "F12",        kScanF12 },
+    { "F13",        kScanF13 },
+    { "F14",        kScanF14 },
+    { "F15",        kScanF15 },
+    { "F16",        kScanF16 },
+    { "F17",        kScanF17 },
+    { "F18",        kScanF18 },
+    { "F19",        kScanF19 },
+    { "F20",        kScanF20 },
+    { "F21",        kScanF21 },
+    { "F22",        kScanF22 },
+    { "F23",        kScanF23 },
+    { "F24",        kScanF24 },
     { "-",          kScanMinus },
     { "=",          kScanEquals },
     { "BakSpc",     kScanBackspace },
@@ -126,24 +138,25 @@ static KeyName kKeyNames[] = {
     { "KPdEnt",     kScanPadEnter },
     { "KPadEnt",    kScanPadEnter },
     { "KPadEnter",  kScanPadEnter },
-    { 0, -1 }
+    { 0, kScanNone }
 };
 
 /* KeyboardScanCodeToString (BurgerLib KeyboardScanCodeToString). */
 // FUNCTION: EVNOVA 0x004f1990
-void KeyboardScanCodeToString(char *out, ULong size, ULong code)
+void KeyboardScanCodeToString(char *out, ULong size, ScanCode code)
 {
     const KeyName *entry;
+    ULong length;
 
     if (size != 0) {
         entry = kKeyNames;
         do {
             if (entry->code == code) {
-                code = strlen(entry->name);
-                if (code >= size)
-                    code = size - 1;
-                memcpy(out, entry->name, code);
-                out[code] = 0;
+                length = strlen(entry->name);
+                if (length >= size)
+                    length = size - 1;
+                memcpy(out, entry->name, length);
+                out[length] = 0;
                 return;
             }
             ++entry;
