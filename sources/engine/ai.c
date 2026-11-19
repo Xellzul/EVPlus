@@ -1051,30 +1051,6 @@ void InterceptorAI(ShipObj *ship)
     if ((int32_t)ship->aiState == kAIStateCountWait)
         return;
 
-    if (ship->persType == kPersCaptainHector) {
-        if (ship->jumpTimer <= 0.0F) {
-            if (ship->aiTimer <= 0.0F) {
-                if (ship->lastInspected != 0) {
-                    if (IsDying(shipData) != 0) {
-                        if (AIShipHasFuelForJump(ship))
-                            AIMakeShipLeave(ship);
-                        else
-                            ship->aiState = kAIStateWait;
-                    } else {
-                        ship->aiState = kAIStateInspect;
-                        ship->targetShip = 0;
-                    }
-                } else if ((int32_t)ship->aiState != kAIStateFightSh) {
-                    if (AIShipHasFuelForJump(ship))
-                        AIMakeShipLeave(ship);
-                    else
-                        ship->aiState = kAIStateWait;
-                }
-            }
-        }
-        return;
-    }
-
     if ((int32_t)ship->aiState == kAIStateRefuel ||
         (int32_t)ship->aiState == kAIStateRepair)
         return;
@@ -2142,22 +2118,11 @@ void HighLevelAIHandler(ShipObj *ship)
                     if (ship->targetShip == 0) {
                         pt.x = ship->vel.x - shipData->vel.x;
                         pt.y = ship->vel.y - shipData->vel.y;
-                        if (ship->persType == kPersCaptainHector)
-                            pt.x = pt.y = 0.0f;
-                        if (ship->persType == kPersCaptainHector) {
-                            ship->lastInspected = 0;
-                            ST_PlaySound(beepSnd[4], 1, gSoundVolume);
-                            GetIndString(msg, kHackedStrList, Rand(3) + 2);
-                            DisplayComm((PStrChar *)msg, 0x168, 0, kCommTextSize,
-                                        &rgbWhite, 0, 0);
-                            AIMakeShipLeave(ship);
-                        } else {
-                            ship->targetStellar = -1;
-                            ship->targetShip = -1;
-                            ship->aiState = kAIStateHiJack;
-                            ship->aiSubstate = kSubLoJack;
-                            ScanPlayer(ship);
-                        }
+                        ship->targetStellar = -1;
+                        ship->targetShip = -1;
+                        ship->aiState = kAIStateHiJack;
+                        ship->aiSubstate = kSubLoJack;
+                        ScanPlayer(ship);
                     } else {
                         ship->aiState = kAIStateHiJack;
                         ship->targetShip = -1;
@@ -3912,8 +3877,6 @@ void SelectWarshipTarget(ShipObj *ship)
                         continue;
                     if (shipData[i].defenseStellar != -1)
                         continue;
-                    if (shipData[i].persType == kPersCaptainHector)
-                        continue;
                     if (shipData[i].type == kShipTypeEscapePod)
                         continue;
                     if (GovtAllies(ship->govt, shipData[i].govt) != 0)
@@ -4481,8 +4444,6 @@ Boolean IsShipMyEnemy(ShipObj *ship, ShipObj *other)
         return 0;
     if (ship->active == 0 || other->active == 0)
         return 0;
-    if (other->persType == kPersCaptainHector)
-        return 0;
     mine = ship->govt;
     if (mine != -1 && (theirs = other->govt) != -1) {
         if (mine == theirs)
@@ -4516,8 +4477,7 @@ void DoGoodSamaritan(ShipObj *victim, ShipObj *attacker)
 
     if (victim == NULL || attacker == NULL)
         return;
-    if (victim->persType == kPersCaptainHector ||
-        attacker->persType == kPersBountyHunter)
+    if (attacker->persType == kPersBountyHunter)
         return;
     if (victim->govt >= 0 && victim->govt < kMaxGovts &&
         (govtData[victim->govt].flags & kGovtAlwaysDisabled))
@@ -4528,7 +4488,7 @@ void DoGoodSamaritan(ShipObj *victim, ShipObj *attacker)
             continue;
         if (shipData[i].aiState == kAIStateFightSh)
             continue;
-        help = (shipData[i].persType != kPersCaptainHector) ? (Boolean)1 : (Boolean)0;
+        help = 1;
         if (IsShipMyEnemy(&shipData[i], victim))
             continue;
         sgovt = shipData[i].govt;
@@ -6262,7 +6222,6 @@ void FireAIShipWeapon(ShipObj *ship)
                 }
 
                 if (weaponStats[ship->selectedWeapon].ammoType != -1
-                        && ship->persType != kPersCaptainHector
                         && (weaponStats[ship->selectedWeapon].flags3 & kWeapAmmoAtBurstEnd) == 0) {
                     if (weaponStats[ship->selectedWeapon].guidance == kGuidanceBay
                             || (weaponStats[ship->selectedWeapon].ammoType >= 0

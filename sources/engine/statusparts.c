@@ -537,10 +537,7 @@ void DrawStatusTarg(void)
         TextSize(statusFontSize[0]);
         ForeColor(blackColor);
 
-        if (shipData[shipData[0].targetShip].persType == kPersCaptainHector) {
-            RGBForeColor(statusBrightColor);
-            DrawStringCentered("\pAmbrosia", dstRect.left, dstRect.right, dstRect.bottom - CE_Scale(6));
-        } else if ((shipClass[shipData[shipData[0].targetShip].type].flags & kShipHideStatus) != 0) {
+        if ((shipClass[shipData[shipData[0].targetShip].type].flags & kShipHideStatus) != 0) {
             if (shipData[shipData[0].targetShip].govt >= 0) {
                 RGBForeColor(statusDimColor);
                 MoveTo(dstRect.left + 87, dstRect.bottom - 6);

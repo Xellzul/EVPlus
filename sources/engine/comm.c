@@ -27,8 +27,6 @@ void DisplayComm(PStrChar *msg, short count, short font, short size,
 {
     unsigned char text[256];
 
-    if (playerKilledByHector != 0)
-        return;
     commCount = count;
     strncpy(commMsg, (char *)msg, kCommMsgMax);
     strncpy((char *)text, (char *)msg, kCommTextMax);

@@ -784,8 +784,7 @@ void HandleShipDisplay(ShipObj *ship)
                             if (i != ship->index && shipData[i].active != 0) {
                                 dx = FloatAbs(shipData[i].pos.x - ship->pos.x);
                                 dy = FloatAbs(shipData[i].pos.y - ship->pos.y);
-                                if (dx <= blastRadius && dy <= blastRadius
-                                        && ship->persType != kPersCaptainHector)
+                                if (dx <= blastRadius && dy <= blastRadius)
                                     DamageShip(&shipData[i], &ship->pos,
                                                impact, damage, damage, ship->index,
                                                0, 0, 1, 1, 0, 0);
@@ -2002,76 +2001,74 @@ void HandleBeams(unsigned char advance)
                                 massDmg *= 2;
                                 energyDmg *= 2;
                             }
-                            if (shipData[best].persType != kPersCaptainHector) {
-                                if (impact < 0 && beamData[i].owner != -1) {
-                                    if (shipClass[shipData[best].type].mass > 0
-                                        && (shipClass[shipData[best].type].flags
-                                            & kShipPlanetType) == 0) {
-                                        if (shipClass[shipData[beamData[i].owner].type].mass
-                                                >= shipClass[shipData[best].type].mass * 0.75) {
-                                            shipData[best].tractorShip = beamData[i].owner;
-                                            shipData[best].tractorTick = ReadTick();
-                                        } else {
-                                            if (shipData[beamData[i].owner].tractorShip == -1)
-                                                shipData[beamData[i].owner].tractorShip =
-                                                    beamData[i].owner;
-                                            shipData[beamData[i].owner].tractorTick = ReadTick();
-                                            if (FloatAbs(muzzle.x - shipData[best].pos.x) >= 50.0f)
-                                                goto shipKnock;
-                                            if (FloatAbs(muzzle.y - shipData[best].pos.y) >= 50.0f)
-                                                goto shipKnock;
-                                            goto shipKnockDone;
-                                        shipKnock:
-                                            if (shipClass[shipData[beamData[i].owner]
-                                                       .type].mass > 0
-                                                && (shipClass[shipData[beamData[i].owner]
-                                                        .type].flags & kShipPlanetType) == 0) {
-                                                hitAngle = CalcInterceptAngle(
-                                                    &shipData[best].pos, &muzzle);
-                                                AdjustedAccel(hitAngle,
-                                                    impact / (float)shipClass[
-                                                        shipData[beamData[i].owner].type].mass,
-                                                    &shipData[beamData[i].owner].vel,
-                                                    shipClass[shipData[beamData[i].owner]
-                                                        .type].maxSpeed);
-                                                SpeedLimit(
-                                                    &shipData[beamData[i].owner].vel,
-                                                    ShipMaxSpeed(
-                                                        &shipData[beamData[i].owner]));
-                                            }
-                                        shipKnockDone:
-                                            impact = 0;
+                            if (impact < 0 && beamData[i].owner != -1) {
+                                if (shipClass[shipData[best].type].mass > 0
+                                    && (shipClass[shipData[best].type].flags
+                                        & kShipPlanetType) == 0) {
+                                    if (shipClass[shipData[beamData[i].owner].type].mass
+                                            >= shipClass[shipData[best].type].mass * 0.75) {
+                                        shipData[best].tractorShip = beamData[i].owner;
+                                        shipData[best].tractorTick = ReadTick();
+                                    } else {
+                                        if (shipData[beamData[i].owner].tractorShip == -1)
+                                            shipData[beamData[i].owner].tractorShip =
+                                                beamData[i].owner;
+                                        shipData[beamData[i].owner].tractorTick = ReadTick();
+                                        if (FloatAbs(muzzle.x - shipData[best].pos.x) >= 50.0f)
+                                            goto shipKnock;
+                                        if (FloatAbs(muzzle.y - shipData[best].pos.y) >= 50.0f)
+                                            goto shipKnock;
+                                        goto shipKnockDone;
+                                    shipKnock:
+                                        if (shipClass[shipData[beamData[i].owner]
+                                                   .type].mass > 0
+                                            && (shipClass[shipData[beamData[i].owner]
+                                                    .type].flags & kShipPlanetType) == 0) {
+                                            hitAngle = CalcInterceptAngle(
+                                                &shipData[best].pos, &muzzle);
+                                            AdjustedAccel(hitAngle,
+                                                impact / (float)shipClass[
+                                                    shipData[beamData[i].owner].type].mass,
+                                                &shipData[beamData[i].owner].vel,
+                                                shipClass[shipData[beamData[i].owner]
+                                                    .type].maxSpeed);
+                                            SpeedLimit(
+                                                &shipData[beamData[i].owner].vel,
+                                                ShipMaxSpeed(
+                                                    &shipData[beamData[i].owner]));
                                         }
-                                    } else
+                                    shipKnockDone:
                                         impact = 0;
-                                }
-                                if (beamData[i].target != -1) {
-                                    if (best == beamData[i].target)
-                                        DamageShip(&shipData[best], &muzzle, impact,
-                                            massDmg, energyDmg, beamData[i].owner, 1, 1,
-                                            beamData[i].disableOnly, 0,
-                                            weaponStats[beamData[i].weapType].flags
-                                                & kWeapPassesShields, 1);
-                                    else
-                                        DamageShip(&shipData[best], &muzzle, impact,
-                                            massDmg, energyDmg, beamData[i].owner, 1, 0,
-                                            beamData[i].disableOnly, 0,
-                                            weaponStats[beamData[i].weapType].flags
-                                                & kWeapPassesShields, 1);
-                                } else {
-                                    if (best == shipData[beamData[i].owner].targetShip)
-                                        DamageShip(&shipData[best], &muzzle, impact,
-                                            massDmg, energyDmg, beamData[i].owner, 1, 1,
-                                            beamData[i].disableOnly, 0,
-                                            weaponStats[beamData[i].weapType].flags
-                                                & kWeapPassesShields, 1);
-                                    else
-                                        DamageShip(&shipData[best], &muzzle, impact,
-                                            massDmg, energyDmg, beamData[i].owner, 1, 0,
-                                            beamData[i].disableOnly, 0,
-                                            weaponStats[beamData[i].weapType].flags
-                                                & kWeapPassesShields, 1);
-                                }
+                                    }
+                                } else
+                                    impact = 0;
+                            }
+                            if (beamData[i].target != -1) {
+                                if (best == beamData[i].target)
+                                    DamageShip(&shipData[best], &muzzle, impact,
+                                        massDmg, energyDmg, beamData[i].owner, 1, 1,
+                                        beamData[i].disableOnly, 0,
+                                        weaponStats[beamData[i].weapType].flags
+                                            & kWeapPassesShields, 1);
+                                else
+                                    DamageShip(&shipData[best], &muzzle, impact,
+                                        massDmg, energyDmg, beamData[i].owner, 1, 0,
+                                        beamData[i].disableOnly, 0,
+                                        weaponStats[beamData[i].weapType].flags
+                                            & kWeapPassesShields, 1);
+                            } else {
+                                if (best == shipData[beamData[i].owner].targetShip)
+                                    DamageShip(&shipData[best], &muzzle, impact,
+                                        massDmg, energyDmg, beamData[i].owner, 1, 1,
+                                        beamData[i].disableOnly, 0,
+                                        weaponStats[beamData[i].weapType].flags
+                                            & kWeapPassesShields, 1);
+                                else
+                                    DamageShip(&shipData[best], &muzzle, impact,
+                                        massDmg, energyDmg, beamData[i].owner, 1, 0,
+                                        beamData[i].disableOnly, 0,
+                                        weaponStats[beamData[i].weapType].flags
+                                            & kWeapPassesShields, 1);
                             }
                             if (best == 0)
                                 statusRedraw[kRedrawShield] = 1;
@@ -3242,8 +3239,7 @@ void HandleShip(ShipObj *ship)
                         ship->vel.x = 0;
                         ship->vel.y = 0;
                     }
-                    if (ship->parentShip == -1
-                            && ship->persType != kPersCaptainHector)
+                    if (ship->parentShip == -1)
                         ship->aiTimer = (Rand(0x1e) + 0x1e);
                 }
             }

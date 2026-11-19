@@ -2795,8 +2795,6 @@ void HandlePlayerCommunication(void)
             if (IsDisabled(&shipData[me->targetShip]) != 0)
                 canHail = 0;
             pers = shipData[me->targetShip].persType;
-            if (pers == kPersCaptainHector)
-                canHail = 0;
             if (canHail) {
                 if (pers != -1) {
                   if (personData[pers].linkMission != -1) {
@@ -4312,8 +4310,6 @@ reject:
         goto reject;
     if (shipData[me->targetShip].curSystem != me->curSystem)
         goto reject;
-    if (shipData[me->targetShip].persType == kPersCaptainHector)
-        goto reject;
     if (IsDying(me))
         goto reject;
 
@@ -4425,7 +4421,7 @@ reject:
             j = 1;
         else if (currentMissionObjectives[m].active && currentMissionObjectives[m].failed)
             j = 1;
-        if (j == 1 && (j = shipData[me->targetShip].persType) != kPersCaptainHector && j != kPersBountyHunter) {
+        if (j == 1 && (j = shipData[me->targetShip].persType) != kPersBountyHunter) {
             SlapWithPenalty(shipData[0].curSystem, shipData[me->targetShip].govt, 2, m);
             if (shipData[me->targetShip].persType != -1) {
                 if (personData[shipData[me->targetShip].persType].linkMission != -1) {

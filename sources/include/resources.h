@@ -803,7 +803,6 @@ typedef struct PersRecord {
     char pad792[2];
 } PersRecord;
 
-#define kPersCaptainHector 1023 /* the hand-built shareware enforcer */
 #define kPersBountyHunter  1022
 
 typedef struct SystRecord {
@@ -1248,7 +1247,6 @@ EXTERN_CPP_END
 #define kKeyNameStrList     129     /* STR# 129: the key names */
 #define kAlertStrList       140
 #define kSpecialValueStrList 141   /* STR# 141: the words a preference shows for its special values */
-#define kHackedStrList      30000   /* STR# 30000: what the ships say to a hacked copy */
 #define kFirstJunkItem     6
 #define kFirstResourceID 128
 /* an ID field that also carries a class: 128 + 1000 * class + index */

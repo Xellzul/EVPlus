@@ -772,10 +772,6 @@ float ShipTurnRate(ShipObj *ship)
         if (ship->tractorShip != -1 && ship->tractorShip != ship->index)
             v *= 0.333;
     }
-    if (ship->persType == kPersCaptainHector) {
-        if (v < 6.0f)
-            v += 1.0f;
-    }
     if (shipClass[ship->type].turnRate >= 1.0f && v < 1.0f)
         v = 1.0f;
     if (ship->ionization > 0.0f && ship->jumpTimer <= 0.0f) {
@@ -832,8 +828,6 @@ float ShipAccelRate(ShipObj *ship)
         else
             v *= 2.0;
     }
-    if (ship->persType == kPersCaptainHector)
-        v *= 2.0;
     if (ship->ionization > 0.0f) {
         ratio = ShipIonizationFactor(ship);
         if (ratio > 0.7)
@@ -880,8 +874,6 @@ float ShipMaxSpeed(ShipObj *ship)
         if (ship->tractorShip != -1 && ship->tractorShip != ship->index)
             v *= 0.333;
     }
-    if (ship->persType == kPersCaptainHector)
-        v *= 2.0;
     if (ship->index == 0 || ship->parentShip == 0) {
         if (strictPlay == 0)
             v *= 1.5;
@@ -1119,8 +1111,6 @@ Boolean ShipVisibleToShip(ShipObj *ship, ShipObj *viewer)
 {
     if (AIShipIsEmergingFromHypergate(ship))
         return 0;
-    if (viewer->persType == kPersCaptainHector)
-        return 1;
     if (ShipIsCloaked(ship)) {
         float d;
 
@@ -4039,100 +4029,6 @@ short ShipAntiInterference(void)
     }
     return playerAntiInterference;
 }
-
-// FUNCTION: EVNOVA 0x0046ac50
-// MAC: _SpawnNagShip i386 0x00005fdb ppc 0x000077d8
-// NOT USED
-void SpawnNagShip(void)
-{
-    int32_t chance;
-    short slot;
-    int32_t w;
-    short heading;
-    float step;
-    float total;
-    FloatPoint origin;
-    unsigned char msg[256];
-    short totalDaysPlayed = 0;
-
-    if (personData[kPersCaptainHector].shipType < 0)
-        return;
-
-    if (totalDaysPlayed <= 14)
-        chance = 25000;
-    else if (totalDaysPlayed < 30)
-        chance = 10000;
-    else if (totalDaysPlayed < 60)
-        chance = 4000;
-    else
-        chance = 500;
-
-    for (w = 1; (short)w < kMaxShips; w++) {
-        if (shipData[w].active != 0 && shipData[w].persType == kPersCaptainHector)
-            return;
-    }
-
-    if (chance > 0 && Rand(chance) == 0) {
-        slot = GenericRandomShipSpawn(shipData->curSystem, 2);
-        if (slot != -1) {
-            if (totalDaysPlayed > 30) {
-            ST_PlaySound(beepSnd[4], 1, gSoundVolume);
-            GetIndString(msg, kHackedStrList, Rand(3) + 5);
-            DisplayComm((PStrChar *)msg, 0x168, 0, kCommTextSize, &rgbWhite, 0, 0);
-            }
-
-            shipData[slot].persType = kPersCaptainHector;
-            shipData[slot].type = personData[kPersCaptainHector].shipType;
-            shipData[slot].aiType = kShipTypeInterceptor;
-
-            total = 0.0f;
-            if (totalDaysPlayed >= 60)
-                step = 31.0f;
-            else
-                step = 50.0f;
-            while (step > 0.0f) {
-                total += step;
-                step -= 1.165;
-            }
-
-            shipData[slot].pos.x = shipData->pos.x;
-            shipData[slot].pos.y = shipData->pos.y;
-
-            if (totalDaysPlayed >= 60) {
-            heading = shipData->heading;
-            } else {
-            origin.x = origin.y = 0.0f;
-            heading = CalcInterceptAngle(&shipData->pos, &origin);
-            }
-            Accel(heading, -(total + 500.0), &shipData[slot].pos);
-
-            shipData[slot].heading = heading;
-            shipData[slot].dude = -1;
-            shipData[slot].aggression = 4;
-            shipData[slot].govt = -1;
-
-            for (chance = 0; chance < kMaxWeapTypes; chance++) {
-                shipData[slot].weap[chance].count = shipClass[shipData[slot].type].weapCount[chance];
-                shipData[slot].weap[chance].ammo = shipClass[shipData[slot].type].weapAmmo[chance];
-                shipData[slot].weap[chance].count += personData[kPersCaptainHector].weapCount[chance];
-                shipData[slot].weap[chance].ammo += personData[kPersCaptainHector].weapAmmo[chance];
-            }
-
-            shipData[slot].shield = shipClass[shipData[slot].type].shield;
-            shipData[slot].armor = shipClass[shipData[slot].type].armor;
-            if (personData[kPersCaptainHector].shieldMod > 0.0f) {
-            shipData[slot].shield *= personData[kPersCaptainHector].shieldMod;
-            shipData[slot].armor *= personData[kPersCaptainHector].shieldMod;
-            }
-
-            AISetup(&shipData[slot]);
-            AIMakeShipJumpIn(&shipData[slot]);
-            shipData[slot].lastInspected = -1;
-            shipData[slot].aiTimer = -1.0f;
-        }
-    }
-}
-
 
 /* the shorter way round a 360-unit circle */
 

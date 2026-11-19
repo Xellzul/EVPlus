@@ -1555,8 +1555,6 @@ void LoadObjectData(void)
 
     /* ---------------- përs: persons ---------------- */
     {
-        int32_t shieldSum;
-
         found = 0;
         n = count = CountResources(kPersType);
         for (i = 0; i < kMaxPersons;i++) {
@@ -1667,67 +1665,6 @@ void LoadObjectData(void)
             }
             if (found >= n)
                 break;
-        }
-
-        /* Captain Hector, the shareware enforcer */
-        personData[kPersCaptainHector].linkSyst = -1;
-        personData[kPersCaptainHector].govt = -1;
-        personData[kPersCaptainHector].aiType = 3;
-        personData[kPersCaptainHector].aggression = 4;
-        personData[kPersCaptainHector].coward = -1;
-        personData[kPersCaptainHector].credits = 0;
-        personData[kPersCaptainHector].shieldMod = -1.0f;
-        personData[kPersCaptainHector].commQuote = 8;
-        personData[kPersCaptainHector].hailQuote = -1;
-        personData[kPersCaptainHector].linkMission = -1;
-        personData[kPersCaptainHector].flags = 2;
-        personData[kPersCaptainHector].shipColor.red = personData[kPersCaptainHector].shipColor.green = personData[kPersCaptainHector].shipColor.blue = 0;
-        personData[kPersCaptainHector].loaded = 1;
-        CStr2PStr(personData[kPersCaptainHector].name, "Captain Hector");
-        CStr2PStr(personData[kPersCaptainHector].subtitle, "Shareware Enforcer");
-
-        /* pick him a ship: sufficiently shielded and agile vs the fleet average */
-        shieldSum = 0;
-        n = 0;
-        for (i = 0; i < kMaxShipTypes;i++) {
-            if (shipClass[i].techLevel != kResAbsent && shipClass[i].turnRate > 2.0f) {
-                shieldSum += shipClass[i].shield;
-                n++;
-            }
-        }
-        if (n > 0)
-            shieldSum /= n;
-        else
-            shieldSum = 300;
-        personData[kPersCaptainHector].shipType = -1;
-        for (i = 0; i < kMaxShipTypes;i++) {
-            if (shipClass[i].techLevel != kResUnloaded && shipClass[i].inherentAI >= 2 &&
-                shipClass[i].shield >= shieldSum * 0.88 &&
-                shipClass[i].turnRate > 2.0f) {
-                personData[kPersCaptainHector].shipType = i;
-                break;
-            }
-        }
-        if (personData[kPersCaptainHector].shipType == -1)
-            personData[kPersCaptainHector].shipType = 0;
-
-        /* arm him: escalate with the shareware timer */
-        for (count = 0; count < kMaxWeapTypes; count++)
-            personData[kPersCaptainHector].weapCount[count] = 0;
-        j = 0;
-        n = kPersCaptainHector;
-        for (count = 0; count < kMaxWeapTypes; count++) {
-            if (weaponStats[count].guidance >= kGuidanceUnguided &&
-                weaponStats[count].damage[0] > 0 && weaponStats[count].damage[1] > 0 &&
-                weaponStats[count].subCount <= 0 &&
-                (weaponStats[count].damage[0] >= shieldSum / 40.0 ||
-                 weaponStats[count].damage[1] >= shieldSum / 40.0)) {
-                personData[n].weapCount[count] = 10;
-                personData[n].weapAmmo[count] = 1000;
-                j++;
-                if (j > 2)
-                    break;
-            }
         }
 
         /* alias persons that share a name prefix */

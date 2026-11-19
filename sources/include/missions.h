@@ -55,7 +55,6 @@ extern Handle missionFileHand;                  /* 0x0077efb8 (mac _missionFileH
 extern unsigned char missionName[][256];        /* 0x007356e8 (mac _missionName) */
 extern Boolean offeringFromShip;                    /* 0x00773eea (mac name) */
 extern short offeringShipIndex;                    /* 0x0077430e (mac _offeringShipIndex) */
-extern Boolean playerKilledByHector;                /* 0x007354aa */
 EXTERN_CPP_END
 
 

@@ -59,7 +59,6 @@ extern Boolean ShipsShareParent(ShipObj *a, ShipObj *b);
 extern void SpawnBox(short slot);
 extern short SpawnEscort(short shipType, short stellar);
 extern void SpawnFleet(short sys, unsigned char arriving);
-extern void SpawnNagShip(void);
 extern void SpawnScoopableBox(FloatPoint *pos, short cargoType, short pict);
 extern void SystemInfoToShipStats(void);
 extern short TotalMissionCargoSpace(void);

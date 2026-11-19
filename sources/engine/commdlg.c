@@ -565,16 +565,12 @@ void CommDialogUpdate(void)
     DrawIndString(kGameStrList, 0xc3);
     MoveTo((box.left + 0x23), (box.top + 12));
     ForeColor(whiteColor);
-    if (commShip->persType == kPersCaptainHector) {
-        DrawString("\pAmbrosia Mascot");
-    } else {
-        DrawString(shipClassStr);
-        if (shipGovtStr[0] != 0) {
-            MoveTo((box.left + 0x23), (box.top + 0x19));
-            DrawString("\p(");
-            DrawString(shipGovtStr);
-            DrawString("\p)");
-        }
+    DrawString(shipClassStr);
+    if (shipGovtStr[0] != 0) {
+        MoveTo((box.left + 0x23), (box.top + 0x19));
+        DrawString("\p(");
+        DrawString(shipGovtStr);
+        DrawString("\p)");
     }
     MoveTo(box.left, (box.top + 0x28));
     RGBForeColor(&rgbMedGrey);

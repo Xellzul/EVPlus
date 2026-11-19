@@ -274,7 +274,6 @@ unsigned char hypergateMapMode;
 Boolean redrawEscortMenu;
 Boolean screenFaded;
 Boolean playerIsLanded;
-Boolean playerKilledByHector;
 Boolean quickKeyCheckResult;
 Point lastMousePos;
 short descFlags;
@@ -565,7 +564,6 @@ void PlayGame(void)
     ignoreKeys = 0;
     hyperGamma = -1.0f;
     cursorAlpha = 0;
-    playerKilledByHector = 0;
     PrepareAllSprites();
     RefreshWindowBuffer();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
@@ -757,7 +755,6 @@ void PlayGame(void)
     MyProfileDump("profile.txt");
     FadeScreenOut();
     ShowTheCursor();
-    playerKilledByHector = 0;
     FlushEvents(everyEvent - diskMask, 0);
     SWSetPortToWindow(gSpriteWorld);
     ForeColor(blackColor);
@@ -962,12 +959,6 @@ void PrepareAllSprites(void)
 #define kStrMissionFailed       0x11c
 #define kStrShipDestroyed       0x11f
 #define kStrPlayerKilled        0x120
-#define kHectorStrList          30000
-#define kHectorTauntBase        8
-#define kHectorTauntCount       6
-
-#define kHectorCommFrames        5000
-
 #define kImpactCancelRange      50.0f
 #define kEscortDefendRange      320.0f
 #define kFullCloak              32.0f
@@ -1083,7 +1074,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
                && shipData[attacker].parentShip == 0) {
         enemy = 1;
     }
-    if (enemy != 0 && ship->defenseStellar == -1 && ship->persType < kPersCaptainHector) {
+    if (enemy != 0 && ship->defenseStellar == -1) {
         if (IsDisabled(ship) && wasDisabled == 0)
             SlapWithPenalty(shipData->curSystem, ship->govt, 1, ship->specialMission);
         if (ship->armor <= 0.0f && wasDying == 0 && !ShipIsDerelict(ship)) {
@@ -1149,19 +1140,9 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
     /* `&`, not `&&`: the exe ANDs the two booleans with `test eax,ebx` */
     if (ship->index == 0 && (IsDying(ship) & (wasDying == 0))) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-        if (fromAttack != 0 && attacker > 0 && attacker < kMaxShips
-                && shipData[attacker].persType == kPersCaptainHector) {
-            GetIndString((unsigned char *)msg, kHectorStrList,
-                         Rand(kHectorTauntCount) + kHectorTauntBase);
-            DisplayComm((PStrChar *)msg, kHectorCommFrames, 0, kCommTextSize,
-                        &rgbWhite, 0, 0);
-            playerKilledByHector = 1;
-        }
-        if (playerKilledByHector == 0) {
-            GetIndString((unsigned char *)msg, kGameStrList, kStrPlayerKilled);
-            DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize,
-                        &rgbWhite, 0, 0);
-        }
+        GetIndString((unsigned char *)msg, kGameStrList, kStrPlayerKilled);
+        DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize,
+                    &rgbWhite, 0, 0);
         for (i = 0; i < kMaxActiveMissions; i++) {
             if (currentMissionObjectives[i].active != 0 && currentMissionObjectives[i].failed == 0
                     && (currentMissions[i].flags2 & kMissionFailIfDisabled) != 0) {
@@ -4385,8 +4366,6 @@ Boolean ShotCanHitShip(ShotObj *shot, ShipObj *ship)
         if (shot->owner == ship->index)
             return 0;
         if (shot->guidanceState == 0x3e6)
-            return 0;
-        if (ship->persType == kPersCaptainHector)
             return 0;
 
         if (weaponStats[shot->weapType].guidance == kGuidanceHoming
