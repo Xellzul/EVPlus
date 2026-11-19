@@ -294,7 +294,6 @@ void InitOffscreen(void)
 #define kVoiceSetStride       0x64
 #define kVoiceMsgStride        0xa
 #define kFirstVoiceID        0x3e8
-#define kLoopSounds              2
 #define kDefaultLoopTicks    0x15e
 #define kTicksPerSecond         60
 #define kFirstEngineID        0x96
@@ -1539,7 +1538,6 @@ void InitSprites(void)
 }
 
 
-
 // FUNCTION: EVNOVA 0x004b0740
 // MAC: _LoadSounds i386 0x0001c036 ppc 0x000201a4
 void LoadSounds(void)
@@ -2533,7 +2531,6 @@ short firstShipWeapIndex;
 short firstShipShieldIndex;
 short shipSpriteLoaded[kMaxShipTypes][6];
 Rect mainWindRect;
-Rect screenMinusDockRect;
 int32_t fullScreenRestore;
 
 

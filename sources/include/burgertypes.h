@@ -26,16 +26,6 @@ typedef uint32_t Word32;
 typedef uint32_t ULong;
 typedef unsigned long long ULongLong;
 
-/* a hand-assembled body: no prologue, no epilogue */
-#define NAKED __declspec(naked)
-
-#define kNoLength           0xffffffff
-
-/* UTF-16 surrogate decoding */
-#define kSurrogateMask      0xfffffc00
-#define kSurrogateHigh      0xd800
-#define kSurrogateBias      0xfca02400
-
 /* ST_PlaySoundParam's request, 0x1c bytes: the engine keeps two of these
    (warpUpSoundSpec, planetSoundSpec) and atsndplay.c clamps one in place.
    rate is signed: AdjustWarpSoundSpeed converts a double into it. */

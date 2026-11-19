@@ -23,7 +23,6 @@ EXTERN_C_BEGIN
 #define kNameFieldStride         0x100
 #define kMaxPilotNameLen          0x18
 #define kSelectAllNameText        0xfe
-#define kTempMenuID             5000
 
 
 // FUNCTION: EVNOVA 0x0048a7e0

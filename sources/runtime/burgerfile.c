@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-int32_t BurgerSndKillProcs[3];                      /* 0x00870d9c */
-ULong BurgerSndExitIn;                           /* 0x0086ffec */
-
 #define kFixedMax       0x7fffffff
 #define kFixedMin       0x80000000
 

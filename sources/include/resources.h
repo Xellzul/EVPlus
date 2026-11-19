@@ -175,7 +175,6 @@ typedef struct ShipRec {
 #define kSpobType 0x73709a62   /* 'spöb' */
 #define kSystType 0x73d87374   /* 'sÿst' */
 #define kWeapType 0x77916170   /* 'wëap' */
-#define kYearType 0x79918aa8   /* 'yëä®' */
 
 #define kResAbsent          (-9999)
 #define kResUnloaded        9999
@@ -1244,7 +1243,6 @@ EXTERN_CPP_END
 #define SpobHasShipyard(s)  ((s)->flags & kSpobHasShipyard)
 #define kGameStrList        2002
 #define kButtonStrList      150     /* STR# 150: the button labels */
-#define kKeyNameStrList     129     /* STR# 129: the key names */
 #define kAlertStrList       140
 #define kSpecialValueStrList 141   /* STR# 141: the words a preference shows for its special values */
 #define kFirstJunkItem     6
@@ -1280,10 +1278,6 @@ EXTERN_CPP_END
 #define kStrOf                 0x187   /* STR# 2002: "of" */
 #define kStrAnd                0x188   /* STR# 2002: "and" */
 #define kPrefsStrList   0x82
-#define kRankActive                 0
-#define kRankFlags                  0x1c
-#define kRankGovt                   6
-#define kRankInUse                  1
 #define kShipTypeWimpyTrader    1       /* aiType: shïp inherentAI 1..4 */
 #define kShipTypeBraveTrader    2
 #define kShipTypeWarship        3

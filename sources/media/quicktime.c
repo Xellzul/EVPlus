@@ -22,7 +22,6 @@
 #define kCodecErr       (-8960)
 
 #define kVideoMediaType   0x76696465                /* 'vide' */
-#define kFormat16BE555    0x00000010                /* k16BE555PixelFormat */
 #define kFormat16LE555    0x4c353535                /* k16LE555PixelFormat 'L555' */
 #define kTimeScale        600                       /* QuickTime's movie time units per second */
 #define kLoopTimeBase     1                         /* loopTimeBase */

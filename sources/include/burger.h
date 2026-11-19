@@ -212,9 +212,6 @@ extern char *VideoOffscreen;
 extern void VideoFadeWhite(Word from, Word to, uint32_t ticks);
 
 /* sound globals (burgersndwin.c) */
-extern Word MusicVolume;
-extern Word SystemState;
-extern ULong BurgerVoiceCount;                       /* BurgerVoiceCount */
 
 struct MixVoice;
 
@@ -236,8 +233,6 @@ extern unsigned char PCM_Mixer(const short *data, short **out, ULong frames, ULo
 extern int32_t gNumVoices;
 extern ULong gSaveRightVolume;
 extern ULong gSampleRate;
-extern ULong BurgerSndExitIn;                    /* burgerfile.c */
-extern int32_t BurgerSndKillProcs[3];               /* burgerfile.c */
 
 extern ULong UFix32_To_UInt32(ULong rate);
 extern void CriticalEnter(void *lock);

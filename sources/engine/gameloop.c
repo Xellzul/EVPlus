@@ -1066,8 +1066,6 @@ void HandleAlertSprite(void)
     }
 }
 
-#define kMasterSprites      0x100
-
 #define kApproachSpan       1.1      /* pooled double */
 
 // FUNCTION: EVNOVA 0x0042cd10
@@ -3669,7 +3667,6 @@ void HandleShot(ShotObj *shot)
 #define kDeadStrength           (-32000)
 
 
-
 // FUNCTION: EVNOVA 0x00436910
 // MAC: _HandleAsteroids i386 0x000361ac ppc 0x0003bd5c
 void HandleAsteroids(void)
@@ -4396,7 +4393,6 @@ void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite)
 #define kCursorAnimTicks       3
 #define kMinHotRectSize     0x30
 #define kHotRectInset      -0x10
-#define kStatusBarWidth     0xc2
 
 /* SpriteWorld sprite record - only the fields this function reaches.
    sprites.c's SpriteRec is the same object (+0x1a frame, +0x54 frameCount,

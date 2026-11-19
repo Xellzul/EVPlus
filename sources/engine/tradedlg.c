@@ -1903,7 +1903,6 @@ void OutfitDialogUpdate(void)
 #define SpobAmbientLoop(s)  ((s)->flags2 & kSpobLoopSound)
 
 
-
 // FUNCTION: EVNOVA 0x00491950
 // MAC: _CanBuyOutfitItem i386 0x0004e7c4 ppc 0x00057448
 Boolean CanBuyOutfitItem(short outfit)
@@ -3359,7 +3358,6 @@ void ShipyardDialogUpdate(void)
 #define kLabelStrIdx  5
 
 
-
 #define kDescDlogID      0x3fb   /* 1019: the layout with a picture well */
 #define kPlainDescDlogID 0x3ed   /* 1005: the layout without one */
 #define kDescPictID      8507    /* backdrop to match each layout */
@@ -4292,7 +4290,6 @@ void RefreshWindowBuffer(void)
  */
 
 
-
 #define kCaptureStrIdx  0x76
 
 Boolean CapturedAssignmentFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
@@ -4438,7 +4435,6 @@ void CapturedAssignmentDialogUpdate(void)
 #define kTextDlgSlackMargin    16
 #define kTextDlgRecentre       0.3
 #define kScrollLineStep        10
-
 
 
                                                          /* 0x004d18b0 (mac _SizeWindow) */
@@ -4779,8 +4775,6 @@ void CalcShipCanBuy(void)
 }
 
 #define kStripCells 128
-#define kCellWide 0x53
-#define kCellHigh 0x36
 
 // FUNCTION: EVNOVA 0x00499150
 // MAC: _SetupListRects i386 0x00051a2c ppc 0x0005a340
@@ -6482,7 +6476,6 @@ void PlayQTMovieFromDesc(short id)
 }
 
 
-
 // FUNCTION: EVNOVA 0x0049e430
 // MAC: _DrawEscortMenuInFrame i386 0x00056268 ppc 0x0005e590
 void DrawEscortMenuInFrame()
@@ -6595,7 +6588,6 @@ void ShowEscortMenu(void)
 }
 
 
-
 #define kQtyDlogID 0x3eb
 #define kQtyPromptItem 1
 #define kQtyMaxItem 2
@@ -6702,9 +6694,6 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
     qtyDialog = NULL;
     return result;
 }
-
-#define kMapWorldWide 4096
-#define kMapWorldHigh 32
 
 // FUNCTION: EVNOVA 0x0049ed00
 // MAC: _SetupDialogs i386 0x0005715d ppc 0x0005f500

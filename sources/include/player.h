@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-extern void CheckForPiratedCodes(void);
 EXTERN_CPP_BEGIN
 extern Settings settings;
 extern short recentActivatedRank;

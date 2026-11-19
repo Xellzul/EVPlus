@@ -39,7 +39,6 @@ EXTERN_C_BEGIN
 #define kMapDlogID     2000
 #define kMapPictID     0x213d
 #define kNebulaPictBase 0x251c
-#define kMacShiftKey    MacKey(0x38)    /* the mac KeyMap's one shift key */
 
 /* DLOG 2000's items; 1 is kItemAccept and 3 kMapPictItem */
 #define kMapInfoItem        2   /* the selected system's panel */

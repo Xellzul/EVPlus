@@ -79,7 +79,6 @@ enum {
 #define kAnimDone        0x7d00
 #define kMaxMissions    1000    /* mïsn resources; also bounds every mission list */
 #define kBetaPilotVersion 0x6b
-#define kBlacklistCount 38
 #define kBoxSlots               0x40
 #define kBracketInset       0x10
 #define kCargoRect  7
@@ -93,8 +92,6 @@ enum {
 #define kExpandRate         60.0     /* units per second, a pooled double */
 #define kGameYearOffset 250     /* the game opens this far after the host clock */
 #define kMaxGovts               256     /* govtData entries */
-#define kGridCellHigh 55
-#define kGridCellWide 84
 #define kGridCells    20
 #define kGridCols     4
 #define kGridItem     5
@@ -133,7 +130,6 @@ enum {
 #define kMaxSystems           0x800
 #define kMaxWeapTypes           256     /* weaponStats entries, and ship->weap[] is indexed the same way */
 #define kMinPilotVersion 0x12c
-#define kMissionRecStride 0x473   /* in shorts */
 #define kMissionVenues           2
 #define kMurkFull               32      /* fully lit hilite value */
 #define kNavHyperLabel      0x159   /* "jumping to:" */
@@ -155,7 +151,6 @@ enum {
 #define kPortButtons        7
 #define kPortPriceScale 0.01
 #define kQuarterCircle          0x5a
-#define kRankRecordSize             0x120
 #define kScrollToEnd  9999
 #define kStatusDestroyed    0x18c
 #define kStatusDisabled     0x15b
@@ -165,7 +160,6 @@ enum {
 #define kStatusNoWeapon     0x15e    /* "no weapon selected" */
 #define kStatusVulnerable   0x15c
 #define kStellarSprites     0x10
-#define kTargPanelInset     194   /* the panel sits this far in from the window's right */
 #define kTargRect  6
 #define kVoiceMessages           3
 #define kWeapRect   5
@@ -175,15 +169,10 @@ enum {
 
 
 #define kMaxStellars        0x800
-#define kMissionStateStride 5       /* in longs */
 #define kFullCircle         360     /* degrees; the float form is kFullCircleF */
 #define kFullCircleF        360.0f
 #define kSpawnReserve       8       /* ship slots a spawner leaves free */
 #define kDefaultOutfitSlots 8       /* shipClass[].defOutfID / defOutfCount entries */
-#define kInfluenceGridSize  256     /* the influence grid's width and height */
 #define kInfluenceLayers    4       /* the influence grid's last dimension */
-#define kMaxMissionSysts    32      /* missionSyst[] entries */
-#define kNebulaPicFrames    7       /* nebulaPic[][] pictures per nebula */
-#define kMacOSXSystemVersion 0x1000 /* gSystemVersion at or above: Mac OS X */
 
 #endif /* GAMECONST_H */

@@ -39,7 +39,6 @@ typedef struct PrefsNode {
 
 #define kOpenBracket  '['
 #define kCloseBracket ']'
-#define kNewline      '\n'
 #define kEquals       '='
 #define kSemicolon    ';'
 #define kSlash        '/'

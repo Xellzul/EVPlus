@@ -241,11 +241,6 @@ typedef struct MINMAXINFO {
     WinPoint ptMaxTrackSize;    /* +0x20 */
 } MINMAXINFO;
 
-#define HC_ACTION   0
-
-#define GWL_EXSTYLE (-20)
-#define GWL_STYLE   (-16)
-
                                                          /* IAT 0x0058f8f8 */
                                                          /* IAT 0x0058f8e4 */
                                                          /* IAT 0x0058f8e8 */

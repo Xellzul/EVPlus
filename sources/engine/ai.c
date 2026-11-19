@@ -4166,11 +4166,6 @@ Boolean ExtendedIsThreatToPlayer(ShipObj *ship)
     return 0;
 }
 
-/* the AI states that mean the ship is leaving rather than fighting */
-#define AIStateIsLeaving(s) \
-    ((s) != kAIStateInspect && (s) != kAIStateRefuel && (s) != kAIStateRepair && (s) != kAIStateFlyPr \
-     && (s) != kAIStateHypPr && (s) != kAIStateGoHome && (s) != kAIStateProtect && (s) != kAIStateDestStel)
-
 // FUNCTION: EVNOVA 0x0040faa0
 // MAC: _ExtendedIsThreatToShip i386 0x00081a27 ppc 0x0008ba0c
 Boolean ExtendedIsThreatToShip(ShipObj *self, ShipObj *other)

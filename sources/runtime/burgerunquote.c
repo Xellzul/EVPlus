@@ -174,9 +174,6 @@ static const double PowerOf10DblTable[9] = {
     1.0e1, 1.0e2, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256
 };
 
-#define kFloatDigits   9
-#define kDoubleDigits  18
-
 #define kPascalMaxLen   0xff
 
 /* StrCopy (BurgerLib StStringManager): a C string copied into a new pointer. */

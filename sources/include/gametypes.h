@@ -605,8 +605,6 @@ extern unsigned char govtTargStrings[256][256];
 #define kGambleButtonLabel          10
 #define kHolovidButtonLabel         11
 #define kHireEscortButtonLabel      12
-#define kBet1000ButtonLabel         13
-#define kBet5000ButtonLabel         14
 #define kMissionBBSButtonLabel      15
 #define kMinusButtonLabel           16      /* "-" */
 #define kPlusButtonLabel            17      /* "+" */
@@ -624,7 +622,6 @@ extern unsigned char govtTargStrings[256][256];
 #define kAcceptPriceButtonLabel     29
 #define kLowerPriceButtonLabel      30
 #define kReleaseButtonLabel         31
-#define kSelectButtonLabel          32
 #define kCancelButtonLabel          33
 #define kAbortButtonLabel           34
 #define kGeneralButtonLabel         35

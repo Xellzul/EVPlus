@@ -12,9 +12,6 @@
 extern "C" {
 #endif
 
-ULong BurgerVoiceCount = 0x20;                       /* 0x00578670, .data BurgerVoiceCount */
-Word MusicVolume = 255;                          /* 0x00578674 */
-Word SystemState = 3;                            /* 0x00578678 */
 static Word8 ExitProc;
 
 #define kExtendedSign   0x8000                   /* sign bit of the 80-bit exponent word */

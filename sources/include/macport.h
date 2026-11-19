@@ -304,9 +304,6 @@ typedef struct RLEPixelData {
 #define memFullErr      (-108)
 #define resNotFound     (-192)
 #define srcCopy         0
-#define addOver         34              /* QuickDraw arithmetic transfer modes */
-#define adMax           37
-#define kControlInactivePart 255
 #define noNewDevice     2               /* QuickTime GWorldFlags */
 #define k16BE555PixelFormat 0x00000010  /* QuickTime pixel formats */
 #define k16LE555PixelFormat 0x4c353535  /* 'L555' */
@@ -321,8 +318,6 @@ typedef struct RLEPixelData {
 
 #define SW_PIXELPTR(frame, x, y) \
     ((frame)->frameBaseAddr + SW_ROWBYTES(frame, y) + SW_PIXELBYTES(frame, x))
-#define SW_PIXEL16AT(frame, xBytes, y)  \
-    (*(unsigned short *)( (frame)->frameBaseAddr + SW_ROWBYTES(frame,y) + (xBytes) ))
 
 #define SW_PIXELPTR16(frame, x, y)  \
     ((unsigned short *) ( (frame)->frameBaseAddr + SW_ROWBYTES(frame,y) + ((x)+(x)) ))
@@ -541,7 +536,6 @@ extern unsigned char *CtoPstr(char *str);
 #define kAutoKey       5
 #define kBlue555  0x001f
 #define kCharCodeMask  0xff
-#define kDIBHeaderSize 0x28
 #define kEscapeChar    0x1b
 #define kGreen555 0x03e0
 #define kKeyDown       3
@@ -557,7 +551,6 @@ extern unsigned char *CtoPstr(char *str);
 #define IsReturnChar(c) ((c) == kReturnChar)
 #define kDownArrowChar  0x0a
 #define kEndChar       0x93
-#define kEnterChar     0x03
 #define kHomeChar      0x91
 #define kLeftArrowChar  0x96
 #define kPageDownChar   0x94
@@ -565,8 +558,6 @@ extern unsigned char *CtoPstr(char *str);
 #define kRightArrowChar 0x15
 #define kUpArrowChar    0x0b
 #define kUpdateEvt     6
-
-
 
 
 #define shiftKey    0x0200
@@ -577,9 +568,6 @@ extern unsigned char *CtoPstr(char *str);
 
 /* a byte pointer stepped through a cast lvalue: gcc then keeps the pointer in its stack slot, which 1.1.1's bytes witness */
 #define PtrAddBytes(p, n) (*(char **)&(p) += (n))
-
-/* a mac virtual key code in the engine's numbering of the KeyMap: 1.0.10 tests it 16 bits at a time, 1.1.1 a byte at a time */
-#define MacKey(k) (k)
 
 /* the character in a key event: 1.0.10's filters hold it in a char */
 typedef int EventChar;
@@ -602,9 +590,6 @@ extern short Alert(short alertID, void *filterProc);
 extern void BackColor(const RGBColor *color);
 extern Boolean Button(void);
 extern void ClosePrefs(void);
-EXTERN_CPP_BEGIN
-extern Rect screenMinusDockRect;
-EXTERN_CPP_END
 extern void BusyIdle(void);
 extern void Delay(uint32_t numTicks, uint32_t *finalTicks);
 extern void DisposeCIcon(Image_t *icon);

@@ -16,8 +16,6 @@
 #include "gametypes.h"
 #include "stellar.h"
 
-#define kLabelSlot      0x100
-
 
 /* button slots: the index into the spaceport's Rect array */
 enum { kPortLeaveButton, kPortRefuelButton, kPortTradeButton, kPortOutfitButton,

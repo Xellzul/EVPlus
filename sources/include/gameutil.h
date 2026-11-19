@@ -16,8 +16,6 @@ extern void DateToMedString(DateTimeRec date, char *out);
 extern void DrawCommaNumber(int32_t value);
 extern void StrcatCommaNumber(int32_t value, char *dst);
 EXTERN_CPP_BEGIN
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern unsigned char shieldString[6][0x100];
 extern unsigned char armorString[3][0x100];
 extern unsigned char newbieString[10][0x100];

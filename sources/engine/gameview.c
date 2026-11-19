@@ -12,7 +12,6 @@
 
 #define kViewWidth  640
 #define kViewHeight 480
-#define kViewSlots  5
 
 
 #define kIntroDescID   0x7fff

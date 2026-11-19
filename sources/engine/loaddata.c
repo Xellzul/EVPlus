@@ -78,7 +78,6 @@ void InitDataFiles(void)
    (0x004d9680) then CreateDirectoryPathNative (0x004d9530); nonzero on failure */
 
 
-
 // FUNCTION: EVNOVA 0x004bd160
 // MAC: _OpenDataFiles i386 0x00076a76 ppc 0x0007f85c
 void OpenDataFiles(void)
@@ -147,14 +146,11 @@ void OpenDataFiles(void)
 
 /* NebuRecord is loaded without LockAHandle or AdjustHandleSize. */
 
-#define SpobHasTradeCenter(s) ((s)->flags & kSpobTradeCenter)
-
 /* the mac keeps a resource unpurgeable while it is read and purgeable again after; the port's
    resources never purge */
 #define ResourceNoPurge(h)
 #define ResourcePurge(h)
 #define LoadingIntroMusic() HandleIntroMusic(0)
-
 
 
 // FUNCTION: EVNOVA 0x004bd3c0

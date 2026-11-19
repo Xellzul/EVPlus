@@ -430,7 +430,6 @@ int32_t ShipFreeMass(void)
  */
 
 #define kOutfModShieldBoost 4
-#define kOutfModAfterburner 15
 
 // FUNCTION: EVNOVA 0x00463520
 // MAC: _XYShortToFloat i386 0x000028c3 ppc 0x000033ac
@@ -3856,8 +3855,6 @@ short TotalMissionCargoSpace(void)
     }
     return result;
 }
-
-#define kStatusStripWidth 194
 
 // FUNCTION: EVNOVA 0x0046a870
 // MAC: _RefreshSAT i386 0x00006b59 ppc 0x000085e0
