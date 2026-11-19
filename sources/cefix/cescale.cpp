@@ -14,11 +14,6 @@ int ceGridThumbSize = 32;
 int ceStatusBarWidth = 194;
 int ceListItemBaseHeight = 8;       /* the list font's 9 in the original; 8 as in Mac Nova */
 
-static short SwapShort(unsigned short v)
-{
-    return (v >> 8 | v << 8);
-}
-
 int CE_Round(double value)
 {
     return (value + (value >= 0 ? 0.5 : -0.5));
@@ -89,21 +84,4 @@ void CE_ScaleOffsetRectBottom(Rect *r, int dh, int dv)
     bottom = r->bottom;
     CE_ScaleRect(r);
     OffsetRect(r, dh, dv - (r->bottom - bottom));
-}
-
-/* The DLOG bounds, scaled and centred on the screen without the original's rounding of
-   each half down to even; returns the DITL id. The screen size is taken signed, as CE
-   does, so a dialog larger than the screen centres off its top-left edge. */
-int32_t CE_SetDialogTemplateBounds(DialogPtr dlg, const unsigned short *tmpl)
-{
-    short width;
-    short height;
-
-    width = CE_Scale(SwapShort(tmpl[3]) - SwapShort(tmpl[1]));
-    height = CE_Scale(SwapShort(tmpl[2]) - SwapShort(tmpl[0]));
-    dlg->bounds.top = ((int32_t)gVideoHeight - height) / 2;
-    dlg->bounds.left = ((int32_t)gVideoWidth - width) / 2;
-    dlg->bounds.bottom = dlg->bounds.top + height;
-    dlg->bounds.right = dlg->bounds.left + width;
-    return SwapShort(tmpl[9]);
 }

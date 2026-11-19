@@ -43,7 +43,6 @@ void CE_ScaleRect(struct Rect *r);
 void CE_SetPen(short h, short v);
 void CE_ScaleOffsetRect(struct Rect *r, int dh, int dv);
 void CE_ScaleOffsetRectBottom(struct Rect *r, int dh, int dv);
-int32_t CE_SetDialogTemplateBounds(struct DialogRecord *dlg, const unsigned short *tmpl);
 
 /* cepaths.cpp */
 #ifndef __cplusplus

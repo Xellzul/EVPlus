@@ -634,6 +634,20 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
     return result;
 }
 
+/* The dialog's size from its DLOG, scaled by the UI scale, centred on the screen. */
+static void SetDialogBounds(DialogPtr dlg, const unsigned short *dlogTemplate)
+{
+    short width;
+    short height;
+
+    width = CE_Scale(SwapEndianShort(&dlogTemplate[3]) - SwapEndianShort(&dlogTemplate[1]));
+    height = CE_Scale(SwapEndianShort(&dlogTemplate[2]) - SwapEndianShort(&dlogTemplate[0]));
+    dlg->bounds.top = ((int32_t)gVideoHeight - height) / 2;
+    dlg->bounds.left = ((int32_t)gVideoWidth - width) / 2;
+    dlg->bounds.bottom = dlg->bounds.top + height;
+    dlg->bounds.right = dlg->bounds.left + width;
+}
+
 /* A dialog from a DLOG template and its DITL, both as they come off a rez file (big-endian). */
 static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsigned char *ditl,
                                        DialogUpdateProc updateProc, DialogEventProc eventProc)
@@ -649,7 +663,7 @@ static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsig
     dlg->eventProc = (void *)eventProc;
     dlg->needsUpdate = 1;
     dlg->visible = 1;
-    CE_SetDialogTemplateBounds(dlg, dlogTemplate);
+    SetDialogBounds(dlg, dlogTemplate);
     ParseDITL(dlg, ditl);
     dlg->portRect.top = dlg->bounds.top;
     dlg->portRect.left = dlg->bounds.left;
