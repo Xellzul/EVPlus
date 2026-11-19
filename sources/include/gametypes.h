@@ -347,7 +347,6 @@ typedef struct Settings {
     Boolean ambientSounds;
     unsigned char showMapBorders;
     Boolean noHyperGamma;
-    Boolean noVersionCheck;
     short volume;
     short gamma;
 } Settings;
@@ -374,7 +373,7 @@ typedef struct PrefsRecord {
     short planetSounds;
     short showInfluence;
     short noHyperGamma;
-    short noVersionCheck;
+    short unk7A;
     short gamma;
     short unk7E;
     short unk80;

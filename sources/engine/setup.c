@@ -2320,7 +2320,6 @@ void SetDefaultPrefs(void)
     settings.parallaxStars = 1;
     settings.ambientSounds = 1;
     settings.noHyperGamma = 0;
-    settings.noVersionCheck = 1;
     settings.showMapBorders = 0;
     settings.weaponGlows = 1;
     settings.runningLights = 1;

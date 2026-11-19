@@ -370,7 +370,6 @@ void PrefsDialogUpdate(void)
 #define kItemStatusBar     0x12
 #define kItemAutoAim       0x14
 #define kItemMessages      0x15
-#define kItemNetwork       0x16
 #define kItemGammaText  0x18
 #define kItemGammaDown     0x19
 #define kItemGammaUp       0x1a
@@ -504,12 +503,6 @@ void DoPrefsDialog(void)
             SetControlValue((ControlPtr)ctl, 1);
         else
             SetControlValue((ControlPtr)ctl, 0);
-        GetDialogItem(prefsDialog, kItemNetwork, &itemType, (Handle *)&item, &box);
-        ctl = item;
-        if (settings.noVersionCheck == 0)
-            SetControlValue((ControlPtr)ctl, 1);
-        else
-            SetControlValue((ControlPtr)ctl, 0);
 
         GetDialogItem(prefsDialog, kItemMusicVolText, &itemType, (Handle *)&item, &box);
         musicVol = settings.volume;
@@ -594,10 +587,6 @@ void DoPrefsDialog(void)
         }
         if (itemHit == kItemMessages) {
             settings.noHyperGamma = (settings.noHyperGamma == 0);
-            RedrawDialog(prefsDialog);
-        }
-        if (itemHit == kItemNetwork) {
-            settings.noVersionCheck = (settings.noVersionCheck == 0);
             RedrawDialog(prefsDialog);
         }
         if (itemHit == kItemKeys) {

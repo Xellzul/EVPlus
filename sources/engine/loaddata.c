@@ -2462,7 +2462,6 @@ void LoadPrefs(void)
         settings.ambientSounds = 0;
         settings.showMapBorders = 0;
         settings.noHyperGamma = 0;
-        settings.noVersionCheck = 0;
         settings.shipAnimations = 0;
         settings.engineGlows = 0;
         settings.weaponGlows = 0;
@@ -2493,8 +2492,6 @@ void LoadPrefs(void)
                 settings.showMapBorders = 1;
             if ((*gPrefsHandle)->noHyperGamma != 0)
                 settings.noHyperGamma = 1;
-            if ((*gPrefsHandle)->noVersionCheck != 0)
-                settings.noVersionCheck = 1;
             if ((*gPrefsHandle)->unk64 != 0)
                 settings.yieldEvents = 1;
             settings.volume = (*gPrefsHandle)->volume;
@@ -2601,10 +2598,6 @@ void SavePrefs(void)
             (*gPrefsHandle)->noHyperGamma = 1;
         else
             (*gPrefsHandle)->noHyperGamma = 0;
-        if (settings.noVersionCheck != 0)
-            (*gPrefsHandle)->noVersionCheck = 1;
-        else
-            (*gPrefsHandle)->noVersionCheck = 0;
         (*gPrefsHandle)->volume = settings.volume;
         (*gPrefsHandle)->gamma = settings.gamma;
         KeyPrefsToSlotTable();
