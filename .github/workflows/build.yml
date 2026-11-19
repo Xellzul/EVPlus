@@ -1,0 +1,132 @@
+# Builds the game for Windows, Linux and macOS (Apple silicon) on every push and pull request, and makes a
+# GitHub Release from a pushed tag "v*". No game data here: the builds are not run.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  LLVM_MINGW_TAG: '20260826'           # the llvm-mingw release the Windows build uses (UCRT)
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: windows
+            os: ubuntu-24.04
+          - preset: linux
+            os: ubuntu-24.04
+          - preset: macos
+            os: macos-15
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.preset }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tools (Linux host)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang lld make xz-utils
+          if [ "${{ matrix.preset }}" = linux ]; then
+            # fontconfig for the game; the rest so SDL has its X11, Wayland and audio drivers
+            sudo apt-get install -y libfontconfig-dev \
+              libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
+              libxtst-dev libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev \
+              libegl-dev libgl-dev libgles-dev libdrm-dev libgbm-dev \
+              libasound2-dev libpulse-dev libpipewire-0.3-dev libdbus-1-dev libudev-dev
+          fi
+
+      - name: Tools (macOS host)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: llvm-mingw
+        if: matrix.preset == 'windows'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$LLVM_MINGW_TAG" -R mstorsjo/llvm-mingw -p "llvm-mingw-$LLVM_MINGW_TAG-ucrt-ubuntu-*-x86_64.tar.xz" -D "$RUNNER_TEMP"
+          sudo mkdir -p /opt/llvm-mingw
+          sudo tar -xJf "$RUNNER_TEMP"/llvm-mingw-*.tar.xz -C /opt/llvm-mingw --strip-components=1
+
+      # the pinned releases and what is built from them, kept until a version in CMakeLists.txt or the FFmpeg
+      # script changes
+      - name: Library key
+        id: libs
+        run: |
+          key=$(grep -E '^set\((FFMPEG|SDL3|FREETYPE|YYJSON)_(VERSION|SHA256) ' CMakeLists.txt | cat - cmake/build-ffmpeg.sh | shasum -a 256 | cut -c1-16)
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            build/downloads
+            build/${{ matrix.preset }}/ffmpeg
+            build/${{ matrix.preset }}/sdl3
+            build/${{ matrix.preset }}/freetype
+          key: libs-${{ matrix.preset }}-${{ steps.libs.outputs.key }}${{ matrix.preset == 'windows' && format('-{0}', env.LLVM_MINGW_TAG) || '' }}
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        run: cmake --build build/${{ matrix.preset }}
+
+      - name: Show the logs of the library builds
+        if: failure()
+        run: cat build/${{ matrix.preset }}/*-build.log 2>/dev/null || true
+
+      - name: Package
+        run: |
+          out=evplus-${{ matrix.preset }}
+          mkdir -p "$out"
+          cd build/${{ matrix.preset }}
+          case ${{ matrix.preset }} in
+            windows) cp evnova64.exe *.dll "../../$out/" ;;
+            linux)   cp evnova64 *.so.* "../../$out/" ;;
+            macos)   cp evnova64 *.dylib "../../$out/" ;;
+          esac
+          cp FFmpeg-COPYING.LGPLv2.1.txt "../../$out/"
+          cd ../..
+          cp README.md CHANGELOG.md "$out/"
+          tar -czf "$out.tar.gz" "$out"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evplus-${{ matrix.preset }}
+          path: evplus-${{ matrix.preset }}.tar.gz
+          if-no-files-found: error
+
+      # the FFmpeg source the builds were made from, published with a release (LGPL)
+      - uses: actions/upload-artifact@v4
+        if: matrix.preset == 'linux' && startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: ffmpeg-source
+          path: build/downloads/ffmpeg-*.tar.xz
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
