@@ -13,6 +13,7 @@
 #define kMainScreenEnter    3
 #define kMainScreenPrefs    4
 #define kDebugFonts         0       /* 1: the font test page (fonttest.cpp) before the main screen */
+#define kScaleTest          0       /* 1: the drawing test page (scaletest.cpp) before the main screen */
 #define kMainScreenAbout    5
 
 #define kCreditsTextID      0x7ffe
@@ -22,6 +23,7 @@
 #include "gametypes.h"
 #include "gameconst.h"
 #include "macport.h"
+#include "uiscale.h"
 #include "dialogs.h"
 #include "sound.h"
 #include "space.h"
@@ -54,9 +56,7 @@ uint32_t LastTick;                   /* 0x008700f0 */
 // MAC: _DoMainScreen i386 0x0001af02 ppc 0x0001ee70
 void DoMainScreen(void)
 {
-    int32_t mouseV;
     Str255 confirm;
-    int32_t mouseH;
     Point where;
     short delay;
     int key;
@@ -114,6 +114,8 @@ void DoMainScreen(void)
     ShowTheCursor();
     if (kDebugFonts)
         DebugFontScreen();
+    if (kScaleTest)
+        DebugScaleTest();
     crashlog("doing main screen");
     LoadMainScreenAnim();
     MainScreenAnimDraw();
@@ -161,7 +163,7 @@ void DoMainScreen(void)
                 i = i + 1;
             } while ((short)i < 3);
             SWSetPortToWindow(gSpriteWorld);
-            MouseReadPosition(&mouseH, &mouseV);
+            GetGlobalMouse(&where);
             if (animCut) {
                 SetupInterfaceBackground();
                 MainScreenAnimDraw();
@@ -171,8 +173,6 @@ void DoMainScreen(void)
                 MainScreenUpdate(0);
                 ScreenEndScene();
             }
-            where.h = mouseH;
-            where.v = mouseV;
             MainScreenChoice(TrackMainScreenButtons(where));
         } else if (key != 0) {
             MainScreenKey(upper, 0, 0);

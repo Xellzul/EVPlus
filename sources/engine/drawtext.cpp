@@ -15,7 +15,7 @@ void DrawStringCentered(const unsigned char *str, short left, short right,
     short width;
 
     width = StringWidth(str);
-    CE_SetPen(((left + right) / 2 - width / 2), v);
+    MoveTo(((left + right) / 2 - width / 2), v);
     DrawString(str);
 }
 

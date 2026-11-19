@@ -28,7 +28,7 @@ void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
             useDepth = 8;
         else
             useDepth = depth;
-        if (CE_NewGWorld(&gwc->world, useDepth, bounds, 0) != 0) {
+        if (NewGWorld(&gwc->world, useDepth, bounds, 0) != 0) {
             gwc->world = 0;
             return;
         }

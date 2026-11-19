@@ -26,27 +26,7 @@ void CE_ReadX2Hotkey(void);
 unsigned char CE_IsWindowed(void);
 void CE_ToggleFullscreen(void);
 
-/* cescale.cpp */
-extern double ceScaleFactor;
-extern unsigned char ceScaleEnabled;
-extern int ceGridCellWidth;
-extern int ceGridCellHeight;
-extern int ceGridThumbSize;
-extern int ceStatusBarWidth;
-extern int ceListItemBaseHeight;
-
-void CE_InitScaleFactor(double factor);
-int CE_Round(double value);
-int CE_Scale(int value);
-int CE_GridDivide(int offset, int cell);
-void CE_ScaleRect(struct Rect *r);
-void CE_SetPen(short h, short v);
-void CE_ScaleOffsetRect(struct Rect *r, int dh, int dv);
-void CE_ScaleOffsetRectBottom(struct Rect *r, int dh, int dv);
-
 /* cepaths.cpp */
-#ifndef __cplusplus
-#endif
 
 int32_t CE_DecryptIfNecessary(void *buf, uint32_t len, uint32_t key);
 short CE_OpenNovaFilesFallback(const char *path, const char *ext, FILE *log);
@@ -61,17 +41,6 @@ void CE_DrawVersion(void);
 /* cedialog.cpp */
 int32_t CE_TruncF32(float value);
 int32_t CE_RoundD(double value);
-
-/* ceblit.cpp */
-struct PixMap;
-struct CGrafPort;
-
-void CE_Blit16(struct PixMap *src, struct PixMap *dst, struct Rect *srcRect, struct Rect *dstRect);
-void CE_Blit24(struct PixMap *src, struct PixMap *dst, struct Rect *srcRect, struct Rect *dstRect);
-void CE_Blit32(struct PixMap *src, struct PixMap *dst, struct Rect *srcRect, struct Rect *dstRect);
-void CE_Blit16Mask(struct PixMap *src, struct PixMap *mask, struct PixMap *dst,
-                   struct Rect *srcRect, struct Rect *maskRect, struct Rect *dstRect);
-short CE_NewGWorld(struct CGrafPort **out, int depth, const struct Rect *bounds, void *theGDH);
 
 /* cedebug.cpp */
 
@@ -94,10 +63,6 @@ extern int ceMapBordersVisibleWidth;
 extern int ceMapBordersVisibleHeight;
 
 void CE_RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom, struct Rect *r);
-
-/* cehud.cpp */
-void CE_ScaleStatusRects(void);
-void CE_MoveTo(short h, short v);
 
 #ifdef __cplusplus
 }

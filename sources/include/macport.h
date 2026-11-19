@@ -97,6 +97,7 @@ extern void FrameRect(const Rect *r);
 extern void GetFNum(const unsigned char *name, short *familyID);
 /* the font test page (port/fonttest.cpp) and what it asks the font cache */
 extern void DebugFontScreen(void);
+extern void DebugScaleTest(void);
 extern short FontFamilyCount(void);
 extern const char *FontFamilyName(short familyID);
 extern void FontRealName(short familyID, short size, short style, char *out, int outSize);
@@ -144,6 +145,12 @@ extern void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *ds
         int32_t xStep, int32_t yStep, int32_t xStart, int32_t yStart);
 extern void CopyMaskNone(PixMapPtr src, PixMapPtr mask, PixMapPtr dst,
         Rect *srcRect, Rect *maskRect, Rect *dstRect);
+/* blitdirect.cpp: CopyBits / CopyMask procs for direct-colour sources, at the same size or stretched */
+extern void BlitDirect16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect);
+extern void BlitDirect24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect);
+extern void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect);
+extern void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect, Rect *maskRect,
+                             Rect *dstRect);
 extern void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
         Rect *srcRect, Rect *maskRect, Rect *dstRect);
 
@@ -259,6 +266,7 @@ typedef struct SpriteWorldRec {
     int32_t backgroundValue;
     Boolean fastBlit;
     char swFillerED[0xf8 - 0xed];
+    struct CGrafPort *screenPort;   /* the screen; the window frame is the view's own buffer (viewscale.cpp) */
 } SpriteWorldRec, *SpriteWorldPtr;
 
 extern void SWSetPortToWindow(SpriteWorldPtr spriteWorld);

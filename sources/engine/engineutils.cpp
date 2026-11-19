@@ -25,6 +25,7 @@
 #include "burger.h"
 #include "crashlog.h"
 #include "cefix.h"
+#include "viewscale.h"
 #include "platform.h"
 
 #define kRoidYieldBase   0x32
@@ -2574,7 +2575,7 @@ void DisplayMessage(short index)
 
     if (LoadPluginString(index + kMessageStrings - 1, (StringPtr)text) == 0)
         GetIndString((StringPtr)text, kMessageStrings, index);
-    DisplayComm((PStrChar *)text, 480, 0, kCommTextSize, &rgbWhite, 0, 0);
+    DisplayComm((PStrChar *)text, 480);
 }
 
 /* Walk the gamma ramp to `percent` brightness over `duration` milliseconds. */
@@ -3879,22 +3880,16 @@ void RefreshSAT(void)
     if (playerIsLanded == 0)
         SWUpdateSpriteWorld(gSpriteWorld, 0);
 
-    if (commCount >= 0) {
-        RedrawComm(1);
-        SWSetPortToWindow(gSpriteWorld);
-            BlitPixieFloatingRectDrawProc(gSpriteWorld->backFrameP, gSpriteWorld->workFrameP,
-                         &commRect, &commRect, 0, gSpriteWorld->backgroundValue);
-    }
-
     CopyBits(GetPortBitMapForCopyBits(*(CGrafPtr *)gSpriteWorld->workFrameP),
-             GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
+             GetPortBitMapForCopyBits(gSpriteWorld->windowFrameP->framePort),
              &gSpriteWorld->workFrameP->frameRect,
              &gSpriteWorld->windowFrameP->frameRect,
              0, 0);
+    View::Flush();
 
     r = GetCWindowPortRect((WindowRef)gWind);
     box = *r;
-    box.left = box.right - ceStatusBarWidth;
+    box.left = box.right - kStatusBarWidth;
     strip = box;
     OffsetRect(&strip, -strip.left, -strip.top);
 
@@ -3906,7 +3901,6 @@ void RefreshSAT(void)
              &box, &box, 0, 0);
 
     if (playerIsLanded == 0) {
-        RedrawComm(0);
         FloaterDrawCallback(gSpriteWorld);
     }
     SWSetPortToWindow(gSpriteWorld);

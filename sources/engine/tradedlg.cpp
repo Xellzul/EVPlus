@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "macport.h"
+#include "scaleddraw.h"
 #include "gametypes.h"
 #include "shipobj.h"
 #include "resources.h"
@@ -22,6 +23,8 @@
 #include "burger.h"
 #include "sound.h"
 #include "cefix.h"
+#include "viewscale.h"
+#include "uiscale.h"
 #include "movie.h"
 #include "ai.h"
 #include "space.h"
@@ -561,14 +564,14 @@ void TradeDialogUpdate(void)
         RGBForeColor(&rgbDarkGrey);
         FrameRect(&box);
         RGBForeColor(&rgbLightGrey);
-        CE_SetPen(box.left + CE_Scale(7), box.top + CE_Scale(12));
+        MoveTo(box.left + 7, box.top + 12);
         DrawIndString(kGameStrList, 0xc5);
-        CE_SetPen(box.right - CE_Scale(0x7b), box.top + CE_Scale(12));
+        MoveTo(box.right - 0x7b, box.top + 12);
         if (TotalFleetHolds() > ShipTotalHolds())
             DrawIndString(kGameStrList, 0xc6);
         else
             DrawIndString(kGameStrList, 0xc7);
-        CE_SetPen(box.right - CE_Scale(0x46), box.top + CE_Scale(12));
+        MoveTo(box.right - 0x46, box.top + 12);
         DrawIndString(kGameStrList, 0xc8);
         ForeColor(blackColor);
     }
@@ -602,28 +605,28 @@ void TradeDialogUpdate(void)
             if (tradePrice[i] != 0) {
                 RGBForeColor((RGBColor *)&ldefColors[0]);
                 if (i <= kLastCommodity) {
-                    CE_SetPen(box.left + CE_Scale(7), box.top + CE_Scale(10));
+                    MoveTo(box.left + 7, box.top + 10);
                     DrawString(cargoName[i]);
                     qty = shipData->cargo[i];
                     if (qty > 0) {
                         NumToString(qty, (StringPtr)text);
-                        CE_SetPen(box.right - (StringWidth((StringPtr)text) + CE_Scale(0x6e)),
-                                  box.top + CE_Scale(10));
+                        MoveTo(box.right - (StringWidth((StringPtr)text) + 0x6e),
+                                  box.top + 10);
                         DrawString((StringPtr)text);
                     }
                 } else if (junkType[i - kFirstJunkItem] != -1) {
-                    CE_SetPen(box.left + CE_Scale(6), box.top + CE_Scale(10));
+                    MoveTo(box.left + 6, box.top + 10);
                     DrawString(junkData[junkType[i - kFirstJunkItem]].name);
                     qty = junkData[junkType[i - kFirstJunkItem]].held;
                     if (qty > 0) {
                         NumToString(qty, (StringPtr)text);
-                        CE_SetPen(box.right - (StringWidth((StringPtr)text) + CE_Scale(0x6e)),
-                                  box.top + CE_Scale(10));
+                        MoveTo(box.right - (StringWidth((StringPtr)text) + 0x6e),
+                                  box.top + 10);
                         DrawString((StringPtr)text);
                     }
                 }
 
-                CE_SetPen(box.right - CE_Scale(0x46), box.top + CE_Scale(10));
+                MoveTo(box.right - 0x46, box.top + 10);
                 found = 0;
                 for (k = 0; k < kMaxDisasters; k++) {
                     if (disasterData[k].loaded != 0 && disasterData[k].countdown > 0 &&
@@ -654,8 +657,8 @@ void TradeDialogUpdate(void)
                 }
 
                 NumToString(tradePrice[i], (StringPtr)text);
-                CE_SetPen(box.right - (StringWidth((StringPtr)text) + CE_Scale(10)),
-                          box.top + CE_Scale(10));
+                MoveTo(box.right - (StringWidth((StringPtr)text) + 10),
+                          box.top + 10);
                 DrawString((StringPtr)text);
             }
             ForeColor(blackColor);
@@ -1585,8 +1588,8 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         where = ev->where;
         GetDialogItem(outfitDialog, kGridItem, &itemType, &item, &box);
         if (PtInRectPoint(where, &box)) {
-            count = CE_GridDivide(where.h - box.left, ceGridCellWidth);
-            row = CE_GridDivide(where.v - box.top, ceGridCellHeight);
+            count = (where.h - box.left) / kGridCellWidth;
+            row = (where.v - box.top) / kGridCellHeight;
             if (count >= 0 && count <= kGridCols - 1 && row >= 0 &&
                 row <= kGridCells / kGridCols - 1) {
                 oldPos = selOutfitListItem;
@@ -1717,9 +1720,9 @@ void OutfitDialogUpdate(void)
                 if (shipSystems[dockedPortItems[i]] > 0) {
                     NumToString(shipSystems[dockedPortItems[i]], line1);
                     ForeColor(whiteColor);
-                    CE_SetPen(listScreenRect[i - outfitScroll].right
-                                  - (StringWidth(line1) + CE_Scale(3)),
-                              listScreenRect[i - outfitScroll].top + CE_Scale(12));
+                    MoveTo(listScreenRect[i - outfitScroll].right
+                                  - (StringWidth(line1) + 3),
+                              listScreenRect[i - outfitScroll].top + 12);
                     DrawString(line1);
                     ForeColor(blackColor);
                 }
@@ -1740,27 +1743,27 @@ void OutfitDialogUpdate(void)
                         ForeColor(whiteColor);
                     else
                         RGBForeColor(&rgbLessDarkGrey);
-                    CE_SetPen((listScreenRect[i - outfitScroll].left
+                    MoveTo((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
                                   - StringWidth(line1) / 2,
-                              listScreenRect[i - outfitScroll].bottom - CE_Scale(14));
+                              listScreenRect[i - outfitScroll].bottom - 14);
                     DrawString(line1);
                     c = line2[1];
                     if (isalpha(HeldChar(c, line2[1])) || isdigit(HeldChar(c, line2[1])))
                         ForeColor(whiteColor);
                     else
                         RGBForeColor(&rgbLessDarkGrey);
-                    CE_SetPen((listScreenRect[i - outfitScroll].left
+                    MoveTo((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
                                   - StringWidth(line2) / 2,
-                              listScreenRect[i - outfitScroll].bottom - CE_Scale(3));
+                              listScreenRect[i - outfitScroll].bottom - 3);
                     DrawString(line2);
                     ForeColor(blackColor);
                 } else {
-                    CE_SetPen((listScreenRect[i - outfitScroll].left
+                    MoveTo((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
                                   - StringWidth(line1) / 2,
-                              listScreenRect[i - outfitScroll].bottom - CE_Scale(6));
+                              listScreenRect[i - outfitScroll].bottom - 6);
                     ForeColor(whiteColor);
                     DrawString(line1);
                     ForeColor(blackColor);
@@ -2481,7 +2484,7 @@ void PortDialogUpdate(void)
         TextFont(gTimesFont);
         TextSize(kNameSize);
         DrawStringCentered(dockedPort->name, box.left, box.right,
-                           box.top + CE_Scale(kNameBaseline));
+                           box.top + kNameBaseline);
         ForeColor(blackColor);
     }
     GetDialogItem(portDialog, 5, &itemType, &item, &box);
@@ -2872,7 +2875,6 @@ void DoShipyardDialog(void)
         ForeColor(blackColor);
         PaintRect(&box);
         RedrawStatus(1);
-        RedrawComm(0);
     }
     SWSetPortToBackground(gSpriteWorld);
     SetSystemBackgroundColor();
@@ -3035,8 +3037,8 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         where = ev->where;
         GetDialogItem(shipyardDialog, kGridItem, &itemType, &item, &box);
         if (PtInRectPoint(where, &box)) {
-            count = CE_GridDivide(where.h - box.left, ceGridCellWidth);
-            row = CE_GridDivide(where.v - box.top, ceGridCellHeight);
+            count = (where.h - box.left) / kGridCellWidth;
+            row = (where.v - box.top) / kGridCellHeight;
             if (count >= 0 && count <= kGridCols - 1 && row >= 0 &&
                 row <= kGridCells / kGridCols - 1) {
                 oldPos = selShipListItem;
@@ -3193,27 +3195,27 @@ void ShipyardDialogUpdate(void)
                             ForeColor(whiteColor);
                         else
                             RGBForeColor(&rgbLessDarkGrey);
-                        CE_SetPen((listScreenRect[i - shipyardScroll].left
+                        MoveTo((listScreenRect[i - shipyardScroll].left
                                        + listScreenRect[i - shipyardScroll].right) / 2
                                       - StringWidth(line1) / 2,
-                                  listScreenRect[i - shipyardScroll].bottom - CE_Scale(14));
+                                  listScreenRect[i - shipyardScroll].bottom - 14);
                         DrawString(line1);
                         c = line2[1];
                         if (isalpha(HeldChar(c, line2[1])) || isdigit(HeldChar(c, line2[1])))
                             ForeColor(whiteColor);
                         else
                             RGBForeColor(&rgbLessDarkGrey);
-                        CE_SetPen((listScreenRect[i - shipyardScroll].left
+                        MoveTo((listScreenRect[i - shipyardScroll].left
                                        + listScreenRect[i - shipyardScroll].right) / 2
                                       - StringWidth(line2) / 2,
-                                  listScreenRect[i - shipyardScroll].bottom - CE_Scale(3));
+                                  listScreenRect[i - shipyardScroll].bottom - 3);
                         DrawString(line2);
                         ForeColor(blackColor);
                     } else {
-                        CE_SetPen((listScreenRect[i - (int32_t)shipyardScroll].left
+                        MoveTo((listScreenRect[i - (int32_t)shipyardScroll].left
                                        + listScreenRect[i - (int32_t)shipyardScroll].right) / 2
                                       - StringWidth(line1) / 2,
-                                  listScreenRect[i - (int32_t)shipyardScroll].bottom - CE_Scale(6));
+                                  listScreenRect[i - (int32_t)shipyardScroll].bottom - 6);
                         ForeColor(whiteColor);
                         DrawString(line1);
                         ForeColor(blackColor);
@@ -3564,10 +3566,10 @@ void ShipDescDialogUpdate(void)
         ForeColor(whiteColor);
         if (hasPict)
             DrawStringCentered(shipyardLongNames[selShipyardItem], box.left,
-                               box.right, box.top + CE_Scale(18));
+                               box.right, box.top + 18);
         else
             DrawStringCentered(shipClass[selShipyardItem].name, box.left,
-                               box.right, box.top + CE_Scale(18));
+                               box.right, box.top + 18);
         ForeColor(blackColor);
     }
     GetDialogItem(shipDescDialog, 5, &itemType, &item, &box);
@@ -3987,7 +3989,6 @@ void IterateInGameEventLoop(short tickCount)
                         if (onPlanet || inBackground) {
                             RedrawStatus(1);
                             RefreshSAT();
-                            RedrawComm(1);
                         }
                     } else {
                         CopyBits(GWorldContainerBits(&loadPort),
@@ -4273,10 +4274,11 @@ void RefreshWindowBuffer(void)
     SWSetPortToWindow(gSpriteWorld);
     CopyBits(GetPortBitMapForCopyBits(
                  gSpriteWorld->workFrameP->framePort),
-             GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
+             GetPortBitMapForCopyBits(gSpriteWorld->windowFrameP->framePort),
              &gSpriteWorld->workFrameP->frameRect,
              &gSpriteWorld->windowFrameP->frameRect,
              0, 0);
+    View::Flush();
     ScreenEndScene();
 }
 
@@ -4783,21 +4785,21 @@ void SetupListRects(Point *where)
 
     for (i = 0; i < kGridCells; i++) {
         cell = &listScreenRect[i];
-        cell->left = i % kGridCols * ceGridCellWidth + where->h;
-        cell->top = i / kGridCols * ceGridCellHeight + where->v;
-        cell->right = cell->left + ceGridCellWidth + 1;
-        cell->bottom = cell->top + ceGridCellHeight + 1;
+        cell->left = i % kGridCols * kGridCellWidth + where->h;
+        cell->top = i / kGridCols * kGridCellHeight + where->v;
+        cell->right = cell->left + kGridCellWidth + 1;
+        cell->bottom = cell->top + kGridCellHeight + 1;
         icon = &listPicScreenRect[i];
-        icon->left = (cell->left + cell->right - ceGridThumbSize) / 2;
-        icon->bottom = (cell->top + cell->bottom + ceGridThumbSize / 2) / 2;
-        icon->right = icon->left + ceGridThumbSize;
-        icon->top = icon->bottom - ceGridThumbSize;
+        icon->left = (cell->left + cell->right - kGridThumbSize) / 2;
+        icon->bottom = (cell->top + cell->bottom + kGridThumbSize / 2) / 2;
+        icon->right = icon->left + kGridThumbSize;
+        icon->top = icon->bottom - kGridThumbSize;
     }
     for (i = 0; i < kStripCells; i++) {
-        listPicOffRect[i].left = ceGridThumbSize * i;
+        listPicOffRect[i].left = kGridThumbSize * i;
         listPicOffRect[i].top = 0;
-        listPicOffRect[i].right = listPicOffRect[i].left + ceGridThumbSize;
-        listPicOffRect[i].bottom = ceGridThumbSize;
+        listPicOffRect[i].right = listPicOffRect[i].left + kGridThumbSize;
+        listPicOffRect[i].bottom = kGridThumbSize;
     }
 }
 
@@ -4975,52 +4977,100 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
+/* A dialog's background, laid over `box' of the current port and stretched as one picture: pics[0] at the
+   top, pics[1] under it, pics[2] at the bottom -- or, with `onePicture', pics[0] over the whole box. */
+void DrawDialogBackground(PicHandle pics[3], const Rect &box, bool onePicture)
+{
+    UI::ArtComposition background(CurrentGrafPort, box);
+    Rect r;
+    Rect top;
+
+    if (onePicture) {
+        if (pics[0] != NULL)
+            DrawPicHandle(pics[0], (Rect *)&box);
+        return;
+    }
+    if (pics[1] != NULL) {
+        QDGetPictureBounds(pics[1], &r);
+        OffsetRect(&r, -r.left, -r.top);
+        if (pics[0] != NULL) {
+            QDGetPictureBounds(pics[0], &top);
+            OffsetRect(&top, -top.left, -top.top);
+            OffsetRect(&r, 0, top.bottom);
+        }
+        OffsetRect(&r, box.left, box.top);
+        DrawPicHandle(pics[1], &r);
+    }
+    if (pics[0] != NULL) {
+        QDGetPictureBounds(pics[0], &r);
+        OffsetRect(&r, -r.left, -r.top);
+        OffsetRect(&r, box.left, box.top);
+        DrawPicHandle(pics[0], &r);
+    }
+    if (pics[2] != NULL) {
+        QDGetPictureBounds(pics[2], &r);
+        OffsetRect(&r, -r.left, -r.top);
+        OffsetRect(&r, box.left, box.bottom - (r.bottom - r.top));
+        DrawPicHandle(pics[2], &r);
+    }
+}
+
+/* The player info dialog's background, stretched as one picture: the middle picture fills what the top
+   and bottom ones leave (at least its own height). */
+static void DrawPlayerInfoBackground(const Rect &port)
+{
+    UI::ArtComposition background(CurrentGrafPort, port);
+    Rect box;
+    Rect box2;
+
+    if (playerInfoBackgroundPic[1] != NULL) {
+        QDGetPictureBounds(playerInfoBackgroundPic[1], &box);
+        OffsetRect(&box, -box.left, -box.top);
+        if (playerInfoBackgroundPic[0] != NULL) {
+            QDGetPictureBounds(playerInfoBackgroundPic[0], &box2);
+            OffsetRect(&box2, -box2.left, -box2.top);
+            OffsetRect(&box, 0, box2.bottom);
+        }
+        if (playerInfoBackgroundPic[2] != NULL) {
+            QDGetPictureBounds(playerInfoBackgroundPic[2], &box2);
+            box.bottom = (port.bottom - port.top) - (box2.bottom - box2.top);
+        }
+        QDGetPictureBounds(playerInfoBackgroundPic[1], &box2);
+        if (box.bottom - box.top < box2.bottom - box2.top)
+            box.bottom = box.top + (box2.bottom - box2.top);
+        OffsetRect(&box, port.left, port.top);
+        DrawPicHandle(playerInfoBackgroundPic[1], &box);
+    }
+
+    if (playerInfoBackgroundPic[0] != NULL) {
+        QDGetPictureBounds(playerInfoBackgroundPic[0], &box);
+        OffsetRect(&box, -box.left, -box.top);
+        OffsetRect(&box, port.left, port.top);
+        DrawPicHandle(playerInfoBackgroundPic[0], &box);
+    }
+
+    if (playerInfoBackgroundPic[2] != NULL) {
+        QDGetPictureBounds(playerInfoBackgroundPic[2], &box);
+        OffsetRect(&box, -box.left, -box.top);
+        OffsetRect(&box, port.left, port.bottom - (box.bottom - box.top));
+        DrawPicHandle(playerInfoBackgroundPic[2], &box);
+    }
+}
+
 // FUNCTION: EVNOVA 0x00499870
 // MAC: _TextDialogUpdate i386 0x00051b40 ppc 0x0005a474
 void TextDialogUpdate(void)
 {
     PicHandle loaded;
-    PicHandle pic;
     Rect r;
-    Rect r2;
     short itemType;
     Handle item;
 
     SetGWorldContainer(&loadPort);
     ForeColor(blackColor);
     PaintRect(GetDialogPortRect(textDialog));
-    if (descResourcePictId < kFirstResourceID) {
-        pic = textDialogBackgroundPic[1];
-        if (pic != NULL) {
-            QDGetPictureBounds(pic, &r);
-            OffsetRect(&r, -r.left, -r.top);
-            if (textDialogBackgroundPic[0] != NULL) {
-                QDGetPictureBounds(textDialogBackgroundPic[0], &r2);
-                OffsetRect(&r2, -r2.left, -r2.top);
-                OffsetRect(&r, 0, r2.bottom);
-            }
-            CE_ScaleOffsetRect(&r, GetDialogPortRect(textDialog)->left,
-                               GetDialogPortRect(textDialog)->top);
-            DrawPicHandle(textDialogBackgroundPic[1], &r);
-        }
-        if (textDialogBackgroundPic[0] != NULL) {
-            QDGetPictureBounds(textDialogBackgroundPic[0], &r);
-            OffsetRect(&r, -r.left, -r.top);
-            CE_ScaleOffsetRect(&r, GetDialogPortRect(textDialog)->left,
-                               GetDialogPortRect(textDialog)->top);
-            DrawPicHandle(textDialogBackgroundPic[0], &r);
-        }
-        pic = textDialogBackgroundPic[2];
-        if (pic != NULL) {
-            QDGetPictureBounds(pic, &r);
-            OffsetRect(&r, -r.left, -r.top);
-            CE_ScaleOffsetRectBottom(&r, GetDialogPortRect(textDialog)->left,
-                                     GetDialogPortRect(textDialog)->bottom - (r.bottom - r.top));
-            DrawPicHandle(textDialogBackgroundPic[2], &r);
-        }
-    } else if (textDialogBackgroundPic[0] != NULL) {
-        DrawPicHandle(textDialogBackgroundPic[0], GetDialogPortRect(textDialog));
-    }
+    DrawDialogBackground(textDialogBackgroundPic, *GetDialogPortRect(textDialog),
+                         descResourcePictId >= kFirstResourceID);
     DrawTextButtons(-1);
     TextFont(smallTextFont);
     TextSize(smallTextSize);
@@ -5302,44 +5352,7 @@ void PlayerInfoDialogUpdate(void)
     ForeColor(blackColor);
     PaintRect(GetDialogPortRect(infoDialog));
 
-    if (playerInfoBackgroundPic[1] != NULL) {
-        QDGetPictureBounds(playerInfoBackgroundPic[1], &box);
-        OffsetRect(&box, -box.left, -box.top);
-        if (playerInfoBackgroundPic[0] != NULL) {
-            QDGetPictureBounds(playerInfoBackgroundPic[0], &box2);
-            OffsetRect(&box2, -box2.left, -box2.top);
-            OffsetRect(&box, 0, box2.bottom);
-        }
-        if (playerInfoBackgroundPic[2] != NULL) {
-            QDGetPictureBounds(playerInfoBackgroundPic[2], &box2);
-            box.bottom = (GetDialogPortRect(infoDialog)->bottom -
-                             GetDialogPortRect(infoDialog)->top) -
-                            (box2.bottom - box2.top);
-        }
-        QDGetPictureBounds(playerInfoBackgroundPic[1], &box2);
-        if (box.bottom - box.top < box2.bottom - box2.top)
-            box.bottom = box.top + (box2.bottom - box2.top);
-        CE_ScaleOffsetRect(&box, GetDialogPortRect(infoDialog)->left,
-                           GetDialogPortRect(infoDialog)->top);
-        DrawPicHandle(playerInfoBackgroundPic[1], &box);
-    }
-
-    if (playerInfoBackgroundPic[0] != NULL) {
-        QDGetPictureBounds(playerInfoBackgroundPic[0], &box);
-        OffsetRect(&box, -box.left, -box.top);
-        CE_ScaleOffsetRect(&box, GetDialogPortRect(infoDialog)->left,
-                           GetDialogPortRect(infoDialog)->top);
-        DrawPicHandle(playerInfoBackgroundPic[0], &box);
-    }
-
-    if (playerInfoBackgroundPic[2] != NULL) {
-        QDGetPictureBounds(playerInfoBackgroundPic[2], &box);
-        OffsetRect(&box, -box.left, -box.top);
-        CE_ScaleOffsetRectBottom(&box, GetDialogPortRect(infoDialog)->left,
-                                 GetDialogPortRect(infoDialog)->bottom -
-                                 (box.bottom - box.top));
-        DrawPicHandle(playerInfoBackgroundPic[2], &box);
-    }
+    DrawPlayerInfoBackground(*GetDialogPortRect(infoDialog));
 
     TextFont(smallTextFont);
     TextSize(smallTextSize);
@@ -5637,7 +5650,7 @@ void PlayerInfoDialogUpdate(void)
                 GetIndString((StringPtr)buf, kGameStrList, 0x10c);
             else
                 GetIndString((StringPtr)buf, kGameStrList, 0x10d);
-            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + CE_Scale(0x37));
+            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + 0x37);
         }
     } else if (selPlayerInfoMode == 3) {
         count = 0;
@@ -5660,7 +5673,7 @@ void PlayerInfoDialogUpdate(void)
         } else {
             RGBForeColor(&rgbLightGrey);
             GetIndString((StringPtr)buf, kGameStrList, 0x10e);
-            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + CE_Scale(0x37));
+            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + 0x37);
         }
     } else if (selPlayerInfoMode == 4) {
         count = 0;
@@ -5687,7 +5700,7 @@ void PlayerInfoDialogUpdate(void)
         } else {
             RGBForeColor(&rgbLightGrey);
             GetIndString((StringPtr)buf, kGameStrList, 0x10f);
-            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + CE_Scale(0x37));
+            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + 0x37);
         }
     }
 
@@ -6216,8 +6229,9 @@ void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
     if (loopingMovie == NULL)
         return;
 
-    MovieSetTarget(loopingMovie, port->pix.baseAddr, port->pix.rowBytes, box->right - box->left,
-                   box->bottom - box->top, 1);
+    Rect device = UI::Mapping(port->pix).DeviceRect(*box);
+    MovieSetTarget(loopingMovie, port->pix.baseAddr, port->pix.rowBytes, device.right - device.left,
+                   device.bottom - device.top, 1);
     MovieSetLoop(loopingMovie, 1);
     MovieRewind(loopingMovie);
     MovieStart(loopingMovie);
@@ -6291,32 +6305,29 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
         box.right = movieW * 2 + 1;
         box.bottom = movieH * 2 + 1;
     }
-    movieBox.bottom = gVideoHeight;
-    movieBox.right = gVideoWidth;
-    movieBox.top = 0;
-    movieBox.left = 0;
-    CenterRect(&box, &movieBox);
-    port = GetCWindowGrafPort(gWind);
-    MovieSetTarget(movie, (char *)port->pix.baseAddr + box.top * port->pix.rowBytes +
-                              (port->pix.pixelSize >> 3) * box.left,
-                   port->pix.rowBytes, box.right - box.left, box.bottom - box.top, 0);
-    w = gVideoWidth;
-    h = gVideoHeight;
+    /* shrunk to fit the screen if it is bigger, keeping its shape, and centred */
+    w = UI::ScreenWidth();
+    h = UI::ScreenHeight();
     dw = box.right - box.left;
     dh = box.bottom - box.top;
-    /* BUG: both letterbox fits compute the new bottom from box.left, not box.top */
     if (dw > w) {
         ratio = w / (float)dw;
-        box.right = (box.left + dw * ratio);
-        box.bottom = (box.left + dh * ratio);
+        dw = (short)(dw * ratio);
+        dh = (short)(dh * ratio);
     }
-    dw = box.right - box.left;
-    dh = box.bottom - box.top;
     if (dh > h) {
         ratio = h / (float)dh;
-        box.right = (box.left + dw * ratio);
-        box.bottom = (box.left + dh * ratio);
+        dw = (short)(dw * ratio);
+        dh = (short)(dh * ratio);
     }
+    SetRect(&box, 0, 0, dw, dh);
+    SetRect(&movieBox, 0, 0, w, h);
+    CenterRect(&box, &movieBox);
+    port = GetCWindowGrafPort(gWind);
+    Rect device = UI::Mapping(port->pix).DeviceRect(box);
+    MovieSetTarget(movie, (char *)port->pix.baseAddr + device.top * port->pix.rowBytes +
+                              (port->pix.pixelSize >> 3) * device.left,
+                   port->pix.rowBytes, device.right - device.left, device.bottom - device.top, 0);
     InsetRect(&box, -1, -1);
     FrameRect(&box);
     MovieRewind(movie);
@@ -6394,7 +6405,7 @@ void DrawEscortMenuInFrame()
     TextSize(smallTextSize);
 
     GetIndString(str, kGameStrList, 0x85);
-    CE_SetPen((box.left + box.right) / 2 - StringWidth(str) / 2, CE_Scale(box.top + 0xf));
+    MoveTo((box.left + box.right) / 2 - StringWidth(str) / 2, (box.top + 0xf));
     DrawString(str);
 
     for (i = 1; i < kMaxShips; i++) {
@@ -6415,8 +6426,6 @@ void DrawEscortMenuInFrame()
             bar.top = box.top + 0x1e + (i + 1) * 18;
             bar.bottom = box.top + 0x2b + (i + 1) * 18;
             RGBForeColor(&escortMenuColor);
-            bar.top = CE_Scale(bar.top);
-            bar.bottom = CE_Scale(bar.bottom);
             PaintRect(&bar);
         }
 
@@ -6427,7 +6436,7 @@ void DrawEscortMenuInFrame()
         else
             RGBForeColor(&rgbDarkGrey);
 
-        CE_SetPen(box.left + 7, CE_Scale(box.top + 0x28 + (i + 1) * 18));
+        MoveTo(box.left + 7, (box.top + 0x28 + (i + 1) * 18));
         NumToString(i + 2, str);
         DrawString(str);
         DrawString("\p) ");
@@ -6456,7 +6465,7 @@ void DrawEscortMenuInFrame()
             else
                 GetIndString(str, kGameStrList, 0x95);
             ForeColor(whiteColor);
-            CE_SetPen(box.right - StringWidth(str) - 7, CE_Scale(box.top + 0x28 + (i + 1) * 18));
+            MoveTo(box.right - StringWidth(str) - 7, (box.top + 0x28 + (i + 1) * 18));
             DrawString(str);
         }
     }
@@ -6614,7 +6623,7 @@ void SetupDialogs(void)
         iconCache[i].stamp = 0;
     }
     nagCount = 0;
-    SetRect(&r, 0, 0, ceGridThumbSize * 128, ceGridThumbSize);
+    SetRect(&r, 0, 0, kGridThumbSize * 128, kGridThumbSize);
     CreateGWorldContainer(&iconsPort, 0, 0, &r);
 }
 

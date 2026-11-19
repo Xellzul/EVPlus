@@ -1,5 +1,6 @@
 /* statusbar.cpp -- the status-bar driver pair (win link order 0x0045d0a0, 0x0045d320; mac 1.1.1 twins _RedrawStatus @0x4cac0, _DrawStatus @0x4c85d). Notes: Research/notes/statusbar.md */
 #include "macport.h"
+#include "gameconst.h"
 #include "shipobj.h"
 #include "game.h"
 #include "dialogs.h"
@@ -34,7 +35,7 @@ void RedrawStatus(Boolean copyToScreen)
 
     if (creatingPilotFile || gPause)
         return;
-    SetRect(&box, GetCWindowPortRect(gWind)->right - ceStatusBarWidth,
+    SetRect(&box, GetCWindowPortRect(gWind)->right - kStatusBarWidth,
             GetCWindowPortRect(gWind)->top, GetCWindowPortRect(gWind)->right,
             GetCWindowPortRect(gWind)->bottom);
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
@@ -44,7 +45,7 @@ void RedrawStatus(Boolean copyToScreen)
         box2 = statusOffRect[0];
         // BUG (all versions): offsets box, but paints the unshifted box2 (status-bar coordinates);
         // CE F14.04 keeps it
-        OffsetRect(&box, GetCWindowPortRect(gWind)->right - ceStatusBarWidth, 0);
+        OffsetRect(&box, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
         ForeColor(blackColor);
         PaintRect(&box2);
         SWSetPortToWindow(gSpriteWorld);
@@ -64,7 +65,7 @@ void RedrawStatus(Boolean copyToScreen)
     preventStatusCopy = 0;
     if (copyToScreen) {
         box = *GetCWindowPortRect((WindowRef)gWind);
-        box.left = box.right - ceStatusBarWidth;
+        box.left = box.right - kStatusBarWidth;
         if (gSpriteWorld->fastBlit) {
             CopyBits(GWorldContainerBits(&loadPort),
                      GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),

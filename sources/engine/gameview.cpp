@@ -5,6 +5,8 @@
 #include "gameconst.h"
 #include "dialogs.h"
 #include "game.h"
+#include "viewscale.h"
+#include "uisprite.h"
 #include "gameutil.h"
 #include "render.h"
 #include "sound.h"
@@ -89,13 +91,13 @@ short TrackMainScreenButtons(Point where)
                                     (menuTopCorner.h + menuButtonPos[i].h),
                                     (menuTopCorner.v + menuButtonPos[i].v));
                 if (hit == i)
-                    BlitPixieRLEDrawProc(menuButtonSprite[i]->frameArray[1],
-                                         gSpriteWorld->workFrameP, &box, &box);
+                    UI::DrawSprite(BlitPixieRLEDrawProc, menuButtonSprite[i]->frameArray[1],
+                                         View::UIWork(), &box, &box);
                 else
-                    BlitPixieRLEDrawProc(menuButtonSprite[i]->frameArray[0],
-                                         gSpriteWorld->workFrameP, &box, &box);
+                    UI::DrawSprite(BlitPixieRLEDrawProc, menuButtonSprite[i]->frameArray[0],
+                                         View::UIWork(), &box, &box);
                 ForeColor(blackColor);
-                CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
+                CopyBits(GetPortPixMapBits(View::UIWork()->framePort),
                          GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                          &box, &box, 0, NULL);
                 QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
@@ -107,11 +109,11 @@ short TrackMainScreenButtons(Point where)
             HandleIntroMusic(0);
             GetGlobalMouse(&pt);
             CopyBits(GWorldContainerBits(&loadPort),
-                     GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
+                     GetPortBitMapForCopyBits(View::UIWork()->framePort),
                      &rolloverDestRect, &rolloverDestRect, 0, NULL);
             MainScreenRolloverIdle();
             MainScreenRolloverDraw();
-            CopyBits(GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
+            CopyBits(GetPortBitMapForCopyBits(View::UIWork()->framePort),
                      GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                      &rolloverDestRect, &rolloverDestRect, 0, NULL);
             over = -1;
@@ -132,10 +134,10 @@ short TrackMainScreenButtons(Point where)
                     SWSetSpriteLocation(menuButtonSprite[over],
                                         (menuTopCorner.h + menuButtonPos[over].h),
                                         (menuTopCorner.v + menuButtonPos[over].v));
-                    BlitPixieRLEDrawProc(menuButtonSprite[over]->frameArray[1],
-                                         gSpriteWorld->workFrameP, &box, &box);
+                    UI::DrawSprite(BlitPixieRLEDrawProc, menuButtonSprite[over]->frameArray[1],
+                                         View::UIWork(), &box, &box);
                     ForeColor(blackColor);
-                    CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
+                    CopyBits(GetPortPixMapBits(View::UIWork()->framePort),
                              GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                              &box, &box, 0, NULL);
                     QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
@@ -150,10 +152,10 @@ short TrackMainScreenButtons(Point where)
                     SWSetSpriteLocation(menuButtonSprite[hit],
                                         (menuTopCorner.h + menuButtonPos[hit].h),
                                         (menuTopCorner.v + menuButtonPos[hit].v));
-                    BlitPixieRLEDrawProc(menuButtonSprite[hit]->frameArray[0],
-                                         gSpriteWorld->workFrameP, &box, &box);
+                    UI::DrawSprite(BlitPixieRLEDrawProc, menuButtonSprite[hit]->frameArray[0],
+                                         View::UIWork(), &box, &box);
                     ForeColor(blackColor);
-                    CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
+                    CopyBits(GetPortPixMapBits(View::UIWork()->framePort),
                              GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                              &box, &box, 0, NULL);
                     QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);

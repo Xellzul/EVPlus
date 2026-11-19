@@ -9,6 +9,9 @@
 #include "burger.h"
 #include "macport.h"
 #include "game.h"
+#include "spriteworld.h"
+#include "viewscale.h"
+#include "uiscale.h"
 #include "missions.h"
 #include "render.h"
 #include "stellar.h"
@@ -17,48 +20,89 @@ EXTERN_C_BEGIN
 
 #define kCommMsgMax     0xff
 #define kCommTextMax    0xfe
-#define kTextFaceBold   2
 
-// FUNCTION: EVNOVA 0x0047e2d0
-// MAC: _DisplayComm i386 0x00090201 ppc 0x0009be7c
-void DisplayComm(PStrChar *msg, short count, short font, short size,
-                 RGBColor *color, Boolean bold, unsigned char noBlit)
+/* the style of the message shown: white in the comm size, or a caller's own (DisplayCommStyled) */
+static struct {
+    short font;
+    short size;
+    RGBColor color;
+} gCommStyle = { 0, kCommTextSize, { 0xffff, 0xffff, 0xffff } };
+static bool gCommDrawn;                 /* CommOverlay's frame shows the message */
+
+/* The comm message in its box on the current port, on the system's background colour. */
+static void DrawCommText(Rect *box)
 {
     unsigned char text[256];
 
-    commCount = count;
-    strncpy(commMsg, (char *)msg, kCommMsgMax);
-    strncpy((char *)text, (char *)msg, kCommTextMax);
+    strncpy((char *)text, commMsg, kCommTextMax);
+    text[kCommTextMax] = 0;
     PtoCstr(text);
-    SWSetPortToBackground(gSpriteWorld);
-    RGBForeColor(color);
-    TextFont(font);
-    TextSize(size);
-    if (bold != 0)
-        TextFace(kTextFaceBold);
+    RGBForeColor(&gCommStyle.color);
+    TextFont(gCommStyle.font);
+    TextSize(gCommStyle.size);
+    TextFace(0);
     SetSystemBackgroundBackColor();
-    TETextBox(text, strlen((char *)text), &commRect, 0);
+    TETextBox(text, strlen((char *)text), box, 0);
     ForeColor(blackColor);
     BackColor(whiteColor);
-    SWSetPortToWindow(gSpriteWorld);
-    if (noBlit == 0) {
-        ForeColor(blackColor);
-        BackColor(whiteColor);
-        CopyBits(GetPortPixMapBits(
-                     gSpriteWorld->backFrameP->framePort),
-                 GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
-                 &commRect, &commRect, 0, NULL);
-    }
 }
 
-/* the stored count doubles as a "there is a message" flag */
-// FUNCTION: EVNOVA 0x0047e430
-// MAC: _RedrawComm i386 0x000903a0 ppc 0x0009bfdc
-void RedrawComm(unsigned char noBlit)
+/* Shows `msg' in the comm strip for `count' frames; Flush lays it over the view (CommOverlay). */
+// FUNCTION: EVNOVA 0x0047e2d0
+// MAC: _DisplayComm i386 0x00090201 ppc 0x0009be7c
+void DisplayComm(PStrChar *msg, short count)
 {
-    if (commCount > 0)
-        DisplayComm((PStrChar *)commMsg, commCount, 0, kCommTextSize, &rgbWhite, 0,
-                    noBlit);
+    DisplayCommStyled(msg, count, 0, kCommTextSize, &rgbWhite);
+}
+
+void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const RGBColor *color)
+{
+    gCommStyle.font = font;
+    gCommStyle.size = size;
+    gCommStyle.color = *color;
+    commCount = count;
+    strncpy(commMsg, (char *)msg, kCommMsgMax);
+    gCommDrawn = false;
+    SWSetPortToWindow(gSpriteWorld);                /* callers draw on the window next */
+}
+
+/* The comm message drawn in its own frame, at the screen's resolution, for Flush to lay over the view; NULL
+   when there is none. The frame is drawn again only when the message or the system's colour changes. */
+SWFrameRec *CommOverlay(void)
+{
+    static SWFrameRec *frame;
+    static Rect bounds;
+    static RGBColor drawnOn;                /* the system colour the frame was drawn on */
+    Rect local = commRect;
+    Rect wanted;
+
+    if (commCount <= 0)
+        return NULL;
+    OffsetRect(&local, -local.left, -local.top);
+    wanted = View::OverlayFrameRect(local);
+    if (frame == NULL || wanted.right != bounds.right || wanted.bottom != bounds.bottom) {
+        if (frame != NULL)
+            SWDisposeFrame(&frame);
+        bounds = wanted;
+        if (SWCreateFrame(GetGDevice(), &frame, &bounds, gSpriteWorld->pixelDepth, 1) != 0 || frame == NULL) {
+            frame = NULL;
+            return NULL;
+        }
+        View::ScaleOverlayFrame(frame);
+        SWLockFrame(frame);
+        gCommDrawn = false;
+    }
+    RGBColor background = shipData[0].curSystem < 0 ? rgbBlack : systemData[shipData[0].curSystem].rgb;
+    if (!gCommDrawn || memcmp(&background, &drawnOn, sizeof background) != 0) {
+        drawnOn = background;
+        GrafPtr saved;
+        GetPort(&saved);
+        SWSetPortToFrame(frame);
+        DrawCommText(&bounds);
+        SetPort(saved);
+        gCommDrawn = true;
+    }
+    return frame;
 }
 
 EXTERN_C_END

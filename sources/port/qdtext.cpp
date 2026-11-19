@@ -16,6 +16,7 @@
 #include "player.h"
 #include "cefix.h"
 #include "fontraster.h"
+#include "uiscale.h"
 
 #define kSpace          ' '
 #define kReturn         '\r'
@@ -24,6 +25,7 @@
 #define kFirstVisible   0x20
 #define kFull           255
 #define kFallbackFont   0               /* the system font's number */
+#define kMinScaledSize  10              /* on a scaled port: the smallest logical size, then scaled */
 
 /* a character: what the font is asked for */
 typedef struct TextUnit {
@@ -115,26 +117,43 @@ typedef struct TextStyle {
     int descent;
 } TextStyle;
 
-/* The font, size and style set in the port. A font number the font cache does not know (the scrolling
-   text asks for 20, the Mac's number for Times) leaves the port with the font it drew or measured with
-   before (GDI kept the font selected last); a port that has had none gets font 0 at the port's size,
-   where GDI had its stock System font. */
-static int CurrentStyle(TextStyle *style)
+/* A size as asked for, or, for the glyphs drawn on a scaled port, scaled (after the smallest size is applied
+   to it, so text keeps its proportions). */
+static short SizeFor(short size, double scale)
+{
+    if (scale == 1.0)
+        return size;
+    if (size < kMinScaledSize)
+        size = kMinScaledSize;
+    return (short)(size * scale + 0.5);
+}
+
+/* The font, size and style set in the port: at the port's own size (layout and measuring), or with
+   scale != 1 the same font scaled (the glyphs on a scaled port). A font number the font cache does not know
+   (the scrolling text asks for 20, the Mac's number for Times) leaves the port with the font it drew or
+   measured with before; a port that has had none gets font 0 at the port's size. */
+static int StyleAt(TextStyle *style, double scale)
 {
     CGrafPtr port;
 
     port = CurrentGrafPort;
-    if (GetFont(port->txFont, port->txSize, port->txFace, &style->spec)) {
+    if (GetFont(port->txFont, SizeFor(port->txSize, scale), port->txFace, &style->spec)) {
         port->lastFont = port->txFont;
         port->lastSize = port->txSize;
         port->lastFace = port->txFace;
         port->hasLastFont = 1;
-    } else if (!(port->hasLastFont && GetFont(port->lastFont, port->lastSize, port->lastFace, &style->spec))
-               && !GetFont(kFallbackFont, port->txSize, port->txFace, &style->spec)) {
+    } else if (!(port->hasLastFont
+                 && GetFont(port->lastFont, SizeFor(port->lastSize, scale), port->lastFace, &style->spec))
+               && !GetFont(kFallbackFont, SizeFor(port->txSize, scale), port->txFace, &style->spec)) {
         return 0;
     }
     RasterMetrics(style->spec.font, style->spec.pixelSize, &style->ascent, &style->descent);
     return 1;
+}
+
+static int CurrentStyle(TextStyle *style)
+{
+    return StyleAt(style, 1.0);
 }
 
 static const RasterGlyph *GlyphOf(const TextStyle *style, const TextUnit *unit)
@@ -291,6 +310,80 @@ static int DrawUnits(PixMap *pix, const TextStyle *style, const TextUnit *units,
     return x;
 }
 
+/* Characters from logical x on, drawn on a scaled port. The run takes exactly the room it takes at the
+   logical size (layout as unscaled); inside it the glyphs, drawn at the device size, are spaced by their own
+   device advances, stretched to fill that room evenly. Returns the logical x after them. */
+static int DrawUnitsScaled(PixMap *pix, const UI::Mapping &map, const TextStyle *layout, const TextStyle *glyphs,
+                           const TextUnit *units, int count, int x, int baseline, const ClipRect *clip,
+                           const TextColor *color)
+{
+    int logicalWidth = WidthOf(layout, units, count);
+    int deviceWidth = WidthOf(glyphs, units, count);
+    int deviceStart = map.X(x);
+    double stretch = deviceWidth > 0 ? (double)(map.X(x + logicalWidth) - deviceStart) / deviceWidth : 1.0;
+    int advanced = 0;
+
+    for (int i = 0; i < count && pix != NULL; i++) {
+        const RasterGlyph *shape = GlyphOf(glyphs, &units[i]);
+        if (shape == NULL)
+            continue;
+        DrawGlyph(pix, shape, deviceStart + (int)(advanced * stretch + 0.5), baseline, clip, color);
+        advanced += shape->advance;
+    }
+    return x + logicalWidth;
+}
+
+/* DrawTextRun on a scaled port: laid out at the logical size, as unscaled; drawn in device pixels */
+static void DrawScaledRun(CGrafPtr port, PixMap *pix, const TextStyle *layout, const TextUnit *units, int count,
+                          const Rect *box, char clipped, int height, const TextColor *color)
+{
+    UI::Mapping map(port->pix);
+    TextStyle glyphs;
+    ClipRect clip = { 0, 0, port->pix.width, port->pix.height };
+    Rect logicalBox;
+    Rect deviceBox;
+    int left = port->pix.bounds.left;
+    int top = port->pix.bounds.top;
+
+    if (!StyleAt(&glyphs, map.ScaleY()))
+        return;
+    if (box != NULL) {
+        logicalBox = *box;
+        OffsetRect(&logicalBox, left, top);
+        deviceBox = map.DeviceRect(logicalBox);
+        if (clip.right > deviceBox.right)
+            clip.right = deviceBox.right;
+        if (clip.bottom > deviceBox.bottom)
+            clip.bottom = deviceBox.bottom;
+    }
+    if (clipped == 0) {
+        int y = port->pnLoc.v - port->txSize;
+        if (box != NULL) {
+            if (clip.left < map.X(port->pnLoc.h))
+                clip.left = map.X(port->pnLoc.h);
+            if (clip.top < map.Y(y))
+                clip.top = map.Y(y);
+        }
+        port->pnLoc.h = (short)DrawUnitsScaled(pix, map, layout, &glyphs, units, count, port->pnLoc.h,
+                                               map.Y(y + layout->ascent), &clip, color);
+    } else {
+        if (clip.left < deviceBox.left)
+            clip.left = deviceBox.left;
+        if (clip.top < deviceBox.top)
+            clip.top = deviceBox.top;
+        int y = logicalBox.top - height;
+        int start = 0;
+        int end;
+        int next;
+        while (NextLine(layout, units, count, start, logicalBox.right - logicalBox.left, &end, &next)) {
+            DrawUnitsScaled(pix, map, layout, &glyphs, units + start, end - start, logicalBox.left,
+                            map.Y(y + layout->ascent), &clip, color);
+            y += layout->ascent + layout->descent;
+            start = next;
+        }
+    }
+}
+
 /* Rectangles are in the pixel map's own pixels, the port's bounds not applied to `box', as the exe gives
    them to GDI. */
 // FUNCTION: EVNOVA 0x004bc760
@@ -324,6 +417,11 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
     color.g = (unsigned char)(gGammaRamp[port->foreColor.green >> 11] * 8);
     color.b = (unsigned char)(gGammaRamp[port->foreColor.blue >> 11] * 8);
 
+    if (UI::Mapping(port->pix).Scaled()) {
+        DrawScaledRun(port, pix, &style, units, byteCount, box, clipped, height, &color);
+        DeallocAPointer(units);
+        return;
+    }
     clip.left = 0;
     clip.top = 0;
     clip.right = port->pix.width;

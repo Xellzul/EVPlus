@@ -103,8 +103,8 @@ void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t
         if (lDataLen <= 0)
             break;
         v = lRect->top + (*lHandle)->indent.v;
-        CE_SetPen(lRect->left + (*lHandle)->indent.h + CE_Scale(4),
-                  v + smallTextSize - 9 + CE_Scale(9));
+        MoveTo(lRect->left + (*lHandle)->indent.h + 4,
+                  v + smallTextSize);
         TextFace(0);
         RGBForeColor(&ldefColors[0]);
         DrawText(text, lDataOffset, lDataLen);
@@ -120,8 +120,8 @@ void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t
         if (lDataLen <= 0)
             break;
         v = lRect->top + (*lHandle)->indent.v;
-        CE_SetPen(lRect->left + (*lHandle)->indent.h + CE_Scale(4),
-                  v + smallTextSize - 9 + CE_Scale(9));
+        MoveTo(lRect->left + (*lHandle)->indent.h + 4,
+                  v + smallTextSize);
         TextFace(0);
         RGBForeColor(&ldefColors[0]);
         DrawText(text, lDataOffset, lDataLen);

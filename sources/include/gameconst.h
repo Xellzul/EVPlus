@@ -174,5 +174,10 @@ enum {
 #define kSpawnReserve       8       /* ship slots a spawner leaves free */
 #define kDefaultOutfitSlots 8       /* shipClass[].defOutfID / defOutfCount entries */
 #define kInfluenceLayers    4       /* the influence grid's last dimension */
+#define kStatusBarWidth     194     /* the status bar at the screen's right edge */
+#define kGridCellWidth      83      /* the outfitter and shipyard grid (tradedlg.cpp) */
+#define kGridCellHeight     54
+#define kGridThumbSize      32
+#define kListItemBaseHeight 8       /* list rows; the Windows game had 9, Mac Nova 8 */
 
 #endif /* GAMECONST_H */

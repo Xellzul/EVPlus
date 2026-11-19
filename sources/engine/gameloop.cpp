@@ -23,6 +23,8 @@
 #include "game.h"
 #include "stellar.h"
 #include "cefix.h"
+#include "viewscale.h"
+#include "uiscale.h"
 #include "missions.h"
 #include "crashlog.h"
 #include "gameutil.h"
@@ -803,7 +805,7 @@ void HandleShipDisplay(ShipObj *ship)
                                         & kMissionHidden) == 0) {
                                 PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
                                 GetIndString(msg, kGameStrList, 0x11c);
-                                DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                                DisplayComm((PStrChar *)msg, kCommFrames);
                                 QuickMissionFailure(ship->specialMission);
                             }
                         }
@@ -1686,20 +1688,8 @@ void HandleWeapTargetSprites(void)
 // MAC: _HandleComm i386 0x000301b9 ppc 0x00035524
 void HandleComm(void)
 {
-    if (commCount >= 0) {
+    if (commCount >= 0)
         commCount -= 1;
-        if (commCount <= 0) {
-            SWSetPortToBackground(gSpriteWorld);
-            SetSystemBackgroundColor();
-            PaintRect(&commRect);
-            ForeColor(blackColor);
-            SWSetPortToWindow(gSpriteWorld);
-            CopyBits(GetPortPixMapBits(
-                         gSpriteWorld->backFrameP->framePort),
-                     GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
-                     &commRect, &commRect, 0, NULL);
-        }
-    }
     if (showFloatingMap > 0) {
         if (ReadTick() > floatingMapStartTime + kJumpTimeoutTicks)
             showFloatingMap = 0;
@@ -2934,7 +2924,7 @@ void HandleShip(ShipObj *ship)
                 if (ship->formerEscort == 0) {
                     ship->aiType = kShipTypeFighter;
                     GetIndString(msg, kGameStrList, 0x80);
-                    DisplayComm((PStrChar *)msg, 0xfa, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)msg, 0xfa);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                 } else {
                     if (ship->formerEscort == 1)
@@ -2943,7 +2933,7 @@ void HandleShip(ShipObj *ship)
                         ship->hired = 0;
                     ship->aiType = kShipTypeEscort;
                     GetIndString(msg, kGameStrList, 0x7f);
-                    DisplayComm((PStrChar *)msg, 0xfa, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)msg, 0xfa);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                 }
             }
@@ -4429,7 +4419,8 @@ void HandleMouse(void)
         HideTheCursor();
     else
         ShowTheCursor();
-    box.right -= ceStatusBarWidth;
+    box.right -= kStatusBarWidth;
+    View::ToView(&mouse);
 
     if (mouse.h != lastMousePos.h || mouse.v != lastMousePos.v || Button()) {
         lastMousePos.h = mouse.h;
@@ -4673,86 +4664,55 @@ void TerminateCron(short index)
     }
 }
 
-/*
- * The caller passes an argument that this body never reads (the exe is
- * frameless and nothing touches [esp+4]); gameutils.cpp already declares the
- * one-parameter form, so it is kept. 0x004703e0 is declared here with two
- * SWFrameRec pointers because that is what both of this file's argument slots
- * hold.
- */
-
-// FUNCTION: EVNOVA 0x00439a10
-// MAC: _FloaterEraseCallback i386 0x00038920 ppc 0x0003e924
-void FloaterEraseCallback(void *a)
+/* A floating frame (drawn in device pixels) laid over the screen where its view rect is, `level' of 32
+   translucent as in the view. */
+static void BlendOnScreen(SWFrameRec *frame, const Rect &viewRect, short level)
 {
-    if (commCount >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0) {
-            CopyBits(GetPortPixMapBits(
-                         gSpriteWorld->backFrameP->framePort),
-                     GetPortPixMapBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     &commRect, &commRect, 0, NULL);
-        } else {
-            BlitPixieRectDrawProc(gSpriteWorld->backFrameP, gSpriteWorld->workFrameP,
-                         &commRect, &commRect);
-        }
+    Rect device = View::ScreenRectOfView(viewRect);
+    PixMap &from = frame->framePort->pix;
+    PixMap &to = gGamePort.pix;
+    int width = device.right - device.left;
+    int height = device.bottom - device.top;
+
+    if (width > from.width)
+        width = from.width;
+    if (height > from.height)
+        height = from.height;
+    if (device.left < 0 || device.top < 0 || device.left + width > to.width || device.top + height > to.height
+        || width <= 0 || height <= 0)
+        return;
+    BlitPixieFloatingRect((unsigned char *)from.baseAddr,
+                          (unsigned char *)to.baseAddr + device.top * to.rowBytes + device.left * 2,
+                          from.rowBytes, to.rowBytes, (unsigned short)(width * 2), (unsigned short)height,
+                          (unsigned short)(32 - level));
+}
+
+/* the comm line, floating map and escort menu over the view */
+void DrawOverlays()
+{
+    SWFrameRec *comm = CommOverlay();
+    short tick;
+    short blink;
+
+    if (comm != NULL)
+        BlendOnScreen(comm, commRect, 0);
+    if (showFloatingMap > 0) {
+        tick = (floatingMapStartTime + 0x96) - ReadTick();
+        blink = tick <= 0 ? 0x20 : tick < 0x20 ? 0x20 - tick : 0;
+        BlendOnScreen(floatingMapFrame, floatingMapRect, blink);
     }
-    if (showFloatingMap >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0) {
-            CopyBits(GetPortPixMapBits(
-                         gSpriteWorld->backFrameP->framePort),
-                     GetPortPixMapBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     &floatingMapRect, &floatingMapRect, 0, NULL);
-        } else {
-            BlitPixieRectDrawProc(gSpriteWorld->backFrameP, gSpriteWorld->workFrameP,
-                         &floatingMapRect, &floatingMapRect);
-        }
-    }
-    if (escortMenuOnscreen >= 0) {
-        if (inBackground != 0 || gSpriteWorld->fastBlit == 0) {
-            CopyBits(GetPortPixMapBits(
-                         gSpriteWorld->backFrameP->framePort),
-                     GetPortPixMapBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     &escortMenuRect, &escortMenuRect, 0, NULL);
-        } else {
-            BlitPixieRectDrawProc(gSpriteWorld->backFrameP, gSpriteWorld->workFrameP,
-                         &escortMenuRect, &escortMenuRect);
-        }
-    }
+    if (escortMenuOnscreen > 0)
+        BlendOnScreen(floatingEscortMenuFrame, escortMenuRect, 0x20 - escortMenuOnscreen);
 }
 
 // FUNCTION: EVNOVA 0x00439bb0
 // MAC: _FloaterDrawCallback i386 0x00038b2d ppc 0x0003eb98
 void FloaterDrawCallback(SpriteWorldPtr world)
 {
-    short tick;
-    short blink;
-
     if (inBackground != 0 || world->fastBlit == 0)
         return;
 
-    if (commCount >= 0) {
-        BlitPixieFloatingRectDrawProc(gSpriteWorld->backFrameP, gSpriteWorld->workFrameP,
-                     &commRect, &commRect, 0, gSpriteWorld->backgroundValue);
-    }
-    if (showFloatingMap > 0) {
-        tick = (floatingMapStartTime + 0x96) - ReadTick();
-        if (tick <= 0)
-            blink = 0x20;
-        else if (tick < 0x20)
-            blink = 0x20 - tick;
-        else
-            blink = 0;
-        BlitPixieFloatingRectDrawProc(floatingMapFrame, gSpriteWorld->workFrameP,
-                     &floatingMapFrame->frameRect, &floatingMapRect, blink,
-                     gSpriteWorld->backgroundValue);
-    }
     if (escortMenuOnscreen > 0) {
-        BlitPixieFloatingRectDrawProc(floatingEscortMenuFrame, gSpriteWorld->workFrameP,
-                     &floatingEscortMenuFrame->frameRect, &escortMenuRect,
-                     0x20 - escortMenuOnscreen, gSpriteWorld->backgroundValue);
         if (redrawEscortMenu != 0) {
             DrawEscortMenuInFrame();
             redrawEscortMenu = 0;
@@ -4773,7 +4733,6 @@ void PostDrawCallback(SpriteWorldPtr world)
 void PostEraseCallback(SpriteWorldPtr world)
 {
     BeamEraseCallback(world);
-    FloaterEraseCallback(world);
     EraseParticlesOffscreen(world);
 }
 
@@ -4784,47 +4743,10 @@ void PostAnimateHandler(void)
     int i;
     int passes;
 
-    if (commCount >= 0) {
-        if (inBackground == 0 && gSpriteWorld->fastBlit != 0) {
-            BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                         &commRect, &commRect);
-        } else {
-            SWSetPortToWindow(gSpriteWorld);
-            CopyBits(GetPortBitMapForCopyBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     GetPortBitMapForCopyBits(
-                         *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                     &commRect, &commRect, 0, NULL);
-        }
-    }
-    if (showFloatingMap >= 0) {
-        if (inBackground == 0 && gSpriteWorld->fastBlit != 0) {
-            BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                         &floatingMapRect, &floatingMapRect);
-        } else {
-            CopyBits(GetPortBitMapForCopyBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     GetPortBitMapForCopyBits(
-                         *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                     &floatingMapRect, &floatingMapRect, 0, NULL);
-        }
-        if (showFloatingMap == 0)
-            showFloatingMap = -1;
-    }
-    if (escortMenuOnscreen >= 0) {
-        if (inBackground == 0 && gSpriteWorld->fastBlit != 0) {
-            BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                         &escortMenuRect, &escortMenuRect);
-        } else {
-            CopyBits(GetPortBitMapForCopyBits(
-                         gSpriteWorld->workFrameP->framePort),
-                     GetPortBitMapForCopyBits(
-                         *(CGrafPtr *)gSpriteWorld->windowFrameP),
-                     &escortMenuRect, &escortMenuRect, 0, NULL);
-        }
-        if (escortMenuOnscreen == 0)
-            escortMenuOnscreen = -1;
-    }
+    if (showFloatingMap == 0)
+        showFloatingMap = -1;
+    if (escortMenuOnscreen == 0)
+        escortMenuOnscreen = -1;
     UpdateParticlesInWindow(gSpriteWorld);
     i = 0;
     for (;;) {
@@ -4880,8 +4802,7 @@ void HandleReinforcements(void)
                     StrcatIndCString((char *)msg, kGameStrList, kReinforceIndexB);
                     CtoPstr((char *)msg);
                     PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-                    DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize,
-                                &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)msg, kCommFrames);
                 }
                 systemData[sys].reinforceDaysLeft = systemData[sys].reinforceInterval;
                 if (systemData[sys].reinforceDaysLeft < 1)

@@ -162,6 +162,10 @@ void SWSetPortToWorkArea(SpriteWorldPtr spriteWorld)
 void SWSetPortToWindow(SpriteWorldPtr spriteWorld)
 {
     if (spriteWorld != NULL) {
+        if (spriteWorld->screenPort != NULL) {
+            SetPort(spriteWorld->screenPort);
+            return;
+        }
         SWSetPortToFrame(spriteWorld->windowFrameP);
         return;
     }

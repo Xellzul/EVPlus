@@ -30,7 +30,7 @@ short SWCreateGWorldFromPict(SpriteWorldPtr destSpriteWorld,
     QDGetPictureBounds((PicHandle)pictH, &pictRect);
     OffsetRect(&pictRect, -pictRect.left, -pictRect.top);
 
-    err = CE_NewGWorld(&tempGWorld, depth, &pictRect, 0);
+    err = NewGWorld(&tempGWorld, depth, &pictRect, 0);
 
     if ((int)err == noErr) {
         *pictGWorld = tempGWorld;

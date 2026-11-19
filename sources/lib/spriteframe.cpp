@@ -42,7 +42,7 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
         tempFrameP->rleDataH = 0;
 
         if (createGWorld) {
-            err = CE_NewGWorld(&frameGWorld, depth, frameRect, theGDH);
+            err = NewGWorld(&frameGWorld, depth, frameRect, theGDH);
 
             if ((int)err == noErr) {
                 tempFrameP->framePort = frameGWorld;

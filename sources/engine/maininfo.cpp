@@ -20,6 +20,8 @@
 #include "prototypes.h"
 #include "ships.h"
 #include "cefix.h"
+#include "viewscale.h"
+#include "uisprite.h"
 #include "space.h"
 
 // FUNCTION: EVNOVA 0x004873b0
@@ -40,25 +42,25 @@ void MainScreenUpdate(short which)
         mainScreenBackgroundDirty = 0;
     }
     SetGWorldContainer(&loadPort);
-    SWSetPortToWorkArea(gSpriteWorld);
+    View::SetPortToUIWork();
     ForeColor(blackColor);
     if (which == 2) {
         CopyBits(GWorldContainerBits(&loadPort),
-                 GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
+                 GetPortBitMapForCopyBits(View::UIWork()->framePort),
                  &rolloverDestRect, &rolloverDestRect, 0, NULL);
         for (i = 0; i < 3; i++) {
             if (slidePort[i].world != NULL && slideIndex[i] < slideFrameCount[i]) {
                 CopyBits(GWorldContainerBits(&loadPort),
                          GetPortBitMapForCopyBits(
-                             gSpriteWorld->workFrameP->framePort),
+                             View::UIWork()->framePort),
                          &slideDestRect[i], &slideDestRect[i], 0, NULL);
             }
         }
     } else {
         CopyBits(GWorldContainerBits(&loadPort),
-                 GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
-                 &gSpriteWorld->workFrameP->frameRect,
-                 &gSpriteWorld->workFrameP->frameRect, 0, NULL);
+                 GetPortBitMapForCopyBits(View::UIWork()->framePort),
+                 &View::UIWork()->frameRect,
+                 &View::UIWork()->frameRect, 0, NULL);
     }
     SetRect(&box, standardPicRect.left + 0x115, standardPicRect.top + 0x10a,
             standardPicRect.left + 0x171, standardPicRect.top + 0x1be);
@@ -124,7 +126,7 @@ void MainScreenUpdate(short which)
                 ForeColor(blackColor);
                 i = shipClass[shipData->type].targetPictID;
                 if (targetInfoPic[i] != NULL) {
-                    SWSetPortToBackground(gSpriteWorld);
+                    View::SetPortToUIBack();
                     ForeColor(blackColor);
                     QDGetPictureBounds((PicHandle)targetInfoPic[i], &box);
                     OffsetRect(&box, -box.left, -box.top);
@@ -132,12 +134,12 @@ void MainScreenUpdate(short which)
                                mainMenuCenter.h - (box.right - box.left) / 2,
                                mainMenuCenter.v + 0x118);
                     DrawPicHandle((PicHandle)targetInfoPic[i], &box);
-                    SWSetPortToWorkArea(gSpriteWorld);
+                    View::SetPortToUIWork();
                     ForeColor(blackColor);
                     CopyBits(GetPortBitMapForCopyBits(
-                                 gSpriteWorld->backFrameP->framePort),
+                                 View::UIBack()->framePort),
                              GetPortBitMapForCopyBits(
-                                 gSpriteWorld->workFrameP->framePort),
+                                 View::UIWork()->framePort),
                              &box, &box, 0x22, NULL);
                 }
             } else {
@@ -190,9 +192,9 @@ void MainScreenUpdate(short which)
             SWSetSpriteLocation(menuButtonSprite[i],
                          (menuTopCorner.h + menuButtonPos[i].h),
                          (menuTopCorner.v + menuButtonPos[i].v));
-            BlitPixieRLEDrawProc(
+            UI::DrawSprite(BlitPixieRLEDrawProc,
                 menuButtonSprite[i]->frameArray[0],
-                gSpriteWorld->workFrameP, &box, &box);
+                View::UIWork(), &box, &box);
         }
     }
     ForeColor(blackColor);
@@ -206,23 +208,23 @@ void MainScreenUpdate(short which)
             SWSetSpriteLocation(menuButtonSprite[i],
                          (menuTopCorner.h + menuButtonPos[i].h),
                          (menuTopCorner.v + menuButtonPos[i].v));
-            BlitPixieRLEDrawProc(
+            UI::DrawSprite(BlitPixieRLEDrawProc,
                 menuButtonSprite[i]->frameArray[0],
-                gSpriteWorld->workFrameP, &box, &box);
+                View::UIWork(), &box, &box);
         }
     }
     MainScreenRolloverDraw();
     if (which == 1) {
         CopyBits(GetPortBitMapForCopyBits(
-                     gSpriteWorld->workFrameP->framePort),
+                     View::UIWork()->framePort),
                  GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                 &gSpriteWorld->workFrameP->frameRect,
-                 &gSpriteWorld->workFrameP->frameRect, 0, NULL);
-        /* and the 0xc2-wide status strip, loadPort -> the window's right edge. */
+                 &View::UIWork()->frameRect,
+                 &View::UIWork()->frameRect, 0, NULL);
+        /* and the 0xc2-wide status strip loadPort -> the window's right edge. */
         box = loadPort.bounds;
-        box.left = (box.right - ceStatusBarWidth);
+        box.left = (box.right - kStatusBarWidth);
         dst = *GetCWindowPortRect((WindowRef)gWind);
-        dst.left = (dst.right - ceStatusBarWidth);
+        dst.left = (dst.right - kStatusBarWidth);
         CopyBits(GWorldContainerBits(&loadPort),
                  GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                  &box, &dst, 0, NULL);
@@ -284,23 +286,25 @@ void SetupInterfaceBackground(void)
 {
     void *pic;
 
-    SetGWorldContainer(&loadPort);
+    SetGWorldContainer(MenuArt());
     ForeColor(blackColor);
     pic = GetPicture(kInterfacePictID);
     if (pic != 0) {
-        interfacePicRect = loadPort.bounds;
+        interfacePicRect = MenuArt()->bounds;
         CenterPict(pic, &interfacePicRect);
-        if (loadPort.bounds.bottom - loadPort.bounds.top < kMinFullHeight)
+        if (MenuArt()->bounds.bottom - MenuArt()->bounds.top < kMinFullHeight)
             OffsetRect(&interfacePicRect, 0, -kSmallScreenNudge);
-        if (loadPort.bounds.right - loadPort.bounds.left <= kMinFullWidth)
+        if (MenuArt()->bounds.right - MenuArt()->bounds.left <= kMinFullWidth)
             OffsetRect(&interfacePicRect, -kSmallScreenNudge, 0);
         mainMenuCenter.h = (interfacePicRect.left + interfacePicRect.right) / 2;
         mainMenuCenter.v = (interfacePicRect.top + interfacePicRect.bottom) / 2;
         menuTopCorner.h = mainMenuCenter.h - kMenuHalfWidth;
         menuTopCorner.v = mainMenuCenter.v - kMenuHalfHeight;
         ForeColor(blackColor);
-        PaintRect(&loadPort.bounds);
+        PaintRect(&MenuArt()->bounds);
         DrawPicHandle((PicHandle)pic, &interfacePicRect);
+        ShowMenuArt(MenuArt()->bounds);
+        SetGWorldContainer(&loadPort);
         CE_DrawVersion();
         QDReleaseResource((PicHandle)pic);
     }
@@ -365,7 +369,7 @@ void EnterGameFromMainScreen(void)
     RedrawStatus(1);
     RefreshSAT();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
-    RedrawComm(0);
+    View::Flush();
     statusRedraw[kRedrawCargo] = 1;
     escortMenuOnscreen = 0;
     mBarHidden = 1;

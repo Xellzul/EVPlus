@@ -13,6 +13,8 @@
 #include "gameutil.h"
 #include "missions.h"
 #include "player.h"
+#include "viewscale.h"
+#include "uisprite.h"
 #include "render.h"
 #include "ships.h"
 #include "sound.h"
@@ -774,8 +776,7 @@ void DoPlanetCommDialog(short stellar)
                             strcat((char *)text, " ");
                             StrcatIndCString((char *)text, kGameStrList, 0x64);
                             CtoPstr((char *)text);
-                            DisplayComm((PStrChar *)text, 0xfa, 0, kCommTextSize,
-                                        &rgbWhite, 0, 0);
+                            DisplayComm((PStrChar *)text, 0xfa);
                             shipData->credits -= haggleVal;
                             statusRedraw[kRedrawCargo] = 1;
                             willTakeBribe = 0;
@@ -921,7 +922,6 @@ void DoPlanetCommDialog(short stellar)
     ForeColor(blackColor);
     SWSetPortToWindow(gSpriteWorld);
     RedrawStatus(1);
-    RedrawComm(0);
 }
 
 // FUNCTION: EVNOVA 0x00481140
@@ -1038,12 +1038,12 @@ void PlanetCommDialogUpdate(void)
         textBox.top = textBox.bottom = (box.top + box.bottom) / 2;
         InsetRect(&textBox, -spriteWidth / 2, -spriteHeight / 2);
         CopyBits(GWorldContainerBits(&loadPort),
-                 GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
+                 GetPortPixMapBits(View::UIWork()->framePort),
                  &textBox, &textBox, 0, NULL);
-        BlitPixieRLEDrawProc(stellarSprite[i]->curFrameP, gSpriteWorld->workFrameP,
+        UI::DrawSprite(BlitPixieRLEDrawProc, stellarSprite[i]->curFrameP, View::UIWork(),
                              &stellarSprite[i]->curFrameP->frameRect, &textBox);
         CopyBits(GetPortPixMapBits(
-                     gSpriteWorld->workFrameP->framePort),
+                     View::UIWork()->framePort),
                  (BitMapPtr)GWorldContainerBits(&loadPort),
                  &textBox, &textBox, 0, NULL);
     }
@@ -1670,7 +1670,7 @@ void DoPlunderDialog(void)
                 StrcatIndCString((char *)text, kGameStrList, 0x6c);
                 CtoPstr((char *)text);
                 PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                DisplayComm((PStrChar *)text, kCommFrames);
             }
         }
     }
@@ -1706,7 +1706,7 @@ void DoPlunderDialog(void)
             shipData[shipData->targetShip].deathTimer = 0;
             PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
             GetIndString(text, kGameStrList, 0x71);
-            DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+            DisplayComm((PStrChar *)text, kCommFrames);
             SetDialogGWorld(plunderDialog);
             break;
         }
@@ -1719,7 +1719,7 @@ void DoPlunderDialog(void)
                 if (salvageQty <= 0) {
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
                     GetIndString(text, kGameStrList, 0x72);
-                    DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)text, kCommFrames);
                 } else {
                     strcpy((char *)text, "");
                     StrcatIndCString((char *)text, kGameStrList, 0x73);
@@ -1742,7 +1742,7 @@ void DoPlunderDialog(void)
                     StrcatIndCString((char *)text, kGameStrList, 0x6c);
                     CtoPstr((char *)text);
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                    DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)text, kCommFrames);
                     shipData->cargo[salvageType] += salvageQty;
                     statusRedraw[kRedrawCargo] = 1;
                     salvageQty = 0;
@@ -1769,7 +1769,7 @@ void DoPlunderDialog(void)
                 strcat((char *)text, " ");
                 StrcatIndCString((char *)text, kGameStrList, 0x6c);
                 CtoPstr((char *)text);
-                DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                DisplayComm((PStrChar *)text, kCommFrames);
                 shipData->credits += salvageCredits;
                 risk *= 1.25;
                 risky = 1;
@@ -1822,11 +1822,11 @@ void DoPlunderDialog(void)
                     StrcatIndCString((char *)text, kGameStrList, 0x6c);
                     CtoPstr((char *)text);
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                    DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)text, kCommFrames);
                 } else {
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
                     GetIndString(text, kGameStrList, 0x75);
-                    DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)text, kCommFrames);
                 }
                 statusRedraw[kRedrawWeap] = 1;
                 risk *= 2.0;
@@ -1850,11 +1850,11 @@ void DoPlunderDialog(void)
                 if (space > 0) {
                     shipData->fuel = shipData->fuel + space;
                     if (shipData->fuel >= ShipFuelCapacity(shipData))
-                        DisplayComm((PStrChar *)fuelString[1], kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                        DisplayComm((PStrChar *)fuelString[1], kCommFrames);
                     else
-                        DisplayComm((PStrChar *)fuelString[2], kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                        DisplayComm((PStrChar *)fuelString[2], kCommFrames);
                 } else {
-                    DisplayComm((PStrChar *)fuelString[3], kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)fuelString[3], kCommFrames);
                 }
                 statusRedraw[kRedrawFuel] = 1;
                 DrawStatus();
@@ -1880,7 +1880,7 @@ void DoPlunderDialog(void)
                     shipData[shipData->targetShip].armor = 0;
                     shipData[shipData->targetShip].deathTimer = 0;
                     GetIndString(text, kGameStrList, 0x71);
-                    DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)text, kCommFrames);
                     SetDialogGWorld(plunderDialog);
                 } else {
                     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
@@ -1909,7 +1909,7 @@ void DoPlunderDialog(void)
                                 LoadIntfResource();
                             } else {
                                 GetIndString(text, kGameStrList, 0x7a);
-                                DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                                DisplayComm((PStrChar *)text, kCommFrames);
                                 SetDialogGWorld(plunderDialog);
                             }
                         } else {
@@ -1941,14 +1941,14 @@ void DoPlunderDialog(void)
                             for (i = 0; i < 4; i++)
                                 shipData[shipData->targetShip].jamming[i] = -1;
                             GetIndString(text, kGameStrList, 0x7b);
-                            DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                            DisplayComm((PStrChar *)text, kCommFrames);
                             SetDialogGWorld(plunderDialog);
                             statusRedraw[kRedrawCargo] = 1;
                         }
                     } else {
                         PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
                         GetIndString(text, kGameStrList, 0x7c);
-                        DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                        DisplayComm((PStrChar *)text, kCommFrames);
                         SetDialogGWorld(plunderDialog);
                     }
                 }
@@ -1956,7 +1956,7 @@ void DoPlunderDialog(void)
                 done = 1;
                 PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
                 GetIndString(text, kGameStrList, 0x7d);
-                DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                DisplayComm((PStrChar *)text, kCommFrames);
                 SetDialogGWorld(plunderDialog);
             }
         }

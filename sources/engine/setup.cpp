@@ -1,6 +1,7 @@
 /* setup.cpp --tu-map object O26, the original Setup.c: SpriteWorld and sprite setup, loading, cleanup and game-state reset, then the QuickDraw state shims. Notes: Research/notes/setup.md */
 #include <math.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "burgerplat.h"
 #include "macport.h"
@@ -12,6 +13,7 @@
 #include "spriteworld.h"
 #include "dialogs.h"
 #include "cefix.h"
+#include "uiscale.h"
 #include "shipobj.h"
 #include "resources.h"
 #include "space.h"
@@ -23,6 +25,8 @@
 #include "missions.h"
 #include "player.h"
 #include "platform.h"
+#include "viewscale.h"
+#include "prefsdisplay.h"
 #include "ships.h"
 #include "sound.h"
 
@@ -39,16 +43,17 @@ void SetupSpriteWorld(void)
 {
     short i;
     short err;
-    Rect *frameRect;
     Str255 str;
     Rect windRect;
     RGBColor color;
 
     mBarHidden = 1;
     windRect = mainWindRect;
-    windRect.right -= ceStatusBarWidth;
+    windRect.right -= kStatusBarWidth;
     SetPortWindowPort((WindowRef)gWind);
-    err = SWCreateSpriteWorldFromWindow(&gSpriteWorld, gWind, &windRect, &windRect, 0);
+    View::CreateUIFrames(windRect);
+    SetRect(&windRect, 0, 0, View::width, View::height);
+    err = SWCreateSpriteWorldFromWindow(&gSpriteWorld, View::Open(), &windRect, &windRect, 0);
     if ((int32_t)err != 0) {
         FadeScreenIn();
         GetIndString(str, kAlertStrList, 36);
@@ -56,6 +61,7 @@ void SetupSpriteWorld(void)
         ST_Close();
         ExitToShell();
     }
+    gSpriteWorld->screenPort = gWind;
     if (gSpriteWorld->pixelDepth != 16) {
         FadeScreenIn();
         GetIndString(str, kAlertStrList, 37);
@@ -101,22 +107,21 @@ void SetupSpriteWorld(void)
     crashlog("creating scratch frames");
     windRect.top = 0;
     windRect.left = 0;
-    windRect.right = ((mainWindRect.right - mainWindRect.left) * 0.25);
+    windRect.right = View::gameWidth * 0.25;
     if (windRect.right < 200)
         windRect.right = 200;
     windRect.bottom = windRect.right;
-    SWCreateFrame(GetGDevice(), &floatingMapFrame, &windRect, gSpriteWorld->pixelDepth, 1);
-    SWLockFrame(floatingMapFrame);
     floatingMapRect = windRect;
-    OffsetRect(&floatingMapRect,
-            GetCWindowPortRect(gWind)->right - GetCWindowPortRect(gWind)->left
-            - (windRect.right - windRect.left + ceStatusBarWidth + 16), 150);
-    SetRect(&windRect, 0, 0, CE_Scale(160), CE_Scale(120));
+    windRect = View::OverlayFrameRect(windRect);
+    SWCreateFrame(GetGDevice(), &floatingMapFrame, &windRect, gSpriteWorld->pixelDepth, 1);
+    View::ScaleOverlayFrame(floatingMapFrame);
+    SWLockFrame(floatingMapFrame);
+    OffsetRect(&floatingMapRect, View::width - (floatingMapRect.right + 16), 150);
+    SetRect(&windRect, 0, 0, 160, 120);
     SWCreateFrame(GetGDevice(), &floatingEscortMenuFrame, &windRect, gSpriteWorld->pixelDepth, 1);
+    View::ScaleOverlayFrame(floatingEscortMenuFrame);
     SWLockFrame(floatingEscortMenuFrame);
-    escortMenuRect = floatingEscortMenuFrame->frameRect;
-    OffsetRect(&escortMenuRect, -escortMenuRect.left, -escortMenuRect.top);
-    OffsetRect(&escortMenuRect, 15, 150);
+    SetRect(&escortMenuRect, 15, 150, 15 + View::ScaleInView(160), 150 + View::ScaleInView(120));
 
     color.red = color.green = color.blue = 0;
     SWSetBackgroundColor(gSpriteWorld, &color);
@@ -184,10 +189,8 @@ void SetupWind(void)
         HideTheMenuBar();
         mBarHidden = 1;
     }
-    screenCenter.h = ((GetCWindowPortRect(gWind)->right
-                             - GetCWindowPortRect(gWind)->left - ceStatusBarWidth) * 0.5);
-    screenCenter.v = ((GetCWindowPortRect(gWind)->bottom
-                             - GetCWindowPortRect(gWind)->top) * 0.5);
+    screenCenter.h = View::width * 0.5;
+    screenCenter.v = View::height * 0.5;
 }
 
 #define AllocFailed(var, expr) (var = (expr), !(var != NULL))
@@ -253,6 +256,9 @@ void InitArrays(void)
         EV_ASSERT_FAIL("Setup.c", 0x1d0, 773);
 }
 
+GWorldContainer menuArtPort;            /* MenuArt() */
+GWorldContainer menuShownPort;          /* the menu art last stretched into loadPort */
+
 // FUNCTION: EVNOVA 0x004ac950
 // MAC: _InitOffscreen i386 0x0001bd21 ppc 0x0001fe24
 void InitOffscreen(void)
@@ -265,6 +271,12 @@ void InitOffscreen(void)
     r = *bounds;
     OffsetRect(&r, -r.left, -r.top);
     CreateGWorldContainer(&loadPort, GetMainDevice(), 0, &r);
+    if (loadPort.world != NULL)
+        UI::ScaleUIPort(loadPort.world);
+    if (UI::Enabled()) {
+        CreateGWorldContainer(&menuArtPort, GetMainDevice(), 0, &r);
+        CreateGWorldContainer(&menuShownPort, GetMainDevice(), 0, &r);
+    }
     if (loadPort.world == NULL) {
         HideWindow((WindowRef)gWind);
         ShowTheMenuBar();
@@ -275,8 +287,10 @@ void InitOffscreen(void)
         ST_Close();
         ExitToShell();
     }
-    r.right = r.left + ceStatusBarWidth;
+    r.right = r.left + kStatusBarWidth;
     CreateGWorldContainer(&statusOffPort, GetMainDevice(), 0, &r);
+    if (statusOffPort.world != NULL)
+        UI::ScaleUIPort(statusOffPort.world);
     if (statusOffPort.world == NULL) {
         HideWindow((WindowRef)gWind);
         ShowTheMenuBar();
@@ -1531,10 +1545,8 @@ void InitSprites(void)
 
     ServiceIntroMusic(0);
 
-    commRect.left = GetCWindowPortRect(gWind)->left + 25;
-    commRect.right = GetCWindowPortRect(gWind)->right - ceStatusBarWidth - 50;
-    commRect.bottom = GetCWindowPortRect(gWind)->bottom - 5;
-    commRect.top = commRect.bottom - CE_Scale(26) - 4;
+    SetRect(&commRect, 25, 0, View::width - 50, View::height - 5);
+    commRect.top = commRect.bottom - View::ScaleInView(26) - 4;
 }
 
 
@@ -2289,30 +2301,106 @@ void ResetPlayerRecord(Boolean newPilot)
 #define kVideoFullScreen    0x01                /* borderless, at the desktop's mode */
 #define kVideoAlways        0x02
 
+/* The main menu's picture with its logo and slide animations is put together here: at the art's own size when
+   the interface is scaled, so it is stretched as one picture (no seams), else in loadPort as in the original. */
+GWorldContainer *MenuArt(void)
+{
+    return menuArtPort.world != NULL ? &menuArtPort : &loadPort;
+}
+
+namespace {
+
+/* the menu art's rows over `r', in the art and in what was last stretched */
+bool SameAsShown(const Rect &r)
+{
+    const PixMap &art = menuArtPort.world->pix;
+    const PixMap &shown = menuShownPort.world->pix;
+    size_t bytes = (size_t)(r.right - r.left) * 2;
+
+    for (int y = r.top; y < r.bottom; y++) {
+        if (memcmp((char *)art.baseAddr + (size_t)y * art.rowBytes + r.left * 2,
+                   (char *)shown.baseAddr + (size_t)y * shown.rowBytes + r.left * 2, bytes) != 0)
+            return false;
+    }
+    return true;
+}
+
+void KeepAsShown(const Rect &r)
+{
+    const PixMap &art = menuArtPort.world->pix;
+    const PixMap &shown = menuShownPort.world->pix;
+    size_t bytes = (size_t)(r.right - r.left) * 2;
+
+    for (int y = r.top; y < r.bottom; y++)
+        memcpy((char *)shown.baseAddr + (size_t)y * shown.rowBytes + r.left * 2,
+               (char *)art.baseAddr + (size_t)y * art.rowBytes + r.left * 2, bytes);
+}
+
+} // namespace
+
+/* The put-together picture over `area' -> loadPort, stretched to its scale. With `onlyChanged' it is left
+   alone when the art there (and the pixels the stretch reads around it) is as last stretched. */
+void ShowMenuArt(const Rect &area, bool onlyChanged)
+{
+    Rect shown;
+    Rect read;
+
+    if (menuArtPort.world == NULL || menuShownPort.world == NULL || loadPort.world == NULL
+            || !SectRect(&area, &menuArtPort.bounds, &shown))
+        return;
+    read = shown;
+    InsetRect(&read, -2, -2);
+    SectRect(&read, &menuArtPort.bounds, &read);
+    if (onlyChanged && SameAsShown(read))
+        return;
+    KeepAsShown(read);
+    ForeColor(blackColor);
+    CopyBits(GWorldContainerBits(&menuArtPort), GWorldContainerBits(&loadPort), &shown, &shown, 0, NULL);
+}
+
 short startGameWidth;
 short startGameHeight;
+double startUIScale;
 
-/* The screen at the preferences' resolution (gameWidth, gameHeight; 0 = the desktop's), shown with their
-   upscaling filter and whole-pixel scaling. */
+/* The game plays at the preferences' resolution (0 = the desktop's) and is drawn at the largest size of that
+   shape the desktop holds; the UI scale grows with it. */
 // FUNCTION: EVNOVA 0x004b45e0
 void SetupMonitor(void)
 {
-    int32_t width;
-    int32_t height;
-    int desktopWidth;
-    int desktopHeight;
+    int gameW;
+    int gameH;
+    int desktopW;
+    int desktopH;
+    int drawW;
+    int drawH;
+    double fit;
 
     startGameWidth = settings.gameWidth;
     startGameHeight = settings.gameHeight;
-    width = settings.gameWidth;
-    height = settings.gameHeight;
-    PlatDesktopSize(&desktopWidth, &desktopHeight);
-    if (width == 0)
-        width = desktopWidth;
-    if (height == 0)
-        height = desktopHeight;
+    PlatDesktopSize(&desktopW, &desktopH);
+    gameW = settings.gameWidth != 0 ? settings.gameWidth : desktopW;
+    gameH = settings.gameHeight != 0 ? settings.gameHeight : desktopH;
+    fit = (double)desktopW / gameW < (double)desktopH / gameH ? (double)desktopW / gameW
+                                                               : (double)desktopH / gameH;
+    drawW = gameW;
+    drawH = gameH;
+    if (fit > 1.0) {
+        drawW = 2 * (int)(gameW * fit / 2 + 0.5);
+        drawH = (int)(gameH * fit + 0.5);
+    }
+    /* the file may hold any scale: kept to what the Preferences offer, where every dialog fits */
+    double maxUI = MaxUIScale({ settings.gameWidth, settings.gameHeight }, 0, 0);
+    if (!(settings.uiScale >= 1.0))
+        settings.uiScale = 1.0;
+    if (settings.uiScale > maxUI)
+        settings.uiScale = maxUI;
+    double scale = settings.uiScale * drawH / gameH;
+    UI::SetScale(scale);
+    UI::SetScreenSize((short)(drawW / scale + 0.5), (short)(drawH / scale + 0.5), drawW, drawH);
+    startUIScale = settings.uiScale;
+    View::SetSizes(gameW, gameH, drawW, drawH, settings.uiScale);
     ApplyDisplayScaling();
-    SetDisplayToSize(width, height, kVideoDepth, kVideoFullScreen | kVideoAlways);
+    SetDisplayToSize(drawW, drawH, kVideoDepth, kVideoFullScreen | kVideoAlways);
 }
 
 /* The preferences' upscaling filter and whole-pixel scaling, to the window. */
@@ -2329,8 +2417,8 @@ void ResetScreenRect(void)
 {
     mainWindRect.top = 0;
     mainWindRect.left = 0;
-    mainWindRect.bottom = gVideoHeight;
-    mainWindRect.right = gVideoWidth;
+    mainWindRect.bottom = UI::ScreenHeight();
+    mainWindRect.right = UI::ScreenWidth();
 }
 
 /*
@@ -3088,6 +3176,11 @@ void GetGlobalMouse(Point *pt)
     MouseReadPosition(&h, &v);
     pt->h = h;
     pt->v = v;
+    if (UI::Enabled()) {
+        UI::Mapping screen(gGamePort.pix);
+        pt->h = (short)screen.LogicalX(h);
+        pt->v = (short)screen.LogicalY(v);
+    }
 }
 
 // FUNCTION: EVNOVA 0x004b68d0
@@ -3122,7 +3215,7 @@ void TextFont(short font)
 void TextSize(short size)
 {
     // BUG (CE F12.82): CE's replacement drops the NULL-port test; no caller in play has no port
-    CurrentGrafPort->txSize = CE_Scale(size);
+    CurrentGrafPort->txSize = size;
 }
 
 // FUNCTION: EVNOVA 0x004b6940

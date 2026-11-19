@@ -15,6 +15,8 @@
 #include "gameutil.h"
 #include "missions.h"
 #include "player.h"
+#include "viewscale.h"
+#include "uisprite.h"
 #include "render.h"
 #include "ships.h"
 #include "crashlog.h"
@@ -90,7 +92,7 @@ void MainScreenRolloverDraw(void)
         menuRolloverSprite->tintColor = 0;
         gSWCurrentSpriteBeingDrawn = menuRolloverSprite;
 
-        BlitPixieRLETranslucentDrawProc(menuRolloverSprite->frameArray[idx],
-            gSpriteWorld->workFrameP, &srcRect, &rolloverDestRect);
+        UI::DrawSprite(BlitPixieRLETranslucentDrawProc, menuRolloverSprite->frameArray[idx],
+            View::UIWork(), &srcRect, &rolloverDestRect);
     }
 }

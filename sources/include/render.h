@@ -56,7 +56,7 @@ extern void DrawStatusWeap(void);
 extern void DrawStringCentered(const unsigned char *str, short left,
                                short right, short v);
 extern void EndLoopingMovie(void);
-extern void FloaterEraseCallback(void *a);
+extern SWFrameRec *CommOverlay(void);
 extern void SetupListRects(Point *where);
 extern void InitOffscreen(void);
 extern void HideAmbrosiaLogo(void);

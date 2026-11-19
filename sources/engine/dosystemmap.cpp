@@ -19,6 +19,7 @@
 #include "sound.h"
 #include "stellar.h"
 #include "cefix.h"
+#include "viewscale.h"
 #include "space.h"
 
 EXTERN_C_BEGIN
@@ -482,7 +483,7 @@ void DoSystemMap(void)
     SetRect(&r, found - x, sys - y, found + x, sys + y);
     pr = GetCWindowPortRect(gWind);
     box2 = *pr;
-    box2.left = box2.right - ceStatusBarWidth;
+    box2.left = box2.right - kStatusBarWidth;
     if (SectRect(&r, &box2, &box2))
         RedrawStatus(1);
     RedrawDialogs(1);
@@ -576,7 +577,7 @@ void MapDialogUpdate(void)
             SetGWorldContainer(&loadPort);
             GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
         } else {
-            SWSetPortToWorkArea(gSpriteWorld);
+            View::SetPortToUIWork();
             PenSize(1, 1);
             GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
         }
@@ -585,7 +586,7 @@ void MapDialogUpdate(void)
         ForeColor(blackColor);
         PaintRect(&box);
         if (partialMapDialogUpdate == 0 && settings.showMapBorders != 0) {
-            SWSetPortToWorkArea(gSpriteWorld);
+            View::SetPortToUIWork();
             GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &r2);
             DrawMapInfluence(r2);
         }
@@ -623,25 +624,25 @@ void MapDialogUpdate(void)
                     if (nebulaPic[i][fit] != 0) {
                         SectRect(&box, &nebR, &r2);
                         if (partialMapDialogUpdate != 0) {
-                            SWSetPortToWorkArea(gSpriteWorld);
+                            View::SetPortToUIWork();
                             ForeColor(blackColor);
                             DrawPicHandle(nebulaPic[i][fit], &nebR);
                             SetGWorldContainer(&loadPort);
                             ForeColor(blackColor);
                             CopyBits(GetPortPixMapBits(
-                                         gSpriteWorld->workFrameP->framePort),
+                                         View::UIWork()->framePort),
                                      (BitMapPtr)GWorldContainerBits(&loadPort),
                                      &r2, &r2, 0, 0);
                         } else {
-                            SWSetPortToBackground(gSpriteWorld);
+                            View::SetPortToUIBack();
                             ForeColor(blackColor);
                             DrawPicHandle(nebulaPic[i][fit], &nebR);
                             CopyBits(GetPortPixMapBits(
-                                         gSpriteWorld->backFrameP->framePort),
+                                         View::UIBack()->framePort),
                                      GetPortPixMapBits(
-                                         gSpriteWorld->workFrameP->framePort),
+                                         View::UIWork()->framePort),
                                      &r2, &r2, 0x25, 0);
-                            SWSetPortToWorkArea(gSpriteWorld);
+                            View::SetPortToUIWork();
                             ForeColor(blackColor);
                         }
                     }
@@ -707,7 +708,7 @@ void MapDialogUpdate(void)
             SetGWorldContainer(&loadPort);
             ForeColor(blackColor);
             CopyBits(GetPortPixMapBits(
-                         gSpriteWorld->workFrameP->framePort),
+                         View::UIWork()->framePort),
                      (BitMapPtr)GWorldContainerBits(&loadPort),
                      &box, &box, 0, 0);
         }
@@ -850,7 +851,7 @@ void MapDialogUpdate(void)
             DateToMedString(gameTime, (char *)buf);
             CtoPstr((char *)buf);
         }
-        CE_SetPen(box.right - StringWidth(buf) + CE_Scale(-5), box.top + CE_Scale(0x24));
+        MoveTo(box.right - StringWidth(buf) - 5, box.top + 0x24);
         DrawString(buf);
         ForeColor(blackColor);
         didUpdateMap = 1;

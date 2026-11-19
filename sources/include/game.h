@@ -54,8 +54,8 @@ extern void *clickSnd;
 extern short lastShipAIDispatched;
 EXTERN_CPP_END
 extern unsigned int DeleteAFile(const char *path);
-extern void DisplayComm(PStrChar *msg, short count, short font, short size,
-                        RGBColor *color, Boolean bold, unsigned char noBlit);
+extern void DisplayComm(PStrChar *msg, short count);
+extern void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const RGBColor *color);
 extern void DoNewPilot(void);
 extern void DoShipCloak(ShipObj *ship);
 extern void DoStellarTimePassage(void);
@@ -194,6 +194,9 @@ extern Boolean mBarHidden;
 extern Rect mainWindRect;
 extern short startGameWidth;                /* the preferences' resolution the game started with */
 extern short startGameHeight;
+extern double startUIScale;                 /* the preferences' UI scale the game started with */
+extern GWorldContainer *MenuArt(void);
+extern void ShowMenuArt(const Rect &area, bool onlyChanged = false);
 extern void SetupMonitor(void);
 extern void ApplyDisplayScaling(void);
 extern short menuFontID;

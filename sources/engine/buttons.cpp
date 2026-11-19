@@ -1,5 +1,7 @@
 /* buttons.cpp -- the custom picture buttons every EV Nova dialog draws over its Dialog Manager items (win TU region 0x0049eef0..0x004a3aa0). Notes: Research/notes/buttons.md */
 #include "macport.h"
+#include "scaleddraw.h"
+#include "uiscale.h"
 
 #include "gametypes.h"
 #include "shipobj.h"
@@ -1426,6 +1428,8 @@ void InitButtons(void)
     buttonColor[2].red = buttonColor[2].green = buttonColor[2].blue = 0x8000;
     SetRect(&bounds, 0, 0, 500, 75);
     CreateGWorldContainer(&buttonPort, kButtonDevice, gSpriteWorld->pixelDepth, &bounds);
+    if (buttonPort.world != 0)
+        UI::ScaleUIPort(buttonPort.world);
 }
 
 // FUNCTION: EVNOVA 0x004a3300
@@ -1448,13 +1452,39 @@ void DisposeButtons(void)
 #define kGlyphPlus  0x2b
 #define kGlyphMinus 0x2d
 
+/* A button's face in buttonPort over `box': its left and right ends masked, the middle stretched between
+   them, put together and stretched as one picture. */
+static void DrawButtonFace(short mode, const Rect &box)
+{
+    UI::ArtComposition art(buttonPort.world, box);
+    Rect piece;
+    Rect mid = box;
+
+    piece = buttonPieceRect[mode * 3];
+    OffsetRect(&piece, -piece.left, -piece.top);
+    OffsetRect(&piece, box.left, box.top);
+    piece.bottom = box.bottom;
+    CopyMask(GWorldContainerBits(&buttonImagePort), GWorldContainerBits(&buttonMaskPort),
+             GWorldContainerBits(&buttonPort), &buttonPieceRect[mode * 3],
+             &buttonPieceRect[mode * 3], &piece);
+    mid.left = piece.right;
+    piece = buttonPieceRect[mode * 3 + 2];
+    OffsetRect(&piece, -piece.left, -piece.top);
+    OffsetRect(&piece, box.right - piece.right, box.top);
+    piece.bottom = box.bottom;
+    CopyMask(GWorldContainerBits(&buttonImagePort), GWorldContainerBits(&buttonMaskPort),
+             GWorldContainerBits(&buttonPort), &buttonPieceRect[mode * 3 + 2],
+             &buttonPieceRect[mode * 3 + 2], &piece);
+    mid.right = piece.left;
+    CopyBits(GWorldContainerBits(&buttonImagePort), (BitMapPtr)GWorldContainerBits(&buttonPort),
+             &buttonPieceRect[mode * 3 + 1], &mid, 0, 0);
+}
+
 // FUNCTION: EVNOVA 0x004a3340
 // MAC: _DrawButton i386 0x00025ea8 ppc 0x0002a5dc
 void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
                 short state, short selected, PicHandle pic)
 {
-    Rect piece;
-    Rect mid;
     Rect box;
     CGrafPtr savedPort;
     short mode;
@@ -1481,32 +1511,11 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
         GWorldContainerSetPort(&buttonPort);
         ForeColor(blackColor);
         box = *bounds;
-        mid = box;
         OffsetRect(&box, -box.left, -box.top);
-        OffsetRect(&mid, -mid.left, -mid.top);
         CopyBits(GWorldContainerBits(&loadPort), (BitMapPtr)GWorldContainerBits(&buttonPort),
                  bounds, &box, 0, 0);
         if (state == 0 || state == kButtonDim) {
-            piece = buttonPieceRect[mode * 3];
-            OffsetRect(&piece, -piece.left, -piece.top);
-            OffsetRect(&piece, box.left, box.top);
-            piece.bottom = box.bottom;
-            piece.right = piece.left + CE_Scale(piece.right - piece.left);
-            CopyMask(GWorldContainerBits(&buttonImagePort), GWorldContainerBits(&buttonMaskPort),
-                     GWorldContainerBits(&buttonPort), &buttonPieceRect[mode * 3],
-                     &buttonPieceRect[mode * 3], &piece);
-            mid.left = piece.right;
-            piece = buttonPieceRect[mode * 3 + 2];
-            OffsetRect(&piece, -piece.left, -piece.top);
-            OffsetRect(&piece, box.right - piece.right, box.top);
-            piece.bottom = box.bottom;
-            piece.left = piece.right - CE_Scale(piece.right - piece.left);
-            CopyMask(GWorldContainerBits(&buttonImagePort), GWorldContainerBits(&buttonMaskPort),
-                     GWorldContainerBits(&buttonPort), &buttonPieceRect[mode * 3 + 2],
-                     &buttonPieceRect[mode * 3 + 2], &piece);
-            mid.right = piece.left;
-            CopyBits(GWorldContainerBits(&buttonImagePort), (BitMapPtr)GWorldContainerBits(&buttonPort),
-                     &buttonPieceRect[mode * 3 + 1], &mid, 0, 0);
+            DrawButtonFace(mode, box);
             RGBForeColor(&buttonColor[mode]);
             glyph = label[1];
             if (glyph == kGlyphCaret) {
@@ -1542,8 +1551,8 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
             } else {
                 TextFont(buttonFontID);
                 TextSize(buttonFontSize);
-                CE_SetPen((box.left + box.right) / 2 - StringWidth(label) / 2,
-                          (box.top + box.bottom) / 2 + CE_Scale(5));
+                MoveTo((box.left + box.right) / 2 - StringWidth(label) / 2,
+                          (box.top + box.bottom) / 2 + 5);
                 DrawString(label);
             }
         }

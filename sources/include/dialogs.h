@@ -323,6 +323,8 @@ EXTERN_CPP_BEGIN
 extern ScrollRec **missionList;
 EXTERN_CPP_END
 
+extern void DrawDialogBackground(PicHandle pics[3], const Rect &box, bool onePicture);  /* tradedlg.cpp */
+
 #ifdef __cplusplus
 }
 #endif

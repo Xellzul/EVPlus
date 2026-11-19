@@ -7,6 +7,7 @@
 #include "burger.h"
 #include "render.h"
 #include "game.h"
+#include "viewscale.h"
 #include "gameutil.h"
 #include "sound.h"
 #include "crashlog.h"
@@ -166,13 +167,13 @@ void MainScreenAnimIdle(void)
     CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
              &logoDestRect, &logoDestRect, 0, NULL);
 
-    CopyBits(GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
+    CopyBits(GetPortBitMapForCopyBits(View::UIWork()->framePort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
              &rolloverDestRect, &rolloverDestRect, 0, NULL);
 
     for (i = 0; i < 3; i++) {
         if (slidePort[i].world != NULL && slideIndex[i] < 0x7d00) {
-            CopyBits(GetPortBitMapForCopyBits(gSpriteWorld->workFrameP->framePort),
+            CopyBits(GetPortBitMapForCopyBits(View::UIWork()->framePort),
                      GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                      &slideDestRect[i], &slideDestRect[i], 0, NULL);
             if (slideIndex[i] >= slideFrameCount[i])

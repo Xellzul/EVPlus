@@ -424,16 +424,16 @@ void NewsDialogUpdate(void)
     ForeColor(blackColor);
     PaintRect(GetDialogPortRect(newsDialog));
     DrawPicHandle(newsPic, GetDialogPortRect(newsDialog));
-    SetRect(&box, GetDialogPortRect(newsDialog)->left + CE_Scale(kTextInset),
-            GetDialogPortRect(newsDialog)->top + CE_Scale(kTitleTop),
-            GetDialogPortRect(newsDialog)->right - CE_Scale(kTextInset),
-            GetDialogPortRect(newsDialog)->top + CE_Scale(kTitleBottom));
+    SetRect(&box, GetDialogPortRect(newsDialog)->left + kTextInset,
+            GetDialogPortRect(newsDialog)->top + kTitleTop,
+            GetDialogPortRect(newsDialog)->right - kTextInset,
+            GetDialogPortRect(newsDialog)->top + kTitleBottom);
     TETextBox(sponsorString, strlen(sponsorString), &box, 0);
     InvertRect(&box);
-    SetRect(&box, GetDialogPortRect(newsDialog)->left + CE_Scale(kTextInset),
-            GetDialogPortRect(newsDialog)->top + CE_Scale(kBodyTop),
-            GetDialogPortRect(newsDialog)->right - CE_Scale(kTextInset),
-            GetDialogPortRect(newsDialog)->bottom - CE_Scale(kBodyMargin));
+    SetRect(&box, GetDialogPortRect(newsDialog)->left + kTextInset,
+            GetDialogPortRect(newsDialog)->top + kBodyTop,
+            GetDialogPortRect(newsDialog)->right - kTextInset,
+            GetDialogPortRect(newsDialog)->bottom - kBodyMargin);
     TETextBox(newsString, strlen(newsString), &box, 0);
     InvertRect(&box);
     SWSetPortToWindow(gSpriteWorld);

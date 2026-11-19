@@ -11,7 +11,6 @@ extern "C" {
 #endif
 
 extern void StrcatIndCString(char *dst, short strListID, short index);   /* 0x004cd1a0 mac _StrcatIndCString */
-extern void RedrawComm(unsigned char noBlit);        /* 0x0047e430 comm.cpp */
 EXTERN_CPP_BEGIN
 extern MissionRecord *currentMissions;               /* 0x005914b4 (mac _currentMissions), mission.cpp */
 extern BoxObj *boxData;                              /* 0x005914a8 */

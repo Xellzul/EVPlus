@@ -5,6 +5,7 @@
 #include "dialogs.h"
 #include "game.h"
 #include "player.h"
+#include "viewscale.h"
 #include "render.h"
 #include "gametypes.h"
 
@@ -171,7 +172,7 @@ void KeyDialogUpdate(void)
 
     SetDialogGWorld(keyDialog);
     GetDialogItem(keyDialog, 4, &itemType, &item, &picBox);
-    SWSetPortToWorkArea(gSpriteWorld);
+    View::SetPortToUIWork();
     ForeColor(blackColor);
     TextFont(0);
     TextSize(12);
@@ -214,7 +215,7 @@ void KeyDialogUpdate(void)
         SWSetPortToWindow(gSpriteWorld);
     SetDialogGWorld(keyDialog);
     ForeColor(blackColor);
-    CopyBits(GetPortPixMapBits(gSpriteWorld->workFrameP->framePort),
+    CopyBits(GetPortPixMapBits(View::UIWork()->framePort),
              GetPortBitMapForCopyBits(GetDialogPort(keyDialog)),
              &picBox, &picBox, 0, NULL);
 }

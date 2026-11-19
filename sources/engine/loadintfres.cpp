@@ -96,7 +96,6 @@ void LoadIntfResource(void)
         if (picID < kFirstResourceID)
             picID = kFirstResourceID;
 
-        CE_ScaleStatusRects();
         ReleaseResource(intfFileHand);
     } else {
         picID = kFirstResourceID;
@@ -109,7 +108,7 @@ void LoadIntfResource(void)
         PaintRect(&statusOffPort.bounds);
         QDGetPictureBounds(pict, &pictRect);
         OffsetRect(&pictRect, -pictRect.left, -pictRect.top);
-        CE_ScaleOffsetRect(&pictRect, -statusOffPort.bounds.left, -statusOffPort.bounds.top);
+        OffsetRect(&pictRect, -statusOffPort.bounds.left, -statusOffPort.bounds.top);
         DrawPicHandle(pict, &pictRect);
         QDReleaseResource(pict);
         UnsetGWorldContainer(&statusOffPort);

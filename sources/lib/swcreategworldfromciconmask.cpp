@@ -35,7 +35,7 @@ short SWCreateGWorldFromCIconMask(SpriteWorldPtr destSpriteWorld,
 
     SetRect(&bounds, 0, 0, cIconH->Width, cIconH->Height);
 
-    err = CE_NewGWorld(&tempGWorldP, depth, &bounds, 0);
+    err = NewGWorld(&tempGWorldP, depth, &bounds, 0);
 
     if ((int)err == noErr) {
         SetPort(tempGWorldP);

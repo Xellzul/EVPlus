@@ -6,6 +6,8 @@
 #include <string.h>
 
 #include "macport.h"
+#include "scaleddraw.h"
+#include "uiscale.h"
 #include "game.h"
 #include "stellar.h"
 #include "shipobj.h"
@@ -181,17 +183,17 @@ typedef void (*BlitProc)(PixMapPtr srcBits, PixMapPtr dstBits,
 BlitProc copyBitsProcs[5][5] = {             /* 0x00575b28 same-size srcCopy */
     { NULL, NULL,             NULL,                NULL,             NULL             },
     { NULL, BP CopyBitsNone, BP CopyBitsCopy8,    BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsCopy16,     BP CopyBitsNone, BP CE_Blit16    },
-    { NULL, BP CopyBitsNone, BP CE_Blit24,        BP CopyBitsNone, BP CE_Blit24    },
-    { NULL, BP CopyBitsNone, BP CE_Blit32,        BP CopyBitsNone, BP CE_Blit32    }
+    { NULL, BP CopyBitsNone, BP CopyBitsCopy16,     BP CopyBitsNone, BP BlitDirect16    },
+    { NULL, BP CopyBitsNone, BP BlitDirect24,        BP CopyBitsNone, BP BlitDirect24    },
+    { NULL, BP CopyBitsNone, BP BlitDirect32,        BP CopyBitsNone, BP BlitDirect32    }
 };
 
 BlitProc scaleBitsCopyProcs[5][5] = {        /* 0x00575b8c scaled srcCopy */
     { NULL, NULL,             NULL,                NULL,             NULL             },
     { NULL, BP CopyBitsNone, BP CopyBitsScale8,   BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CE_Blit16,        BP CopyBitsNone, BP CE_Blit16    },
-    { NULL, BP CopyBitsNone, BP CE_Blit24,        BP CopyBitsNone, BP CE_Blit24    },
-    { NULL, BP CopyBitsNone, BP CE_Blit32,        BP CopyBitsNone, BP CE_Blit32    }
+    { NULL, BP CopyBitsNone, BP BlitDirect16,        BP CopyBitsNone, BP BlitDirect16    },
+    { NULL, BP CopyBitsNone, BP BlitDirect24,        BP CopyBitsNone, BP BlitDirect24    },
+    { NULL, BP CopyBitsNone, BP BlitDirect32,        BP CopyBitsNone, BP BlitDirect32    }
 };
 
 BlitProc copyBitsAddOverProcs[5][5] = {      /* 0x00575bf0 same-size addOver */
@@ -232,8 +234,15 @@ void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits, const Rect *srcRect,
 
     xStep = 0;
     yStep = 0;
+    proc = NULL;
     if (srcBits == NULL || dstBits == NULL || srcRect == NULL || dstRect == NULL)
         return;
+    if (UI::ComposeCopy((PixMapPtr)srcBits, (PixMapPtr)dstBits, srcRect, dstRect, mode))
+        return;
+    if (UI::Mapping(*(PixMapPtr)srcBits).Scaled() || UI::Mapping(*(PixMapPtr)dstBits).Scaled()) {
+        Scaled::CopyBits(*(PixMapPtr)srcBits, *(PixMapPtr)dstBits, *srcRect, *dstRect, mode);
+        return;
+    }
 
     src.top = srcRect->top;
     src.left = srcRect->left;
@@ -324,6 +333,8 @@ void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits, const Rect *srcRect,
             || src.right > srcPix->bounds.right
             || src.bottom > srcPix->bounds.bottom)
         return;
+    if (proc == NULL)
+        return;                         /* a stretched copy in a mode that cannot stretch */
 
     proc(srcPix, dstPix, &src, &dst, xStep, yStep, xFrac, yFrac);
 }
@@ -754,7 +765,7 @@ typedef void (*BlitMaskProc)(PixMapPtr srcBits, PixMapPtr maskBits,
 BlitMaskProc copyMaskProcs[5][5] = {    /* 0x00575cb8 */
     { NULL, NULL,                      NULL,                      NULL,                      NULL                      },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMask16,   (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CE_Blit16Mask },
+    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMask16,   (BlitMaskProc)CopyMaskNone, (BlitMaskProc)BlitDirectMask16 },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone }
 };
@@ -762,7 +773,7 @@ BlitMaskProc copyMaskProcs[5][5] = {    /* 0x00575cb8 */
 BlitMaskProc scaleMaskProcs[5][5] = {   /* 0x00575d1c */
     { NULL, NULL,                      NULL,                      NULL,                      NULL                      },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CE_Blit16Mask, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CE_Blit16Mask },
+    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)BlitDirectMask16, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)BlitDirectMask16 },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
     { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone }
 };
@@ -790,6 +801,14 @@ void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
     if (srcBits == NULL || maskBits == NULL || dstBits == NULL
             || srcRect == NULL || maskRect == NULL || dstRect == NULL)
         return;
+    if (UI::ComposeMask((PixMapPtr)srcBits, (PixMapPtr)maskBits, (PixMapPtr)dstBits, srcRect, maskRect, dstRect))
+        return;
+    if (UI::Mapping(*(PixMapPtr)srcBits).Scaled() || UI::Mapping(*(PixMapPtr)maskBits).Scaled()
+            || UI::Mapping(*(PixMapPtr)dstBits).Scaled()) {
+        Scaled::CopyMask(*(PixMapPtr)srcBits, *(PixMapPtr)maskBits, *(PixMapPtr)dstBits, *srcRect, *maskRect,
+                         *dstRect);
+        return;
+    }
 
     src.top = srcRect->top;
     src.left = srcRect->left;
@@ -871,364 +890,21 @@ void Line(short dh, short dv)
 // FUNCTION: EVNOVA 0x004b97e0
 void LineTo(short h, short v)
 {
-    char *q;
-    int x0;
-    char wide;
-    int x1;
-    int32_t clipTop;
-    int clipBottom;
-    int y1;
-    unsigned int n;
-    short boundsTop;
-    int32_t color32;
-    int yStep;
-    int rowAdvance;
-    int penH;
-    unsigned int penW;
-    int y0;
-    int xStep;
-    unsigned int dx;
-    int rows;
-    unsigned int err;
-    unsigned int count;
-    int skipped;
-    int clipRight;
-    int clipLeft;
-    unsigned int nRows;
-    char *p;
-    unsigned int dy;
-    int i;
-
-    x1 = h;
-    y1 = v;
     if (CurrentGrafPort == NULL)
         return;
-    x0 = CurrentGrafPort->pnLoc.h;
-    y0 = CurrentGrafPort->pnLoc.v;
-    if (x0 > x1)
-        x0--;
-    else if (x0 != x1)
-        x1--;
-    if (y0 > y1)
-        y0--;
-    else if (y0 != y1)
-        y1--;
-
-    color32 = gGammaRamp[CurrentGrafPort->foreColor.blue >> 11] |
-              (gGammaRamp[CurrentGrafPort->foreColor.red >> 11] << 10 |
-               gGammaRamp[CurrentGrafPort->foreColor.green >> 11] << 5);
-    color32 |= color32 << 16;
-
-    penW = CurrentGrafPort->pnSize.h;
-    penH = CurrentGrafPort->pnSize.v;
-    if (y0 > y1) {
-        i = x0;
-        x0 = x1;
-        x1 = i;
-        i = y0;
-        y0 = y1;
-        y1 = i;
-    }
-    boundsTop = CurrentGrafPort->pix.bounds.top;
-    clipTop = boundsTop;
-    clipLeft = CurrentGrafPort->pix.bounds.left;
-    clipBottom = CurrentGrafPort->pix.bounds.bottom;
-    clipRight = CurrentGrafPort->pix.bounds.right;
-    wide = penW > 1;
-    if (wide) {
-        clipTop += penH - 1;
-        clipBottom -= penH - 1;
-        clipLeft += penW - 1;
-        clipRight -= penW - 1;
-    }
-    /* BUG: the clip rejections return without moving the pen to (h, v) (exe 0x004b9e56,
-       0x004b9e88, 0x004b9e90) */
-    if (y1 < clipTop || y0 >= clipBottom)
-        return;
-
-    dx = x1 - x0;
-    if ((int)dx < 0) {
-        dx = -dx;
-        xStep = -2;
-        if (x0 < clipLeft || x1 >= clipRight)
-            return;
-    } else {
-        if (x1 < clipLeft || x0 >= clipRight)
-            return;
-        xStep = 2;
-    }
-    yStep = CurrentGrafPort->pix.rowBytes;
-    dy = y1 - y0;
-    p = (char *)CurrentGrafPort->pix.baseAddr +
-        (y0 - boundsTop) * CurrentGrafPort->pix.rowBytes +
-        (x0 - CurrentGrafPort->pix.bounds.left) * 2;
-    if (wide)
-        rowAdvance = CurrentGrafPort->pix.rowBytes - penW * 2;
-
-    if (dx >= dy) {
-        if (dx == 0) {
-            if (wide) {
-                rows = penH;
-                do {
-                    n = penW;
-                    if (n > 1) {
-                        do {
-                            *(uint32_t *)p = color32;
-                            p += 4;
-                            n -= 2;
-                        } while (n > 1);
-                    }
-                    if (n != 0) {
-                        *(unsigned short *)p = color32;
-                        p += 2;
-                    }
-                    p += rowAdvance;
-                    rows--;
-                } while (rows != 0);
-            } else {
-                *(unsigned short *)p = color32;
-            }
-            return;
-        }
-        err = dx >> 1;
-        count = dx;
-        skipped = 0;
-        if (xStep <= 0) {
-            if (x0 >= clipRight) {
-                i = (x0 - clipRight) + 1;
-                err += i * dy;
-                p -= i * 2;
-                count -= i;
-                nRows = err / dx;
-                err = err % dx;
-                p = (char *)((intptr_t)p + yStep * nRows);
-                y0 += nRows;
-            }
-            if (x1 < clipLeft) {
-                skipped = clipLeft - x1;
-                count -= skipped;
-            }
-        } else {
-            if (x0 < clipLeft) {
-                i = clipLeft - x0;
-                err += i * dy;
-                p += i * 2;
-                count -= i;
-                nRows = err / dx;
-                err = err % dx;
-                p = (char *)((intptr_t)p + yStep * nRows);
-                y0 += nRows;
-            }
-            if (x1 >= clipRight) {
-                skipped = (x1 - clipRight) + 1;
-                count -= skipped;
-            }
-        }
-        if (y0 < clipTop) {
-            i = clipTop - y0;
-            i = (i * dx - err) / dy + 1;
-            err += i * dy;
-            p = (char *)((intptr_t)p + i * xStep);
-            count -= i;
-            nRows = err / dx;
-            err = err % dx;
-            p = (char *)((intptr_t)p + yStep * nRows);
-        }
-        if (y1 >= clipBottom) {
-            i = (y1 - clipBottom) + 1;
-            i = (i * dx - err) / dy + 1;
-            if (i > skipped)
-                count -= i - skipped;
-        }
-        if ((int)count >= 0) {
-            if (wide) {
-                q = p;
-                rows = penH;
-                do {
-                    n = penW;
-                    if (n > 1) {
-                        do {
-                            *(uint32_t *)q = color32;
-                            q += 4;
-                            n -= 2;
-                        } while (n > 1);
-                    }
-                    if (n != 0) {
-                        *(unsigned short *)q = color32;
-                        q += 2;
-                    }
-                    q = (char *)((intptr_t)q + rowAdvance);
-                    rows--;
-                } while (rows != 0);
-                if (count != 0) {
-                    do {
-                        err += dy;
-                        if (err >= dx) {
-                            err -= dx;
-                            p = (char *)((intptr_t)p + yStep);
-                        }
-                        p = (char *)((intptr_t)p + xStep);
-                        q = p;
-                        rows = penH;
-                        do {
-                            n = penW;
-                            if (n > 1) {
-                                do {
-                                    *(uint32_t *)q = color32;
-                                    q += 4;
-                                    n -= 2;
-                                } while (n > 1);
-                            }
-                            if (n != 0) {
-                                *(unsigned short *)q = color32;
-                                q += 2;
-                            }
-                            q += rowAdvance;
-                            rows--;
-                        } while (rows != 0);
-                    } while (--count != 0);
-                }
-            } else {
-                *(unsigned short *)p = color32;
-                if (count != 0) {
-                    do {
-                        err += dy;
-                        if (err >= dx) {
-                            err -= dx;
-                            p = (char *)((intptr_t)p + yStep);
-                        }
-                        p = (char *)((intptr_t)p + xStep);
-                        *(unsigned short *)p = color32;
-                    } while (--count != 0);
-                }
-            }
-        }
-        /* BUG: the x-major walk returns without moving the pen to (h, v) (exe 0x004ba0f1 and
-           0x004b9ec6 for dx == 0; the one pnLoc store is 0x004ba2c0) */
-        return;
-    }
-
-    err = dy >> 1;
-    count = dy;
-    if (xStep <= 0) {
-        if (x0 >= clipRight) {
-            rows = (x0 - clipRight) + 1;
-            rows = (rows * dy - err) / dx + 1;
-            y0 += rows;
-            err += rows * dx;
-            p = (char *)((intptr_t)p + rows * yStep);
-            count -= rows;
-            i = err / dy;
-            err = err % dy;
-            p = (char *)((intptr_t)p + xStep * i);
-        }
-        if (x1 < clipLeft) {
-            i = clipLeft - x1;
-            i = (i * dy - err) / dx + 1;
-            count -= i;
-            y1 -= i;
-        }
-    } else {
-        if (x0 < clipLeft) {
-            i = clipLeft - x0;
-            i = (i * dy - err) / dx + 1;
-            y0 += i;
-            err += i * dx;
-            p = (char *)((intptr_t)p + i * yStep);
-            count -= i;
-            nRows = err / dy;
-            err = err % dy;
-            p = (char *)((intptr_t)p + xStep * nRows);
-        }
-        if (x1 >= clipRight) {
-            i = (x1 - clipRight) + 1;
-            i = (i * dy - err) / dx + 1;
-            count -= i;
-            y1 -= i;
-        }
-    }
-    if (y0 < clipTop) {
-        skipped = clipTop - y0;
-        err += skipped * dx;
-        p = (char *)((intptr_t)p + skipped * yStep);
-        count -= skipped;
-        i = err / dy;
-        err = err % dy;
-        p = (char *)((intptr_t)p + xStep * i);
-    }
-    if (y1 >= clipBottom)
-        count -= (y1 - clipBottom) + 1;
-    if ((int)count >= 0) {
-        if (wide) {
-            q = p;
-            rows = penH;
-            do {
-                n = penW;
-                if (n > 1) {
-                    do {
-                        *(uint32_t *)q = color32;
-                        q += 4;
-                        n -= 2;
-                    } while (n > 1);
-                }
-                if (n != 0) {
-                    *(unsigned short *)q = color32;
-                    q += 2;
-                }
-                q = (char *)((intptr_t)q + rowAdvance);
-                rows--;
-            } while (rows != 0);
-            if (count != 0) {
-                do {
-                    err += dx;
-                    if (err >= dy) {
-                        err -= dy;
-                        p = (char *)((intptr_t)p + xStep);
-                    }
-                    p = (char *)((intptr_t)p + yStep);
-                    q = p;
-                    rows = penH;
-                    do {
-                        n = penW;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = color32;
-                                q += 4;
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0) {
-                            *(unsigned short *)q = color32;
-                            q += 2;
-                        }
-                        q = (char *)((intptr_t)q + rowAdvance);
-                        rows--;
-                    } while (rows != 0);
-                } while (--count != 0);
-            }
-        } else {
-            *(unsigned short *)p = color32;
-            if (count != 0) {
-                do {
-                    err += dx;
-                    if (err >= dy) {
-                        err -= dy;
-                        p = (char *)((intptr_t)p + xStep);
-                    }
-                    p = (char *)((intptr_t)p + yStep);
-                    *(unsigned short *)p = color32;
-                } while (--count != 0);
-            }
-        }
-    }
-    CurrentGrafPort->pnLoc.h = h;
-    CurrentGrafPort->pnLoc.v = v;
+    if (CurrentGrafPort->pix.pixelSize == 16)
+        Scaled::LineTo(h, v);
+    else
+        MoveTo(h, v);
 }
 
 // FUNCTION: EVNOVA 0x004ba2f0
 void MoveTo(short h, short v)
 {
-    CE_MoveTo(h, v);
+    if (CurrentGrafPort == NULL)
+        return;
+    CurrentGrafPort->pnLoc.h = h;
+    CurrentGrafPort->pnLoc.v = v;
 }
 
 // FUNCTION: EVNOVA 0x004ba320
@@ -1243,565 +919,15 @@ void PenSize(short width, short height)
 // FUNCTION: EVNOVA 0x004ba350
 void FrameOval(Rect *r)
 {
-    int left;
-    int top;
-    int bottom;
-    int right;
-    int penW;
-    int penH;
-    char thick;
-    int y;
-    int d;
-    int k;
-    int x;
-    int cx;
-    int rowBytes;
-    uint32_t colour;
-    int radius;
-    int cy;
-    unsigned char *base;
-    int px;
-    int py;
-    int bx;
-    int by;
-    int fw;
-    int fh;
-    /* the thick pen's eight blocks: the later ones keep their own row pointer and height */
-    int fh8;
-    int fh6;
-    int fh7;
-    int n;
-    unsigned short *p7;
-    unsigned short *p8;
-    unsigned short *p3;
-    unsigned short *p4;
-    unsigned short *p5;
-    unsigned short *p6;
-    unsigned short *p;
-    unsigned short *q;
-
-    if (CurrentGrafPort == NULL)
-        return;
-    left = CurrentGrafPort->pix.bounds.left;
-    top = CurrentGrafPort->pix.bounds.top;
-    bottom = CurrentGrafPort->pix.bounds.bottom;
-    right = CurrentGrafPort->pix.bounds.right;
-    if (r->right < left || r->left > right ||
-        r->bottom < top || r->top > bottom)
-        return;
-
-    penW = CurrentGrafPort->pnSize.h;
-    penH = CurrentGrafPort->pnSize.v;
-    thick = (penW != 1 || penH != 1);
-
-    x = 0;
-    radius = (r->bottom - r->top) / 2;
-    y = radius;
-    d = 1 - radius;
-    cx = (r->right + r->left) / 2;
-    cy = (r->top + r->bottom) / 2;
-    rowBytes = CurrentGrafPort->pix.rowBytes;
-    base = (unsigned char *)CurrentGrafPort->pix.baseAddr;
-    colour = (gGammaRamp[CurrentGrafPort->foreColor.red >> 11] << 10) |
-             (gGammaRamp[CurrentGrafPort->foreColor.green >> 11] << 5) |
-             gGammaRamp[CurrentGrafPort->foreColor.blue >> 11];
-    colour |= colour << 16;
-
-    if (y >= x) {
-        k = 3;
-        do {
-            if (!thick) {
-                px = cx + x;
-                py = cy + y;
-                if (px >= left && px < right && py >= top && py < bottom)
-                    *(unsigned short *)(base + rowBytes * py + px * 2) =
-                        colour;
-                px = cx + x;
-                py = cy - y;
-                if (px >= left && px < right && py >= top && py < bottom)
-                    *(unsigned short *)(base + rowBytes * py + px * 2) =
-                        colour;
-                px = cx - x;
-                py = cy + y;
-                if (px >= left && px < right && py >= top && py < bottom)
-                    *(unsigned short *)(base + rowBytes * py + px * 2) =
-                        colour;
-                px = cx - x;
-                py = cy - y;
-                if (px >= left && px < right && py >= top && py < bottom)
-                    *(unsigned short *)(base + rowBytes * py + px * 2) =
-                        colour;
-                px = cx + y;
-                py = cy + x;
-                if (px >= left && px < right && py >= top && py < bottom)
-                    *(unsigned short *)(base + rowBytes * py + px * 2) =
-                        colour;
-                px = cx + y;
-                py = cy - x;
-                if (px >= left && px < right && py >= top && py < bottom)
-                    *(unsigned short *)(base + rowBytes * py + px * 2) =
-                        colour;
-                px = cx - y;
-                py = cy + x;
-                if (px >= left && px < right && py >= top && py < bottom)
-                    *(unsigned short *)(base + rowBytes * py + px * 2) =
-                        colour;
-                px = cx - y;
-                py = cy - x;
-                if (px >= left && px < right && py >= top && py < bottom)
-                    *(unsigned short *)(base + rowBytes * py + px * 2) =
-                        colour;
-            } else {
-                fh = penH;
-                fw = penW;
-                bx = cx + x;
-                by = cy + y;
-                if (by < top) {
-                    fh -= top - by;
-                    by = top;
-                }
-                if (by + fh >= bottom)
-                    fh = bottom - by;
-                if (bx < left) {
-                    fw -= left - bx;
-                    bx = left;
-                }
-                if (bx + fw >= right)
-                    fw = right - bx;
-                if (fh > 0 && fw > 0) {
-                    p = (unsigned short *)(base + rowBytes * by + bx * 2);
-                    do {
-                        q = p;
-                        n = fw;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = colour;
-                                q++;    /* BUG: one pixel per two-pixel store, so about half of fw is painted (all eight blocks) */
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0)
-                            *(unsigned char *)q = colour;    /* BUG: a byte store, half of the last pixel (all eight blocks) */
-                        fh--;
-                    } while (fh != 0);    /* BUG: p never advances by rowBytes, so every pass repaints one row (all eight blocks) */
-                }
-
-                fh = penH;
-                fw = penW;
-                bx = cx + x;
-                by = cy - y;
-                if (by < top) {
-                    fh -= top - by;
-                    by = top;
-                }
-                if (by + fh >= bottom)
-                    fh = bottom - by;
-                if (bx < left) {
-                    fw -= left - bx;
-                    bx = left;
-                }
-                if (bx + fw >= right)
-                    fw = right - bx;
-                if (fh > 0 && fw > 0) {
-                    p = (unsigned short *)(base + rowBytes * by + bx * 2);
-                    do {
-                        q = p;
-                        n = fw;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = colour;
-                                q++;
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0)
-                            *(unsigned char *)q = colour;
-                        fh--;
-                    } while (fh != 0);
-                }
-
-                fh = penH;
-                fw = penW;
-                bx = cx - x;
-                by = cy + y;
-                if (by < top) {
-                    fh -= top - by;
-                    by = top;
-                }
-                if (by + fh >= bottom)
-                    fh = bottom - by;
-                if (bx < left) {
-                    fw -= left - bx;
-                    bx = left;
-                }
-                if (bx + fw >= right)
-                    fw = right - bx;
-                if (fh > 0 && fw > 0) {
-                    p3 = (unsigned short *)(base + rowBytes * by + bx * 2);
-                    do {
-                        q = p3;
-                        n = fw;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = colour;
-                                q++;
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0)
-                            *(unsigned char *)q = colour;
-                        fh--;
-                    } while (fh != 0);
-                }
-
-                fh = penH;
-                fw = penW;
-                bx = cx - x;
-                by = cy - y;
-                if (by < top) {
-                    fh -= top - by;
-                    by = top;
-                }
-                if (by + fh >= bottom)
-                    fh = bottom - by;
-                if (bx < left) {
-                    fw -= left - bx;
-                    bx = left;
-                }
-                if (bx + fw >= right)
-                    fw = right - bx;
-                if (fh > 0 && fw > 0) {
-                    p4 = (unsigned short *)(base + rowBytes * by + bx * 2);
-                    do {
-                        q = p4;
-                        n = fw;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = colour;
-                                q++;
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0)
-                            *(unsigned char *)q = colour;
-                        fh--;
-                    } while (fh != 0);
-                }
-
-                fh = penH;
-                fw = penW;
-                bx = cx + y;
-                by = cy + x;
-                if (by < top) {
-                    fh -= top - by;
-                    by = top;
-                }
-                if (by + fh >= bottom)
-                    fh = bottom - by;
-                if (bx < left) {
-                    fw -= left - bx;
-                    bx = left;
-                }
-                if (bx + fw >= right)
-                    fw = right - bx;
-                if (fh > 0 && fw > 0) {
-                    p5 = (unsigned short *)(base + rowBytes * by + bx * 2);
-                    do {
-                        q = p5;
-                        n = fw;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = colour;
-                                q++;
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0)
-                            *(unsigned char *)q = colour;
-                        fh--;
-                    } while (fh != 0);
-                }
-
-                fh6 = penH;
-                fw = penW;
-                bx = cx + y;
-                by = cy - x;
-                if (by < top) {
-                    fh6 -= top - by;
-                    by = top;
-                }
-                if (by + fh6 >= bottom)
-                    fh6 = bottom - by;
-                if (bx < left) {
-                    fw -= left - bx;
-                    bx = left;
-                }
-                if (bx + fw >= right)
-                    fw = right - bx;
-                if (fh6 > 0 && fw > 0) {
-                    p6 = (unsigned short *)(base + rowBytes * by + bx * 2);
-                    do {
-                        q = p6;
-                        n = fw;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = colour;
-                                q++;
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0)
-                            *(unsigned char *)q = colour;
-                        fh6--;
-                    } while (fh6 != 0);
-                }
-
-                fh7 = penH;
-                fw = penW;
-                bx = cx - y;
-                by = cy + x;
-                if (by < top) {
-                    fh7 -= top - by;
-                    by = top;
-                }
-                if (by + fh7 >= bottom)
-                    fh7 = bottom - by;
-                if (bx < left) {
-                    fw -= left - bx;
-                    bx = left;
-                }
-                if (bx + fw >= right)
-                    fw = right - bx;
-                if (fh7 > 0 && fw > 0) {
-                    p7 = (unsigned short *)(base + rowBytes * by + bx * 2);
-                    do {
-                        q = p7;
-                        n = fw;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = colour;
-                                q++;
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0)
-                            *(unsigned char *)q = colour;
-                        fh7--;
-                    } while (fh7 != 0);
-                }
-
-                fh8 = penH;
-                fw = penW;
-                bx = cx - y;
-                by = cy - x;
-                if (by < top) {
-                    fh8 -= top - by;
-                    by = top;
-                }
-                if (by + fh8 >= bottom)
-                    fh8 = bottom - by;
-                if (bx < left) {
-                    fw -= left - bx;
-                    bx = left;
-                }
-                if (bx + fw >= right)
-                    fw = right - bx;
-                if (fh8 > 0 && fw > 0) {
-                    p8 = (unsigned short *)(base + rowBytes * by + bx * 2);
-                    do {
-                        q = p8;
-                        n = fw;
-                        if (n > 1) {
-                            do {
-                                *(uint32_t *)q = colour;
-                                q++;
-                                n -= 2;
-                            } while (n > 1);
-                        }
-                        if (n != 0)
-                            *(unsigned char *)q = colour;
-                        fh8--;
-                    } while (fh8 != 0);
-                }
-            }
-
-            if (d < 0)
-                d += k;
-            else {
-                d += 2 * (x - y) + 5;
-                y--;
-            }
-            k += 2;
-            x++;
-        } while (y >= x);
-    }
+    if (CurrentGrafPort != NULL && r != NULL && CurrentGrafPort->pix.pixelSize == 16)
+        Scaled::FrameOval(*r);
 }
 
 // FUNCTION: EVNOVA 0x004bb260
 void PaintOval(Rect *r)
 {
-    int32_t left;
-    int32_t top;
-    int32_t k;
-    int32_t d;
-    int32_t right;
-    uint32_t colour;
-    int32_t x;
-    int32_t y;
-    int32_t bottom;
-    unsigned char *base;
-    int32_t cy;
-    int32_t bot;
-    int32_t rowBytes;
-    int32_t cx;
-    int32_t radius;
-    int32_t px0;
-    int32_t px1;
-    int32_t qx2;
-    int32_t ybot;
-    int32_t qx3;
-    int32_t w2;
-    int32_t qx0;
-    int32_t qx1;
-    int32_t x1;
-    int32_t w4;
-    int32_t x0;
-    int32_t ytop;
-    int32_t w1;
-    int32_t w3;
-    unsigned short *q;
-    unsigned short *q2;
-
-    if (CurrentGrafPort == NULL)
-        return;
-    cy = r->top;
-    bot = r->bottom;
-    radius = (bot - cy) / 2;
-    x = 0;
-    y = radius;
-    d = 1 - radius;
-    cx = (r->right + r->left) / 2;
-    cy = (cy + bot) / 2;
-    left = CurrentGrafPort->pix.bounds.left;
-    top = CurrentGrafPort->pix.bounds.top;
-    bottom = CurrentGrafPort->pix.bounds.bottom;
-    right = CurrentGrafPort->pix.bounds.right;
-    rowBytes = CurrentGrafPort->pix.rowBytes;
-    base = (unsigned char *)CurrentGrafPort->pix.baseAddr;
-    colour = (gGammaRamp[CurrentGrafPort->foreColor.red >> 11] << 10) |
-             (gGammaRamp[CurrentGrafPort->foreColor.green >> 11] << 5) |
-             gGammaRamp[CurrentGrafPort->foreColor.blue >> 11];
-    colour |= colour << 16;
-
-    if (y >= x) {
-        k = 3;
-        do {
-            ybot = cy + y;
-            x0 = cx - x;
-            x1 = cx + x;
-            px0 = x0;
-            px1 = x1;
-            if (ybot >= top && ybot < bottom && x0 < right && x1 >= left) {
-                if (x0 < left)
-                    px0 = 0;    /* BUG: clips to column 0, not to left (all four spans) */
-                if (x1 >= right)
-                    px1 = right - 1;    /* BUG: the span is [px0, px1), so this drops column right - 1 (all four spans) */
-                if (px0 != px1) {
-                    w1 = px1 - px0;
-                    q = (unsigned short *)(base + rowBytes * ybot + px0 * 2);
-                    if (w1 > 1) {
-                        do {
-                            *(uint32_t *)q = colour;
-                            w1 -= 2;
-                            q += 2;
-                        } while (w1 > 1);
-                    }
-                    if (w1 != 0)
-                        *q = colour;
-                }
-            }
-
-            ytop = cy - y;
-            qx0 = x0;
-            qx1 = x1;
-            if (ytop >= top && ytop < bottom && x0 < right && x1 >= left) {
-                if (x0 < left)
-                    qx0 = 0;
-                if (x1 >= right)
-                    qx1 = right - 1;
-                if (qx0 != qx1) {
-                    w2 = qx1 - qx0;
-                    q = (unsigned short *)(base + rowBytes * ytop + qx0 * 2);
-                    if (w2 > 1) {
-                        do {
-                            *(uint32_t *)q = colour;
-                            w2 -= 2;
-                            q += 2;
-                        } while (w2 > 1);
-                    }
-                    if (w2 != 0)
-                        *q = colour;
-                }
-            }
-
-            ybot = cy + x;
-            x0 = cx - y;
-            x1 = cx + y;
-            px0 = x0;
-            px1 = x1;
-            if (ybot >= top && ybot < bottom && x0 < right && x1 >= left) {
-                if (x0 < left)
-                    px0 = 0;
-                if (x1 >= right)
-                    px1 = right - 1;
-                if (px0 != px1) {
-                    w3 = px1 - px0;
-                    q2 = (unsigned short *)(base + rowBytes * ybot + px0 * 2);
-                    if (w3 > 1) {
-                        do {
-                            *(uint32_t *)q2 = colour;
-                            w3 -= 2;
-                            q2 += 2;
-                        } while (w3 > 1);
-                    }
-                    if (w3 != 0)
-                        *q2 = colour;
-                }
-            }
-
-            ytop = cy - x;
-            qx2 = x0;
-            qx3 = x1;
-            if (ytop >= top && ytop < bottom && x0 < right && x1 >= left) {
-                if (x0 < left)
-                    qx2 = 0;
-                if (x1 >= right)
-                    qx3 = right - 1;
-                if (qx2 != qx3) {
-                    w4 = qx3 - qx2;
-                    q2 = (unsigned short *)(base + rowBytes * ytop + qx2 * 2);
-                    if (w4 > 1) {
-                        do {
-                            *(uint32_t *)q2 = colour;
-                            w4 -= 2;
-                            q2 += 2;
-                        } while (w4 > 1);
-                    }
-                    if (w4 != 0)
-                        *q2 = colour;
-                }
-            }
-
-            if (d < 0)
-                d += k;
-            else {
-                d += 2 * (x - y) + 5;
-                y--;
-            }
-            k += 2;
-            x++;
-        } while (y >= x);
-    }
+    if (CurrentGrafPort != NULL && r != NULL && CurrentGrafPort->pix.pixelSize == 16)
+        Scaled::PaintOval(*r);
 }
 
 // FUNCTION: EVNOVA 0x004bb860
@@ -1815,7 +941,7 @@ char RectInRgn(Rect *r, void *rgn)
    are 555. */
 
 /* The pixels of a port: zeroed, each row ending on a 4-byte boundary. The exe's are DIB sections, which
-   GDI lays out so; the game's row strides (CE_NewGWorld) count on it. */
+   GDI lays out so; NewGWorld takes that stride. */
 #define kRowAlignBits   32
 
 void *NewPortPixels(int width, int rows, int bits)
@@ -1866,7 +992,7 @@ short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
     /* one row more than the port is high, as the exe's bitmap has */
     gw->pixels = NewPortPixels(gw->pix.width, gw->pix.height + 1, depth);
     gw->pix.baseAddr = gw->pixels;
-    gw->pix.rowBytes = depth / 8 * gw->pix.width;
+    gw->pix.rowBytes = (gw->pix.width * depth + 31) / 32 * 4;     /* rows padded to 4 bytes (NewPortPixels) */
     *out = gw;
     return 0;
 }
@@ -2094,6 +1220,7 @@ void FillCRect(Rect *dstRect, Image_t *pat)
         return;
 
     ImageAsPixMap(&src, pat);
+    UI::ArtComposition tiles(CurrentGrafPort, *dstRect);    /* the tiles stretched as one */
     y = 0;
     do {
         col = cols;

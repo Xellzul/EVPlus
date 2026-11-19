@@ -11,6 +11,7 @@
 #include "game.h"
 #include "burger.h"
 #include "macport.h"
+#include "scaleddraw.h"
 #include "gameutil.h"
 #include "player.h"
 #include "crashlog.h"
@@ -456,7 +457,7 @@ void SetupMissionList(void)
     TextFont(smallTextFont);
     TextSize(smallTextSize);
 
-    cellSize.v = (ceListItemBaseHeight * 1.5);
+    cellSize.v = (kListItemBaseHeight * 1.5);
     if (cellSize.v * count <= box.bottom - box.top) {
         visible = 0;
         GetDialogItem(missionDialog, 3, &itemType, &itemHandle, &box3);
@@ -2141,7 +2142,7 @@ void MissionDialogUpdate(void)
         TextFont(smallTextFont);
         TextSize(smallTextSize);
         RGBForeColor(&rgbLightGrey);
-        CE_SetPen(box.left, box.top + CE_Scale(12));
+        MoveTo(box.left, box.top + 12);
         DrawIndString(kGameStrList, kListCaptionIdx);
         ForeColor(blackColor);
     }
@@ -2160,7 +2161,7 @@ void MissionDialogUpdate(void)
             strncpy((char *)text, briefingTextPtr, 0xfa);
             strncpy(briefingTextPtr, savedBriefing, kBriefingTextMax);
             TruncateTextToWidth(text, box.right - box.left - 1);
-            CE_SetPen(box.left, box.top + CurrentGrafPort->txSize);
+            MoveTo(box.left, box.top + CurrentGrafPort->txSize);
             DrawTextRun(text, strlen(text), NULL, 0, 0);
         } else {
             ForeColor(blackColor);
@@ -3121,7 +3122,7 @@ void MissionObjectivesCheck(short slot)
         if ((currentMissionObjectives[slot].flags & kMissionHidden) == 0) {
             PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
             GetIndString(buf, kGameStrList, 285);
-            DisplayComm((PStrChar *)buf, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+            DisplayComm((PStrChar *)buf, kCommFrames);
         }
         QuickMissionFailure(slot);
     }
@@ -3618,7 +3619,7 @@ void SetupMissionInfoList(void)
     TextFont(smallTextFont);
     TextSize(smallTextSize);
 
-    cellSize.v = (ceListItemBaseHeight * 1.5);
+    cellSize.v = (kListItemBaseHeight * 1.5);
 
     if (cellSize.v * count <= box.bottom - box.top) {
         hasScrollbar = 0;
@@ -4000,8 +4001,8 @@ void MissionInfoDialogUpdate(void)
     DateToMedString(gameTime, text);
     CtoPstr(text);
     GetDialogItem(missionInfoDialog, 7, &itemType, (Handle *)&item, &box);
-    CE_SetPen((box.right + box.left) / 2 - StringWidth((unsigned char *)text) / 2,
-              box.top + smallTextSize - 9 + CE_Scale(9));
+    MoveTo((box.right + box.left) / 2 - StringWidth((unsigned char *)text) / 2,
+              box.top + smallTextSize);
     DrawString((unsigned char *)text);
     ForeColor(blackColor);
     GetDialogItem(missionInfoDialog, 4, &itemType, (Handle *)&item, &box);
@@ -4183,9 +4184,7 @@ void SingleMissionDialogUpdate(void)
 {
     Boolean inside;
     PicHandle loaded;
-    PicHandle pic;
     Rect r;
-    Rect r2;
     short itemType;
     void *item;
 
@@ -4194,38 +4193,8 @@ void SingleMissionDialogUpdate(void)
     TextSize(smallTextSize);
     ForeColor(blackColor);
     PaintRect(GetDialogPortRect(missionDialog));
-    if (descResourcePictId < kFirstResourceID) {
-        pic = missionBackgroundPic[1];
-        if (pic != NULL) {
-            QDGetPictureBounds(pic, &r);
-            OffsetRect(&r, -r.left, -r.top);
-            if (missionBackgroundPic[0] != NULL) {
-                QDGetPictureBounds(missionBackgroundPic[0], &r2);
-                OffsetRect(&r2, -r2.left, -r2.top);
-                OffsetRect(&r, 0, r2.bottom);
-            }
-            CE_ScaleOffsetRect(&r, GetDialogPortRect(missionDialog)->left,
-                               GetDialogPortRect(missionDialog)->top);
-            DrawPicHandle(missionBackgroundPic[1], &r);
-        }
-        if (missionBackgroundPic[0] != NULL) {
-            QDGetPictureBounds(missionBackgroundPic[0], &r);
-            OffsetRect(&r, -r.left, -r.top);
-            CE_ScaleOffsetRect(&r, GetDialogPortRect(missionDialog)->left,
-                               GetDialogPortRect(missionDialog)->top);
-            DrawPicHandle(missionBackgroundPic[0], &r);
-        }
-        pic = missionBackgroundPic[2];
-        if (pic != NULL) {
-            QDGetPictureBounds(pic, &r);
-            OffsetRect(&r, -r.left, -r.top);
-            CE_ScaleOffsetRectBottom(&r, GetDialogPortRect(missionDialog)->left,
-                                     GetDialogPortRect(missionDialog)->bottom - (r.bottom - r.top));
-            DrawPicHandle(missionBackgroundPic[2], &r);
-        }
-    } else if (missionBackgroundPic[0] != NULL) {
-        DrawPicHandle(missionBackgroundPic[0], GetDialogPortRect(missionDialog));
-    }
+    DrawDialogBackground(missionBackgroundPic, *GetDialogPortRect(missionDialog),
+                         descResourcePictId >= kFirstResourceID);
     DrawSingleMissionButtons(-1);
     if (descResourcePictId >= kFirstResourceID) {
         GetDialogItem(missionDialog, 8, &itemType, (Handle *)&item, &r);

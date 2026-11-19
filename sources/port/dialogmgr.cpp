@@ -14,6 +14,7 @@
 #include "dialogs.h"
 #include "prototypes.h"
 #include "cefix.h"
+#include "uiscale.h"
 #include "platform.h"
 #include "endianswap.h"
 
@@ -471,7 +472,6 @@ void ParseDITL(DialogPtr dlg, unsigned char *p)
             p += 1;
         }
 
-        CE_ScaleRect(&box);
         switch (type) {
         case 0:
             item = nv_AppendDialogItem(0, 0, 0, 1, &box, NULL, 0, dlg);
@@ -569,6 +569,7 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
             OffsetRect(&box, 0, portRect->top - box.top);
         }
         CreateGWorldContainer(&gw, 0, 0, &box);
+        UI::ScaleUIPort(gw.world);
         SetGWorldContainer(&gw);
         EraseRect(&box);
         UnsetGWorldContainer(&gw);
@@ -640,10 +641,10 @@ static void SetDialogBounds(DialogPtr dlg, const unsigned short *dlogTemplate)
     short width;
     short height;
 
-    width = CE_Scale(SwapEndianShort(&dlogTemplate[3]) - SwapEndianShort(&dlogTemplate[1]));
-    height = CE_Scale(SwapEndianShort(&dlogTemplate[2]) - SwapEndianShort(&dlogTemplate[0]));
-    dlg->bounds.top = ((int32_t)gVideoHeight - height) / 2;
-    dlg->bounds.left = ((int32_t)gVideoWidth - width) / 2;
+    width = (SwapEndianShort(&dlogTemplate[3]) - SwapEndianShort(&dlogTemplate[1]));
+    height = (SwapEndianShort(&dlogTemplate[2]) - SwapEndianShort(&dlogTemplate[0]));
+    dlg->bounds.top = ((int32_t)UI::ScreenHeight() - height) / 2;
+    dlg->bounds.left = ((int32_t)UI::ScreenWidth() - width) / 2;
     dlg->bounds.bottom = dlg->bounds.top + height;
     dlg->bounds.right = dlg->bounds.left + width;
 }
@@ -671,6 +672,7 @@ static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsig
     dlg->portRect.right = dlg->bounds.right;
     OffsetRect(&dlg->portRect, -dlg->bounds.left, -dlg->bounds.top);
     CreateGWorldContainer((GWorldContainer *)dlg, 0, 0, &dlg->portRect);
+    UI::ScaleUIPort(dlg->port);
     SetGWorldContainer((GWorldContainer *)dlg);
     EraseRect(&dlg->portRect);
     UnsetGWorldContainer((GWorldContainer *)dlg);
@@ -1952,13 +1954,14 @@ void SizeDialogWindow(DialogPtr dlg, short width, short height, char update)
     free(gw->pixels);
     gw->pixels = NewPortPixels(gw->pix.width, gw->pix.height, gw->pix.pixelSize);
     gw->pix.baseAddr = gw->pixels;
-    gw->pix.rowBytes = gw->pix.pixelSize / 8 * gw->pix.width;
+    gw->pix.rowBytes = (gw->pix.width * gw->pix.pixelSize + 31) / 32 * 4;     /* rows padded (NewPortPixels) */
     dlg->port->pix.bounds.right = dlg->port->pix.bounds.left + width;
     dlg->port->pix.bounds.bottom = dlg->port->pix.bounds.top + height;
     dlg->port->pix.width = width;
     dlg->port->pix.height = height;
     dlg->gwBounds.right = dlg->gwBounds.left + width;
     dlg->gwBounds.bottom = dlg->gwBounds.top + height;
+    UI::ScaleUIPort(dlg->port);
     if (update)
         dlg->needsUpdate = 1;
 }

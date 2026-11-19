@@ -25,6 +25,7 @@
 #include "platform.h"
 #include "macport.h"
 #include "resources.h"
+#include "viewscale.h"
 #include "cefix.h"
 #include "sound.h"
 #include "ships.h"
@@ -351,9 +352,7 @@ void LoadObjectData(void)
                 systemData[i].asteroidCount = ResRec(SystRes, systemFileHand)->asteroids;
                 systemData[i].interference = ResRec(SystRes, systemFileHand)->interference;
                 if (systemData[i].asteroidCount > 0) {
-                    systemData[i].asteroidCount *=
-                        (GetCWindowPortRect(gWind)->right -
-                                 GetCWindowPortRect(gWind)->left) / 640.0;
+                    systemData[i].asteroidCount *= View::gameWidth / 640.0;
                     if (systemData[i].asteroidCount > kMaxAsteroids)
                         systemData[i].asteroidCount = kMaxAsteroids;
                 } else {

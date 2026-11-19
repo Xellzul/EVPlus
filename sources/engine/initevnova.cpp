@@ -24,6 +24,7 @@
 #include "space.h"
 #include "stellar.h"
 #include "cefix.h"
+#include "viewscale.h"
 #include "prototypes.h"
 #include "gametypes.h"
 
@@ -371,7 +372,6 @@ void InitEVNova(void)
     InitDataFiles();
     CE_ReadX2Hotkey();
     LoadPrefs();
-    CE_InitScaleFactor(settings.uiScale);
 
     crashlog("initializing monitor");
     SetupMonitor();
@@ -546,7 +546,6 @@ void PlayGame(void)
 
     GetTime(&d);
     RedrawStatus(1);
-    RedrawComm(0);
     PropagateMissionBitEffects();
     HandleStellarSystemVisibility();
     gameFrozen = 1;
@@ -559,7 +558,8 @@ void PlayGame(void)
     PrepareAllSprites();
     RefreshWindowBuffer();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
-        RefreshSAT();
+    View::Flush();
+    RefreshSAT();
     FadeScreenIn();
     lastLoMemWarningTime = 0;
     CheckLoMem();
@@ -616,7 +616,7 @@ void PlayGame(void)
                     if (ReadTick() > lastFPSUpdateTime + 120) {
                         if ((uint32_t)lastFPSUpdateTime == 0) {
                             GetIndString(str, kGameStrList, 282);
-                            DisplayComm((PStrChar *)str, 100, 0, kCommTextSize, &rgbWhite, 0, 0);
+                            DisplayComm((PStrChar *)str, 100);
                         } else {
                             NumToString((fpsCounter * 60.0 /
                                     (float)(ReadTick() - lastFPSUpdateTime)),
@@ -626,7 +626,7 @@ void PlayGame(void)
                             strcat((char *)str, " ");
                             StrcatIndCString((char *)str, kGameStrList, 283);
                             CtoPstr((char *)str);
-                            DisplayComm((PStrChar *)str, 999, 0, kCommTextSize, &rgbWhite, 0, 0);
+                            DisplayComm((PStrChar *)str, 999);
                         }
                         lastFPSUpdateTime = ReadTick();
                         fpsCounter = 0;
@@ -652,6 +652,7 @@ void PlayGame(void)
                 MyProfileExit(kProfAnimateSW);
                 MyProfileEnter(kProfPostAnimate);
                 PostAnimateHandler();
+                View::Flush();
                 MyProfileExit(kProfPostAnimate);
                 ScreenEndScene();
                 MyProfileExit(kProfDrawing);
@@ -676,8 +677,7 @@ void PlayGame(void)
                 if (frameCounter > 1024) {
                     frameCounter = 0;
                     if (d.day == 30 && d.month == 6 && commCount <= 0)
-                        DisplayComm((PStrChar *)"\pHappy birthday Matt",
-                                    5, 3, 9, &rgbDarkGrey, 0, 0);
+                        DisplayCommStyled((PStrChar *)"\pHappy birthday Matt", 5, 3, 9, &rgbDarkGrey);
                 }
                 if (missionSoundID != -1 && missionSnd == 0) {
                     missionSnd = ST_LoadSndResource(missionSoundID);
@@ -724,6 +724,7 @@ void PlayGame(void)
                 MyProfileExit(kProfPostDraw);
             } else {
                 SWUpdateSpriteWorld(gSpriteWorld, 0);
+                View::Flush();
                 IterateInGameEventLoop(3);
                 if (gSpriteWorld->fastBlit != 0) {
                     RefreshSAT();
@@ -737,8 +738,7 @@ void PlayGame(void)
         }
         if (absquatulateStr[0] != 0) {
             PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-            DisplayComm((PStrChar *)absquatulateStr, 500, 0, kCommTextSize, &rgbWhite, 0, 0);
-            RedrawComm(1);
+            DisplayComm((PStrChar *)absquatulateStr, 500);
             absquatulateStr[0] = 0;
         }
         MyProfileExit(kProfGameLoop);
@@ -1085,8 +1085,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
                         && (currentMissions[ship->specialMission].flags & kMissionHidden) == 0) {
                     PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
                     GetIndString((unsigned char *)msg, kGameStrList, kStrMissionFailed);
-                    DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize,
-                                &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)msg, kCommFrames);
                     QuickMissionFailure(ship->specialMission);
                 }
                 currentMissions[ship->specialMission].specialShipsDisabled++;
@@ -1111,8 +1110,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
         if (ship->index == 0 && wasDisabled == 0) {
             PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
             GetIndString((unsigned char *)msg, kGameStrList, kStrShipDestroyed);
-            DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize,
-                        &rgbWhite, 0, 0);
+            DisplayComm((PStrChar *)msg, kCommFrames);
             playerRepairInhibit = 300.0f;
             ship->armor = (int32_t)ship->armor;
             for (i = 0; i < kMaxActiveMissions; i++) {
@@ -1121,8 +1119,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
                     PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
                     QuickMissionFailure(i);
                     GetIndString((unsigned char *)msg, kGameStrList, kStrMissionFailed);
-                    DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize,
-                                &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)msg, kCommFrames);
                     break;
                 }
             }
@@ -1133,16 +1130,14 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
     if (ship->index == 0 && (IsDying(ship) & (wasDying == 0))) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         GetIndString((unsigned char *)msg, kGameStrList, kStrPlayerKilled);
-        DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize,
-                    &rgbWhite, 0, 0);
+        DisplayComm((PStrChar *)msg, kCommFrames);
         for (i = 0; i < kMaxActiveMissions; i++) {
             if (currentMissionObjectives[i].active != 0 && currentMissionObjectives[i].failed == 0
                     && (currentMissions[i].flags2 & kMissionFailIfDisabled) != 0) {
                 PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
                 QuickMissionFailure(i);
                 GetIndString((unsigned char *)msg, kGameStrList, kStrMissionFailed);
-                DisplayComm((PStrChar *)msg, kCommFrames, 0, kCommTextSize,
-                            &rgbWhite, 0, 0);
+                DisplayComm((PStrChar *)msg, kCommFrames);
                 break;
             }
         }
@@ -2415,7 +2410,7 @@ void JettisonCargo(unsigned char withMissions)
                 if ((currentMissions[k].flags & kMissionHidden) == 0
                     && playerIsLanded == 0) {
                     GetIndString(text, kGameStrList, kMsgMissionAborted);
-                    DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+                    DisplayComm((PStrChar *)text, kCommFrames);
                     toldMission = 1;
                 }
                 QuickMissionFailure(k);
@@ -2461,7 +2456,7 @@ void JettisonCargo(unsigned char withMissions)
                 GetIndString(text, kGameStrList, kMsgJettisonMission);
             else
                 GetIndString(text, kGameStrList, kMsgJettisonPlain);
-            DisplayComm((PStrChar *)text, kCommFrames, 0, kCommTextSize, &rgbWhite, 0, 0);
+            DisplayComm((PStrChar *)text, kCommFrames);
         }
     }
     ResetPlayerPrecalcedValues();
@@ -3839,11 +3834,11 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
         SystemInfoToShipStats();
         me->active = 0;
         GetIndString(buf, kGameStrList, 0x130);
-        DisplayComm((PStrChar *)buf, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
+        DisplayComm((PStrChar *)buf, 360);
 
     } else {
         GetIndString(buf, kGameStrList, 0x131);
-        DisplayComm((PStrChar *)buf, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
+        DisplayComm((PStrChar *)buf, 360);
     }
 }
 #undef slotL
@@ -4262,7 +4257,7 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
                     digit = 0;
             }
             PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-            DisplayComm((PStrChar *)buf, 360, 0, kCommTextSize, &rgbWhite, 0, 0);
+            DisplayComm((PStrChar *)buf, 360);
         }
     }
 }
@@ -4295,8 +4290,7 @@ void ShowPersonHailQuote(short persID)
     strcpy(briefingTextPtr, parseBuffer);
     MungeBriefing(0, -1);
     CtoPstr(briefingTextPtr);
-    DisplayComm((PStrChar *)briefingTextPtr, kHailCommFrames, 0, kCommTextSize,
-                &rgbWhite, 0, 0);
+    DisplayComm((PStrChar *)briefingTextPtr, kHailCommFrames);
 }
 
 // FUNCTION: EVNOVA 0x00426dd0
