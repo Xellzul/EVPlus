@@ -437,7 +437,6 @@ void GetIndString(unsigned char *str, int strListID, int index)
             entry += *entry + 1;
         memcpy(str, entry, *entry + 1);
     }
-    UnlockAHandle(h);
     ReleaseResource(h);
 }
 
@@ -549,7 +548,6 @@ PicHandle LoadPictResource(int picID, char gamma)
         img = (Image_t *)AllocAPointer(sizeof(Image_t));
         LockAHandle(h);
         err = ImageParsePict(img, (unsigned char *)*h);
-        UnlockAHandle(h);
         ReleaseResource(h);
         if (err != 0) {
             DeallocAPointer(img);
@@ -1981,7 +1979,6 @@ Image_t *GetCIcon(short id)
         icon = (Image_t *)AllocAPointer(sizeof(Image_t));
         LockAHandle(h);
         err = ImageParseCicn(icon, (Word8 *)*h);
-        UnlockAHandle(h);
         ReleaseResource(h);
         if (err != 0) {
             DeallocAPointer(icon);
@@ -2058,7 +2055,6 @@ Image_t *GetPixPat(short id)
         pat = (Image_t *)AllocAPointer(sizeof(Image_t));
         LockAHandle(h);
         err = CE_ImageParsePPat(pat, *h);
-        UnlockAHandle(h);
         ReleaseResource(h);
         if (err != 0) {
             DeallocAPointer(pat);
@@ -2191,7 +2187,6 @@ int32_t ReplaceInHandle(char **h, int32_t offset, const char *find, int32_t find
     start = *h + offset;
     count = GetAHandleSize(h) - offset - findLen + 1;
     if (count <= 0) {
-        UnlockAHandle(h);
         return -1;
     }
     c = find[0];
@@ -2215,7 +2210,6 @@ int32_t ReplaceInHandle(char **h, int32_t offset, const char *find, int32_t find
             memcpy(p, repl, replLen);
             if (newSize < oldSize)
                 ResizeAHandle(h, newSize);
-            UnlockAHandle(h);
             return offset + replLen;
         }
         p++;
@@ -2224,7 +2218,6 @@ int32_t ReplaceInHandle(char **h, int32_t offset, const char *find, int32_t find
         start = p;
         p = (char *)memchr(start, c, count);
     }
-    UnlockAHandle(h);
     return -1;
 }
 

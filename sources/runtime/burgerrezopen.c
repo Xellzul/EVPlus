@@ -230,7 +230,6 @@ RezGroup **RezGroupNew(ULong *in, RezHeader *header, int32_t flags, ULong base)
 
             if (remaining != 0)
                 memcpy(group, in, remaining);
-            UnlockAHandle((Handle)h);
             return (RezGroup **)h;
         }
     }
@@ -311,8 +310,6 @@ void ResourceHashNames(RezFile *rez)
                 out->HashOffset = out->HashOffset - (uintptr_t)table;
                 out++;
             } while (--count);
-            UnlockAHandle((Handle)names);
-            UnlockAHandle((Handle)rez->groups);
             return;
         }
     }
@@ -380,7 +377,6 @@ extern Word ResourceAddName(struct RezFile *rez, const char *name); /* 0x005010f
 #define kLoadCountMask  0xff000000UL
 #define kFlagExternalOk 1                        /* RezFile.flags: a named resource may come from its own file */
 #define kFlagDontCache  2                        /* RezFile.flags: release frees at once */
-#define kPurgeable      1
 #define kRezPackedMask  0x00180000UL             /* 1-3: which decompressor */
 #define kRezPackedShift 19
 #define kRezFixed       0x00200000UL
@@ -486,7 +482,6 @@ void ResourcePurgeCache(RezFile *rez)
                 }
                 group = kNextGroup(group);
             } while (--groups);
-            UnlockAHandle((Handle)rez->groups);
         }
     }
 }
@@ -718,7 +713,6 @@ Handle ResourceLoadHandle(RezFile *Input, int32_t RezNum)
     Entry->nameFlags = flags + kLoadCountOne;
     if (BufferHand != 0) {
         if (*BufferHand) {
-            SetHandlePurgeFlag(BufferHand, 0);
             return (Handle)BufferHand;
         }
         Entry->MemHand = 0;
@@ -745,7 +739,6 @@ Handle ResourceLoadHandle(RezFile *Input, int32_t RezNum)
             }
             fclose(fp);
         }
-        UnlockAHandle((Handle)Input->groups);
         Entry = ResourceScan(Input, RezNum);
         Entry->nameFlags |= kRezTriedExternal | kRezIsExternal;
         if (BufferHand != 0)
@@ -788,7 +781,6 @@ Handle ResourceLoadHandle(RezFile *Input, int32_t RezNum)
                 goto FreeFail;
         }
 Loaded:
-        UnlockAHandle((Handle)BufferHand);
         ResourceJustLoaded = 1;
         Entry = ResourceScan(Input, RezNum);
         Entry->MemHand = BufferHand;
@@ -819,7 +811,7 @@ Handle ResourceLoadHandleByName(struct RezFile *rez, const char *name)
 }
 
 /* ResourceRelease (BurgerLib RzResourceManager): one load fewer; at none the handle is
-   unlocked and made purgeable, or freed outright for a don't-cache file. */
+   kept, or freed outright for a don't-cache file. */
 // FUNCTION: EVNOVA 0x00501d50
 void ResourceRelease(RezFile *rez, int32_t index)
 {
@@ -834,14 +826,9 @@ void ResourceRelease(RezFile *rez, int32_t index)
             entry->nameFlags = flags - kLoadCountOne;
             if (((flags - kLoadCountOne) & kLoadCountMask) == 0) {
                 handle = entry->MemHand;
-                if (handle != 0) {
-                    UnlockAHandle((Handle)handle);
-                    if (rez->flags & kFlagDontCache) {
-                        entry->MemHand = 0;
-                        DeallocAHandle(handle);
-                    } else {
-                        SetHandlePurgeFlag(handle, kPurgeable);
-                    }
+                if (handle != 0 && (rez->flags & kFlagDontCache)) {
+                    entry->MemHand = 0;
+                    DeallocAHandle(handle);
                 }
             }
         }

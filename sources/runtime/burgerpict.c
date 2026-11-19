@@ -593,7 +593,6 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
             DataPtr += MatteSize + MaskSize;
             if (BigLong(DataPtr) == sizeof(ImageDescription)) {
                 Desc = (ImageDescriptionHandle)NewHandle(sizeof(ImageDescription));
-                HLock((Handle)Desc);
                 DescPtr = *Desc;
                 *DescPtr = *(const ImageDescription *)DataPtr;
                 DescPtr->idSize = SwapLong(DescPtr->idSize);

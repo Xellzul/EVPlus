@@ -1292,7 +1292,6 @@ void LoadAdvice(void)
         if (h != NULL) {
             LockAHandle(h);
             strCount = SwapEndianShort((const unsigned short *)*h);
-            UnlockAHandle(h);
             ReleaseResource(h);
         }
         if (strCount > 0) {

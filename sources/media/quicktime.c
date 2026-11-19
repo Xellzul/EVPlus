@@ -58,7 +58,6 @@ void DisposeHandle(Handle h)
 }
 
 /* applied by loadbar.c to the port's own GetResource handles: must not touch them */
-void HLock(Handle h) { (void)h; }
 void HUnlock(Handle h) { (void)h; }
 void HPurge(Handle h) { (void)h; }
 

@@ -2941,7 +2941,6 @@ short LoadExtendedShipSprites(short shipType)
         }
 
         AdjustHandleSize((Handle)shipSpriteInfoHand, 0xc0);
-        UnlockAHandle((Handle)shipSpriteInfoHand);
         ReleaseResource((Handle)shipSpriteInfoHand);
     }
     return total;

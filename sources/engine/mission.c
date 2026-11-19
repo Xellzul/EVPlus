@@ -470,7 +470,6 @@ void SetupMissionList(void)
     missionList = nv_NewDialog(&box, &cellBounds, cellSize,
         (ListDrawProcPtr)MissionListDefinition, (CGrafPtr)missionDialog, visible);
     LockAHandle((Handle)missionList);
-    UnlockAHandle((Handle)missionList);
     LSetDrawingMode(0, missionList);
 
     rowPt.h = 0;
@@ -1650,7 +1649,6 @@ void LoadCurrentMissionData(short mission, short slot)
             if (h != NULL) {
                 LockAHandle(h);
                 strCount = SwapEndianShort((const unsigned short *)*h);
-                UnlockAHandle(h);
                 ReleaseResource(h);
                 n = Rand(strCount) + 1;
                 GetIndString(buf, ((MisnRes *)*missionFileHand)->shipNameID, n);
@@ -1664,7 +1662,6 @@ void LoadCurrentMissionData(short mission, short slot)
             if (h != NULL) {
                 LockAHandle(h);
                 strCount = SwapEndianShort((const unsigned short *)*h);
-                UnlockAHandle(h);
                 ReleaseResource(h);
                 n = Rand(strCount) + 1;
                 GetIndString(buf, ((MisnRes *)*missionFileHand)->shipSubtitle, n);
@@ -1688,7 +1685,6 @@ void LoadCurrentMissionData(short mission, short slot)
         else
             currentMissions[slot].specialShipsJumpedIn = currentMissions[slot].initialShipCount;
         currentMissions[slot].auxShipsSpawned = 0;
-        UnlockAHandle(missionFileHand);
         ReleaseResource(missionFileHand);
     }
     currentMissions[slot].misnIndex = mission;
@@ -3635,7 +3631,6 @@ void SetupMissionInfoList(void)
     missionInfoList = nv_NewDialog(&box, &cellBounds, cellSize,
         (ListDrawProcPtr)MissionListDefinition, (CGrafPtr)missionInfoDialog, hasScrollbar);
     LockAHandle((Handle)missionInfoList);
-    UnlockAHandle((Handle)missionInfoList);
 
     rowPt.h = rowPt.v = 0;
     for (i = 0; i < kMaxActiveMissions; i++) {

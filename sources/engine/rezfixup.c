@@ -272,7 +272,6 @@ void FixupResourceByType(Handle h, uint32_t type)
 
     if (type == 0x726c9138 || type == 0x726c9144)
         FixupRLEPixelData((unsigned char *)*h + 0x10, (RLEPixelData *)*h);
-    UnlockAHandle(h);
 }
 
 EXTERN_C_END

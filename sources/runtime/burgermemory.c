@@ -22,7 +22,6 @@ extern "C" {
 typedef struct MyHandle {
     void *MemPtr;
     Word32 Length;                               /* the size asked for */
-    Word32 Flags;                                /* as given; nothing reads them now */
 } MyHandle;
 
 /* AllocAPointer's block: the size in front, the caller's memory 16 bytes in (the exe's header size, which
@@ -35,6 +34,7 @@ void **AllocAHandle2(Word32 MemSize, Word Flag)
 {
     MyHandle *h;
 
+    (void)Flag;
     if (MemSize == 0)
         return 0;
     h = (MyHandle *)calloc(1, sizeof(MyHandle));
@@ -42,7 +42,6 @@ void **AllocAHandle2(Word32 MemSize, Word Flag)
         h->MemPtr = calloc(1, MemSize);
         if (h->MemPtr != 0) {
             h->Length = MemSize;
-            h->Flags = Flag;
             return (void **)h;
         }
         free(h);
@@ -174,21 +173,6 @@ char *LockAHandle(Handle h)
     if (h != 0)
         return *h;
     return 0;
-}
-
-/* UnlockAHandle (BurgerLib MMMemoryManager). */
-// FUNCTION: EVNOVA 0x004d8ba0
-void UnlockAHandle(Handle h)
-{
-    (void)h;
-}
-
-/* SetHandlePurgeFlag (BurgerLib MMMemoryManager): nothing is purged now. */
-// FUNCTION: EVNOVA 0x004d8bb0
-void SetHandlePurgeFlag(void **handle, Word flag)
-{
-    (void)handle;
-    (void)flag;
 }
 
 #ifdef __cplusplus

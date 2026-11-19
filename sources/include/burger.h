@@ -98,11 +98,8 @@ extern void DeallocAHandle(void *MemHandle);
 extern uint32_t GetAHandleSize(Handle h);
 extern Handle ResizeAHandle(Handle h, uint32_t size);
 extern char * LockAHandle(Handle h);
-extern void UnlockAHandle(Handle h);
-extern void SetHandlePurgeFlag(void **handle, Word flag);
 
 /* QuickTime calls, media/quicktime.c */
-extern void HLock(Handle h);                                         /* 0x004f1470 */
 extern void HUnlock(Handle h);
 extern void HPurge(Handle h);
 extern short EnterMovies(void);

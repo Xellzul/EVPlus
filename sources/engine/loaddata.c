@@ -269,7 +269,6 @@ void LoadObjectData(void)
             else
                 stellarData[i].weapon = -1;
             AdjustHandleSize(stellarFileHand, 0x45e);
-            UnlockAHandle(stellarFileHand);
             ResourcePurge(stellarFileHand);
             ReleaseResource(stellarFileHand);
             if (SpobCanLand(&stellarData[i]) && !SpobIsHyperOrWorm(&stellarData[i]) &&
@@ -459,7 +458,6 @@ void LoadObjectData(void)
                 systemData[i].reinforceDaysLeft = 0;
                 strcpy(systemData[i].visibility, ResRec(SystRes, systemFileHand)->visibility);
                 AdjustHandleSize(systemFileHand, 0x1ac);
-                UnlockAHandle(systemFileHand);
                 ResourcePurge(systemFileHand);
                 ReleaseResource(systemFileHand);
                 LoadingIntroMusic();
@@ -673,7 +671,6 @@ void LoadObjectData(void)
                 CtoPstr((char *)outfitShortNames[i]);
                 CtoPstr((char *)lcOutfitName[i]);
                 CtoPstr((char *)lcPluralOutfitName[i]);
-                UnlockAHandle(outfitSystemFileHand);
                 ResourcePurge(outfitSystemFileHand);
                 ReleaseResource(outfitSystemFileHand);
                 if (outfitSystem[i].buyRandom > 0 && crashlog_isactive()) {
@@ -884,7 +881,6 @@ void LoadObjectData(void)
                     weaponStats[i].guidance = kGuidanceHoming;
                     weaponStats[i].seeker = 0x30fe;
                 }
-                UnlockAHandle(weaponFileHand);
                 AdjustHandleSize(weaponFileHand, 0x86);
                 ResourcePurge(weaponFileHand);
                 ReleaseResource(weaponFileHand);
@@ -1322,7 +1318,6 @@ void LoadObjectData(void)
                     crashlog_print_num(shipClass[i].cost);
                     crashlog_print("\n");
                 }
-                UnlockAHandle(shipClassFileHand);
                 ResourcePurge(shipClassFileHand);
                 ReleaseResource(shipClassFileHand);
                 if (crashlog_isactive()) {
@@ -1421,7 +1416,6 @@ void LoadObjectData(void)
                         dudeData[i].shipProbs[j] = 0;
                     }
                 }
-                UnlockAHandle(dudeFileHand);
                 AdjustHandleSize(dudeFileHand, 0x58);
                 ResourcePurge(dudeFileHand);
                 ReleaseResource(dudeFileHand);
@@ -1516,7 +1510,6 @@ void LoadObjectData(void)
                 CtoPstr((char *)govtTargStrings[i]);
                 CtoPstr((char *)govtShortNames[i]);
                 CtoPstr((char *)govtMediumNames[i]);
-                UnlockAHandle(govtFileHand);
                 AdjustHandleSize(govtFileHand, 0xc0);
                 ResourcePurge(govtFileHand);
                 ReleaseResource(govtFileHand);
@@ -1647,7 +1640,6 @@ void LoadObjectData(void)
                 GetResInfo(personFileHand, &resID, &resType, name);
                 TrimResourceName(name);
                 strncpy(personData[i].name, (char *)name, 30);
-                UnlockAHandle(personFileHand);
                 ResourcePurge(personFileHand);
                 ReleaseResource(personFileHand);
                 personData[i].prepared = 1;
@@ -1748,7 +1740,6 @@ void LoadObjectData(void)
                 GetResInfo(disasterFileHand, &resID, &resType, name);
                 TrimResourceName(name);
                 pstrcpy(disasterData[i].name, name);
-                UnlockAHandle(disasterFileHand);
                 ResourcePurge(disasterFileHand);
                 ReleaseResource(disasterFileHand);
                 LoadingIntroMusic();
@@ -1837,7 +1828,6 @@ void LoadObjectData(void)
                 }
                 strcpy(fleetData[i].activateOn, ResRec(FletRes, fleetFileHand)->activateOn);
                 AdjustHandleSize(fleetFileHand, 0x132);
-                UnlockAHandle(fleetFileHand);
                 ResourcePurge(fleetFileHand);
                 ReleaseResource(fleetFileHand);
                 LoadingIntroMusic();
@@ -1898,7 +1888,6 @@ void LoadObjectData(void)
                 strcpy(junkData[i].abbrev, ResRec(JunkRes, junkFileHand)->abbrev);
                 strcpy(junkData[i].buyOn, ResRec(JunkRes, junkFileHand)->buyOn);
                 strcpy(junkData[i].sellOn, ResRec(JunkRes, junkFileHand)->sellOn);
-                UnlockAHandle(junkFileHand);
                 ResourcePurge(junkFileHand);
                 ReleaseResource(junkFileHand);
                 LoadingIntroMusic();
@@ -1981,7 +1970,6 @@ void LoadObjectData(void)
                 strcpy(cronEvent[i].onStart, ResRec(CronRes, cronFileHand)->onStart);
                 strcpy(cronEvent[i].onEnd, ResRec(CronRes, cronFileHand)->onEnd);
                 cronEvent[i].loaded = 1;
-                UnlockAHandle(cronFileHand);
                 AdjustHandleSize(cronFileHand, 0x336);
                 ResourcePurge(cronFileHand);
                 ReleaseResource(cronFileHand);
@@ -2020,7 +2008,6 @@ void LoadObjectData(void)
                 strncpy(rankData[i].name, (char *)name, 127);
                 strcpy(rankData[i].convName, ResRec(RankRes, rankFileHand)->name);
                 strcpy(rankData[i].shortName, ResRec(RankRes, rankFileHand)->shortName);
-                UnlockAHandle(rankFileHand);
                 AdjustHandleSize(rankFileHand, 0x98);
                 ResourcePurge(rankFileHand);
                 ReleaseResource(rankFileHand);
@@ -2083,7 +2070,6 @@ void LoadObjectData(void)
                     asteroidType[i].explodType >= 1000 + kMaxExplodTypes)
                     asteroidType[i].explodType = -1;
                 asteroidType[i].mass = ResRec(RoidRes, asteroidFileHand)->mass;
-                UnlockAHandle(asteroidFileHand);
                 AdjustHandleSize(asteroidFileHand, 0x28);
                 ResourcePurge(asteroidFileHand);
                 ReleaseResource(asteroidFileHand);
@@ -2159,7 +2145,6 @@ void LoadObjectData(void)
             slideDestPoint[k].v = ResRec(ColrRes, colorFileHand)->slidePos[k * 2 + 1];
         }
         AdjustHandleSize(colorFileHand, 0xf4);
-        UnlockAHandle(colorFileHand);
         ResourcePurge(colorFileHand);
         ReleaseResource(colorFileHand);
         LoadingIntroMusic();
@@ -2665,8 +2650,6 @@ short WritePilotData(short stellar)
         fwritelong(GetAHandleSize((Handle)altPlayerFileHand), f);
         fwrite(*altPlayerFileHand, GetAHandleSize((Handle)altPlayerFileHand), 1, f);
         fwritestr(name, f);
-        UnlockAHandle((Handle)playerFileHand);
-        UnlockAHandle((Handle)altPlayerFileHand);
         DeallocAHandle(playerFileHand);
         DeallocAHandle(altPlayerFileHand);
         fclose(f);
@@ -3092,13 +3075,11 @@ short LoadPilotData(char *path)
         playerFileHand = (PilotRec **)AllocAHandle2(len, 0);
         LockAHandle((Handle)playerFileHand);
         fread(*playerFileHand, len, 1, f);
-        UnlockAHandle((Handle)playerFileHand);
     }
     if (playerFileHand != NULL) {
         LockAHandle((Handle)playerFileHand);
         err = CE_DecryptIfNecessary(*playerFileHand, GetAHandleSize((Handle)playerFileHand),
                                     kPilotCryptKey);
-        UnlockAHandle((Handle)playerFileHand);
 
         if (err == 0) {
             crashlog("load pilot data 2");
@@ -3300,24 +3281,20 @@ short LoadPilotData(char *path)
         altPlayerFileHand = (PilotRec2 **)AllocAHandle2(len, 0);
         LockAHandle((Handle)altPlayerFileHand);
         fread(*altPlayerFileHand, len, 1, f);
-        UnlockAHandle((Handle)altPlayerFileHand);
     }
     if (altPlayerFileHand != NULL) {
         LockAHandle((Handle)altPlayerFileHand);
         err = CE_DecryptIfNecessary(*altPlayerFileHand,
                                     GetAHandleSize((Handle)altPlayerFileHand), kPilotCryptKey);
-        UnlockAHandle((Handle)altPlayerFileHand);
 
         if (err == 0) {
             crashlog("load pilot data 6");
             if ((*altPlayerFileHand)->version == kBetaPilotVersion) {
-                UnlockAHandle((Handle)altPlayerFileHand);
                 DeallocAHandle(altPlayerFileHand);
                 fclose(f);
                 return kPilotBetaFile;
             }
             if ((*altPlayerFileHand)->version < kMinPilotVersion) {
-                UnlockAHandle((Handle)altPlayerFileHand);
                 DeallocAHandle(altPlayerFileHand);
                 fclose(f);
                 return kPilotWrongVersion;
@@ -3814,7 +3791,6 @@ void ActivateCharResource(const unsigned char *name, Boolean applyStats)
         EvalMissionBitSetString(ResRec(CharRecord, charFileHand)->onStart);
     }
 
-    UnlockAHandle(charFileHand);
     AdjustHandleSize(charFileHand, kCharRecordSize);
     ReleaseResource(charFileHand);
     } else {

@@ -98,7 +98,6 @@ void LoadIntfResource(void)
             picID = kFirstResourceID;
 
         CE_ScaleStatusRects();
-        UnlockAHandle(intfFileHand);
         ReleaseResource(intfFileHand);
     } else {
         picID = kFirstResourceID;

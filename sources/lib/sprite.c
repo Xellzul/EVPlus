@@ -472,7 +472,6 @@ void SWUnlockSprite(SpritePtr srcSpriteP)
             srcFrameP->rleTokenStart = 0;
         }
 
-        UnlockAHandle(spriteData);
     }
 }
 
