@@ -75,6 +75,7 @@ typedef struct CGrafPort {
     short txFont;
     short txFace;
     short txSize;
+    int32_t pnDeviceOffset;         /* text: the pen's device x minus pnLoc.h's; 0 after any pen move */
 } CGrafPort, *CGrafPtr;
 /* one port record serves every port, so these are Carbon's: a GrafPtr is a CGrafPtr */
 typedef CGrafPtr GrafPtr;
@@ -617,6 +618,7 @@ extern CWindowPtr FrontWindow(void *window);
 extern Image_t *GetCIcon(short iconID);
 extern void *GetCWindowVisRgn(void *window);
 extern Rect *GetDialogPortRect(DialogPtr dlg);
+#define kMinFontSize 10                     /* GetFont makes a smaller font this size */
 struct FontSpec;
 extern int GetFont(short fontID, short size, short style, struct FontSpec *spec);
 /* the procs a dialog record carries: its update (draw) proc and its event filter */
@@ -736,6 +738,7 @@ extern void TextFont(short font);
 extern void TextSize(short size);
 extern short TextWidth(const char *text, int byteCount);
 extern short TextWidthMacRoman(const char *text, int byteCount);
+extern int TextDeviceWidth(const char *text, int byteCount);
 extern unsigned AnsiToUnicode(unsigned char c);             /* code page 1252, the typed text's */
 /* port/utf8text.cpp: the game's text (a typed name, an alert) as UTF-8 for a path or the system, and a
    file's name as game text */

@@ -78,6 +78,11 @@ Rect Mapping::DeviceRect(const Rect &logical) const
     return device;
 }
 
+int Mapping::LogicalLength(int device) const
+{
+    return MulDivRound(device, logicalX, deviceX);
+}
+
 int Mapping::LogicalX(int device) const
 {
     return left + MulDivFloor(device, logicalX, deviceX);
@@ -101,6 +106,7 @@ void ResizePixels(CGrafPtr port, int width, int height)
     free(port->pixels);
     port->pix.width = width;
     port->pix.height = height;
+    port->pnDeviceOffset = 0;                  /* the pen's device remainder belonged to the old size */
     port->pixels = NewPortPixels(width, height + 1, depth);
     port->pix.baseAddr = port->pixels;
     port->pix.rowBytes = (width * depth + kRowAlignBits - 1) / kRowAlignBits * (kRowAlignBits / 8);

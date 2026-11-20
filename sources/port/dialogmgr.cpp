@@ -15,6 +15,7 @@
 #include "prototypes.h"
 #include "cefix.h"
 #include "uiscale.h"
+#include "scaleddraw.h"
 #include "platform.h"
 #include "endianswap.h"
 
@@ -1027,6 +1028,13 @@ void InvalDialogRect(DialogPtr dlg, Rect *box)
 {
     dlg->needsUpdate = 1;
 }
+
+/* a logical x on the current port in its device pixels */
+static int DeviceX(int logical)
+{
+    return CurrentGrafPort != NULL ? UI::Mapping(CurrentGrafPort->pix).X(logical) : logical;
+}
+
 // FUNCTION: EVNOVA 0x004cfdd0
 void ModalDialog(void *filterProc, short *itemHitPtr)
 {
@@ -1201,7 +1209,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                 dlg->needsUpdate = 1;
             } else if (clickKind == 3) {
                 if (rec->data != NULL) {
-                    keyChar = localH - (rec->box.left + 2);
+                    keyChar = DeviceX(localH) - DeviceX(rec->box.left + 2);
                     localH = strlen((char *)rec->data);
                     located = 0;
                     text = (char *)rec->data;
@@ -1210,7 +1218,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                         rec->maxValue = localH;
                     } else {
                         for (pos = 0; pos < localH; pos++) {
-                            w = TextWidth(text, pos + 1);
+                            w = TextDeviceWidth(text, pos + 1);
                             if (keyChar < w) {
                                 located = 1;
                                 rec->maxValue = pos;
@@ -1586,20 +1594,17 @@ void DrawDialog(DialogPtr dlg)
     int32_t i;
     int32_t y;
     char *shown;
-    int32_t caretX;
     void (*updateProc)(void);
     int32_t rightBound;
     int32_t width;
     int32_t rowWidth;
     int32_t titleWidth;
-    short maxW;
     ControlRecord *item;
     DlgListRec *list;
     int32_t row;
     int32_t count;
     int32_t rowY;
     char *entry;
-    int32_t prefix;
     int32_t titleX;
     int32_t titleY;
     CGrafPtr savedPort;
@@ -1790,30 +1795,31 @@ void DrawDialog(DialogPtr dlg)
                     inner.bottom = box.bottom;
                     DrawTextRun(item->data, strlen((char *)item->data), &inner, 0, 0);
                 }
+                /* selection and caret in device pixels, from the measured device advances */
                 if (dlg->editItem == item->itemNo) {
+                    UI::Mapping map(CurrentGrafPort->pix);
+
                     if (item->minValue < item->maxValue) {
-                        sel.top = box.top + 1;
-                        sel.left = box.left + 1;
-                        sel.bottom = box.bottom - 1;
-                        sel.right = box.right - 1;
+                        sel.top = (short)map.Y(box.top + 1);
+                        sel.left = (short)map.X(box.left + 1);
+                        sel.bottom = (short)map.Y(box.bottom - 1);
+                        sel.right = (short)map.X(box.right - 1);
                         if (item->maxValue < strlen((char *)item->data)) {
-                            maxW = TextWidth((char *)item->data, item->maxValue);
-                            rightBound = sel.left + maxW;
+                            rightBound = sel.left + TextDeviceWidth((char *)item->data, item->maxValue);
                             if (sel.right > rightBound)
-                                sel.right = rightBound;
+                                sel.right = (short)rightBound;
                         }
-                        if (item->minValue > 0)
-                            sel.left += TextWidth((char *)item->data, item->minValue);
-                        InvertRect(&sel);
+                        sel.left += TextDeviceWidth((char *)item->data, item->minValue);
+                        Scaled::InvertDeviceRect(sel);
                     } else if (gCaretPhase != 0) {
-                        caretX = box.left + 2;
-                        prefix = item->minValue > 0
-                            ? TextWidth((char *)item->data, item->minValue) : 0;
-                        caretX += prefix;
-                        if (caretX < box.right - 3) {
-                            MoveTo(caretX, box.bottom - 3);
-                            LineTo(caretX, box.top + 3);
-                        }
+                        /* a pen-wide line, a logical pixel left of where the next glyph starts */
+                        sel.left = (short)(map.X(box.left + 2) + TextDeviceWidth((char *)item->data, item->minValue));
+                        sel.right = (short)(sel.left + map.X(box.left + 2 + CurrentGrafPort->pnSize.h)
+                                            - map.X(box.left + 2));
+                        sel.top = (short)map.Y(box.top + 3);
+                        sel.bottom = (short)map.Y(box.bottom - 4 + CurrentGrafPort->pnSize.v);
+                        if (sel.left < map.X(box.right - 3))
+                            Scaled::FillDeviceRect(sel, CurrentGrafPort->foreColor);
                     }
                 }
                 break;

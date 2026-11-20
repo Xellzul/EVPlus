@@ -69,10 +69,19 @@ void FillRect(const Rect &r, const RGBColor &color)
     FillDevice(pix, UI::Mapping(pix).DeviceRect(r), Pixel555(color));
 }
 
+void FillDeviceRect(const Rect &device, const RGBColor &color)
+{
+    FillDevice(CurrentGrafPort->pix, device, Pixel555(color));
+}
+
 void InvertRect(const Rect &r)
 {
+    InvertDeviceRect(UI::Mapping(CurrentGrafPort->pix).DeviceRect(r));
+}
+
+void InvertDeviceRect(Rect device)
+{
     const PixMap &pix = CurrentGrafPort->pix;
-    Rect device = UI::Mapping(pix).DeviceRect(r);
 
     if (pix.pixelSize != 16 || !ClipToPixels(pix, device))
         return;
@@ -115,6 +124,7 @@ void LineTo(short h, short v)
 
     port.pnLoc.h = h;
     port.pnLoc.v = v;
+    port.pnDeviceOffset = 0;
     if (x0 > x1)
         x0--;
     else if (x0 != x1)

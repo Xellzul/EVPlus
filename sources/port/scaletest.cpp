@@ -1,8 +1,8 @@
 /* scaletest.cpp -- a test page for the drawing code: every kind of drawing the UI uses (rects, lines, ovals,
    text, pictures, icons, patterns, copy modes, masks) on one fixed 640 x 480 page, drawn at UI scale 1 into
    scaletest.raw and at the other test scales into scaletest_<scale>.raw, shown before the main screen when
-   kScaleTest (mainscreen.cpp) is 1. Scale 1 must give the same file before and after a change;
-   build/devtools/scaletest.sh runs it. */
+   kScaleTest (mainscreen.cpp) is 1. The text checks are logged to scaletest.txt. Scale 1 must give the same
+   file before and after a change; build/devtools/scaletest.sh runs it. */
 
 #include <stdio.h>
 #include <string.h>
@@ -13,6 +13,7 @@
 #include "render.h"
 #include "platform.h"
 #include "uiscale.h"
+#include "scaleddraw.h"
 
 namespace {
 
@@ -135,6 +136,151 @@ void DrawText()
     FrameRect(&box);
 }
 
+/* a device pixel of the page, 16 bits */
+unsigned short PagePixel(const PixMap *pix, int x, int y)
+{
+    return *(const unsigned short *)((const char *)pix->baseAddr + (size_t)y * pix->rowBytes + (size_t)x * 2);
+}
+
+/* A green square when `ok', else a red one. */
+void Mark(short left, short top, bool ok)
+{
+    Rect r;
+
+    Color(ok ? 0 : 0xffff, ok ? 0xc000 : 0, 0);
+    SetRect(&r, left, top, left + 6, top + 6);
+    PaintRect(&r);
+}
+
+/* Growing prefixes of one string, one per row at the same x, as typed into a field. Left square: the
+   pixels left of each prefix's end are the same in the next row. Right square: StringWidth == the pen's
+   advance. Each row is also logged. */
+void DrawPrefixRows(GWorldContainer *page, short left, short size, double scale, FILE *log)
+{
+    static const char kTyped[] = "Kestrel Wing";
+    constexpr int kRows = sizeof(kTyped) - 1;
+    PixMapPtr pix = (PixMapPtr)GWorldContainerBits(page);
+    UI::Mapping map(*pix);
+    unsigned char pascal[256];
+    short widths[kRows];
+    constexpr short kTop = 280;
+    constexpr short kPitch = 16;            /* whole device pixels at every test scale */
+
+    TextFont(smallTextFont);
+    TextFace(0);
+    TextSize(size);
+    for (int k = 1; k <= kRows; k++) {
+        short pen = (short)(kTop + (k - 1) * kPitch + size);
+
+        Color(0xffff, 0xffff, 0xffff);
+        MoveTo(left, pen);
+        ::DrawText(kTyped, 0, k);
+        int advance = CurrentGrafPort->pnLoc.h - left;
+        pascal[0] = (unsigned char)k;
+        memcpy(pascal + 1, kTyped, k);
+        widths[k - 1] = StringWidth(pascal);
+        Mark((short)(left - 8), (short)(pen - 6), widths[k - 1] == advance);
+        if (log != NULL)
+            fprintf(log, "scale %g size %d prefix %2d: StringWidth %d pen advance %d%s\n", scale, size, k,
+                    widths[k - 1], advance, widths[k - 1] == advance ? "" : "  MISMATCH");
+    }
+    for (int k = 1; k < kRows; k++) {
+        int rowTop = kTop + (k - 1) * kPitch;
+        int y0 = map.Y(rowTop);
+        int y1 = map.Y(rowTop + kPitch);
+        int x0 = map.X(left);
+        int x1 = map.X(left + widths[k - 1] - 1);
+        bool same = true;
+
+        for (int y = y0; y < y1 && same; y++) {
+            for (int x = x0; x < x1; x++) {
+                if (PagePixel(pix, x, y) != PagePixel(pix, x, y + y1 - y0)) {
+                    same = false;
+                    break;
+                }
+            }
+        }
+        Mark((short)(left - 16), (short)(rowTop + size - 6), same);
+        if (log != NULL && !same)
+            fprintf(log, "scale %g size %d prefix %2d: pixels differ in the next row\n", scale, size, k);
+    }
+}
+
+/* the same device rows of two bands `shift' rows apart are the same from column x0 to x1 */
+bool SameBands(const PixMap *pix, int x0, int x1, int y0, int y1, int shift)
+{
+    for (int y = y0; y < y1; y++) {
+        for (int x = x0; x < x1; x++) {
+            if (PagePixel(pix, x, y) != PagePixel(pix, x, y + shift))
+                return false;
+        }
+    }
+    return true;
+}
+
+/* One string drawn whole, and below it in two DrawCString calls that go on from the pen: the pixels must be
+   the same. */
+void DrawPieceRows(GWorldContainer *page, short top, short size, double scale, FILE *log)
+{
+    static const char kWhole[] = "Credits: 25,000";
+    constexpr short kLeft = 15;
+    constexpr short kPitch = 24;            /* whole device pixels at every test scale */
+    PixMapPtr pix = (PixMapPtr)GWorldContainerBits(page);
+    UI::Mapping map(*pix);
+
+    TextFont(smallTextFont);
+    TextFace(0);
+    TextSize(size);
+    Color(0xffff, 0xffff, 0xffff);
+    MoveTo(kLeft, top + size);
+    DrawCString(kWhole);
+    MoveTo(kLeft, top + kPitch + size);
+    DrawCString("Credits: ");
+    DrawCString("25,000");
+    bool same = SameBands(pix, map.X(kLeft), map.X(135), map.Y(top), map.Y(top + 20), map.Y(top + kPitch) - map.Y(top));
+    Mark(kLeft - 11, (short)(top + kPitch + size - 6), same);
+    if (log != NULL)
+        fprintf(log, "scale %g size %d pieces: %s\n", scale, size, same ? "same as whole" : "DIFFER from whole");
+}
+
+/* A string, and where TextDeviceWidth puts its end (the edit field's caret): that is the pen's device x after
+   drawing it, and the glyphs' ink ends at most two logical pixels before it, never after. The caret is drawn
+   there afterwards, one logical pixel wide, left of the end. */
+void DrawCaretRow(GWorldContainer *page, short left, short top, short size, const char *text, double scale,
+                  FILE *log)
+{
+    PixMapPtr pix = (PixMapPtr)GWorldContainerBits(page);
+    UI::Mapping map(*pix);
+    int count = (int)strlen(text);
+    RGBColor caretColor = { 0xffff, 0x8000, 0 };
+    Rect caret;
+
+    TextFont(smallTextFont);
+    TextFace(0);
+    TextSize(size);
+    Color(0xffff, 0xffff, 0xffff);
+    MoveTo(left, top + size);
+    ::DrawText(text, 0, count);
+    int end = map.X(left) + TextDeviceWidth(text, count);
+    int penEnd = map.X(CurrentGrafPort->pnLoc.h) + CurrentGrafPort->pnDeviceOffset;
+    int ink = map.X(left);
+    for (int y = map.Y(top); y < map.Y(top + 18) && y < pix->height; y++) {
+        for (int x = map.X(left); x < map.X(left + 120); x++) {
+            if (PagePixel(pix, x, y) != 0 && x + 1 > ink)
+                ink = x + 1;
+        }
+    }
+    int gap = end - ink;
+    bool ok = end == penEnd && gap >= 0 && gap <= map.X(left + 2) - map.X(left);
+    SetRect(&caret, (short)(end - (map.X(left + 1) - map.X(left))), (short)map.Y(top + 3), (short)end,
+            (short)map.Y(top + size + 2));
+    Scaled::FillDeviceRect(caret, caretColor);
+    Mark((short)(left - 10), (short)(top + size - 6), ok);
+    if (log != NULL)
+        fprintf(log, "scale %g size %d caret \"%s\": end %d pen %d ink %d gap %d%s\n", scale, size, text,
+                end - map.X(left), penEnd - map.X(left), ink - map.X(left), gap, ok ? "" : "  FAIL");
+}
+
 /* pictures at their size and stretched, a cicn, a tiled pattern */
 void DrawPictures()
 {
@@ -239,7 +385,7 @@ void WritePage(GWorldContainer *page, double scale)
     fclose(file);
 }
 
-void DrawPage(GWorldContainer *page)
+void DrawPage(GWorldContainer *page, double scale, FILE *log)
 {
     SetGWorldContainer(page);
     ForeColor(blackColor);
@@ -250,6 +396,14 @@ void DrawPage(GWorldContainer *page)
     DrawText();
     DrawPictures();
     DrawCopyModes(page);
+    DrawPrefixRows(page, 416, 12, scale, log);
+    DrawPrefixRows(page, 530, 16, scale, log);
+    DrawPieceRows(page, 386, 12, scale, log);
+    DrawPieceRows(page, 434, 16, scale, log);
+    DrawCaretRow(page, 160, 444, 16, "Haxon", scale, log);
+    DrawCaretRow(page, 280, 444, 16, "Lieutenant", scale, log);
+    DrawCaretRow(page, 160, 464, 12, "Kestrel Wing", scale, log);
+    DrawCaretRow(page, 280, 464, 12, "Credits: 25,000", scale, log);
 }
 
 } // namespace
@@ -259,18 +413,24 @@ void DebugScaleTest(void)
     GWorldContainer page;
     Rect bounds;
 
+    FILE *log = PlatFileOpen("scaletest.txt", "wb");
+
     SetRect(&bounds, 0, 0, kPageWidth, kPageHeight);
     for (double scale : kTestScales) {
         page.world = 0;
         CreateGWorldContainer(&page, GetMainDevice(), 0, &bounds);
         if (page.world == 0)
-            return;
+            break;
         UI::ScalePortPixels(page.world, scale);
-        DrawPage(&page);
+        DrawPage(&page, scale, log);
         WritePage(&page, scale);
         if (scale != 1.0)
             DisposeGWorldContainer(&page);
     }
+    if (log != NULL)
+        fclose(log);
+    if (page.world == 0)
+        return;
 
     SWSetPortToWindow(gSpriteWorld);
     CopyBits(GWorldContainerBits(&page), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),

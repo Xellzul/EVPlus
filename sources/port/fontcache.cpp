@@ -38,8 +38,7 @@ ListRec gFontFamilies;
 static GameFont *gGameFonts;
 
 /* CE drew its text through cnc-ddraw, which changes every font the game creates by two ddraw.ini settings;
-   these are the values CE ships: */
-#define kMinFontSize            10      /* min_font_size: a smaller font is made this size */
+   these are the values CE ships (min_font_size is kMinFontSize, macport.h): */
 #define kAntiAliasedMinSize     13      /* anti_aliased_fonts_min_size: a smaller font is not smoothed */
 
 #define kFontPattern    "*.ttf"

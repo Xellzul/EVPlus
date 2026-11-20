@@ -261,7 +261,7 @@ static CachedGlyph *MakeGlyph(RasterFont *font, int pixelSize, int flags, unsign
         return NULL;
     index = FT_Get_Char_Index(font->face, code);
     load = (flags & kRasterSmooth) != 0 ? FT_LOAD_DEFAULT : FT_LOAD_TARGET_MONO;
-    if ((flags & kRasterItalic) != 0)
+    if ((flags & kRasterItalic) != 0 || ((flags & kRasterNoStrike) != 0 && FT_IS_SCALABLE(font->face)))
         load |= FT_LOAD_NO_BITMAP;      /* a bitmap strike cannot be slanted */
     if (FT_Load_Glyph(font->face, index, load) != 0 && FT_Load_Glyph(font->face, 0, load) != 0)
         return NULL;

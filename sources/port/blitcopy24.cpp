@@ -889,6 +889,7 @@ void MoveTo(short h, short v)
         return;
     CurrentGrafPort->pnLoc.h = h;
     CurrentGrafPort->pnLoc.v = v;
+    CurrentGrafPort->pnDeviceOffset = 0;
 }
 
 // FUNCTION: EVNOVA 0x004ba320

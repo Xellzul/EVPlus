@@ -6,6 +6,8 @@
    - with word wrap a line ends at CR, LF or CR LF, or before the word that no longer fits, at the last
      space; a word wider than the line is not cut;
    - measured without DT_NOPREFIX an `&' is an accelerator mark and has no width (`&&' is one `&').
+   Glyphs are drawn at the port's device size, each one its hinted advance after the one before it, in whole
+   device pixels; a width is the sum of those advances in logical pixels, rounded once.
    Notes: Research/notes/toolbox.md */
 
 #include <stddef.h>
@@ -25,7 +27,6 @@
 #define kFirstVisible   0x20
 #define kFull           255
 #define kFallbackFont   0               /* the system font's number */
-#define kMinScaledSize  10              /* on a scaled port: the smallest logical size, then scaled */
 
 /* a character: what the font is asked for */
 typedef struct TextUnit {
@@ -123,48 +124,52 @@ static short SizeFor(short size, double scale)
 {
     if (scale == 1.0)
         return size;
-    if (size < kMinScaledSize)
-        size = kMinScaledSize;
+    if (size < kMinFontSize)
+        size = kMinFontSize;
     return (short)(size * scale + 0.5);
 }
 
-/* The font, size and style set in the port: at the port's own size (layout and measuring), or with
-   scale != 1 the same font scaled (the glyphs on a scaled port). A font number the font cache does not know
-   (the scrolling text asks for 20, the Mac's number for Times) leaves the port with the font it drew or
-   measured with before; a port that has had none gets font 0 at the port's size. */
-static int StyleAt(TextStyle *style, double scale)
+/* The font, size and style set in the port, scaled by `scale': 1 gives the port's own size (rows: ascent and
+   descent), the port's device scale the glyphs drawn and measured. A scaled font never uses a bitmap strike,
+   so its glyphs are the same outlines at every scale. A font number the font cache does not know (the
+   scrolling text asks for 20, the Mac's number for Times) leaves the port with the font it drew or measured
+   with before; a port that has had none gets font 0 at the port's size. */
+static int FontAt(FontSpec *spec, double scale)
 {
     CGrafPtr port;
 
     port = CurrentGrafPort;
-    if (GetFont(port->txFont, SizeFor(port->txSize, scale), port->txFace, &style->spec)) {
+    if (GetFont(port->txFont, SizeFor(port->txSize, scale), port->txFace, spec)) {
         port->lastFont = port->txFont;
         port->lastSize = port->txSize;
         port->lastFace = port->txFace;
         port->hasLastFont = 1;
-    } else if (!(port->hasLastFont
-                 && GetFont(port->lastFont, SizeFor(port->lastSize, scale), port->lastFace, &style->spec))
-               && !GetFont(kFallbackFont, SizeFor(port->txSize, scale), port->txFace, &style->spec)) {
+    } else if (!(port->hasLastFont && GetFont(port->lastFont, SizeFor(port->lastSize, scale), port->lastFace, spec))
+               && !GetFont(kFallbackFont, SizeFor(port->txSize, scale), port->txFace, spec)) {
         return 0;
     }
+    if (scale != 1.0)
+        spec->flags |= kRasterNoStrike;
+    return 1;
+}
+
+/* the port's font at its own size, with its ascent and descent */
+static int CurrentStyle(TextStyle *style)
+{
+    if (!FontAt(&style->spec, 1.0))
+        return 0;
     RasterMetrics(style->spec.font, style->spec.pixelSize, &style->ascent, &style->descent);
     return 1;
 }
 
-static int CurrentStyle(TextStyle *style)
-{
-    return StyleAt(style, 1.0);
-}
-
-static const RasterGlyph *GlyphOf(const TextStyle *style, const TextUnit *unit)
+static const RasterGlyph *GlyphOf(const FontSpec *spec, const TextUnit *unit)
 {
     if (unit->unicode < kFirstVisible)
         return NULL;                    /* a control character has no shape and no width */
-    return RasterGetGlyph(style->spec.font, style->spec.pixelSize, style->spec.flags, unit->unicode,
-                          unit->macRoman);
+    return RasterGetGlyph(spec->font, spec->pixelSize, spec->flags, unit->unicode, unit->macRoman);
 }
 
-static int WidthOf(const TextStyle *style, const TextUnit *units, int count)
+static int WidthOf(const FontSpec *spec, const TextUnit *units, int count)
 {
     const RasterGlyph *glyph;
     int width;
@@ -172,17 +177,22 @@ static int WidthOf(const TextStyle *style, const TextUnit *units, int count)
 
     width = 0;
     for (i = 0; i < count; i++) {
-        glyph = GlyphOf(style, &units[i]);
+        glyph = GlyphOf(spec, &units[i]);
         if (glyph != NULL)
             width += glyph->advance;
     }
     return width;
 }
 
-/* One line of word-wrapped text from `start' on: its characters end before `end', the next line begins at
-   `next'. 0 = no line left. */
-static int NextLine(const TextStyle *style, const TextUnit *units, int count, int start, int maxWidth,
-                    int *end, int *next)
+static short ClampShort(int value)
+{
+    return (short)(value < -32768 ? -32768 : value > 32767 ? 32767 : value);
+}
+
+/* One line of word-wrapped text from `start' on, measured with the glyphs drawn on `map': its characters end
+   before `end', the next line begins at `next'. 0 = no line left. */
+static int NextLine(const UI::Mapping &map, const FontSpec *spec, const TextUnit *units, int count, int start,
+                    int maxWidth, int *end, int *next)
 {
     const RasterGlyph *glyph;
     int lastSpace;
@@ -201,10 +211,10 @@ static int NextLine(const TextStyle *style, const TextUnit *units, int count, in
             *next = (c == kReturn && i + 1 < count && units[i + 1].unicode == kLineFeed) ? i + 2 : i + 1;
             return 1;
         }
-        glyph = GlyphOf(style, &units[i]);
+        glyph = GlyphOf(spec, &units[i]);
         if (c == kSpace) {
             lastSpace = i;
-        } else if (glyph != NULL && width + glyph->advance > maxWidth && lastSpace >= 0) {
+        } else if (glyph != NULL && map.LogicalLength(width + glyph->advance) > maxWidth && lastSpace >= 0) {
             *end = lastSpace;
             *next = lastSpace + 1;
             return 1;
@@ -292,119 +302,57 @@ static void DrawGlyph(PixMap *pix, const RasterGlyph *glyph, int x, int baseline
     }
 }
 
-/* characters from x on, on one baseline; returns the x after them */
-static int DrawUnits(PixMap *pix, const TextStyle *style, const TextUnit *units, int count, int x, int baseline,
-                     const ClipRect *clip, const TextColor *color)
+/* Characters from device x on, on one device baseline, each glyph its advance after the one before it.
+   Returns the device x after them. */
+static int DrawRun(PixMap *pix, const FontSpec *spec, const TextUnit *units, int count, int x, int baseline,
+                   const ClipRect *clip, const TextColor *color)
 {
     const RasterGlyph *glyph;
+    int pen;
     int i;
 
+    pen = x;
     for (i = 0; i < count; i++) {
-        glyph = GlyphOf(style, &units[i]);
+        glyph = GlyphOf(spec, &units[i]);
         if (glyph == NULL)
             continue;
         if (pix != NULL)
-            DrawGlyph(pix, glyph, x, baseline, clip, color);
-        x += glyph->advance;
+            DrawGlyph(pix, glyph, pen, baseline, clip, color);
+        pen += glyph->advance;
     }
-    return x;
-}
-
-/* Characters from logical x on, drawn on a scaled port. The run takes exactly the room it takes at the
-   logical size (layout as unscaled); inside it the glyphs, drawn at the device size, are spaced by their own
-   device advances, stretched to fill that room evenly. Returns the logical x after them. */
-static int DrawUnitsScaled(PixMap *pix, const UI::Mapping &map, const TextStyle *layout, const TextStyle *glyphs,
-                           const TextUnit *units, int count, int x, int baseline, const ClipRect *clip,
-                           const TextColor *color)
-{
-    int logicalWidth = WidthOf(layout, units, count);
-    int deviceWidth = WidthOf(glyphs, units, count);
-    int deviceStart = map.X(x);
-    double stretch = deviceWidth > 0 ? (double)(map.X(x + logicalWidth) - deviceStart) / deviceWidth : 1.0;
-    int advanced = 0;
-
-    for (int i = 0; i < count && pix != NULL; i++) {
-        const RasterGlyph *shape = GlyphOf(glyphs, &units[i]);
-        if (shape == NULL)
-            continue;
-        DrawGlyph(pix, shape, deviceStart + (int)(advanced * stretch + 0.5), baseline, clip, color);
-        advanced += shape->advance;
-    }
-    return x + logicalWidth;
-}
-
-/* DrawTextRun on a scaled port: laid out at the logical size, as unscaled; drawn in device pixels */
-static void DrawScaledRun(CGrafPtr port, PixMap *pix, const TextStyle *layout, const TextUnit *units, int count,
-                          const Rect *box, char clipped, int height, const TextColor *color)
-{
-    UI::Mapping map(port->pix);
-    TextStyle glyphs;
-    ClipRect clip = { 0, 0, port->pix.width, port->pix.height };
-    Rect logicalBox;
-    Rect deviceBox;
-    int left = port->pix.bounds.left;
-    int top = port->pix.bounds.top;
-
-    if (!StyleAt(&glyphs, map.ScaleY()))
-        return;
-    if (box != NULL) {
-        logicalBox = *box;
-        OffsetRect(&logicalBox, left, top);
-        deviceBox = map.DeviceRect(logicalBox);
-        if (clip.right > deviceBox.right)
-            clip.right = deviceBox.right;
-        if (clip.bottom > deviceBox.bottom)
-            clip.bottom = deviceBox.bottom;
-    }
-    if (clipped == 0) {
-        int y = port->pnLoc.v - port->txSize;
-        if (box != NULL) {
-            if (clip.left < map.X(port->pnLoc.h))
-                clip.left = map.X(port->pnLoc.h);
-            if (clip.top < map.Y(y))
-                clip.top = map.Y(y);
-        }
-        port->pnLoc.h = (short)DrawUnitsScaled(pix, map, layout, &glyphs, units, count, port->pnLoc.h,
-                                               map.Y(y + layout->ascent), &clip, color);
-    } else {
-        if (clip.left < deviceBox.left)
-            clip.left = deviceBox.left;
-        if (clip.top < deviceBox.top)
-            clip.top = deviceBox.top;
-        int y = logicalBox.top - height;
-        int start = 0;
-        int end;
-        int next;
-        while (NextLine(layout, units, count, start, logicalBox.right - logicalBox.left, &end, &next)) {
-            DrawUnitsScaled(pix, map, layout, &glyphs, units + start, end - start, logicalBox.left,
-                            map.Y(y + layout->ascent), &clip, color);
-            y += layout->ascent + layout->descent;
-            start = next;
-        }
-    }
+    return pen;
 }
 
 /* Rectangles are in the pixel map's own pixels, the port's bounds not applied to `box', as the exe gives
-   them to GDI. */
+   them to GDI. Rows and line pitch are in logical pixels at the port's size; widths and line breaks come from
+   the device advances of the glyphs drawn. Unclipped text starts at the pen's device x and leaves the pen at
+   the logical pixel nearest its end, the rest in pnDeviceOffset, so the next run continues exactly. clipped != 0
+   wraps into `box' and needs one. */
 // FUNCTION: EVNOVA 0x004bc760
 void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, int height)
 {
     CGrafPtr port;
     PixMap *pix;
     TextUnit *units;
-    TextStyle style;
+    TextStyle layout;
+    FontSpec glyphs;
     TextColor color;
     ClipRect clip;
+    Rect logicalBox;
+    Rect deviceBox;
     int x;
     int y;
     int start;
     int end;
     int next;
 
-    if (text == NULL || byteCount == 0)
+    if (text == NULL || byteCount == 0 || (clipped != 0 && box == NULL))
         return;
     port = CurrentGrafPort;
-    if (port == NULL || !CurrentStyle(&style))
+    if (port == NULL || !CurrentStyle(&layout))
+        return;
+    UI::Mapping map(port->pix);
+    if (!FontAt(&glyphs, map.ScaleY()))
         return;
     units = (TextUnit *)AllocAPointer(byteCount * sizeof(TextUnit));
     if (units == NULL)
@@ -417,44 +365,42 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
     color.g = (unsigned char)(gGammaRamp[port->foreColor.green >> 11] * 8);
     color.b = (unsigned char)(gGammaRamp[port->foreColor.blue >> 11] * 8);
 
-    if (UI::Mapping(port->pix).Scaled()) {
-        DrawScaledRun(port, pix, &style, units, byteCount, box, clipped, height, &color);
-        DeallocAPointer(units);
-        return;
-    }
     clip.left = 0;
     clip.top = 0;
     clip.right = port->pix.width;
     clip.bottom = port->pix.height;
-    x = port->pnLoc.h - port->pix.bounds.left;
-    y = port->pnLoc.v - port->pix.bounds.top;
+    if (box != NULL) {
+        logicalBox = *box;
+        OffsetRect(&logicalBox, port->pix.bounds.left, port->pix.bounds.top);
+        deviceBox = map.DeviceRect(logicalBox);
+        if (clip.right > deviceBox.right)
+            clip.right = deviceBox.right;
+        if (clip.bottom > deviceBox.bottom)
+            clip.bottom = deviceBox.bottom;
+    }
     if (clipped == 0) {
-        y -= port->txSize;
+        x = map.X(port->pnLoc.h) + port->pnDeviceOffset;
+        y = port->pnLoc.v - port->txSize;
         if (box != NULL) {
             if (clip.left < x)
                 clip.left = x;
-            if (clip.top < y)
-                clip.top = y;
-            if (clip.right > box->right)
-                clip.right = box->right;
-            if (clip.bottom > box->bottom)
-                clip.bottom = box->bottom;
+            if (clip.top < map.Y(y))
+                clip.top = map.Y(y);
         }
-        port->pnLoc.h += DrawUnits(pix, &style, units, byteCount, x, y + style.ascent, &clip, &color) - x;
+        end = DrawRun(pix, &glyphs, units, byteCount, x, map.Y(y + layout.ascent), &clip, &color);
+        port->pnLoc.h = ClampShort(port->pnLoc.h + map.LogicalLength(end - map.X(port->pnLoc.h)));
+        port->pnDeviceOffset = end - map.X(port->pnLoc.h);
     } else {
-        if (clip.left < box->left)
-            clip.left = box->left;
-        if (clip.top < box->top)
-            clip.top = box->top;
-        if (clip.right > box->right)
-            clip.right = box->right;
-        if (clip.bottom > box->bottom)
-            clip.bottom = box->bottom;
-        y = box->top - height;
+        if (clip.left < deviceBox.left)
+            clip.left = deviceBox.left;
+        if (clip.top < deviceBox.top)
+            clip.top = deviceBox.top;
+        y = logicalBox.top - height;
         start = 0;
-        while (NextLine(&style, units, byteCount, start, box->right - box->left, &end, &next)) {
-            DrawUnits(pix, &style, units + start, end - start, box->left, y + style.ascent, &clip, &color);
-            y += style.ascent + style.descent;
+        while (NextLine(map, &glyphs, units, byteCount, start, logicalBox.right - logicalBox.left, &end, &next)) {
+            DrawRun(pix, &glyphs, units + start, end - start, map.X(logicalBox.left), map.Y(y + layout.ascent),
+                    &clip, &color);
+            y += layout.ascent + layout.descent;
             start = next;
         }
     }
@@ -481,23 +427,39 @@ void DrawCString(const char *text)
 
 /* -- measuring ----------------------------------------------------------------------------------------------- */
 
+/* the device advances of the glyphs DrawTextRun draws for these characters on the current port */
+static int DeviceWidthOf(const UI::Mapping &map, const TextUnit *units, int count)
+{
+    FontSpec glyphs;
+
+    if (!FontAt(&glyphs, map.ScaleY()))
+        return 0;
+    return WidthOf(&glyphs, units, count);
+}
+
 /* BUG (exe, all Windows versions): StringWidth, MeasureCString, TextWidth and MeasureWrappedText take the
    bytes as ANSI text with `&' as an accelerator mark, while DrawTextRun draws them as Mac Roman with `&'
    shown: text with characters above 0x7f or with an `&' is measured at another width than it is drawn. */
-static short MeasureAnsi(const char *text, int byteCount)
+static int AnsiDeviceWidth(const UI::Mapping &map, const char *text, int byteCount)
 {
     TextUnit *units;
-    TextStyle style;
-    short width;
+    int width;
 
-    if (byteCount <= 0 || !CurrentStyle(&style))
+    if (byteCount <= 0)
         return 0;
     units = (TextUnit *)AllocAPointer(byteCount * sizeof(TextUnit));
     if (units == NULL)
         return 0;
-    width = WidthOf(&style, units, FromAnsi(text, byteCount, units));
+    width = DeviceWidthOf(map, units, FromAnsi(text, byteCount, units));
     DeallocAPointer(units);
     return width;
+}
+
+static short MeasureAnsi(const char *text, int byteCount)
+{
+    UI::Mapping map(CurrentGrafPort->pix);
+
+    return ClampShort(map.LogicalLength(AnsiDeviceWidth(map, text, byteCount)));
 }
 
 /* the same measurer over a Pascal string */
@@ -530,6 +492,15 @@ short TextWidth(const char *text, int byteCount)
     return MeasureAnsi(text, byteCount);
 }
 
+/* TextWidth in the current port's device pixels, before rounding to logical ones: where the glyphs of the
+   first byteCount bytes end, from where they start */
+int TextDeviceWidth(const char *text, int byteCount)
+{
+    if (CurrentGrafPort == NULL || text == NULL || text[0] == 0)
+        return 0;
+    return AnsiDeviceWidth(UI::Mapping(CurrentGrafPort->pix), text, byteCount);
+}
+
 /* The pen's v for DrawCString that puts the port font's capitals in the middle of the rows top..bottom - 1. */
 short CapsCenteredPenV(short top, short bottom)
 {
@@ -540,7 +511,7 @@ short CapsCenteredPenV(short top, short bottom)
 
     if (CurrentGrafPort == NULL || !CurrentStyle(&style))
         return (short)((top + bottom) / 2);
-    glyph = GlyphOf(&style, &capital);
+    glyph = GlyphOf(&style.spec, &capital);
     capHeight = glyph != NULL ? glyph->top : style.ascent;
     return (short)((top + bottom + capHeight) / 2 + CurrentGrafPort->txSize - style.ascent);
 }
@@ -550,16 +521,16 @@ short CapsCenteredPenV(short top, short bottom)
 short TextWidthMacRoman(const char *text, int byteCount)
 {
     TextUnit *units;
-    TextStyle style;
     short width;
 
-    if (CurrentGrafPort == NULL || text == NULL || byteCount <= 0 || !CurrentStyle(&style))
+    if (CurrentGrafPort == NULL || text == NULL || byteCount <= 0)
         return 0;
     units = (TextUnit *)AllocAPointer(byteCount * sizeof(TextUnit));
     if (units == NULL)
         return 0;
     FromMacRoman(text, byteCount, units);
-    width = WidthOf(&style, units, byteCount);
+    UI::Mapping map(CurrentGrafPort->pix);
+    width = ClampShort(map.LogicalLength(DeviceWidthOf(map, units, byteCount)));
     DeallocAPointer(units);
     return width;
 }
@@ -580,6 +551,7 @@ int MeasureWrappedText(const char *text, int byteCount, int width)
 {
     TextUnit *units;
     TextStyle style;
+    FontSpec glyphs;
     int count;
     int lines;
     int start;
@@ -590,7 +562,8 @@ int MeasureWrappedText(const char *text, int byteCount, int width)
         return 0;
     if (text == NULL || byteCount == 0)
         return 0;
-    if (!CurrentStyle(&style))
+    UI::Mapping map(CurrentGrafPort->pix);
+    if (!CurrentStyle(&style) || !FontAt(&glyphs, map.ScaleY()))
         return 0;
     units = (TextUnit *)AllocAPointer(byteCount * sizeof(TextUnit));
     if (units == NULL)
@@ -598,7 +571,7 @@ int MeasureWrappedText(const char *text, int byteCount, int width)
     count = FromAnsi(text, byteCount, units);
     lines = 0;
     start = 0;
-    while (NextLine(&style, units, count, start, width, &end, &next)) {
+    while (NextLine(map, &glyphs, units, count, start, width, &end, &next)) {
         lines++;
         start = next;
     }

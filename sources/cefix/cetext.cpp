@@ -20,8 +20,7 @@ void CE_DrawVersion(void)
     CurrentGrafPort->foreColor.red = kVersionGrey;
     CurrentGrafPort->foreColor.green = kVersionGrey;
     CurrentGrafPort->foreColor.blue = kVersionGrey;
-    CurrentGrafPort->pnLoc.h = kVersionLeft;
-    CurrentGrafPort->pnLoc.v = CurrentGrafPort->pix.bounds.bottom - kVersionRaise;
+    MoveTo(kVersionLeft, CurrentGrafPort->pix.bounds.bottom - kVersionRaise);
     CurrentGrafPort->txFont = smallTextFont;
     TextSize(kVersionTextSize);
     DrawTextRun(version, sizeof(version) - 1, NULL, 0, 0);

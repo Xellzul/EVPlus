@@ -8,6 +8,11 @@ namespace Scaled {
 
 void FillRect(const Rect &r, const RGBColor &color);
 void InvertRect(const Rect &r);
+
+/* a rect in the current port's device pixels */
+void FillDeviceRect(const Rect &device, const RGBColor &color);
+void InvertDeviceRect(Rect device);
+
 void FrameRect(const Rect &r, const RGBColor &color);
 void LineTo(short h, short v);
 void FrameOval(const Rect &r);

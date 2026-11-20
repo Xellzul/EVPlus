@@ -13,6 +13,7 @@ typedef struct RasterFont RasterFont;       /* one font file, opened */
 #define kRasterBold     1                   /* the glyph smeared a pixel to the right, a pixel wider */
 #define kRasterItalic   2                   /* the outline slanted */
 #define kRasterSmooth   4                   /* grey edges; without it a pixel is on or off */
+#define kRasterNoStrike 8                   /* the outline even where the font has a bitmap strike */
 
 /* what a text call draws with */
 typedef struct FontSpec {
