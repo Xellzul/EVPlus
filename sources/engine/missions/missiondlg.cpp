@@ -8,6 +8,7 @@
 #include "prototypes.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "missionlist.h"
 
 #define kStrTooManyA            351
 #define kStrTooManyB            352
@@ -33,6 +34,8 @@ public:
 private:
     void Hit(short item) override;
     static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static void ShowSelected(short old, bool pick);
+    static void StepDown();
 
     Boolean accepted = 0;   /* the last accept took the mission */
 };
@@ -111,10 +114,7 @@ void MissionDialog::Run()
     MissionDialogUpdate();
     Loop();
     backdrop.Release();
-    if (missionList != NULL) {
-        LDispose(missionList);
-        missionList = NULL;
-    }
+    MissionList(missionList).Dispose();
     dialog.Close();
     return;
 }
@@ -203,15 +203,46 @@ void MissionDialog::Hit(short item)
 
 static constexpr short kMissionSlotItems[] = { kItemAccept, kItemDone };
 
+/* Loads the selected mission's briefing (pick also selects its row); redraws briefing and title if it changed. */
+void MissionDialog::ShowSelected(short old, bool pick)
+{
+    strncpy(briefingTextPtr, "", 3);
+    if (selMissionListItem != -1) {
+        LoadDescription(briefingTextPtr,
+                        dockedPortMissions[missionsOutside][selMissionListItem]
+                            + kMissionDescBase);
+        MungeBriefing(1,
+                      dockedPortMissions[missionsOutside][selMissionListItem]);
+        if (pick)
+            MissionList(missionList).Pick(selMissionListItem);
+    }
+    if (selMissionListItem != old) {
+        InvalDialogItem(missionDialog, 4);
+        InvalDialogItem(missionDialog, 5);
+    }
+}
+
+/* The next mission, back to the first after the last. */
+void MissionDialog::StepDown()
+{
+    MissionList(missionList).Leave(selMissionListItem, 1);
+    short old = selMissionListItem;
+    selMissionListItem++;
+    if (selMissionListItem >= kMaxMissions
+            || dockedPortMissions[missionsOutside][selMissionListItem] == -1)
+        selMissionListItem = 0;
+    ShowSelected(old, true);
+}
+
 // FUNCTION: EVNOVA 0x00440c90
 // MAC: _MissionFilter i386 0x0009f7a9 ppc 0x000ab3fc
 Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
+    MissionList list(missionList);
     EventKeyByte key;
     Rect box;
     short itemType;
     Point where;
-    Point cell;
     void *item;
     short old;
 
@@ -235,73 +266,14 @@ Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
             return 1;
         }
         if (key == kTabChar) {
-            cell.h = 0;
-            cell.v = selMissionListItem;
-            if (selMissionListItem != -1) {
-                LSetSelect(0, cell, missionList);
-                GetListCellRect(&box, cell, missionList);
-                if (box.bottom >= (*missionList)->rView.bottom)
-                    LScroll(0, 1, missionList);
-            }
-            old = selMissionListItem;
-            selMissionListItem++;
-            if (selMissionListItem >= kMaxMissions
-                    || dockedPortMissions[missionsOutside][selMissionListItem] == -1)
-                selMissionListItem = 0;
-            strncpy(briefingTextPtr, "", 3);
-            if (selMissionListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                dockedPortMissions[missionsOutside][selMissionListItem]
-                                    + kMissionDescBase);
-                MungeBriefing(1,
-                              dockedPortMissions[missionsOutside][selMissionListItem]);
-                cell.v = selMissionListItem;
-                LSetSelect(1, cell, missionList);
-                LAutoScroll(missionList);
-            }
-            if (selMissionListItem != old) {
-                InvalDialogItem(missionDialog, 4);
-                InvalDialogItem(missionDialog, 5);
-            }
-            cell.v = selMissionListItem;
-            LSetSelect(1, cell, missionList);
-            LAutoScroll(missionList);
+            StepDown();
+            list.Pick(selMissionListItem);
         }
-        if (key == kDownArrowChar) {
-            if (selMissionListItem + 1 < kMaxMissions) {
-                cell.h = 0;
-                cell.v = selMissionListItem;
-                if (selMissionListItem != -1) {
-                    LSetSelect(0, cell, missionList);
-                    GetListCellRect(&box, cell, missionList);
-                    if (box.bottom >= (*missionList)->rView.bottom)
-                        LScroll(0, 1, missionList);
-                }
-                old = selMissionListItem;
-                selMissionListItem++;
-                if (dockedPortMissions[missionsOutside][selMissionListItem] == -1)
-                    selMissionListItem = 0;
-                strncpy(briefingTextPtr, "", 3);
-                if (selMissionListItem != -1) {
-                    LoadDescription(briefingTextPtr,
-                                    dockedPortMissions[missionsOutside]
-                                                      [selMissionListItem]
-                                        + kMissionDescBase);
-                    MungeBriefing(1,
-                                  dockedPortMissions[missionsOutside]
-                                                    [selMissionListItem]);
-                    cell.v = selMissionListItem;
-                    LSetSelect(1, cell, missionList);
-                    LAutoScroll(missionList);
-                }
-                if (selMissionListItem != old) {
-                    InvalDialogItem(missionDialog, 4);
-                    InvalDialogItem(missionDialog, 5);
-                }
-            }
-        }
+        if (key == kDownArrowChar && selMissionListItem + 1 < kMaxMissions)
+            StepDown();
         if (key == kUpArrowChar) {
             if (selMissionListItem == -1) {
+                /* BUG: with every slot filled this stops one short, so Up selects the second-to-last mission */
                 selMissionListItem = kMaxMissions - 1;
                 while (dockedPortMissions[missionsOutside]
                                          [selMissionListItem - 1] == -1
@@ -309,14 +281,7 @@ Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
                     selMissionListItem--;
             }
             if (selMissionListItem != -1) {
-                cell.h = 0;
-                cell.v = selMissionListItem;
-                if (selMissionListItem != -1) {
-                    LSetSelect(0, cell, missionList);
-                    GetListCellRect(&box, cell, missionList);
-                    if (box.top <= (*missionList)->rView.top)
-                        LScroll(0, -1, missionList);
-                }
+                list.Leave(selMissionListItem, -1);
                 old = selMissionListItem;
                 selMissionListItem--;
                 if (selMissionListItem < 0) {
@@ -329,23 +294,7 @@ Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
                                              [selMissionListItem] == -1) {
                     selMissionListItem = -1;
                 }
-                strncpy(briefingTextPtr, "", 3);
-                if (selMissionListItem != -1) {
-                    LoadDescription(briefingTextPtr,
-                                    dockedPortMissions[missionsOutside]
-                                                      [selMissionListItem]
-                                        + kMissionDescBase);
-                    MungeBriefing(1,
-                                  dockedPortMissions[missionsOutside]
-                                                    [selMissionListItem]);
-                    cell.v = selMissionListItem;
-                    LSetSelect(1, cell, missionList);
-                    LAutoScroll(missionList);
-                }
-                if (selMissionListItem != old) {
-                    InvalDialogItem(missionDialog, 4);
-                    InvalDialogItem(missionDialog, 5);
-                }
+                ShowSelected(old, true);
             }
         }
     }
@@ -355,28 +304,11 @@ Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (PtInRect(where.h, where.v, &box)) {
             LClick(where, ev->modifiers, missionList);
             old = selMissionListItem;
-            selMissionListItem = -1;
-            cell.h = 0;
-            for (cell.v = 0; cell.v < (*missionList)->dataBounds.bottom; cell.v++) {
-                if (LGetSelect(0, &cell, missionList)) {
-                    selMissionListItem = cell.v;
-                    break;
-                }
-            }
-            strncpy(briefingTextPtr, "", 3);
-            if (selMissionListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                dockedPortMissions[missionsOutside][selMissionListItem]
-                                    + kMissionDescBase);
-                MungeBriefing(1,
-                              dockedPortMissions[missionsOutside][selMissionListItem]);
-            }
-            if (selMissionListItem != old) {
-                InvalDialogItem(missionDialog, 4);
-                InvalDialogItem(missionDialog, 5);
-            }
+            selMissionListItem = list.Selected();
+            ShowSelected(old, false);
         }
         GetDialogItem(missionDialog, 3, &itemType, (Handle *)&item, &box);
+        /* BUG: when the list fits it reaches into item 3; a click there moves the hilite but not the selection */
         if (PtInRect(where.h, where.v, &box))
             LClick(where, ev->modifiers, missionList);
         MissionDialogUpdate();
@@ -396,17 +328,15 @@ void DoMissionDialog(void)
 // MAC: _SetupMissionList i386 0x000a069e ppc 0x000ac360
 void SetupMissionList(void)
 {
+    MissionList list(missionList);
     short i;
     short count;
     int32_t len;
     Rect box3;
     Rect box;
-    Rect cellBounds;
     short itemType;
     Handle itemHandle;
     Str255 buf;
-    unsigned char visible;
-    Point cellSize;
     Point rowPt;
 
     selMissionListItem = 0;
@@ -419,26 +349,20 @@ void SetupMissionList(void)
 
     SetDialogGWorld(missionDialog);
     GetDialogItem(missionDialog, 2, &itemType, &itemHandle, &box);
-    SetRect(&cellBounds, 0, 0, 1, count);
 
     TextFont(smallTextFont);
     TextSize(smallTextSize);
 
-    cellSize.v = (kListItemBaseHeight * 1.5);
-    if (cellSize.v * count <= box.bottom - box.top) {
-        visible = 0;
+    bool scrollBar = !MissionList::Fits(box, count);
+    if (!scrollBar) {
         GetDialogItem(missionDialog, 3, &itemType, &itemHandle, &box3);
         box.right = box3.right;
-    } else {
-        visible = 1;
     }
-    cellSize.h = box.right - box.left;
-
-    missionList = nv_NewDialog(&box, &cellBounds, cellSize,
-        (ListDrawProcPtr)MissionListDefinition, (CGrafPtr)missionDialog, visible);
-    LockAHandle((Handle)missionList);
+    list.Create(missionDialog, box, count, scrollBar);
     LSetDrawingMode(0, missionList);
 
+    /* BUG: rows come from slots 0..count-1, right only while the slots are packed (they are filled that way);
+       a click on a row of an empty slot would read missionName[-1] */
     rowPt.h = 0;
     for (rowPt.v = 0; rowPt.v < count; rowPt.v++) {
         if (dockedPortMissions[0][rowPt.v] != -1) {
@@ -454,10 +378,7 @@ void SetupMissionList(void)
         LSetCell(buf, len, rowPt, missionList);
     }
 
-    rowPt.h = rowPt.v = 0;
-    LSetSelect(1, rowPt, missionList);
-    LSetDrawingMode(1, missionList);
-    LAutoScroll(missionList);
+    list.SelectFirst();
 }
 
 #define kListCaptionIdx  0x167
@@ -524,19 +445,7 @@ void MissionDialogUpdate(void)
             PaintRect(&box);
         }
     }
-    GetDialogItem(missionDialog, 4, &itemType, (Handle *)&item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(missionDialog)))) {
-        if (selMissionListItem != -1) {
-            ForeColor(blackColor);
-            TextFont(smallTextFont);
-            TextSize(smallTextSize);
-            TETextBox(briefingTextPtr, strlen(briefingTextPtr), &box, 0);
-            InvertRect(&box);
-        } else {
-            ForeColor(blackColor);
-            PaintRect(&box);
-        }
-    }
+    DrawMissionBriefing(missionDialog, selMissionListItem != -1);
     GetDialogItem(missionDialog, 11, &itemType, (Handle *)&item, &box);
     RGBForeColor(&rgbDarkGrey);
     DateToMedString(gameTime, (char *)text);
@@ -545,13 +454,5 @@ void MissionDialogUpdate(void)
     DrawString((unsigned char *)text);
     ForeColor(blackColor);
     MissionButtons().Draw(-1);
-    if (missionList != NULL)
-        ListUpdate(NULL, missionList);
-    CopyLoadPortToDialog(missionDialog);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    if (missionList != NULL) {
-        SetDialogGWorld(missionDialog);
-        ListUpdate(GetWindowVisRgn(FrontWindow(missionDialog)), missionList);
-    }
+    MissionList(missionList).Present(missionDialog);
 }

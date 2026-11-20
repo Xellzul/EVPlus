@@ -2140,7 +2140,7 @@ char LClick(Point where, short modifiers, ScrollRec **h)
 void GetListCellRect(Rect *box, Point cell, ScrollRec **h)
 {
     SetRect(box, 0, (*h)->cellSize.v * cell.v, (*h)->cellSize.h, (*h)->cellSize.v * (cell.v + 1));
-    OffsetRect(box, 0, (*h)->cellSize.v * (*h)->scroll);
+    OffsetRect(box, 0, (*h)->cellSize.v * (*h)->scroll); /* BUG: adds the scroll; the screen row subtracts it */
     OffsetRect(box, (*h)->rView.left, (*h)->rView.top);
 }
 

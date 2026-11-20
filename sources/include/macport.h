@@ -599,7 +599,6 @@ extern int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec);
 extern void EditTextKey(ControlRecord *rec, int32_t key, int32_t mods);
 void DrawBevel(Rect *r, const RGBColor *fill, const RGBColor *light, const RGBColor *dark);
 extern void LUpdate(void *list);
-#define ListUpdate(rgn, list) LUpdate(list)
 extern void WinGameActivate(int on);
 extern void WinGameMinimized(void);
 extern void WinGameClose(void);

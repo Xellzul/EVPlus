@@ -10,6 +10,7 @@
 #include "prototypes.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "missionlist.h"
 
 #define kDateCaptionIdx     0x168
 
@@ -19,16 +20,14 @@
 // MAC: _SetupMissionInfoList i386 0x0009de7a ppc 0x000a9a9c
 void SetupMissionInfoList(void)
 {
+    MissionList list(missionInfoList);
     char marker[256];
     char nameBuf[256];
     short i;
     short count;
     short itemType;
     void *itemHandle;
-    Rect cellBounds;
     Rect box;
-    unsigned char hasScrollbar;
-    Point cellSize;
     Point rowPt;
     int32_t len;
 
@@ -46,23 +45,14 @@ void SetupMissionInfoList(void)
 
     SetDialogGWorld(missionInfoDialog);
     GetDialogItem(missionInfoDialog, 2, &itemType, (Handle *)&itemHandle, &box);
-    SetRect(&cellBounds, 0, 0, 1, count);
 
     TextFont(smallTextFont);
     TextSize(smallTextSize);
 
-    cellSize.v = (kListItemBaseHeight * 1.5);
-
-    if (cellSize.v * count <= box.bottom - box.top) {
-        hasScrollbar = 0;
-    } else {
+    bool scrollBar = !MissionList::Fits(box, count);
+    if (scrollBar)
         box.right -= 15;
-        hasScrollbar = 1;
-    }
-    cellSize.h = box.right - box.left;
-    missionInfoList = nv_NewDialog(&box, &cellBounds, cellSize,
-        (ListDrawProcPtr)MissionListDefinition, (CGrafPtr)missionInfoDialog, hasScrollbar);
-    LockAHandle((Handle)missionInfoList);
+    list.Create(missionInfoDialog, box, count, scrollBar);
 
     rowPt.h = rowPt.v = 0;
     for (i = 0; i < kMaxActiveMissions; i++) {
@@ -86,19 +76,10 @@ void SetupMissionInfoList(void)
         rowPt.v++;
     }
 
-    rowPt.h = rowPt.v = 0;
-    LSetSelect(1, rowPt, missionInfoList);
-    LSetDrawingMode(1, missionInfoList);
-    LAutoScroll(missionInfoList);
+    list.SelectFirst();
 }
 
 /* --- DoMissionInfoDialog (0x00446150) --- */
-
-/* the stellar record, stride 0x498; only the field the map jump reads */
-
-/* the system record, stride 0x1fc; only the id this scan matches on */
-
-/* the player ship, only the two screen-position fields the map disturbs */
 
 #define kMissionInfoDlogID   0x3f4
 #define kMissionInfoPictID   0x2145
@@ -115,6 +96,9 @@ public:
 private:
     void Hit(short item) override;
     static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static short CountActive();
+    static void ShowSelected(short old, bool pick);
+    static void Step(short dir);
 };
 
 void MissionInfoDialog::Run()
@@ -140,10 +124,7 @@ void MissionInfoDialog::Run()
         currentMissions[activeMissions[selMissionInfoListItem]].canAbort;
     MissionInfoDialogUpdate();
     Loop();
-    if (missionInfoList != NULL) {
-        LDispose(missionInfoList);
-        missionInfoList = NULL;
-    }
+    MissionList(missionInfoList).Dispose();
     dialog.Close();
     backdrop.Release();
     RedrawDialogs(1);
@@ -154,7 +135,6 @@ void MissionInfoDialog::Hit(short item)
 {
     Point cell;
     short i;
-    short count;
     short n;
     short stellar;
 
@@ -195,14 +175,8 @@ void MissionInfoDialog::Hit(short item)
                     }
                 }
                 AbortMission(activeMissions[selMissionInfoListItem], 1);
-                count = 0;
-                for (i = 0; i < kMaxActiveMissions; i++) {
-                    if (currentMissionObjectives[i].active != 0)
-                        count++;
-                }
-                if (count > 0) {
-                    if (missionInfoList != NULL)
-                        LDispose(missionInfoList);
+                if (CountActive() > 0) {
+                    MissionList(missionInfoList).Dispose();
                     SetupMissionInfoList();
                     selMissionInfoListItem = -1;
                     RedrawDialog(missionInfoDialog);
@@ -214,6 +188,7 @@ void MissionInfoDialog::Hit(short item)
                     LAutoScroll(missionInfoList);
                     for (i = 0; i < kMaxActiveMissions; i++)
                         activeMissions[i] = -1;
+                    /* BUG: no hidden-mission filter here, unlike Setup: rows and activeMissions can disagree */
                     n = 0;
                     for (i = 0; i < kMaxActiveMissions; i++) {
                         if (currentMissionObjectives[i].active != 0) {
@@ -233,6 +208,57 @@ void MissionInfoDialog::Hit(short item)
 
 static constexpr short kMissionInfoSlotItems[] = { 1, 5 };
 
+/* Active missions, hidden ones included. */
+short MissionInfoDialog::CountActive()
+{
+    short count = 0;
+
+    for (short i = 0; i < kMaxActiveMissions; i++) {
+        if (currentMissionObjectives[i].active != 0)
+            count++;
+    }
+    return count;
+}
+
+/* Loads the selected mission's briefing and abort state (pick also selects its row); redraws briefing and abort
+   button if it changed. */
+void MissionInfoDialog::ShowSelected(short old, bool pick)
+{
+    strncpy(briefingTextPtr, "", 3);
+    if (selMissionInfoListItem != -1) {
+        LoadDescription(briefingTextPtr,
+                        currentMissions[activeMissions[selMissionInfoListItem]].quickBriefDesc);
+        MungeBriefing(0, activeMissions[selMissionInfoListItem]);
+        if (pick)
+            MissionList(missionInfoList).Pick(selMissionInfoListItem);
+        showAbortMissionButton =
+            currentMissions[activeMissions[selMissionInfoListItem]].canAbort;
+    } else {
+        showAbortMissionButton = 0;
+    }
+    if (selMissionInfoListItem != old) {
+        InvalDialogItem(missionInfoDialog, 4);
+        InvalDialogItem(missionInfoDialog, 5);
+    }
+}
+
+/* The next (dir 1) or previous (dir -1) mission slot in use, wrapping around. */
+void MissionInfoDialog::Step(short dir)
+{
+    MissionList(missionInfoList).Leave(selMissionInfoListItem, dir);
+    short old = selMissionInfoListItem;
+    if (CountActive() > 0) {
+        do {
+            selMissionInfoListItem += dir;
+            if (selMissionInfoListItem >= kMaxActiveMissions)
+                selMissionInfoListItem = 0;
+            else if (selMissionInfoListItem < 0)
+                selMissionInfoListItem = kMaxActiveMissions - 1;
+        } while (activeMissions[selMissionInfoListItem] == -1);
+    }
+    ShowSelected(old, true);
+}
+
 // FUNCTION: EVNOVA 0x00446770
 // MAC: _MissionInfoFilter i386 0x0009d6e5 ppc 0x000a9304
 Boolean MissionInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -240,12 +266,9 @@ Boolean MissionInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *item
     Rect box;
     short itemType;
     Point where;
-    Point cell;
     void *item;
     EventKeyByte c;
     short old;
-    short i;
-    short count;
 
     if ((int)ev->what == kKeyDown) {
         if (QuickKeyHit(6, -1, -1, itemHit))
@@ -255,86 +278,10 @@ Boolean MissionInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *item
             *itemHit = 1;
             return 1;
         }
-        if (c == kTabChar || c == kDownArrowChar) {
-            cell.h = 0;
-            cell.v = selMissionInfoListItem;
-            if (selMissionInfoListItem != -1) {
-                LSetSelect(0, cell, missionInfoList);
-                GetListCellRect(&box, cell, missionInfoList);
-                if (box.bottom >= (*missionInfoList)->rView.bottom)
-                    LScroll(0, 1, missionInfoList);
-            }
-            old = selMissionInfoListItem;
-            count = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active != 0)
-                    count++;
-            }
-            if (count > 0) {
-                do {
-                    selMissionInfoListItem++;
-                    if (selMissionInfoListItem >= kMaxActiveMissions)
-                        selMissionInfoListItem = 0;
-                } while (activeMissions[selMissionInfoListItem] == -1);
-            }
-            strncpy(briefingTextPtr, "", 3);
-            if (selMissionInfoListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                currentMissions[activeMissions[selMissionInfoListItem]].quickBriefDesc);
-                MungeBriefing(0, activeMissions[selMissionInfoListItem]);
-                cell.v = selMissionInfoListItem;
-                LSetSelect(1, cell, missionInfoList);
-                LAutoScroll(missionInfoList);
-                showAbortMissionButton =
-                    currentMissions[activeMissions[selMissionInfoListItem]].canAbort;
-            } else {
-                showAbortMissionButton = 0;
-            }
-            if (selMissionInfoListItem != old) {
-                InvalDialogItem(missionInfoDialog, 4);
-                InvalDialogItem(missionInfoDialog, 5);
-            }
-        }
-        if (c == kUpArrowChar) {
-            cell.h = 0;
-            cell.v = selMissionInfoListItem;
-            if (selMissionInfoListItem != -1) {
-                LSetSelect(0, cell, missionInfoList);
-                GetListCellRect(&box, cell, missionInfoList);
-                if (box.top <= (*missionInfoList)->rView.top)
-                    LScroll(0, -1, missionInfoList);
-            }
-            old = selMissionInfoListItem;
-            count = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active != 0)
-                    count++;
-            }
-            if (count > 0) {
-                do {
-                    selMissionInfoListItem--;
-                    if (selMissionInfoListItem < 0)
-                        selMissionInfoListItem = kMaxActiveMissions - 1;
-                } while (activeMissions[selMissionInfoListItem] == -1);
-            }
-            strncpy(briefingTextPtr, "", 3);
-            if (selMissionInfoListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                currentMissions[activeMissions[selMissionInfoListItem]].quickBriefDesc);
-                MungeBriefing(0, activeMissions[selMissionInfoListItem]);
-                cell.v = selMissionInfoListItem;
-                LSetSelect(1, cell, missionInfoList);
-                LAutoScroll(missionInfoList);
-                showAbortMissionButton =
-                    currentMissions[activeMissions[selMissionInfoListItem]].canAbort;
-            } else {
-                showAbortMissionButton = 0;
-            }
-            if (selMissionInfoListItem != old) {
-                InvalDialogItem(missionInfoDialog, 4);
-                InvalDialogItem(missionInfoDialog, 5);
-            }
-        }
+        if (c == kTabChar || c == kDownArrowChar)
+            Step(1);
+        if (c == kUpArrowChar)
+            Step(-1);
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
@@ -342,29 +289,8 @@ Boolean MissionInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *item
         if (PtInRect(where.h, where.v, &box)) {
             LClick(where, ev->modifiers, missionInfoList);
             old = selMissionInfoListItem;
-            selMissionInfoListItem = -1;
-            cell.h = 0;
-            cell.v = 0;
-            for (; cell.v < (*missionInfoList)->dataBounds.bottom; cell.v++) {
-                if (LGetSelect(0, &cell, missionInfoList)) {
-                    selMissionInfoListItem = cell.v;
-                    break;
-                }
-            }
-            strncpy(briefingTextPtr, "", 3);
-            if (selMissionInfoListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                currentMissions[activeMissions[selMissionInfoListItem]].quickBriefDesc);
-                MungeBriefing(0, activeMissions[selMissionInfoListItem]);
-                showAbortMissionButton =
-                    currentMissions[activeMissions[selMissionInfoListItem]].canAbort;
-            } else {
-                showAbortMissionButton = 0;
-            }
-            if (selMissionInfoListItem != old) {
-                InvalDialogItem(missionInfoDialog, 4);
-                InvalDialogItem(missionInfoDialog, 5);
-            }
+            selMissionInfoListItem = MissionList(missionInfoList).Selected();
+            ShowSelected(old, false);
         }
         MissionInfoDialogUpdate();
         return ButtonItemHit(MissionInfoButtons().Track(where), kMissionInfoSlotItems, itemHit);
@@ -409,27 +335,7 @@ void MissionInfoDialogUpdate(void)
               box.top + smallTextSize);
     DrawString((unsigned char *)text);
     ForeColor(blackColor);
-    GetDialogItem(missionInfoDialog, 4, &itemType, (Handle *)&item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(missionInfoDialog)))) {
-        if (selMissionInfoListItem != -1) {
-            ForeColor(blackColor);
-            TextFont(smallTextFont);
-            TextSize(smallTextSize);
-            TETextBox(briefingTextPtr, strlen(briefingTextPtr), &box, 0);
-            InvertRect(&box);
-        } else {
-            ForeColor(blackColor);
-            PaintRect(&box);
-        }
-    }
+    DrawMissionBriefing(missionInfoDialog, selMissionInfoListItem != -1);
     MissionInfoButtons().Draw(-1);
-    if (missionInfoList != NULL)
-        ListUpdate(NULL, missionInfoList);
-    CopyLoadPortToDialog(missionInfoDialog);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    if (missionInfoList != NULL) {
-        SetDialogGWorld(missionInfoDialog);
-        ListUpdate(GetWindowVisRgn(FrontWindow(missionInfoDialog)), missionInfoList);
-    }
+    MissionList(missionInfoList).Present(missionInfoDialog);
 }
