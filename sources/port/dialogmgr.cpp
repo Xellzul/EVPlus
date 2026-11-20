@@ -192,11 +192,6 @@ typedef struct CntlTemplate {
  * with visible clear has nothing on screen yet and is skipped either way.
  */
 
-/* a control's storage is the item array itself, so there is nothing to free */
-static __inline void DisposeControl(void *ctl)
-{
-}
-
 /* Dialog Manager item types, as far as the port distinguishes them */
 #define kResCtrlItem 7                  /* ctrlItem + resCtrl */
 #define kPicItem    64
@@ -772,9 +767,7 @@ void DisposeDialog(DialogPtr dlg)
             item = &((ControlPtr)dlg->items)[i];
             if (item->data != NULL) {
                 switch (item->kind) {
-                case kResCtrlItem:
-                    if (item->data != NULL)
-                        DisposeControl(item->data);
+                case kResCtrlItem:      /* its storage is the item array itself */
                     break;
                 case kIconItem:
                     DisposeCIcon((Image_t *)item->data);

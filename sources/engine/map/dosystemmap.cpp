@@ -20,6 +20,7 @@
 #include "stellar.h"
 #include "cefix.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "viewscale.h"
 #include "space.h"
 #include "buttons.h"
@@ -27,7 +28,6 @@
 EXTERN_C_BEGIN
 
 
-/* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
 
 /* the mac plots the map arrows as colour icons */
 
@@ -53,50 +53,45 @@ EXTERN_C_BEGIN
 #define kMapSearchItem      10
 
 
+namespace {
+
 // FUNCTION: EVNOVA 0x004a3aa0
 // MAC: _DoSystemMap i386 0x000121a3 ppc 0x00015bbc
-void DoSystemMap(void)
+/* The galaxy map: a click selects a system (in flight, targets it); a shift-click extends or cuts back the
+   hyper route. */
+class MapDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short itemHit) override;
+    static Boolean Filter(DialogPtr dlg, EventRecord *event, short *itemHit);
+
+    short routeLen;     /* the hyper route's length */
+    Rect box;           /* the map picture item's rect */
+};
+
+void MapDialog::Run()
 {
     short sys;
     short found;
     short i;
     short j;
-    short routeLen;
-    int32_t last;
-    short prev;
-    short s2;
-    short s3;
-    short prevV;
-    short prevH;
-    short sy;
     short savedStellar;
     short x;
     short y;
-    short w;
-    short h;
     short itemType;
-    short itemHit;
     Handle item;
-    Boolean inRoute;
-    Boolean selected;
-    Boolean hyperlinked;
     unsigned char savedShow;
-    Boolean done;
     Rect r;
-    Point mouse;
-    Rect box;
     Rect box2;
-    Point anchor;
-    MapScroll savedScroll;
     Rect *pr;
-    Dialog dialog;
     Picture nebulae[kMaxNebulae][7];
 
-    done = 0;
     if (screenFaded != 0)
         return;
     ShowTheCursor();
-    dialog.Open(kMapDlogID, MapDialogUpdate, MapFilter, &mapDialog, DialogClose::NoFlash);
+    dialog.Open(kMapDlogID, MapDialogUpdate, Filter, &mapDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(mapBackgroundPic);
@@ -145,314 +140,16 @@ void DoSystemMap(void)
             systemData[shipData->curSystem].links[shipData->targetStellar]);
     else
         selSystem = shipData->curSystem;
-    RedrawNebulaeOffscreen();
     backdrop.Load(kMapPictID);
     SWSetPortToWindow(gSpriteWorld);
     SetDialogGWorld(mapDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(mapDialog);
     MapDialogUpdate();
-    CreateMapTriggerRgn();
     GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
     if (settings.showMapBorders != 0)
         RecalcAllMapInfluence(&box);
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == kItemAccept)
-            done = 1;
-        if (itemHit == kMapCursorItem) {
-            cursorHidden = 0;
-            ShowTheCursor();
-        }
-        if (itemHit == kMapBordersItem) {
-            settings.showMapBorders = (settings.showMapBorders == 0);
-            InvalDialogItem(mapDialog, kMapBordersItem);
-            InvalDialogItem(mapDialog, kMapPictItem);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        }
-        if (itemHit == kMapZoomOutItem && canZoomOut != 0) {
-            mapZoom = mapZoom * 1.333333;
-            InvalDialogItem(mapDialog, kMapInfoItem);
-            InvalDialogItem(mapDialog, kMapPictItem);
-            InvalDialogItem(mapDialog, kMapZoomOutItem);
-            InvalDialogItem(mapDialog, kMapZoomInItem);
-            InvalDialogItem(mapDialog, kMapRouteItem);
-            RedrawNebulaeOffscreen();
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        }
-        if (itemHit == kMapZoomInItem && canZoomIn != 0) {
-            mapZoom = mapZoom * 0.75;
-            InvalDialogItem(mapDialog, kMapInfoItem);
-            InvalDialogItem(mapDialog, kMapPictItem);
-            InvalDialogItem(mapDialog, kMapZoomOutItem);
-            InvalDialogItem(mapDialog, kMapZoomInItem);
-            InvalDialogItem(mapDialog, kMapRouteItem);
-            RedrawNebulaeOffscreen();
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        }
-        if (itemHit == kMapClearRouteItem) {
-            for (i = 1; i < kMaxHyperRoute; i++)
-                hyperRoute[i] = -1;
-            hyperRoute[0] = shipData->curSystem;
-            routeLen = 1;
-            showClearRouteButton = 0;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            InvalDialogItem(mapDialog, kMapRouteItem);
-            InvalDialogItem(mapDialog, kMapClearRouteItem);
-            MapDialogUpdate();
-            shipData->targetStellar = -1;
-            statusRedraw[kRedrawNav] = 1;
-            DrawStatus();
-        }
-        if (itemHit == kMapSearchItem)
-            DoSystemSearch();
-        if (itemHit == kMapPictItem) {
-            GetMouse(&mouse);
-            GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box2);
-            w = box2.right - box2.left;
-            h = box2.bottom - box2.top;
-            found = -1;
-            for (sys = 0; sys < kMaxSystems; sys++) {
-                if (found != -1)
-                    break;
-                found = -1;
-                if (systemData[sys].loaded != 0) {
-                    sy = systemData[sys].pos.v;
-                    r.left = (box2.left + w / 2
-                                     + systemData[sys].pos.h / mapZoom
-                                     - mapScroll.h / mapZoom);
-                    r.top = (box2.top + h / 2
-                                    + sy / mapZoom
-                                    - mapScroll.v / mapZoom);
-                    r.right = r.left;
-                    r.bottom = r.top;
-                    InsetRect(&r, -10, -10);
-                    if (PtInRectPoint(mouse, &r)) {
-                        inRoute = selected = hyperlinked = 0;
-                        for (s3 = 0; s3 < 32; s3++) {
-                            if (sys == missionSyst[s3] && missionSyst[s3] != -1) {
-                                inRoute = 1;
-                                break;
-                            }
-                        }
-                        if (greenMissionSyst == sys)
-                            selected = 1;
-                        if (hypergateMapMode != 0 && hypergateMapModeStellar >= 0
-                            && hypergateMapModeStellar < kMaxStellars) {
-                            for (i = 0; i < kSpobHyperLinks; i++) {
-                                if (stellarData[hypergateMapModeStellar].hyperLinks[i] != -1) {
-                                    s3 = stellarData[stellarData[hypergateMapModeStellar].hyperLinks[i]].system;
-                                    if (s3 < 0 || s3 >= kMaxSystems)
-                                        s3 = FindSystemFromStellar(stellarData[hypergateMapModeStellar].hyperLinks[i]);
-                                    s3 = FindActiveCoLocatedSystem(s3);
-                                    if (s3 == sys) {
-                                        hyperlinked = 1;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        if (hypergateMapMode != 0 && hyperlinked == 0
-                            && sys != shipData->curSystem)
-                            continue;
-                        if (systemData[sys].known != 0) {
-                            found = sys;
-                            break;
-                        }
-                        if (inRoute != 0 || selected != 0 || hyperlinked != 0) {
-                            found = sys;
-                            break;
-                        }
-                        if ((KeyCheck(kScanLShift) == 0
-                             && KeyCheck(kScanRShift) == 0)
-                            || routeLen <= 1) {
-                            prev = shipData->curSystem;
-                        } else {
-                            prev = hyperRoute[routeLen - 1];
-                            if (systemData[prev].pos.h == systemData[sys].pos.h
-                                && systemData[prev].pos.v == systemData[sys].pos.v) {
-                                found = sys;
-                                break;
-                            }
-                        }
-                        for (i = 0; i < kMaxSystemLinks; i++) {
-                            if (systemData[prev].links[i] != -1) {
-                                s2 = FindActiveCoLocatedSystem(systemData[prev].links[i]);
-                                if (s2 == sys) {
-                                    found = s2;
-                                    break;
-                                }
-                                if (systemData[s2].pos.h == systemData[sys].pos.h
-                                    && systemData[s2].pos.v == systemData[sys].pos.v) {
-                                    found = s2;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (found != -1)
-                found = FindActiveCoLocatedSystem(found);
-            if (found != -1) {
-                InvalDialogItem(mapDialog, kMapInfoItem);
-                InvalDialogItem(mapDialog, kMapPictItem);
-                InvalDialogItem(mapDialog, kMapRouteItem);
-                if ((KeyCheck(kScanLShift) != 0
-                     || KeyCheck(kScanRShift) != 0)
-                    && hypergateMapMode == 0) {
-                    CompactHyperRoute();
-                    routeLen = -1;
-                    if (FindFirstCoLocatedSystem(shipData->curSystem)
-                        == FindFirstCoLocatedSystem(found)) {
-                        for (i = 0; i < kMaxHyperRoute; i++)
-                            hyperRoute[i] = -1;
-                    }
-                    for (i = 1; i < kMaxHyperRoute; i++) {
-                        if (hyperRoute[i] == -1)
-                            break;
-                        if (FindFirstCoLocatedSystem(hyperRoute[i])
-                            == FindFirstCoLocatedSystem(found)) {
-                            for (j = i; j < kMaxHyperRoute; j++)
-                                hyperRoute[j] = -1;
-                            break;
-                        }
-                    }
-                    for (i = 1; i < kMaxHyperRoute; i++) {
-                        if (hyperRoute[i] == -1) {
-                            routeLen = i;
-                            break;
-                        }
-                    }
-                    if (routeLen == -1) {
-                        if (hyperRoute[0] == -1)
-                            hyperRoute[0] = shipData->curSystem;
-                        routeLen = 1;
-                    }
-                    inRoute = 0;
-                    if (routeLen > 1) {
-                        prev = hyperRoute[routeLen - 1];
-                        s2 = FindActiveCoLocatedSystem(prev);
-                        if (s2 != prev && s2 != -1)
-                            prev = s2;
-                    } else
-                        prev = shipData->curSystem;
-                    if (systemData[prev].exploreLevel > 0
-                        || systemData[found].known != 0) {
-                        for (i = 0; i < kMaxSystemLinks; i++) {
-                            if (systemData[prev].links[i] != -1) {
-                                s2 = FindActiveCoLocatedSystem(systemData[prev].links[i]);
-                                if (s2 == found) {
-                                    inRoute = 1;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (routeLen > 0) {
-                        last = routeLen - 1;
-                        s2 = hyperRoute[last];
-                        if (s2 >= 0 && s2 < kMaxSystems) {
-                            if (systemData[found].pos.h == systemData[s2].pos.h
-                                && systemData[found].pos.v == systemData[s2].pos.v) {
-                                hyperRoute[last] = -1;
-                                routeLen--;
-                                inRoute = 0;
-                            }
-                        }
-                    }
-                    if (inRoute != 0) {
-                        if (routeLen != -1) {
-                            if (hyperRoute[0] == -1)
-                                hyperRoute[0] = shipData->curSystem;
-                            hyperRoute[routeLen] = found;
-                            routeLen++;
-                            showClearRouteButton = 1;
-                        } else {
-                            hyperRoute[0] = shipData->curSystem;
-                            hyperRoute[1] = found;
-                            routeLen = 2;
-                            showClearRouteButton = 1;
-                        }
-                        InvalDialogItem(mapDialog, kMapPictItem);
-                        InvalDialogItem(mapDialog, kMapRouteItem);
-                        InvalDialogItem(mapDialog, kMapClearRouteItem);
-                        SetGWorldContainer(&loadPort);
-                        ForeColor(blackColor);
-                        PaintRect(GetDialogPortRect(mapDialog));
-                        if (mapBackgroundPic != NULL)
-                            DrawPicHandle(mapBackgroundPic, GetDialogPortRect(mapDialog));
-                        UnsetGWorldContainer(&loadPort);
-                        SetDialogGWorld(mapDialog);
-                        MapButtons().Draw(-1);
-                        selSystem = found;
-                    }
-                } else {
-                    selSystem = found;
-                    if (onPlanet == 0) {
-                        if (hypergateMapMode != 0) {
-                            if (hyperlinked != 0) {
-                                shipData->navTargetKind = kNavTargetGate;
-                                shipData->targetStellar = selSystem;
-                            } else {
-                                shipData->navTargetKind = -1;
-                                shipData->targetStellar = -1;
-                            }
-                        } else {
-                            s2 = -1;
-                            for (i = 0; i < kMaxSystemLinks; i++) {
-                                if (systemData[shipData->curSystem].links[i] != -1) {
-                                    if (found == FindActiveCoLocatedSystem(systemData[shipData->curSystem].links[i])) {
-                                        s2 = i;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (s2 != -1) {
-                                shipData->navTargetKind = kNavTargetLink;
-                                shipData->targetStellar = s2;
-                                statusRedraw[kRedrawNav] = 1;
-                                DrawStatus();
-                                SetDialogGWorld(mapDialog);
-                            } else {
-                                shipData->targetStellar = -1;
-                                statusRedraw[kRedrawNav] = 1;
-                                DrawStatus();
-                                SetDialogGWorld(mapDialog);
-                            }
-                        }
-                    }
-                }
-            } else {
-                if (StillDown()) {
-                    GetMouse(&anchor);
-                    savedScroll = mapScroll;
-                    while (StillDown()) {
-                        BusyIdle();
-                        prevV = mouse.v;
-                        prevH = mouse.h;
-                        GetMouse(&mouse);
-                        mapScroll.h = (savedScroll.h
-                                              - (mouse.h - anchor.h) * mapZoom);
-                        mapScroll.v = (savedScroll.v
-                                              - (mouse.v - anchor.v) * mapZoom);
-                        ScrollMapDisplay(mouse.h - prevH, mouse.v - prevV);
-                        nv_UpdateDialogWindow(0);
-                    }
-                    if (settings.showMapBorders != 0)
-                        RecalcAllMapInfluence(&box);
-                    if (mapScroll.h != savedScroll.h
-                        || mapScroll.v != savedScroll.v)
-                        MapDialogUpdate();
-                }
-            }
-        }
-    } while (done == 0);
+    Loop();
     for (x = 0; x < kMaxNebulae; x++)
         for (j = 0; j < 7; j++)
             nebulae[x][j].Release();
@@ -495,10 +192,541 @@ void DoSystemMap(void)
     FlushEvents(7, 0);
 }
 
-// FUNCTION: EVNOVA 0x004a51e0
-// MAC: _CreateMapTriggerRgn i386 0x0000e2d7 ppc 0x00011a98
-void CreateMapTriggerRgn(void)
+void MapDialog::Hit(short itemHit)
 {
+    short sys;
+    short found;
+    short i;
+    short j;
+    int32_t last;
+    short prev;
+    short s2;
+    short s3;
+    short prevV;
+    short prevH;
+    short sy;
+    short w;
+    short h;
+    short itemType;
+    Handle item;
+    Boolean inRoute;
+    Boolean selected;
+    Boolean hyperlinked;
+    Rect r;
+    Point mouse;
+    Rect box2;
+    Point anchor;
+    MapScroll savedScroll;
+
+    if (itemHit == kItemAccept)
+        done = 1;
+    if (itemHit == kMapCursorItem) {
+        cursorHidden = 0;
+        ShowTheCursor();
+    }
+    if (itemHit == kMapBordersItem) {
+        settings.showMapBorders = (settings.showMapBorders == 0);
+        InvalDialogItem(mapDialog, kMapBordersItem);
+        InvalDialogItem(mapDialog, kMapPictItem);
+        if (settings.showMapBorders != 0)
+            RecalcAllMapInfluence(&box);
+    }
+    if (itemHit == kMapZoomOutItem && canZoomOut != 0) {
+        mapZoom = mapZoom * 1.333333;
+        InvalDialogItem(mapDialog, kMapInfoItem);
+        InvalDialogItem(mapDialog, kMapPictItem);
+        InvalDialogItem(mapDialog, kMapZoomOutItem);
+        InvalDialogItem(mapDialog, kMapZoomInItem);
+        InvalDialogItem(mapDialog, kMapRouteItem);
+        if (settings.showMapBorders != 0)
+            RecalcAllMapInfluence(&box);
+    }
+    if (itemHit == kMapZoomInItem && canZoomIn != 0) {
+        mapZoom = mapZoom * 0.75;
+        InvalDialogItem(mapDialog, kMapInfoItem);
+        InvalDialogItem(mapDialog, kMapPictItem);
+        InvalDialogItem(mapDialog, kMapZoomOutItem);
+        InvalDialogItem(mapDialog, kMapZoomInItem);
+        InvalDialogItem(mapDialog, kMapRouteItem);
+        if (settings.showMapBorders != 0)
+            RecalcAllMapInfluence(&box);
+    }
+    if (itemHit == kMapClearRouteItem) {
+        for (i = 1; i < kMaxHyperRoute; i++)
+            hyperRoute[i] = -1;
+        hyperRoute[0] = shipData->curSystem;
+        routeLen = 1;
+        showClearRouteButton = 0;
+        InvalDialogItem(mapDialog, kMapPictItem);
+        InvalDialogItem(mapDialog, kMapRouteItem);
+        InvalDialogItem(mapDialog, kMapClearRouteItem);
+        MapDialogUpdate();
+        shipData->targetStellar = -1;
+        statusRedraw[kRedrawNav] = 1;
+        DrawStatus();
+    }
+    if (itemHit == kMapSearchItem)
+        DoSystemSearch();
+    if (itemHit == kMapPictItem) {
+        GetMouse(&mouse);
+        GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box2);
+        w = box2.right - box2.left;
+        h = box2.bottom - box2.top;
+        found = -1;
+        for (sys = 0; sys < kMaxSystems; sys++) {
+            if (found != -1)
+                break;
+            found = -1;
+            if (systemData[sys].loaded != 0) {
+                sy = systemData[sys].pos.v;
+                r.left = (box2.left + w / 2
+                                 + systemData[sys].pos.h / mapZoom
+                                 - mapScroll.h / mapZoom);
+                r.top = (box2.top + h / 2
+                                + sy / mapZoom
+                                - mapScroll.v / mapZoom);
+                r.right = r.left;
+                r.bottom = r.top;
+                InsetRect(&r, -10, -10);
+                if (PtInRectPoint(mouse, &r)) {
+                    inRoute = selected = hyperlinked = 0;
+                    for (s3 = 0; s3 < 32; s3++) {
+                        if (sys == missionSyst[s3] && missionSyst[s3] != -1) {
+                            inRoute = 1;
+                            break;
+                        }
+                    }
+                    if (greenMissionSyst == sys)
+                        selected = 1;
+                    if (hypergateMapMode != 0 && hypergateMapModeStellar >= 0
+                        && hypergateMapModeStellar < kMaxStellars) {
+                        for (i = 0; i < kSpobHyperLinks; i++) {
+                            if (stellarData[hypergateMapModeStellar].hyperLinks[i] != -1) {
+                                s3 = stellarData[stellarData[hypergateMapModeStellar].hyperLinks[i]].system;
+                                if (s3 < 0 || s3 >= kMaxSystems)
+                                    s3 = FindSystemFromStellar(stellarData[hypergateMapModeStellar].hyperLinks[i]);
+                                s3 = FindActiveCoLocatedSystem(s3);
+                                if (s3 == sys) {
+                                    hyperlinked = 1;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (hypergateMapMode != 0 && hyperlinked == 0
+                        && sys != shipData->curSystem)
+                        continue;
+                    if (systemData[sys].known != 0) {
+                        found = sys;
+                        break;
+                    }
+                    if (inRoute != 0 || selected != 0 || hyperlinked != 0) {
+                        found = sys;
+                        break;
+                    }
+                    if ((KeyCheck(kScanLShift) == 0
+                         && KeyCheck(kScanRShift) == 0)
+                        || routeLen <= 1) {
+                        prev = shipData->curSystem;
+                    } else {
+                        prev = hyperRoute[routeLen - 1];
+                        if (systemData[prev].pos.h == systemData[sys].pos.h
+                            && systemData[prev].pos.v == systemData[sys].pos.v) {
+                            found = sys;
+                            break;
+                        }
+                    }
+                    for (i = 0; i < kMaxSystemLinks; i++) {
+                        if (systemData[prev].links[i] != -1) {
+                            s2 = FindActiveCoLocatedSystem(systemData[prev].links[i]);
+                            if (s2 == sys) {
+                                found = s2;
+                                break;
+                            }
+                            if (systemData[s2].pos.h == systemData[sys].pos.h
+                                && systemData[s2].pos.v == systemData[sys].pos.v) {
+                                found = s2;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (found != -1)
+            found = FindActiveCoLocatedSystem(found);
+        if (found != -1) {
+            InvalDialogItem(mapDialog, kMapInfoItem);
+            InvalDialogItem(mapDialog, kMapPictItem);
+            InvalDialogItem(mapDialog, kMapRouteItem);
+            if ((KeyCheck(kScanLShift) != 0
+                 || KeyCheck(kScanRShift) != 0)
+                && hypergateMapMode == 0) {
+                CompactHyperRoute();
+                routeLen = -1;
+                if (FindFirstCoLocatedSystem(shipData->curSystem)
+                    == FindFirstCoLocatedSystem(found)) {
+                    for (i = 0; i < kMaxHyperRoute; i++)
+                        hyperRoute[i] = -1;
+                }
+                for (i = 1; i < kMaxHyperRoute; i++) {
+                    if (hyperRoute[i] == -1)
+                        break;
+                    if (FindFirstCoLocatedSystem(hyperRoute[i])
+                        == FindFirstCoLocatedSystem(found)) {
+                        for (j = i; j < kMaxHyperRoute; j++)
+                            hyperRoute[j] = -1;
+                        break;
+                    }
+                }
+                for (i = 1; i < kMaxHyperRoute; i++) {
+                    if (hyperRoute[i] == -1) {
+                        routeLen = i;
+                        break;
+                    }
+                }
+                if (routeLen == -1) {
+                    if (hyperRoute[0] == -1)
+                        hyperRoute[0] = shipData->curSystem;
+                    routeLen = 1;
+                }
+                inRoute = 0;
+                if (routeLen > 1) {
+                    prev = hyperRoute[routeLen - 1];
+                    s2 = FindActiveCoLocatedSystem(prev);
+                    if (s2 != prev && s2 != -1)
+                        prev = s2;
+                } else
+                    prev = shipData->curSystem;
+                if (systemData[prev].exploreLevel > 0
+                    || systemData[found].known != 0) {
+                    for (i = 0; i < kMaxSystemLinks; i++) {
+                        if (systemData[prev].links[i] != -1) {
+                            s2 = FindActiveCoLocatedSystem(systemData[prev].links[i]);
+                            if (s2 == found) {
+                                inRoute = 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (routeLen > 0) {
+                    last = routeLen - 1;
+                    s2 = hyperRoute[last];
+                    if (s2 >= 0 && s2 < kMaxSystems) {
+                        if (systemData[found].pos.h == systemData[s2].pos.h
+                            && systemData[found].pos.v == systemData[s2].pos.v) {
+                            hyperRoute[last] = -1;
+                            routeLen--;
+                            inRoute = 0;
+                        }
+                    }
+                }
+                if (inRoute != 0) {
+                    if (routeLen != -1) {
+                        if (hyperRoute[0] == -1)
+                            hyperRoute[0] = shipData->curSystem;
+                        hyperRoute[routeLen] = found;
+                        routeLen++;
+                        showClearRouteButton = 1;
+                    } else {
+                        hyperRoute[0] = shipData->curSystem;
+                        hyperRoute[1] = found;
+                        routeLen = 2;
+                        showClearRouteButton = 1;
+                    }
+                    InvalDialogItem(mapDialog, kMapPictItem);
+                    InvalDialogItem(mapDialog, kMapRouteItem);
+                    InvalDialogItem(mapDialog, kMapClearRouteItem);
+                    SetGWorldContainer(&loadPort);
+                    ForeColor(blackColor);
+                    PaintRect(GetDialogPortRect(mapDialog));
+                    if (mapBackgroundPic != NULL)
+                        DrawPicHandle(mapBackgroundPic, GetDialogPortRect(mapDialog));
+                    UnsetGWorldContainer(&loadPort);
+                    SetDialogGWorld(mapDialog);
+                    MapButtons().Draw(-1);
+                    selSystem = found;
+                }
+            } else {
+                selSystem = found;
+                if (onPlanet == 0) {
+                    if (hypergateMapMode != 0) {
+                        if (hyperlinked != 0) {
+                            shipData->navTargetKind = kNavTargetGate;
+                            shipData->targetStellar = selSystem;
+                        } else {
+                            shipData->navTargetKind = -1;
+                            shipData->targetStellar = -1;
+                        }
+                    } else {
+                        s2 = -1;
+                        for (i = 0; i < kMaxSystemLinks; i++) {
+                            if (systemData[shipData->curSystem].links[i] != -1) {
+                                if (found == FindActiveCoLocatedSystem(systemData[shipData->curSystem].links[i])) {
+                                    s2 = i;
+                                    break;
+                                }
+                            }
+                        }
+                        if (s2 != -1) {
+                            shipData->navTargetKind = kNavTargetLink;
+                            shipData->targetStellar = s2;
+                            statusRedraw[kRedrawNav] = 1;
+                            DrawStatus();
+                            SetDialogGWorld(mapDialog);
+                        } else {
+                            shipData->targetStellar = -1;
+                            statusRedraw[kRedrawNav] = 1;
+                            DrawStatus();
+                            SetDialogGWorld(mapDialog);
+                        }
+                    }
+                }
+            }
+        } else {
+            if (StillDown()) {
+                GetMouse(&anchor);
+                savedScroll = mapScroll;
+                while (StillDown()) {
+                    BusyIdle();
+                    prevV = mouse.v;
+                    prevH = mouse.h;
+                    GetMouse(&mouse);
+                    mapScroll.h = (savedScroll.h
+                                          - (mouse.h - anchor.h) * mapZoom);
+                    mapScroll.v = (savedScroll.v
+                                          - (mouse.v - anchor.v) * mapZoom);
+                    ScrollMapDisplay(mouse.h - prevH, mouse.v - prevV);
+                    nv_UpdateDialogWindow(0);
+                }
+                if (settings.showMapBorders != 0)
+                    RecalcAllMapInfluence(&box);
+                if (mapScroll.h != savedScroll.h
+                    || mapScroll.v != savedScroll.v)
+                    MapDialogUpdate();
+            }
+        }
+    }
+}
+
+static constexpr short kMapSlotItems[] = {
+    kItemAccept, kMapZoomOutItem, kMapZoomInItem, kMapClearRouteItem, kMapBordersItem, kMapSearchItem,
+};
+
+// FUNCTION: EVNOVA 0x004a74f0
+// MAC: _MapFilter i386 0x00013c63 ppc 0x000175a8
+Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
+{
+    Handle item;
+    EventKeyByte key;
+    short i;
+    short j;
+    short k;
+    short n;
+    short count;
+    short cur;
+    short sys;
+    Boolean ok[kMaxSystemLinks];
+    short list[kSpobHyperLinks];
+    Rect box;
+    short itemType;
+    EventWhat what;
+    Point pt;
+
+    if (mapZoom > 0.5)
+        canZoomIn = 1;
+    else
+        canZoomIn = 0;
+    if (mapZoom < 2.0)
+        canZoomOut = 1;
+    else
+        canZoomOut = 0;
+    didUpdateMap = 0;
+    what = event->what;
+    if (what == kKeyDown) {
+        key = tolower(EventCharOf(event));
+        if (IsReturnChar(key) || key == kEscapeChar) {
+            *itemHit = kItemAccept;
+            return 1;
+        } else if ((key == kTabChar || key == '\\') && onPlanet == 0) {
+            if (hypergateMapMode != 0 && hypergateMapModeStellar >= 0
+                && hypergateMapModeStellar < kMaxStellars) {
+                n = 0;
+                for (i = 0; i < kSpobHyperLinks; i++)
+                    list[i] = -1;
+                for (i = 0; i < kSpobHyperLinks; i++) {
+                    sys = stellarData[hypergateMapModeStellar].hyperLinks[i];
+                    // BUG (all versions): sys is a stellar index but is bounded by kMaxSystems, not kMaxStellars
+                    if (sys >= 0 && sys < kMaxSystems) {
+                        list[n] = FindSystemFromStellar(sys);
+                        n++;
+                    }
+                }
+                count = n;
+                if (count > 0) {
+                    cur = -1;
+                    for (i = 0; i < count; i++) {
+                        if (selSystem == list[i]) {
+                            cur = i;
+                            break;
+                        }
+                    }
+                    if (cur == -1)
+                        cur = 0;
+                    else if ((*(unsigned short *)&event->modifiers & shiftKey) != 0) {
+                        if (cur == 0)
+                            cur = n - 1;
+                        else
+                            cur -= 1;
+                    } else
+                        cur = (cur + 1) % n;
+                    shipData[0].navTargetKind = kNavTargetGate;
+                    shipData[0].targetStellar = list[cur];
+                    selSystem = list[cur];
+                    InvalDialogItem(mapDialog, kMapInfoItem);
+                    InvalDialogItem(mapDialog, kMapPictItem);
+                    InvalDialogItem(mapDialog, kMapRouteItem);
+                    SetDialogGWorld(mapDialog);
+                }
+            } else {
+                shipData[0].navTargetKind = kNavTargetLink;
+                count = 0;
+                for (i = 0; i < kMaxSystemLinks; i++) {
+                    ok[i] = 0;
+                    if (systemData[shipData[0].curSystem].links[i] != -1) {
+                        if (FindActiveCoLocatedSystem(
+                                systemData[shipData[0].curSystem].links[i]) != -1) {
+                            ok[i] = 1;
+                            count++;
+                        }
+                    }
+                }
+                if (count > 0) {
+                    do {
+                        shipData[0].targetStellar += 1;
+                        if (shipData[0].targetStellar >= kMaxSystemLinks)
+                            shipData[0].targetStellar = 0;
+                        if (shipData[0].targetStellar < 0)
+                            shipData[0].targetStellar = kMaxSystemLinks - 1;
+                    } while (ok[shipData[0].targetStellar] == 0);
+                } else
+                    shipData[0].targetStellar = -1;
+                statusRedraw[kRedrawNav] = 1;
+                InvalDialogItem(mapDialog, kMapInfoItem);
+                InvalDialogItem(mapDialog, kMapPictItem);
+                InvalDialogItem(mapDialog, kMapRouteItem);
+                DrawStatus();
+                SetDialogGWorld(mapDialog);
+                if (shipData[0].navTargetKind == kNavTargetLink && shipData[0].targetStellar != -1)
+                    selSystem = FindActiveCoLocatedSystem(
+                        systemData[shipData[0].curSystem]
+                            .links[shipData[0].targetStellar]);
+                else
+                    selSystem = shipData[0].curSystem;
+            }
+        } else if (key == 'c') {
+            *itemHit = kMapClearRouteItem;
+            return 1;
+        } else if (key == 'b') {
+            *itemHit = kMapBordersItem;
+            return 1;
+        } else if (key == ' ') {
+            PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
+            mapScroll.h = systemData[shipData[0].curSystem].pos.h;
+            mapScroll.v = systemData[shipData[0].curSystem].pos.v;
+            selSystem = shipData[0].curSystem;
+            InvalDialogItem(mapDialog, kMapInfoItem);
+            InvalDialogItem(mapDialog, kMapRouteItem);
+            InvalDialogItem(mapDialog, kMapPictItem);
+            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
+            if (settings.showMapBorders != 0)
+                RecalcAllMapInfluence(&box);
+        } else if (key == '-') {
+            *itemHit = kMapZoomOutItem;
+            return 1;
+        } else if (key == '+' || key == '=') {
+            *itemHit = kMapZoomInItem;
+            return 1;
+        } else if (key == kLeftArrowChar) {
+            mapScroll.h -= 10;
+            InvalDialogItem(mapDialog, kMapPictItem);
+            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
+            if (settings.showMapBorders != 0)
+                RecalcAllMapInfluence(&box);
+        } else if (key == kRightArrowChar) {
+            mapScroll.h += 10;
+            InvalDialogItem(mapDialog, kMapPictItem);
+            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
+            if (settings.showMapBorders != 0)
+                RecalcAllMapInfluence(&box);
+        } else if (key == kUpArrowChar) {
+            mapScroll.v -= 10;
+            InvalDialogItem(mapDialog, kMapPictItem);
+            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
+            if (settings.showMapBorders != 0)
+                RecalcAllMapInfluence(&box);
+        } else if (key == kDownArrowChar) {
+            mapScroll.v += 10;
+            InvalDialogItem(mapDialog, kMapPictItem);
+            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
+            if (settings.showMapBorders != 0)
+                RecalcAllMapInfluence(&box);
+        } else if (key == 'f' || key == 's') {
+            *itemHit = kMapSearchItem;
+            return 1;
+        } else if (KeyCheck(keyPrefs.map) != 0) {
+            *itemHit = kItemAccept;
+            return 1;
+        }
+    }
+    if ((int)event->what == kMouseDown) {
+        pt = event->where;
+        GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
+        if (PtInRect(pt.h, pt.v, &box) != 0) {
+            *itemHit = kMapPictItem;
+            return 1;
+        }
+        MapDialogUpdate();
+        SetDialogGWorld(mapDialog);
+        return ButtonItemHit(MapButtons().Track(pt), kMapSlotItems, itemHit);
+    }
+    if ((int)event->what == kNullEvent && settings.showMapBorders != 0
+        && influenceCoordsCached != 0) {
+        if (nextInfluenceSyst < 0) {
+            nextInfluenceSyst = 0;
+        } else if (nextInfluenceSyst <= kMaxSystems) {
+            influenceStepSize = 1;
+            for (i = 0; i < kCEBordersWidth; i++) {
+                for (j = 0; j < kCEBordersHeight; j++) {
+                    for (k = 0; k < 4; k++) {
+                        influenceOwner[i][j][k] = 0;
+                        influenceValue[i][j][k] = 0;
+                    }
+                }
+            }
+            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
+            while (nextInfluenceSyst < kMaxSystems) {
+                nextInfluenceSyst += 1;
+                sys = FindActiveCoLocatedSystem(nextInfluenceSyst - 1);
+                if (sys != -1)
+                    AddSystemInfluenceToMap(sys, &box);
+            }
+            if (nextInfluenceSyst == kMaxSystems) {
+                nextInfluenceSyst = kMaxSystems + 1;
+                SetDialogGWorld(mapDialog);
+                InvalDialogItem(mapDialog, kMapPictItem);
+            }
+        }
+    }
+    return 0;
+}
+
+} // namespace
+
+void DoSystemMap(void)
+{
+    MapDialog().Run();
 }
 
 
@@ -1020,226 +1248,6 @@ void ScrollMapDisplay(short dh, short dv)
     MapDialogUpdate();
     partialMapDialogUpdate = 0;
 }
-
-// FUNCTION: EVNOVA 0x004a74e0
-// MAC: _RedrawNebulaeOffscreen i386 0x0000e2d2 ppc 0x00011a94
-void RedrawNebulaeOffscreen(void)
-{
-}
-
-
-static constexpr short kMapSlotItems[] = {
-    kItemAccept, kMapZoomOutItem, kMapZoomInItem, kMapClearRouteItem, kMapBordersItem, kMapSearchItem,
-};
-
-// FUNCTION: EVNOVA 0x004a74f0
-// MAC: _MapFilter i386 0x00013c63 ppc 0x000175a8
-Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
-{
-    Handle item;
-    EventKeyByte key;
-    short i;
-    short j;
-    short k;
-    short n;
-    short count;
-    short cur;
-    short sys;
-    Boolean ok[kMaxSystemLinks];
-    short list[kSpobHyperLinks];
-    Rect box;
-    short itemType;
-    EventWhat what;
-    Point pt;
-
-    if (mapZoom > 0.5)
-        canZoomIn = 1;
-    else
-        canZoomIn = 0;
-    if (mapZoom < 2.0)
-        canZoomOut = 1;
-    else
-        canZoomOut = 0;
-    didUpdateMap = 0;
-    what = event->what;
-    if (what == kKeyDown) {
-        key = tolower(EventCharOf(event));
-        if (IsReturnChar(key) || key == kEscapeChar) {
-            *itemHit = kItemAccept;
-            return 1;
-        } else if ((key == kTabChar || key == '\\') && onPlanet == 0) {
-            if (hypergateMapMode != 0 && hypergateMapModeStellar >= 0
-                && hypergateMapModeStellar < kMaxStellars) {
-                n = 0;
-                for (i = 0; i < kSpobHyperLinks; i++)
-                    list[i] = -1;
-                for (i = 0; i < kSpobHyperLinks; i++) {
-                    sys = stellarData[hypergateMapModeStellar].hyperLinks[i];
-                    // BUG (all versions): sys is a stellar index but is bounded by kMaxSystems, not kMaxStellars
-                    if (sys >= 0 && sys < kMaxSystems) {
-                        list[n] = FindSystemFromStellar(sys);
-                        n++;
-                    }
-                }
-                count = n;
-                if (count > 0) {
-                    cur = -1;
-                    for (i = 0; i < count; i++) {
-                        if (selSystem == list[i]) {
-                            cur = i;
-                            break;
-                        }
-                    }
-                    if (cur == -1)
-                        cur = 0;
-                    else if ((*(unsigned short *)&event->modifiers & shiftKey) != 0) {
-                        if (cur == 0)
-                            cur = n - 1;
-                        else
-                            cur -= 1;
-                    } else
-                        cur = (cur + 1) % n;
-                    shipData[0].navTargetKind = kNavTargetGate;
-                    shipData[0].targetStellar = list[cur];
-                    selSystem = list[cur];
-                    InvalDialogItem(mapDialog, kMapInfoItem);
-                    InvalDialogItem(mapDialog, kMapPictItem);
-                    InvalDialogItem(mapDialog, kMapRouteItem);
-                    SetDialogGWorld(mapDialog);
-                }
-            } else {
-                shipData[0].navTargetKind = kNavTargetLink;
-                count = 0;
-                for (i = 0; i < kMaxSystemLinks; i++) {
-                    ok[i] = 0;
-                    if (systemData[shipData[0].curSystem].links[i] != -1) {
-                        if (FindActiveCoLocatedSystem(
-                                systemData[shipData[0].curSystem].links[i]) != -1) {
-                            ok[i] = 1;
-                            count++;
-                        }
-                    }
-                }
-                if (count > 0) {
-                    do {
-                        shipData[0].targetStellar += 1;
-                        if (shipData[0].targetStellar >= kMaxSystemLinks)
-                            shipData[0].targetStellar = 0;
-                        if (shipData[0].targetStellar < 0)
-                            shipData[0].targetStellar = kMaxSystemLinks - 1;
-                    } while (ok[shipData[0].targetStellar] == 0);
-                } else
-                    shipData[0].targetStellar = -1;
-                statusRedraw[kRedrawNav] = 1;
-                InvalDialogItem(mapDialog, kMapInfoItem);
-                InvalDialogItem(mapDialog, kMapPictItem);
-                InvalDialogItem(mapDialog, kMapRouteItem);
-                DrawStatus();
-                SetDialogGWorld(mapDialog);
-                if (shipData[0].navTargetKind == kNavTargetLink && shipData[0].targetStellar != -1)
-                    selSystem = FindActiveCoLocatedSystem(
-                        systemData[shipData[0].curSystem]
-                            .links[shipData[0].targetStellar]);
-                else
-                    selSystem = shipData[0].curSystem;
-            }
-        } else if (key == 'c') {
-            *itemHit = kMapClearRouteItem;
-            return 1;
-        } else if (key == 'b') {
-            *itemHit = kMapBordersItem;
-            return 1;
-        } else if (key == ' ') {
-            PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-            mapScroll.h = systemData[shipData[0].curSystem].pos.h;
-            mapScroll.v = systemData[shipData[0].curSystem].pos.v;
-            selSystem = shipData[0].curSystem;
-            InvalDialogItem(mapDialog, kMapInfoItem);
-            InvalDialogItem(mapDialog, kMapRouteItem);
-            InvalDialogItem(mapDialog, kMapPictItem);
-            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == '-') {
-            *itemHit = kMapZoomOutItem;
-            return 1;
-        } else if (key == '+' || key == '=') {
-            *itemHit = kMapZoomInItem;
-            return 1;
-        } else if (key == kLeftArrowChar) {
-            mapScroll.h -= 10;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == kRightArrowChar) {
-            mapScroll.h += 10;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == kUpArrowChar) {
-            mapScroll.v -= 10;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == kDownArrowChar) {
-            mapScroll.v += 10;
-            InvalDialogItem(mapDialog, kMapPictItem);
-            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
-            if (settings.showMapBorders != 0)
-                RecalcAllMapInfluence(&box);
-        } else if (key == 'f' || key == 's') {
-            *itemHit = kMapSearchItem;
-            return 1;
-        } else if (KeyCheck(keyPrefs.map) != 0) {
-            *itemHit = kItemAccept;
-            return 1;
-        }
-    }
-    if ((int)event->what == kMouseDown) {
-        pt = event->where;
-        GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
-        if (PtInRect(pt.h, pt.v, &box) != 0) {
-            *itemHit = kMapPictItem;
-            return 1;
-        }
-        MapDialogUpdate();
-        SetDialogGWorld(mapDialog);
-        return ButtonItemHit(MapButtons().Track(pt), kMapSlotItems, itemHit);
-    }
-    if ((int)event->what == kNullEvent && settings.showMapBorders != 0
-        && influenceCoordsCached != 0) {
-        if (nextInfluenceSyst < 0) {
-            nextInfluenceSyst = 0;
-        } else if (nextInfluenceSyst <= kMaxSystems) {
-            influenceStepSize = 1;
-            for (i = 0; i < kCEBordersWidth; i++) {
-                for (j = 0; j < kCEBordersHeight; j++) {
-                    for (k = 0; k < 4; k++) {
-                        influenceOwner[i][j][k] = 0;
-                        influenceValue[i][j][k] = 0;
-                    }
-                }
-            }
-            GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
-            while (nextInfluenceSyst < kMaxSystems) {
-                nextInfluenceSyst += 1;
-                sys = FindActiveCoLocatedSystem(nextInfluenceSyst - 1);
-                if (sys != -1)
-                    AddSystemInfluenceToMap(sys, &box);
-            }
-            if (nextInfluenceSyst == kMaxSystems) {
-                nextInfluenceSyst = kMaxSystems + 1;
-                SetDialogGWorld(mapDialog);
-                InvalDialogItem(mapDialog, kMapPictItem);
-            }
-        }
-    }
-    return 0;
-}
-
 
 // FUNCTION: EVNOVA 0x004a7e80
 // MAC: _CompactHyperRoute i386 0x0000e16a ppc 0x000118c0

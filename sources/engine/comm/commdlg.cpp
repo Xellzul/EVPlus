@@ -72,25 +72,34 @@ short commDialogMode;
 
 /* the fields this dialog reads of the 0x120-byte rank record */
 
+namespace {
+
 // FUNCTION: EVNOVA 0x0047e470
 // MAC: _DoCommDialog i386 0x000956d5 ppc 0x000a1380
-void DoCommDialog(short shipIndex)
+/* Hailing a ship: ask it for help (or pay it off), ask for advice, or release an escort. */
+class CommDialog final : public GameDialog {
+public:
+    void Run(short shipIndex);
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    Boolean hasMission;     /* the ship escorts the player for a mission */
+    Boolean isMissionShip;  /* its govt is not talkative */
+    Boolean cantTalk;       /* its govt is silent */
+    Boolean noBribe;        /* a warship of a plundering govt */
+    Boolean canAskEscort;   /* an allied rank calls for assistance */
+    Boolean canAskHelp;     /* repairs and refuels for free */
+};
+
+void CommDialog::Run(short shipIndex)
 {
     short i;
-    short itemHit;
-    Boolean hasMission;
-    Boolean isMissionShip;
-    Boolean cantTalk;
-    Boolean done;
-    Boolean canAskEscort;
-    Boolean canAskHelp;
-    Boolean noBribe;
-    Boolean missionPending;
     unsigned char buf[256];
     short n;
     short r;
-    int32_t amount;
-    done = 0;
+
     if (screenFaded)
         return;
     if (shipIndex < 0 || shipIndex >= kMaxShips)
@@ -210,9 +219,8 @@ void DoCommDialog(short shipIndex)
         else
             LoadResponse(2);
     }
-    Dialog dialog;
     Picture backdrop(commBackgroundPic);
-    dialog.Open(kCommDlgID2, CommDialogUpdate, CommFilter, &commDialog, DialogClose::NoFlash);
+    dialog.Open(kCommDlgID2, CommDialogUpdate, Filter, &commDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     canAskEscort = 0;
@@ -241,185 +249,7 @@ void DoCommDialog(short shipIndex)
     RedrawDialog(commDialog);
     CommDialogUpdate();
 
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == 1) {
-            CommButtons().Draw(-1);
-            done = 1;
-        }
-        if (itemHit == 2) {
-            PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-            if (!IsDisabled(commShip)) {
-                if (commShip->parentShip == 0 && commShip->aiType == kShipTypeEscort
-                           && !hasMission) {
-                    releaseCommEscort = 1;
-                    LoadResponse(0x26);
-                    InvalDialogItem(commDialog, 12);
-                    CommButtons().Draw(-1);
-                } else if (!cantTalk) {
-                    CommButtons().Draw(-1);
-                    if (ExtendedIsThreatToPlayer(commShip)) {
-                        missionPending = 0;
-                        if (commShip->specialMission != -1
-                            && currentMissionObjectives[commShip->specialMission].active != 0
-                            && currentMissions[commShip->specialMission].shipBehav == kMissionModeAttackPlayer)
-                            missionPending = 1;
-                        if (!missionPending) {
-                            if (commShip->defenseStellar != -1)
-                                LoadResponse(0x13);
-                            else if (commShip->persType == kPersBountyHunter)
-                                LoadResponse(0x13);
-                            else if (willTakeBribe) {
-                                if (bribeFlux < 0.8)
-                                    LoadResponse(0x17);
-                                else if (bribeFlux > 1.2)
-                                    LoadResponse(0x18);
-                                else
-                                    LoadResponse(0x12);
-                                CommDialogUpdate();
-                                r = DoShipCommPayment();
-                                SetDialogGWorld(commDialog);
-                                if (r == 1) {
-                                    LoadResponse(0x14);
-                                    AIMakeShipLeave(commShip);
-                                    commShip->aiType = kShipTypeWimpyTrader;
-                                } else if (r == 0) {
-                                    LoadResponse(0x1e);
-                                    AIMakeShipAttackPlayer(commShip);
-                                } else if (r == -1)
-                                    LoadResponse(0xc);
-                                RedrawDialog(commDialog);
-                            } else
-                                LoadResponse(0x13);
-                        } else
-                            LoadResponse(0x13);
-                    } else if (AIDoesShipLikePlayer(commShip) && !commShipXeno
-                               && !noBribe) {
-                        if (IsShipThreatened(commShip) || AIIsShipBusy(commShip)) {
-                            if (IsRefuellingPlayer(commShip) || IsRepairingPlayer(commShip))
-                                LoadResponse(0x1d);
-                            else if (commShip->aiType <= kShipTypeInterceptor)
-                                LoadResponse(0x10);
-                            else
-                                LoadResponse(0x16);
-                        } else if (IsPlayerThreatened()) {
-                            if (IsPlayerThreatenedByMyEnemy(commShip)) {
-                                if (canAskEscort) {
-                                    LoadResponse(0x1d);
-                                    AIFightEnemyThreatToPlayer(commShip);
-                                    AICallForReinforcements(commShip, 1);
-                                } else if (commShipXeno)
-                                    LoadResponse(0x13);
-                                else if (commShip->aiType == kShipTypeWimpyTrader)
-                                    LoadResponse(0x11);
-                                else if (commShip->aiType == kShipTypeBraveTrader) {
-                                    if (commShip->index % 3 == 0
-                                        && commShip->govt == -1) {
-                                        if (bribeFlux < 0.8)
-                                            LoadResponse(0x17);
-                                        else if (bribeFlux > 1.2)
-                                            LoadResponse(0x18);
-                                        else
-                                            LoadResponse(0x12);
-                                        CommDialogUpdate();
-                                        r = DoShipCommPayment();
-                                        SetDialogGWorld(commDialog);
-                                        if (r == 1) {
-                                            LoadResponse(0x1d);
-                                            AIFightEnemyThreatToPlayer(commShip);
-                                        } else if (r == 0)
-                                            LoadResponse(0x1f);
-                                        else if (r == -1)
-                                            LoadResponse(0xc);
-                                    } else
-                                        LoadResponse(0x11);
-                                } else if (commShip->aiType == kShipTypeWarship
-                                           || commShip->aiType == kShipTypeInterceptor) {
-                                    if (bribeFlux < 0.8)
-                                        LoadResponse(0x17);
-                                    else if (bribeFlux > 1.2)
-                                        LoadResponse(0x18);
-                                    else
-                                        LoadResponse(0x12);
-                                    CommDialogUpdate();
-                                    r = DoShipCommPayment();
-                                    SetDialogGWorld(commDialog);
-                                    if (r == 1) {
-                                        LoadResponse(0x1d);
-                                        AIFightEnemyThreatToPlayer(commShip);
-                                    } else if (r == 0)
-                                        LoadResponse(0x1f);
-                                    else if (r == -1)
-                                        LoadResponse(0xc);
-                                } else {
-                                    LoadResponse(0x1d);
-                                    AIFightThreatToPlayer(commShip);
-                                }
-                            } else
-                                LoadResponse(0x13);
-                        } else {
-                            if ((shipData->fuel < 100 && ShipFuelCapacity(shipData) > 0)
-                                || IsDisabled(shipData)) {
-                                if (commShipXeno)
-                                    LoadResponse(0x13);
-                                else if (commShip->aiType <= kShipTypeInterceptor) {
-                                    if (bribeFlux < 0.8)
-                                        LoadResponse(0x17);
-                                    else if (bribeFlux > 1.2)
-                                        LoadResponse(0x18);
-                                    else
-                                        LoadResponse(0x1c);
-                                    CommDialogUpdate();
-                                    r = 0;
-                                    if (canAskHelp)
-                                        r = 1;
-                                    if (r != 1) {
-                                        r = DoShipCommPayment();
-                                        SetDialogGWorld(commDialog);
-                                    }
-                                    if (r == 1) {
-                                        LoadResponse(0x1d);
-                                        if (IsDisabled(shipData))
-                                            AIMakeShipRepairPlayer(commShip);
-                                        else
-                                            AIMakeShipRefuelPlayer(commShip);
-                                    } else if (r == 0)
-                                        LoadResponse(0x1f);
-                                    else if (r == -1)
-                                        LoadResponse(0xc);
-                                } else
-                                    LoadResponse(0x19);
-                            } else
-                                LoadResponse(0xe);
-                        }
-                    } else
-                        LoadResponse(0x13);
-                }
-            } else {
-                if (!isMissionShip)
-                    LoadResponse(1);
-            }
-        }
-        if (itemHit == 3) {
-            PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-            CommButtons().Draw(-1);
-            if (IsDisabled(commShip) || isMissionShip)
-                LoadResponse(1);
-            else if (ExtendedIsThreatToPlayer(commShip))
-                LoadResponse(0xd);
-            else if (AIDoesShipLikePlayer(commShip))
-                strncpy((char *)commResponseString, (char *)adviceString, 254);
-            else
-                LoadResponse(0xd);
-        }
-        if (itemHit != -1) {
-            SetDialogGWorld(commDialog);
-            InvalDialogItem(commDialog, 10);
-            InvalDialogItem(commDialog, 12);
-        }
-    } while (!done);
+    Loop();
 
     backdrop.Release();
     shipPic.Release();
@@ -441,35 +271,190 @@ void DoCommDialog(short shipIndex)
     SWSetPortToWindow(gSpriteWorld);
 }
 
-/*
- * A no raises the asking price by a thousand for next time, and -1 means the
- * player could not have paid it anyway.
- */
-// FUNCTION: EVNOVA 0x0047f9c0
-// MAC: _DoShipCommPayment i386 0x000920f3 ppc 0x0009dd38
-short DoShipCommPayment(void)
+void CommDialog::Hit(short item)
 {
-    short answer;
+    short r;
+    Boolean missionPending;
 
-    CommDialogUpdate();
-    haggleVal = initialHaggleVal;
-    answer = DoHaggleDialog(0, 0x23);
-    SetDialogGWorld(commDialog);
-    if (shipData->credits >= haggleVal) {
-        if (answer == 1) {
-            shipData->credits -= haggleVal;
-            statusRedraw[kRedrawCargo] = 1;
-            return 1;
-        }
-        initialHaggleVal += 1000;
-        return 0;
+    if (item == 1) {
+        CommButtons().Draw(-1);
+        done = 1;
     }
-    return -1;
+    if (item == 2) {
+        PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
+        if (!IsDisabled(commShip)) {
+            if (commShip->parentShip == 0 && commShip->aiType == kShipTypeEscort
+                       && !hasMission) {
+                releaseCommEscort = 1;
+                LoadResponse(0x26);
+                InvalDialogItem(commDialog, 12);
+                CommButtons().Draw(-1);
+            } else if (!cantTalk) {
+                CommButtons().Draw(-1);
+                if (ExtendedIsThreatToPlayer(commShip)) {
+                    missionPending = 0;
+                    if (commShip->specialMission != -1
+                        && currentMissionObjectives[commShip->specialMission].active != 0
+                        && currentMissions[commShip->specialMission].shipBehav == kMissionModeAttackPlayer)
+                        missionPending = 1;
+                    if (!missionPending) {
+                        if (commShip->defenseStellar != -1)
+                            LoadResponse(0x13);
+                        else if (commShip->persType == kPersBountyHunter)
+                            LoadResponse(0x13);
+                        else if (willTakeBribe) {
+                            if (bribeFlux < 0.8)
+                                LoadResponse(0x17);
+                            else if (bribeFlux > 1.2)
+                                LoadResponse(0x18);
+                            else
+                                LoadResponse(0x12);
+                            CommDialogUpdate();
+                            r = DoShipCommPayment();
+                            SetDialogGWorld(commDialog);
+                            if (r == 1) {
+                                LoadResponse(0x14);
+                                AIMakeShipLeave(commShip);
+                                commShip->aiType = kShipTypeWimpyTrader;
+                            } else if (r == 0) {
+                                LoadResponse(0x1e);
+                                AIMakeShipAttackPlayer(commShip);
+                            } else if (r == -1)
+                                LoadResponse(0xc);
+                            RedrawDialog(commDialog);
+                        } else
+                            LoadResponse(0x13);
+                    } else
+                        LoadResponse(0x13);
+                } else if (AIDoesShipLikePlayer(commShip) && !commShipXeno
+                           && !noBribe) {
+                    if (IsShipThreatened(commShip) || AIIsShipBusy(commShip)) {
+                        if (IsRefuellingPlayer(commShip) || IsRepairingPlayer(commShip))
+                            LoadResponse(0x1d);
+                        else if (commShip->aiType <= kShipTypeInterceptor)
+                            LoadResponse(0x10);
+                        else
+                            LoadResponse(0x16);
+                    } else if (IsPlayerThreatened()) {
+                        if (IsPlayerThreatenedByMyEnemy(commShip)) {
+                            if (canAskEscort) {
+                                LoadResponse(0x1d);
+                                AIFightEnemyThreatToPlayer(commShip);
+                                AICallForReinforcements(commShip, 1);
+                            } else if (commShipXeno)
+                                LoadResponse(0x13);
+                            else if (commShip->aiType == kShipTypeWimpyTrader)
+                                LoadResponse(0x11);
+                            else if (commShip->aiType == kShipTypeBraveTrader) {
+                                if (commShip->index % 3 == 0
+                                    && commShip->govt == -1) {
+                                    if (bribeFlux < 0.8)
+                                        LoadResponse(0x17);
+                                    else if (bribeFlux > 1.2)
+                                        LoadResponse(0x18);
+                                    else
+                                        LoadResponse(0x12);
+                                    CommDialogUpdate();
+                                    r = DoShipCommPayment();
+                                    SetDialogGWorld(commDialog);
+                                    if (r == 1) {
+                                        LoadResponse(0x1d);
+                                        AIFightEnemyThreatToPlayer(commShip);
+                                    } else if (r == 0)
+                                        LoadResponse(0x1f);
+                                    else if (r == -1)
+                                        LoadResponse(0xc);
+                                } else
+                                    LoadResponse(0x11);
+                            } else if (commShip->aiType == kShipTypeWarship
+                                       || commShip->aiType == kShipTypeInterceptor) {
+                                if (bribeFlux < 0.8)
+                                    LoadResponse(0x17);
+                                else if (bribeFlux > 1.2)
+                                    LoadResponse(0x18);
+                                else
+                                    LoadResponse(0x12);
+                                CommDialogUpdate();
+                                r = DoShipCommPayment();
+                                SetDialogGWorld(commDialog);
+                                if (r == 1) {
+                                    LoadResponse(0x1d);
+                                    AIFightEnemyThreatToPlayer(commShip);
+                                } else if (r == 0)
+                                    LoadResponse(0x1f);
+                                else if (r == -1)
+                                    LoadResponse(0xc);
+                            } else {
+                                LoadResponse(0x1d);
+                                AIFightThreatToPlayer(commShip);
+                            }
+                        } else
+                            LoadResponse(0x13);
+                    } else {
+                        if ((shipData->fuel < 100 && ShipFuelCapacity(shipData) > 0)
+                            || IsDisabled(shipData)) {
+                            if (commShipXeno)
+                                LoadResponse(0x13);
+                            else if (commShip->aiType <= kShipTypeInterceptor) {
+                                if (bribeFlux < 0.8)
+                                    LoadResponse(0x17);
+                                else if (bribeFlux > 1.2)
+                                    LoadResponse(0x18);
+                                else
+                                    LoadResponse(0x1c);
+                                CommDialogUpdate();
+                                r = 0;
+                                if (canAskHelp)
+                                    r = 1;
+                                if (r != 1) {
+                                    r = DoShipCommPayment();
+                                    SetDialogGWorld(commDialog);
+                                }
+                                if (r == 1) {
+                                    LoadResponse(0x1d);
+                                    if (IsDisabled(shipData))
+                                        AIMakeShipRepairPlayer(commShip);
+                                    else
+                                        AIMakeShipRefuelPlayer(commShip);
+                                } else if (r == 0)
+                                    LoadResponse(0x1f);
+                                else if (r == -1)
+                                    LoadResponse(0xc);
+                            } else
+                                LoadResponse(0x19);
+                        } else
+                            LoadResponse(0xe);
+                    }
+                } else
+                    LoadResponse(0x13);
+            }
+        } else {
+            if (!isMissionShip)
+                LoadResponse(1);
+        }
+    }
+    if (item == 3) {
+        PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
+        CommButtons().Draw(-1);
+        if (IsDisabled(commShip) || isMissionShip)
+            LoadResponse(1);
+        else if (ExtendedIsThreatToPlayer(commShip))
+            LoadResponse(0xd);
+        else if (AIDoesShipLikePlayer(commShip))
+            strncpy((char *)commResponseString, (char *)adviceString, 254);
+        else
+            LoadResponse(0xd);
+    }
+    if (item != -1) {
+        SetDialogGWorld(commDialog);
+        InvalDialogItem(commDialog, 10);
+        InvalDialogItem(commDialog, 12);
+    }
 }
 
 // FUNCTION: EVNOVA 0x0047fa40
 // MAC: _CommFilter i386 0x000908ed ppc 0x0009c440
-Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean CommDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     int what;
@@ -510,6 +495,39 @@ Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return ButtonItemHit(CommButtons().Track(where), itemHit);
     }
     return 0;
+}
+
+} // namespace
+
+void DoCommDialog(short shipIndex)
+{
+    CommDialog().Run(shipIndex);
+}
+
+/*
+ * A no raises the asking price by a thousand for next time, and -1 means the
+ * player could not have paid it anyway.
+ */
+// FUNCTION: EVNOVA 0x0047f9c0
+// MAC: _DoShipCommPayment i386 0x000920f3 ppc 0x0009dd38
+short DoShipCommPayment(void)
+{
+    short answer;
+
+    CommDialogUpdate();
+    haggleVal = initialHaggleVal;
+    answer = DoHaggleDialog(0, 0x23);
+    SetDialogGWorld(commDialog);
+    if (shipData->credits >= haggleVal) {
+        if (answer == 1) {
+            shipData->credits -= haggleVal;
+            statusRedraw[kRedrawCargo] = 1;
+            return 1;
+        }
+        initialHaggleVal += 1000;
+        return 0;
+    }
+    return -1;
 }
 
 // FUNCTION: EVNOVA 0x0047fb70
@@ -604,18 +622,26 @@ void CommDialogUpdate(void)
 #define kGovtNameList    0x44c
 #define kTributeList     0xbba
 
+namespace {
+
 // FUNCTION: EVNOVA 0x00480030
 // MAC: _DoPlanetCommDialog i386 0x00096949 ppc 0x000a25ac
-void DoPlanetCommDialog(short stellar)
+/* Hailing a planet: bribe it for landing, demand tribute, or release it once dominated. */
+class PlanetCommDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void PlanetCommDialog::Run()
 {
-    short itemHit;
     unsigned char text[256];
     unsigned char pname[256];
-    short i;
     short n;
-    Boolean done;
 
-    done = 0;
     if (screenFaded)
         return;
     if (shipData->targetStellar == -1)
@@ -647,9 +673,8 @@ void DoPlanetCommDialog(short stellar)
         GetIndString(stellarTypeStr, kGovtNameList, stellarData[shipData->targetStellar].type + 1);
     PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
     ShowTheCursor();
-    Dialog dialog;
     Picture backdrop(commBackgroundPic);
-    dialog.Open(kCommDlogID, PlanetCommDialogUpdate, PlanetCommFilter, &commDialog, DialogClose::NoFlash);
+    dialog.Open(kCommDlogID, PlanetCommDialogUpdate, Filter, &commDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     if (stellarData[shipData->targetStellar].minStatus == 0x7fff)
@@ -703,28 +728,44 @@ void DoPlanetCommDialog(short stellar)
     RedrawDialog(commDialog);
     PlanetCommDialogUpdate();
 
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == 1)
-            done = 1;
-        if (itemHit == 2 || itemHit == 3) {
-            SetDialogGWorld(commDialog);
-            PlanetCommButtons().Draw(-1);
-            LoadResponse(1);
-            PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-            if (itemHit == 2) {
-                if (hatesPlayer
-                    && stellarData[shipData->targetStellar].dominated == 0) {
-                    if (willTakeBribe != 0) {
-                        LoadStellarResponse(8);
-                        PlanetCommDialogUpdate();
-                        haggleVal = initialHaggleVal;
-                        i = DoHaggleDialog(0, 0x23);
-                        PlaySound(beepSnd[1], 1, gSoundVolume,
-                                  gSoundVolume);
-                        if (shipData->credits >= haggleVal) {
+    Loop();
+
+    backdrop.Release();
+    PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+    dialog.Close();
+    gSpeedMult = 0;
+    SWSetPortToBackground(gSpriteWorld);
+    SetSystemBackgroundColor();
+    PaintRect(&gSpriteWorld->windRect);
+    ForeColor(blackColor);
+    SWSetPortToWindow(gSpriteWorld);
+    RedrawStatus(1);
+}
+
+void PlanetCommDialog::Hit(short item)
+{
+    unsigned char text[256];
+    short i;
+    short n;
+
+    if (item == 1)
+        done = 1;
+    if (item == 2 || item == 3) {
+        SetDialogGWorld(commDialog);
+        PlanetCommButtons().Draw(-1);
+        LoadResponse(1);
+        PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
+        if (item == 2) {
+            if (hatesPlayer
+                && stellarData[shipData->targetStellar].dominated == 0) {
+                if (willTakeBribe != 0) {
+                    LoadStellarResponse(8);
+                    PlanetCommDialogUpdate();
+                    haggleVal = initialHaggleVal;
+                    i = DoHaggleDialog(0, 0x23);
+                    PlaySound(beepSnd[1], 1, gSoundVolume,
+                              gSoundVolume);
+                    if (shipData->credits >= haggleVal) {
                         if (i == 1) {
                             dockPermission = 0x2ef;
                             dockTarget = shipData->targetStellar;
@@ -752,139 +793,127 @@ void DoPlanetCommDialog(short stellar)
                             LoadStellarResponse(6);
                             PlanetCommDialogUpdate();
                         }
-                        } else {
-                            LoadStellarResponse(4);
-                            PlanetCommDialogUpdate();
-                        }
-                        RedrawDialog(commDialog);
                     } else {
-                        LoadStellarResponse(9);
+                        LoadStellarResponse(4);
                         PlanetCommDialogUpdate();
                     }
-                } else {
-                    if (!hatesPlayer)
-                        LoadResponse(9);
-                    else
-                        LoadStellarResponse(4);
                     RedrawDialog(commDialog);
+                } else {
+                    LoadStellarResponse(9);
+                    PlanetCommDialogUpdate();
                 }
+            } else {
+                if (!hatesPlayer)
+                    LoadResponse(9);
+                else
+                    LoadStellarResponse(4);
+                RedrawDialog(commDialog);
             }
-            if (itemHit == 3) {
-                            if ((stellarData[shipData->targetStellar].flags2 & kSpobAlwaysDominated) == 0) {
-                    if (stellarData[shipData->targetStellar].dominated != 0) {
-                        if ((stellarData[shipData->targetStellar].flags & kSpobIsStation) != 0)
-                            GetIndString(commResponseString, kTributeList, 0x25);
+        }
+        if (item == 3) {
+            if ((stellarData[shipData->targetStellar].flags2 & kSpobAlwaysDominated) == 0) {
+                if (stellarData[shipData->targetStellar].dominated != 0) {
+                    if ((stellarData[shipData->targetStellar].flags & kSpobIsStation) != 0)
+                        GetIndString(commResponseString, kTributeList, 0x25);
+                    else
+                        GetIndString(commResponseString, kTributeList, 0x24);
+                    dockPermission = 0;
+                    dockTarget = -1;
+                    stellarData[shipData->targetStellar].dominated = 0;
+                    if (stellarData[shipData->targetStellar].defCount > 1000) {
+                        if (stellarData[shipData->targetStellar].defCount > 10000)
+                            stellarData[shipData->targetStellar].defWaveSize =
+                                stellarData[shipData->targetStellar].defCount / 10 - 1000;
                         else
-                            GetIndString(commResponseString, kTributeList, 0x24);
-                        dockPermission = 0;
-                        dockTarget = -1;
-                        stellarData[shipData->targetStellar].dominated = 0;
-                        if (stellarData[shipData->targetStellar].defCount > 1000) {
-                            if (stellarData[shipData->targetStellar].defCount > 10000)
-                                stellarData[shipData->targetStellar].defWaveSize =
-                                    stellarData[shipData->targetStellar].defCount / 10 - 1000;
-                            else
-                                stellarData[shipData->targetStellar].defWaveSize =
-                                    stellarData[shipData->targetStellar].defCount / 10 - 100;
-                        } else
-                            stellarData[shipData->targetStellar].defWaveSize = stellarData[shipData->targetStellar].defCount;
-                        if (playerRecord[shipData->curSystem]
-                                >= stellarData[shipData->targetStellar].minStatus
-                            && stellarData[shipData->targetStellar].minStatus > (short)0x8001
-                            && stellarData[shipData->targetStellar].minStatus != 0x7fff)
-                            playerRecord[shipData->curSystem] =
-                                stellarData[shipData->targetStellar].minStatus - 1;
-                        crashlog_mission_bit_set(
-                            "releasing stellar",
-                            (char *)stellarData[shipData->targetStellar].name, 1, shipData->targetStellar + kFirstResourceID,
-                            stellarData[shipData->targetStellar].onRelease);
-                        EvalMissionBitSetString(stellarData[shipData->targetStellar].onRelease);
+                            stellarData[shipData->targetStellar].defWaveSize =
+                                stellarData[shipData->targetStellar].defCount / 10 - 100;
+                    } else
+                        stellarData[shipData->targetStellar].defWaveSize = stellarData[shipData->targetStellar].defCount;
+                    if (playerRecord[shipData->curSystem]
+                            >= stellarData[shipData->targetStellar].minStatus
+                        && stellarData[shipData->targetStellar].minStatus > (short)0x8001
+                        && stellarData[shipData->targetStellar].minStatus != 0x7fff)
+                        playerRecord[shipData->curSystem] =
+                            stellarData[shipData->targetStellar].minStatus - 1;
+                    crashlog_mission_bit_set(
+                        "releasing stellar",
+                        (char *)stellarData[shipData->targetStellar].name, 1, shipData->targetStellar + kFirstResourceID,
+                        stellarData[shipData->targetStellar].onRelease);
+                    EvalMissionBitSetString(stellarData[shipData->targetStellar].onRelease);
+                    RedrawDialog(commDialog);
+                } else {
+                    hatesPlayer = 1;
+                    if (playerRecord[shipData->curSystem]
+                            >= stellarData[shipData->targetStellar].minStatus
+                        && stellarData[shipData->targetStellar].minStatus > (short)0x8001
+                        && stellarData[shipData->targetStellar].minStatus != 0x7fff)
+                        playerRecord[shipData->curSystem] =
+                            stellarData[shipData->targetStellar].minStatus - 1;
+                    SlapWithPenalty(shipData->curSystem,
+                                 stellarData[shipData->targetStellar].govt, 3, -1);
+                    if (playerKills < 0x3200 && !cheatsActive) {
+                        SetDialogGWorld(commDialog);
+                        LoadStellarResponse(1);
                         RedrawDialog(commDialog);
-                    } else {
-                        hatesPlayer = 1;
-                        if (playerRecord[shipData->curSystem]
-                                >= stellarData[shipData->targetStellar].minStatus
-                            && stellarData[shipData->targetStellar].minStatus > (short)0x8001
-                            && stellarData[shipData->targetStellar].minStatus != 0x7fff)
-                            playerRecord[shipData->curSystem] =
-                                stellarData[shipData->targetStellar].minStatus - 1;
-                        SlapWithPenalty(shipData->curSystem,
-                                     stellarData[shipData->targetStellar].govt, 3, -1);
-                        if (playerKills < 0x3200 && !cheatsActive) {
-                            SetDialogGWorld(commDialog);
-                            LoadStellarResponse(1);
-                            RedrawDialog(commDialog);
-                        } else if (hasDemandedTribute
-                                   || stellarData[shipData->targetStellar].defWaveSize > 0
-                                   || stellarData[shipData->targetStellar].defenseActive != 0) {
-                            SetDialogGWorld(commDialog);
-                            LoadStellarResponse(2);
-                            RedrawDialog(commDialog);
-                            if (stellarData[shipData->targetStellar].defenseActive == 0) {
-                                for (i = 0; i <= 4; i++)
-                                    SlapWithPenalty(shipData->curSystem,
-                                                 stellarData[shipData->targetStellar].govt, 3, -1);
-                                if (stellarData[shipData->targetStellar].defCount <= 1000) {
-                                    n = stellarData[shipData->targetStellar].defWaveSize;
-                                    stellarData[shipData->targetStellar].defWaveSize = 0;
-                                } else {
-                                    stellarData[shipData->targetStellar].defWaveSize -=
-                                        stellarData[shipData->targetStellar].defCount % 10;
-                                    n = stellarData[shipData->targetStellar].defCount % 10;
-                                    if (stellarData[shipData->targetStellar].defWaveSize < 0) {
-                                        n += stellarData[shipData->targetStellar].defWaveSize;
-                                        stellarData[shipData->targetStellar].defWaveSize = 0;
-                                    }
-                                }
-                                for (i = 0; i < n; i++)
-                                    SpawnStellarDefenseShip(shipData->targetStellar);
-                            }
-                        } else {
+                    } else if (hasDemandedTribute
+                               || stellarData[shipData->targetStellar].defWaveSize > 0
+                               || stellarData[shipData->targetStellar].defenseActive != 0) {
+                        SetDialogGWorld(commDialog);
+                        LoadStellarResponse(2);
+                        RedrawDialog(commDialog);
+                        if (stellarData[shipData->targetStellar].defenseActive == 0) {
                             for (i = 0; i <= 4; i++)
                                 SlapWithPenalty(shipData->curSystem,
                                              stellarData[shipData->targetStellar].govt, 3, -1);
-                            if ((stellarData[shipData->targetStellar].flags & kSpobIsStation) != 0)
-                                GetIndString(commResponseString, kTributeList, 0x1b);
-                            else
-                                GetIndString(commResponseString, kTributeList, 0x1a);
-                            dockPermission = 0;
-                            dockTarget = -1;
-                            ((char *)personData)[0x1e46f8] = 1;
-                            stellarData[shipData->targetStellar].dominated = 1;
-                            stellarData[shipData->targetStellar].daysDominated = 0;
-                            crashlog_mission_bit_set(
-                                "dominating stellar",
-                                (char *)stellarData[shipData->targetStellar].name, 1, shipData->targetStellar + kFirstResourceID,
-                                stellarData[shipData->targetStellar].onDominate);
-                            EvalMissionBitSetString(stellarData[shipData->targetStellar].onDominate);
-                            SetDialogGWorld(commDialog);
-                            RedrawDialog(commDialog);
+                            if (stellarData[shipData->targetStellar].defCount <= 1000) {
+                                n = stellarData[shipData->targetStellar].defWaveSize;
+                                stellarData[shipData->targetStellar].defWaveSize = 0;
+                            } else {
+                                stellarData[shipData->targetStellar].defWaveSize -=
+                                    stellarData[shipData->targetStellar].defCount % 10;
+                                n = stellarData[shipData->targetStellar].defCount % 10;
+                                if (stellarData[shipData->targetStellar].defWaveSize < 0) {
+                                    n += stellarData[shipData->targetStellar].defWaveSize;
+                                    stellarData[shipData->targetStellar].defWaveSize = 0;
+                                }
+                            }
+                            for (i = 0; i < n; i++)
+                                SpawnStellarDefenseShip(shipData->targetStellar);
                         }
-                        hasDemandedTribute = 1;
+                    } else {
+                        for (i = 0; i <= 4; i++)
+                            SlapWithPenalty(shipData->curSystem,
+                                         stellarData[shipData->targetStellar].govt, 3, -1);
+                        if ((stellarData[shipData->targetStellar].flags & kSpobIsStation) != 0)
+                            GetIndString(commResponseString, kTributeList, 0x1b);
+                        else
+                            GetIndString(commResponseString, kTributeList, 0x1a);
+                        dockPermission = 0;
+                        dockTarget = -1;
+                        ((char *)personData)[0x1e46f8] = 1;
+                        stellarData[shipData->targetStellar].dominated = 1;
+                        stellarData[shipData->targetStellar].daysDominated = 0;
+                        crashlog_mission_bit_set(
+                            "dominating stellar",
+                            (char *)stellarData[shipData->targetStellar].name, 1, shipData->targetStellar + kFirstResourceID,
+                            stellarData[shipData->targetStellar].onDominate);
+                        EvalMissionBitSetString(stellarData[shipData->targetStellar].onDominate);
+                        SetDialogGWorld(commDialog);
+                        RedrawDialog(commDialog);
                     }
+                    hasDemandedTribute = 1;
                 }
             }
-            SetDialogGWorld(commDialog);
-            InvalDialogItem(commDialog, 4);
-            InvalDialogItem(commDialog, 6);
         }
-    } while (!done);
-
-    backdrop.Release();
-    PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-    dialog.Close();
-    gSpeedMult = 0;
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->windRect);
-    ForeColor(blackColor);
-    SWSetPortToWindow(gSpriteWorld);
-    RedrawStatus(1);
+        SetDialogGWorld(commDialog);
+        InvalDialogItem(commDialog, 4);
+        InvalDialogItem(commDialog, 6);
+    }
 }
 
 // FUNCTION: EVNOVA 0x00481140
 // MAC: _PlanetCommFilter i386 0x000911a9 ppc 0x0009cc58
-Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean PlanetCommDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     int what;
@@ -931,6 +960,13 @@ Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return ButtonItemHit(PlanetCommButtons().Track(where), itemHit);
     }
     return 0;
+}
+
+} // namespace
+
+void DoPlanetCommDialog(short stellar)
+{
+    PlanetCommDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x004812c0
@@ -2200,13 +2236,22 @@ void PlunderDialogUpdate(void)
 #define kEscortDialogID 0x3fe
 #define kEscortPictID   0x2141
 
+namespace {
+
 // FUNCTION: EVNOVA 0x004853a0
 // MAC: _DoEscortDialog i386 0x000951ee ppc 0x000a0eb4
-void DoEscortDialog(ShipObj *ship)
-{
-    short itemHit;
-    Boolean done;
+/* Orders to an escort: release it, or upgrade or sell it on landing. */
+class EscortDialog final : public GameDialog {
+public:
+    void Run(ShipObj *ship);
 
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void EscortDialog::Run(ShipObj *ship)
+{
     if (ship == NULL)
         return;
 
@@ -2217,9 +2262,8 @@ void DoEscortDialog(ShipObj *ship)
     shipPic.Load(shipClass[commShip->type].shipyardPictID);
     ShowTheCursor();
 
-    Dialog dialog;
     Picture backdrop(commBackgroundPic);
-    dialog.Open(kEscortDialogID, EscortDialogUpdate, EscortFilter, &commDialog, DialogClose::NoFlash);
+    dialog.Open(kEscortDialogID, EscortDialogUpdate, Filter, &commDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
 
@@ -2235,7 +2279,6 @@ void DoEscortDialog(ShipObj *ship)
             canUpgradeEscort = 1;
     }
 
-    done = 0;
     commDialogMode = 2;
 
     SetDialogGWorld(commDialog);
@@ -2249,40 +2292,7 @@ void DoEscortDialog(ShipObj *ship)
     FlushEvents(4, 0);
     FlushEvents(5, 0);
 
-    do {
-        if (gQuit)
-            done = 1;
-
-        itemHit = dialog.Modal();
-
-        if (itemHit == 1) {
-            done = 1;
-        } else if (itemHit == 2) {
-            DestroyPartialFleetCargo(commShip->index);
-            commShip->parentShip = -1;
-            commShip->formerEscort = -1;
-            commShip->boarded = 1;
-            commShip->aiType = shipClass[commShip->type].inherentAI;
-            AISetup(commShip);
-            AIMakeShipLeave(commShip);
-            statusRedraw[kRedrawCargo] = 1;
-            done = 1;
-        } else if (itemHit == 3) {
-            if (canUpgradeEscort) {
-                commShip->upgradeOnLanding = (commShip->upgradeOnLanding == 0);
-                if (commShip->upgradeOnLanding)
-                    commShip->sellOnLanding = 0;
-            }
-        } else if (itemHit == 4) {
-            if (canSellEscort) {
-                commShip->sellOnLanding = (commShip->sellOnLanding == 0);
-                if (commShip->sellOnLanding)
-                    commShip->upgradeOnLanding = 0;
-            }
-        }
-
-        RedrawDialog(commDialog);
-    } while (!done);
+    Loop();
 
     shipPic.Release();
 
@@ -2304,11 +2314,42 @@ void DoEscortDialog(ShipObj *ship)
     SWSetPortToWindow(gSpriteWorld);
 }
 
-static constexpr KeyItem kEscortKeys[] = { { 'u', 3 }, { 's', 4 }, { 'r', 2 }, { 'c', 1 } };
+void EscortDialog::Hit(short item)
+{
+    if (item == 1) {
+        done = 1;
+    } else if (item == 2) {
+        DestroyPartialFleetCargo(commShip->index);
+        commShip->parentShip = -1;
+        commShip->formerEscort = -1;
+        commShip->boarded = 1;
+        commShip->aiType = shipClass[commShip->type].inherentAI;
+        AISetup(commShip);
+        AIMakeShipLeave(commShip);
+        statusRedraw[kRedrawCargo] = 1;
+        done = 1;
+    } else if (item == 3) {
+        if (canUpgradeEscort) {
+            commShip->upgradeOnLanding = (commShip->upgradeOnLanding == 0);
+            if (commShip->upgradeOnLanding)
+                commShip->sellOnLanding = 0;
+        }
+    } else if (item == 4) {
+        if (canSellEscort) {
+            commShip->sellOnLanding = (commShip->sellOnLanding == 0);
+            if (commShip->sellOnLanding)
+                commShip->upgradeOnLanding = 0;
+        }
+    }
+
+    RedrawDialog(commDialog);
+}
+
+constexpr KeyItem kEscortKeys[] = { { 'u', 3 }, { 's', 4 }, { 'r', 2 }, { 'c', 1 } };
 
 // FUNCTION: EVNOVA 0x00485840
 // MAC: _EscortFilter i386 0x000950e9 ppc 0x000a0d7c
-Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean EscortDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     int what;
@@ -2333,6 +2374,13 @@ Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return ButtonItemHit(EscortButtons().Track(where), itemHit);
     }
     return 0;
+}
+
+} // namespace
+
+void DoEscortDialog(ShipObj *ship)
+{
+    EscortDialog().Run(ship);
 }
 
 // FUNCTION: EVNOVA 0x00485970

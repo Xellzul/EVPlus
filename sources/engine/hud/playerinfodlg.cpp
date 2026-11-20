@@ -29,14 +29,13 @@
 #include "ai.h"
 #include "space.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "buttons.h"
 
 DialogPtr infoDialog;
 short selPlayerInfoMode;
 PicHandle playerInfoBackgroundPic[3];
 char playerInfoText[3][4096];
-
-EXTERN_C_BEGIN
 
 /* The player info dialog's background, stretched as one picture: the middle picture fills what the top
    and bottom ones leave (at least its own height). */
@@ -114,28 +113,36 @@ static void DrawPlayerInfoBackground(const Rect &port)
 #define kRetireQuestionIdx     0x123
 
 
+namespace {
+
 // FUNCTION: EVNOVA 0x00499c10
 // MAC: _DoPlayerInfoDialog i386 0x0005a00a ppc 0x00062244
-void DoPlayerInfoDialog(void)
+/* The player info dialog: the pilot's record in pages, picked by the page buttons or Tab. */
+class PlayerInfoDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void PlayerInfoDialog::Run()
 {
     Handle item;
-    short itemHit;
     Rect r;
     Rect buttonBox[2];
     short itemType;
     Rect saved;
     Rect box6;
-    unsigned char buf[256];
     short delta;
     short i;
     short tallest;
-    Boolean done;
     short height;
     short boxHeight;
     short dv;
     char *p;
 
-    done = 0;
     if (screenFaded != 0)
         return;
     if (shipData[0].jumpTimer != 0)
@@ -146,8 +153,7 @@ void DoPlayerInfoDialog(void)
         return;
     ShipStatsToSystemInfo();
     selPlayerInfoMode = 1;
-    Dialog dialog;
-    dialog.Open(kPlayerInfoDlogID, PlayerInfoDialogUpdate, PlayerInfoFilter, &infoDialog, DialogClose::NoFlash);
+    dialog.Open(kPlayerInfoDlogID, PlayerInfoDialogUpdate, Filter, &infoDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     Picture backdrops[3];
@@ -204,27 +210,7 @@ void DoPlayerInfoDialog(void)
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(infoDialog);
     PlayerInfoDialogUpdate();
-    do {
-        if (gQuit != 0)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == 1)
-            done = 1;
-        if (itemHit >= 2 && itemHit <= 5) {
-            selPlayerInfoMode = itemHit - 1;
-            RedrawDialog(infoDialog);
-        }
-        if (itemHit == 7 && selPlayerInfoMode == 2) {
-            if (PlayerHasJettisonableCargo()) {
-                GetIndString(buf, kGameStrList, kRetireQuestionIdx);
-                if (EVYesNoDialog(buf)) {
-                    JettisonCargo(1);
-                    done = 1;
-                }
-            }
-            RedrawDialog(infoDialog);
-        }
-    } while (done == 0);
+    Loop();
     SWSetPortToWindow(gSpriteWorld);
     while (KeyCheck(keyPrefs.playerInfo))
         BusyIdle();
@@ -236,11 +222,33 @@ void DoPlayerInfoDialog(void)
     FlushEvents(7, 0);
 }
 
-static constexpr short kPlayerInfoSlotItems[] = { 1, 2, 3, 4, 5, 7 };
+void PlayerInfoDialog::Hit(short item)
+{
+    unsigned char buf[256];
+
+    if (item == 1)
+        done = 1;
+    if (item >= 2 && item <= 5) {
+        selPlayerInfoMode = item - 1;
+        RedrawDialog(infoDialog);
+    }
+    if (item == 7 && selPlayerInfoMode == 2) {
+        if (PlayerHasJettisonableCargo()) {
+            GetIndString(buf, kGameStrList, kRetireQuestionIdx);
+            if (EVYesNoDialog(buf)) {
+                JettisonCargo(1);
+                done = 1;
+            }
+        }
+        RedrawDialog(infoDialog);
+    }
+}
+
+constexpr short kPlayerInfoSlotItems[] = { 1, 2, 3, 4, 5, 7 };
 
 // FUNCTION: EVNOVA 0x0049a3a0
 // MAC: _PlayerInfoFilter i386 0x00053ae9 ppc 0x0005c1b8
-Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean PlayerInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
     int c;
@@ -271,6 +279,13 @@ Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return ButtonItemHit(PlayerInfoButtons(selPlayerInfoMode).Track(where), kPlayerInfoSlotItems, itemHit);
     }
     return 0;
+}
+
+} // namespace
+
+void DoPlayerInfoDialog(void)
+{
+    PlayerInfoDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x0049a540
@@ -1088,5 +1103,3 @@ void SetupPlayerInfoText(void)
         strcat(playerInfoText[2], "\r");
     }
 }
-
-EXTERN_C_END

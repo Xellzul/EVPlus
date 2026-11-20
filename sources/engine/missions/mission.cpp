@@ -27,6 +27,7 @@
 #include "prototypes.h"
 #include "endianswap.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "buttons.h"
 #include "scrolltext.h"
 
@@ -223,23 +224,30 @@ void MissionPostLoadValidCheck(void)
 #define kItemMissionInfo         10
 #define kItemPlayerInfo           9
 
+namespace {
+
 // FUNCTION: EVNOVA 0x0043c470
 // MAC: _DoMissionDialog i386 0x000a37cf ppc 0x000af2b8
-void DoMissionDialog(void)
+/* The mission computer: the port's missions on offer, with the map, mission info and player info keys. */
+class MissionDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    Boolean accepted = 0;   /* the last accept took the mission */
+};
+
+void MissionDialog::Run()
 {
     Str255 msg;
-    short itemHit;
     Str255 numBuf;
     short i;
     short j;
     short count;
-    short savedTarget;
-    short savedRoute;
-    Boolean accepted;
-    Boolean done;
-    Dialog dialog;
 
-    done = 0;
     missionsOutside = 0;
     count = 0;
     for (i = 0; i < kMaxActiveMissions; i++) {
@@ -259,7 +267,7 @@ void DoMissionDialog(void)
             strcat((char *)msg, " ");
             StrcatIndCString((char *)msg, kGameStrList, kStrTooManyB);
             strncpy(textShowString, (char *)msg, kShowStringMax);
-            ShowTextDialog(0, 0, 0);
+            ShowTextDialog(0, 0);
             SetDialogGWorld(portDialog);
         }
         return;
@@ -279,12 +287,12 @@ void DoMissionDialog(void)
         } else {
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, kStrNoMissions);
-            ShowTextDialog(0, 0, 0);
+            ShowTextDialog(0, 0);
         }
         SetDialogGWorld(portDialog);
         return;
     }
-    dialog.Open(kMissionDlogID, MissionDialogUpdate, MissionFilter, &missionDialog, DialogClose::NoFlash);
+    dialog.Open(kMissionDlogID, MissionDialogUpdate, Filter, &missionDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(missionBackgroundPic[0]);
@@ -304,120 +312,287 @@ void DoMissionDialog(void)
         MungeBriefing(1, dockedPortMissions[0][selMissionListItem]);
     }
     MissionDialogUpdate();
-    do {
-        if (gQuit != 0)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == kItemAccept) {
-            FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-            FlushEvents(5, 0);
-            FlushEvents(1, 0);
-            FlushEvents(2, 0);
-            if (selMissionListItem != -1)
-                accepted = DoMissionAccept(
-                    dockedPortMissions[0][selMissionListItem]);
-            if (selMissionListItem != -1)
-                LoadDescription(briefingTextPtr,
-                                (dockedPortMissions[0][selMissionListItem]
-                                        + kMissionDescBase));
-            if (accepted != 0) {
-                reenterMissionDialog = 1;
-                done = 1;
-            } else if (selMissionListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                (dockedPortMissions[0][selMissionListItem]
-                                        + kMissionDescBase));
-                MungeBriefing(1,
-                              dockedPortMissions[0][selMissionListItem]);
-            }
-            MissionDialogUpdate();
-        }
-        if (itemHit == kItemDone) {
-            reenterMissionDialog = 0;
-            done = 1;
-        }
-        if (itemHit == kItemMap) {
-            FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-            FlushEvents(5, 0);
-            FlushEvents(1, 0);
-            FlushEvents(2, 0);
-            greenMissionSyst = -1;
-            multiArrowsOnSingleSystem = 1;
-            if (selMissionListItem != -1) {
-                if ((missionAvailData[dockedPortMissions[0][selMissionListItem]].flags
-                     & kMissionBriefingArrow) != 0) {
-                    if (briefMissionInfo[dockedPortMissions[0][selMissionListItem]].destStellar
-                        != -1) {
-                        greenMissionSyst = stellarData[
-                            briefMissionInfo[dockedPortMissions[0][selMissionListItem]].destStellar].system;
-                    } else if (briefMissionInfo[dockedPortMissions[0][selMissionListItem]].returnStellar
-                               != -1) {
-                        greenMissionSyst = stellarData[
-                            briefMissionInfo[dockedPortMissions[0][selMissionListItem]].returnStellar].system;
-                    }
-                }
-            }
-            savedTarget = shipData->targetStellar;
-            savedRoute = shipData->navTargetKind;
-            hypergateMapMode = 0;
-            SetDialogGWorld(missionDialog);
-            DoSystemMap();
-            greenMissionSyst = -1;
-            shipData->targetStellar = savedTarget;
-            shipData->navTargetKind = savedRoute;
-            statusRedraw[kRedrawNav] = 1;
-            DrawStatus();
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            PortDialogUpdate();
-            SetDialogGWorld(missionDialog);
-            RedrawDialog(missionDialog);
-        }
-        if (itemHit == kItemMissionInfo) {
-            FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-            FlushEvents(5, 0);
-            FlushEvents(1, 0);
-            FlushEvents(2, 0);
-            count = 0;
-            for (j = 0; j < kMaxActiveMissions; j++) {
-                if (currentMissionObjectives[j].active != 0) {
-                    if ((currentMissionObjectives[j].flags & kMissionHidden) == 0)
-                        count++;
-                }
-            }
-            if (count > 0)
-                DoMissionInfoDialog();
-            if (selMissionListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                (dockedPortMissions[0][selMissionListItem]
-                                        + kMissionDescBase));
-                MungeBriefing(1,
-                              dockedPortMissions[0][selMissionListItem]);
-            }
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            PortDialogUpdate();
-            SetDialogGWorld(missionDialog);
-            RedrawDialog(missionDialog);
-        }
-        if (itemHit == kItemPlayerInfo) {
-            FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-            FlushEvents(5, 0);
-            FlushEvents(1, 0);
-            FlushEvents(2, 0);
-            DoPlayerInfoDialog();
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            PortDialogUpdate();
-            SetDialogGWorld(missionDialog);
-            RedrawDialog(missionDialog);
-        }
-    } while (done == 0);
+    Loop();
     backdrop.Release();
-    if (missionList != NULL)
+    if (missionList != NULL) {
         LDispose(missionList);
+        missionList = NULL;
+    }
     dialog.Close();
     return;
+}
+
+void MissionDialog::Hit(short item)
+{
+    if (item == kItemAccept) {
+        FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+        FlushEvents(5, 0);
+        FlushEvents(1, 0);
+        FlushEvents(2, 0);
+        if (selMissionListItem != -1)
+            accepted = DoMissionAccept(
+                dockedPortMissions[0][selMissionListItem]);
+        if (selMissionListItem != -1)
+            LoadDescription(briefingTextPtr,
+                            (dockedPortMissions[0][selMissionListItem]
+                                    + kMissionDescBase));
+        if (accepted != 0) {
+            reenterMissionDialog = 1;
+            done = 1;
+        } else if (selMissionListItem != -1) {
+            LoadDescription(briefingTextPtr,
+                            (dockedPortMissions[0][selMissionListItem]
+                                    + kMissionDescBase));
+            MungeBriefing(1,
+                          dockedPortMissions[0][selMissionListItem]);
+        }
+        MissionDialogUpdate();
+    }
+    if (item == kItemDone) {
+        reenterMissionDialog = 0;
+        done = 1;
+    }
+    if (item == kItemMap) {
+        FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+        FlushEvents(5, 0);
+        FlushEvents(1, 0);
+        FlushEvents(2, 0);
+        greenMissionSyst = -1;
+        multiArrowsOnSingleSystem = 1;
+        if (selMissionListItem != -1) {
+            if ((missionAvailData[dockedPortMissions[0][selMissionListItem]].flags
+                 & kMissionBriefingArrow) != 0) {
+                if (briefMissionInfo[dockedPortMissions[0][selMissionListItem]].destStellar
+                    != -1) {
+                    greenMissionSyst = stellarData[
+                        briefMissionInfo[dockedPortMissions[0][selMissionListItem]].destStellar].system;
+                } else if (briefMissionInfo[dockedPortMissions[0][selMissionListItem]].returnStellar
+                           != -1) {
+                    greenMissionSyst = stellarData[
+                        briefMissionInfo[dockedPortMissions[0][selMissionListItem]].returnStellar].system;
+                }
+            }
+        }
+        OpenMapKeepingNav();
+        greenMissionSyst = -1;
+        statusRedraw[kRedrawNav] = 1;
+        DrawStatus();
+        RedrawAfterSubDialog(missionDialog);
+    }
+    if (item == kItemMissionInfo) {
+        FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+        FlushEvents(5, 0);
+        FlushEvents(1, 0);
+        FlushEvents(2, 0);
+        if (AnyMissionShown())
+            DoMissionInfoDialog();
+        if (selMissionListItem != -1) {
+            LoadDescription(briefingTextPtr,
+                            (dockedPortMissions[0][selMissionListItem]
+                                    + kMissionDescBase));
+            MungeBriefing(1,
+                          dockedPortMissions[0][selMissionListItem]);
+        }
+        RedrawAfterSubDialog(missionDialog);
+    }
+    if (item == kItemPlayerInfo) {
+        FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+        FlushEvents(5, 0);
+        FlushEvents(1, 0);
+        FlushEvents(2, 0);
+        PlayerInfoFromDialog(missionDialog);
+    }
+}
+
+static constexpr short kMissionSlotItems[] = { kItemAccept, kItemDone };
+
+// FUNCTION: EVNOVA 0x00440c90
+// MAC: _MissionFilter i386 0x0009f7a9 ppc 0x000ab3fc
+Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+{
+    EventKeyByte key;
+    Rect box;
+    short itemType;
+    Point where;
+    Point cell;
+    void *item;
+    short old;
+
+    if (LeaveRequested(kItemDone, itemHit))
+        return 1;
+    if ((int)ev->what == kKeyDown) {
+        if (QuickKeyHit(kItemMap, kItemPlayerInfo, kItemMissionInfo, itemHit))
+            return 1;
+        key = EventCharOf(ev);
+        key = tolower(key);
+        if (IsReturnChar(key) || key == kEscapeChar) {
+            *itemHit = kItemDone;
+            return 1;
+        }
+        if (key == 'l') {
+            *itemHit = kItemDone;
+            return 1;
+        }
+        if (key == 'a' && selMissionListItem != -1) {
+            *itemHit = kItemAccept;
+            return 1;
+        }
+        if (key == kTabChar) {
+            cell.h = 0;
+            cell.v = selMissionListItem;
+            if (selMissionListItem != -1) {
+                LSetSelect(0, cell, missionList);
+                GetListCellRect(&box, cell, missionList);
+                if (box.bottom >= (*missionList)->rView.bottom)
+                    LScroll(0, 1, missionList);
+            }
+            old = selMissionListItem;
+            selMissionListItem++;
+            if (selMissionListItem >= kMaxMissions
+                    || dockedPortMissions[missionsOutside][selMissionListItem] == -1)
+                selMissionListItem = 0;
+            strncpy(briefingTextPtr, "", 3);
+            if (selMissionListItem != -1) {
+                LoadDescription(briefingTextPtr,
+                                dockedPortMissions[missionsOutside][selMissionListItem]
+                                    + kMissionDescBase);
+                MungeBriefing(1,
+                              dockedPortMissions[missionsOutside][selMissionListItem]);
+                cell.v = selMissionListItem;
+                LSetSelect(1, cell, missionList);
+                LAutoScroll(missionList);
+            }
+            if (selMissionListItem != old) {
+                InvalDialogItem(missionDialog, 4);
+                InvalDialogItem(missionDialog, 5);
+            }
+            cell.v = selMissionListItem;
+            LSetSelect(1, cell, missionList);
+            LAutoScroll(missionList);
+        }
+        if (key == kDownArrowChar) {
+            if (selMissionListItem + 1 < kMaxMissions) {
+                cell.h = 0;
+                cell.v = selMissionListItem;
+                if (selMissionListItem != -1) {
+                    LSetSelect(0, cell, missionList);
+                    GetListCellRect(&box, cell, missionList);
+                    if (box.bottom >= (*missionList)->rView.bottom)
+                        LScroll(0, 1, missionList);
+                }
+                old = selMissionListItem;
+                selMissionListItem++;
+                if (dockedPortMissions[missionsOutside][selMissionListItem] == -1)
+                    selMissionListItem = 0;
+                strncpy(briefingTextPtr, "", 3);
+                if (selMissionListItem != -1) {
+                    LoadDescription(briefingTextPtr,
+                                    dockedPortMissions[missionsOutside]
+                                                      [selMissionListItem]
+                                        + kMissionDescBase);
+                    MungeBriefing(1,
+                                  dockedPortMissions[missionsOutside]
+                                                    [selMissionListItem]);
+                    cell.v = selMissionListItem;
+                    LSetSelect(1, cell, missionList);
+                    LAutoScroll(missionList);
+                }
+                if (selMissionListItem != old) {
+                    InvalDialogItem(missionDialog, 4);
+                    InvalDialogItem(missionDialog, 5);
+                }
+            }
+        }
+        if (key == kUpArrowChar) {
+            if (selMissionListItem == -1) {
+                selMissionListItem = kMaxMissions - 1;
+                while (dockedPortMissions[missionsOutside]
+                                         [selMissionListItem - 1] == -1
+                       && selMissionListItem > 1)
+                    selMissionListItem--;
+            }
+            if (selMissionListItem != -1) {
+                cell.h = 0;
+                cell.v = selMissionListItem;
+                if (selMissionListItem != -1) {
+                    LSetSelect(0, cell, missionList);
+                    GetListCellRect(&box, cell, missionList);
+                    if (box.top <= (*missionList)->rView.top)
+                        LScroll(0, -1, missionList);
+                }
+                old = selMissionListItem;
+                selMissionListItem--;
+                if (selMissionListItem < 0) {
+                    selMissionListItem = kMaxMissions - 1;
+                    while (dockedPortMissions[missionsOutside]
+                                             [selMissionListItem] == -1
+                           && selMissionListItem > 0)
+                        selMissionListItem--;
+                } else if (dockedPortMissions[missionsOutside]
+                                             [selMissionListItem] == -1) {
+                    selMissionListItem = -1;
+                }
+                strncpy(briefingTextPtr, "", 3);
+                if (selMissionListItem != -1) {
+                    LoadDescription(briefingTextPtr,
+                                    dockedPortMissions[missionsOutside]
+                                                      [selMissionListItem]
+                                        + kMissionDescBase);
+                    MungeBriefing(1,
+                                  dockedPortMissions[missionsOutside]
+                                                    [selMissionListItem]);
+                    cell.v = selMissionListItem;
+                    LSetSelect(1, cell, missionList);
+                    LAutoScroll(missionList);
+                }
+                if (selMissionListItem != old) {
+                    InvalDialogItem(missionDialog, 4);
+                    InvalDialogItem(missionDialog, 5);
+                }
+            }
+        }
+    }
+    if ((int)ev->what == kMouseDown) {
+        where = ev->where;
+        GetDialogItem(missionDialog, 2, &itemType, (Handle *)&item, &box);
+        if (PtInRect(where.h, where.v, &box)) {
+            LClick(where, ev->modifiers, missionList);
+            old = selMissionListItem;
+            selMissionListItem = -1;
+            cell.h = 0;
+            for (cell.v = 0; cell.v < (*missionList)->dataBounds.bottom; cell.v++) {
+                if (LGetSelect(0, &cell, missionList)) {
+                    selMissionListItem = cell.v;
+                    break;
+                }
+            }
+            strncpy(briefingTextPtr, "", 3);
+            if (selMissionListItem != -1) {
+                LoadDescription(briefingTextPtr,
+                                dockedPortMissions[missionsOutside][selMissionListItem]
+                                    + kMissionDescBase);
+                MungeBriefing(1,
+                              dockedPortMissions[missionsOutside][selMissionListItem]);
+            }
+            if (selMissionListItem != old) {
+                InvalDialogItem(missionDialog, 4);
+                InvalDialogItem(missionDialog, 5);
+            }
+        }
+        GetDialogItem(missionDialog, 3, &itemType, (Handle *)&item, &box);
+        if (PtInRect(where.h, where.v, &box))
+            LClick(where, ev->modifiers, missionList);
+        MissionDialogUpdate();
+        return ButtonItemHit(MissionButtons().Track(where), kMissionSlotItems, itemHit);
+    }
+    return 0;
+}
+
+} // namespace
+
+void DoMissionDialog(void)
+{
+    MissionDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x0043cc20
@@ -1379,13 +1554,13 @@ Boolean DoMissionAccept(short mission)
         if (ShipTotalHolds() < briefMissionInfo[mission].cargoUnits) {
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, kStrNoHoldsAtAll);
-            ShowTextDialog(0, 0, 0);
+            ShowTextDialog(0, 0);
             return 0;
         }
         if (TotalMissionCargoSpace() < briefMissionInfo[mission].cargoUnits) {
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, kStrHoldsAreFull);
-            ShowTextDialog(0, 0, 0);
+            ShowTextDialog(0, 0);
             return 0;
         }
     }
@@ -1434,7 +1609,7 @@ Boolean DoMissionAccept(short mission)
         }
         if (portDialog != NULL && !offeringFromShip)
             PortDialogUpdate();
-        ShowTextDialog(1, 0, 1);
+        ShowTextDialog(1, 1);
         greenMissionSyst = -1;
     }
     if (currentMissions[slot].pickupMode == 0) {
@@ -1444,7 +1619,7 @@ Boolean DoMissionAccept(short mission)
             LoadDescription(briefingTextPtr, currentMissions[slot].loadCargoDesc);
             MungeBriefing(0, slot);
             strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
-            ShowTextDialog(0, 0, 1);
+            ShowTextDialog(0, 1);
             RefreshSAT();
         }
     }
@@ -1698,13 +1873,13 @@ Boolean DoMissionCargoPickup(short unused, short needed)
         if (ShipTotalHolds() < needed) {
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, 357);
-            ShowTextDialog(0, 0, 0);
+            ShowTextDialog(0, 0);
             return 0;
         }
         if (TotalMissionCargoSpace() < needed) {
             strcpy(textShowString, "");
             StrcatIndCString(textShowString, kGameStrList, 358);
-            ShowTextDialog(0, 0, 0);
+            ShowTextDialog(0, 0);
             return 0;
         }
     }
@@ -1725,7 +1900,7 @@ void DoMissionSuccess(short mission)
         LoadDescription(briefingTextPtr, currentMissions[mission].compDesc);
         MungeBriefing(0, mission);
         strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
-        ShowTextDialog(0, 0, 1);
+        ShowTextDialog(0, 1);
     }
     currentMissionObjectives[mission].active = 0;
     crashlog_mission_bit_set("mission success", currentMissions[mission].name, 1,
@@ -1827,7 +2002,7 @@ void DoMissionFailure(short mission)
         LoadDescription(briefingTextPtr, currentMissions[mission].failDesc);
         MungeBriefing(0, mission);
         strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
-        ShowTextDialog(0, 0, 1);
+        ShowTextDialog(0, 1);
     }
     AbortMission(mission, 0);
     lastMissionStellar = -1;
@@ -1882,204 +2057,6 @@ void QuickMissionFailure(short mission)
 /* the port's scrolling list */
 
 #define kListCaptionIdx  0x167
-
-static constexpr short kMissionSlotItems[] = { kItemAccept, kItemDone };
-
-/* the port's list entry points */
-// FUNCTION: EVNOVA 0x00440c90
-// MAC: _MissionFilter i386 0x0009f7a9 ppc 0x000ab3fc
-Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
-{
-    EventKeyByte key;
-    Rect box;
-    short itemType;
-    Point where;
-    Point cell;
-    void *item;
-    short old;
-
-    if (absquatulateStr[0] != 0) {
-        *itemHit = kItemDone;
-        return 1;
-    }
-    if ((int)ev->what == kKeyDown) {
-        QuickKeyCheckHandler();
-        if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
-            *itemHit = kItemMap;
-            return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.playerInfo) && infoDialog == NULL) {
-            *itemHit = kItemPlayerInfo;
-            return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
-            *itemHit = kItemMissionInfo;
-            return 1;
-        }
-        key = EventCharOf(ev);
-        key = tolower(key);
-        if (IsReturnChar(key) || key == kEscapeChar) {
-            *itemHit = kItemDone;
-            return 1;
-        }
-        if (key == 'l') {
-            *itemHit = kItemDone;
-            return 1;
-        }
-        if (key == 'a' && selMissionListItem != -1) {
-            *itemHit = kItemAccept;
-            return 1;
-        }
-        if (key == kTabChar) {
-            cell.h = 0;
-            cell.v = selMissionListItem;
-            if (selMissionListItem != -1) {
-                LSetSelect(0, cell, missionList);
-                GetListCellRect(&box, cell, missionList);
-                if (box.bottom >= (*missionList)->rView.bottom)
-                    LScroll(0, 1, missionList);
-            }
-            old = selMissionListItem;
-            selMissionListItem++;
-            if (selMissionListItem >= kMaxMissions
-                    || dockedPortMissions[missionsOutside][selMissionListItem] == -1)
-                selMissionListItem = 0;
-            strncpy(briefingTextPtr, "", 3);
-            if (selMissionListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                dockedPortMissions[missionsOutside][selMissionListItem]
-                                    + kMissionDescBase);
-                MungeBriefing(1,
-                              dockedPortMissions[missionsOutside][selMissionListItem]);
-                cell.v = selMissionListItem;
-                LSetSelect(1, cell, missionList);
-                LAutoScroll(missionList);
-            }
-            if (selMissionListItem != old) {
-                InvalDialogItem(missionDialog, 4);
-                InvalDialogItem(missionDialog, 5);
-            }
-            cell.v = selMissionListItem;
-            LSetSelect(1, cell, missionList);
-            LAutoScroll(missionList);
-        }
-        if (key == kDownArrowChar) {
-            if (selMissionListItem + 1 < kMaxMissions) {
-                cell.h = 0;
-                cell.v = selMissionListItem;
-                if (selMissionListItem != -1) {
-                    LSetSelect(0, cell, missionList);
-                    GetListCellRect(&box, cell, missionList);
-                    if (box.bottom >= (*missionList)->rView.bottom)
-                        LScroll(0, 1, missionList);
-                }
-                old = selMissionListItem;
-                selMissionListItem++;
-                if (dockedPortMissions[missionsOutside][selMissionListItem] == -1)
-                    selMissionListItem = 0;
-                strncpy(briefingTextPtr, "", 3);
-                if (selMissionListItem != -1) {
-                    LoadDescription(briefingTextPtr,
-                                    dockedPortMissions[missionsOutside]
-                                                      [selMissionListItem]
-                                        + kMissionDescBase);
-                    MungeBriefing(1,
-                                  dockedPortMissions[missionsOutside]
-                                                    [selMissionListItem]);
-                    cell.v = selMissionListItem;
-                    LSetSelect(1, cell, missionList);
-                    LAutoScroll(missionList);
-                }
-                if (selMissionListItem != old) {
-                    InvalDialogItem(missionDialog, 4);
-                    InvalDialogItem(missionDialog, 5);
-                }
-            }
-        }
-        if (key == kUpArrowChar) {
-            if (selMissionListItem == -1) {
-                selMissionListItem = kMaxMissions - 1;
-                while (dockedPortMissions[missionsOutside]
-                                         [selMissionListItem - 1] == -1
-                       && selMissionListItem > 1)
-                    selMissionListItem--;
-            }
-            if (selMissionListItem != -1) {
-                cell.h = 0;
-                cell.v = selMissionListItem;
-                if (selMissionListItem != -1) {
-                    LSetSelect(0, cell, missionList);
-                    GetListCellRect(&box, cell, missionList);
-                    if (box.top <= (*missionList)->rView.top)
-                        LScroll(0, -1, missionList);
-                }
-                old = selMissionListItem;
-                selMissionListItem--;
-                if (selMissionListItem < 0) {
-                    selMissionListItem = kMaxMissions - 1;
-                    while (dockedPortMissions[missionsOutside]
-                                             [selMissionListItem] == -1
-                           && selMissionListItem > 0)
-                        selMissionListItem--;
-                } else if (dockedPortMissions[missionsOutside]
-                                             [selMissionListItem] == -1) {
-                    selMissionListItem = -1;
-                }
-                strncpy(briefingTextPtr, "", 3);
-                if (selMissionListItem != -1) {
-                    LoadDescription(briefingTextPtr,
-                                    dockedPortMissions[missionsOutside]
-                                                      [selMissionListItem]
-                                        + kMissionDescBase);
-                    MungeBriefing(1,
-                                  dockedPortMissions[missionsOutside]
-                                                    [selMissionListItem]);
-                    cell.v = selMissionListItem;
-                    LSetSelect(1, cell, missionList);
-                    LAutoScroll(missionList);
-                }
-                if (selMissionListItem != old) {
-                    InvalDialogItem(missionDialog, 4);
-                    InvalDialogItem(missionDialog, 5);
-                }
-            }
-        }
-    }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
-        GetDialogItem(missionDialog, 2, &itemType, (Handle *)&item, &box);
-        if (PtInRect(where.h, where.v, &box)) {
-            LClick(where, ev->modifiers, missionList);
-            old = selMissionListItem;
-            selMissionListItem = -1;
-            cell.h = 0;
-            for (cell.v = 0; cell.v < (*missionList)->dataBounds.bottom; cell.v++) {
-                if (LGetSelect(0, &cell, missionList)) {
-                    selMissionListItem = cell.v;
-                    break;
-                }
-            }
-            strncpy(briefingTextPtr, "", 3);
-            if (selMissionListItem != -1) {
-                LoadDescription(briefingTextPtr,
-                                dockedPortMissions[missionsOutside][selMissionListItem]
-                                    + kMissionDescBase);
-                MungeBriefing(1,
-                              dockedPortMissions[missionsOutside][selMissionListItem]);
-            }
-            if (selMissionListItem != old) {
-                InvalDialogItem(missionDialog, 4);
-                InvalDialogItem(missionDialog, 5);
-            }
-        }
-        GetDialogItem(missionDialog, 3, &itemType, (Handle *)&item, &box);
-        if (PtInRect(where.h, where.v, &box))
-            LClick(where, ev->modifiers, missionList);
-        MissionDialogUpdate();
-        return ButtonItemHit(MissionButtons().Track(where), kMissionSlotItems, itemHit);
-    }
-    return 0;
-}
 
 /* The mac's TruncString(width, title, smTruncEnd) for the mission title: cut the end and add an
    ellipsis until it fits. Done after MungeBriefing, so expanded tags fit too (the mac truncated
@@ -2466,19 +2443,34 @@ static ScrollingText OfferText()
 }
 
 
+namespace {
+
 // FUNCTION: EVNOVA 0x00442510
 // MAC: _OfferOneMission i386 0x000a21ac ppc 0x000adfd8
-short OfferOneMission(short mission)
+/* A mission briefing to accept or, unless the mission says otherwise, refuse. */
+class SingleMissionDialog final : public GameDialog {
+public:
+    short Run(short offered);   /* 1 accepted, 0 refused, invalid or not opened, else -1 */
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    short mission;
+    Boolean refused = 0;
+    Boolean accepted = 0;
+    short refuseDescID;     /* the desc shown on refusal, -1 none */
+    char setString[256];    /* the bit-set expression run on refusal */
+    Boolean savedUp;        /* the scroll buttons' last drawn state */
+    Boolean savedDown;
+};
+
+short SingleMissionDialog::Run(short offered)
 {
     Rect box;
-    short refuseDescID;
-    Boolean refused;
-    Boolean done;
     int32_t missionResID;
     void *itemHandle;
     short itemType;
-    short itemHit;
-    char setString[256];
     Rect *wr;
     short i;
     short itemHeight;
@@ -2486,19 +2478,11 @@ short OfferOneMission(short mission)
     short floatZero;
     short widest;
     short otherWidth;
-    short savedTarget;
-    short savedRoute;
     short shown;
     unsigned char labelChar;
-    Boolean accepted;
-    Boolean savedUp;
-    Boolean savedDown;
-    Dialog dialog;
     Picture backdrops[kMissionPictCount];
 
-    refused = 0;
-    accepted = 0;
-    done = 0;
+    mission = offered;
     if (mission < 0 || mission >= kMaxMissions)
         return 0;
 
@@ -2540,7 +2524,7 @@ short OfferOneMission(short mission)
     strcat(briefingTextPtr, "\r");
 
     dialog.Open(descResourcePictId >= 128 ? kWideDlogID : kNarrowDlogID, SingleMissionDialogUpdate,
-                SingleMissionFilter, &missionDialog, DialogClose::NoFlash);
+                Filter, &missionDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return 0;
 
@@ -2691,124 +2675,7 @@ short OfferOneMission(short mission)
     RedrawDialog(missionDialog);
     SingleMissionDialogUpdate();
 
-    do {
-        if (gQuit != 0)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (canRefuseMission != 0) {
-            if (itemHit == kItemAccept) {
-                FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-                FlushEvents(5, 0);
-                FlushEvents(1, 0);
-                FlushEvents(2, 0);
-                SetDialogVisible(missionDialog, 0);
-                accepted = DoMissionAccept(mission);
-                SingleMissionDialogUpdate();
-                LoadDescription(briefingTextPtr, mission + kMissionDescBase);
-                MungeBriefing(1, mission);
-                SetDialogGWorld(missionDialog);
-                done = 1;
-            }
-            if (itemHit == kItemRefuse) {
-                if (refuseDescID != -1) {
-                    SetDialogVisible(missionDialog, 0);
-                    strncpy(briefingTextPtr, "", 3);
-                    LoadDescription(briefingTextPtr, refuseDescID);
-                    MungeBriefing(0, -1);
-                    strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
-                    ShowTextDialog(0, 0, 1);
-                }
-                crashlog_mission_bit_set("refusing mission", NULL, 0,
-                                         mission + kFirstResourceID, setString);
-                EvalMissionBitSetString(setString);
-                refused = 1;
-                done = 1;
-            }
-        } else if (itemHit == kItemAccept || itemHit == kItemRefuse) {
-            FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-            FlushEvents(5, 0);
-            FlushEvents(1, 0);
-            FlushEvents(2, 0);
-            accepted = DoMissionAccept(mission);
-            LoadDescription(briefingTextPtr, mission + kMissionDescBase);
-            MungeBriefing(1, mission);
-            SingleMissionDialogUpdate();
-            done = 1;
-        }
-        if (itemHit == kBriefItemMap) {
-            FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-            FlushEvents(5, 0);
-            FlushEvents(1, 0);
-            FlushEvents(2, 0);
-            greenMissionSyst = -1;
-            multiArrowsOnSingleSystem = 1;
-            if ((missionAvailData[mission].flags & kMissionBriefingArrow) != 0) {
-                if (briefMissionInfo[mission].destStellar != -1) {
-                    greenMissionSyst =
-                        stellarData[briefMissionInfo[mission].destStellar].system;
-                } else {
-                    if (briefMissionInfo[mission].returnStellar != -1)
-                        greenMissionSyst =
-                            stellarData[briefMissionInfo[mission].returnStellar].system;
-                }
-            }
-            savedTarget = shipData->targetStellar;
-            savedRoute = shipData->navTargetKind;
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedTarget;
-            shipData->navTargetKind = savedRoute;
-            greenMissionSyst = -1;
-            if (offeringFromShip == 0 && playerIsLanded != 0) {
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                PortDialogUpdate();
-            }
-            SetDialogGWorld(missionDialog);
-            RedrawDialog(missionDialog);
-        }
-        if (itemHit == kBriefItemPlayerInfo) {
-            FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-            FlushEvents(5, 0);
-            FlushEvents(1, 0);
-            FlushEvents(2, 0);
-            DoPlayerInfoDialog();
-            if (offeringFromShip == 0 && playerIsLanded != 0) {
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                PortDialogUpdate();
-            }
-            SetDialogGWorld(missionDialog);
-            RedrawDialog(missionDialog);
-        }
-        if (itemHit == kBriefItemMissionInfo) {
-            widest = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active != 0) {
-                    if ((currentMissionObjectives[i].flags & kMissionHidden) == 0)
-                        widest++;
-                }
-            }
-            if (widest > 0) {
-                FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
-                FlushEvents(5, 0);
-                FlushEvents(1, 0);
-                FlushEvents(2, 0);
-                DoMissionInfoDialog();
-                LoadDescription(briefingTextPtr, mission + kMissionDescBase);
-                MungeBriefing(1, mission);
-                if (offeringFromShip == 0 && playerIsLanded != 0) {
-                    SetDialogGWorld(portDialog);
-                    RedrawDialog(portDialog);
-                    PortDialogUpdate();
-                }
-                SetDialogGWorld(missionDialog);
-                RedrawDialog(missionDialog);
-            }
-        }
-        OfferText().Step(itemHit);
-        OfferText().InvalidateChanged(savedUp, savedDown);
-    } while (done == 0);
+    Loop();
 
     if (descMovieName[0] != 0 && settings.noMovies == 0
         && (descFlags & kDescMovieAfter) != 0)
@@ -2835,6 +2702,159 @@ short OfferOneMission(short mission)
     if (accepted != 0)
         return 1;
     return -1;
+}
+
+/* After a sub-dialog closed over the offer: the spaceport when landed, then the offer. Not UpdateAllPortDialogs:
+   it would pick the mission BBS update for missionDialog after the BBS was closed. */
+static void RedrawOfferAfterSubDialog()
+{
+    if (portDialog != NULL) {
+        SetDialogGWorld(portDialog);
+        RedrawDialog(portDialog);
+        PortDialogUpdate();
+    }
+    SetDialogGWorld(missionDialog);
+    RedrawDialog(missionDialog);
+}
+
+void SingleMissionDialog::Hit(short item)
+{
+    if (canRefuseMission != 0) {
+        if (item == kItemAccept) {
+            FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+            FlushEvents(5, 0);
+            FlushEvents(1, 0);
+            FlushEvents(2, 0);
+            SetDialogVisible(missionDialog, 0);
+            accepted = DoMissionAccept(mission);
+            SingleMissionDialogUpdate();
+            LoadDescription(briefingTextPtr, mission + kMissionDescBase);
+            MungeBriefing(1, mission);
+            SetDialogGWorld(missionDialog);
+            done = 1;
+        }
+        if (item == kItemRefuse) {
+            if (refuseDescID != -1) {
+                SetDialogVisible(missionDialog, 0);
+                strncpy(briefingTextPtr, "", 3);
+                LoadDescription(briefingTextPtr, refuseDescID);
+                MungeBriefing(0, -1);
+                strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+                ShowTextDialog(0, 1);
+            }
+            crashlog_mission_bit_set("refusing mission", NULL, 0,
+                                     mission + kFirstResourceID, setString);
+            EvalMissionBitSetString(setString);
+            refused = 1;
+            done = 1;
+        }
+    } else if (item == kItemAccept || item == kItemRefuse) {
+        FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+        FlushEvents(5, 0);
+        FlushEvents(1, 0);
+        FlushEvents(2, 0);
+        accepted = DoMissionAccept(mission);
+        LoadDescription(briefingTextPtr, mission + kMissionDescBase);
+        MungeBriefing(1, mission);
+        SingleMissionDialogUpdate();
+        done = 1;
+    }
+    if (item == kBriefItemMap) {
+        FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+        FlushEvents(5, 0);
+        FlushEvents(1, 0);
+        FlushEvents(2, 0);
+        greenMissionSyst = -1;
+        multiArrowsOnSingleSystem = 1;
+        if ((missionAvailData[mission].flags & kMissionBriefingArrow) != 0) {
+            if (briefMissionInfo[mission].destStellar != -1) {
+                greenMissionSyst =
+                    stellarData[briefMissionInfo[mission].destStellar].system;
+            } else {
+                if (briefMissionInfo[mission].returnStellar != -1)
+                    greenMissionSyst =
+                        stellarData[briefMissionInfo[mission].returnStellar].system;
+            }
+        }
+        OpenMapKeepingNav();
+        greenMissionSyst = -1;
+        RedrawOfferAfterSubDialog();
+    }
+    if (item == kBriefItemPlayerInfo) {
+        FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+        FlushEvents(5, 0);
+        FlushEvents(1, 0);
+        FlushEvents(2, 0);
+        DoPlayerInfoDialog();
+        RedrawOfferAfterSubDialog();
+    }
+    if (item == kBriefItemMissionInfo && AnyMissionShown()) {
+        FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
+        FlushEvents(5, 0);
+        FlushEvents(1, 0);
+        FlushEvents(2, 0);
+        DoMissionInfoDialog();
+        LoadDescription(briefingTextPtr, mission + kMissionDescBase);
+        MungeBriefing(1, mission);
+        RedrawOfferAfterSubDialog();
+    }
+    OfferText().Step(item);
+    OfferText().InvalidateChanged(savedUp, savedDown);
+}
+
+static constexpr short kSingleMissionSlotItems[] = { kItemAccept, kItemRefuse, -1, -1 };
+
+// FUNCTION: EVNOVA 0x00447170
+// MAC: _SingleMissionFilter i386 0x00098d9a ppc 0x000a4984
+Boolean SingleMissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+{
+    Point where;
+    int acceptKey;
+    int refuseKey;
+    EventChar c;
+    int what;
+
+    if (QuickKeyHit(kBriefItemMap, kBriefItemPlayerInfo, kBriefItemMissionInfo, itemHit))
+        return 1;
+    what = ev->what;
+    if ((int)ev->what == kKeyDown) {
+        c = EventCharOf(ev);
+        c = tolower(c);
+        if (IsReturnChar(c)) {
+            *itemHit = kItemAccept;
+            return 1;
+        }
+        refuseKey = missionButtonLabel[1][1];
+        acceptKey = missionButtonLabel[0][1];
+        if (tolower(acceptKey) != tolower(refuseKey)) {
+            if (c == tolower(acceptKey)) {
+                *itemHit = kItemAccept;
+                return 1;
+            }
+            if (canRefuseMission != 0 && c == tolower(refuseKey)) {
+                *itemHit = kItemRefuse;
+                return 1;
+            }
+        }
+        if (OfferText().Key(c, itemHit))
+            return 1;
+    }
+    if (what == kMouseDown) {
+        where = ev->where;
+        SingleMissionButtons buttons;
+        if (OfferText().Press(where, itemHit, buttons))
+            return 1;
+        SingleMissionDialogUpdate();
+        return ButtonItemHit(buttons.Track(where), kSingleMissionSlotItems, itemHit);
+    }
+    return 0;
+}
+
+} // namespace
+
+short OfferOneMission(short mission)
+{
+    return SingleMissionDialog().Run(mission);
 }
 
 // FUNCTION: EVNOVA 0x00443760
@@ -2905,7 +2925,7 @@ void MissionLandCargoCheck(short slot, short stel)
                     LoadDescription(briefingTextPtr, currentMissions[slot].loadCargoDesc);
                     MungeBriefing(0, slot);
                     strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
-                    ShowTextDialog(0, 0, 1);
+                    ShowTextDialog(0, 1);
                 }
             }
         } else {
@@ -2922,7 +2942,7 @@ void MissionLandCargoCheck(short slot, short stel)
                 LoadDescription(briefingTextPtr, currentMissions[slot].dropCargoDesc);
                 MungeBriefing(0, slot);
                 strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
-                ShowTextDialog(0, 0, 1);
+                ShowTextDialog(0, 1);
                 ResetPlayerPrecalcedValues();
             }
             statusRedraw[kRedrawCargo] = 1;
@@ -2942,7 +2962,7 @@ void MissionLandCargoCheck(short slot, short stel)
                     LoadDescription(briefingTextPtr, currentMissions[slot].dropCargoDesc);
                     MungeBriefing(0, slot);
                     strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
-                    ShowTextDialog(0, 0, 1);
+                    ShowTextDialog(0, 1);
                 }
                 statusRedraw[kRedrawCargo] = 1;
             }
@@ -3077,7 +3097,7 @@ void MissionObjectivesCheck(short slot)
             LoadDescription(briefingTextPtr, currentMissions[slot].shipDoneDesc);
             MungeBriefing(0, slot);
             strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
-            ShowTextDialog(0, 0, 1);
+            ShowTextDialog(0, 1);
         }
         if (currentMissions[slot].shipGoal != kMissionGoalNone) {
             crashlog_mission_bit_set("mission ship goal complete",
@@ -3610,26 +3630,26 @@ void SetupMissionInfoList(void)
 #define kMissionInfoDlogID   0x3f4
 #define kMissionInfoPictID   0x2145
 
+namespace {
+
 // FUNCTION: EVNOVA 0x00446150
 // MAC: _DoMissionInfoDialog i386 0x0009e19b ppc 0x000a9dd4
-void DoMissionInfoDialog(void)
-{
-    Point cell;
-    short itemHit;
-    short i;
-    short count;
-    short n;
-    short stellar;
-    short savedX;
-    short savedY;
-    Boolean done;
-    Dialog dialog;
+/* The player's active missions: their briefings, the map to one, and aborting one. */
+class MissionInfoDialog final : public GameDialog {
+public:
+    void Run();
 
-    done = 0;
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void MissionInfoDialog::Run()
+{
     if (screenFaded != 0)
         return;
     PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-    dialog.Open(kMissionInfoDlogID, MissionInfoDialogUpdate, MissionInfoFilter, &missionInfoDialog,
+    dialog.Open(kMissionInfoDlogID, MissionInfoDialogUpdate, Filter, &missionInfoDialog,
                 DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
@@ -3646,108 +3666,103 @@ void DoMissionInfoDialog(void)
     showAbortMissionButton =
         currentMissions[activeMissions[selMissionInfoListItem]].canAbort;
     MissionInfoDialogUpdate();
-    do {
-        if (gQuit != 0)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == 1)
-            done = 1;
-        if (itemHit == 6 && missionDialog == NULL) {
-            greenMissionSyst = -1;
-            multiArrowsOnSingleSystem = 0;
-            if (selMissionInfoListItem != -1) {
-                if ((currentMissions[activeMissions[selMissionInfoListItem]].flags & kMissionBriefingArrow) != 0) {
-                    if (currentMissions[activeMissions[selMissionInfoListItem]].travelStellar != -1) {
-                        stellar = currentMissions[activeMissions[selMissionInfoListItem]].travelStellar;
-                        greenMissionSyst = stellarData[stellar].system;
-                    } else if (currentMissions[activeMissions[selMissionInfoListItem]].returnStellar != -1) {
-                        stellar = currentMissions[activeMissions[selMissionInfoListItem]].returnStellar;
-                        greenMissionSyst = stellarData[stellar].system;
-                    }
-                }
-            }
-            savedX = shipData[0].targetStellar;
-            savedY = shipData[0].navTargetKind;
-            hypergateMapMode = 0;
-            DoSystemMap();
-            if (missionDialog != NULL) {
-                shipData[0].targetStellar = savedX;
-                shipData[0].navTargetKind = savedY;
-            }
-            if (portDialog != NULL) {
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                PortDialogUpdate();
-            }
-            greenMissionSyst = -1;
-            multiArrowsOnSingleSystem = 1;
-            SetDialogGWorld(missionInfoDialog);
-            RedrawDialog(missionInfoDialog);
-            MissionInfoDialogUpdate();
-        }
-        if (itemHit == 5) {
-            if (selMissionInfoListItem == -1) {
-                PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-                MissionInfoButtons().Draw(-1);
-            } else {
-                if (currentMissions[activeMissions[selMissionInfoListItem]].canAbort != 0) {
-                    if ((currentMissions[activeMissions[selMissionInfoListItem]].flags & kMissionAbortPenalty) != 0
-                        && currentMissions[activeMissions[selMissionInfoListItem]].compGovt != -1) {
-                        for (i = 0; i < kMaxSystems; i++) {
-                            if (systemData[i].govt == currentMissions[activeMissions[selMissionInfoListItem]].compGovt)
-                                playerRecord[i] -=
-                                    currentMissions[activeMissions[selMissionInfoListItem]].compReward * 5;
-                        }
-                    }
-                    AbortMission(activeMissions[selMissionInfoListItem], 1);
-                    count = 0;
-                    for (i = 0; i < kMaxActiveMissions; i++) {
-                        if (currentMissionObjectives[i].active != 0)
-                            count++;
-                    }
-                    if (count > 0) {
-                        if (missionInfoList != NULL)
-                            LDispose(missionInfoList);
-                        SetupMissionInfoList();
-                        selMissionInfoListItem = -1;
-                        RedrawDialog(missionInfoDialog);
-                        cell.h = cell.v = 0;
-                        while (cell.v < (*missionInfoList)->dataBounds.bottom) {
-                            LSetSelect(0, cell, missionInfoList);
-                            cell.v++;
-                        }
-                        LAutoScroll(missionInfoList);
-                        for (i = 0; i < kMaxActiveMissions; i++)
-                            activeMissions[i] = -1;
-                        n = 0;
-                        for (i = 0; i < kMaxActiveMissions; i++) {
-                            if (currentMissionObjectives[i].active != 0) {
-                                activeMissions[n] = i;
-                                n++;
-                            }
-                        }
-                    } else {
-                        done = 1;
-                    }
-                    DrawStatusCargo();
-                    SetDialogGWorld(missionInfoDialog);
-                }
-            }
-        }
-    } while (done == 0);
-    if (missionInfoList != NULL)
+    Loop();
+    if (missionInfoList != NULL) {
         LDispose(missionInfoList);
+        missionInfoList = NULL;
+    }
     dialog.Close();
     backdrop.Release();
     RedrawDialogs(1);
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
 }
 
+void MissionInfoDialog::Hit(short item)
+{
+    Point cell;
+    short i;
+    short count;
+    short n;
+    short stellar;
+
+    if (item == 1)
+        done = 1;
+    if (item == 6 && missionDialog == NULL) {
+        greenMissionSyst = -1;
+        multiArrowsOnSingleSystem = 0;
+        if (selMissionInfoListItem != -1) {
+            if ((currentMissions[activeMissions[selMissionInfoListItem]].flags & kMissionBriefingArrow) != 0) {
+                if (currentMissions[activeMissions[selMissionInfoListItem]].travelStellar != -1) {
+                    stellar = currentMissions[activeMissions[selMissionInfoListItem]].travelStellar;
+                    greenMissionSyst = stellarData[stellar].system;
+                } else if (currentMissions[activeMissions[selMissionInfoListItem]].returnStellar != -1) {
+                    stellar = currentMissions[activeMissions[selMissionInfoListItem]].returnStellar;
+                    greenMissionSyst = stellarData[stellar].system;
+                }
+            }
+        }
+        hypergateMapMode = 0;
+        DoSystemMap();
+        greenMissionSyst = -1;
+        multiArrowsOnSingleSystem = 1;
+        RedrawAfterSubDialog(missionInfoDialog);
+    }
+    if (item == 5) {
+        if (selMissionInfoListItem == -1) {
+            PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+            MissionInfoButtons().Draw(-1);
+        } else {
+            if (currentMissions[activeMissions[selMissionInfoListItem]].canAbort != 0) {
+                if ((currentMissions[activeMissions[selMissionInfoListItem]].flags & kMissionAbortPenalty) != 0
+                    && currentMissions[activeMissions[selMissionInfoListItem]].compGovt != -1) {
+                    for (i = 0; i < kMaxSystems; i++) {
+                        if (systemData[i].govt == currentMissions[activeMissions[selMissionInfoListItem]].compGovt)
+                            playerRecord[i] -=
+                                currentMissions[activeMissions[selMissionInfoListItem]].compReward * 5;
+                    }
+                }
+                AbortMission(activeMissions[selMissionInfoListItem], 1);
+                count = 0;
+                for (i = 0; i < kMaxActiveMissions; i++) {
+                    if (currentMissionObjectives[i].active != 0)
+                        count++;
+                }
+                if (count > 0) {
+                    if (missionInfoList != NULL)
+                        LDispose(missionInfoList);
+                    SetupMissionInfoList();
+                    selMissionInfoListItem = -1;
+                    RedrawDialog(missionInfoDialog);
+                    cell.h = cell.v = 0;
+                    while (cell.v < (*missionInfoList)->dataBounds.bottom) {
+                        LSetSelect(0, cell, missionInfoList);
+                        cell.v++;
+                    }
+                    LAutoScroll(missionInfoList);
+                    for (i = 0; i < kMaxActiveMissions; i++)
+                        activeMissions[i] = -1;
+                    n = 0;
+                    for (i = 0; i < kMaxActiveMissions; i++) {
+                        if (currentMissionObjectives[i].active != 0) {
+                            activeMissions[n] = i;
+                            n++;
+                        }
+                    }
+                } else {
+                    done = 1;
+                }
+                DrawStatusCargo();
+                SetDialogGWorld(missionInfoDialog);
+            }
+        }
+    }
+}
+
 static constexpr short kMissionInfoSlotItems[] = { 1, 5 };
 
 // FUNCTION: EVNOVA 0x00446770
 // MAC: _MissionInfoFilter i386 0x0009d6e5 ppc 0x000a9304
-Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean MissionInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -3760,11 +3775,8 @@ Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     short count;
 
     if ((int)ev->what == kKeyDown) {
-        QuickKeyCheckHandler();
-        if (QuickKeyCheck(keyPrefs.map)) {
-            *itemHit = 6;
+        if (QuickKeyHit(6, -1, -1, itemHit))
             return 1;
-        }
         c = EventCharOf(ev);
         if (IsReturnChar(c) || c == kEscapeChar || KeyCheck(keyPrefs.missions)) {
             *itemHit = 1;
@@ -3887,6 +3899,13 @@ Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     return 0;
 }
 
+} // namespace
+
+void DoMissionInfoDialog(void)
+{
+    MissionInfoDialog().Run();
+}
+
 // FUNCTION: EVNOVA 0x00446e00
 // MAC: _MissionInfoDialogUpdate i386 0x00098508 ppc 0x000a42a0
 void MissionInfoDialogUpdate(void)
@@ -3942,64 +3961,6 @@ void MissionInfoDialogUpdate(void)
     }
 }
 
-static constexpr short kSingleMissionSlotItems[] = { kItemAccept, kItemRefuse, -1, -1 };
-
-// FUNCTION: EVNOVA 0x00447170
-// MAC: _SingleMissionFilter i386 0x00098d9a ppc 0x000a4984
-Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
-{
-    Point where;
-    int acceptKey;
-    int refuseKey;
-    EventChar c;
-    int what;
-
-    QuickKeyCheckHandler();
-    if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
-        *itemHit = kBriefItemMap;
-        return 1;
-    }
-    if (QuickKeyCheck(keyPrefs.playerInfo) && infoDialog == NULL) {
-        *itemHit = kBriefItemPlayerInfo;
-        return 1;
-    }
-    if (QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
-        *itemHit = kBriefItemMissionInfo;
-        return 1;
-    }
-    what = ev->what;
-    if ((int)ev->what == kKeyDown) {
-        c = EventCharOf(ev);
-        c = tolower(c);
-        if (IsReturnChar(c)) {
-            *itemHit = kItemAccept;
-            return 1;
-        }
-        refuseKey = missionButtonLabel[1][1];
-        acceptKey = missionButtonLabel[0][1];
-        if (tolower(acceptKey) != tolower(refuseKey)) {
-            if (c == tolower(acceptKey)) {
-                *itemHit = kItemAccept;
-                return 1;
-            }
-            if (canRefuseMission != 0 && c == tolower(refuseKey)) {
-                *itemHit = kItemRefuse;
-                return 1;
-            }
-        }
-        if (OfferText().Key(c, itemHit))
-            return 1;
-    }
-    if (what == kMouseDown) {
-        where = ev->where;
-        SingleMissionButtons buttons;
-        if (OfferText().Press(where, itemHit, buttons))
-            return 1;
-        SingleMissionDialogUpdate();
-        return ButtonItemHit(buttons.Track(where), kSingleMissionSlotItems, itemHit);
-    }
-    return 0;
-}
 // FUNCTION: EVNOVA 0x00447680
 // MAC: _SingleMissionDialogUpdate i386 0x00098950 ppc 0x000a45e0
 void SingleMissionDialogUpdate(void)

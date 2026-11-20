@@ -47,6 +47,23 @@ static void DrawCommText(Rect *box)
     BackColor(whiteColor);
 }
 
+/* Grows commRect upwards to two lines of the comm font plus a 4-pixel gap, measured on the comm frame. */
+static void FitCommRect(SWFrameRec *frame)
+{
+    GrafPtr saved;
+    short need;
+
+    GetPort(&saved);
+    SWSetPortToFrame(frame);
+    TextFont(0);
+    TextSize(kCommTextSize);
+    TextFace(0);
+    need = (short)View::ScaleInView(2 * TextLineHeight() + 4);
+    SetPort(saved);
+    if (commRect.bottom - commRect.top < need)
+        commRect.top = commRect.bottom - need;
+}
+
 /* Shows `msg' in the comm strip for `count' frames; Flush lays it over the view (CommOverlay). */
 // FUNCTION: EVNOVA 0x0047e2d0
 // MAC: _DisplayComm i386 0x00090201 ppc 0x0009be7c
@@ -73,14 +90,14 @@ SWFrameRec *CommOverlay(void)
     static SWFrameRec *frame;
     static Rect bounds;
     static RGBColor drawnOn;                /* the system colour the frame was drawn on */
-    Rect local = commRect;
-    Rect wanted;
-
     if (commCount <= 0)
         return NULL;
-    OffsetRect(&local, -local.left, -local.top);
-    wanted = View::OverlayFrameRect(local);
-    if (frame == NULL || wanted.right != bounds.right || wanted.bottom != bounds.bottom) {
+    for (int pass = 0; pass < 2; pass++) {          /* the second pass follows a commRect FitCommRect grew */
+        Rect local = commRect;
+        OffsetRect(&local, -local.left, -local.top);
+        Rect wanted = View::OverlayFrameRect(local);
+        if (frame != NULL && wanted.right == bounds.right && wanted.bottom == bounds.bottom)
+            break;
         if (frame != NULL)
             SWDisposeFrame(&frame);
         bounds = wanted;
@@ -91,6 +108,7 @@ SWFrameRec *CommOverlay(void)
         View::ScaleOverlayFrame(frame);
         SWLockFrame(frame);
         gCommDrawn = false;
+        FitCommRect(frame);
     }
     RGBColor background = shipData[0].curSystem < 0 ? rgbBlack : systemData[shipData[0].curSystem].rgb;
     if (!gCommDrawn || memcmp(&background, &drawnOn, sizeof background) != 0) {

@@ -703,6 +703,7 @@ extern short StringWidth(const unsigned char *str);
 extern void SysBeep(short duration);
 extern void TETextBox(const void *text, int32_t length, Rect *box, short just);
 extern int MeasureWrappedText(const char *text, int byteCount, int width);
+extern int TextLineHeight(void);
 extern void NumToString(int32_t value, unsigned char *str);
 extern void QDGetPictureBounds(PicHandle pic, Rect *r);
 extern void *GetGWorldDevice(CGrafPtr port);
@@ -713,7 +714,6 @@ extern short GetFrameBiggestSize(SWFrameRec *frame);
 extern void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text);
 extern void SWSetPostEraseCallBack(SpriteWorldPtr world, WorldProcPtr proc);
 extern void SWSetPostDrawCallBack(SpriteWorldPtr world, WorldProcPtr proc);
-extern void DisposeWindow(CWindowPtr window);
 extern void *GetGDevice(void);
 extern void BuildGammaRamp(float gamma);
 extern int32_t ReplaceInHandle(char **h, int32_t offset, const char *find, int32_t findLen,

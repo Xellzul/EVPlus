@@ -10,7 +10,6 @@ extern "C" {
 #endif
 
 extern void CenterPict(void *pict, Rect *bounds);
-extern void CheckLoMem(void);
 extern void DateToLongString(DateTimeRec date, char *out);
 extern void DateToMedString(DateTimeRec date, char *out);
 extern void DrawCommaNumber(int32_t value);

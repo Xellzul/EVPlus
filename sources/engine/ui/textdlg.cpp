@@ -67,12 +67,10 @@ EXTERN_C_BEGIN
 /* on mac ShowTextDialog paints gWind through GetWindowPortRect and invalidates items itself */
 // FUNCTION: EVNOVA 0x004982a0
 // MAC: _ShowTextDialog i386 0x0005a752 ppc 0x000628d4
-void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
+void ShowTextDialog(Boolean allowMap, Boolean showMovie)
 {
     Rect box;
-    short savedStellar;
     short itemHit;
-    short savedRoute;
     short itemType;
     Handle item;
     Boolean savedUp;
@@ -239,26 +237,8 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
         if (itemHit == 1)
             done = 1;
         DialogText().Step(itemHit);
-        if (itemHit == 4 && allowMap) {
-            savedStellar = shipData->targetStellar;
-            savedRoute = shipData->navTargetKind;
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedStellar;
-            shipData->navTargetKind = savedRoute;
-            if (portDialog != NULL) {
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                PortDialogUpdate();
-            }
-            if (redrawMission) {
-                SetDialogGWorld(missionDialog);
-                RedrawDialog(missionDialog);
-            }
-            SetDialogGWorld(textDialog);
-            RedrawDialog(textDialog);
-            TextDialogUpdate();
-        }
+        if (itemHit == 4 && allowMap)
+            MapFromDialog(textDialog);
         SetDialogGWorld(textDialog);
         DialogText().InvalidateChanged(savedUp, savedDown);
     } while (done == 0);
@@ -321,11 +301,8 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     EventChar c;
 
     if ((int)ev->what == kKeyDown) {
-        QuickKeyCheckHandler();
-        if (QuickKeyCheck(keyPrefs.map)) {
-            *itemHit = 4;
+        if (QuickKeyHit(4, -1, -1, itemHit))
             return 1;
-        }
         c = EventCharOf(ev);
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 1;

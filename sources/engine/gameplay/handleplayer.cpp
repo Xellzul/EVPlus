@@ -235,7 +235,7 @@ void HandlePlayer(ShipObj *player)
                                 ShowTheCursor();
                                 LoadDescription(textShowString,
                                                 outfitSystem[i].modVal[j]);
-                                ShowTextDialog(0, 0, 1);
+                                ShowTextDialog(0, 1);
                                 SetAllKeyCmdFlags();
                                 break;
                             }
@@ -337,7 +337,7 @@ void HandlePlayer(ShipObj *player)
             PaintRect(GetCWindowPortRect((WindowRef)gWind));
             ShowTheCursor();
             LoadDescription(textShowString, 0x36af);
-            ShowTextDialog(0, 0, 1);
+            ShowTextDialog(0, 1);
             SWSetPortToWindow(gSpriteWorld);
             ForeColor(blackColor);
             PaintRect(GetCWindowPortRect((WindowRef)gWind));
@@ -2518,13 +2518,7 @@ void HandlePlayer(ShipObj *player)
         keyPressedThisFrame = 1;
         if (!missionInfoFlag) {
             missionInfoFlag = 1;
-            n = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active
-                        && !(currentMissionObjectives[i].flags & kMissionHidden))
-                    n++;
-            }
-            if (n > 0) {
+            if (AnyMissionShown()) {
                 HideCursorSprite();
                 RefreshSAT();
                 ShowTheCursor();
@@ -3867,7 +3861,6 @@ void HandlePlayerDockRequest(void)
                 RedrawStatus(1);
                 AdjustSoundVolume();
                 frameCounter = -0xf;
-                CheckLoMem();
                 return;
             } else {
                 PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);

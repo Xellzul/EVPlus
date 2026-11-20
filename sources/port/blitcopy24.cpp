@@ -363,11 +363,6 @@ void GetPort(CGrafPtr *port)
     *port = CurrentGrafPort;
 }
 
-// FUNCTION: EVNOVA 0x004b8ad0
-void DisposeWindow(CWindowPtr window)
-{
-}
-
 /* the blitter object's globals */
 CGrafPort gGamePort;
 RGBColor blackRGB;

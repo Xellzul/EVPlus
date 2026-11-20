@@ -77,8 +77,7 @@ extern void DrawDialog(DialogPtr dlg);
 void SetPlunderValues(void);
 void SetupMissionInfoList(void);
 extern void SetupPlayerInfoText(void);
-extern void ShowTextDialog(Boolean allowMap, Boolean redrawMission,
-                           Boolean showMovie);
+extern void ShowTextDialog(Boolean allowMap, Boolean showMovie);
 extern void ShipDescDialogUpdate(void);
 void ShipyardDialogUpdate(); /* unprototyped: the 1.1.1 DoShipyardDialog passes it the dialog */
 extern void DoNewsDialog(void);
@@ -94,6 +93,27 @@ void RaceDialogUpdate(void);
 void PlanetCommDialogUpdate(void);
 extern void DoPlanetCommDialog(short stellar);
 extern void PortDialogUpdate(void);
+/* after a sub-dialog closed over `self`: redraw the spaceport dialogs and flag `self` for redraw */
+void RedrawAfterSubDialog(DialogPtr self);
+/* the galaxy map, not in hypergate mode; the nav target is put back afterwards */
+void OpenMapKeepingNav(void);
+/* OpenMapKeepingNav, then RedrawAfterSubDialog(self) */
+void MapFromDialog(DialogPtr self);
+/* the player info dialog, then RedrawAfterSubDialog(self) */
+void PlayerInfoFromDialog(DialogPtr self);
+/* whether any active mission is not hidden */
+Boolean AnyMissionShown(void);
+/* if AnyMissionShown: the mission info dialog, then RedrawAfterSubDialog(self) */
+void MissionInfoFromDialog(DialogPtr self);
+/* a mission offer from `venue`; RedrawAfterSubDialog(self) when one was made */
+void OfferFromDialog(short venue, DialogPtr self);
+/* filter checks: each sets *itemHit and returns 1 when it applies */
+/* absquatulateStr is set (forced takeoff): leaveItem */
+Boolean LeaveRequested(short leaveItem, short *itemHit);
+/* missionOfferTime has passed: offerItem, and missionOfferTime is set 30-59 ticks ahead */
+Boolean OfferDue(short offerItem, short *itemHit);
+/* QuickKeyCheckHandler, then the map, player info or missions key while that dialog is closed; -1 skips a key */
+Boolean QuickKeyHit(short mapItem, short infoItem, short missionsItem, short *itemHit);
 extern void TextDialogUpdate(void);
 void TradeDialogUpdate(void);
 EXTERN_CPP_BEGIN
@@ -250,26 +270,11 @@ extern uint32_t lastClickTime;
 extern Boolean screenFaded;
 EXTERN_CPP_END
 
-Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean NewsDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 EXTERN_CPP_BEGIN
 extern ShortPoint menuTopCorner;
 EXTERN_CPP_END
 
-extern Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-extern Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-extern Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit);
-Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-extern Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-extern Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 EXTERN_CPP_BEGIN
 extern TEHandle offerTextHandle;
 EXTERN_CPP_END

@@ -67,11 +67,6 @@ extern ScrollRec **missionInfoList;
 extern short tempMissions[];
 EXTERN_CPP_END
 
-/* the two mission-list ModalDialog filter procs */
-extern Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit);      /* 0x00440c90 */
-extern Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev,
-                                short *itemHit);                              /* 0x00447170 */
-
 #ifdef __cplusplus
 }
 #endif

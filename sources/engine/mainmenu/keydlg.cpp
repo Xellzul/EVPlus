@@ -9,26 +9,27 @@
 #include "render.h"
 #include "gametypes.h"
 #include "dialog.h"
+#include "gamedialog.h"
 
 #define kBindingCount 0x22
 
 
-// FUNCTION: EVNOVA 0x0048b280
-void DoKeyDialog(void)
-{
-    Boolean done;
-    short itemHit;
-    short itemType;
-    Handle item;
-    Rect box;
-    short i;
-    short j;
-    Boolean matched;
-    ScanCode localBuf[kBindingCount];
-    ScanCode defaultBuf[kBindingCount];
-    Dialog dialog;
+namespace {
 
-    dialog.Open(0xfa2, KeyDialogUpdate, KeyFilter, &keyDialog);
+// FUNCTION: EVNOVA 0x0048b280
+/* The key bindings: a key pressed binds the selected row; OK saves them unless a key is bound twice. */
+class KeyDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void KeyDialog::Run()
+{
+    dialog.Open(0xfa2, KeyDialogUpdate, Filter, &keyDialog);
     if (!dialog.IsOpen())
         return;
 
@@ -39,52 +40,8 @@ void DoKeyDialog(void)
     Picture pic(keyPic);
     pic.Load(0x8b);
 
-    done = 0;
     KeyDialogUpdate();
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == 1) {
-            matched = 0;
-            for (j = 0; j < kBindingCount; j++) {
-                if (DupKeyCheck(newKeyPrefs[j], j)) {
-                    keyDialogSel = j;
-                    RedrawDialog(keyDialog);
-                    SysBeep(0);
-                    matched = 1;
-                    break;
-                }
-            }
-            if (!matched) {
-                SlotTableToKeyPrefs();
-                done = 1;
-                SavePrefs();
-            }
-        }
-        if (itemHit == 2)
-            done = 1;
-        if (itemHit == 3) {
-            KeyPrefsToSlotTable();
-            for (i = 0; i < kBindingCount; i++)
-                localBuf[i] = newKeyPrefs[i];
-            SetDefaultKeys();
-            KeyPrefsToSlotTable();
-            for (i = 0; i < kBindingCount; i++) {
-                defaultBuf[i] = newKeyPrefs[i];
-                newKeyPrefs[i] = localBuf[i];
-            }
-            SlotTableToKeyPrefs();
-            for (i = 0; i < kBindingCount; i++)
-                newKeyPrefs[i] = defaultBuf[i];
-            keyDialogSel = 0;
-            RedrawDialog(keyDialog);
-        }
-        if (itemHit >= 5 && itemHit <= 0x27) {
-            keyDialogSel = itemHit - 5;
-            RedrawDialog(keyDialog);
-        }
-    } while (!done);
+    Loop();
 
     if (gWind != NULL)
         SWSetPortToWindow(gSpriteWorld);
@@ -92,20 +49,63 @@ void DoKeyDialog(void)
     dialog.Close();
 }
 
+void KeyDialog::Hit(short item)
+{
+    short i;
+    short j;
+    Boolean matched;
+    ScanCode localBuf[kBindingCount];
+    ScanCode defaultBuf[kBindingCount];
+
+    if (item == 1) {
+        matched = 0;
+        for (j = 0; j < kBindingCount; j++) {
+            if (DupKeyCheck(newKeyPrefs[j], j)) {
+                keyDialogSel = j;
+                RedrawDialog(keyDialog);
+                SysBeep(0);
+                matched = 1;
+                break;
+            }
+        }
+        if (!matched) {
+            SlotTableToKeyPrefs();
+            done = 1;
+            SavePrefs();
+        }
+    }
+    if (item == 2)
+        done = 1;
+    if (item == 3) {
+        KeyPrefsToSlotTable();
+        for (i = 0; i < kBindingCount; i++)
+            localBuf[i] = newKeyPrefs[i];
+        SetDefaultKeys();
+        KeyPrefsToSlotTable();
+        for (i = 0; i < kBindingCount; i++) {
+            defaultBuf[i] = newKeyPrefs[i];
+            newKeyPrefs[i] = localBuf[i];
+        }
+        SlotTableToKeyPrefs();
+        for (i = 0; i < kBindingCount; i++)
+            newKeyPrefs[i] = defaultBuf[i];
+        keyDialogSel = 0;
+        RedrawDialog(keyDialog);
+    }
+    if (item >= 5 && item <= 0x27) {
+        keyDialogSel = item - 5;
+        RedrawDialog(keyDialog);
+    }
+}
+
 #define kFirstBindingItem   5
 #define kNoNameStrIndex  0x119
 #define kRowTextInset       5
 #define kRowBaseline      0xf
 
-/*
- * v and h must be signed `short`, and v must be declared first. PtInRect widens
- * them, and mwcc defers a short local's widening to the use site, so the field
- * read stays a movzx and the widening is a separate movsx hoisted out of the
- * loop.
- */
 // FUNCTION: EVNOVA 0x0048b6d0
 // MAC: _KeyFilter i386 0x00017482 ppc 0x0001b030
-Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean KeyDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -146,6 +146,13 @@ Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     return 0;
+}
+
+} // namespace
+
+void DoKeyDialog(void)
+{
+    KeyDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x0048b860

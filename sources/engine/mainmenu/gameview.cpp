@@ -37,7 +37,7 @@ void DoAboutBox(void)
         LoadDescription(briefingTextPtr, kIntroDescID);
         MungeBriefing(0, -1);
         strcpy(textShowString, briefingTextPtr);
-        ShowTextDialog(0, 0, 1);
+        ShowTextDialog(0, 1);
         mainScreenBackgroundDirty = 1;
     }
 }

@@ -29,6 +29,7 @@
 #include "ai.h"
 #include "space.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "buttons.h"
 
 #define kFirstRowItem  4
@@ -41,8 +42,6 @@ DialogPtr tradeDialog;
 short junkType[2];
 PicHandle tradeBackgroundPic;
 
-EXTERN_C_BEGIN
-
 #define kTradeDlogID   0x3e9
 #define kTradePictID   0x213e
 #define kTradeVenue    4
@@ -50,6 +49,7 @@ EXTERN_C_BEGIN
 #define kHoldsItem     3
 #define kCargoItem     0xc
 #define kNewsItem      0xf
+#define kOfferItem     0xf     /* a mission offer falls due */
 
 /* port price-status codes read off portDemand[]; the STR# 2002 index each
    selects (0xc9/0xca/0xcb) is read straight from the exe, name TBC */
@@ -57,25 +57,29 @@ EXTERN_C_BEGIN
 #define kPortSurplus  2
 #define kPortEmbargo  4
 
-/* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
+namespace {
+
 // FUNCTION: EVNOVA 0x0048c730
 // MAC: _DoTradeDialog i386 0x0005dbe1 ppc 0x000657f4
-void DoTradeDialog(void)
+/* The trade center: buying and selling commodities and junk at the port's prices. */
+class TradeDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    short savedStellar;     /* the nav target the map may change, restored after it */
+    short savedRoute;
+};
+
+void TradeDialog::Run()
 {
     short i;
-    short savedStellar;
-    short savedRoute;
-    short itemHit;
-    short mods;
     double mult;
     short j;
-    short space;
-    short maxSell;
-    int32_t afford;
-    int32_t qty;
-    Boolean done;
 
-    done = 0;
     savedStellar = shipData->targetStellar;
     savedRoute = shipData->navTargetKind;
     mult = 1.25;
@@ -138,8 +142,7 @@ void DoTradeDialog(void)
     missionsOutside = kTradeVenue;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(0x1e) + 0x1e;
-    Dialog dialog;
-    dialog.Open(kTradeDlogID, TradeDialogUpdate, TradeFilter, &tradeDialog, DialogClose::NoFlash);
+    dialog.Open(kTradeDlogID, TradeDialogUpdate, Filter, &tradeDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(tradeBackgroundPic);
@@ -150,130 +153,7 @@ void DoTradeDialog(void)
     TradeDialogUpdate();
     OfferMissionFromPort(kTradeVenue);
     RedrawDialog(tradeDialog);
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        mods = GetKeyModifiers();
-        if (itemHit == 1)
-            done = 1;
-        if (itemHit == 2) {
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedStellar;
-            shipData->navTargetKind = savedRoute;
-            UpdateAllPortDialogs();
-            SetDialogGWorld(tradeDialog);
-            RedrawDialog(tradeDialog);
-        }
-        if (itemHit == 0x10) {
-            DoPlayerInfoDialog();
-            UpdateAllPortDialogs();
-            SetDialogGWorld(tradeDialog);
-            RedrawDialog(tradeDialog);
-        }
-        if (itemHit == 0x11) {
-            qty = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active != 0
-                    && (currentMissionObjectives[i].flags & kMissionHidden) == 0)
-                    qty++;
-            }
-            if (qty > 0) {
-                DoMissionInfoDialog();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(tradeDialog);
-                UpdateAllPortDialogs();
-                SetDialogGWorld(tradeDialog);
-                RedrawDialog(tradeDialog);
-            }
-        }
-        if (itemHit == kBuyItem) {
-            RedrawDialog(tradeDialog);
-            space = TotalFleetHolds() - TotalCargo(shipData);
-            if (space > 0) {
-                afford = shipData->credits / (float)tradePrice[selTradeItem];
-                if ((mods & optionKey) != 0) {
-                    if (afford > space)
-                        qty = space;
-                    else
-                        qty = afford;
-                    if (qty > kMaxTradeQty)
-                        qty = kMaxTradeQty;
-                    qty = DoQuantityDialog(qty, 0);
-                    TradeDialogUpdate();
-                } else {
-                    qty = 10;
-                    if (afford < 10)
-                        qty = afford;
-                    if (qty > space)
-                        qty = space;
-                }
-                if (qty > 0) {
-                    if (selTradeItem <= kLastCommodity)
-                        shipData->cargo[selTradeItem] += qty;
-                    else if (junkType[selTradeItem - kFirstJunkItem] != -1)
-                        junkData[junkType[selTradeItem - kFirstJunkItem]]
-                            .held += qty;
-                    shipData->credits -= tradePrice[selTradeItem] * qty;
-                }
-                RedrawDialog(tradeDialog);
-                statusRedraw[kRedrawCargo] = 1;
-                DrawStatus();
-                SetDialogGWorld(tradeDialog);
-            }
-            RedrawDialog(tradeDialog);
-        }
-        if (itemHit == kSellItem) {
-            RedrawDialog(tradeDialog);
-            qty = 0;
-            if (selTradeItem <= kLastCommodity)
-                qty = shipData->cargo[selTradeItem];
-            else if (junkType[selTradeItem - kFirstJunkItem] != -1)
-                qty = junkData[junkType[selTradeItem - kFirstJunkItem]].held;
-            if (qty > kMaxTradeQty)
-                maxSell = kMaxTradeQty;
-            else
-                maxSell = qty;
-            qty = 0;
-            if (maxSell > 0) {
-                if ((mods & optionKey) != 0) {
-                    qty = DoQuantityDialog(maxSell, 1);
-                    TradeDialogUpdate();
-                } else {
-                    qty = 10;
-                    if (selTradeItem <= kLastCommodity) {
-                        if (shipData->cargo[selTradeItem] < qty)
-                            qty = shipData->cargo[selTradeItem];
-                    } else if (junkType[selTradeItem - kFirstJunkItem] != -1) {
-                        if (junkData[junkType[selTradeItem - kFirstJunkItem]]
-                                .held < qty)
-                            qty = junkData[junkType[selTradeItem
-                                                    - kFirstJunkItem]].held;
-                    }
-                }
-                if (qty > 0) {
-                    if (selTradeItem <= kLastCommodity)
-                        shipData->cargo[selTradeItem] -= qty;
-                    else if (junkType[selTradeItem - kFirstJunkItem] != -1)
-                        junkData[junkType[selTradeItem - kFirstJunkItem]]
-                            .held -= qty;
-                    shipData->credits += tradePrice[selTradeItem] * qty;
-                }
-                RedrawDialog(tradeDialog);
-                statusRedraw[kRedrawCargo] = 1;
-                DrawStatus();
-                SetDialogGWorld(tradeDialog);
-            }
-            RedrawDialog(tradeDialog);
-        }
-        if (itemHit == kNewsItem) {
-            if (OfferMissionFromPort(kTradeVenue) != 0) {
-                SetDialogGWorld(portDialog);
-                UpdateAllPortDialogs();
-            }
-        }
-    } while (done == 0);
+    Loop();
     dialog.Close();
     backdrop.Release();
     shipData->targetStellar = savedStellar;
@@ -282,12 +162,116 @@ void DoTradeDialog(void)
     ResetMissionOfferVenue();
 }
 
-static constexpr KeyItem kTradeKeys[] = { { 'b', kBuyItem }, { 's', kSellItem } };
-static constexpr short kTradeSlotItems[] = { 1, kBuyItem, kSellItem };
+void TradeDialog::Hit(short item)
+{
+    short mods;
+    short space;
+    short maxSell;
+    int32_t afford;
+    int32_t qty;
+
+    mods = GetKeyModifiers();
+    if (item == 1)
+        done = 1;
+    if (item == 2) {
+        OpenMapKeepingNav();
+        shipData->targetStellar = savedStellar;
+        shipData->navTargetKind = savedRoute;
+        RedrawAfterSubDialog(tradeDialog);
+    }
+    if (item == 0x10)
+        PlayerInfoFromDialog(tradeDialog);
+    if (item == 0x11)
+        MissionInfoFromDialog(tradeDialog);
+    if (item == kBuyItem) {
+        RedrawDialog(tradeDialog);
+        space = TotalFleetHolds() - TotalCargo(shipData);
+        if (space > 0) {
+            afford = shipData->credits / (float)tradePrice[selTradeItem];
+            if ((mods & optionKey) != 0) {
+                if (afford > space)
+                    qty = space;
+                else
+                    qty = afford;
+                if (qty > kMaxTradeQty)
+                    qty = kMaxTradeQty;
+                qty = DoQuantityDialog(qty, 0);
+                TradeDialogUpdate();
+            } else {
+                qty = 10;
+                if (afford < 10)
+                    qty = afford;
+                if (qty > space)
+                    qty = space;
+            }
+            if (qty > 0) {
+                if (selTradeItem <= kLastCommodity)
+                    shipData->cargo[selTradeItem] += qty;
+                else if (junkType[selTradeItem - kFirstJunkItem] != -1)
+                    junkData[junkType[selTradeItem - kFirstJunkItem]]
+                        .held += qty;
+                shipData->credits -= tradePrice[selTradeItem] * qty;
+            }
+            RedrawDialog(tradeDialog);
+            statusRedraw[kRedrawCargo] = 1;
+            DrawStatus();
+            SetDialogGWorld(tradeDialog);
+        }
+        RedrawDialog(tradeDialog);
+    }
+    if (item == kSellItem) {
+        RedrawDialog(tradeDialog);
+        qty = 0;
+        if (selTradeItem <= kLastCommodity)
+            qty = shipData->cargo[selTradeItem];
+        else if (junkType[selTradeItem - kFirstJunkItem] != -1)
+            qty = junkData[junkType[selTradeItem - kFirstJunkItem]].held;
+        if (qty > kMaxTradeQty)
+            maxSell = kMaxTradeQty;
+        else
+            maxSell = qty;
+        qty = 0;
+        if (maxSell > 0) {
+            if ((mods & optionKey) != 0) {
+                qty = DoQuantityDialog(maxSell, 1);
+                TradeDialogUpdate();
+            } else {
+                qty = 10;
+                if (selTradeItem <= kLastCommodity) {
+                    if (shipData->cargo[selTradeItem] < qty)
+                        qty = shipData->cargo[selTradeItem];
+                } else if (junkType[selTradeItem - kFirstJunkItem] != -1) {
+                    if (junkData[junkType[selTradeItem - kFirstJunkItem]]
+                            .held < qty)
+                        qty = junkData[junkType[selTradeItem
+                                                - kFirstJunkItem]].held;
+                }
+            }
+            if (qty > 0) {
+                if (selTradeItem <= kLastCommodity)
+                    shipData->cargo[selTradeItem] -= qty;
+                else if (junkType[selTradeItem - kFirstJunkItem] != -1)
+                    junkData[junkType[selTradeItem - kFirstJunkItem]]
+                        .held -= qty;
+                shipData->credits += tradePrice[selTradeItem] * qty;
+            }
+            RedrawDialog(tradeDialog);
+            statusRedraw[kRedrawCargo] = 1;
+            DrawStatus();
+            SetDialogGWorld(tradeDialog);
+        }
+        RedrawDialog(tradeDialog);
+    }
+    if (item == kOfferItem)
+        OfferFromDialog(kTradeVenue, tradeDialog);
+}
+
+constexpr KeyItem kTradeKeys[] = { { 'b', kBuyItem }, { 's', kSellItem } };
+constexpr short kTradeSlotItems[] = { 1, kBuyItem, kSellItem };
 
 // FUNCTION: EVNOVA 0x0048d190
 // MAC: _TradeFilter i386 0x0004e092 ppc 0x00056d08
-Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean TradeDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -300,24 +284,11 @@ Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     EventChar c;
 
     SetDialogGWorld(tradeDialog);
-    if (absquatulateStr[0] != 0) {
-        *itemHit = 1;
+    if (LeaveRequested(1, itemHit))
         return 1;
-    }
     if ((int)ev->what == kKeyDown) {
-        QuickKeyCheckHandler();
-        if (QuickKeyCheck(keyPrefs.map)) {
-            *itemHit = 2;
+        if (QuickKeyHit(2, 16, 17, itemHit))
             return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.playerInfo) && infoDialog == NULL) {
-            *itemHit = 16;
-            return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
-            *itemHit = 17;
-            return 1;
-        }
         c = EventCharOf(ev);
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 1;
@@ -376,12 +347,14 @@ Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         TradeDialogUpdate();
         return ButtonItemHit(TradeButtons().Track(where), kTradeSlotItems, itemHit);
     }
-    if (ReadTick() >= missionOfferTime) {
-        *itemHit = 15;
-        missionOfferTime = ReadTick() + Rand(30) + 30;
-        return 1;
-    }
-    return 0;
+    return OfferDue(kOfferItem, itemHit);
+}
+
+} // namespace
+
+void DoTradeDialog(void)
+{
+    TradeDialog().Run();
 }
 
 #define kMapFilterCount 8
@@ -739,5 +712,3 @@ void TradeDialogUpdate(void)
 
     CopyLoadPortToDialog(tradeDialog);
 }
-
-EXTERN_C_END

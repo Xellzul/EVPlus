@@ -2645,12 +2645,6 @@ void FadeWhiteOut(void)
     screenFaded = false;
 }
 
-// FUNCTION: EVNOVA 0x00467e70
-// MAC: _RestoreOrigClut i386 0x00005537 ppc 0x00006b24
-void RestoreOrigClut(void)
-{
-}
-
 /* ShipCanCloak (no mac symbol). */
 // FUNCTION: EVNOVA 0x00467e80
 // MAC: _ShipCanCloak i386 0x0000553c ppc 0x00006b28
@@ -5510,12 +5504,6 @@ short FindSystemFromStellar(short stellarID)
 // FUNCTION: EVNOVA 0x0046e840
 // MAC: _BusyIdle i386 0x00005981 ppc 0x0000707c
 void BusyIdle(void)
-{
-}
-
-// FUNCTION: EVNOVA 0x0046e850
-// MAC: _CheckLoMem i386 0x00007f65 ppc 0x00009d7c
-void CheckLoMem(void)
 {
 }
 

@@ -396,7 +396,6 @@ void EnterGameFromMainScreen(void)
     }
     crashlog("restoring stuff");
     KillVoiceSound();
-    RestoreOrigClut();
     SWSetPortToWindow(gSpriteWorld);
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect((WindowRef)gWind));

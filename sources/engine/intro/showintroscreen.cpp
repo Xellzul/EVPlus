@@ -145,7 +145,7 @@ void ShowIntroScreen(void)
             LoadDescription(briefingTextPtr, introTextID);
             MungeBriefing(0, -1);
             strcpy(textShowString, briefingTextPtr);
-            ShowTextDialog(0, 0, 1);
+            ShowTextDialog(0, 1);
             showingIntroText = 0;
         }
     }

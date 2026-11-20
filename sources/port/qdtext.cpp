@@ -564,6 +564,16 @@ short TextWidthMacRoman(const char *text, int byteCount)
     return width;
 }
 
+/* the current font's line height: ascent + descent */
+int TextLineHeight(void)
+{
+    TextStyle style;
+
+    if (!CurrentStyle(&style))
+        return 0;
+    return style.ascent + style.descent;
+}
+
 /* the height of the text wrapped into `width' */
 // FUNCTION: EVNOVA 0x004bcc70
 int MeasureWrappedText(const char *text, int byteCount, int width)

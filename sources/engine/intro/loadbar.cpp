@@ -62,12 +62,6 @@ void InitIntroProgressBar(void)
     DrawIntroProgressBar();
 }
 
-// FUNCTION: EVNOVA 0x004ab3a0
-// MAC: _DisposeIntroProgressBar i386 0x000613ef ppc 0x00069200
-void DisposeIntroProgressBar(void)
-{
-}
-
 // FUNCTION: EVNOVA 0x004ab3b0
 // MAC: _DeltaIntroProgressBar i386 0x000613f4 ppc 0x00069204
 void DeltaIntroProgressBar(double amount)

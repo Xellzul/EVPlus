@@ -29,6 +29,7 @@
 #include "ai.h"
 #include "space.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "buttons.h"
 
 DialogPtr portDialog;
@@ -41,8 +42,6 @@ Boolean didBuyShip;
 Boolean onPlanet = 0;
 uint32_t ambientNoiseDelay;
 GWorldContainer planetPicContainer;
-
-EXTERN_C_BEGIN
 
 #define kPortDlogID         0x3e8
 #define kLastPriceMult      1
@@ -88,22 +87,26 @@ void PreloadPortDialog(SpobRecord *spob, short stellar)
     }
 }
 
-/* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
+namespace {
+
 // FUNCTION: EVNOVA 0x00491f30
 // MAC: _DoPortDialog i386 0x0005f911 ppc 0x000675a4
-void DoPortDialog(SpobRecord *spob, short stellar)
+/* The spaceport: refuelling, the trade center, outfitter, shipyard, mission computer and bar. */
+class PortDialog final : public GameDialog {
+public:
+    void Run(SpobRecord *spob, short stellar);
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void PortDialog::Run(SpobRecord *spob, short stellar)
 {
-    Boolean uninhabited;
     short i;
-    short itemHit;
-    short savedStellar;
-    short savedRoute;
-    short n;
     short j;
     unsigned short vol;
-    Boolean quit;
 
-    quit = 0;
     if (screenFaded != 0)
         return;
     onPlanet = 1;
@@ -123,8 +126,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
             }
         }
     }
-    Dialog dialog;
-    dialog.Open(kPortDlogID, PortDialogUpdate, PortFilter, &portDialog, DialogClose::NoFlash);
+    dialog.Open(kPortDlogID, PortDialogUpdate, Filter, &portDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     if (spob->customSound >= kFirstResourceID && settings.ambientSounds != 0) {
@@ -166,134 +168,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
     missionOfferTime = ReadTick() + Rand(kMissionOfferSpread)
                        + kMissionOfferSpread;
     OfferMissionFromPort(kPortVenue);
-    do {
-        if (gQuit)
-            quit = 1;
-        itemHit = dialog.Modal();
-        if (gQuit)
-            quit = 1;
-        if (itemHit == 12) {
-            quit = 1;
-        } else if (itemHit == 2) {
-            DoPlayerInfoDialog();
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-        } else if (itemHit == 3) {
-            savedStellar = shipData->targetStellar;
-            savedRoute = shipData->navTargetKind;
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedStellar;
-            shipData->navTargetKind = savedRoute;
-            UpdateAllPortDialogs();
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-        } else if (itemHit == 4) {
-            uninhabited = SpobUninhabited(dockedPort);
-            if (uninhabited == 0) {
-                n = ShipFuelCapacity(shipData);
-                shipData->fuel = (short)shipData->fuel;
-                n -= shipData->fuel;
-                if (dockedPort->dominated == 0) {
-                    if (n > shipData->credits)
-                        n = shipData->credits;
-                    shipData->credits -= n;
-                }
-                shipData->fuel += n;
-                statusRedraw[kRedrawFuel] = 1;
-                statusRedraw[kRedrawCargo] = 1;
-                gSpriteWorld->fastBlit = 1;
-                DrawStatus();
-                gSpriteWorld->fastBlit = 0;
-                SetDialogGWorld(portDialog);
-            }
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-        } else if (itemHit == 5) {
-            if (planetSnd != NULL
-                    && SpobAmbientLoop(dockedPort) == 0)
-                ST_PlaySoundParam(&planetSoundSpec);
-        } else if (itemHit == 7) {
-            if (SpobHasTrade(dockedPort) != 0) {
-                SetDialogGWorld(portDialog);
-                PlanetButtons().Draw(kAllButtonsOff);
-                DoTradeDialog();
-                statusRedraw[kRedrawCargo] = 1;
-                DrawStatus();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-            }
-        } else if (itemHit == 8) {
-            if (SpobHasOutfitter(dockedPort) != 0) {
-                InvalDialogItem(portDialog, 8);
-                UpdateAllPortDialogs();
-                DoOutfitDialog();
-                statusRedraw[kRedrawCargo] = 1;
-                DrawStatus();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-            }
-        } else if (itemHit == 9) {
-            if (SpobHasShipyard(dockedPort) != 0) {
-                InvalDialogItem(portDialog, 9);
-                UpdateAllPortDialogs();
-                shipBuyMode = 0;
-                DoShipyardDialog();
-                statusRedraw[kRedrawCargo] = 1;
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-            }
-        } else if (itemHit == 10) {
-            if (canDoMissions != 0) {
-                savedStellar = shipData->targetStellar;
-                savedRoute = shipData->navTargetKind;
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                UpdateAllPortDialogs();
-                reenterMissionDialog = 0;
-                do {
-                    DoMissionDialog();
-                    statusRedraw[kRedrawCargo] = 1;
-                    statusRedraw[kRedrawNav] = 1;
-                    DrawStatus();
-                } while (reenterMissionDialog != 0);
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                shipData->targetStellar = savedStellar;
-                shipData->navTargetKind = savedRoute;
-                statusRedraw[kRedrawCargo] = 1;
-                statusRedraw[kRedrawNav] = 1;
-                DrawStatus();
-            }
-        } else if (itemHit == 11) {
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            UpdateAllPortDialogs();
-            if (SpobHasBar(dockedPort) != 0) {
-                DoBarDialog();
-                DrawStatusCargo();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-            }
-        } else if (itemHit == 14) {
-            n = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active != 0
-                    && (currentMissionObjectives[i].flags & kMissionHidden) == 0)
-                    n++;
-            }
-            if (n > 0) {
-                DoMissionInfoDialog();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-            }
-        } else if (itemHit == 15) {
-            if (OfferMissionFromPort(kPortVenue)) {
-                SetDialogGWorld(portDialog);
-                UpdateAllPortDialogs();
-            }
-        }
-    } while (quit == 0);
+    Loop();
     DoEscortLand();
     if (planetPicContainer.world != NULL)
         DisposeGWorldContainer(&planetPicContainer);
@@ -319,17 +194,126 @@ void DoPortDialog(SpobRecord *spob, short stellar)
     onPlanet = 0;
 }
 
+void PortDialog::Hit(short item)
+{
+    Boolean uninhabited;
+    short savedStellar;
+    short savedRoute;
+    short n;
+
+    if (gQuit)
+        done = 1;
+    if (item == 12) {
+        done = 1;
+    } else if (item == 2) {
+        PlayerInfoFromDialog(portDialog);
+    } else if (item == 3) {
+        MapFromDialog(portDialog);
+    } else if (item == 4) {
+        uninhabited = SpobUninhabited(dockedPort);
+        if (uninhabited == 0) {
+            n = ShipFuelCapacity(shipData);
+            shipData->fuel = (short)shipData->fuel;
+            n -= shipData->fuel;
+            if (dockedPort->dominated == 0) {
+                if (n > shipData->credits)
+                    n = shipData->credits;
+                shipData->credits -= n;
+            }
+            shipData->fuel += n;
+            statusRedraw[kRedrawFuel] = 1;
+            statusRedraw[kRedrawCargo] = 1;
+            gSpriteWorld->fastBlit = 1;
+            DrawStatus();
+            gSpriteWorld->fastBlit = 0;
+            SetDialogGWorld(portDialog);
+        }
+        SetDialogGWorld(portDialog);
+        RedrawDialog(portDialog);
+    } else if (item == 5) {
+        if (planetSnd != NULL
+                && SpobAmbientLoop(dockedPort) == 0)
+            ST_PlaySoundParam(&planetSoundSpec);
+    } else if (item == 7) {
+        if (SpobHasTrade(dockedPort) != 0) {
+            SetDialogGWorld(portDialog);
+            PlanetButtons().Draw(kAllButtonsOff);
+            DoTradeDialog();
+            statusRedraw[kRedrawCargo] = 1;
+            DrawStatus();
+            SetDialogGWorld(portDialog);
+            RedrawDialog(portDialog);
+        }
+    } else if (item == 8) {
+        if (SpobHasOutfitter(dockedPort) != 0) {
+            InvalDialogItem(portDialog, 8);
+            UpdateAllPortDialogs();
+            DoOutfitDialog();
+            statusRedraw[kRedrawCargo] = 1;
+            DrawStatus();
+            SetDialogGWorld(portDialog);
+            RedrawDialog(portDialog);
+        }
+    } else if (item == 9) {
+        if (SpobHasShipyard(dockedPort) != 0) {
+            InvalDialogItem(portDialog, 9);
+            UpdateAllPortDialogs();
+            shipBuyMode = 0;
+            DoShipyardDialog();
+            statusRedraw[kRedrawCargo] = 1;
+            SetDialogGWorld(portDialog);
+            RedrawDialog(portDialog);
+        }
+    } else if (item == 10) {
+        if (canDoMissions != 0) {
+            savedStellar = shipData->targetStellar;
+            savedRoute = shipData->navTargetKind;
+            SetDialogGWorld(portDialog);
+            RedrawDialog(portDialog);
+            UpdateAllPortDialogs();
+            reenterMissionDialog = 0;
+            do {
+                DoMissionDialog();
+                statusRedraw[kRedrawCargo] = 1;
+                statusRedraw[kRedrawNav] = 1;
+                DrawStatus();
+            } while (reenterMissionDialog != 0);
+            SetDialogGWorld(portDialog);
+            RedrawDialog(portDialog);
+            shipData->targetStellar = savedStellar;
+            shipData->navTargetKind = savedRoute;
+            statusRedraw[kRedrawCargo] = 1;
+            statusRedraw[kRedrawNav] = 1;
+            DrawStatus();
+        }
+    } else if (item == 11) {
+        SetDialogGWorld(portDialog);
+        RedrawDialog(portDialog);
+        UpdateAllPortDialogs();
+        if (SpobHasBar(dockedPort) != 0) {
+            DoBarDialog();
+            DrawStatusCargo();
+            SetDialogGWorld(portDialog);
+            RedrawDialog(portDialog);
+        }
+    } else if (item == 14) {
+        MissionInfoFromDialog(portDialog);
+    } else if (item == 15) {
+        OfferFromDialog(kPortVenue, portDialog);
+    }
+}
+
 #define kAmbientPeriod   480
 
 
 #define kNameBaseline 0x12
 #define kNameSize     0x12
 
-static constexpr KeyItem kPortKeys[] = {
+constexpr KeyItem kPortKeys[] = {
     { 'r', 4 }, { 'f', 4 }, { 'c', 7 }, { 't', 7 },
     { 'o', 8 }, { 's', 9 }, { 'n', 10 }, { 'b', 11 },
 };
-static constexpr short kPortSlotItems[] = { 12, 4, 7, 8, 9, 10, 11 };
+constexpr short kPortSlotItems[] = { 12, 4, 7, 8, 9, 10, 11 };
 
 /*
  * A click inside item 5 - the planet image - reports the image rather than
@@ -337,7 +321,7 @@ static constexpr short kPortSlotItems[] = { 12, 4, 7, 8, 9, 10, 11 };
  */
 // FUNCTION: EVNOVA 0x004928a0
 // MAC: _PortFilter i386 0x0004f041 ppc 0x00057c18
-Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean PortDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -347,10 +331,8 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     EventChar c;
 
     *itemHit = -1;
-    if ((absquatulateStr)[0] != 0) {
-        *itemHit = 12;
+    if (LeaveRequested(12, itemHit))
         return 1;
-    }
     if (SpobUninhabited(dockedPort))
         canDoMissions = 0;
     else
@@ -399,6 +381,13 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return ButtonItemHit(button, kPortSlotItems, itemHit);
     }
     return 0;
+}
+
+} // namespace
+
+void DoPortDialog(SpobRecord *spob, short stellar)
+{
+    PortDialog().Run(spob, stellar);
 }
 
 // FUNCTION: EVNOVA 0x00492c40
@@ -479,6 +468,97 @@ void UpdateAllPortDialogs(void)
         nv_UpdateDialogWindow(1);
 }
 
+void RedrawAfterSubDialog(DialogPtr self)
+{
+    UpdateAllPortDialogs();
+    SetDialogGWorld(self);
+    RedrawDialog(self);
+}
+
+void OpenMapKeepingNav(void)
+{
+    short savedStellar = shipData->targetStellar;
+    short savedRoute = shipData->navTargetKind;
+
+    hypergateMapMode = 0;
+    DoSystemMap();
+    shipData->targetStellar = savedStellar;
+    shipData->navTargetKind = savedRoute;
+}
+
+void MapFromDialog(DialogPtr self)
+{
+    OpenMapKeepingNav();
+    RedrawAfterSubDialog(self);
+}
+
+void PlayerInfoFromDialog(DialogPtr self)
+{
+    DoPlayerInfoDialog();
+    RedrawAfterSubDialog(self);
+}
+
+Boolean AnyMissionShown(void)
+{
+    short i;
+
+    for (i = 0; i < kMaxActiveMissions; i++) {
+        if (currentMissionObjectives[i].active != 0
+            && (currentMissionObjectives[i].flags & kMissionHidden) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+void MissionInfoFromDialog(DialogPtr self)
+{
+    if (AnyMissionShown()) {
+        DoMissionInfoDialog();
+        RedrawAfterSubDialog(self);
+    }
+}
+
+void OfferFromDialog(short venue, DialogPtr self)
+{
+    if (OfferMissionFromPort(venue))
+        RedrawAfterSubDialog(self);
+}
+
+Boolean LeaveRequested(short leaveItem, short *itemHit)
+{
+    if (absquatulateStr[0] == 0)
+        return 0;
+    *itemHit = leaveItem;
+    return 1;
+}
+
+Boolean OfferDue(short offerItem, short *itemHit)
+{
+    if (ReadTick() < missionOfferTime)
+        return 0;
+    *itemHit = offerItem;
+    missionOfferTime = ReadTick() + Rand(30) + 30;
+    return 1;
+}
+
+Boolean QuickKeyHit(short mapItem, short infoItem, short missionsItem, short *itemHit)
+{
+    QuickKeyCheckHandler();
+    if (mapItem != -1 && QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
+        *itemHit = mapItem;
+        return 1;
+    }
+    if (infoItem != -1 && QuickKeyCheck(keyPrefs.playerInfo) && infoDialog == NULL) {
+        *itemHit = infoItem;
+        return 1;
+    }
+    if (missionsItem != -1 && QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
+        *itemHit = missionsItem;
+        return 1;
+    }
+    return 0;
+}
+
 // FUNCTION: EVNOVA 0x0049d640
 // MAC: _ApplyPriceAndTechnologyFlux i386 0x0004e6cd ppc 0x000572e4
 int32_t ApplyPriceAndTechnologyFlux(int32_t cost, float multiplier, short itemTech, short portTech)
@@ -510,5 +590,3 @@ int32_t ApplyPriceAndTechnologyFlux(int32_t cost, float multiplier, short itemTe
 
     return price;
 }
-
-EXTERN_C_END

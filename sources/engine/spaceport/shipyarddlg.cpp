@@ -29,6 +29,7 @@
 #include "ai.h"
 #include "space.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "buttons.h"
 
 DialogPtr shipyardDialog;
@@ -46,8 +47,6 @@ PicHandle shipDescBackgroundPic;
 Boolean shipyardEgg;
 unsigned char textInputString[256];
 
-EXTERN_C_BEGIN
-
 #define kShipDescBase 13000    /* desc ID of ship 0's shipyard blurb */
 #define kHireDescBase 14000     /* ...and of its hire-an-escort blurb */
 
@@ -57,32 +56,31 @@ EXTERN_C_BEGIN
 
 #define kShipyardPictID 0x2135
 
-/* per-mission state, stride 0x14; buttons.cpp's MissionState only names +0x00 */
+namespace {
 
 // FUNCTION: EVNOVA 0x00492f30
 // MAC: _DoShipyardDialog i386 0x0005e679 ppc 0x00066438
-void DoShipyardDialog(void)
+/* The shipyard: buying a new ship for the old one's trade-in, or (shipBuyMode) hiring an escort. */
+class ShipyardDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    short savedTargetStellar;   /* the nav target the map may change, restored after it */
+    short savedUnk6A;
+};
+
+void ShipyardDialog::Run()
 {
     void *item;
     short halfHeight;
     Rect box;
-    short itemHit;
-    unsigned char msgText[256];
-    int hireCost;
-    unsigned char defaultName[256];
-    short i;
     short itemType;
-    short outf;
-    int32_t tradeIn;
-    int32_t cost;
     short weap;
-    Boolean weapHasSlot;
-    short savedTargetStellar;
     short n;
-    short savedUnk6A;
-    Boolean confirmed;
-    Boolean done;
-    char digitBuf[256];
 
     SetupPortAvailableShipTypes(dockedPort);
     done = 1;
@@ -98,7 +96,7 @@ void DoShipyardDialog(void)
             StrcatIndCString(textShowString, kGameStrList, 0xdf);
         else
             StrcatIndCString(textShowString, kGameStrList, 0xe0);
-        ShowTextDialog(0, 0, 0);
+        ShowTextDialog(0, 0);
         return;
     }
     SWSetPortToWindow(gSpriteWorld);
@@ -114,8 +112,7 @@ void DoShipyardDialog(void)
     missionsOutside = 5;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(30) + 30;
-    Dialog dialog;
-    dialog.Open(0x3ec, ShipyardDialogUpdate, ShipyardFilter, &shipyardDialog, DialogClose::NoFlash);
+    dialog.Open(0x3ec, ShipyardDialogUpdate, Filter, &shipyardDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(shipyardBackgroundPic);
@@ -133,232 +130,7 @@ void DoShipyardDialog(void)
     RedrawDialog(shipyardDialog);
     GetDialogItem(shipyardDialog, kMovieItem, &itemType, (Handle *)&item, &box);
 
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == 1) {
-            if (selShipyardItem != -1) {
-                n = selShipyardItem;
-                if (canBuy != 0) {
-                    if (shipBuyMode == 0) {
-
-                        RedrawDialog(shipyardDialog);
-                        strcpy((char *)msgText, "");
-                        StrcatIndCString((char *)msgText, kGameStrList, 0x78);
-                        strcat((char *)msgText, " ");
-                        strncpy((char *)defaultName, (char *)shipyardLongNames[n], 200);
-                        PtoCstr(defaultName);
-                        strcat((char *)msgText, (char *)defaultName);
-                        strcat((char *)msgText, ": ");
-                        CtoPstr((char *)msgText);
-                        pstrcpy(defaultName,
-                               shipClass[n].name);
-                        PtoCstr(defaultName);
-                        strcat((char *)defaultName, " ");
-                        for (weap = 0; weap <= 2; weap++) {
-                            NumToString(Rand(9) + 1, (unsigned char *)digitBuf);
-                            PtoCstr((unsigned char *)digitBuf);
-                            strcat((char *)defaultName, digitBuf);
-                        }
-                        CtoPstr((char *)defaultName);
-                        confirmed = EVTextInputDialog(msgText,
-                                                      defaultName, 0x40);
-                        SetDialogGWorld(shipyardDialog);
-                        RedrawDialog(shipyardDialog);
-                        if (confirmed != 0) {
-                            didBuyShip = 1;
-                            tradeIn = ApplyPriceAndTechnologyFlux(
-                                PlayerShipTradeInPrice(), priceFluxMult[0],
-                                shipClass[shipData->type].techLevel,
-                                stellarData[shipData->targetStellar].techLevel);
-                            tradeIn = ApplyPriceAndTechnologyFlux(
-                                tradeIn, priceFluxMult[1],
-                                shipClass[shipData->type].techLevel,
-                                stellarData[shipData->targetStellar].techLevel);
-                            shipData->credits += tradeIn;
-                            crashlog_mission_bit_set(
-                                "retiring ship", (char *)shipClass[shipData->type].name,
-                                1, shipData->type + 128,
-                                shipClass[shipData->type].onRetire);
-                            EvalMissionBitSetString(shipClass[shipData->type].onRetire);
-                            shipData->type = n;
-                            cost = ApplyPriceAndTechnologyFlux(
-                                shipClass[n].cost, priceFluxMult[1],
-                                shipClass[n].techLevel,
-                                stellarData[shipData->targetStellar].techLevel);
-                            shipData->credits -= cost;
-                            pstrcpy(shipName, textInputString);
-                            CullNameString(shipName);
-                            for (weap = 1; weap < kMaxShips; weap++) {
-                                if (shipData[weap].active != 0 &&
-                                    shipData[weap].parentShip == 0 &&
-                                    shipData[weap].aiType == kShipTypeFighter)
-                                    shipData[weap].active = 0;
-                            }
-                            for (weap = 0; weap < kMaxWeapTypes; weap++) {
-                                weapHasSlot = 0;
-                                for (outf = 0; outf < kMaxOutfits; outf++) {
-                                    if (outfitSystem[outf].modType[0] == kOutfModWeapon &&
-                                        outfitSystem[outf].modVal[0] == weap &&
-                                        outfitSystem[outf].persistent != 0) {
-                                        weapHasSlot = 1;
-                                        break;
-                                    }
-                                }
-                                if (!weapHasSlot) {
-                                    shipData->weap[weap].count = 0;
-                                    shipData->weap[weap].ammo = 0;
-                                }
-                            }
-                            for (weap = 0; weap < kMaxOutfits; weap++) {
-                                if (outfitSystem[weap].persistent == 0)
-                                    shipSystems[weap] = 0;
-                            }
-                            for (outf = 0; outf < kDefaultOutfitSlots; outf++) {
-                                if (shipClass[shipData->type].defOutfCount[outf] > 0)
-                                    shipSystems[shipClass[shipData->type].defOutfID[outf]] +=
-                                        shipClass[shipData->type].defOutfCount[outf];
-                            }
-                            SystemInfoToShipStats();
-                            for (weap = 0; weap < kMaxWeapTypes; weap++) {
-                                if (shipClass[shipData->type].weapCount[weap] >
-                                    shipData->weap[weap].count)
-                                    shipData->weap[weap].count =
-                                        shipClass[shipData->type].weapCount[weap];
-                                if (shipClass[shipData->type].weapAmmo[weap] > 0) {
-                                    if (weaponStats[weap].ammoType >= 0 && weaponStats[weap].ammoType < kMaxWeapTypes
-                                        && weaponStats[weap].guidance != kGuidanceBay)
-                                        i = weaponStats[weap].ammoType;
-                                    else
-                                        i = weap;
-                                    if (shipClass[shipData->type].weapAmmo[weap] >
-                                        shipData->weap[i].ammo)
-                                        shipData->weap[i].ammo =
-                                            shipClass[shipData->type].weapAmmo[weap];
-                                }
-                            }
-                            DestroyPartialFleetCargo(0);
-                            crashlog_mission_bit_set(
-                                "purchasing ship", (char *)shipClass[shipData->type].name,
-                                1, shipData->type + 128,
-                                shipClass[shipData->type].onPurchase);
-                            EvalMissionBitSetString(shipClass[shipData->type].onPurchase);
-                            shipData->targetShip = -1;
-                            shipData->selectedWeapon = -1;
-                            playerPaint.red = playerPaint.green =
-                                playerPaint.blue = 0;
-                            statusRedraw[kRedrawWeap] = 1;
-                            statusRedraw[kRedrawNav] = 1;
-                            statusRedraw[kRedrawTarg] = 1;
-                            statusRedraw[kRedrawCargo] = 1;
-                            shipData->shield = ShipShieldCapacity(shipData);
-                            shipData->armor = ShipArmorCapacity(shipData);
-                            shipData->fuel = ShipFuelCapacity(shipData);
-                            shipData->pos.x = dockedPort->pos.h;
-                            shipData->pos.y = dockedPort->pos.v;
-                            statusRedraw[kRedrawCargo] = 1;
-                            LoadIntfResource();
-                            DrawStatus();
-                            SetDialogGWorld(shipyardDialog);
-                            done = 1;
-                        }
-                        shipClass[selShipyardItem].dailySaleRoll = Rand(100) + 1;
-                        SetDialogGWorld(shipyardDialog);
-                        RedrawDialog(shipyardDialog);
-                    } else {
-                        hireCost = ApplyPriceAndTechnologyFlux(shipClass[selShipyardItem].cost,
-                                                   priceFluxMult[1],
-                                                   shipClass[selShipyardItem].techLevel,
-                                                   stellarData[shipData->targetStellar].techLevel);
-                        shipData->credits -= hireCost * 0.1;
-                        statusRedraw[kRedrawCargo] = 1;
-                        SpawnEscort(selShipyardItem, shipData->targetStellar);
-                        shipClass[selShipyardItem].dailyHireRoll = Rand(100) + 1;
-                        done = 1;
-                    }
-                } else {
-                    PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-                }
-            } else {
-                PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-            }
-        }
-        if (itemHit == 3) {
-            savedTargetStellar = shipData->targetStellar;
-            savedUnk6A = shipData->navTargetKind;
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedTargetStellar;
-            shipData->navTargetKind = savedUnk6A;
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            UpdateAllPortDialogs();
-            SetDialogGWorld(shipyardDialog);
-            RedrawDialog(shipyardDialog);
-        }
-        if (itemHit == 4) {
-            DoPlayerInfoDialog();
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            UpdateAllPortDialogs();
-            SetDialogGWorld(shipyardDialog);
-            RedrawDialog(shipyardDialog);
-        }
-        if (itemHit == 8 && shipBuyMode == 0) {
-            if (OfferMissionFromPort(5) != 0) {
-                SetDialogGWorld(portDialog);
-                UpdateAllPortDialogs();
-                SetDialogGWorld(shipyardDialog);
-                ShipyardDialogUpdate();
-            }
-        }
-        if (itemHit == 0xb) {
-            n = 0;
-            for (weap = 0; weap < kMaxActiveMissions; weap++) {
-                if (currentMissionObjectives[weap].active != 0 &&
-                    (currentMissionObjectives[weap].flags & kMissionHidden) == 0)
-                    n++;
-            }
-            if (n > 0) {
-                DoMissionInfoDialog();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                PortDialogUpdate();
-                SetDialogGWorld(shipyardDialog);
-                RedrawDialog(shipyardDialog);
-            }
-        }
-        if (itemHit == 10 && selShipyardItem != -1) {
-            ShipyardDialogUpdate();
-            DoShipyardDescription(selShipyardItem);
-            SetDialogGWorld(shipyardDialog);
-            RedrawDialog(shipyardDialog);
-        }
-        if (itemHit == 0xc && shipyardScroll >= kGridCols) {
-            shipyardScroll -= kGridCols;
-            selShipyardItem = selShipListItem = -1;
-            strncpy(dialogDescTextPtr, "", 3);
-            EndLoopingMovie();
-            RedrawDialog(shipyardDialog);
-        }
-        if (itemHit == 0xd) {
-            n = 0;
-            for (weap = 0; weap < kMaxShipTypes; weap++) {
-                if (dockedPortShipTypes[weap] != -1)
-                    n++;
-            }
-            if (shipyardScroll < n - kGridCells) {
-                shipyardScroll += kGridCols;
-                selShipyardItem = selShipListItem = -1;
-                strncpy(dialogDescTextPtr, "", 3);
-                EndLoopingMovie();
-                RedrawDialog(shipyardDialog);
-            }
-        }
-        if (itemHit == 7)
-            done = 1;
-    } while (done == 0);
+    Loop();
 
     if (shipBuyMode != 0) {
         n = -((GetDialogPortRect(shipyardDialog)->right -
@@ -394,11 +166,215 @@ void DoShipyardDialog(void)
     ResetMissionOfferVenue();
 }
 
-static constexpr short kShipyardSlotItems[] = { 7, 1, 10, 12, 13 };
+void ShipyardDialog::Hit(short item)
+{
+    unsigned char msgText[256];
+    int hireCost;
+    unsigned char defaultName[256];
+    short i;
+    short outf;
+    int32_t tradeIn;
+    int32_t cost;
+    short weap;
+    Boolean weapHasSlot;
+    short n;
+    Boolean confirmed;
+    char digitBuf[256];
+
+    if (item == 1) {
+        if (selShipyardItem != -1) {
+            n = selShipyardItem;
+            if (canBuy != 0) {
+                if (shipBuyMode == 0) {
+
+                    RedrawDialog(shipyardDialog);
+                    strcpy((char *)msgText, "");
+                    StrcatIndCString((char *)msgText, kGameStrList, 0x78);
+                    strcat((char *)msgText, " ");
+                    strncpy((char *)defaultName, (char *)shipyardLongNames[n], 200);
+                    PtoCstr(defaultName);
+                    strcat((char *)msgText, (char *)defaultName);
+                    strcat((char *)msgText, ": ");
+                    CtoPstr((char *)msgText);
+                    pstrcpy(defaultName,
+                           shipClass[n].name);
+                    PtoCstr(defaultName);
+                    strcat((char *)defaultName, " ");
+                    for (weap = 0; weap <= 2; weap++) {
+                        NumToString(Rand(9) + 1, (unsigned char *)digitBuf);
+                        PtoCstr((unsigned char *)digitBuf);
+                        strcat((char *)defaultName, digitBuf);
+                    }
+                    CtoPstr((char *)defaultName);
+                    confirmed = EVTextInputDialog(msgText,
+                                                  defaultName, 0x40);
+                    SetDialogGWorld(shipyardDialog);
+                    RedrawDialog(shipyardDialog);
+                    if (confirmed != 0) {
+                        didBuyShip = 1;
+                        tradeIn = ApplyPriceAndTechnologyFlux(
+                            PlayerShipTradeInPrice(), priceFluxMult[0],
+                            shipClass[shipData->type].techLevel,
+                            stellarData[shipData->targetStellar].techLevel);
+                        tradeIn = ApplyPriceAndTechnologyFlux(
+                            tradeIn, priceFluxMult[1],
+                            shipClass[shipData->type].techLevel,
+                            stellarData[shipData->targetStellar].techLevel);
+                        shipData->credits += tradeIn;
+                        crashlog_mission_bit_set(
+                            "retiring ship", (char *)shipClass[shipData->type].name,
+                            1, shipData->type + 128,
+                            shipClass[shipData->type].onRetire);
+                        EvalMissionBitSetString(shipClass[shipData->type].onRetire);
+                        shipData->type = n;
+                        cost = ApplyPriceAndTechnologyFlux(
+                            shipClass[n].cost, priceFluxMult[1],
+                            shipClass[n].techLevel,
+                            stellarData[shipData->targetStellar].techLevel);
+                        shipData->credits -= cost;
+                        pstrcpy(shipName, textInputString);
+                        CullNameString(shipName);
+                        for (weap = 1; weap < kMaxShips; weap++) {
+                            if (shipData[weap].active != 0 &&
+                                shipData[weap].parentShip == 0 &&
+                                shipData[weap].aiType == kShipTypeFighter)
+                                shipData[weap].active = 0;
+                        }
+                        for (weap = 0; weap < kMaxWeapTypes; weap++) {
+                            weapHasSlot = 0;
+                            for (outf = 0; outf < kMaxOutfits; outf++) {
+                                if (outfitSystem[outf].modType[0] == kOutfModWeapon &&
+                                    outfitSystem[outf].modVal[0] == weap &&
+                                    outfitSystem[outf].persistent != 0) {
+                                    weapHasSlot = 1;
+                                    break;
+                                }
+                            }
+                            if (!weapHasSlot) {
+                                shipData->weap[weap].count = 0;
+                                shipData->weap[weap].ammo = 0;
+                            }
+                        }
+                        for (weap = 0; weap < kMaxOutfits; weap++) {
+                            if (outfitSystem[weap].persistent == 0)
+                                shipSystems[weap] = 0;
+                        }
+                        for (outf = 0; outf < kDefaultOutfitSlots; outf++) {
+                            if (shipClass[shipData->type].defOutfCount[outf] > 0)
+                                shipSystems[shipClass[shipData->type].defOutfID[outf]] +=
+                                    shipClass[shipData->type].defOutfCount[outf];
+                        }
+                        SystemInfoToShipStats();
+                        for (weap = 0; weap < kMaxWeapTypes; weap++) {
+                            if (shipClass[shipData->type].weapCount[weap] >
+                                shipData->weap[weap].count)
+                                shipData->weap[weap].count =
+                                    shipClass[shipData->type].weapCount[weap];
+                            if (shipClass[shipData->type].weapAmmo[weap] > 0) {
+                                if (weaponStats[weap].ammoType >= 0 && weaponStats[weap].ammoType < kMaxWeapTypes
+                                    && weaponStats[weap].guidance != kGuidanceBay)
+                                    i = weaponStats[weap].ammoType;
+                                else
+                                    i = weap;
+                                if (shipClass[shipData->type].weapAmmo[weap] >
+                                    shipData->weap[i].ammo)
+                                    shipData->weap[i].ammo =
+                                        shipClass[shipData->type].weapAmmo[weap];
+                            }
+                        }
+                        DestroyPartialFleetCargo(0);
+                        crashlog_mission_bit_set(
+                            "purchasing ship", (char *)shipClass[shipData->type].name,
+                            1, shipData->type + 128,
+                            shipClass[shipData->type].onPurchase);
+                        EvalMissionBitSetString(shipClass[shipData->type].onPurchase);
+                        shipData->targetShip = -1;
+                        shipData->selectedWeapon = -1;
+                        playerPaint.red = playerPaint.green =
+                            playerPaint.blue = 0;
+                        statusRedraw[kRedrawWeap] = 1;
+                        statusRedraw[kRedrawNav] = 1;
+                        statusRedraw[kRedrawTarg] = 1;
+                        statusRedraw[kRedrawCargo] = 1;
+                        shipData->shield = ShipShieldCapacity(shipData);
+                        shipData->armor = ShipArmorCapacity(shipData);
+                        shipData->fuel = ShipFuelCapacity(shipData);
+                        shipData->pos.x = dockedPort->pos.h;
+                        shipData->pos.y = dockedPort->pos.v;
+                        statusRedraw[kRedrawCargo] = 1;
+                        LoadIntfResource();
+                        DrawStatus();
+                        SetDialogGWorld(shipyardDialog);
+                        done = 1;
+                    }
+                    shipClass[selShipyardItem].dailySaleRoll = Rand(100) + 1;
+                    SetDialogGWorld(shipyardDialog);
+                    RedrawDialog(shipyardDialog);
+                } else {
+                    hireCost = ApplyPriceAndTechnologyFlux(shipClass[selShipyardItem].cost,
+                                               priceFluxMult[1],
+                                               shipClass[selShipyardItem].techLevel,
+                                               stellarData[shipData->targetStellar].techLevel);
+                    shipData->credits -= hireCost * 0.1;
+                    statusRedraw[kRedrawCargo] = 1;
+                    SpawnEscort(selShipyardItem, shipData->targetStellar);
+                    shipClass[selShipyardItem].dailyHireRoll = Rand(100) + 1;
+                    done = 1;
+                }
+            } else {
+                PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+            }
+        } else {
+            PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+        }
+    }
+    if (item == 3) {
+        savedTargetStellar = shipData->targetStellar;
+        savedUnk6A = shipData->navTargetKind;
+        MapFromDialog(shipyardDialog);
+    }
+    if (item == 4)
+        PlayerInfoFromDialog(shipyardDialog);
+    if (item == 8 && shipBuyMode == 0)
+        OfferFromDialog(5, shipyardDialog);
+    if (item == 0xb)
+        MissionInfoFromDialog(shipyardDialog);
+    if (item == 10 && selShipyardItem != -1) {
+        ShipyardDialogUpdate();
+        DoShipyardDescription(selShipyardItem);
+        SetDialogGWorld(shipyardDialog);
+        RedrawDialog(shipyardDialog);
+    }
+    if (item == 0xc && shipyardScroll >= kGridCols) {
+        shipyardScroll -= kGridCols;
+        selShipyardItem = selShipListItem = -1;
+        strncpy(dialogDescTextPtr, "", 3);
+        EndLoopingMovie();
+        RedrawDialog(shipyardDialog);
+    }
+    if (item == 0xd) {
+        n = 0;
+        for (weap = 0; weap < kMaxShipTypes; weap++) {
+            if (dockedPortShipTypes[weap] != -1)
+                n++;
+        }
+        if (shipyardScroll < n - kGridCells) {
+            shipyardScroll += kGridCols;
+            selShipyardItem = selShipListItem = -1;
+            strncpy(dialogDescTextPtr, "", 3);
+            EndLoopingMovie();
+            RedrawDialog(shipyardDialog);
+        }
+    }
+    if (item == 7)
+        done = 1;
+}
+
+constexpr short kShipyardSlotItems[] = { 7, 1, 10, 12, 13 };
 
 // FUNCTION: EVNOVA 0x00493fc0
 // MAC: _ShipyardFilter i386 0x00060449 ppc 0x00068154
-Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean ShipyardDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     Rect movieBox;
@@ -412,10 +388,8 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     short oldPos;
     short row;
 
-    if ((absquatulateStr)[0] != 0) {
-        *itemHit = 7;
+    if (LeaveRequested(7, itemHit))
         return 1;
-    }
     LoopingMovieIdle();
     *itemHit = -1;
     CalcShipCanBuy();
@@ -516,19 +490,8 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         }
     }
     if ((int)ev->what == kKeyDown) {
-        QuickKeyCheckHandler();
-        if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
-            *itemHit = 3;
+        if (QuickKeyHit(3, 4, 11, itemHit))
             return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.playerInfo) && infoDialog == NULL) {
-            *itemHit = 4;
-            return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
-            *itemHit = 11;
-            return 1;
-        }
         c = tolower(EventCharOf(ev));
         return 0;
     }
@@ -590,14 +553,16 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         ShipyardDialogUpdate();
         return ButtonItemHit(ShipyardButtons().Track(where), kShipyardSlotItems, itemHit);
     }
-    if (shipBuyMode == 0) {
-        if (ReadTick() >= missionOfferTime) {
-            *itemHit = 8;
-            missionOfferTime = ReadTick() + Rand(30) + 30;
-            return 1;
-        }
-    }
+    if (shipBuyMode == 0)
+        return OfferDue(8, itemHit);
     return 0;
+}
+
+} // namespace
+
+void DoShipyardDialog(void)
+{
+    ShipyardDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x004948b0
@@ -828,24 +793,27 @@ void ShipyardDialogUpdate(void)
 #define kDescPictID      8507    /* backdrop to match each layout */
 #define kPlainDescPictID 8506
 
+namespace {
+
 // FUNCTION: EVNOVA 0x004956a0
 // MAC: _DoShipyardDescription i386 0x0005b6d2 ppc 0x00063764
-void DoShipyardDescription(short ship)
-{
-    Boolean done;
-    short itemHit;
-    short savedStellar;
-    short savedRoute;
-    short i;
-    short shown;
+/* A ship's full description, opened from the shipyard. */
+class ShipDescDialog final : public GameDialog {
+public:
+    void Run();
 
-    done = 0;
-    Dialog dialog;
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void ShipDescDialog::Run()
+{
     Picture bigShip(bigShipPic);
     bigShipPic = NULL;
     if (descResourcePictId >= kFirstResourceID)
         bigShip.Load(descResourcePictId);
-    dialog.Open(bigShipPic != NULL ? kDescDlogID : kPlainDescDlogID, ShipDescDialogUpdate, ShipDescFilter,
+    dialog.Open(bigShipPic != NULL ? kDescDlogID : kPlainDescDlogID, ShipDescDialogUpdate, Filter,
                 &shipDescDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
@@ -856,58 +824,27 @@ void DoShipyardDescription(short ship)
     ForeColor(blackColor);
     RedrawDialog(shipDescDialog);
     ShipDescDialogUpdate();
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == 1)
-            done = 1;
-        if (itemHit == 4) {
-            savedStellar = shipData->targetStellar;
-            savedRoute = shipData->navTargetKind;
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedStellar;
-            shipData->navTargetKind = savedRoute;
-            SetDialogGWorld(portDialog);
-            RedrawDialog(shipDescDialog);
-            PortDialogUpdate();
-            SetDialogGWorld(shipDescDialog);
-            RedrawDialog(shipDescDialog);
-        }
-        if (itemHit == 2) {
-            DoPlayerInfoDialog();
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            PortDialogUpdate();
-            SetDialogGWorld(shipDescDialog);
-            RedrawDialog(shipDescDialog);
-        }
-        if (itemHit == 6) {
-            shown = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active != 0
-                    && (currentMissionObjectives[i].flags & kMissionHidden) == 0)
-                    shown++;
-            }
-            if (shown > 0) {
-                DoMissionInfoDialog();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                PortDialogUpdate();
-                SetDialogGWorld(shipDescDialog);
-                RedrawDialog(shipDescDialog);
-            }
-        }
-    } while (done == 0);
+    Loop();
     dialog.Close();
     backdrop.Release();
     bigShip.Release();
 }
 
+void ShipDescDialog::Hit(short item)
+{
+    if (item == 1)
+        done = 1;
+    if (item == 4)
+        MapFromDialog(shipDescDialog);
+    if (item == 2)
+        PlayerInfoFromDialog(shipDescDialog);
+    if (item == 6)
+        MissionInfoFromDialog(shipDescDialog);
+}
+
 // FUNCTION: EVNOVA 0x004959d0
 // MAC: _ShipDescFilter i386 0x000510e5 ppc 0x00059a0c
-Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean ShipDescDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     short itemType;
     void *item;
@@ -919,19 +856,8 @@ Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     EventChar c;
 
     if ((int)ev->what == kKeyDown) {
-        QuickKeyCheckHandler();
-        if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
-            *itemHit = 4;
+        if (QuickKeyHit(4, 2, 6, itemHit))
             return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.playerInfo) && infoDialog == NULL) {
-            *itemHit = 2;
-            return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
-            *itemHit = 6;
-            return 1;
-        }
         c = EventCharOf(ev);
         c = tolower(c);
         if (IsReturnChar(c) || c == kEscapeChar || c == ' ') {
@@ -972,6 +898,13 @@ Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         }
     }
     return 0;
+}
+
+} // namespace
+
+void DoShipyardDescription(short ship)
+{
+    ShipDescDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x00495c80
@@ -1435,5 +1368,3 @@ void CalcShipCanBuy(void)
             canBuy = 0;
     }
 }
-
-EXTERN_C_END

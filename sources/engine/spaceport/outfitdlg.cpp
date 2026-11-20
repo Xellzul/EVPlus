@@ -29,6 +29,7 @@
 #include "ai.h"
 #include "space.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "buttons.h"
 
 DialogPtr outfitDialog;
@@ -48,8 +49,6 @@ Rect listPicScreenRect[kGridCells];
 short previewPicID;
 RGBColor shopGridColor[2];
 
-EXTERN_C_BEGIN
-
 #define kOutfitDescBase 3000    /* desc ID of outfit 0's description */
 #define kOutfitPictBase 6000    /* PICT ID of outfit 0's picture */
 
@@ -63,37 +62,34 @@ EXTERN_C_BEGIN
 #define kOutfModRaiseMax 0x1b   /* outfit ModType 27: raises another outfit's maximum */
 
 
+namespace {
+
 // FUNCTION: EVNOVA 0x0048ea70
 // MAC: _DoOutfitDialog i386 0x0005bacf ppc 0x00063b20
-void DoOutfitDialog(void)
+/* The outfitter: buying and selling outfits; outfits owned on entry sell back at half price. */
+class OutfitDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    short savedUnk6C;                   /* the nav target the map may change, restored after it */
+    short savedUnk6A;
+    short savedOutfits[kMaxOutfits];    /* the outfits owned on entry */
+};
+
+void OutfitDialog::Run()
 {
-    short itemHit;
     short itemType;
     void *item;
-    short filterKey;
-    short savedUnk6C;
-    short savedUnk6A;
-    int32_t qtyLimit;
-    int have;
     short count;
-    short weapID;
-    short ammo;
-    Boolean done;
-    short shortfall;
-    short n;
-    short maxAfford;
-    short savedOutfits[kMaxOutfits];
     Rect box;
-    unsigned char nameBuf[256];
-    char msg[256];
     short i;
     short j;
     short k;
-    short m;
-    Boolean shown;
-    int32_t cost;
 
-    done = 0;
     for (i = 0; i < kMaxOutfits; i++)
         savedOutfits[i] = shipSystems[i];
     savedUnk6C = shipData->targetStellar;
@@ -126,7 +122,7 @@ void DoOutfitDialog(void)
 
         strcpy(textShowString, "");
         StrcatIndCString(textShowString, kGameStrList, 0xce);
-        ShowTextDialog(0, 0, 0);
+        ShowTextDialog(0, 0);
         return;
     }
     previewPic = NULL;
@@ -134,8 +130,7 @@ void DoOutfitDialog(void)
     missionsOutside = kOutfitVenue;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(30) + 30;
-    Dialog dialog;
-    dialog.Open(kOutfitDlogID, OutfitDialogUpdate, OutfitFilter, &outfitDialog, DialogClose::NoFlash);
+    dialog.Open(kOutfitDlogID, OutfitDialogUpdate, Filter, &outfitDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(outfitBackgroundPic);
@@ -151,415 +146,7 @@ void DoOutfitDialog(void)
     OfferMissionFromPort(kOutfitVenue);
     RedrawDialog(outfitDialog);
 
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        filterKey = GetKeyModifiers();
-        if (itemHit == 1)
-            done = 1;
-        if (itemHit == 2) {
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedUnk6C;
-            shipData->navTargetKind = savedUnk6A;
-            SetDialogGWorld(portDialog);
-            RedrawDialog(portDialog);
-            UpdateAllPortDialogs();
-            SetDialogGWorld(outfitDialog);
-            RedrawDialog(outfitDialog);
-        }
-        if (itemHit == 13) {
-            n = 0;
-            for (count = 0; count < kMaxActiveMissions; count++) {
-                if (currentMissionObjectives[count].active != 0
-                    && (currentMissionObjectives[count].flags & kMissionHidden) == 0)
-                    n++;
-            }
-            if (n > 0) {
-                DoMissionInfoDialog();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                UpdateAllPortDialogs();
-                SetDialogGWorld(outfitDialog);
-                RedrawDialog(portDialog);
-            }
-        }
-        if (itemHit == 8) {
-            if (OfferMissionFromPort(kOutfitVenue)) {
-                SetDialogGWorld(portDialog);
-                UpdateAllPortDialogs();
-                SetDialogGWorld(outfitDialog);
-            }
-        }
-        if (itemHit == 7) {
-            if (selOutfitItem != -1)
-                canBuy = CanBuyOutfitItem(selOutfitItem);
-            else
-                canBuy = 0;
-            if (canBuy && selOutfitItem != -1) {
-                count = 1;
-                if ((filterKey & optionKey) != 0) {
-                    cost = ApplyPriceAndTechnologyFlux(
-                        outfitSystem[selOutfitItem].cost, priceFluxMult[0],
-                        outfitSystem[selOutfitItem].techLevel,
-                        stellarData[shipData->targetStellar].techLevel);
-                    cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
-                                            &shipClass[shipData->type]);
-                    if (cost <= 0)
-                        qtyLimit = kMaxTradeQty;
-                    else {
-                        qtyLimit = shipData->credits / cost;
-                        if (qtyLimit > kMaxTradeQty)
-                            qtyLimit = kMaxTradeQty;
-                    }
-                    if (outfitSystem[selOutfitItem].maxCount
-                        > shipSystems[selOutfitItem]) {
-                        if (qtyLimit > outfitSystem[selOutfitItem].maxCount
-                                       - shipSystems[selOutfitItem])
-                            qtyLimit = outfitSystem[selOutfitItem].maxCount
-                                       - shipSystems[selOutfitItem];
-                    }
-                    if (qtyLimit > 1) {
-                        HasMaxOfItem(selOutfitItem, 0, &maxAfford);
-                        if (maxAfford < qtyLimit)
-                            qtyLimit = maxAfford;
-                        if (maxAfford - shipSystems[selOutfitItem] < qtyLimit)
-                            qtyLimit = maxAfford - shipSystems[selOutfitItem];
-                    }
-                    if (qtyLimit > 1) {
-                        count = DoQuantityDialog(qtyLimit, 0);
-                        OutfitDialogUpdate();
-                    }
-                }
-                for (m = 0; m < count; m++) {
-                    if (canBuy) {
-                        cost = ApplyPriceAndTechnologyFlux(
-                            outfitSystem[selOutfitItem].cost, priceFluxMult[0],
-                            outfitSystem[selOutfitItem].techLevel,
-                            stellarData[shipData->targetStellar].techLevel);
-                        cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
-                                                &shipClass[shipData->type]);
-                        GrantOutfitItem(selOutfitItem);
-                        shipData->credits -= cost;
-                        crashlog_mission_bit_set(
-                            "purchasing outfit",
-                            (char *)outfitSystem[selOutfitItem].name, 1,
-                            selOutfitItem + kFirstResourceID,
-                            outfitSystem[selOutfitItem].onPurchase);
-                        if (shipData->credits < 0) {
-                            crashlog("warning: player's cash went below zero");
-                            shipData->credits = 0;
-                            m = count;
-                        }
-                        EvalMissionBitSetString(outfitSystem[selOutfitItem].onPurchase);
-                    }
-                    if (selOutfitItem != -1)
-                        canBuy = CanBuyOutfitItem(selOutfitItem);
-                    else
-                        canBuy = 0;
-                }
-                SystemInfoToShipStats();
-                if (SetupPortAvailableItems(dockedPort)) {
-                    selOutfitItem = 0;
-                    selOutfitListItem = -1;
-                    outfitScroll = 0;
-                    canBuy = canSell = 0;
-                    strncpy(dialogDescTextPtr, "", 3);
-                    RedrawDialog(outfitDialog);
-                    m = 0;
-                    for (i = 0; i < kMaxOutfits; i++) {
-                        if (dockedPortItems[i] != -1) {
-                            m++;
-                            break;
-                        }
-                    }
-                    if (m == 0)
-                        done = 1;
-                }
-                RedrawDialog(outfitDialog);
-                didOutfit = 1;
-                if (shipSystems[selOutfitItem] > 0) {
-                    if ((outfitSystem[selOutfitItem].flags & kOutfCantSell) != 0)
-                        canSell = 0;
-                    else
-                        canSell = 1;
-                } else
-                    canSell = 0;
-                statusRedraw[kRedrawCargo] = 1;
-                DrawStatus();
-                SetDialogGWorld(outfitDialog);
-                OutfitButtons().Draw(-1);
-            }
-        }
-        if (itemHit == 4 && canSell) {
-            n = 1;
-            if ((filterKey & optionKey) != 0) {
-                qtyLimit = shipSystems[selOutfitItem];
-                if (qtyLimit > kMaxTradeQty)
-                    qtyLimit = kMaxTradeQty;
-                if (qtyLimit > 1) {
-                    n = DoQuantityDialog(qtyLimit, 1);
-                    OutfitDialogUpdate();
-                }
-            }
-            shown = 0;
-            for (count = 0; count < n; count++) {
-                if (canSell) {
-                    have = AdjustedItemMass(&outfitSystem[selOutfitItem],
-                                            &shipClass[shipData->type]);
-                    if (have < 0 && ShipFreeMass() + have < 0) {
-                        if (!shown) {
-                            GetIndString((unsigned char *)msg, kGameStrList, 0xcf);
-                            PtoCstr((unsigned char *)msg);
-                            strcpy(textShowString, (char *)msg);
-                            ShowTextDialog(0, 0, 0);
-                            shown = 1;
-                        }
-                        canSell = 0;
-                    }
-                }
-                if (canSell) {
-                    for (i = 0; i < kOutfMods; i++) {
-                        if (outfitSystem[selOutfitItem].modType[i] == kOutfModRaiseMax
-                            && outfitSystem[selOutfitItem].modVal[i] >= kFirstResourceID
-                            && outfitSystem[selOutfitItem].modVal[i] < kFirstResourceID + kMaxOutfits) {
-                            shortfall = shipSystems[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]
-                                - ((shipSystems[selOutfitItem] - n)
-                                          * outfitSystem[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID].maxCount);
-                            if (shortfall > 0) {
-                                if (!shown) {
-                                    strcpy((char *)msg,"");
-
-                                    StrcatIndCString((char *)msg,kGameStrList, 0xd0);
-                                    strcat((char *)msg," ");
-                                    if (shortfall > 3)
-                                        StrcatCommaNumber(shortfall, (char *)msg);
-                                    else
-                                        StrcatOrdinalNumber(shortfall, (char *)msg,0);
-                                    strcat((char *)msg," ");
-                                    if (shortfall > 1)
-                                        pstrcpy(nameBuf,
-                                            lcPluralOutfitName[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]);
-                                    else
-                                        pstrcpy(nameBuf,
-                                            lcOutfitName[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]);
-                                    PtoCstr(nameBuf);
-                                    strcat((char *)msg,(char *)nameBuf);
-                                    strcat((char *)msg," ");
-                                    StrcatIndCString((char *)msg,kGameStrList, 0xd4);
-                                    strcat((char *)msg," ");
-                                    if (count < n - 1)
-                                        pstrcpy(nameBuf, lcPluralOutfitName[selOutfitItem]);
-                                    else
-                                        pstrcpy(nameBuf, lcOutfitName[selOutfitItem]);
-                                    PtoCstr(nameBuf);
-                                    strcat((char *)msg,(char *)nameBuf);
-                                    strcat((char *)msg,".");
-                                    strcpy(textShowString, (char *)msg);
-                                    ShowTextDialog(0, 0, 0);
-                                    shown = 1;
-                                }
-                                canSell = 0;
-                            }
-                        }
-                    }
-                    weapID = -1;
-                    for (i = 0; i < kOutfMods; i++) {
-                        if (outfitSystem[selOutfitItem].modType[i] == kOutfModWeapon) {
-                            weapID = outfitSystem[selOutfitItem].modVal[i];
-                            break;
-                        }
-                    }
-                    if (weapID != -1 && weaponStats[weapID].maxAmmo > 0) {
-                        if (weaponStats[weapID].ammoType >= 0
-                            && weaponStats[weapID].ammoType < kMaxWeapTypes
-                            && weaponStats[weapID].guidance != kGuidanceBay)
-                            ammo = shipData->weap[weaponStats[weapID].ammoType].ammo;
-                        else
-                            ammo = shipData->weap[weapID].ammo;
-                        if (weaponStats[weapID].guidance == kGuidanceBay) {
-                            for (m = 1; m < kMaxShips; m++) {
-                                if (shipData[m].active != 0
-                                    && shipData[m].parentShip == 0
-                                    && shipData[m].aiType == kShipTypeFighter
-                                    && shipData[m].type
-                                       == weaponStats[weapID].ammoType - kFirstResourceID
-                                    && !IsDisabled(&shipData[m]))
-                                    ammo++;
-                            }
-                        }
-                        shortfall = ammo
-                            - ((shipSystems[selOutfitItem] - (count + 1))
-                                      * weaponStats[weapID].maxAmmo);
-                        if (shortfall > 0 && ammo > 0) {
-                            if (!shown) {
-                                strcpy((char *)msg,"");
-
-                                StrcatIndCString((char *)msg,kGameStrList, 0xd0);
-                                strcat((char *)msg," ");
-                                if (shortfall > 3)
-                                    StrcatCommaNumber(shortfall, (char *)msg);
-                                else
-                                    StrcatOrdinalNumber(shortfall, (char *)msg,0);
-                                strcat((char *)msg," ");
-                                k = -1;
-                                for (m = 0; m < kMaxOutfits; m++) {
-                                    for (j = 0; j < kOutfMods; j++) {
-                                        if (outfitSystem[m].modType[j] == kOutfModAmmo
-                                            && outfitSystem[m].modVal[j] == weapID) {
-                                            k = m;
-                                            break;
-                                        }
-                                    }
-                                    if (k != -1)
-                                        break;
-                                }
-                                if (k != -1) {
-                                    if (shortfall > 1)
-                                        pstrcpy(nameBuf, lcPluralOutfitName[k]);
-                                    else
-                                        pstrcpy(nameBuf, lcOutfitName[k]);
-                                    PtoCstr(nameBuf);
-                                    strcat((char *)msg,(char *)nameBuf);
-                                } else {
-                                    if (shortfall > 1)
-                                        StrcatIndCString((char *)msg,kGameStrList, 0xd2);
-                                    else
-                                        StrcatIndCString((char *)msg,kGameStrList, 0xd1);
-                                    strcat((char *)msg," ");
-                                    StrcatIndCString((char *)msg,kGameStrList, 0xd3);
-                                }
-                                strcat((char *)msg," ");
-                                StrcatIndCString((char *)msg,kGameStrList, 0xd4);
-                                strcat((char *)msg," ");
-                                if (count < n - 1)
-                                    pstrcpy(nameBuf, lcPluralOutfitName[selOutfitItem]);
-                                else
-                                    pstrcpy(nameBuf, lcOutfitName[selOutfitItem]);
-                                PtoCstr(nameBuf);
-                                strcat((char *)msg,(char *)nameBuf);
-                                strcat((char *)msg,".");
-                                strcpy(textShowString, (char *)msg);
-                                ShowTextDialog(0, 0, 0);
-                                shown = 1;
-                            }
-                            canSell = 0;
-                        }
-                    }
-                }
-                if (canSell) {
-                    cost = ApplyPriceAndTechnologyFlux(
-                        outfitSystem[selOutfitItem].cost, priceFluxMult[0],
-                        outfitSystem[selOutfitItem].techLevel,
-                        stellarData[shipData->targetStellar].techLevel);
-                    cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
-                                            &shipClass[shipData->type]);
-                    if (shipSystems[selOutfitItem]
-                        <= savedOutfits[selOutfitItem])
-                        cost *= 0.5;
-                    have = ShipFreeMass();
-                    shipSystems[selOutfitItem] -= 1;
-                    if (ShipFreeMass() < 0 && have >= 0) {
-                        shipSystems[selOutfitItem] += 1;
-                        PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-                        break;
-                    } else {
-                        shipData->credits += cost;
-                        for (j = 0; j < kOutfMods; j++) {
-                            if (shipSystems[selOutfitItem] <= 0) {
-                                if (outfitSystem[selOutfitItem].modType[j] == kOutfModWeapon
-                                    && shipData->selectedWeapon
-                                       == outfitSystem[selOutfitItem].modVal[j]) {
-                                    shipData->selectedWeapon = -1;
-                                    statusRedraw[kRedrawWeap] = 1;
-                                    break;
-                                }
-                            }
-                        }
-                        crashlog_mission_bit_set(
-                            "selling outfit",
-                            (char *)outfitSystem[selOutfitItem].name, 1,
-                            selOutfitItem + kFirstResourceID,
-                            outfitSystem[selOutfitItem].onSell);
-                        EvalMissionBitSetString(outfitSystem[selOutfitItem].onSell);
-                        SystemInfoToShipStats();
-                        if (SetupPortAvailableItems(dockedPort)) {
-                            selOutfitItem = 0;
-                            selOutfitListItem = -1;
-                            outfitScroll = 0;
-                            canBuy = canSell = 0;
-                            strncpy(dialogDescTextPtr, "", 3);
-                            RedrawDialog(outfitDialog);
-                            k = 0;
-                            // BUG (all versions): reuses the outer sell loop's `count', so after the item list
-                            // changes a quantity sale stops early or runs the wrong number of times
-                            for (count = 0; count < kMaxOutfits; count++) {
-                                if (dockedPortItems[count] != -1) {
-                                    k++;
-                                    break;
-                                }
-                            }
-                            if (k == 0)
-                                done = 1;
-                        }
-                    }
-                }
-                if (selOutfitItem != -1 && shipSystems[selOutfitItem] > 0) {
-                    if ((outfitSystem[selOutfitItem].flags & kOutfCantSell) != 0)
-                        canSell = 0;
-                    else
-                        canSell = 1;
-                } else
-                    canSell = 0;
-            }
-            if (selOutfitItem != -1)
-                canBuy = CanBuyOutfitItem(selOutfitItem);
-            else
-                canBuy = 0;
-            RedrawDialog(outfitDialog);
-            didOutfit = 1;
-            statusRedraw[kRedrawCargo] = 1;
-            DrawStatus();
-            SetDialogGWorld(outfitDialog);
-            OutfitButtons().Draw(-1);
-        }
-        if (itemHit == 10 && outfitScroll >= kGridCols) {
-            outfitScroll -= kGridCols;
-            if (selOutfitListItem >= 0 && selOutfitListItem < kGridCells - kGridCols) {
-                selOutfitListItem += kGridCols;
-                selOutfitItem =
-                    dockedPortItems[outfitScroll + selOutfitListItem];
-                LoadDescription(dialogDescTextPtr, selOutfitItem + kOutfitDescBase);
-            } else {
-                selOutfitItem = selOutfitListItem = -1;
-                strncpy(dialogDescTextPtr, "", 3);
-            }
-            SetDialogGWorld(outfitDialog);
-            RedrawDialog(outfitDialog);
-        }
-        if (itemHit == 11) {
-            m = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (dockedPortItems[i] != -1)
-                    m++;
-            }
-            if (outfitScroll < m - kGridCells) {
-                outfitScroll += kGridCols;
-                if (selOutfitListItem >= kGridCols) {
-                    selOutfitListItem -= kGridCols;
-                    selOutfitItem =
-                        dockedPortItems[outfitScroll + selOutfitListItem];
-                    LoadDescription(dialogDescTextPtr, selOutfitItem + kOutfitDescBase);
-                } else {
-                    selOutfitItem = selOutfitListItem = -1;
-                    strncpy(dialogDescTextPtr, "", 3);
-                }
-                SetDialogGWorld(outfitDialog);
-                RedrawDialog(outfitDialog);
-            }
-        }
-    } while (!done);
+    Loop();
 
     k = ShipFuelCapacity(shipData);
     if (shipData->fuel > k) {
@@ -596,12 +183,414 @@ void DoOutfitDialog(void)
     ResetMissionOfferVenue();
 }
 
-static constexpr KeyItem kOutfitKeys[] = { { 'b', 7 }, { 's', 4 } };
-static constexpr short kOutfitSlotItems[] = { 1, 7, 4, 10, 11 };
+void OutfitDialog::Hit(short item)
+{
+    short filterKey;
+    int32_t qtyLimit;
+    int have;
+    short count;
+    short weapID;
+    short ammo;
+    short shortfall;
+    short n;
+    short maxAfford;
+    unsigned char nameBuf[256];
+    char msg[256];
+    short i;
+    short j;
+    short k;
+    short m;
+    Boolean shown;
+    int32_t cost;
+
+    filterKey = GetKeyModifiers();
+    if (item == 1)
+        done = 1;
+    if (item == 2) {
+        OpenMapKeepingNav();
+        shipData->targetStellar = savedUnk6C;
+        shipData->navTargetKind = savedUnk6A;
+        RedrawAfterSubDialog(outfitDialog);
+    }
+    if (item == 13)
+        MissionInfoFromDialog(outfitDialog);
+    if (item == 8)
+        OfferFromDialog(kOutfitVenue, outfitDialog);
+    if (item == 7) {
+        if (selOutfitItem != -1)
+            canBuy = CanBuyOutfitItem(selOutfitItem);
+        else
+            canBuy = 0;
+        if (canBuy && selOutfitItem != -1) {
+            count = 1;
+            if ((filterKey & optionKey) != 0) {
+                cost = ApplyPriceAndTechnologyFlux(
+                    outfitSystem[selOutfitItem].cost, priceFluxMult[0],
+                    outfitSystem[selOutfitItem].techLevel,
+                    stellarData[shipData->targetStellar].techLevel);
+                cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
+                                        &shipClass[shipData->type]);
+                if (cost <= 0)
+                    qtyLimit = kMaxTradeQty;
+                else {
+                    qtyLimit = shipData->credits / cost;
+                    if (qtyLimit > kMaxTradeQty)
+                        qtyLimit = kMaxTradeQty;
+                }
+                if (outfitSystem[selOutfitItem].maxCount
+                    > shipSystems[selOutfitItem]) {
+                    if (qtyLimit > outfitSystem[selOutfitItem].maxCount
+                                   - shipSystems[selOutfitItem])
+                        qtyLimit = outfitSystem[selOutfitItem].maxCount
+                                   - shipSystems[selOutfitItem];
+                }
+                if (qtyLimit > 1) {
+                    HasMaxOfItem(selOutfitItem, 0, &maxAfford);
+                    if (maxAfford < qtyLimit)
+                        qtyLimit = maxAfford;
+                    if (maxAfford - shipSystems[selOutfitItem] < qtyLimit)
+                        qtyLimit = maxAfford - shipSystems[selOutfitItem];
+                }
+                if (qtyLimit > 1) {
+                    count = DoQuantityDialog(qtyLimit, 0);
+                    OutfitDialogUpdate();
+                }
+            }
+            for (m = 0; m < count; m++) {
+                if (canBuy) {
+                    cost = ApplyPriceAndTechnologyFlux(
+                        outfitSystem[selOutfitItem].cost, priceFluxMult[0],
+                        outfitSystem[selOutfitItem].techLevel,
+                        stellarData[shipData->targetStellar].techLevel);
+                    cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
+                                            &shipClass[shipData->type]);
+                    GrantOutfitItem(selOutfitItem);
+                    shipData->credits -= cost;
+                    crashlog_mission_bit_set(
+                        "purchasing outfit",
+                        (char *)outfitSystem[selOutfitItem].name, 1,
+                        selOutfitItem + kFirstResourceID,
+                        outfitSystem[selOutfitItem].onPurchase);
+                    if (shipData->credits < 0) {
+                        crashlog("warning: player's cash went below zero");
+                        shipData->credits = 0;
+                        m = count;
+                    }
+                    EvalMissionBitSetString(outfitSystem[selOutfitItem].onPurchase);
+                }
+                if (selOutfitItem != -1)
+                    canBuy = CanBuyOutfitItem(selOutfitItem);
+                else
+                    canBuy = 0;
+            }
+            SystemInfoToShipStats();
+            if (SetupPortAvailableItems(dockedPort)) {
+                selOutfitItem = 0;
+                selOutfitListItem = -1;
+                outfitScroll = 0;
+                canBuy = canSell = 0;
+                strncpy(dialogDescTextPtr, "", 3);
+                RedrawDialog(outfitDialog);
+                m = 0;
+                for (i = 0; i < kMaxOutfits; i++) {
+                    if (dockedPortItems[i] != -1) {
+                        m++;
+                        break;
+                    }
+                }
+                if (m == 0)
+                    done = 1;
+            }
+            RedrawDialog(outfitDialog);
+            didOutfit = 1;
+            if (shipSystems[selOutfitItem] > 0) {
+                if ((outfitSystem[selOutfitItem].flags & kOutfCantSell) != 0)
+                    canSell = 0;
+                else
+                    canSell = 1;
+            } else
+                canSell = 0;
+            statusRedraw[kRedrawCargo] = 1;
+            DrawStatus();
+            SetDialogGWorld(outfitDialog);
+            OutfitButtons().Draw(-1);
+        }
+    }
+    if (item == 4 && canSell) {
+        n = 1;
+        if ((filterKey & optionKey) != 0) {
+            qtyLimit = shipSystems[selOutfitItem];
+            if (qtyLimit > kMaxTradeQty)
+                qtyLimit = kMaxTradeQty;
+            if (qtyLimit > 1) {
+                n = DoQuantityDialog(qtyLimit, 1);
+                OutfitDialogUpdate();
+            }
+        }
+        shown = 0;
+        for (count = 0; count < n; count++) {
+            if (canSell) {
+                have = AdjustedItemMass(&outfitSystem[selOutfitItem],
+                                        &shipClass[shipData->type]);
+                if (have < 0 && ShipFreeMass() + have < 0) {
+                    if (!shown) {
+                        GetIndString((unsigned char *)msg, kGameStrList, 0xcf);
+                        PtoCstr((unsigned char *)msg);
+                        strcpy(textShowString, (char *)msg);
+                        ShowTextDialog(0, 0);
+                        shown = 1;
+                    }
+                    canSell = 0;
+                }
+            }
+            if (canSell) {
+                for (i = 0; i < kOutfMods; i++) {
+                    if (outfitSystem[selOutfitItem].modType[i] == kOutfModRaiseMax
+                        && outfitSystem[selOutfitItem].modVal[i] >= kFirstResourceID
+                        && outfitSystem[selOutfitItem].modVal[i] < kFirstResourceID + kMaxOutfits) {
+                        shortfall = shipSystems[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]
+                            - ((shipSystems[selOutfitItem] - n)
+                                      * outfitSystem[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID].maxCount);
+                        if (shortfall > 0) {
+                            if (!shown) {
+                                strcpy((char *)msg,"");
+
+                                StrcatIndCString((char *)msg,kGameStrList, 0xd0);
+                                strcat((char *)msg," ");
+                                if (shortfall > 3)
+                                    StrcatCommaNumber(shortfall, (char *)msg);
+                                else
+                                    StrcatOrdinalNumber(shortfall, (char *)msg,0);
+                                strcat((char *)msg," ");
+                                if (shortfall > 1)
+                                    pstrcpy(nameBuf,
+                                        lcPluralOutfitName[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]);
+                                else
+                                    pstrcpy(nameBuf,
+                                        lcOutfitName[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]);
+                                PtoCstr(nameBuf);
+                                strcat((char *)msg,(char *)nameBuf);
+                                strcat((char *)msg," ");
+                                StrcatIndCString((char *)msg,kGameStrList, 0xd4);
+                                strcat((char *)msg," ");
+                                if (count < n - 1)
+                                    pstrcpy(nameBuf, lcPluralOutfitName[selOutfitItem]);
+                                else
+                                    pstrcpy(nameBuf, lcOutfitName[selOutfitItem]);
+                                PtoCstr(nameBuf);
+                                strcat((char *)msg,(char *)nameBuf);
+                                strcat((char *)msg,".");
+                                strcpy(textShowString, (char *)msg);
+                                ShowTextDialog(0, 0);
+                                shown = 1;
+                            }
+                            canSell = 0;
+                        }
+                    }
+                }
+                weapID = -1;
+                for (i = 0; i < kOutfMods; i++) {
+                    if (outfitSystem[selOutfitItem].modType[i] == kOutfModWeapon) {
+                        weapID = outfitSystem[selOutfitItem].modVal[i];
+                        break;
+                    }
+                }
+                if (weapID != -1 && weaponStats[weapID].maxAmmo > 0) {
+                    if (weaponStats[weapID].ammoType >= 0
+                        && weaponStats[weapID].ammoType < kMaxWeapTypes
+                        && weaponStats[weapID].guidance != kGuidanceBay)
+                        ammo = shipData->weap[weaponStats[weapID].ammoType].ammo;
+                    else
+                        ammo = shipData->weap[weapID].ammo;
+                    if (weaponStats[weapID].guidance == kGuidanceBay) {
+                        for (m = 1; m < kMaxShips; m++) {
+                            if (shipData[m].active != 0
+                                && shipData[m].parentShip == 0
+                                && shipData[m].aiType == kShipTypeFighter
+                                && shipData[m].type
+                                   == weaponStats[weapID].ammoType - kFirstResourceID
+                                && !IsDisabled(&shipData[m]))
+                                ammo++;
+                        }
+                    }
+                    shortfall = ammo
+                        - ((shipSystems[selOutfitItem] - (count + 1))
+                                  * weaponStats[weapID].maxAmmo);
+                    if (shortfall > 0 && ammo > 0) {
+                        if (!shown) {
+                            strcpy((char *)msg,"");
+
+                            StrcatIndCString((char *)msg,kGameStrList, 0xd0);
+                            strcat((char *)msg," ");
+                            if (shortfall > 3)
+                                StrcatCommaNumber(shortfall, (char *)msg);
+                            else
+                                StrcatOrdinalNumber(shortfall, (char *)msg,0);
+                            strcat((char *)msg," ");
+                            k = -1;
+                            for (m = 0; m < kMaxOutfits; m++) {
+                                for (j = 0; j < kOutfMods; j++) {
+                                    if (outfitSystem[m].modType[j] == kOutfModAmmo
+                                        && outfitSystem[m].modVal[j] == weapID) {
+                                        k = m;
+                                        break;
+                                    }
+                                }
+                                if (k != -1)
+                                    break;
+                            }
+                            if (k != -1) {
+                                if (shortfall > 1)
+                                    pstrcpy(nameBuf, lcPluralOutfitName[k]);
+                                else
+                                    pstrcpy(nameBuf, lcOutfitName[k]);
+                                PtoCstr(nameBuf);
+                                strcat((char *)msg,(char *)nameBuf);
+                            } else {
+                                if (shortfall > 1)
+                                    StrcatIndCString((char *)msg,kGameStrList, 0xd2);
+                                else
+                                    StrcatIndCString((char *)msg,kGameStrList, 0xd1);
+                                strcat((char *)msg," ");
+                                StrcatIndCString((char *)msg,kGameStrList, 0xd3);
+                            }
+                            strcat((char *)msg," ");
+                            StrcatIndCString((char *)msg,kGameStrList, 0xd4);
+                            strcat((char *)msg," ");
+                            if (count < n - 1)
+                                pstrcpy(nameBuf, lcPluralOutfitName[selOutfitItem]);
+                            else
+                                pstrcpy(nameBuf, lcOutfitName[selOutfitItem]);
+                            PtoCstr(nameBuf);
+                            strcat((char *)msg,(char *)nameBuf);
+                            strcat((char *)msg,".");
+                            strcpy(textShowString, (char *)msg);
+                            ShowTextDialog(0, 0);
+                            shown = 1;
+                        }
+                        canSell = 0;
+                    }
+                }
+            }
+            if (canSell) {
+                cost = ApplyPriceAndTechnologyFlux(
+                    outfitSystem[selOutfitItem].cost, priceFluxMult[0],
+                    outfitSystem[selOutfitItem].techLevel,
+                    stellarData[shipData->targetStellar].techLevel);
+                cost = AdjustedItemCost(&outfitSystem[selOutfitItem],
+                                        &shipClass[shipData->type]);
+                if (shipSystems[selOutfitItem]
+                    <= savedOutfits[selOutfitItem])
+                    cost *= 0.5;
+                have = ShipFreeMass();
+                shipSystems[selOutfitItem] -= 1;
+                if (ShipFreeMass() < 0 && have >= 0) {
+                    shipSystems[selOutfitItem] += 1;
+                    PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+                    break;
+                } else {
+                    shipData->credits += cost;
+                    for (j = 0; j < kOutfMods; j++) {
+                        if (shipSystems[selOutfitItem] <= 0) {
+                            if (outfitSystem[selOutfitItem].modType[j] == kOutfModWeapon
+                                && shipData->selectedWeapon
+                                   == outfitSystem[selOutfitItem].modVal[j]) {
+                                shipData->selectedWeapon = -1;
+                                statusRedraw[kRedrawWeap] = 1;
+                                break;
+                            }
+                        }
+                    }
+                    crashlog_mission_bit_set(
+                        "selling outfit",
+                        (char *)outfitSystem[selOutfitItem].name, 1,
+                        selOutfitItem + kFirstResourceID,
+                        outfitSystem[selOutfitItem].onSell);
+                    EvalMissionBitSetString(outfitSystem[selOutfitItem].onSell);
+                    SystemInfoToShipStats();
+                    if (SetupPortAvailableItems(dockedPort)) {
+                        selOutfitItem = 0;
+                        selOutfitListItem = -1;
+                        outfitScroll = 0;
+                        canBuy = canSell = 0;
+                        strncpy(dialogDescTextPtr, "", 3);
+                        RedrawDialog(outfitDialog);
+                        k = 0;
+                        // BUG (all versions): reuses the outer sell loop's `count', so after the item list
+                        // changes a quantity sale stops early or runs the wrong number of times
+                        for (count = 0; count < kMaxOutfits; count++) {
+                            if (dockedPortItems[count] != -1) {
+                                k++;
+                                break;
+                            }
+                        }
+                        if (k == 0)
+                            done = 1;
+                    }
+                }
+            }
+            if (selOutfitItem != -1 && shipSystems[selOutfitItem] > 0) {
+                if ((outfitSystem[selOutfitItem].flags & kOutfCantSell) != 0)
+                    canSell = 0;
+                else
+                    canSell = 1;
+            } else
+                canSell = 0;
+        }
+        if (selOutfitItem != -1)
+            canBuy = CanBuyOutfitItem(selOutfitItem);
+        else
+            canBuy = 0;
+        RedrawDialog(outfitDialog);
+        didOutfit = 1;
+        statusRedraw[kRedrawCargo] = 1;
+        DrawStatus();
+        SetDialogGWorld(outfitDialog);
+        OutfitButtons().Draw(-1);
+    }
+    if (item == 10 && outfitScroll >= kGridCols) {
+        outfitScroll -= kGridCols;
+        if (selOutfitListItem >= 0 && selOutfitListItem < kGridCells - kGridCols) {
+            selOutfitListItem += kGridCols;
+            selOutfitItem =
+                dockedPortItems[outfitScroll + selOutfitListItem];
+            LoadDescription(dialogDescTextPtr, selOutfitItem + kOutfitDescBase);
+        } else {
+            selOutfitItem = selOutfitListItem = -1;
+            strncpy(dialogDescTextPtr, "", 3);
+        }
+        SetDialogGWorld(outfitDialog);
+        RedrawDialog(outfitDialog);
+    }
+    if (item == 11) {
+        m = 0;
+        for (i = 0; i < kMaxOutfits; i++) {
+            if (dockedPortItems[i] != -1)
+                m++;
+        }
+        if (outfitScroll < m - kGridCells) {
+            outfitScroll += kGridCols;
+            if (selOutfitListItem >= kGridCols) {
+                selOutfitListItem -= kGridCols;
+                selOutfitItem =
+                    dockedPortItems[outfitScroll + selOutfitListItem];
+                LoadDescription(dialogDescTextPtr, selOutfitItem + kOutfitDescBase);
+            } else {
+                selOutfitItem = selOutfitListItem = -1;
+                strncpy(dialogDescTextPtr, "", 3);
+            }
+            SetDialogGWorld(outfitDialog);
+            RedrawDialog(outfitDialog);
+        }
+    }
+}
+
+constexpr KeyItem kOutfitKeys[] = { { 'b', 7 }, { 's', 4 } };
+constexpr short kOutfitSlotItems[] = { 1, 7, 4, 10, 11 };
 
 // FUNCTION: EVNOVA 0x004903c0
 // MAC: _OutfitFilter i386 0x00058039 ppc 0x00060298
-Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -615,10 +604,8 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     short row;
     int what;
 
-    if ((absquatulateStr)[0] != 0) {
-        *itemHit = 1;
+    if (LeaveRequested(1, itemHit))
         return 1;
-    }
     *itemHit = -1;
     if (selOutfitItem != -1) {
         canBuy = CanBuyOutfitItem(selOutfitItem);
@@ -635,15 +622,8 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         canBuy = 0;
     }
     if ((int)ev->what == kKeyDown) {
-        QuickKeyCheckHandler();
-        if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
-            *itemHit = 2;
+        if (QuickKeyHit(2, -1, 13, itemHit))
             return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
-            *itemHit = 13;
-            return 1;
-        }
         c = EventCharOf(ev);
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 1;
@@ -789,12 +769,14 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         OutfitDialogUpdate();
         return ButtonItemHit(OutfitButtons().Track(where), kOutfitSlotItems, itemHit);
     }
-    if (ReadTick() >= missionOfferTime) {
-        *itemHit = 8;
-        missionOfferTime = ReadTick() + Rand(30) + 30;
-        return 1;
-    }
-    return 0;
+    return OfferDue(8, itemHit);
+}
+
+} // namespace
+
+void DoOutfitDialog(void)
+{
+    OutfitDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x00490c70
@@ -1191,5 +1173,3 @@ Boolean CanBuyOutfitItem(short outfit)
     }
     return can;
 }
-
-EXTERN_C_END

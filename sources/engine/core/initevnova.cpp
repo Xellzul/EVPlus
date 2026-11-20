@@ -159,7 +159,6 @@ uint32_t lastMouseMoveTime;
 uint32_t lastEscortMenuTime;
 uint32_t lastFrameTime;
 int32_t lastFPSUpdateTime;
-uint32_t lastLoMemWarningTime;
 uint32_t lastCursorAnimTime;
 short frameCounter;
 short lastShipAIDispatched;
@@ -484,7 +483,6 @@ void InitEVNova(void)
     crashlog("initializing main screen");
     HandleIntroMusic(1);
     FadeScreenOut();
-    DisposeIntroProgressBar();
     InitMainScreen();
 
     crashlog("opening last pilot file");
@@ -562,8 +560,6 @@ void PlayGame(void)
     View::Flush();
     RefreshSAT();
     FadeScreenIn();
-    lastLoMemWarningTime = 0;
-    CheckLoMem();
     lastSmokeUpdateTime = ReadTick();
     lastEventLoopTime = ReadTick();
     lastKeypressTime = ReadTick();
@@ -3400,7 +3396,7 @@ void DoEscortLand(void)
                     strcat(textShowString, creditCString);
                 strcat(textShowString, ".");
             }
-            ShowTextDialog(0, 0, 0);
+            ShowTextDialog(0, 0);
             total = numSold + numUpgraded;
             days = total / 2;
             if (days > 0) {
@@ -3479,7 +3475,7 @@ void DoEscortPayment(short days)
             StrcatIndCString(textShowString, kGameStrList, 303);
         }
         statusRedraw[kRedrawCargo] = 1;
-        ShowTextDialog(0, 0, 0);
+        ShowTextDialog(0, 0);
         DrawStatus();
     }
 }

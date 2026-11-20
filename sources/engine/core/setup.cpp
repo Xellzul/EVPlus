@@ -324,7 +324,6 @@ void Bye(void)
     void *snd;
 
     ByeLog("doing cleanup");
-    DisposeIntroProgressBar();
     FlushEvents(everyEvent - diskMask, 0);
 
     ByeLog("disposing sounds");
@@ -597,7 +596,6 @@ void Bye(void)
     DisposeDialogs();
 
     ByeLog("disposing window");
-    DisposeWindow(gWind);
     gWind = NULL;
 
     ByeLog("closing QuickTime");
@@ -1538,7 +1536,7 @@ void InitSprites(void)
     ServiceIntroMusic(0);
 
     SetRect(&commRect, 25, 0, View::width - 50, View::height - 5);
-    commRect.top = commRect.bottom - View::ScaleInView(26 + 4);   /* two lines of comm text */
+    commRect.top = commRect.bottom - View::ScaleInView(26 + 4);   /* CommOverlay grows it to the font's two lines */
 }
 
 

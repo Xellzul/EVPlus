@@ -1,8 +1,12 @@
 # Changelog
 
-- Mac, Win, Linux builds
-- 64bit builds
+- Mac, Win, Linux 64bit builds
+- No quicktime dependency
 - Hyperspace white-out from the Mac 1.1.1 release
-- Preferences dialog redone
+- Preferences dialog redone and moved to JSON
 - The interface is scaled
 - Brightness slider works live, on the whole screen
+- Key settings `[` and `]` fixed orientation 
+- Unintended keypresses wont skip movies / launch figters
+- Mission computer and bar: available missions are listed correctly by their display weight
+- Rendering in SDL

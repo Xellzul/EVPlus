@@ -21,6 +21,7 @@
 #include "burger.h"
 #include "cefix.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "buttons.h"
 
 #define kBarDlogID          0x3fd   /* DLOG 1021, with portrait */
@@ -57,22 +58,27 @@ short lastRaceWinner;
 short raceCount;
 int32_t raceBetAmount;
 
-EXTERN_C_BEGIN
+namespace {
 
 // FUNCTION: EVNOVA 0x0047c8e0
 // MAC: _DoBarDialog i386 0x00048ef5 ppc 0x00051898
-void DoBarDialog(void)
-{
-    short itemHit;
-    short savedStellar;
+/* The spaceport bar: the races, the news, hiring escorts and bar mission offers. */
+class BarDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    short savedStellar;     /* the nav target the map may change, restored after it */
     short savedRoute;
-    Boolean done;
-    short i;
-    short shown;
-    Dialog dialog;
+};
+
+void BarDialog::Run()
+{
     Picture portrait(barPic);
 
-    done = 0;
     savedStellar = shipData->targetStellar;
     savedRoute = shipData->navTargetKind;
     RandomizeNewsDialog();
@@ -89,7 +95,7 @@ void DoBarDialog(void)
     barPic = NULL;
     if (descResourcePictId >= kFirstResourceID)
         portrait.Load(descResourcePictId);
-    dialog.Open(barPic != NULL ? kBarDlogID : kPlainBarDlogID, BarDialogUpdate, BarFilter, &barDialog,
+    dialog.Open(barPic != NULL ? kBarDlogID : kPlainBarDlogID, BarDialogUpdate, Filter, &barDialog,
                 DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
@@ -99,95 +105,137 @@ void DoBarDialog(void)
     SetDialogGWorld(barDialog);
     RedrawDialog(barDialog);
     BarDialogUpdate();
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == kBarLeaveItem)
-            done = 1;
-        if (itemHit == kBarRaceItem) {
-            if (shipData->credits > 0) {
-                DoRaceDialog();
-            } else {
-                strcpy(textShowString, "");
-                StrcatIndCString(textShowString, kGameStrList,
-                                kBrokeStrIndex);
-                ShowTextDialog(0, 0, 0);
-            }
-            PortDialogUpdate();
-            SetDialogGWorld(barDialog);
-            BarDialogUpdate();
-        }
-        if (itemHit == kBarNewsItem) {
-            SetDialogGWorld(barDialog);
-            BarButtons().Draw(-1);
-            DoNewsDialog();
-            PortDialogUpdate();
-            SetDialogGWorld(barDialog);
-            BarDialogUpdate();
-        }
-        if (itemHit == kBarHireItem) {
-            if (CanHireEscorts()) {
-                SetDialogGWorld(barDialog);
-                BarButtons().Draw(-1);
-                shipBuyMode = 1;
-                DoShipyardDialog();
-                ShipStatsToSystemInfo();
-                DrawStatusCargo();
-                RedrawDialogs(1);
-            }
-        }
-        if (itemHit == kBarOfferItem) {
-            if (OfferMissionFromPort(kBarVenue)) {
-                SetDialogGWorld(portDialog);
-                PortDialogUpdate();
-                SetDialogGWorld(barDialog);
-                BarDialogUpdate();
-            }
-        }
-        if (itemHit == kBarMapItem) {
-            hypergateMapMode = 0;
-            DoSystemMap();
-            shipData->targetStellar = savedStellar;
-            shipData->navTargetKind = savedRoute;
-            UpdateAllPortDialogs();
-            SetDialogGWorld(barDialog);
-            RedrawDialog(barDialog);
-        }
-        if (itemHit == kBarPlayerInfoItem) {
-            DoPlayerInfoDialog();
-            UpdateAllPortDialogs();
-            SetDialogGWorld(barDialog);
-            RedrawDialog(barDialog);
-        }
-        if (itemHit == kBarMissionInfoItem) {
-            shown = 0;
-            for (i = 0; i < kMaxActiveMissions; i++) {
-                if (currentMissionObjectives[i].active != 0
-                    && (currentMissionObjectives[i].flags & kMissionHidden) == 0)
-                    shown++;
-            }
-            if (shown > 0) {
-                DoMissionInfoDialog();
-                SetDialogGWorld(portDialog);
-                RedrawDialog(portDialog);
-                UpdateAllPortDialogs();
-                SetDialogGWorld(barDialog);
-                RedrawDialog(barDialog);
-            }
-        }
-    } while (done == 0);
+    Loop();
     backdrop.Release();
     portrait.Release();
     dialog.Close();
     ResetMissionOfferVenue();
 }
 
-/* nothing here reaches into a dialog; the accessors do all of it */
+void BarDialog::Hit(short item)
+{
+    if (item == kBarLeaveItem)
+        done = 1;
+    if (item == kBarRaceItem) {
+        if (shipData->credits > 0) {
+            DoRaceDialog();
+        } else {
+            strcpy(textShowString, "");
+            StrcatIndCString(textShowString, kGameStrList,
+                            kBrokeStrIndex);
+            ShowTextDialog(0, 0);
+        }
+        PortDialogUpdate();
+        SetDialogGWorld(barDialog);
+        BarDialogUpdate();
+    }
+    if (item == kBarNewsItem) {
+        SetDialogGWorld(barDialog);
+        BarButtons().Draw(-1);
+        DoNewsDialog();
+        PortDialogUpdate();
+        SetDialogGWorld(barDialog);
+        BarDialogUpdate();
+    }
+    if (item == kBarHireItem) {
+        if (CanHireEscorts()) {
+            SetDialogGWorld(barDialog);
+            BarButtons().Draw(-1);
+            shipBuyMode = 1;
+            DoShipyardDialog();
+            ShipStatsToSystemInfo();
+            DrawStatusCargo();
+            RedrawDialogs(1);
+        }
+    }
+    if (item == kBarOfferItem)
+        OfferFromDialog(kBarVenue, barDialog);
+    if (item == kBarMapItem) {
+        OpenMapKeepingNav();
+        shipData->targetStellar = savedStellar;
+        shipData->navTargetKind = savedRoute;
+        RedrawAfterSubDialog(barDialog);
+    }
+    if (item == kBarPlayerInfoItem)
+        PlayerInfoFromDialog(barDialog);
+    if (item == kBarMissionInfoItem)
+        MissionInfoFromDialog(barDialog);
+}
 
+constexpr KeyItem kBarKeys[] = {
+    { 'g', kBarRaceItem }, { 'r', kBarRaceItem },
+    { 'w', kBarNewsItem }, { 'n', kBarNewsItem },
+    { 'h', kBarHireItem }, { 'e', kBarHireItem },
+};
+constexpr short kBarSlotItems[] = { kBarLeaveItem, kBarRaceItem, kBarNewsItem, -1, kBarHireItem, -1 };
 
-/* the oops record, this file's own copy; the disaster handler models the same
-   0x210-byte record for the fields it needs */
+// FUNCTION: EVNOVA 0x0047cdb0
+// MAC: _BarFilter i386 0x00047a4b ppc 0x000503e8
+Boolean BarDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+{
+    Point where;
+    EventChar c;
+    EventChar key;
+
+    if (LeaveRequested(kBarLeaveItem, itemHit))
+        return 1;
+    if ((int)ev->what == kKeyDown) {
+        if (QuickKeyHit(kBarMapItem, kBarPlayerInfoItem, kBarMissionInfoItem, itemHit))
+            return 1;
+        c = EventCharOf(ev);
+        if (IsReturnChar(c) || c == kEscapeChar) {
+            *itemHit = kBarLeaveItem;
+            return 1;
+        }
+        key = tolower(c);
+        if (KeyItemHit(key, kBarKeys, itemHit))
+            return 1;
+    }
+    if ((int)ev->what == kMouseDown) {
+        where = ev->where;
+        BarDialogUpdate();
+        return ButtonItemHit(BarButtons().Track(where), kBarSlotItems, itemHit);
+    }
+    return OfferDue(kBarOfferItem, itemHit);
+}
+
+} // namespace
+
+void DoBarDialog(void)
+{
+    BarDialog().Run();
+}
+
+// FUNCTION: EVNOVA 0x0047cfe0
+// MAC: _BarDialogUpdate i386 0x000477e8 ppc 0x0005020c
+void BarDialogUpdate(void)
+{
+    Rect box;
+    short itemType;
+    Handle item;
+
+    SetGWorldContainer(&loadPort);
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    ForeColor(blackColor);
+    PaintRect(GetDialogPortRect(barDialog));
+    if (barBackgroundPic != NULL)
+        DrawPicHandle(barBackgroundPic, GetDialogPortRect(barDialog));
+    if (barPic != NULL) {
+        GetDialogItem(barDialog, kBarPortraitItem, &itemType, &item, &box);
+        ForeColor(blackColor);
+        DrawPicHandle(barPic, &box);
+    }
+    GetDialogItem(barDialog, kBarDescItem, &itemType, &item, &box);
+    ForeColor(blackColor);
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    TETextBox(barDescText, strlen(barDescText), &box, 0);
+    InvertRect(&box);
+    ForeColor(blackColor);
+    BarButtons().Draw(-1);
+    CopyLoadPortToDialog(barDialog);
+}
 
 #define kSponsorStrList      0x1fa4  /* STR# 8100, the sponsor lines */
 #define kFillerNewsStrList   0x1fa5  /* STR# 8101, used when nothing qualifies */
@@ -222,100 +270,23 @@ void DoBarDialog(void)
 #define kTextInset    10
 #define kBodyMargin   4
 
-static constexpr KeyItem kBarKeys[] = {
-    { 'g', kBarRaceItem }, { 'r', kBarRaceItem },
-    { 'w', kBarNewsItem }, { 'n', kBarNewsItem },
-    { 'h', kBarHireItem }, { 'e', kBarHireItem },
-};
-static constexpr short kBarSlotItems[] = { kBarLeaveItem, kBarRaceItem, kBarNewsItem, -1, kBarHireItem, -1 };
-
-// FUNCTION: EVNOVA 0x0047cdb0
-// MAC: _BarFilter i386 0x00047a4b ppc 0x000503e8
-Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
-{
-    Point where;
-    EventChar c;
-    EventChar key;
-
-    if (absquatulateStr[0] != 0) {
-        *itemHit = kBarLeaveItem;
-        return 1;
-    }
-    if ((int)ev->what == kKeyDown) {
-        QuickKeyCheckHandler();
-        if (QuickKeyCheck(keyPrefs.map)) {
-            *itemHit = kBarMapItem;
-            return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.playerInfo) && infoDialog == NULL) {
-            *itemHit = kBarPlayerInfoItem;
-            return 1;
-        }
-        if (QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
-            *itemHit = kBarMissionInfoItem;
-            return 1;
-        }
-        c = EventCharOf(ev);
-        if (IsReturnChar(c) || c == kEscapeChar) {
-            *itemHit = kBarLeaveItem;
-            return 1;
-        }
-        key = tolower(c);
-        if (KeyItemHit(key, kBarKeys, itemHit))
-            return 1;
-    }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
-        BarDialogUpdate();
-        return ButtonItemHit(BarButtons().Track(where), kBarSlotItems, itemHit);
-    }
-    if (ReadTick() >= missionOfferTime) {
-        *itemHit = kBarOfferItem;
-        missionOfferTime = ReadTick() + Rand(30) + 30;
-        return 1;
-    }
-    return 0;
-}
-
-// FUNCTION: EVNOVA 0x0047cfe0
-// MAC: _BarDialogUpdate i386 0x000477e8 ppc 0x0005020c
-void BarDialogUpdate(void)
-{
-    Rect box;
-    short itemType;
-    Handle item;
-
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(barDialog));
-    if (barBackgroundPic != NULL)
-        DrawPicHandle(barBackgroundPic, GetDialogPortRect(barDialog));
-    if (barPic != NULL) {
-        GetDialogItem(barDialog, kBarPortraitItem, &itemType, &item, &box);
-        ForeColor(blackColor);
-        DrawPicHandle(barPic, &box);
-    }
-    GetDialogItem(barDialog, kBarDescItem, &itemType, &item, &box);
-    ForeColor(blackColor);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    TETextBox(barDescText, strlen(barDescText), &box, 0);
-    InvertRect(&box);
-    ForeColor(blackColor);
-    BarButtons().Draw(-1);
-    CopyLoadPortToDialog(barDialog);
-}
+namespace {
 
 // FUNCTION: EVNOVA 0x0047d180
 // MAC: _DoNewsDialog i386 0x00047f0a ppc 0x000508b8
-void DoNewsDialog(void)
+/* The news, closed by Return, Escape or a click on it. */
+class NewsDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void NewsDialog::Run()
 {
-    Boolean done;
     short pictID;
-    short itemHit;
-    Dialog dialog;
     Picture backdrop(newsPic);
 
     PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
@@ -326,20 +297,13 @@ void DoNewsDialog(void)
     }
     if (backdrop.Load(pictID) == NULL && pictID != kDefaultBackdropPict)
         backdrop.Load(kDefaultBackdropPict);
-    dialog.Open(kDlg1014ID, NewsDialogUpdate, NewsDialogFilter, &newsDialog, DialogClose::NoFlash);
+    dialog.Open(kDlg1014ID, NewsDialogUpdate, Filter, &newsDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     SetDialogGWorld(newsDialog);
     FlushEvents(everyEvent - diskMask, 0);
     NewsDialogUpdate();
-    done = 0;
-    do {
-        if (gQuit != 0)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == kNewsDoneItem)
-            done = 1;
-    } while (done == 0);
+    Loop();
     backdrop.Release();
     dialog.Close();
     FlushEvents(1, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
@@ -348,6 +312,43 @@ void DoNewsDialog(void)
     FlushEvents(4, 0);
     FlushEvents(5, 0);
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+}
+
+void NewsDialog::Hit(short item)
+{
+    if (item == kNewsDoneItem)
+        done = 1;
+}
+
+// FUNCTION: EVNOVA 0x0047d560
+// MAC: _NewsDialogFilter i386 0x00048160 ppc 0x00050acc
+Boolean NewsDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+{
+    Point where;
+
+    *itemHit = -1;
+    if ((int)ev->what == kKeyDown &&
+        (IsReturnChar(EventCharOf(ev)) ||
+         EventCharOf(ev) == kEscapeChar)) {
+        *itemHit = kNewsDoneItem;
+        return 1;
+    }
+    if ((int)ev->what == kMouseDown) {
+        where = ev->where;
+        SetDialogGWorld(newsDialog);
+        if (PtInRectPoint(where, GetDialogPortRect(newsDialog)) != 0) {
+            *itemHit = kNewsDoneItem;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+} // namespace
+
+void DoNewsDialog(void)
+{
+    NewsDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x0047d370
@@ -375,30 +376,6 @@ void NewsDialogUpdate(void)
     TETextBox(newsString, strlen(newsString), &box, 0);
     InvertRect(&box);
     CopyLoadPortToDialog(newsDialog);
-}
-
-// FUNCTION: EVNOVA 0x0047d560
-// MAC: _NewsDialogFilter i386 0x00048160 ppc 0x00050acc
-Boolean NewsDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
-{
-    Point where;
-
-    *itemHit = -1;
-    if ((int)ev->what == kKeyDown &&
-        (IsReturnChar(EventCharOf(ev)) ||
-         EventCharOf(ev) == kEscapeChar)) {
-        *itemHit = kNewsDoneItem;
-        return 1;
-    }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
-        SetDialogGWorld(newsDialog);
-        if (PtInRectPoint(where, GetDialogPortRect(newsDialog)) != 0) {
-            *itemHit = kNewsDoneItem;
-            return 1;
-        }
-    }
-    return 0;
 }
 
 // FUNCTION: EVNOVA 0x0047d600
@@ -531,20 +508,27 @@ void RandomizeNewsDialog(void)
     }
 }
 
+namespace {
+
 // FUNCTION: EVNOVA 0x0047dc50
 // MAC: _DoRaceDialog i386 0x000489ca ppc 0x00051360
-void DoRaceDialog(void)
+/* Betting on the races: a pick bets a fixed stake, with Alt held it asks for one. */
+class RaceDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+};
+
+void RaceDialog::Run()
 {
-    short itemHit;
-    Boolean done;
     short i;
     short j;
-    int32_t payout;
-    int32_t credits;
-    Dialog dialog;
     Picture racers[kRacerCount][kLastRaceFrame + 1];
 
-    dialog.Open(kRaceDialogID, RaceDialogUpdate, RaceFilter, &raceDialog, DialogClose::NoFlash);
+    dialog.Open(kRaceDialogID, RaceDialogUpdate, Filter, &raceDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     raceWinner = -1;
@@ -562,79 +546,7 @@ void DoRaceDialog(void)
     SetDialogGWorld(raceDialog);
     RedrawDialog(raceDialog);
     RaceDialogUpdate();
-    done = 0;
-    do {
-        if (gQuit != 0)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == kRaceDoneItem)
-            done = 1;
-        if (itemHit == kRaceHelpItem) {
-            LoadDescription(textShowString, kRaceHelpDesc);
-            ShowTextDialog(0, 0, 0);
-            SetDialogGWorld(raceDialog);
-            RaceDialogUpdate();
-        }
-        if (itemHit >= kRaceFirstButton &&
-            itemHit < kRaceFirstButton + kRacerCount) {
-            if (KeyCheck(kScanLAlt) != 0 || KeyCheck(kScanRAlt) != 0)
-            {
-                if (shipData[0].credits > kMaxRaceBet)
-                    credits = kMaxRaceBet;
-                else
-                    credits = shipData[0].credits;
-                raceBetAmount = DoQuantityDialog(credits, 2);
-            }
-            else if (shipData[0].credits >= kQuickRaceBet)
-                raceBetAmount = kQuickRaceBet;
-            else
-                raceBetAmount = shipData[0].credits;
-            if (raceWinner == -1 && raceBetAmount > 0) {
-                racePick = itemHit - kRaceFirstButton;
-                shipData[0].credits -= raceBetAmount;
-                statusRedraw[kRedrawCargo] = 1;
-                DrawStatus();
-                raceWinner = Rand(kRacerCount);
-                if (raceWinner == lastRaceWinner) {
-                    do {
-                        raceWinner = Rand(kRacerCount);
-                    } while (raceWinner == lastRaceWinner ||
-                             raceWinner == racePick);
-                }
-                lastRaceWinner = raceWinner;
-                raceCount++;
-                RedrawDialog(raceDialog);
-                LoadDescription(textShowString,
-                                (raceWinner + kRaceResultDesc));
-                if (raceWinner == racePick) {
-                    payout = raceBetAmount * kRacePayoutOdds;
-                    strcat(textShowString, "\r\r");
-                    StrcatIndCString(textShowString, kGameStrList,
-                                    kRaceWinStrIndex);
-                    strcat(textShowString, ":  ");
-                    StrcatCommaNumber(payout, textShowString);
-                    strcat(textShowString, " ");
-                    if (payout == 1)
-                        strcat(textShowString, creditCString);
-                    else
-                        strcat(textShowString, creditsCString);
-                    strcat(textShowString, ".");
-                }
-                ShowTextDialog(0, 0, 1);
-                if (raceWinner == racePick) {
-                    shipData[0].credits += payout;
-                    statusRedraw[kRedrawCargo] = 1;
-                    DrawStatus();
-                }
-            } else {
-                raceWinner = -1;
-                racePick = -1;
-            }
-            SetDialogGWorld(raceDialog);
-            RedrawDialog(raceDialog);
-            RaceDialogUpdate();
-        }
-    } while (done == 0);
+    Loop();
     backdrop.Release();
     for (i = 0; i < kRacerCount; i++)
         for (j = 0; j <= kLastRaceFrame; j++)
@@ -642,9 +554,83 @@ void DoRaceDialog(void)
     dialog.Close();
 }
 
+void RaceDialog::Hit(short item)
+{
+    int32_t payout;
+    int32_t credits;
+
+    if (item == kRaceDoneItem)
+        done = 1;
+    if (item == kRaceHelpItem) {
+        LoadDescription(textShowString, kRaceHelpDesc);
+        ShowTextDialog(0, 0);
+        SetDialogGWorld(raceDialog);
+        RaceDialogUpdate();
+    }
+    if (item >= kRaceFirstButton &&
+        item < kRaceFirstButton + kRacerCount) {
+        if (KeyCheck(kScanLAlt) != 0 || KeyCheck(kScanRAlt) != 0)
+        {
+            if (shipData[0].credits > kMaxRaceBet)
+                credits = kMaxRaceBet;
+            else
+                credits = shipData[0].credits;
+            raceBetAmount = DoQuantityDialog(credits, 2);
+        }
+        else if (shipData[0].credits >= kQuickRaceBet)
+            raceBetAmount = kQuickRaceBet;
+        else
+            raceBetAmount = shipData[0].credits;
+        if (raceWinner == -1 && raceBetAmount > 0) {
+            racePick = item - kRaceFirstButton;
+            shipData[0].credits -= raceBetAmount;
+            statusRedraw[kRedrawCargo] = 1;
+            DrawStatus();
+            raceWinner = Rand(kRacerCount);
+            if (raceWinner == lastRaceWinner) {
+                do {
+                    raceWinner = Rand(kRacerCount);
+                } while (raceWinner == lastRaceWinner ||
+                         raceWinner == racePick);
+            }
+            lastRaceWinner = raceWinner;
+            raceCount++;
+            RedrawDialog(raceDialog);
+            LoadDescription(textShowString,
+                            (raceWinner + kRaceResultDesc));
+            if (raceWinner == racePick) {
+                payout = raceBetAmount * kRacePayoutOdds;
+                strcat(textShowString, "\r\r");
+                StrcatIndCString(textShowString, kGameStrList,
+                                kRaceWinStrIndex);
+                strcat(textShowString, ":  ");
+                StrcatCommaNumber(payout, textShowString);
+                strcat(textShowString, " ");
+                if (payout == 1)
+                    strcat(textShowString, creditCString);
+                else
+                    strcat(textShowString, creditsCString);
+                strcat(textShowString, ".");
+            }
+            ShowTextDialog(0, 1);
+            if (raceWinner == racePick) {
+                shipData[0].credits += payout;
+                statusRedraw[kRedrawCargo] = 1;
+                DrawStatus();
+            }
+        } else {
+            raceWinner = -1;
+            racePick = -1;
+        }
+        SetDialogGWorld(raceDialog);
+        RedrawDialog(raceDialog);
+        RaceDialogUpdate();
+    }
+}
+
 // FUNCTION: EVNOVA 0x0047e150
 // MAC: _RaceFilter i386 0x0004890e ppc 0x00051284
-Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean RaceDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
 
@@ -660,6 +646,13 @@ Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return ButtonItemHit(RaceButtons().Track(where), itemHit);
     }
     return 0;
+}
+
+} // namespace
+
+void DoRaceDialog(void)
+{
+    RaceDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x0047e1e0
@@ -678,4 +671,3 @@ void RaceDialogUpdate(void)
     CopyLoadPortToDialog(raceDialog);
 }
 
-EXTERN_C_END
