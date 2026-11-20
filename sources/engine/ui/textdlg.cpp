@@ -30,13 +30,19 @@
 #include "space.h"
 #include "dialog.h"
 #include "buttons.h"
+#include "scrolltext.h"
 
 DialogPtr textDialog;
 PicHandle textDialogBackgroundPic[3];
-Boolean canScrollTextUp;
-Boolean canScrollTextDown;
 TEHandle textDialogTextHandle;
-uint32_t lastTextScrollTime;
+
+/* the text item, its scroll buttons and TextButtons' slots for them */
+constexpr ScrollingText::Layout kTextLayout = { 3, 5, 6, 1, 2, 10, 250 };
+
+static ScrollingText DialogText()
+{
+    return ScrollingText(textDialog, textDialogTextHandle, kTextLayout);
+}
 
 EXTERN_C_BEGIN
 
@@ -53,7 +59,6 @@ EXTERN_C_BEGIN
 #define kTextDlgMinHeight      0x30
 #define kTextDlgSlackMargin    16
 #define kTextDlgRecentre       0.3
-#define kScrollLineStep        10
 
 
                                                          /* 0x004d18b0 (mac _SizeWindow) */
@@ -75,7 +80,6 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
     Boolean savedDown;
     Point pt;
     Boolean done;
-    short savedBottom;
     short slack;
     short viewHeight;
     short textHeight;
@@ -184,13 +188,7 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
     SetDialogGWorld(textDialog);
     lastTextScrollTime = ReadTick();
     FlushEvents(everyEvent - diskMask, 0);
-    canScrollTextUp = 0;
-    canScrollTextDown = 1;
-    savedBottom = (*textDialogTextHandle)->destRect.bottom;
-    TEPinScroll(0, -1, textDialogTextHandle);
-    if ((*textDialogTextHandle)->destRect.bottom == savedBottom)
-        canScrollTextDown = 0;
-    TEPinScroll(0, 1, textDialogTextHandle);
+    DialogText().ProbeRange();
     savedUp = canScrollTextUp;
     savedDown = canScrollTextDown;
     TextDialogUpdate();
@@ -240,10 +238,7 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
         itemHit = dialog.Modal();
         if (itemHit == 1)
             done = 1;
-        if (itemHit == 5 && canScrollTextUp != 0)
-            ScrollDialogText(textDialog, 3, textDialogTextHandle, kScrollLineStep, 1);
-        if (itemHit == 6 && canScrollTextDown != 0)
-            ScrollDialogText(textDialog, 3, textDialogTextHandle, -kScrollLineStep, 1);
+        DialogText().Step(itemHit);
         if (itemHit == 4 && allowMap) {
             savedStellar = shipData->targetStellar;
             savedRoute = shipData->navTargetKind;
@@ -265,14 +260,7 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
             TextDialogUpdate();
         }
         SetDialogGWorld(textDialog);
-        if (canScrollTextUp != savedUp) {
-            InvalDialogItem(textDialog, 5);
-            savedUp = canScrollTextUp;
-        }
-        if (canScrollTextDown != savedDown) {
-            InvalDialogItem(textDialog, 6);
-            savedDown = canScrollTextDown;
-        }
+        DialogText().InvalidateChanged(savedUp, savedDown);
     } while (done == 0);
 
     for (i = 0; i < 3; i++)
@@ -323,63 +311,11 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
     }
 }
 
-#define kScrollTicksToLines 0.01667     /* ~1/60: ticks to scroll units */
-
-
-// FUNCTION: EVNOVA 0x00499270
-// MAC: _ScrollDialogText i386 0x00051839 ppc 0x0005a10c
-void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean force)
-{
-    Rect box;
-    short type;
-    void *handle;
-    short savedTop;
-    short delta;
-
-    if (!force) {
-        delta = dv * (float)(ReadTick() - lastTextScrollTime) * kScrollTicksToLines;
-        dv = delta;
-        if (dv == 0)
-            return;
-    }
-
-    SetGWorldContainer(&loadPort);
-    savedTop = (*hTE)->destRect.top;
-    (*hTE)->inPort = (GrafPtr)loadPort.world;
-    ForeColor(whiteColor);
-    BackColor(blackColor);
-    TEPinScroll(0, dv, hTE);
-    ForeColor(blackColor);
-    BackColor(whiteColor);
-    (*hTE)->inPort = (GrafPtr)GetDialogPort(textDialog);
-    lastTextScrollTime = ReadTick();
-    SetDialogGWorld(dlg);
-
-    if ((*hTE)->viewRect.top > (*hTE)->destRect.top)
-        canScrollTextUp = 1;
-    else
-        canScrollTextUp = 0;
-
-    if ((*hTE)->destRect.top == savedTop && dv < 0)
-        canScrollTextDown = 0;
-    else if ((*hTE)->viewRect.bottom > (*hTE)->destRect.top)
-        canScrollTextDown = 1;
-
-    GetDialogItem(dlg, item, &type, (Handle *)&handle, &box);
-    CopyLoadPortToDialog(dlg, box);
-}
-
-#define kScrollPageStep   250
-
-
 // FUNCTION: EVNOVA 0x00499440
 // MAC: _TextDialogFilter i386 0x00051f77 ppc 0x0005a820
 Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
-    Rect box;
     Point where;
-    short itemType;
-    void *item;
     short button;
     EventChar c;
 
@@ -396,82 +332,17 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                 return 1;
             }
         }
-        if (canScrollTextUp != 0) {
-            if (c == kUpArrowChar) {
-                *itemHit = 5;
-                return 1;
-            }
-            if (c == kHomeChar) {
-                ScrollDialogText(textDialog, 3, textDialogTextHandle, kScrollToEnd, 1);
-                *itemHit = -1;
-                canScrollTextUp = 0;
-                return 1;
-            }
-            if (c == kPageUpChar) {
-                ScrollDialogText(textDialog, 3, textDialogTextHandle, kScrollPageStep, 1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
-        if (canScrollTextDown != 0) {
-            if (c == kDownArrowChar) {
-                *itemHit = 6;
-                return 1;
-            }
-            if (c == kEndChar) {
-                ScrollDialogText(textDialog, 3, textDialogTextHandle, -kScrollToEnd, 1);
-                *itemHit = -1;
-                canScrollTextDown = 0;
-                return 1;
-            }
-            if (c == kPageDownChar) {
-                ScrollDialogText(textDialog, 3, textDialogTextHandle, -kScrollPageStep, 1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
+        if (DialogText().Key(c, itemHit))
+            return 1;
     }
     if ((int)ev->what == kMouseDown) {
         SetDialogGWorld(textDialog);
         where = ev->where;
-        if (canScrollTextUp != 0) {
-            GetDialogItem(textDialog, 5, &itemType, (Handle *)&item, &box);
-            if (PtInRectPoint(where, &box) && canScrollTextUp != 0) {
-                lastTextScrollTime = ReadTick();
-                while (StillDown()) {
-                    BusyIdle();
-                    ScrollDialogText(textDialog, 3, textDialogTextHandle, 1, 1);
-                    SetDialogGWorld(textDialog);
-                    TextButtons().Draw(1);
-                    while (lastTextScrollTime == ReadTick() && StillDown())
-                        BusyIdle();
-                }
-                SetDialogGWorld(textDialog);
-                TextButtons().Draw(-1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
-        if (canScrollTextDown != 0) {
-            GetDialogItem(textDialog, 6, &itemType, (Handle *)&item, &box);
-            if (PtInRectPoint(where, &box) && canScrollTextDown != 0) {
-                lastTextScrollTime = ReadTick();
-                while (StillDown()) {
-                    BusyIdle();
-                    ScrollDialogText(textDialog, 3, textDialogTextHandle, -1, 1);
-                    SetDialogGWorld(textDialog);
-                    TextButtons().Draw(2);
-                    while (lastTextScrollTime == ReadTick() && StillDown())
-                        BusyIdle();
-                }
-                SetDialogGWorld(textDialog);
-                TextButtons().Draw(-1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
+        TextButtons buttons;
+        if (DialogText().Press(where, itemHit, buttons))
+            return 1;
         TextDialogUpdate();
-        button = TextButtons().Track(where);
+        button = buttons.Track(where);
         if (button == 0)
             *itemHit = 1;
         else if (button == 1)
@@ -481,7 +352,7 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         else
             *itemHit = -1;
         SetDialogGWorld(textDialog);
-        TextButtons().Draw(-1);
+        buttons.Draw(-1);
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
@@ -555,14 +426,12 @@ void TextDialogUpdate(void)
             QDReleaseResource(loaded);
         }
     }
-    (*textDialogTextHandle)->inPort = (GrafPtr)loadPort.world;
     GetDialogItem(textDialog, 3, &itemType, &item, &r);
     ForeColor(whiteColor);
     BackColor(blackColor);
     TEUpdate(&r, textDialogTextHandle);
     ForeColor(blackColor);
     BackColor(whiteColor);
-    (*textDialogTextHandle)->inPort = (GrafPtr)GetDialogPort(textDialog);
     CopyLoadPortToDialog(textDialog);
 }
 

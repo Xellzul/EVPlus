@@ -28,6 +28,7 @@
 #include "endianswap.h"
 #include "dialog.h"
 #include "buttons.h"
+#include "scrolltext.h"
 
 #define kDudeResName "d\x9f" "de"
 #define kSpobResName "sp\x9a" "b"
@@ -2476,7 +2477,13 @@ Boolean IsMissionAvailable(short mission, Boolean offer)
 #define kItemScrollUp                  9
 #define kItemScrollDown               10
 
-#define kBriefScrollStep               10
+/* the briefing text, its scroll buttons and SingleMissionButtons' slots for them */
+constexpr ScrollingText::Layout kOfferTextLayout = { kItemBriefText, kItemScrollUp, kItemScrollDown, 2, 3, 10, 250 };
+
+static ScrollingText OfferText()
+{
+    return ScrollingText(missionDialog, offerTextHandle, kOfferTextLayout);
+}
 
 
 // FUNCTION: EVNOVA 0x00442510
@@ -2502,7 +2509,6 @@ short OfferOneMission(short mission)
     short savedTarget;
     short savedRoute;
     short shown;
-    short savedScroll;
     unsigned char labelChar;
     Boolean accepted;
     Boolean savedUp;
@@ -2695,13 +2701,7 @@ short OfferOneMission(short mission)
     SetDialogItem(missionDialog, kItemDivider, itemType, itemHandle, &box);
 
     lastTextScrollTime = ReadTick();
-    canScrollTextUp = 0;
-    canScrollTextDown = 1;
-    savedScroll = (*offerTextHandle)->destRect.bottom;
-    TEPinScroll(0, -1, offerTextHandle);
-    if ((*offerTextHandle)->destRect.bottom == savedScroll)
-        canScrollTextDown = 0;
-    TEPinScroll(0, 1, offerTextHandle);
+    OfferText().ProbeRange();
     savedUp = canScrollTextUp;
     savedDown = canScrollTextDown;
 
@@ -2826,24 +2826,8 @@ short OfferOneMission(short mission)
                 RedrawDialog(missionDialog);
             }
         }
-        if (itemHit == kItemScrollUp) {
-            if (canScrollTextUp != 0)
-                ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle,
-                                 kBriefScrollStep, 1);
-        }
-        if (itemHit == kItemScrollDown) {
-            if (canScrollTextDown != 0)
-                ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle,
-                                 -kBriefScrollStep, 1);
-        }
-        if (canScrollTextUp != savedUp) {
-            InvalDialogItem(missionDialog, kItemScrollUp);
-            savedUp = canScrollTextUp;
-        }
-        if (canScrollTextDown != savedDown) {
-            InvalDialogItem(missionDialog, kItemScrollDown);
-            savedDown = canScrollTextDown;
-        }
+        OfferText().Step(itemHit);
+        OfferText().InvalidateChanged(savedUp, savedDown);
     } while (done == 0);
 
     if (descMovieName[0] != 0 && settings.noMovies == 0
@@ -3551,10 +3535,6 @@ void MungeForSymbol(char *needle, char *replacement)
 
 #define kDateCaptionIdx     0x168
 
-/* the port's own codes */
-
-#define kScrollStep   250
-
 /* MissionState fields beyond +0x00, from SetupMissionInfoList (TBC per its
    header): +0x03 gates the bullet prefix, +0x04 bit 0x400 excludes. */
 
@@ -4001,10 +3981,7 @@ void MissionInfoDialogUpdate(void)
 // MAC: _SingleMissionFilter i386 0x00098d9a ppc 0x000a4984
 Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
-    Rect box;
-    short itemType;
     Point where;
-    void *item;
     short button;
     int acceptKey;
     int refuseKey;
@@ -4046,81 +4023,16 @@ Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                 }
             }
         }
-        if (canScrollTextUp != 0) {
-            if (c == kUpArrowChar) {
-                *itemHit = kItemScrollUp;
-                return 1;
-            }
-            if (c == kHomeChar) {
-                ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle, kScrollToEnd, 1);
-                *itemHit = -1;
-                canScrollTextUp = 0;
-                return 1;
-            }
-            if (c == kPageUpChar) {
-                ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle, kScrollStep, 1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
-        if (canScrollTextDown != 0) {
-            if (c == kDownArrowChar) {
-                *itemHit = kItemScrollDown;
-                return 1;
-            }
-            if (c == kEndChar) {
-                ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle, -kScrollToEnd, 1);
-                *itemHit = -1;
-                canScrollTextDown = 0;
-                return 1;
-            }
-            if (c == kPageDownChar) {
-                ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle, -kScrollStep, 1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
+        if (OfferText().Key(c, itemHit))
+            return 1;
     }
     if (what == kMouseDown) {
         where = ev->where;
-        if (canScrollTextUp != 0) {
-            GetDialogItem(missionDialog, kItemScrollUp, &itemType, (Handle *)&item, &box);
-            if (PtInRect(where.h, where.v, &box) && canScrollTextUp != 0) {
-                lastTextScrollTime = ReadTick();
-                while (StillDown()) {
-                    BusyIdle();
-                    ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle, 1, 1);
-                    SetDialogGWorld(missionDialog);
-                    SingleMissionButtons().Draw(2);
-                    while (lastTextScrollTime == ReadTick() && StillDown())
-                        BusyIdle();
-                }
-                SetDialogGWorld(missionDialog);
-                SingleMissionButtons().Draw(-1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
-        if (canScrollTextDown != 0) {
-            GetDialogItem(missionDialog, kItemScrollDown, &itemType, (Handle *)&item, &box);
-            if (PtInRect(where.h, where.v, &box) && canScrollTextDown != 0) {
-                lastTextScrollTime = ReadTick();
-                while (StillDown()) {
-                    BusyIdle();
-                    ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle, -1, 1);
-                    SetDialogGWorld(missionDialog);
-                    SingleMissionButtons().Draw(3);
-                    while (lastTextScrollTime == ReadTick() && StillDown())
-                        BusyIdle();
-                }
-                SetDialogGWorld(missionDialog);
-                SingleMissionButtons().Draw(-1);
-                *itemHit = -1;
-                return 1;
-            }
-        }
+        SingleMissionButtons buttons;
+        if (OfferText().Press(where, itemHit, buttons))
+            return 1;
         SingleMissionDialogUpdate();
-        button = SingleMissionButtons().Track(where);
+        button = buttons.Track(where);
         if (button == 0) {
             *itemHit = kItemAccept;
             return 1;
@@ -4167,14 +4079,12 @@ void SingleMissionDialogUpdate(void)
             }
         }
     }
-    (*offerTextHandle)->inPort = (GrafPtr)loadPort.world;
     GetDialogItem(missionDialog, kItemBriefText, &itemType, (Handle *)&item, &r);
     ForeColor(whiteColor);
     BackColor(blackColor);
     TEUpdate(&r, offerTextHandle);
     ForeColor(blackColor);
     BackColor(whiteColor);
-    (*offerTextHandle)->inPort = (GrafPtr)GetDialogPort(missionDialog);
     CopyLoadPortToDialog(missionDialog);
 }
 
