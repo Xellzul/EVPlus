@@ -28,6 +28,7 @@
 #include "movie.h"
 #include "ai.h"
 #include "space.h"
+#include "dialog.h"
 
 #define kFirstRowItem  4
 #define kLastRowItem   11
@@ -203,12 +204,12 @@ void DoTradeDialog(void)
     missionsOutside = kTradeVenue;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(0x1e) + 0x1e;
-    tradeDialog = NULL;
-    tradeDialog = GetNewDialog(kTradeDlogID, TradeDialogUpdate,
-                               TradeFilter);
-    if (tradeDialog == NULL)
+    Dialog dialog;
+    dialog.Open(kTradeDlogID, TradeDialogUpdate, TradeFilter, &tradeDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    tradeBackgroundPic = GetPicture(kTradePictID);
+    Picture backdrop(tradeBackgroundPic);
+    backdrop.Load(kTradePictID);
     CenterWindow(FrontWindow(tradeDialog), FrontWindow(portDialog));
     selTradeItem = 7;
     TradeDialogTabKey(0);
@@ -222,7 +223,8 @@ void DoTradeDialog(void)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(tradeDialog, TradeFilter, &itemHit, &mods);
+        itemHit = dialog.Modal();
+        mods = GetKeyModifiers();
         if (itemHit == 1)
             done = 1;
         if (itemHit == 2) {
@@ -342,12 +344,8 @@ void DoTradeDialog(void)
             }
         }
     } while (done == 0);
-    DisposeDialogNoFlash(tradeDialog);
-    tradeDialog = NULL;
-    if (tradeBackgroundPic != NULL) {
-        QDReleaseResource(tradeBackgroundPic);
-        tradeBackgroundPic = NULL;
-    }
+    dialog.Close();
+    backdrop.Release();
     shipData->targetStellar = savedStellar;
     shipData->navTargetKind = savedRoute;
     statusRedraw[kRedrawNav] = 1;
@@ -959,11 +957,13 @@ void DoOutfitDialog(void)
     missionsOutside = kOutfitVenue;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(30) + 30;
-    outfitDialog = NULL;
-    outfitDialog = GetNewDialog(kOutfitDlogID, OutfitDialogUpdate, OutfitFilter);
-    if (outfitDialog == NULL)
+    Dialog dialog;
+    dialog.Open(kOutfitDlogID, OutfitDialogUpdate, OutfitFilter, &outfitDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    outfitBackgroundPic = GetPicture(kOutfitPictID);
+    Picture backdrop(outfitBackgroundPic);
+    Picture preview(previewPic);
+    backdrop.Load(kOutfitPictID);
     CenterWindow(FrontWindow(outfitDialog), FrontWindow(portDialog));
     GetDialogItem(outfitDialog, kGridItem, &itemType, (Handle *)&item, &box);
     SetupListRects((Point *)&box);
@@ -981,7 +981,8 @@ void DoOutfitDialog(void)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(outfitDialog, OutfitFilter, &itemHit, &filterKey);
+        itemHit = dialog.Modal();
+        filterKey = GetKeyModifiers();
         if (itemHit == 1)
             done = 1;
         if (itemHit == 2) {
@@ -1407,16 +1408,9 @@ void DoOutfitDialog(void)
             shipSystems[i] = 0;
     }
     SystemInfoToShipStats();
-    DisposeDialogNoFlash(outfitDialog);
-    outfitDialog = NULL;
-    if (outfitBackgroundPic != NULL) {
-        QDReleaseResource(outfitBackgroundPic);
-        outfitBackgroundPic = NULL;
-    }
-    if (previewPic != NULL) {
-        QDReleaseResource(previewPic);
-        previewPic = NULL;
-    }
+    dialog.Close();
+    backdrop.Release();
+    preview.Release();
     SWSetPortToBackground(gSpriteWorld);
     SetSystemBackgroundColor();
     PaintRect(&gSpriteWorld->backFrameP->frameRect);
@@ -2118,10 +2112,9 @@ void DoPortDialog(SpobRecord *spob, short stellar)
             }
         }
     }
-    portDialog = NULL;
-    portDialog = GetNewDialog(kPortDlogID, PortDialogUpdate,
-                                  PortFilter);
-    if (portDialog == NULL)
+    Dialog dialog;
+    dialog.Open(kPortDlogID, PortDialogUpdate, PortFilter, &portDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
     if (spob->customSound >= kFirstResourceID && settings.ambientSounds != 0) {
         planetSnd = ST_LoadSndResource(spob->customSound);
@@ -2169,7 +2162,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
     do {
         if (gQuit)
             quit = 1;
-        MyModalDialog(portDialog, PortFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (gQuit)
             quit = 1;
         if (itemHit == 12) {
@@ -2315,8 +2308,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
         shipData->targetShip = -1;
         statusRedraw[kRedrawWeap] = 1;
     }
-    DisposeDialogNoFlash(portDialog);
-    portDialog = NULL;
+    dialog.Close();
     onPlanet = 0;
 }
 
@@ -2516,23 +2508,6 @@ void PortDialogUpdate(void)
              0, NULL);
 }
 
-/*
- * The modal driver every dialog in the binary runs through. Its first two
- * parameters are dead here — the callers all pass the dialog and its event
- * proc, which were installed on the dialog record by GetNewDialog and are
- * picked up from there — and the fourth is an optional out-slot for the
- * modifier state that GetKeyModifiers reports.
- */
-// FUNCTION: EVNOVA 0x00492f10
-// MAC: _MyModalDialog i386 0x00059954 ppc 0x00061ac4
-void MyModalDialog(DialogPtr dlg, DialogEventProc eventProc, short *itemHit,
-                    short *modifiers)
-{
-    ModalDialog(NULL, itemHit);
-    if (modifiers != NULL)
-        *modifiers = GetKeyModifiers();
-}
-
 #define kShipDescBase 13000    /* desc ID of ship 0's shipyard blurb */
 #define kHireDescBase 14000     /* ...and of its hire-an-escort blurb */
 
@@ -2599,11 +2574,13 @@ void DoShipyardDialog(void)
     missionsOutside = 5;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(30) + 30;
-    shipyardDialog = NULL;
-    shipyardDialog = GetNewDialog(0x3ec, ShipyardDialogUpdate, ShipyardFilter);
-    if (shipyardDialog == NULL)
+    Dialog dialog;
+    dialog.Open(0x3ec, ShipyardDialogUpdate, ShipyardFilter, &shipyardDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    shipyardBackgroundPic = GetPicture(kShipyardPictID);
+    Picture backdrop(shipyardBackgroundPic);
+    Picture preview(previewPic);
+    backdrop.Load(kShipyardPictID);
     CenterWindow(FrontWindow(shipyardDialog), FrontWindow(portDialog));
     GetDialogItem(shipyardDialog, kGridItem, &itemType, (Handle *)&item, &box);
     SetupListRects((Point *)&box);
@@ -2623,7 +2600,7 @@ void DoShipyardDialog(void)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(shipyardDialog, ShipyardFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1) {
             if (selShipyardItem != -1) {
                 n = selShipyardItem;
@@ -2854,17 +2831,10 @@ void DoShipyardDialog(void)
                         GetDialogPortRect(shipyardDialog)->top) / 2);
     }
     EndLoopingMovie();
-    DisposeDialogNoFlash(shipyardDialog);
-    shipyardDialog = NULL;
+    dialog.Close();
     shipyardEgg = 0;
-    if (shipyardBackgroundPic != NULL) {
-        QDReleaseResource(shipyardBackgroundPic);
-        shipyardBackgroundPic = NULL;
-    }
-    if (previewPic != NULL) {
-        QDReleaseResource(previewPic);
-        previewPic = NULL;
-    }
+    backdrop.Release();
+    preview.Release();
     if (shipBuyMode != 0) {
         box.left = box.right = ((GetCWindowPortRect((WindowRef)gWind)->left +
                              GetCWindowPortRect((WindowRef)gWind)->right) / 2);
@@ -3374,21 +3344,17 @@ void DoShipyardDescription(short ship)
     short shown;
 
     done = 0;
-    shipDescDialog = NULL;
+    Dialog dialog;
+    Picture bigShip(bigShipPic);
     bigShipPic = NULL;
     if (descResourcePictId >= kFirstResourceID)
-        bigShipPic = GetPicture(descResourcePictId);
-    if (bigShipPic != NULL)
-        shipDescDialog = GetNewDialog(kDescDlogID, ShipDescDialogUpdate, ShipDescFilter);
-    else
-        shipDescDialog = GetNewDialog(kPlainDescDlogID, ShipDescDialogUpdate,
-                                ShipDescFilter);
-    if (shipDescDialog == NULL)
+        bigShip.Load(descResourcePictId);
+    dialog.Open(bigShipPic != NULL ? kDescDlogID : kPlainDescDlogID, ShipDescDialogUpdate, ShipDescFilter,
+                &shipDescDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    if (descResourcePictId >= kFirstResourceID)
-        shipDescBackgroundPic = GetPicture(kDescPictID);
-    else
-        shipDescBackgroundPic = GetPicture(kPlainDescPictID);
+    Picture backdrop(shipDescBackgroundPic);
+    backdrop.Load(descResourcePictId >= kFirstResourceID ? kDescPictID : kPlainDescPictID);
     CenterWindow(FrontWindow(shipDescDialog), FrontWindow(portDialog));
     ShowWindowNoFlash(FrontWindow(shipDescDialog));
     SetDialogGWorld(shipDescDialog);
@@ -3401,7 +3367,7 @@ void DoShipyardDescription(short ship)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(shipDescDialog, ShipDescFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1)
             done = 1;
         if (itemHit == 4) {
@@ -3442,15 +3408,9 @@ void DoShipyardDescription(short ship)
             }
         }
     } while (done == 0);
-    DisposeDialogNoFlash(shipDescDialog);
-    shipDescDialog = NULL;
-    if (shipDescBackgroundPic != NULL) {
-        QDReleaseResource(shipDescBackgroundPic);
-        shipDescBackgroundPic = NULL;
-    }
-    if (bigShipPic != NULL)
-        QDReleaseResource(bigShipPic);
-    bigShipPic = NULL;
+    dialog.Close();
+    backdrop.Release();
+    bigShip.Release();
 }
 
 // FUNCTION: EVNOVA 0x004959d0
@@ -4030,9 +3990,9 @@ void EVNoteAlert(const unsigned char *text)
     Handle item;
 
     done = 0;
-    alertDialog = NULL;
-    alertDialog = GetNewDialog(3000, NULL, NULL);
-    if (alertDialog == NULL)
+    Dialog dialog;
+    dialog.Open(3000, NULL, NULL, &alertDialog);
+    if (!dialog.IsOpen())
         return;
     SetDialogGWorld(alertDialog);
     SetDialogDefaultItem(alertDialog, 1);
@@ -4047,12 +4007,11 @@ void EVNoteAlert(const unsigned char *text)
     FlushEvents(everyEvent - diskMask, 0);
     ShowTheCursor();
     do {
-        ModalDialog(NULL, &itemHit);
+        itemHit = dialog.Modal();
         if (itemHit == 1)
             done = 1;
     } while (done == 0);
-    DisposeDialog(alertDialog);
-    alertDialog = NULL;
+    dialog.Close();
 }
 
 // FUNCTION: EVNOVA 0x004977d0
@@ -4067,9 +4026,9 @@ Boolean EVYesNoDialog(unsigned char *text)
     Handle item;
 
     done = 0;
-    alertDialog = NULL;
-    alertDialog = GetNewDialog(3002, NULL, NULL);
-    if (alertDialog == NULL)
+    Dialog dialog;
+    dialog.Open(3002, NULL, NULL, &alertDialog);
+    if (!dialog.IsOpen())
         return 0;
     SetDialogDefaultItem(alertDialog, 1);
     ShowMacWindow(FrontWindow(alertDialog));
@@ -4081,7 +4040,7 @@ Boolean EVYesNoDialog(unsigned char *text)
     FlushEvents(everyEvent - diskMask, 0);
     ShowTheCursor();
     do {
-        ModalDialog(NULL, &itemHit);
+        itemHit = dialog.Modal();
         if (itemHit == 1) {
             result = 1;
             done = 1;
@@ -4092,8 +4051,7 @@ Boolean EVYesNoDialog(unsigned char *text)
         }
     } while (done == 0);
     SWSetPortToWindow(gSpriteWorld);
-    DisposeDialog(alertDialog);
-    alertDialog = NULL;
+    dialog.Close();
     SWSetPortToWindow(gSpriteWorld);
     return result;
 }
@@ -4111,9 +4069,9 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
     short itemType;
 
     done = 0;
-    alertDialog = NULL;
-    alertDialog = GetNewDialog(3001, NULL, NULL);
-    if (alertDialog == NULL)
+    Dialog dialog;
+    dialog.Open(3001, NULL, NULL, &alertDialog);
+    if (!dialog.IsOpen())
         return 0;
     SetDialogDefaultItem(alertDialog, 1);
     ShowMacWindow(FrontWindow(alertDialog));
@@ -4128,7 +4086,7 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
     FlushEvents(everyEvent - diskMask, 0);
     ShowTheCursor();
     do {
-        ModalDialog(NULL, &itemHit);
+        itemHit = dialog.Modal();
         if (itemHit == 1) {
             GetDialogItem(alertDialog, 5, &itemType, &item, &box);
             GetDialogItemText((Handle)item,text);
@@ -4148,8 +4106,7 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
     GetDialogItem(alertDialog, 5, &itemType, &item, &box);
     GetDialogItemText((Handle)item,textInputString);
     SWSetPortToWindow(gSpriteWorld);
-    DisposeDialog(alertDialog);
-    alertDialog = NULL;
+    dialog.Close();
     SWSetPortToWindow(gSpriteWorld);
     return result;
 }
@@ -4305,12 +4262,13 @@ Boolean DoCapturedShipAssignmentDialog(void)
     short itemHit;
 
     done = 0;
-    captureDialog = NULL;
-    captureDialog = GetNewDialog(kCaptureDlogID, CapturedAssignmentDialogUpdate,
-                                 CapturedAssignmentFilter);
-    if (captureDialog == NULL)
+    Dialog dialog;
+    dialog.Open(kCaptureDlogID, CapturedAssignmentDialogUpdate, CapturedAssignmentFilter, &captureDialog,
+                DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return 0;
-    captureBackgroundPic = GetPicture(kCapturePictID);
+    Picture backdrop(captureBackgroundPic);
+    backdrop.Load(kCapturePictID);
     CenterWindow(FrontWindow(captureDialog), gWind);
     ShowWindowNoFlash(FrontWindow(captureDialog));
     SetDialogGWorld(captureDialog);
@@ -4321,7 +4279,7 @@ Boolean DoCapturedShipAssignmentDialog(void)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(captureDialog, CapturedAssignmentFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1) {
             PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
             result = 1;
@@ -4334,12 +4292,8 @@ Boolean DoCapturedShipAssignmentDialog(void)
         }
     } while (done == 0);
     SWSetPortToWindow(gSpriteWorld);
-    DisposeDialogNoFlash(captureDialog);
-    captureDialog = NULL;
-    if (captureBackgroundPic != NULL) {
-        QDReleaseResource(captureBackgroundPic);
-        captureBackgroundPic = NULL;
-    }
+    dialog.Close();
+    backdrop.Release();
     return result;
 }
 
@@ -4494,25 +4448,26 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
     }
 
     strcat(textShowString, "\r");
-    textDialog = NULL;
+    Dialog dialog;
     if (descResourcePictId >= kFirstResourceID && showMovie) {
-        textDialog = GetNewDialog(kTextDialogPictID, TextDialogUpdate,
-                                  TextDialogFilter);
+        dialog.Open(kTextDialogPictID, TextDialogUpdate, TextDialogFilter, &textDialog, DialogClose::NoFlash);
     } else {
-        textDialog = GetNewDialog(kTextDialogPlainID, TextDialogUpdate,
-                                  TextDialogFilter);
+        dialog.Open(kTextDialogPlainID, TextDialogUpdate, TextDialogFilter, &textDialog, DialogClose::NoFlash);
         descResourcePictId = -1;
     }
-    if (textDialog == NULL)
+    if (!dialog.IsOpen())
         return;
 
+    Picture backdrops[3];
+    for (i = 0; i < 3; i++)
+        backdrops[i].Bind(textDialogBackgroundPic[i]);
     if (descResourcePictId >= kFirstResourceID && showMovie) {
-        textDialogBackgroundPic[0] = GetPicture(kTextDlgSinglePictID);
+        backdrops[0].Load(kTextDlgSinglePictID);
         textDialogBackgroundPic[1] = NULL;
         textDialogBackgroundPic[2] = NULL;
     } else {
         for (i = 0; i < 3; i++)
-            textDialogBackgroundPic[i] = GetPicture(kTextDlgBackdropPictID + i);
+            backdrops[i].Load(kTextDlgBackdropPictID + i);
     }
     SetDialogGWorld(textDialog);
     GetDialogItem(textDialog, 3, &itemType, &item, &box);
@@ -4620,7 +4575,7 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
             canScrollTextUp = 0;
         if (gQuit != 0)
             done = 1;
-        MyModalDialog(textDialog, TextDialogFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1)
             done = 1;
         if (itemHit == 5 && canScrollTextUp != 0)
@@ -4658,16 +4613,11 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
         }
     } while (done == 0);
 
-    for (i = 0; i < 3; i++) {
-        if (textDialogBackgroundPic[i] != NULL) {
-            QDReleaseResource(textDialogBackgroundPic[i]);
-            textDialogBackgroundPic[i] = NULL;
-        }
-    }
+    for (i = 0; i < 3; i++)
+        backdrops[i].Release();
     TEDispose(textDialogTextHandle);
     SWSetPortToWindow(gSpriteWorld);
-    DisposeDialogNoFlash(textDialog);
-    textDialog = NULL;
+    dialog.Close();
 
     if (gPause) {
         if (showingIntroText) {
@@ -5165,13 +5115,15 @@ void DoPlayerInfoDialog(void)
         return;
     ShipStatsToSystemInfo();
     selPlayerInfoMode = 1;
-    infoDialog = NULL;
-    infoDialog = GetNewDialog(kPlayerInfoDlogID, PlayerInfoDialogUpdate,
-                                    PlayerInfoFilter);
-    if (infoDialog == NULL)
+    Dialog dialog;
+    dialog.Open(kPlayerInfoDlogID, PlayerInfoDialogUpdate, PlayerInfoFilter, &infoDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    for (i = 0; i < 3; i++)
-        playerInfoBackgroundPic[i] = GetPicture(kPlayerInfoFirstPictID + i);
+    Picture backdrops[3];
+    for (i = 0; i < 3; i++) {
+        backdrops[i].Bind(playerInfoBackgroundPic[i]);
+        backdrops[i].Load(kPlayerInfoFirstPictID + i);
+    }
     SetDialogGWorld(infoDialog);
     SetupPlayerInfoText();
     saved = *GetDialogPortRect(infoDialog);
@@ -5228,7 +5180,7 @@ void DoPlayerInfoDialog(void)
     do {
         if (gQuit != 0)
             done = 1;
-        MyModalDialog(infoDialog, PlayerInfoFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1)
             done = 1;
         if (itemHit >= 2 && itemHit <= 5) {
@@ -5249,14 +5201,9 @@ void DoPlayerInfoDialog(void)
     SWSetPortToWindow(gSpriteWorld);
     while (KeyCheck(keyPrefs.playerInfo))
         BusyIdle();
-    DisposeDialogNoFlash(infoDialog);
-    infoDialog = NULL;
-    for (i = 0; i < 3; i++) {
-        if (playerInfoBackgroundPic[i] != NULL) {
-            QDReleaseResource(playerInfoBackgroundPic[i]);
-            playerInfoBackgroundPic[i] = NULL;
-        }
-    }
+    dialog.Close();
+    for (i = 0; i < 3; i++)
+        backdrops[i].Release();
     SWSetPortToWindow(gSpriteWorld);
     RefreshSAT();
     FlushEvents(7, 0);
@@ -6506,10 +6453,10 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
     Boolean allDigits;
     short destIdx;
     int32_t result;
+    Dialog dialog;
 
-    qtyDialog = NULL;
-    qtyDialog = GetNewDialog(kQtyDlogID, NULL, NULL);
-    if (qtyDialog == NULL)
+    dialog.Open(kQtyDlogID, NULL, NULL, &qtyDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return 0;
 
     CenterWindow(FrontWindow(qtyDialog), gWind);
@@ -6541,7 +6488,7 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
     done = 0;
     result = 0;
     do {
-        ModalDialog(0, &itemHit);
+        itemHit = dialog.Modal();
         if (itemHit == 4) {
             done = 1;
         } else if (itemHit == 1) {
@@ -6587,8 +6534,7 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
         }
     } while (!done);
 
-    DisposeDialogNoFlash(qtyDialog);
-    qtyDialog = NULL;
+    dialog.Close();
     return result;
 }
 

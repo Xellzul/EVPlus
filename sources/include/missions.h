@@ -67,8 +67,7 @@ extern ScrollRec **missionInfoList;
 extern short tempMissions[];
 EXTERN_CPP_END
 
-/* the two mission-list ModalDialog filter procs; MyModalDialog takes the address
-   as void *, so nothing at a call site checks these */
+/* the two mission-list ModalDialog filter procs */
 extern Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit);      /* 0x00440c90 */
 extern Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev,
                                 short *itemHit);                              /* 0x00447170 */

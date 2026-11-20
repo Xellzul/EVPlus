@@ -14,6 +14,7 @@
 #include "sound.h"
 #include "cefix.h"
 #include "prefsdisplay.h"
+#include "dialog.h"
 
 namespace {
 
@@ -170,6 +171,7 @@ private:
     void setText(short item, const char *text);
 
     ItemList items;
+    Dialog dialog;
     std::array<CheckBox, 12> checks;
     int checkCount = 0;
     std::array<Stepper, 6> steppers;
@@ -268,7 +270,7 @@ PrefsDialog::PrefsDialog()
         });
 
     savedSprites = SpriteSettings::Now();
-    prefsDialog = NewDialogFromItems(kWidth, kHeight, items.data(), items.size(), PrefsDialogUpdate, NULL);
+    dialog.Open(kWidth, kHeight, items.data(), items.size(), PrefsDialogUpdate, NULL, &prefsDialog);
     if (gWind != NULL)
         CenterWindow(FrontWindow(prefsDialog), gWind);
     ShowMacWindow(FrontWindow(prefsDialog));
@@ -281,25 +283,20 @@ PrefsDialog::~PrefsDialog()
 {
     if (gWind != NULL)
         SWSetPortToWindow(gSpriteWorld);
-    DisposeDialog(prefsDialog);
-    prefsDialog = NULL;
+    dialog.Close();
     if (settings.introMusic == 0)
         StopIntroMusic(0);
 }
 
 void PrefsDialog::setCheck(short item, bool on)
 {
-    Handle h;
-
-    GetDialogItem(prefsDialog, item, NULL, &h, NULL);
-    SetControlValue((ControlPtr)h, on);
+    SetControlValue((ControlPtr)dialog.Item(item), on);
 }
 
 void PrefsDialog::setText(short item, const char *text)
 {
-    Handle h;
+    Handle h = dialog.Item(item);
 
-    GetDialogItem(prefsDialog, item, NULL, &h, NULL);
     if (h != NULL)
         SetControlText((ControlPtr)h, text);
 }
@@ -380,7 +377,7 @@ void PrefsDialog::run()
 
     while (!done) {
         show();
-        ModalDialog(NULL, &item);
+        item = dialog.Modal();
         done = handle(item);
         RedrawDialog(prefsDialog);
     }

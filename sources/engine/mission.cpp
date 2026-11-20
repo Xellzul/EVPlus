@@ -26,6 +26,7 @@
 #include "stellar.h"
 #include "prototypes.h"
 #include "endianswap.h"
+#include "dialog.h"
 
 #define kDudeResName "d\x9f" "de"
 #define kSpobResName "sp\x9a" "b"
@@ -234,6 +235,7 @@ void DoMissionDialog(void)
     short savedRoute;
     Boolean accepted;
     Boolean done;
+    Dialog dialog;
 
     done = 0;
     missionsOutside = 0;
@@ -280,12 +282,11 @@ void DoMissionDialog(void)
         SetDialogGWorld(portDialog);
         return;
     }
-    missionDialog = NULL;
-    missionDialog = GetNewDialog(kMissionDlogID, MissionDialogUpdate,
-                                 MissionFilter);
-    if (missionDialog == NULL)
+    dialog.Open(kMissionDlogID, MissionDialogUpdate, MissionFilter, &missionDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    missionBackgroundPic[0] = GetPicture(kMissionPictID);
+    Picture backdrop(missionBackgroundPic[0]);
+    backdrop.Load(kMissionPictID);
     CenterWindow(FrontWindow(missionDialog), gWind);
     ShowWindowNoFlash(FrontWindow(missionDialog));
     SetDialogGWorld(missionDialog);
@@ -308,7 +309,7 @@ void DoMissionDialog(void)
     do {
         if (gQuit != 0)
             done = 1;
-        MyModalDialog(missionDialog, MissionFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == kItemAccept) {
             FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
             FlushEvents(5, 0);
@@ -414,14 +415,10 @@ void DoMissionDialog(void)
             RedrawDialog(missionDialog);
         }
     } while (done == 0);
-    if (missionBackgroundPic[0] != NULL) {
-        QDReleaseResource(missionBackgroundPic[0]);
-        missionBackgroundPic[0] = NULL;
-    }
+    backdrop.Release();
     if (missionList != NULL)
         LDispose(missionList);
-    DisposeDialogNoFlash(missionDialog);
-    missionDialog = NULL;
+    dialog.Close();
     return;
 }
 
@@ -2519,6 +2516,8 @@ short OfferOneMission(short mission)
     Boolean accepted;
     Boolean savedUp;
     Boolean savedDown;
+    Dialog dialog;
+    Picture backdrops[kMissionPictCount];
 
     refused = 0;
     accepted = 0;
@@ -2563,23 +2562,20 @@ short OfferOneMission(short mission)
 
     strcat(briefingTextPtr, "\r");
 
-    missionDialog = NULL;
-    if (descResourcePictId >= 128)
-        missionDialog = GetNewDialog(kWideDlogID, SingleMissionDialogUpdate,
-                                     SingleMissionFilter);
-    else
-        missionDialog = GetNewDialog(kNarrowDlogID, SingleMissionDialogUpdate,
-                                     SingleMissionFilter);
-    if (missionDialog == NULL)
+    dialog.Open(descResourcePictId >= 128 ? kWideDlogID : kNarrowDlogID, SingleMissionDialogUpdate,
+                SingleMissionFilter, &missionDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return 0;
 
+    for (i = 0; i < kMissionPictCount; i++)
+        backdrops[i].Bind(missionBackgroundPic[i]);
     if (descResourcePictId >= 128) {
-        missionBackgroundPic[0] = GetPicture(kWidePictID);
+        backdrops[0].Load(kWidePictID);
         missionBackgroundPic[1] = NULL;
         missionBackgroundPic[2] = NULL;
     } else {
         for (i = 0; i < kMissionPictCount; i++)
-            missionBackgroundPic[i] = GetPicture(kNarrowPictBase + i);
+            backdrops[i].Load(kNarrowPictBase + i);
     }
 
     CenterWindow(FrontWindow(missionDialog), gWind);
@@ -2731,7 +2727,7 @@ short OfferOneMission(short mission)
     do {
         if (gQuit != 0)
             done = 1;
-        MyModalDialog(missionDialog, SingleMissionFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (canRefuseMission != 0) {
             if (itemHit == kItemAccept) {
                 FlushEvents(3, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
@@ -2868,19 +2864,14 @@ short OfferOneMission(short mission)
         PlayQTMovie(descMovieName, descFlags & kDescMovieDoubled,
                     descFlags & kDescMovieFade);
 
-    for (i = 0; i < kMissionPictCount; i++) {
-        if (missionBackgroundPic[i] != NULL) {
-            QDReleaseResource(missionBackgroundPic[i]);
-            missionBackgroundPic[i] = NULL;
-        }
-    }
+    for (i = 0; i < kMissionPictCount; i++)
+        backdrops[i].Release();
     if (offerTextHandle != NULL)
         TEDispose(offerTextHandle);
     while (KeyCheck(keyPrefs.missions))
         BusyIdle();
 
-    DisposeDialogNoFlash(missionDialog);
-    missionDialog = NULL;
+    dialog.Close();
     if (screenFaded != 0) {
         if (playerIsLanded != 0)
             UpdateAllPortDialogs();
@@ -3685,19 +3676,18 @@ void DoMissionInfoDialog(void)
     short savedX;
     short savedY;
     Boolean done;
-    short halfW;
-    short halfH;
+    Dialog dialog;
 
     done = 0;
     if (screenFaded != 0)
         return;
     PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-    missionInfoDialog = NULL;
-    missionInfoDialog = GetNewDialog(kMissionInfoDlogID, MissionInfoDialogUpdate,
-                                     MissionInfoFilter);
-    if (missionInfoDialog == NULL)
+    dialog.Open(kMissionInfoDlogID, MissionInfoDialogUpdate, MissionInfoFilter, &missionInfoDialog,
+                DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    missionInfoBackgroundPic = GetPicture(kMissionInfoPictID);
+    Picture backdrop(missionInfoBackgroundPic);
+    backdrop.Load(kMissionInfoPictID);
     CenterWindow(FrontWindow(missionInfoDialog), gWind);
     ShowWindowNoFlash(FrontWindow(missionInfoDialog));
     SetDialogGWorld(missionInfoDialog);
@@ -3716,7 +3706,7 @@ void DoMissionInfoDialog(void)
     do {
         if (gQuit != 0)
             done = 1;
-        MyModalDialog(missionInfoDialog, MissionInfoFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1)
             done = 1;
         if (itemHit == 6 && missionDialog == NULL) {
@@ -3804,14 +3794,8 @@ void DoMissionInfoDialog(void)
     } while (done == 0);
     if (missionInfoList != NULL)
         LDispose(missionInfoList);
-    halfW = (GetDialogPortRect(missionInfoDialog)->right - GetDialogPortRect(missionInfoDialog)->left) / 2;
-    halfH = (GetDialogPortRect(missionInfoDialog)->bottom - GetDialogPortRect(missionInfoDialog)->top) / 2;
-    DisposeDialogNoFlash(missionInfoDialog);
-    missionInfoDialog = NULL;
-    if (missionInfoBackgroundPic != NULL) {
-        QDReleaseResource(missionInfoBackgroundPic);
-        missionInfoBackgroundPic = NULL;
-    }
+    dialog.Close();
+    backdrop.Release();
     RedrawDialogs(1);
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
 }

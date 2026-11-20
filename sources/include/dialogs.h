@@ -78,8 +78,6 @@ extern void PrefsDialogUpdate(void);
 extern void RandomizeNewsDialog(void);
 extern void ScrollMapDisplay(short dh, short dv);
 extern void CueNextHyperRouteDest(void);
-extern void MyModalDialog(DialogPtr dlg, DialogEventProc eventProc, short *itemHit,
-                           short *modifiers);
 extern void SetDialogGWorld(DialogPtr dlg);
 extern void DrawDialog(DialogPtr dlg);
 void SetPlunderValues(void);
@@ -138,10 +136,6 @@ extern GWorldContainer buttonMaskPort;
 #define kButtonPieceCount 9
 extern Rect buttonPieceRect[kButtonPieceCount];
 extern GWorldContainer buttonPort;
-extern short mapButtonTable[5];
-extern short shipyardButtonTable[5];
-extern short outfitButtonTable[5];
-extern short planetButtonTable[];
 extern Boolean canBuy;
 extern Boolean canRefuseMission;
 extern Boolean canScrollTextDown;
@@ -246,7 +240,6 @@ extern unsigned char shipGovtStr[];
 extern DialogPtr shipyardDialog;
 extern RGBColor shopGridColor[2];
 extern Boolean showAbortMissionButton;
-extern short singleMissionButtonTable[4];
 extern PicHandle textDialogBackgroundPic[3];
 extern PicHandle tradeBackgroundPic;
 EXTERN_CPP_END

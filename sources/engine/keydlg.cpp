@@ -8,10 +8,7 @@
 #include "viewscale.h"
 #include "render.h"
 #include "gametypes.h"
-
-
-
-/* both take an argument in this TU that their own bodies ignore */
+#include "dialog.h"
 
 #define kBindingCount 0x22
 
@@ -29,10 +26,10 @@ void DoKeyDialog(void)
     Boolean matched;
     ScanCode localBuf[kBindingCount];
     ScanCode defaultBuf[kBindingCount];
+    Dialog dialog;
 
-    keyDialog = NULL;
-    keyDialog = GetNewDialog(0xfa2, KeyDialogUpdate, KeyFilter);
-    if (keyDialog == NULL)
+    dialog.Open(0xfa2, KeyDialogUpdate, KeyFilter, &keyDialog);
+    if (!dialog.IsOpen())
         return;
 
     KeyPrefsToSlotTable();
@@ -42,14 +39,15 @@ void DoKeyDialog(void)
     FrontWindow(keyDialog);
     SetDialogGWorld(keyDialog);
     RedrawDialog(keyDialog);
-    keyPic = GetPicture(0x8b);
+    Picture pic(keyPic);
+    pic.Load(0x8b);
 
     done = 0;
     KeyDialogUpdate();
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(keyDialog, KeyFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1) {
             matched = 0;
             for (j = 0; j < kBindingCount; j++) {
@@ -93,10 +91,8 @@ void DoKeyDialog(void)
 
     if (gWind != NULL)
         SWSetPortToWindow(gSpriteWorld);
-    if (keyPic != NULL)
-        QDReleaseResource(keyPic);
-    DisposeDialog(keyDialog);
-    keyDialog = NULL;
+    pic.Release();
+    dialog.Close();
 }
 
 #define kFirstBindingItem   5

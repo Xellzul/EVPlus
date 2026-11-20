@@ -20,6 +20,7 @@
 #include "ships.h"
 #include "burger.h"
 #include "cefix.h"
+#include "dialog.h"
 
 #define kBarDlogID          0x3fd   /* DLOG 1021, with portrait */
 #define kPlainBarDlogID     0x3f5   /* DLOG 1013 */
@@ -67,6 +68,8 @@ void DoBarDialog(void)
     Boolean done;
     short i;
     short shown;
+    Dialog dialog;
+    Picture portrait(barPic);
 
     done = 0;
     savedStellar = shipData->targetStellar;
@@ -84,19 +87,13 @@ void DoBarDialog(void)
     LoadDescription(barDescText, shipData->targetStellar + 10000);
     barPic = NULL;
     if (descResourcePictId >= kFirstResourceID)
-        barPic = GetPicture(descResourcePictId);
-    barDialog = NULL;
-    if (barPic != NULL)
-        barDialog = GetNewDialog(kBarDlogID, BarDialogUpdate, BarFilter);
-    else
-        barDialog = GetNewDialog(kPlainBarDlogID, BarDialogUpdate,
-                                 BarFilter);
-    if (barDialog == NULL)
+        portrait.Load(descResourcePictId);
+    dialog.Open(barPic != NULL ? kBarDlogID : kPlainBarDlogID, BarDialogUpdate, BarFilter, &barDialog,
+                DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    if (barPic != NULL)
-        barBackgroundPic = GetPicture(kBarPictID);
-    else
-        barBackgroundPic = GetPicture(kPlainBarPictID);
+    Picture backdrop(barBackgroundPic);
+    backdrop.Load(barPic != NULL ? kBarPictID : kPlainBarPictID);
     CenterWindow(FrontWindow(barDialog), FrontWindow(portDialog));
     ShowWindowNoFlash(FrontWindow(barDialog));
     FlushEvents(everyEvent - diskMask, 0);
@@ -108,7 +105,7 @@ void DoBarDialog(void)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(barDialog, BarFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == kBarLeaveItem)
             done = 1;
         if (itemHit == kBarRaceItem) {
@@ -183,16 +180,9 @@ void DoBarDialog(void)
             }
         }
     } while (done == 0);
-    if (barBackgroundPic != NULL) {
-        QDReleaseResource(barBackgroundPic);
-        barBackgroundPic = NULL;
-    }
-    if (barPic != NULL) {
-        QDReleaseResource(barPic);
-        barPic = NULL;
-    }
-    DisposeDialogNoFlash(barDialog);
-    barDialog = NULL;
+    backdrop.Release();
+    portrait.Release();
+    dialog.Close();
     ResetMissionOfferVenue();
 }
 
@@ -371,6 +361,8 @@ void DoNewsDialog(void)
     Boolean done;
     short pictID;
     short itemHit;
+    Dialog dialog;
+    Picture backdrop(newsPic);
 
     PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
     pictID = kDefaultBackdropPict;
@@ -378,12 +370,10 @@ void DoNewsDialog(void)
         if (govtData[dockedPort->govt].newsPict != -1)
             pictID = govtData[dockedPort->govt].newsPict;
     }
-    newsPic = GetPicture(pictID);
-    if (newsPic == NULL && pictID != kDefaultBackdropPict)
-        newsPic = GetPicture(kDefaultBackdropPict);
-    newsDialog = NULL;
-    newsDialog = GetNewDialog(kDlg1014ID, NewsDialogUpdate, NewsDialogFilter);
-    if (newsDialog == NULL)
+    if (backdrop.Load(pictID) == NULL && pictID != kDefaultBackdropPict)
+        backdrop.Load(kDefaultBackdropPict);
+    dialog.Open(kDlg1014ID, NewsDialogUpdate, NewsDialogFilter, &newsDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
     CenterWindow(FrontWindow(newsDialog), FrontWindow(barDialog));
     ShowWindowNoFlash(FrontWindow(newsDialog));
@@ -396,14 +386,12 @@ void DoNewsDialog(void)
     do {
         if (gQuit != 0)
             done = 1;
-        MyModalDialog(newsDialog, NewsDialogFilter, &itemHit, NULL);
+        itemHit = dialog.Modal();
         if (itemHit == kNewsDoneItem)
             done = 1;
     } while (done == 0);
-    QDReleaseResource(newsPic);
-    newsPic = NULL;
-    DisposeDialogNoFlash(newsDialog);
-    newsDialog = NULL;
+    backdrop.Release();
+    dialog.Close();
     FlushEvents(1, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
     FlushEvents(2, 0);
     FlushEvents(3, 0);
@@ -614,21 +602,22 @@ void DoRaceDialog(void)
     short j;
     int32_t payout;
     int32_t credits;
+    Dialog dialog;
+    Picture racers[kRacerCount][kLastRaceFrame + 1];
 
-    raceDialog = NULL;
-    raceDialog = GetNewDialog(kRaceDialogID, RaceDialogUpdate,
-                              RaceFilter);
-    if (raceDialog == NULL)
+    dialog.Open(kRaceDialogID, RaceDialogUpdate, RaceFilter, &raceDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
     raceWinner = -1;
     racePick = -1;
     raceCount = 0;
-    raceBackgroundPic = GetPicture(kRaceBackdropPict);
+    Picture backdrop(raceBackgroundPic);
+    backdrop.Load(kRaceBackdropPict);
     for (i = 0; i < kRacerCount; i++) {
-        raceButtonPic[i][0] = GetPicture(kRaceRunnerPict + i);
-        raceButtonPic[i][1] = GetPicture(kRaceRunnerPict + 10 + i);
-        raceButtonPic[i][2] = GetPicture(kRaceRunnerPict + 20 + i);
-        raceButtonPic[i][3] = GetPicture(kRaceRunnerPict + 30 + i);
+        for (j = 0; j <= kLastRaceFrame; j++) {
+            racers[i][j].Bind(raceButtonPic[i][j]);
+            racers[i][j].Load(kRaceRunnerPict + 10 * j + i);
+        }
     }
     CenterWindow(FrontWindow(raceDialog), FrontWindow(portDialog));
     ShowWindowNoFlash(FrontWindow(raceDialog));
@@ -642,7 +631,7 @@ void DoRaceDialog(void)
     do {
         if (gQuit != 0)
             done = 1;
-        MyModalDialog(raceDialog, RaceFilter, &itemHit, NULL);
+        itemHit = dialog.Modal();
         if (itemHit == kRaceDoneItem)
             done = 1;
         if (itemHit == kRaceHelpItem) {
@@ -711,20 +700,11 @@ void DoRaceDialog(void)
             RaceDialogUpdate();
         }
     } while (done == 0);
-    if (raceBackgroundPic != NULL) {
-        QDReleaseResource(raceBackgroundPic);
-        raceBackgroundPic = NULL;
-    }
-    for (i = 0; i < kRacerCount; i++) {
-        for (j = 0; j <= kLastRaceFrame; j++) {
-            if (raceButtonPic[i][j] != NULL) {
-                QDReleaseResource(raceButtonPic[i][j]);
-                raceButtonPic[i][j] = NULL;
-            }
-        }
-    }
-    DisposeDialogNoFlash(raceDialog);
-    raceDialog = NULL;
+    backdrop.Release();
+    for (i = 0; i < kRacerCount; i++)
+        for (j = 0; j <= kLastRaceFrame; j++)
+            racers[i][j].Release();
+    dialog.Close();
 }
 
 // FUNCTION: EVNOVA 0x0047e150

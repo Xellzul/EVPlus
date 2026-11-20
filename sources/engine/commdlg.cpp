@@ -24,6 +24,7 @@
 #include "prototypes.h"
 #include "game.h"
 #include "endianswap.h"
+#include "dialog.h"
 
 /* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
 #define kCommButtons  3
@@ -90,8 +91,6 @@ void DoCommDialog(short shipIndex)
     short n;
     short r;
     int32_t amount;
-    short halfW;
-    short halfH;
     done = 0;
     if (screenFaded)
         return;
@@ -164,7 +163,8 @@ void DoCommDialog(short shipIndex)
     if (commShip->persType != -1
         && personData[commShip->persType].hailPict >= kFirstResourceID)
         n = personData[commShip->persType].hailPict;
-    commShipPic = GetPicture(n);
+    Picture shipPic(commShipPic);
+    shipPic.Load(n);
     if (commShip->govt != -1)
         pstrcpy(shipGovtStr, govtShortNames[commShip->govt]);
     else
@@ -211,9 +211,10 @@ void DoCommDialog(short shipIndex)
         else
             LoadResponse(2);
     }
-    commDialog = NULL;
-    commDialog = GetNewDialog(kCommDlgID2, CommDialogUpdate, CommFilter);
-    if (commDialog == NULL)
+    Dialog dialog;
+    Picture backdrop(commBackgroundPic);
+    dialog.Open(kCommDlgID2, CommDialogUpdate, CommFilter, &commDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
     canAskEscort = 0;
     canAskHelp = 0;
@@ -230,7 +231,7 @@ void DoCommDialog(short shipIndex)
         && (govtData[commShip->govt].flags2 & kGovtRoadsideAssistance) != 0)
         canAskHelp = 1;
     commDialogMode = 0;
-    commBackgroundPic = GetPicture(kCommPictID2);
+    backdrop.Load(kCommPictID2);
     FlushEvents(1, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
     FlushEvents(2, 0);
     FlushEvents(3, 0);
@@ -248,7 +249,7 @@ void DoCommDialog(short shipIndex)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(commDialog, CommFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1) {
             DrawCommDialogButtons(-1);
             done = 1;
@@ -425,14 +426,8 @@ void DoCommDialog(short shipIndex)
         }
     } while (!done);
 
-    if (commBackgroundPic != NULL) {
-        QDReleaseResource(commBackgroundPic);
-        commBackgroundPic = NULL;
-    }
-    if (commShipPic != NULL) {
-        QDReleaseResource(commShipPic);
-        commShipPic = NULL;
-    }
+    backdrop.Release();
+    shipPic.Release();
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
     if (releaseCommEscort) {
         DestroyPartialFleetCargo(commShip->index);
@@ -444,10 +439,7 @@ void DoCommDialog(short shipIndex)
         AIMakeShipLeave(commShip);
         statusRedraw[kRedrawCargo] = 1;
     }
-    halfW = (GetDialogPortRect(commDialog)->right - GetDialogPortRect(commDialog)->left) / 2;
-    halfH = (GetDialogPortRect(commDialog)->bottom - GetDialogPortRect(commDialog)->top) / 2;
-    DisposeDialogNoFlash(commDialog);
-    commDialog = NULL;
+    dialog.Close();
     gSpeedMult = 0;
     commShip->hailed = 1;
     commShip = NULL;
@@ -644,8 +636,6 @@ void DoPlanetCommDialog(short stellar)
     short i;
     short n;
     Boolean done;
-    short halfW;
-    short halfH;
 
     done = 0;
     if (screenFaded)
@@ -679,10 +669,10 @@ void DoPlanetCommDialog(short stellar)
         GetIndString(stellarTypeStr, kGovtNameList, stellarData[shipData->targetStellar].type + 1);
     PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
     ShowTheCursor();
-    commDialog = NULL;
-    commDialog = GetNewDialog(kCommDlogID, PlanetCommDialogUpdate,
-                              PlanetCommFilter);
-    if (commDialog == NULL)
+    Dialog dialog;
+    Picture backdrop(commBackgroundPic);
+    dialog.Open(kCommDlogID, PlanetCommDialogUpdate, PlanetCommFilter, &commDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
     if (stellarData[shipData->targetStellar].minStatus == 0x7fff)
         hatesPlayer = 1;
@@ -724,7 +714,7 @@ void DoPlanetCommDialog(short stellar)
     } else
         LoadResponse(2);
     commDialogMode = 1;
-    commBackgroundPic = GetPicture(kCommPictID);
+    backdrop.Load(kCommPictID);
     FlushEvents(1, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
     FlushEvents(2, 0);
     FlushEvents(3, 0);
@@ -742,7 +732,7 @@ void DoPlanetCommDialog(short stellar)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(commDialog, PlanetCommFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1)
             done = 1;
         if (itemHit == 2 || itemHit == 3) {
@@ -906,15 +896,9 @@ void DoPlanetCommDialog(short stellar)
         }
     } while (!done);
 
-    if (commBackgroundPic != NULL) {
-        QDReleaseResource(commBackgroundPic);
-        commBackgroundPic = NULL;
-    }
+    backdrop.Release();
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-    halfW = (GetDialogPortRect(commDialog)->right - GetDialogPortRect(commDialog)->left) / 2;
-    halfH = (GetDialogPortRect(commDialog)->bottom - GetDialogPortRect(commDialog)->top) / 2;
-    DisposeDialogNoFlash(commDialog);
-    commDialog = NULL;
+    dialog.Close();
     gSpeedMult = 0;
     SWSetPortToBackground(gSpriteWorld);
     SetSystemBackgroundColor();
@@ -1370,8 +1354,6 @@ short DoHaggleDialog(Boolean raise, short chance)
     short result;
     Boolean canHaggle;
     Boolean done;
-    short halfW;
-    short halfH;
 
     done = 0;
     if (raise != 0)
@@ -1384,12 +1366,13 @@ short DoHaggleDialog(Boolean raise, short chance)
     else
         canHaggle = 0;
 
-    haggleDialog = NULL;
-    haggleDialog = GetNewDialog(kHaggleDlogID, HaggleDialogUpdate, HaggleFilter);
-    if (haggleDialog == NULL)
+    Dialog dialog;
+    Picture backdrop(haggleBackgroundPic);
+    dialog.Open(kHaggleDlogID, HaggleDialogUpdate, HaggleFilter, &haggleDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return 0;
 
-    haggleBackgroundPic = GetPicture(kHagglePictID);
+    backdrop.Load(kHagglePictID);
     CenterWindow(FrontWindow(haggleDialog), gWind);
     ShowWindowNoFlash(FrontWindow(haggleDialog));
     SetDialogGWorld(haggleDialog);
@@ -1401,7 +1384,7 @@ short DoHaggleDialog(Boolean raise, short chance)
     do {
         if (gQuit != 0)
             done = 1;
-        MyModalDialog(haggleDialog, HaggleFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == kItemDone) {
             DrawHaggleButtons(-1);
             if (result != 2)
@@ -1428,16 +1411,8 @@ short DoHaggleDialog(Boolean raise, short chance)
         }
     } while (done == 0);
 
-    if (haggleBackgroundPic != NULL) {
-        QDReleaseResource(haggleBackgroundPic);
-        haggleBackgroundPic = NULL;
-    }
-    halfW = (GetDialogPortRect(haggleDialog)->right - GetDialogPortRect(haggleDialog)->left) / 2;
-    halfH = (GetDialogPortRect(haggleDialog)->bottom - GetDialogPortRect(haggleDialog)->top) / 2;
-    halfW = (GetCWindowPortRect((WindowRef)gWind)->right - GetCWindowPortRect((WindowRef)gWind)->left) / 2;
-    halfH = (GetCWindowPortRect((WindowRef)gWind)->bottom - GetCWindowPortRect((WindowRef)gWind)->top) / 2;
-    DisposeDialogNoFlash(haggleDialog);
-    haggleDialog = NULL;
+    backdrop.Release();
+    dialog.Close();
     return result;
 }
 
@@ -1676,12 +1651,12 @@ void DoPlunderDialog(void)
     }
 
     ShowTheCursor();
-    plunderDialog = NULL;
-    plunderDialog = GetNewDialog(kPlunderDlogID, PlunderDialogUpdate,
-                                 PlunderFilter);
-    if (plunderDialog == NULL)
+    Dialog dialog;
+    Picture backdrop(plunderBackgroundPic);
+    dialog.Open(kPlunderDlogID, PlunderDialogUpdate, PlunderFilter, &plunderDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
-    plunderBackgroundPic = GetPicture(kPlunderPictID);
+    backdrop.Load(kPlunderPictID);
     CenterWindow(FrontWindow(plunderDialog), gWind);
     ShowWindowNoFlash(FrontWindow(plunderDialog));
     SetDialogGWorld(plunderDialog);
@@ -1692,7 +1667,7 @@ void DoPlunderDialog(void)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(plunderDialog, PlunderFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == 1) {
             risk = -1;
             risky = 0;
@@ -1966,13 +1941,9 @@ void DoPlunderDialog(void)
             SetDialogGWorld(plunderDialog);
         }
     } while (done == 0);
-    if (plunderBackgroundPic != NULL) {
-        QDReleaseResource(plunderBackgroundPic);
-        plunderBackgroundPic = NULL;
-    }
+    backdrop.Release();
     SWSetPortToWindow(gSpriteWorld);
-    DisposeDialogNoFlash(plunderDialog);
-    plunderDialog = NULL;
+    dialog.Close();
     SWSetPortToWindow(gSpriteWorld);
     ResetPlayerPrecalcedValues();
 #undef n
@@ -2320,15 +2291,17 @@ void DoEscortDialog(ShipObj *ship)
     commShip = ship;
     pstrcpy(shipClassStr, shipCommNames[commShip->type]);
     PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-    commShipPic = GetPicture(shipClass[commShip->type].shipyardPictID);
+    Picture shipPic(commShipPic);
+    shipPic.Load(shipClass[commShip->type].shipyardPictID);
     ShowTheCursor();
 
-    commDialog = NULL;
-    commDialog = GetNewDialog(kEscortDialogID, EscortDialogUpdate, EscortFilter);
-    if (commDialog == NULL)
+    Dialog dialog;
+    Picture backdrop(commBackgroundPic);
+    dialog.Open(kEscortDialogID, EscortDialogUpdate, EscortFilter, &commDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
 
-    commBackgroundPic = GetPicture(kEscortPictID);
+    backdrop.Load(kEscortPictID);
     CenterWindow(FrontWindow(commDialog), gWind);
 
     canUpgradeEscort = 0;
@@ -2362,7 +2335,7 @@ void DoEscortDialog(ShipObj *ship)
         if (gQuit)
             done = 1;
 
-        MyModalDialog(commDialog, EscortFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
 
         if (itemHit == 1) {
             done = 1;
@@ -2393,10 +2366,7 @@ void DoEscortDialog(ShipObj *ship)
         RedrawDialog(commDialog);
     } while (!done);
 
-    if (commShipPic != NULL) {
-        QDReleaseResource(commShipPic);
-        commShipPic = NULL;
-    }
+    shipPic.Release();
 
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
 
@@ -2409,14 +2379,10 @@ void DoEscortDialog(ShipObj *ship)
         statusRedraw[kRedrawCargo] = 1;
     }
 
-    DisposeDialogNoFlash(commDialog);
+    dialog.Close();
     commShip = NULL;
-    commDialog = NULL;
     gSpeedMult = 0;
-    if (commBackgroundPic != NULL) {
-        QDReleaseResource(commBackgroundPic);
-        commBackgroundPic = NULL;
-    }
+    backdrop.Release();
     SWSetPortToWindow(gSpriteWorld);
 }
 

@@ -19,6 +19,7 @@
 #include "sound.h"
 #include "stellar.h"
 #include "cefix.h"
+#include "dialog.h"
 #include "viewscale.h"
 #include "space.h"
 
@@ -87,15 +88,17 @@ void DoSystemMap(void)
     Point anchor;
     MapScroll savedScroll;
     Rect *pr;
+    Dialog dialog;
+    Picture nebulae[kMaxNebulae][7];
 
     done = 0;
     if (screenFaded != 0)
         return;
     ShowTheCursor();
-    mapDialog = NULL;
-    mapDialog = GetNewDialog(kMapDlogID, MapDialogUpdate, MapFilter);
-    if (mapDialog == NULL)
+    dialog.Open(kMapDlogID, MapDialogUpdate, MapFilter, &mapDialog, DialogClose::NoFlash);
+    if (!dialog.IsOpen())
         return;
+    Picture backdrop(mapBackgroundPic);
     savedShow = settings.showMapBorders;
     influenceCoordsCached = 0;
     savedStellar = shipData->targetStellar;
@@ -118,8 +121,10 @@ void DoSystemMap(void)
     }
     for (i = 0; i < kMaxNebulae; i++) {
         if (nebulaData[i].loaded != 0 && nebulaData[i].explored != 0) {
-            for (j = 0; j < 7; j++)
-                nebulaPic[i][j] = GetPicture(kNebulaPictBase + i * 7 + j);
+            for (j = 0; j < 7; j++) {
+                nebulae[i][j].Bind(nebulaPic[i][j]);
+                nebulae[i][j].Load(kNebulaPictBase + i * 7 + j);
+            }
         }
     }
     mapCursorSwitchRgn = 0;
@@ -140,7 +145,7 @@ void DoSystemMap(void)
     else
         selSystem = shipData->curSystem;
     RedrawNebulaeOffscreen();
-    mapBackgroundPic = GetPicture(kMapPictID);
+    backdrop.Load(kMapPictID);
     CenterWindow(FrontWindow(mapDialog), gWind);
     ShowWindowNoFlash(FrontWindow(mapDialog));
     SWSetPortToWindow(gSpriteWorld);
@@ -157,7 +162,7 @@ void DoSystemMap(void)
     do {
         if (gQuit)
             done = 1;
-        MyModalDialog(mapDialog, MapFilter, &itemHit, 0);
+        itemHit = dialog.Modal();
         if (itemHit == kItemAccept)
             done = 1;
         if (itemHit == kMapCursorItem) {
@@ -451,24 +456,15 @@ void DoSystemMap(void)
             }
         }
     } while (done == 0);
-    for (x = 0; x < kMaxNebulae; x++) {
-        for (j = 0; j < 7; j++) {
-            if (nebulaPic[x][j] != NULL) {
-                QDReleaseResource(nebulaPic[x][j]);
-                nebulaPic[x][j] = 0;
-            }
-        }
-    }
-    if (mapBackgroundPic != NULL) {
-        QDReleaseResource(mapBackgroundPic);
-        mapBackgroundPic = NULL;
-    }
+    for (x = 0; x < kMaxNebulae; x++)
+        for (j = 0; j < 7; j++)
+            nebulae[x][j].Release();
+    backdrop.Release();
     x = (GetDialogPortRect(mapDialog)->right - GetDialogPortRect(mapDialog)->left) / 2;
     y = (GetDialogPortRect(mapDialog)->bottom - GetDialogPortRect(mapDialog)->top) / 2;
     while (KeyCheck(keyPrefs.map))
         BusyIdle();
-    DisposeDialogNoFlash(mapDialog);
-    mapDialog = NULL;
+    dialog.Close();
     SWSetPortToWorkArea(gSpriteWorld);
     ForeColor(blackColor);
     PaintRect(&gSpriteWorld->workFrameP->frameRect);

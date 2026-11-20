@@ -7,6 +7,7 @@
 #include "game.h"
 #include "gameutil.h"
 #include "gametypes.h"
+#include "dialog.h"
 
 EXTERN_C_BEGIN
 
@@ -43,6 +44,7 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
     Str255 savedName;
     void *h;
     ControlPtr ctl;
+    Dialog dialog;
     DialogPtr dlg;
     unsigned char *p;
     short i;
@@ -66,11 +68,8 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
     } else {
         count = 0;
     }
-    if (count > 1)
-        dlg = GetNewDialog(kNewPilotDlogID, NULL, NULL);
-    else
-        dlg = GetNewDialog(kNewPilotOneCharDlogID, NULL, NULL);
-    if (dlg == NULL)
+    dlg = dialog.Open(count > 1 ? kNewPilotDlogID : kNewPilotOneCharDlogID);
+    if (!dialog.IsOpen())
         return 0;
 
     SetDialogDefaultItem(dlg, 1);
@@ -127,14 +126,11 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
     SetControlValue(ctl, (short)selected);
 
     do {
-        ModalDialog(NULL, &itemHit);
+        itemHit = dialog.Modal();
         if (itemHit == kItemOK) {
             result = 1;
             done = 1;
             for (n = 0; n < kNameFieldCount; n++) {
-                /* SHORT here: the exe compares the length as 16-bit signed (cmp ax / jle);
-                   burger.h's strlen macro turns this into a block-scope FastStrLen */
-
                 GetDialogItem(dlg, n + kItemFirstNameField, &type, (Handle *)&h, &box);
                 GetDialogItemText((Handle)h, savedName);
                 PtoCstr(savedName);
@@ -164,7 +160,6 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
             result = 0;
             done = 1;
         }
-        itemHit = -1;
     } while (done == 0);
 
     if (result != 0) {
@@ -180,7 +175,7 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
         GetMenuItemText(ctl, GetControlValue(ctl), newPilotPopupChoice[1]);
     }
     SWSetPortToWindow(gSpriteWorld);
-    DisposeDialog(dlg);
+    dialog.Close();
     SWSetPortToWindow(gSpriteWorld);
     return result;
 }

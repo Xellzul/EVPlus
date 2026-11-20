@@ -14,6 +14,7 @@
 #include "macport.h"
 #include "dialogs.h"
 #include "cefix.h"
+#include "dialog.h"
 
 /* the map object's globals */
 Image_t *redMapArrow;
@@ -49,6 +50,7 @@ void DoSystemSearch(void)
     short itemType;
     Handle item;
     Rect box;
+    Dialog dialog;
     DialogPtr dlg;
     Boolean searchNow;
     unsigned char rawText[256];
@@ -63,8 +65,8 @@ void DoSystemSearch(void)
     short bestLen;
     char ch;
 
-    dlg = GetNewDialog(kSearchDlogID, NULL, NULL);
-    if (dlg == NULL)
+    dlg = dialog.Open(kSearchDlogID);
+    if (!dialog.IsOpen())
         return;
 
     SetDialogDefaultItem(dlg, 1);
@@ -83,7 +85,7 @@ void DoSystemSearch(void)
     rawText[0] = 0;
     searchNow = 0;
     do {
-        ModalDialog(0, &itemHit);
+        itemHit = dialog.Modal();
         if (itemHit == 1) {
             GetDialogItem(dlg, kSearchTextItem, &itemType, &item, &box);
             GetDialogItemText((Handle)item, rawText);
@@ -94,7 +96,7 @@ void DoSystemSearch(void)
         }
     } while (!searchNow);
 
-    DisposeDialog(dlg);
+    dialog.Close();
     RedrawDialog(mapDialog);
 
     if (rawText[0] == 0)
