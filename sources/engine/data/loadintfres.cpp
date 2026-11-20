@@ -1,14 +1,9 @@
 /* loadintfres.cpp -- LoadIntfResource (win 0x004cda50), the status-bar-panel loader called once from EnterGameFromMainScreen. Notes: Research/notes/loadintfres.md */
-#include <stddef.h>
-#include <string.h>
 
-#include "macport.h"
 #include "shipobj.h"
 #include "resources.h"
 #include "gameconst.h"
 #include "render.h"
-#include "burger.h"
-#include "cefix.h"
 
 
 #define kIntfRec ((IntfRec *)*intfFileHand)

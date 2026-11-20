@@ -1,12 +1,5 @@
 /* loaddata.cpp -- pilot-folder setup, OpenDataFiles, LoadObjectData, LoadStrings, LoadPrefs/SavePrefs, the pilot file, the resource utilities, the chär record readers. Notes: Research/notes/loaddata.md */
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
 
-#include "gameconst.h"
-#include "gametypes.h"
 #include "render.h"
 #include "crashlog.h"
 #include "player.h"
@@ -21,19 +14,11 @@
     if ((c).blue > 0xffff) (c).blue = 0xffff
 #include "gameutil.h"
 #include "stellar.h"
-#include "burger.h"
 #include "platform.h"
-#include "macport.h"
-#include "resources.h"
 #include "viewscale.h"
-#include "cefix.h"
 #include "sound.h"
 #include "ships.h"
 #include "ai.h"
-#include "shipobj.h"
-#include "missions.h"
-#include "space.h"
-#include "pilotfile.h"
 #include "prototypes.h"
 #include "endianswap.h"
 

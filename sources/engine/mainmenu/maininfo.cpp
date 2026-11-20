@@ -1,25 +1,15 @@
 /* maininfo.cpp -- the main-screen object (tu-map O23, win 0x004873b0..0x00489d70). Notes: Research/notes/maininfo.md */
-#include <stddef.h>
-#include <string.h>
 
-#include "macport.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
-#include "gametypes.h"
 #include "dialogs.h"
 #include "game.h"
 #include "gameutil.h"
-#include "missions.h"
 #include "player.h"
 #include "render.h"
 #include "sound.h"
 #include "stellar.h"
-#include "burger.h"
 #include "crashlog.h"
 #include "prototypes.h"
 #include "ships.h"
-#include "cefix.h"
 #include "viewscale.h"
 #include "uisprite.h"
 #include "space.h"

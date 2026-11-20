@@ -2,7 +2,6 @@
 /* The row strides are pre-adjusted once at the top, on the PARAMETER slots, so the
    per-row advance adds only the leftover stride. The source pixels are pre-masked by
    the caller, which is why an OR suffices; both counters are unsigned. */
-#include "macport.h"
 #include "shipobj.h"
 
 EXTERN_C_BEGIN

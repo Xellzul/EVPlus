@@ -1,8 +1,6 @@
 /* prefsdisplay.cpp -- the Display group of Preferences: the resolutions it offers, their names, the UI scale
    range. */
 #include <math.h>
-#include <stdio.h>
-#include "macport.h"
 #include "burger.h"
 #include "platform.h"
 #include "prefsdisplay.h"

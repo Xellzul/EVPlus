@@ -1,17 +1,11 @@
 /* fontcache.cpp -- the port's font families: a Mac font name to the font file its text is drawn with. The exe
    kept a list of GDI fonts per family and size (CreateFontA; win 0x004bc3e0-0x004bc75d); the files are
    opened here and drawn by port/fontraster.cpp. Notes: Research/notes/fontcache.md */
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
-#include "macport.h"
 #include "dialogs.h"
 
 #include "burgerplat.h"
 #include "burger.h"
-#include "cefix.h"
 #include "platform.h"
 #include "fontraster.h"
 

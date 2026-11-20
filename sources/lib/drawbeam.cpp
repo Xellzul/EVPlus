@@ -1,6 +1,4 @@
 /* drawbeam.cpp -- the SWBeams.c run from DrawTranslucentLine to EraseLightningBeam (win 0x00479590-0x0047b399). Notes: Research/notes/drawbeam.md */
-#include <stdlib.h>
-#include "macport.h"
 #include "spriteworld.h"
 
 // FUNCTION: EVNOVA 0x00479590

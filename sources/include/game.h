@@ -1,10 +1,7 @@
 /* game.h -- starting, running and stopping a game. Notes: Research/notes/game.md */
 #ifndef GAME_H
 #define GAME_H
-#include "gametypes.h"
-#include "macport.h"
 #include "resources.h"
-#include "shipobj.h"
 #include "gameconst.h"
 #include "spriteworld.h"
 #include "movie.h"

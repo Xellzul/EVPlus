@@ -1,6 +1,5 @@
 /* blitpixierleparsepixels.cpp -- BlitPixieRLEParsePixels (win 0x00472510). Notes: Research/notes/blitpixierleparsepixels.md */
 #include "macport.h"
-#include "shipobj.h"
 #include "burger.h"
 
 EXTERN_C_BEGIN

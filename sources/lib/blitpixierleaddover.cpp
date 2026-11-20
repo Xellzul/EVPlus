@@ -1,6 +1,4 @@
 /* blitpixierleaddover.cpp -- BlitPixieRLEAddOver (win 0x00472b30), the direct-colour additive RLE walker. Notes: Research/notes/blitpixierleaddover.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 // FUNCTION: EVNOVA 0x00472b30

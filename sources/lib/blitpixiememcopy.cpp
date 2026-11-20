@@ -1,5 +1,4 @@
 /* blitpixiememcopy.cpp -- BlitPixieMemCopy (win 0x00474350). Notes: Research/notes/blitpixiememcopy.md */
-#include "macport.h"
 #include "shipobj.h"
 
 EXTERN_C_BEGIN

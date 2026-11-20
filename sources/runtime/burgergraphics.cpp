@@ -1,6 +1,5 @@
 /* burgergraphics.cpp -- BurgerLib GrGraphicsManager: the display-mode record. Notes: Research/notes/burgergraphics.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 
 #ifdef __cplusplus

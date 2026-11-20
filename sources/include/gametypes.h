@@ -2,7 +2,6 @@
 #ifndef GAMETYPES_H
 #define GAMETYPES_H
 #include "keycodes.h"
-#include "int32.h"
 
 /* the C++-linkage declarations of the win build's C++ TUs (a C file cannot say extern "C++"); the mac build is C only */
 #if defined(__cplusplus)

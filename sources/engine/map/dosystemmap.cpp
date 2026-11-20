@@ -1,25 +1,13 @@
 /* dosystemmap.cpp -- tu-map object O25: the galaxy map dialog, its drawing, filters and jump routes. Notes: Research/notes/dosystemmap.md */
-#include <stddef.h>
-#include <string.h>
 
-#include "gametypes.h"
-#include "macport.h"
-#include "burger.h"
-#include "resources.h"
-#include "shipobj.h"
-#include "gameconst.h"
 #include "prototypes.h"
 #include "ships.h"
-#include "dialogs.h"
 #include "game.h"
 #include "gameutil.h"
 #include "player.h"
-#include "missions.h"
 #include "render.h"
 #include "sound.h"
 #include "stellar.h"
-#include "cefix.h"
-#include "dialog.h"
 #include "gamedialog.h"
 #include "viewscale.h"
 #include "space.h"

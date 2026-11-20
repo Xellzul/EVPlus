@@ -1,14 +1,8 @@
 /* portbuttons.cpp -- the spaceport's buttons, PlanetButtons. Notes: Research/notes/portbuttons.md, Research/notes/trackplanetbuttons.md */
-#include <stddef.h>
 
-#include "macport.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "dialogs.h"
 #include "game.h"
 #include "ships.h"
-#include "gametypes.h"
 #include "stellar.h"
 #include "buttons.h"
 

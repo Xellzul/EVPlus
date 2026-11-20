@@ -1,7 +1,5 @@
 /* gworld.cpp -- the GWorldContainer wrapper around an offscreen drawing world (win TU region 0x0046f740..0x0046f95a). Notes: Research/notes/gworld.md */
-#include "macport.h"
 #include "render.h"
-#include "cefix.h"
 
 static CGrafPtr savedPort;
 static void *savedDevice;

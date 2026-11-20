@@ -3,7 +3,6 @@
    as the exe's window received and showed them. The exe handed such text to Windows as it was, which took
    it in the system's code page. */
 
-#include <string.h>
 #include "macport.h"
 
 #define kNoSuchChar     '_'             /* for a character the other side does not have */

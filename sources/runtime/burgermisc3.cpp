@@ -1,7 +1,5 @@
 /* burgermisc3.cpp -- burgermisc, exe run 3. Notes: Research/notes/burgermisc.md */
 
-#include <string.h>
-#include "burgertypes.h"
 #include "burger.h"
 #include "burgerplat.h"
 

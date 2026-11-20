@@ -3,7 +3,6 @@
    half a second apart, and keeps a timer thread that touches the counter every 4 s; all of them read the
    platform's one monotonic clock here. Notes: Research/notes/atticks.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
 

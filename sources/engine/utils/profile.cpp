@@ -1,6 +1,4 @@
 /* profile.cpp -- the engine's own 64-slot sampling profiler (win TU region 0x0046fbf0..0x0046ff00). Notes: Research/notes/profile.md */
-#include <stdio.h>
-#include <string.h>
 #include "game.h"
 #include "burger.h"
 #include "platform.h"

@@ -1,12 +1,6 @@
 /* prefsdialog.cpp -- the Preferences dialog: the items of the game's DITL 4003 without the two that did nothing
    (Share Processor Time, Check For Updates) plus Positional Stereo, in three groups, the third with the display
    settings. Built in code (NewDialogFromItems); each check box and up/down control is a table entry. */
-#include <stddef.h>
-#include <stdio.h>
-#include <array>
-#include "macport.h"
-#include "gametypes.h"
-#include "resources.h"
 #include "dialogs.h"
 #include "game.h"
 #include "player.h"

@@ -2,10 +2,7 @@
 /* The port's NewGWorld takes four arguments, not six: with no GDevice list the donor's
    device query and its first arm both go. The `err == noErr' test goes through an int
    copy, because mwcc 418 always narrows a short compare. */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
-#include "cefix.h"
 
 
 // FUNCTION: EVNOVA 0x00478fa0

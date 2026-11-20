@@ -5,10 +5,6 @@
  * sound has been opened, so picture and sound start together; a movie with a picture is done when the clock
  * passes its duration, a song when its sound has drained. */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
 #include "macport.h"
 #include "cefix.h"
 #include "media.h"

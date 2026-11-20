@@ -1,13 +1,8 @@
 /* viewscale.cpp -- the space view drawn at the game size and enlarged onto the screen. */
 #include <math.h>
-#include <string.h>
 #include <vector>
-#include "macport.h"
-#include "gameconst.h"
-#include "gametypes.h"
 #include "burger.h"
 #include "player.h"
-#include "cefix.h"
 #include "spriteworld.h"
 #include "uiscale.h"
 #include "viewscale.h"

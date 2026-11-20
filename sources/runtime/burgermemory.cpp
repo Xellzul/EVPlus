@@ -6,10 +6,7 @@
    failed request fails at once instead of purging first. With the pool, never filled in practice, that is
    how it behaved anyway. Every block starts zeroed, as the fresh pool's memory did. */
 
-#include <stdlib.h>
-#include <string.h>
 
-#include "burgertypes.h"
 #include "burger.h"
 
 #ifdef __cplusplus

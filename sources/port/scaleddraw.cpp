@@ -1,8 +1,6 @@
 /* scaleddraw.cpp -- the drawing primitives on a scaled pixel map: logical coordinates mapped to device pixels
    (uiscale.h), then drawn as the original primitives draw. */
 #include <math.h>
-#include <stdlib.h>
-#include "macport.h"
 #include "uiscale.h"
 #include "scaleddraw.h"
 

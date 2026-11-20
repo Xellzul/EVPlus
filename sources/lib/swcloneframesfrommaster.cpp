@@ -1,5 +1,4 @@
 /* swcloneframesfrommaster.cpp -- SWCloneFramesFromMaster (win 0x00475f70). Notes: Research/notes/swcloneframesfrommaster.md */
-#include "macport.h"
 #include "burger.h"
 #include "spriteworld.h"
 

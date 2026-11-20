@@ -1,19 +1,9 @@
 /* dialogmgr.cpp -- the port's Dialog, Control and List Manager (win 0x004cea90..0x004d2950, in exe order). Notes: Research/notes/dialogmgr.md */
-#include "burgerplat.h"
-#include <stddef.h>
-#include <string.h>   /* strcpy 0x004d6010, strlen 0x004eedb0 */
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "macport.h"
-#include "gametypes.h"
 #include "game.h"
-#include "burger.h"
 #include "render.h"
 #include "sound.h"
 #include "dialogs.h"
-#include "prototypes.h"
-#include "cefix.h"
 #include "uiscale.h"
 #include "scaleddraw.h"
 #include "platform.h"

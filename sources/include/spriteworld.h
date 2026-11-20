@@ -2,7 +2,6 @@
    Research/declaration-mismatches.md */
 #ifndef SPRITEWORLD_H
 #define SPRITEWORLD_H
-#include "gametypes.h"
 #include "macport.h"
 
 #ifdef __cplusplus

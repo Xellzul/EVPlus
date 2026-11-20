@@ -4,8 +4,6 @@
    of each pixel map, bounds not applied. */
 
 #include <math.h>
-#include <stdlib.h>
-#include <string.h>
 #include <algorithm>
 #include <vector>
 #include "macport.h"

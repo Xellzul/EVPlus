@@ -1,8 +1,6 @@
 /* computepixelvalues.cpp -- ComputePixelValues (win 0x00479210, donor SpriteWorldUtils.c line 900). Notes: Research/notes/computepixelvalues.md */
 /* Names two SpriteWorldUtils.c globals outright: 0x007d0500 SWMaskedRGBValue and 0x007d0502
    SWTransparentRGBValue. */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 unsigned short SWMaskedRGBValue;

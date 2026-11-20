@@ -1,11 +1,5 @@
 /* nexttarget.cpp -- cycle the player's target (win 0x00461bd0). Notes: Research/notes/nexttarget.md */
-#include <stddef.h>
 
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "ai.h"
 #include "player.h"
 #include "ships.h"

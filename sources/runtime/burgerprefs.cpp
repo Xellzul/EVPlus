@@ -1,11 +1,8 @@
 /* burgerprefs.cpp -- the preferences file: open, close, write, lookup. Notes: Research/notes/burgerprefs.md */
 
 #include <stddef.h>
-#include <stdio.h>
 
-#include "burgertypes.h"
 #include "burger.h"
-#include "burgerplat.h"
 
 #ifdef __cplusplus
 extern "C" {

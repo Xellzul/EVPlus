@@ -3,8 +3,6 @@
    mask ID is its own picture failed to load. This is the mac's 16-bit path
    (_SWCreateMaskAndFixImage, reached because the default transparent colour is white):
    pixels of the transparent colour become clear in the mask and black in the image. */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 #undef kClear

@@ -2,7 +2,6 @@
 #include "macport.h"
 #include "resources.h"
 #include "gameutil.h"
-#include "burger.h"
 
 EXTERN_C_BEGIN
 

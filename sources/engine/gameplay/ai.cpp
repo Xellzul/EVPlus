@@ -1,14 +1,5 @@
 /* ai.cpp -- the AI object (tu-map O1, win 0x00401000..0x004160f0). Notes: Research/notes/ai.md */
-#include <stdlib.h>
-#include <math.h>
-#include <stddef.h>
-#include <string.h>
 
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
-#include "macport.h"
-#include "gametypes.h"
 #include "stellar.h"
 #include "gameutil.h"
 #include "ai.h"
@@ -18,8 +9,6 @@
 #include "player.h"
 #include "render.h"
 #include "ships.h"
-#include "burger.h"
-#include "crashlog.h"
 #include "sound.h"
 #include "space.h"
 #include "prototypes.h"

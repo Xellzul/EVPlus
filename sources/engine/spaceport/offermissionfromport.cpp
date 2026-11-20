@@ -1,26 +1,9 @@
 /* offermissionfromport.cpp -- ResetMissionOfferVenue, OfferMissionFromPort; exe 0x00448660..0x00448670. Notes: Research/notes/gameutils.md */
 
-#include <math.h>
-#include <stddef.h>
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
-#include "ai.h"
 #include "dialogs.h"
 #include "game.h"
 #include "gameutil.h"
 #include "missions.h"
-#include "player.h"
-#include "render.h"
-#include "ships.h"
-#include "sound.h"
-#include "space.h"
-#include "stellar.h"
-#include "burger.h"
-#include "crashlog.h"
-#include "prototypes.h"
 
 // FUNCTION: EVNOVA 0x00448660
 // MAC: _ResetMissionOfferVenue i386 0x00099f02 ppc 0x000a5d00

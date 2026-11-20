@@ -1,6 +1,4 @@
 /* blitpixierletranslucent.cpp -- BlitPixieRLETranslucent (win 0x00472900), the direct-colour partial-translucency RLE walker. Notes: Research/notes/blitpixierletranslucent.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 /* This body is the only writer of the three tint shorts. */

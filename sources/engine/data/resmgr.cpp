@@ -1,11 +1,8 @@
 /* resmgr.cpp -- the Mac Resource Manager shims the win port implements over BurgerLib's REZ container (win 0x004cdfa0..0x004ce480). Notes: Research/notes/resmgr.md */
-#include <stddef.h>
 
 #include "macport.h"
 
-#include "gametypes.h"
 #include "gameutil.h"
-#include "burger.h"
 #include "burgerplat.h"
 
 struct ListRec *gRezFiles;

@@ -1,13 +1,8 @@
 /* winmain.cpp -- the game's entry, the exe's WinMain (win 0x004d2a80). The program's own entry point is
    the platform layer's, which calls this. Notes: Research/notes/winmain.md */
-#include <stddef.h>
-#include <float.h>
-#include "macport.h"
 #include "burger.h"
 #include "game.h"
-#include "player.h"
 #include "cefix.h"
-#include "platform.h"
 
 EXTERN_C_BEGIN
 

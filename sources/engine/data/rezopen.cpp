@@ -2,10 +2,8 @@
 /* This file adds the raw, still-big-endian counterparts the map's bytes are
    read as before SwapEndianShort/Long convert them in place; every struct and
    the two named globals here are resmgr.cpp's own. */
-#include <stddef.h>
 
 #include "macport.h"
-#include "gametypes.h"
 #include "gameutil.h"
 
 /* resmgr.cpp's RezFile family, stride-exact (0x2c/0xc/0x110) */

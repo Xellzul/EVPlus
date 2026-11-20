@@ -1,12 +1,8 @@
 /* newpilotdlg.cpp -- the New Pilot confirm/abort gate (win 0x0048a7e0). Notes: Research/notes/newpilotdlg.md */
-#include <stddef.h>
 
-#include "burger.h"
-#include "macport.h"
 #include "dialogs.h"
 #include "game.h"
 #include "gameutil.h"
-#include "gametypes.h"
 #include "dialog.h"
 
 EXTERN_C_BEGIN

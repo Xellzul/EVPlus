@@ -1,9 +1,6 @@
 /* toolbox.cpp -- small Mac Toolbox calls the game makes (they came with QuickTime for Windows): the clocks,
    QuickDraw's random numbers, StringToNum, BlockMove, DebugStr and the main device. */
 
-#include <string.h>
-#include <stdint.h>
-#include "macport.h"
 #include "burger.h"
 #include "platform.h"
 #include "spriteworld.h"

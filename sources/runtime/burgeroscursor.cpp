@@ -1,6 +1,5 @@
 /* burgeroscursor.cpp -- BurgerLib OCWin95Code: showing, hiding and resetting the system cursor. Notes: Research/notes/burgeroscursor.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
 

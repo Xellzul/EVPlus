@@ -1,8 +1,6 @@
 /* buttonbar.cpp -- ButtonBar: draws a dialog's picture buttons and runs the press loop they all share */
 #include "buttonbar.h"
-#include "gametypes.h"
 #include "dialogs.h"
-#include "game.h"
 
 ButtonBar::Button &ButtonBar::Set(short slot, short item, unsigned char *label, ButtonLook look)
 {

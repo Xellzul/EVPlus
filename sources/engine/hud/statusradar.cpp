@@ -1,24 +1,12 @@
 /* statusradar.cpp -- DrawStatusRadar (win link order 0x0045d600), the fifth member of the status-painter run and the one function of it that is NOT in statusparts.cpp. Notes: Research/notes/statusradar.md */
-#include <math.h>
-#include <stddef.h>
 
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "gameconst.h"
-#include "dialogs.h"
 #include "gameutil.h"
 #include "player.h"
 #include "render.h"
 #include "ships.h"
 #include "stellar.h"
-#include "prototypes.h"
 #include "space.h"
-#include "resources.h"
-#include "ai.h"
 #include "game.h"
-#include "missions.h"
-#include "cefix.h"
 
 /* the cargo panel is statusOffRect[7], the weapon readout statusOffRect[5] */
 

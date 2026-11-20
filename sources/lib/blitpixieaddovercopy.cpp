@@ -1,5 +1,4 @@
 /* blitpixieaddovercopy.cpp -- BlitPixieAddOverCopy (win 0x00473b60), inside the un-anchored BlitPixie block. Notes: Research/notes/blitpixieaddovercopy.md */
-#include "macport.h"
 #include "shipobj.h"
 
 EXTERN_C_BEGIN

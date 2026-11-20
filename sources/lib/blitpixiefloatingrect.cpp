@@ -1,6 +1,4 @@
 /* blitpixiefloatingrect.cpp -- BlitPixieFloatingRect (win 0x00471d30), the direct-colour translucent rectangle copy. Notes: Research/notes/blitpixiefloatingrect.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 

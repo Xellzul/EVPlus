@@ -1,6 +1,4 @@
 /* blitpixierle.cpp -- BlitPixieRLE (win 0x00471e10). Notes: Research/notes/blitpixierle.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 // FUNCTION: EVNOVA 0x00471e10

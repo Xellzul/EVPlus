@@ -1,6 +1,5 @@
 /* burgertick.cpp -- BurgerLib TkWin95Code: the 60 Hz tick counter. Notes: Research/notes/burgertick.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
 

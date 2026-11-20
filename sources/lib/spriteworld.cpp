@@ -1,11 +1,5 @@
 /* spriteworld.cpp -- SpriteWorld's SpriteWorld.c, tu-map object O17: the sprite world, its update and animation. Notes: Research/notes/spriteworld.md */
-#include <stddef.h>
 
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "spriteworld.h"
-#include "burger.h"
 #include "render.h"
 #include "game.h"
 

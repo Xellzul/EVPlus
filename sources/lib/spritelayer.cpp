@@ -1,6 +1,4 @@
 /* spritelayer.cpp -- SpriteWorld's SpriteLayer.c, tu-map object O16: sprite layers. Notes: Research/notes/spritelayer.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 #define kSpriteAlreadyInLayer   115

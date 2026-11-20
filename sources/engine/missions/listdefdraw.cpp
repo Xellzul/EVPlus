@@ -1,16 +1,10 @@
 /* listdefdraw.cpp -- the mission-list TU: per-arrival mission housekeeping and the mission list's LDEF (win 0x00448910..0x00448b85). Notes: Research/notes/listdefdraw.md */
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
 #include "render.h"
 #include "gameutil.h"
 #include "prototypes.h"
 #include "stellar.h"
-#include "gameconst.h"
 #include "dialogs.h"
 #include "game.h"
-#include "missions.h"
-#include "cefix.h"
 
 /* the mission object's globals; this file ends that object (the .CRT hook) */
 unsigned char missionName[1000][256];

@@ -4,16 +4,10 @@
  * "Parser.c" and a line number (1116 and 1126), so the original TU is named
  * by the binary itself.
  */
-#include <stddef.h>
-#include "burger.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
 #include "gameutil.h"
 #include "ships.h"
 #include "space.h"
 #include "game.h"
-#include "macport.h"
 #include "missions.h"
 #include "player.h"
 #include "prototypes.h"

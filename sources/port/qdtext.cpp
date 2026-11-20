@@ -10,13 +10,7 @@
    device pixels; a width is the sum of those advances in logical pixels, rounded once.
    Notes: Research/notes/toolbox.md */
 
-#include <stddef.h>
-#include <string.h>
-#include "macport.h"
-#include "gametypes.h"
 #include "burger.h"
-#include "player.h"
-#include "cefix.h"
 #include "fontraster.h"
 #include "uiscale.h"
 

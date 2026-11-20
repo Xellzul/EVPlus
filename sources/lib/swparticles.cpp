@@ -1,11 +1,7 @@
 /* swparticles.cpp -- SpriteWorld's SWParticles.c, the whole object (win 0x0047b7d0-0x0047c800). Notes: Research/notes/swparticles.md */
-#include <stddef.h>
 
-#include "gametypes.h"
 #include "game.h"
 #include "burger.h"
-#include "macport.h"
-#include "spriteworld.h"
 
 EXTERN_C_BEGIN
 

@@ -1,5 +1,4 @@
 /* endianswap.cpp -- byte-swap a resource body from a descriptor (win 0x004ce660). Notes: Research/notes/endianswap.md */
-#include "int32.h"
 #include "gametypes.h"
 
 EXTERN_C_BEGIN

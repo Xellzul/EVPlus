@@ -1,10 +1,6 @@
 /* dlgsound.cpp -- the dialog sound bank's stop-all and its two-part chime (win 0x0048bbb0 and 0x0048bc20). Notes: Research/notes/dlgsound.md */
-#include "gametypes.h"
 
-#include <stddef.h>
 
-#include "macport.h"
-#include "burger.h"
 #include "render.h"
 #include "game.h"
 #include "viewscale.h"
@@ -42,7 +38,6 @@ void PlayMainScreenClickSound(void)
     PlaySound(mainScreenSnd[1], 10, gSoundVolume, gSoundVolume);
 }
 
-#include "prototypes.h"   /* inBackground */
 
 
 

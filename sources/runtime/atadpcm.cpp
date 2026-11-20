@@ -2,7 +2,6 @@
    sound is loaded, and the mixer that resamples a 16-bit voice and adds it into the output.
    Notes: Research/notes/atadpcm.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "burgerchan.h"
 

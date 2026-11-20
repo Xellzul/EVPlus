@@ -1,6 +1,5 @@
 /* burgerextract.cpp -- BurgerLib ClStdlib: one line out of a text buffer. Notes: Research/notes/burgerextract.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 
 #ifdef __cplusplus

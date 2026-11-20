@@ -1,15 +1,6 @@
 /* commdlg.cpp -- the hail, haggle and plunder dialog object (tu-map O22, win 0x0047e470..0x004860f0). Notes: Research/notes/commdlg.md */
-#include <stddef.h>
-#include <string.h>
 
-#include "burger.h"
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "ai.h"
-#include "dialogs.h"
 #include "gameutil.h"
 #include "missions.h"
 #include "player.h"
@@ -24,7 +15,6 @@
 #include "prototypes.h"
 #include "game.h"
 #include "endianswap.h"
-#include "dialog.h"
 #include "gamedialog.h"
 #include "buttons.h"
 

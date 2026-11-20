@@ -4,14 +4,9 @@
  * SpriteWorld.h - backFrameP at +0x14, workFrameP at +0x18, each a FramePtr
  * whose first field is the CGrafPtr the port hands to CopyBits.
  */
-#include <stddef.h>
 
-#include "burger.h"
-#include "macport.h"
 #include "game.h"
-#include "spriteworld.h"
 #include "viewscale.h"
-#include "uiscale.h"
 #include "missions.h"
 #include "render.h"
 #include "stellar.h"

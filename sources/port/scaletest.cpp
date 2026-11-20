@@ -4,12 +4,6 @@
    kScaleTest (mainscreen.cpp) is 1. The text checks are logged to scaletest.txt. Scale 1 must give the same
    file before and after a change; build/devtools/scaletest.sh runs it. */
 
-#include <stdio.h>
-#include <string.h>
-#include "macport.h"
-#include "burger.h"
-#include "spriteworld.h"
-#include "game.h"
 #include "render.h"
 #include "platform.h"
 #include "uiscale.h"

@@ -1,9 +1,5 @@
 /* paintrect.cpp -- PaintRect, InvertRect, EraseRect, FrameRect; exe 0x004b6b90..0x004b6ef0. Notes: Research/notes/qddraw.md */
 
-#include <stddef.h>
-#include "macport.h"
-#include "burger.h"
-#include "render.h"
 #include "scaleddraw.h"
 
 // FUNCTION: EVNOVA 0x004b6b90

@@ -1,14 +1,8 @@
 /* physics.cpp -- ship motion helpers (win 0x0043b4a0..0x0043ba30: Accel, AdjustedAccel, CalcInterceptAngle, SpeedLimit ...). Notes: Research/notes/physics.md */
 #include <math.h>
 
-#include "shipobj.h"
-#include "resources.h"
 #include "game.h"
-#include "render.h"
 #include "space.h"
-#include "player.h"
-#include "ships.h"
-#include "gametypes.h"
 
 /* TableSin/TableCos look up the 360-entry tables BuildTrigTable fills and leave the result in trigResult. */
 

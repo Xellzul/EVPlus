@@ -1,9 +1,6 @@
 /* burgersndwin.cpp -- BurgerLib's SnSoundManager: the AIFF extended and parsing a sound file image. Notes: Research/notes/burgersndwin.md */
 
-#include <string.h>
 
-#include "burgertypes.h"
-#include "burger.h"
 #include "burgerplat.h"
 #include "gameutil.h"
 

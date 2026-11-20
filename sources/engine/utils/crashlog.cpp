@@ -1,8 +1,5 @@
 /* crashlog.cpp -- debug logging. Notes: Research/notes/crashlog.md */
-#include <stdio.h>
 
-#include "burger.h"
-#include "macport.h"
 #include "crashlog.h"
 #include "platform.h"
 

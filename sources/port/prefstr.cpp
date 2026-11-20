@@ -7,17 +7,8 @@
  * is named by the resource id and each string by "S" plus its index, so this
  * is what GetIndString ends up calling.
  */
-#include <stddef.h>
-#include <string.h>
-#include "gameconst.h"
-#include "gametypes.h"
-#include "render.h"
-#include "crashlog.h"
 #include "player.h"
-#include "dialogs.h"
-#include "game.h"
 #include "gameutil.h"
-#include "stellar.h"
 
 /* the prefs and data-file object's globals: each resource type's file-data record, then its handle */
 PrefsFileRec gPrefs;

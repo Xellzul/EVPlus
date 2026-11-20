@@ -2,9 +2,6 @@
    8 bits per pixel, in place of BurgerLib's 8-bit-only ImageParsePPat.
    Notes: Research/cefix-plan.md */
 
-#include <string.h>
-#include "burgertypes.h"
-#include "burgerplat.h"
 #include "burger.h"
 #include "cefix.h"
 

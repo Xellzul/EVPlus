@@ -1,6 +1,4 @@
 /* swcreatespriteworld.cpp -- SWEnterSpriteWorld (SpriteWorld.c's order) and SWCreateSpriteWorld (win 0x00477640, donor SpriteWorld.c line 117). Notes: Research/notes/swcreatespriteworld.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "burger.h"
 #include "spriteworld.h"
 

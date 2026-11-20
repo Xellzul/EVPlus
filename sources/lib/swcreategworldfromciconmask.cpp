@@ -1,9 +1,5 @@
 /* swcreategworldfromciconmask.cpp -- SWCreateGWorldFromCIconMask (win 0x00479070, donor SpriteWorldUtils.c line 444). Notes: Research/notes/swcreategworldfromciconmask.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
-#include "burgerplat.h"
-#include "cefix.h"
 
 #define kWhite555   0x7fff
 

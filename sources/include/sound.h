@@ -8,7 +8,6 @@
 #define SOUND_H
 #include "macport.h"
 #include "gameconst.h"
-#include "burgertypes.h"
 
 #ifdef __cplusplus
 extern "C" {

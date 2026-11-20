@@ -1,7 +1,6 @@
 /* swassertfail.cpp -- SWAssertFail (win 0x004794d0, donor SpriteWorldUtils.c line 1866). Notes: Research/notes/swassertfail.md */
 #include "macport.h"
 #include "burger.h"
-#include "shipobj.h"
 #include "stellar.h"
 
 EXTERN_C_BEGIN

@@ -1,6 +1,5 @@
 /* blitpixierlecollisionwithpoint.cpp -- BlitPixieRLECollisionWithPoint (win 0x00472420). Notes: Research/notes/blitpixierlecollisionwithpoint.md */
 #include "macport.h"
-#include "shipobj.h"
 
 EXTERN_C_BEGIN
 

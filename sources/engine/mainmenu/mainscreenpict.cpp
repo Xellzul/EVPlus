@@ -1,12 +1,8 @@
 /* mainscreenpict.cpp -- composite the main screen's background picture and its three animated button/logo sprites into MenuArt() each tick (win 0x0048c3c0). Notes: Research/notes/mainscreenpict.md */
-#include <stddef.h>
 
-#include "macport.h"
 
-#include "gametypes.h"
 #include "render.h"
 #include "game.h"
-#include "shipobj.h"
 
 // FUNCTION: EVNOVA 0x0048c3c0
 // MAC: _MainScreenAnimDraw i386 0x00016146 ppc 0x00019eb4

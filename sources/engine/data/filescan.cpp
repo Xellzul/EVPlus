@@ -1,7 +1,5 @@
 /* filescan.cpp -- count the files of one extension in a directory, logging each (win 0x0046f690). Notes: Research/notes/filescan.md */
-#include <stdio.h>
 
-#include "macport.h"
 #include "burger.h"
 #include "burgerplat.h"
 #include "crashlog.h"

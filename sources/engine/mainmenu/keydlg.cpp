@@ -1,14 +1,9 @@
 /* keydlg.cpp -- the key-binding dialog's update proc (win 0x0048b860). Notes: Research/notes/keydlg.md */
-#include <stddef.h>
 
-#include "macport.h"
-#include "dialogs.h"
 #include "game.h"
 #include "player.h"
 #include "viewscale.h"
 #include "render.h"
-#include "gametypes.h"
-#include "dialog.h"
 #include "gamedialog.h"
 
 #define kBindingCount 0x22

@@ -1,5 +1,4 @@
 /* swcreatesprite.cpp -- SWCreateSprite (win 0x004744a0, donor line 56). Notes: Research/notes/swcreatesprite.md */
-#include "macport.h"
 #include "burger.h"
 #include "spriteworld.h"
 

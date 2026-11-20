@@ -1,8 +1,6 @@
 /* burgerimage.cpp -- BurgerLib ImImageManager: freeing an image and remapping its indexed pixels. Notes: Research/notes/burgerimage.md */
 
-#include "burgertypes.h"
 #include "burger.h"
-#include "burgerplat.h"
 
 #ifdef __cplusplus
 extern "C" {

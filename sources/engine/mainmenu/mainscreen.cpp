@@ -3,7 +3,6 @@
  * The checks are a straight run of independent ifs rather than a chain, so each
  * handled key falls through to the remaining comparisons.
  */
-#include <stddef.h>
 
 #include "prototypes.h"
 
@@ -18,17 +17,10 @@
 
 #define kCreditsTextID      0x7ffe
 
-#include "resources.h"
-#include "shipobj.h"
-#include "gametypes.h"
-#include "gameconst.h"
-#include "macport.h"
-#include "uiscale.h"
 #include "dialogs.h"
 #include "sound.h"
 #include "space.h"
 #include "stellar.h"
-#include "burger.h"
 #include "gameutil.h"
 #include "missions.h"
 #include "player.h"

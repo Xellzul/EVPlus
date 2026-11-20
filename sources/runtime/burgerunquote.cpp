@@ -1,6 +1,5 @@
 /* burgerunquote.cpp -- BurgerLib StStringManager: trimming, extensions, the quoted-value reader, number formatting, string copies. Notes: Research/notes/burgerunquote.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 
 /* The member's one byte of .bss; no live code reads it. */

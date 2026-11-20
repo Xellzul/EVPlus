@@ -1,9 +1,6 @@
 /* spriteframe.cpp -- SpriteWorld's SpriteFrame.c, tu-map object O15: frame creation, disposal and locking. Notes: Research/notes/spriteframe.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "burger.h"
 #include "spriteworld.h"
-#include "cefix.h"
 
 // FUNCTION: EVNOVA 0x00476400
 // MAC: _SWCreateFrame i386 0x000ad556 ppc 0x000b8a00

@@ -1,6 +1,4 @@
 /* swcreateregionfromgworldandrectfinish.cpp -- SWCreateRegionFromGWorldAndRectFinish (win 0x00478f20, donor SpriteWorldUtils.c line 279). Notes: Research/notes/swcreateregionfromgworldandrectfinish.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 

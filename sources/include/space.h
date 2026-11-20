@@ -6,7 +6,6 @@
  */
 #ifndef SPACE_H
 #define SPACE_H
-#include "gametypes.h"
 #include "shipobj.h"
 
 #ifdef __cplusplus

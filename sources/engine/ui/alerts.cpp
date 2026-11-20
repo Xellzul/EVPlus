@@ -1,35 +1,9 @@
 /* alerts.cpp -- alerts, yes/no, text input and quantity dialogs */
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include "macport.h"
-#include "scaleddraw.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "dialogs.h"
-#include "game.h"
-#include "stellar.h"
-#include "crashlog.h"
-#include "prototypes.h"
-#include "gameutil.h"
-#include "missions.h"
-#include "player.h"
 #include "render.h"
-#include "ships.h"
-#include "burger.h"
-#include "sound.h"
-#include "cefix.h"
-#include "viewscale.h"
-#include "uiscale.h"
-#include "movie.h"
 #include "ai.h"
-#include "space.h"
 #include "dialog.h"
-#include "buttons.h"
 
 DialogPtr alertDialog;
 DialogPtr qtyDialog;

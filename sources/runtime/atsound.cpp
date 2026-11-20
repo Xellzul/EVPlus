@@ -1,11 +1,8 @@
 /* atsound.cpp -- the Sound Toolkit: bringing the sound layer up and down, starting and halting sounds over the channel table, and parsing a Mac `snd ' resource out of memory. Notes: Research/notes/atsound.md */
 
-#include <string.h>
-#include "burgertypes.h"
 #include "burger.h"
 
 #include "burgerchan.h"
-#include "macport.h"
 #include "game.h"
 
 extern int32_t _ST_CreateSoundPump(void);

@@ -1,5 +1,4 @@
 /* sprite.cpp -- SpriteWorld's Sprite.c, tu-map object O14: sprite creation, frames, movement and collision. Notes: Research/notes/sprite.md */
-#include "macport.h"
 #include "burger.h"
 #include "spriteworld.h"
 

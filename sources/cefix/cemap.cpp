@@ -1,9 +1,7 @@
 /* cemap.cpp -- EV Nova CE: the galaxy map's border grid, recomputed over its visible part only.
    Notes: Research/cefix-plan.md */
 
-#include "macport.h"
 #include "stellar.h"
-#include "cefix.h"
 
 int ceMapBordersVisibleWidth = kCEBordersWidth;
 int ceMapBordersVisibleHeight = kCEBordersHeight;

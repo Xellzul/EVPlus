@@ -1,7 +1,6 @@
 /* dialogs.h -- the game's own dialogs and the widgets they share. Notes: Research/notes/dialogs.md */
 #ifndef DIALOGS_H
 #define DIALOGS_H
-#include "gametypes.h"
 #include "macport.h"
 #include "shipobj.h"
 

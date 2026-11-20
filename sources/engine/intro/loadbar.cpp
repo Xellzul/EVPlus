@@ -1,14 +1,7 @@
 /* loadbar.cpp -- the startup progress bar (win 0x004ab1b0..0x004ab3d0). Notes: Research/notes/loadbar.md */
-#include <stdlib.h>
-#include "macport.h"
-#include "burger.h"
-#include "resources.h"
 #include "game.h"
 #include "render.h"
-#include "dialogs.h"
 #include "sound.h"
-#include "missions.h"
-#include "player.h"
 
 /* the bar's rect comes out of the colr resource */
 

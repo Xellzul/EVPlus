@@ -1,15 +1,11 @@
 /* cedebug.cpp -- EV Nova CE: the debug-mode keys and NCB prompts, signed NumToString, the
    hyperspace flash colour. Notes: Research/cefix-plan.md */
 
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
 #include "dialogs.h"
 #include "game.h"
 #include "sound.h"
 #include "player.h"
 #include "render.h"
-#include "burger.h"
 #include "cefix.h"
 
 #define kScanNCBTest        kScan9

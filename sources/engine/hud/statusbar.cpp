@@ -1,14 +1,8 @@
 /* statusbar.cpp -- the status-bar driver pair (win link order 0x0045d0a0, 0x0045d320; mac 1.1.1 twins _RedrawStatus @0x4cac0, _DrawStatus @0x4c85d). Notes: Research/notes/statusbar.md */
-#include "macport.h"
-#include "gameconst.h"
-#include "shipobj.h"
 #include "game.h"
-#include "dialogs.h"
 #include "ships.h"
 #include "player.h"
 #include "render.h"
-#include "burger.h"
-#include "cefix.h"
 
 ShipClassID lastTargetedShipClass;
 short lastTargetedShipShields;

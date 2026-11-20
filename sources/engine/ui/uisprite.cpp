@@ -1,10 +1,8 @@
 /* uisprite.cpp -- sprites drawn into the interface, on scaled frames stretched smoothly. */
 #include <math.h>
 #include <vector>
-#include "macport.h"
 #include "spriteworld.h"
 #include "uiscale.h"
-#include "uisprite.h"
 
 namespace UI {
 

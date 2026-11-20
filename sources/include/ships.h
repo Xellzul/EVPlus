@@ -2,7 +2,6 @@
 #ifndef SHIPS_H
 #define SHIPS_H
 #include "burger.h"
-#include "gametypes.h"
 #include "shipobj.h"
 
 #ifdef __cplusplus

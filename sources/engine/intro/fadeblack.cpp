@@ -1,10 +1,7 @@
 /* fadeblack.cpp -- fade out and paint the window black (win 0x004ab180), and the two startup splash screens that ride the same GWorldContainer/CopyBits plumbing as gworld.cpp. Notes: Research/notes/fadeblack.md */
-#include "macport.h"
 #include "gameutil.h"
 #include "render.h"
 #include "stellar.h"
-#include "dialogs.h"
-#include "game.h"
 
 #define kSplashPictID       0x83
 #define kAmbrosiaLogoPictID 0x1fa4

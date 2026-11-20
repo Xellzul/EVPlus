@@ -1,22 +1,11 @@
 /* blitcopy24.cpp --tu-map object O27: the 24-bit and scaled blitters, the blit dispatch, and the QuickDraw port, rect, pen, oval, picture and cicn emulation. Notes: Research/notes/blitcopy24.md */
 #include <time.h>
 #include <math.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include "macport.h"
 #include "scaleddraw.h"
 #include "uiscale.h"
-#include "game.h"
-#include "stellar.h"
-#include "shipobj.h"
-#include "gametypes.h"
-#include "gameconst.h"
 #include "cefix.h"
 #include "burger.h"
-#include "spriteworld.h"
-#include "burgerplat.h"
 #include "player.h"
 #include "endianswap.h"
 

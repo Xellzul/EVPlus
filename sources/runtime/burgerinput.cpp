@@ -1,6 +1,5 @@
 /* burgerinput.cpp -- the alert box and the debug log, on the platform layer (platform.h). Notes: Research/notes/burgerinput.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "macport.h"
 #include "platform.h"

@@ -1,5 +1,4 @@
 /* blitcopy8.cpp -- the two 8-bit-source CopyBits blitters (win 0x004b7230 and 0x004b73b0). Notes: Research/notes/blitcopy8.md */
-#include "gametypes.h"
 #include "macport.h"
 
 /* the same blitter-family record the 15-bit pair uses: a bounds Rect at

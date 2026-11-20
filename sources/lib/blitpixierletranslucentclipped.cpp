@@ -1,6 +1,4 @@
 /* blitpixierletranslucentclipped.cpp -- tu-map object O13: the two clipped 16-bit translucent RLE blitters of the un-anchored BlitPixie block. Notes: Research/notes/blitpixierletranslucentclipped.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 

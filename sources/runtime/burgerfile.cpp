@@ -1,6 +1,5 @@
 /* burgerfile.cpp -- BurgerLib's fixed-point multiply. Notes: Research/notes/burgerfile.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 
 #ifdef __cplusplus

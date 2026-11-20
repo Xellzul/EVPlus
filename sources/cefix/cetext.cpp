@@ -1,8 +1,6 @@
 /* cetext.cpp -- EV Nova CE: the version text on the main menu. (CE's other text change, Mac Roman text
    drawn as Unicode in place of iconv's CP1252, is in port/qdtext.cpp.) Notes: Research/cefix-plan.md */
 
-#include <stddef.h>
-#include "macport.h"
 #include "render.h"
 #include "cefix.h"
 

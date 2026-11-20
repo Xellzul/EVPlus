@@ -3,14 +3,7 @@
    measured and drawn widths, and a word-wrapped paragraph; the names also go into the debug log. Shown
    before the main screen when kDebugFonts (mainscreen.cpp) is 1. */
 
-#include <stdio.h>
-#include <string.h>
-#include "macport.h"
-#include "burger.h"
-#include "spriteworld.h"
-#include "game.h"
 #include "render.h"
-#include "player.h"
 #include "crashlog.h"
 
 #define kLabelLeft      20

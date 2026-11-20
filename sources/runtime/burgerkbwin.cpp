@@ -2,7 +2,6 @@
    events: the event pump, the key queue, the held keys, the mouse buttons and position. */
 
 #include <SDL3/SDL.h>
-#include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
 

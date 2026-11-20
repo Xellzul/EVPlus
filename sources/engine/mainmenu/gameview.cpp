@@ -1,8 +1,5 @@
 /* gameview.cpp -- centre the 640x480 play area in the window (win 0x00486790). Notes: Research/notes/gameview.md */
-#include <stddef.h>
 
-#include "macport.h"
-#include "gameconst.h"
 #include "dialogs.h"
 #include "game.h"
 #include "viewscale.h"

@@ -1,10 +1,7 @@
 /* stellar.h -- systems, stellar objects, governments and the map. Notes: Research/notes/stellar.md */
 #ifndef STELLAR_H
 #define STELLAR_H
-#include "gametypes.h"
-#include "macport.h"
 #include "shipobj.h"
-#include "spriteworld.h"
 #include "cefix.h"
 
 #ifdef __cplusplus

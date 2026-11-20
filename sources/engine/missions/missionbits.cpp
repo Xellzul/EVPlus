@@ -1,9 +1,6 @@
 /* missionbits.cpp -- mission-bit set-expression entry points (win TU region around 0x00448020). Notes: Research/notes/missionbits.md */
-#include <stdio.h>
-#include "burger.h"
 #include "missions.h"
 #include "player.h"
-#include "game.h"
 
 EXTERN_C_BEGIN
 

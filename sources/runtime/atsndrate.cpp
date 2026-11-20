@@ -1,6 +1,5 @@
 /* atsndrate.cpp -- the sound driver's 16.16 rate helpers: to whole hertz, and the saturating multiply and divide. Notes: Research/notes/atsnddrv.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 
 

@@ -1,8 +1,5 @@
 /* syststate.cpp -- two small pieces of the system-entry state machine (win 0x0045cfc0 and 0x0045d030, from the run below 0x0045d0a0). Notes: Research/notes/syststate.md */
-#include <stddef.h>
 
-#include "macport.h"
-#include "shipobj.h"
 #include "resources.h"
 #include "player.h"
 #include "render.h"

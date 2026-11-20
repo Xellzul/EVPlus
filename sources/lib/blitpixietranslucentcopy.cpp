@@ -1,6 +1,4 @@
 /* blitpixietranslucentcopy.cpp -- BlitPixieTranslucentCopy (win 0x004736c0). Notes: Research/notes/blitpixietranslucentcopy.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 /* the blitters' shared blend state */

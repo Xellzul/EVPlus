@@ -1,12 +1,7 @@
 /* shipyardbuttons.cpp -- the head of the buttons TU (win 0x0049eef0..0x0049fbb0): the map's, the shipyard's and the outfitter's buttons. Notes: Research/notes/shipyardbuttons.md */
-#include "macport.h"
-#include "gameconst.h"
 #include "dialogs.h"
-#include "game.h"
 #include "player.h"
 #include "stellar.h"
-#include "burger.h"
-#include "gametypes.h"
 #include "buttons.h"
 
 #define kGridPageCells 20    /* the scroll-down guard's slack */

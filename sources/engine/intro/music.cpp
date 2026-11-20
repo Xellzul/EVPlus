@@ -4,13 +4,8 @@
  * is a signed short, because the product is truncated back to a short and the
  * upper half cannot matter.
  */
-#include <stdio.h>
-#include "macport.h"
-#include "game.h"
 #include "sound.h"
 #include "player.h"
-#include "render.h"
-#include "burger.h"
 #include "gameutil.h"
 #include "movie.h"
 

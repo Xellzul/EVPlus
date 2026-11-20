@@ -1,7 +1,5 @@
 /* burgeronce.cpp -- BurgerLib W9Win95Code: the active flag. Notes: Research/notes/burgeronce.md */
 
-#include <stdlib.h>
-#include "burgertypes.h"
 #include "burger.h"
 
 #ifdef __cplusplus

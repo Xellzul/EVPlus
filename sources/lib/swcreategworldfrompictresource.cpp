@@ -2,8 +2,6 @@
 /* The fork's fourth parameter is a byte flag choosing between 0x004b9050 and 0x004b9060
    -- both print as `LoadPictResource(id, 0)' in a decompiler export and the exe bytes
    say one passes gamma 1. The error arm is a flat resNotFound, -192. */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 

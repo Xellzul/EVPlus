@@ -1,9 +1,5 @@
 /* burgermisc2.cpp -- burgermisc, exe run 2. Notes: Research/notes/burgermisc.md */
 
-#include <string.h>
-#include "burgertypes.h"
-#include "burger.h"
-#include "burgerplat.h"
 
 #ifdef __cplusplus
 extern "C" {

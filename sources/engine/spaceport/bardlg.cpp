@@ -1,26 +1,14 @@
 /* bardlg.cpp -- the bar and dialog-update object (tu-map O21, win 0x0047c8e0..0x0047e1e0). Notes: Research/notes/bardlg.md */
-#include <stddef.h>
-#include <string.h>
 
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "ai.h"
-#include "dialogs.h"
 #include "sound.h"
 #include "game.h"
 #include "stellar.h"
 #include "prototypes.h"
 #include "gameutil.h"
 #include "missions.h"
-#include "player.h"
 #include "render.h"
 #include "ships.h"
-#include "burger.h"
-#include "cefix.h"
-#include "dialog.h"
 #include "gamedialog.h"
 #include "buttons.h"
 

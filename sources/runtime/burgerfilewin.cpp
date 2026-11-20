@@ -3,9 +3,6 @@
    on Windows; elsewhere "/dir/file", which BurgerLib holds as ":dir:file:" (its network-share form, the
    file system's top standing for the share). Notes: Research/notes/burgerfilewin.md */
 
-#include <stdio.h>
-#include <string.h>
-#include "burgertypes.h"
 #include "burger.h"
 #include "burgerplat.h"
 #include "platform.h"

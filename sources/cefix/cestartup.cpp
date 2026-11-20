@@ -1,10 +1,6 @@
 /* cestartup.cpp -- EV Nova CE: startup, ddraw.ini, windowing, x2 key. CE left the window to
    cnc-ddraw (its ddraw.dll); the platform layer has it now. Notes: Research/cefix-plan.md */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include "macport.h"
 #include "burger.h"
 #include "cefix.h"
 #include "platform.h"

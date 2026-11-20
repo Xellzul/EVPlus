@@ -1,9 +1,5 @@
 /* missionbiteffects.cpp -- PropagateMissionBitEffects (win 0x00448090-0x0044864c). Notes: Research/notes/missionbiteffects.md */
 #include "space.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "game.h"
 #include "stellar.h"
 #include "crashlog.h"

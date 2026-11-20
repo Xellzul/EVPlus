@@ -1,10 +1,6 @@
 /* burgerfatal.cpp -- BurgerLib's error reporters (DbDebugManager) and the key-name table. Notes: Research/notes/burgerfatal.md */
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "burgertypes.h"
 #include "burger.h"
 
 #ifdef __cplusplus

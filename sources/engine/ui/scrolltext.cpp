@@ -1,6 +1,4 @@
 /* scrolltext.cpp -- ScrollDialogText and the ScrollingText widget built on it */
-#include "macport.h"
-#include "gametypes.h"
 #include "dialogs.h"
 #include "game.h"
 #include "render.h"

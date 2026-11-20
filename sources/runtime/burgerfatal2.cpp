@@ -1,9 +1,6 @@
 /* burgerfatal2.cpp -- burgerfatal, exe run 2. Notes: Research/notes/burgerfatal.md */
 
 #include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "burgertypes.h"
 #include "burger.h"
 
 #ifdef __cplusplus

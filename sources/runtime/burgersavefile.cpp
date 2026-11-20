@@ -1,10 +1,6 @@
 /* burgersavefile.cpp -- BurgerLib MMMemoryGeneric's cleared allocators. Notes: Research/notes/burgersavefile.md */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "burgertypes.h"
 #include "burger.h"
-#include "burgerplat.h"
 
 #ifdef __cplusplus
 extern "C" {

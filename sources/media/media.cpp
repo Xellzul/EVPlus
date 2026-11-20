@@ -5,15 +5,11 @@
  *          (under its lock), so the two never share an AVFormatContext.
  * MediaDecodeImage: one picture of a QuickTime-compressed PICT (burgerpict.cpp), decoded without a container.
  */
-#include <stdlib.h>
-#include <string.h>
 extern "C" {                        /* FFmpeg is C */
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
-#include <libavutil/channel_layout.h>
-#include <libavutil/imgutils.h>
 #include <libavutil/pixdesc.h>
 }
 #include "media.h"

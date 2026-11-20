@@ -1,6 +1,4 @@
 /* blitpixierleclipped.cpp -- BlitPixieRLEClipped and the RLE byte-swapper FixupRLEPixelData (win 0x00471e90-0x00472190). Notes: Research/notes/blitpixierleclipped.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 EXTERN_C_BEGIN

@@ -1,17 +1,8 @@
 /* dosystemsearch.cpp -- DoSystemSearch; exe 0x004aab30..0x004aaf50. Notes: Research/notes/mapdlg.md */
 
-#include <ctype.h>
-#include <stddef.h>
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "sound.h"
-#include "stellar.h"
 #include "game.h"
 #include "render.h"
-#include "ships.h"
-#include "macport.h"
 #include "dialogs.h"
 #include "cefix.h"
 #include "dialog.h"

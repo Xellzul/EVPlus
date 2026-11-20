@@ -1,6 +1,4 @@
 /* blitpixieinterface.cpp -- SpriteWorld's BlitPixieInterface.c, tu-map object O12: the sprite draw and collision procs. Notes: Research/notes/blitpixieinterface.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 

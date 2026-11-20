@@ -2,8 +2,6 @@
 #ifndef RENDER_H
 #define RENDER_H
 #include "burger.h"
-#include "gametypes.h"
-#include "macport.h"
 #include "spriteworld.h"
 #include "movie.h"
 

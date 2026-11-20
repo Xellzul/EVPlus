@@ -1,7 +1,6 @@
 /* atthreadtbl.cpp -- the platform layer's lock. The exe's file also holds the thread table (records, queues,
    create and dispose); its one user was the clock's timer thread. Notes: Research/notes/atthreadtbl.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
 

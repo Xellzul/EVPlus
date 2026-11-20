@@ -1,6 +1,5 @@
 /* atsnddrv.cpp -- the sound output driver: the mixer's output on the platform layer's audio (platform.h), which pulls the mix as the device needs it. The exe's two outputs (DirectSound with a looping secondary buffer, waveOut with two ping-ponged headers), their mixer thread, the device rate probe and the device volume helpers are gone. Notes: Research/notes/atsnddrv.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
 

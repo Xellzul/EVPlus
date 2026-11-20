@@ -1,6 +1,5 @@
 /* blitcopy16.cpp -- the 16-bit straight-copy blitter (win 0x004b74c0). Notes: Research/notes/blitcopy16.md */
 #include "macport.h"
-#include "gametypes.h"
 
 // FUNCTION: EVNOVA 0x004b74c0
 void CopyBitsCopy16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)

@@ -1,30 +1,16 @@
 /* gameloop.cpp -- the main-loop object (tu-map O3, win 0x00428340..0x0043b170). Notes: Research/notes/gameloop.md */
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <stddef.h>
 
 #include "burgermath.h"
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "sound.h"
 #include "space.h"
 #include "prototypes.h"
-#include "dialogs.h"
 #include "player.h"
 #include "render.h"
 #include "ships.h"
-#include "spriteworld.h"
-#include "burger.h"
 #include "ai.h"
 #include "game.h"
 #include "stellar.h"
-#include "cefix.h"
 #include "viewscale.h"
-#include "uiscale.h"
 #include "missions.h"
 #include "crashlog.h"
 #include "gameutil.h"

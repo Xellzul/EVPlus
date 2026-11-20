@@ -1,6 +1,4 @@
 /* blitpixierect.cpp -- BlitPixieRect (win 0x00471cf0). Notes: Research/notes/blitpixierect.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 // FUNCTION: EVNOVA 0x00471cf0

@@ -1,6 +1,4 @@
 /* textedit.cpp -- the port's TextEdit, over Win32 DrawText (win TU region 0x004bcd30-0x004bcf80). Notes: Research/notes/textedit.md */
-#include <stddef.h>
-#include <string.h>
 
 #include "macport.h"
 #include "burger.h"

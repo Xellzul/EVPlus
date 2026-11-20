@@ -1,9 +1,6 @@
 /* burgerfilemgr.cpp -- BurgerLib FmFileManager: path prefixes, expansion, existence, loading and saving, the stream helpers. Notes: Research/notes/burgerfilemgr.md */
 
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "burgerplat.h"
 #include "platform.h"

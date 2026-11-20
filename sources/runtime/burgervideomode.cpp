@@ -1,6 +1,5 @@
 /* burgervideomode.cpp -- BurgerLib GrWin95Code on the platform layer (platform.h): the display mode, the page lock and flip, the release, the filled rectangle. The game draws a 5-5-5 offscreen page and the flip hands it to the platform's frame; DirectDraw's surfaces, palette and gamma ramp are gone. Notes: Research/notes/burgervideomode.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 #include "platform.h"
 

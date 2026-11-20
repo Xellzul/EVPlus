@@ -1,9 +1,6 @@
 /* burgerpict.cpp -- BurgerLib's ImImageParsePict: a QuickDraw PICT, PackBits rows or a QuickTime-compressed picture, decoded into an Image_t. Notes: Research/notes/burgerpict.md */
 
-#include <string.h>
 
-#include "burgertypes.h"
-#include "burgerplat.h"
 #include "burger.h"
 #include "macport.h"
 #include "media.h"

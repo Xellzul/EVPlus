@@ -1,6 +1,5 @@
 /* blitpixierlecollision.cpp -- BlitPixieRLECollision (win 0x00472190), the two-stream RLE overlap test. Notes: Research/notes/blitpixierlecollision.md */
 #include "macport.h"
-#include "shipobj.h"
 
 EXTERN_C_BEGIN
 

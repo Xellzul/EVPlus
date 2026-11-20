@@ -1,6 +1,5 @@
 /* burgerpalette.cpp -- BurgerLib PlPaletteManager: the nearest palette entry to a colour. Notes: Research/notes/burgerpalette.md */
 
-#include "burgertypes.h"
 #include "burger.h"
 
 #ifdef __cplusplus

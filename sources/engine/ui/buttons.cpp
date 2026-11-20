@@ -1,18 +1,12 @@
 /* buttons.cpp -- the custom picture buttons every EV Nova dialog draws over its Dialog Manager items (win TU region 0x0049eef0..0x004a3aa0). Notes: Research/notes/buttons.md */
-#include "macport.h"
 #include "scaleddraw.h"
 #include "uiscale.h"
 
-#include "gametypes.h"
-#include "shipobj.h"
-#include "resources.h"
 #include "ai.h"
 #include "dialogs.h"
 #include "game.h"
 #include "render.h"
-#include "burger.h"
 #include "prototypes.h"
-#include "cefix.h"
 #include "buttons.h"
 
 #define kButtonPictID         7500

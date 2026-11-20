@@ -2,8 +2,6 @@
 /* The fork's SpriteLayerRec is 0x1c bytes, not the donor's 0x18: a 4-byte member at
    +0x10 (written only by SWSetLayerCallBack) pushes tileLayer to +0x18, isPaused to
    +0x1a, layerIsNonScrolling to +0x1b and userData to +0x14. */
-#include "macport.h"
-#include "shipobj.h"
 #include "burger.h"
 #include "spriteworld.h"
 

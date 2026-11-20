@@ -1,5 +1,4 @@
 /* swcreaterledata.cpp -- SWCreateRLEData (win 0x004760c0, SpriteCompiler.c lines 241-242, donor SpriteCompiler.c line 150). Notes: Research/notes/swcreaterledata.md */
-#include "macport.h"
 #include "spriteworld.h"
 #include "burger.h"
 

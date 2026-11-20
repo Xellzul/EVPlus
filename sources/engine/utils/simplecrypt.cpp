@@ -1,6 +1,5 @@
 /* simplecrypt.cpp -- the resource XOR cipher (win 0x0046f960). Notes: Research/notes/simplecrypt.md */
 #include <stddef.h>
-#include "int32.h"
 #include "gametypes.h"
 
 EXTERN_C_BEGIN

@@ -1,25 +1,8 @@
 /* mainscreenrollover.cpp -- MainScreenRolloverDraw; exe 0x0048c580..0x0048c720. Notes: Research/notes/mainscreen.md */
 
-#include <stddef.h>
-#include "prototypes.h"
-#include "resources.h"
-#include "shipobj.h"
-#include "gametypes.h"
-#include "gameconst.h"
-#include "macport.h"
-#include "dialogs.h"
-#include "sound.h"
-#include "space.h"
-#include "stellar.h"
-#include "burger.h"
-#include "gameutil.h"
-#include "missions.h"
-#include "player.h"
 #include "viewscale.h"
 #include "uisprite.h"
 #include "render.h"
-#include "ships.h"
-#include "crashlog.h"
 #include "game.h"
 /* the main-screen object's globals; this file ends that object (the .CRT hook) */
 PicHandle keyPic;

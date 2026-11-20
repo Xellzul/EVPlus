@@ -1,6 +1,4 @@
 /* swstickyerror.cpp -- SWClearStickyError (win 0x004794a0, donor SpriteWorldUtils.c line 1820) and SWSetStickyIfError (win 0x004794b0, donor line 1838). Notes: Research/notes/swstickyerror.md */
-#include "macport.h"
-#include "shipobj.h"
 #include "spriteworld.h"
 
 

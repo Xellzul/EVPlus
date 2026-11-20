@@ -1,5 +1,4 @@
 /* blitpixiememset.cpp -- BlitPixieMemSet (win 0x00474410). Notes: Research/notes/blitpixiememset.md */
-#include "macport.h"
 #include "shipobj.h"
 
 EXTERN_C_BEGIN

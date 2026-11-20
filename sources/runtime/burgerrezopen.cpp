@@ -1,12 +1,7 @@
 /* burgerrezopen.cpp -- BurgerLib RzResourceManager, one TU: opening a .rez container, then closing, purging, releasing and looking up. Notes: Research/notes/burgerrezopen.md */
 
 #include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include "burgerplat.h"
-#include "burgertypes.h"
 #include "burger.h"
 
 #include "gametypes.h"

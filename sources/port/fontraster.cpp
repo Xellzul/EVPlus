@@ -6,8 +6,6 @@
    - a bold the file does not have is the glyph drawn twice a pixel apart, an italic a slanted outline.
    Built with the library's enum sizes; no game header in here. */
 
-#include <stdlib.h>
-#include <string.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H

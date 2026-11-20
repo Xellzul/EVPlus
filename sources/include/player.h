@@ -1,9 +1,7 @@
 /* player.h -- the player's record, standing, pilot file and preferences. Notes: Research/notes/player.md */
 #ifndef PLAYER_H
 #define PLAYER_H
-#include "burger.h"
 #include "gameconst.h"
-#include "gametypes.h"
 #include "macport.h"
 #include "shipobj.h"
 #include "pilotfile.h"

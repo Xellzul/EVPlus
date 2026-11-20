@@ -1,6 +1,5 @@
 /* uiscale.cpp -- UI scaling: logical to device pixels and back. */
 #include <math.h>
-#include <stdlib.h>
 #include "uiscale.h"
 
 namespace UI {

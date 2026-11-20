@@ -1,24 +1,15 @@
 /* statusparts.cpp -- the status-panel painters at win link order 0x0045f530 (DrawStatusTarg), 0x00460ec0 (DrawStatusWeap) and 0x004612c0 (DrawStatusCargo); contiguous, and the next function is trigtables.cpp's, so the run is one original .obj. Notes: Research/notes/statusparts.md */
-#include <math.h>
-#include <stddef.h>
 
-#include "macport.h"
-#include "gametypes.h"
-#include "shipobj.h"
-#include "gameconst.h"
 #include "gameutil.h"
 #include "player.h"
 #include "render.h"
 #include "ships.h"
 #include "stellar.h"
 #include "prototypes.h"
-#include "dialogs.h"
 #include "space.h"
-#include "resources.h"
 #include "ai.h"
 #include "game.h"
 #include "missions.h"
-#include "cefix.h"
 #include "burgermath.h"
 
 /* the cargo panel is statusOffRect[7], the weapon readout statusOffRect[5] */

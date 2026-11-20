@@ -1,9 +1,6 @@
 /* cepaths.cpp -- EV Nova CE: data, plug-in, movie and music paths relative to the current
    directory, and unencrypted pilot files. Notes: Research/cefix-plan.md */
 
-#include <stddef.h>
-#include "macport.h"
-#include "gameconst.h"
 #include "burger.h"
 #include "player.h"
 #include "cefix.h"

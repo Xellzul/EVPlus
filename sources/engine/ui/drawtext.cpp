@@ -4,7 +4,6 @@
  * exe carries the cmp/sbb/sar rounding idiom twice.
  */
 #include "macport.h"
-#include "cefix.h"
 
 EXTERN_C_BEGIN
 

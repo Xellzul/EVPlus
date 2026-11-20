@@ -1,5 +1,4 @@
 /* blitpixiepartialmask.cpp -- BlitPixiePartialMask (win 0x00471b70), the per-row blit BlitPixiePartialMaskDrawProc calls. Notes: Research/notes/blitpixiepartialmask.md */
-#include "macport.h"
 #include "shipobj.h"
 
 EXTERN_C_BEGIN

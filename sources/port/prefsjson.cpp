@@ -2,9 +2,6 @@
    scan codes (keycodes.h). Fields missing from the file, or not whole numbers, keep the record's value;
    uiScale is any number. */
 #include "yyjson.h"
-#include <stddef.h>
-#include <stdlib.h>
-#include "gametypes.h"
 #include "burger.h"
 #include "player.h"
 
