@@ -6,11 +6,29 @@
  */
 #ifndef MISSIONS_H
 #define MISSIONS_H
-#include "burger.h"
 #include "macport.h"
 #include "resources.h"
-#include "shipobj.h"
-#include "gametypes.h"
+
+/* mission system codes */
+#define kSystemRandom       -2
+#define kSystemAdjacent     -5      /* a random system one hyperlink from the current one */
+
+#define kSystemGovt         10000
+#define kSystemAllied       15000
+#define kSystemNotGovt      20000
+#define kSystemEnemy        25000
+#define kSystemClass        30000
+#define kSystemNotClass     31000
+#define kSystemBandLimit    32000
+
+/* briefing text buffer */
+#define kBriefingTextMax    0x1ffe
+
+/* negative pay bands */
+#define kPayClearGovt   10000   /* pay -(10000 + id): clear the record with govt id */
+#define kPayClearAllies 20000
+#define kPayClearClass  30000
+#define kPctOfCashBase  40000   /* pay -40001..-40099 is N% of the player's cash */
 
 #ifdef __cplusplus
 extern "C" {

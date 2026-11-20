@@ -1,12 +1,8 @@
 /* sprites.cpp -- sprite metric accessors (win region 0x00462340-0x004624c0). Notes: Research/notes/sprites.md */
-#include <stddef.h>
 
 #include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "game.h"
 #include "crashlog.h"
-#include "macport.h"
 
 EXTERN_C_BEGIN
 

@@ -1,16 +1,7 @@
 /* initevnova.cpp -- tu-map object O2: game start, PlayGame, ship spawning, damage, escorts and fleets, then the pirated-key check and the .CRT hook that ends the object. Notes: Research/notes/initevnova.md */
-#include <stdlib.h>
-#include <math.h>
-#include <stddef.h>
-#include <string.h>
 
-#include "macport.h"
 #include "burgermath.h"
-#include "burger.h"
 #include "platform.h"
-#include "shipobj.h"
-#include "resources.h"
-#include "gameconst.h"
 #include "sound.h"
 #include "ai.h"
 #include "crashlog.h"
@@ -23,10 +14,8 @@
 #include "ships.h"
 #include "space.h"
 #include "stellar.h"
-#include "cefix.h"
 #include "viewscale.h"
 #include "prototypes.h"
-#include "gametypes.h"
 
 #define kMaxGamma     6
 #define kDefaultGamma 3

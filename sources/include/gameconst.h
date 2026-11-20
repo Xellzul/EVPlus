@@ -105,6 +105,7 @@ enum {
 #define kMapPictItem   3
 #define kMasterStellarSprites 256
 #define kMaxAsteroids           16
+#define kMaxRoidTypes           16
 #define kMaxBeams               64
 #define kMaxExplods       0x20
 #define kMaxExplodTypes   64      /* explodType[] entries: bööm 128..191 */

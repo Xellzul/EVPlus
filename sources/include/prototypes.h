@@ -2,8 +2,6 @@
 #ifndef PROTOTYPES_H
 #define PROTOTYPES_H
 
-#include "macport.h"
-#include "gametypes.h"
 #include "shipobj.h"
 
 #ifdef __cplusplus
@@ -12,7 +10,7 @@ extern "C" {
 
 extern void StrcatIndCString(char *dst, short strListID, short index);   /* 0x004cd1a0 mac _StrcatIndCString */
 EXTERN_CPP_BEGIN
-extern MissionRecord *currentMissions;               /* 0x005914b4 (mac _currentMissions), mission.cpp */
+extern MissionRecord *currentMissions;               /* 0x005914b4 (mac _currentMissions), initevnova.cpp */
 extern BoxObj *boxData;                              /* 0x005914a8 */
 EXTERN_CPP_END
 
