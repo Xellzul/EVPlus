@@ -2384,6 +2384,7 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->gameHeight = settings.gameHeight;
     rec->scaleFilter = settings.scaleFilter;
     rec->wholePixelScaling = settings.wholePixelScaling != 0;
+    rec->stereoPan = settings.stereoPan != 0;
     rec->uiScale = settings.uiScale;
     KeyPrefsToSlotTable();
     for (i = 0; i <= 35; i++)
@@ -2420,6 +2421,7 @@ static void RecordToPrefs(const PrefsRecord *rec)
     if (settings.scaleFilter < 0 || settings.scaleFilter >= kScaleFilterCount)
         settings.scaleFilter = kScaleFilterLinear;
     settings.wholePixelScaling = rec->wholePixelScaling != 0;
+    settings.stereoPan = rec->stereoPan != 0;
     settings.uiScale = rec->uiScale > 0 ? rec->uiScale : 1.0;
     settings.windowedPending = settings.windowed;
     SetDefaultKeys();

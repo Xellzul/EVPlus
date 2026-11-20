@@ -257,6 +257,7 @@ extern void ProcessSystemEvents(void);
 extern unsigned int OSCursorIsVisible(void);
 extern void CStr2PStr(char *dst, const char *src);
 extern int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level);
+extern int32_t ST_PlaySoundStereo(void *snd, unsigned short priority, unsigned short left, unsigned short right);
 extern ULong ST_PlaySoundParam(SoundRequest *req);
 
 #ifdef __cplusplus

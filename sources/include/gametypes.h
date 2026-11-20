@@ -354,6 +354,7 @@ typedef struct Settings {
     short gameHeight;
     short scaleFilter;              /* kScaleFilter* */
     Boolean wholePixelScaling;
+    Boolean stereoPan;              /* Positional Stereo: distant sounds panned left/right */
     double uiScale;                 /* dialogs and status bar, 1.0 = as designed */
 } Settings;
 
@@ -382,6 +383,7 @@ typedef struct PrefsRecord {
     short gameHeight;
     short scaleFilter;
     short wholePixelScaling;
+    short stereoPan;
     short keys[36];
     double uiScale;
 } PrefsRecord;

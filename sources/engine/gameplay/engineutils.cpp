@@ -3232,7 +3232,7 @@ Boolean PlaySoundDistance(int32_t unused, void *sound, short flags, FloatPoint *
 {
     int dy;
     int dx;
-    int dist;
+    int64_t dist;
     short floorVol;
     short leftVol;
     short rightVol;
@@ -3241,18 +3241,15 @@ Boolean PlaySoundDistance(int32_t unused, void *sound, short flags, FloatPoint *
     if (gSoundVolume > 0) {
         dx = (pos->x - listener->x);
         dy = (pos->y - listener->y);
-        // BUG: int overflow once the distance passes ~46340 units; dist goes negative and the sound plays at full volume
-        dist = dx * dx + dy * dy;
+        dist = (int64_t)dx * dx + (int64_t)dy * dy;
         if (dist > 0) {
-            // BUG (likely): pan looks reversed -- dx > 0 is a source to the right, yet it gets the louder
-            // left channel. Inaudible today because PlaySound averages left and right
             if (dist > kPanCutoffSq) {
-                if (dx > kPanHalfWidth) {
-                    leftVol = (gSoundVolume * kPanNear / dist);
-                    rightVol = (gSoundVolume * kPanCutoffSq / dist);
-                } else if (dx < -kPanHalfWidth) {
+                if (dx > kPanHalfWidth) {               /* to the right: louder on the right */
                     leftVol = (gSoundVolume * kPanCutoffSq / dist);
                     rightVol = (gSoundVolume * kPanNear / dist);
+                } else if (dx < -kPanHalfWidth) {
+                    leftVol = (gSoundVolume * kPanNear / dist);
+                    rightVol = (gSoundVolume * kPanCutoffSq / dist);
                 } else {
                     rightVol = (gSoundVolume * kPanNear / dist);
                     leftVol = rightVol;
@@ -3905,9 +3902,11 @@ void RefreshSAT(void)
 // MAC: _PlaySound i386 0x00005e9a ppc 0x0000768c
 void PlaySound(void *a, short b, short lo, short hi)
 {
-    // BUG: averages the two levels, so PlaySoundDistance's stereo pan is lost (all versions);
-    // a SoundRequest through ST_PlaySoundParam would keep both
-    ST_PlaySound(a, b, (lo + hi) / 2);
+    if (settings.stereoPan != 0) {
+        ST_PlaySoundStereo(a, b, lo, hi);
+        return;
+    }
+    ST_PlaySound(a, b, (lo + hi) / 2);              /* Positional Stereo off: mono */
 }
 
 

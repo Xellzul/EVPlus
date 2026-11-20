@@ -1,6 +1,6 @@
 /* prefsdialog.cpp -- the Preferences dialog: the items of the game's DITL 4003 without the two that did nothing
-   (Share Processor Time, Check For Updates), in three groups, the third with the display settings. Built in
-   code (NewDialogFromItems); each check box and up/down control is a table entry. */
+   (Share Processor Time, Check For Updates) plus Positional Stereo, in three groups, the third with the display
+   settings. Built in code (NewDialogFromItems); each check box and up/down control is a table entry. */
 #include <stddef.h>
 #include <stdio.h>
 #include <array>
@@ -172,7 +172,7 @@ private:
 
     ItemList items;
     Dialog dialog;
-    std::array<CheckBox, 12> checks;
+    std::array<CheckBox, 13> checks;
     int checkCount = 0;
     std::array<Stepper, 6> steppers;
     int stepperCount = 0;
@@ -221,6 +221,7 @@ PrefsDialog::PrefsDialog()
     check(sound.check("Intro Music"), Flag(settings.introMusic));
     check(sound.check("Ambient Sounds"), Flag(settings.ambientSounds));
     check(sound.check("QuickTime Movies"), Flag(settings.noMovies), true);
+    check(sound.check("Positional Stereo"), Flag(settings.stereoPan));
     stepper(sound.stepper("Sound Volume:"),
         [](PrefsDialog &, int direction) {
             short volume = settings.volume + direction;

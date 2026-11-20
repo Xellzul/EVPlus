@@ -10,3 +10,4 @@
 - Unintended keypresses wont skip movies / launch figters
 - Mission computer and bar: available missions are listed correctly by their display weight
 - Rendering in SDL
+- Positional Audio

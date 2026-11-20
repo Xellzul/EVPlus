@@ -2448,6 +2448,7 @@ void SetDefaultPrefs(void)
     settings.gameHeight = 0;
     settings.scaleFilter = kScaleFilterLinear;
     settings.wholePixelScaling = 0;
+    settings.stereoPan = 1;
     settings.uiScale = 1.0;
     pstrcpy(lastPlayerName, "\p");
 }

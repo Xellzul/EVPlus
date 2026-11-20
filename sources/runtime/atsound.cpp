@@ -122,22 +122,23 @@ void ST_DisposeSound(void *sound)
 // FUNCTION: EVNOVA 0x004d64f0
 int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level)
 {
-    SoundRequest req;
-    int32_t err;
-    int32_t result;
+    return ST_PlaySoundStereo(snd, priority, level, level);
+}
 
-    err = 0;
-    result = 0;
+/* ST_PlaySound with its own level for each channel */
+int32_t ST_PlaySoundStereo(void *snd, unsigned short priority, unsigned short left, unsigned short right)
+{
+    SoundRequest req;
+
     req.handle = (void **)snd;
     req.priority = priority;
-    req.leftLevel = level;
-    req.rightLevel = level;
+    req.leftLevel = left;
+    req.rightLevel = right;
     req.rate = kDefaultRate;
     req.done = 0;
     req.unk10 = 0;
     req.id = 0;
-    result = ST_PlaySoundParam(&req);
-    return result;
+    return ST_PlaySoundParam(&req);
 }
 
 #define kMinPriority 1
