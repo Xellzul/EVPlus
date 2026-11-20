@@ -59,7 +59,6 @@ void EVNoteAlert(const unsigned char *text)
     SetDialogGWorld(alertDialog);
     SetDialogGWorld(alertDialog);
     DrawDialog(alertDialog);
-    FrameDefaultButton(alertDialog, 1);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
     SetDialogItemText((Handle)item,text);
     FlushEvents(everyEvent - diskMask, 0);
@@ -90,7 +89,6 @@ Boolean EVYesNoDialog(unsigned char *text)
         return 0;
     SetDialogDefaultItem(alertDialog, 1);
     SetDialogGWorld(alertDialog);
-    FrameDefaultButton(alertDialog, 1);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
     SetDialogItemText((Handle)item,text);
     FlushEvents(everyEvent - diskMask, 0);
@@ -131,7 +129,6 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
         return 0;
     SetDialogDefaultItem(alertDialog, 1);
     SetDialogGWorld(alertDialog);
-    FrameDefaultButton(alertDialog, 1);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
     SetDialogItemText((Handle)item,prompt);
     GetDialogItem(alertDialog, 5, &itemType, &item, &box);
@@ -165,12 +162,6 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
     return result;
 }
 
-// FUNCTION: EVNOVA 0x0049d630
-// MAC: _FrameDefaultButton i386 0x00055200 ppc 0x0005d578
-void FrameDefaultButton(void *dlg, short flag)
-{
-}
-
 #define kQtyDlogID 0x3eb
 #define kQtyPromptItem 1
 #define kQtyMaxItem 2
@@ -199,7 +190,6 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
         return 0;
 
     SetDialogGWorld(qtyDialog);
-    FrameDefaultButton(qtyDialog, 1);
     SelectDialogItemText(qtyDialog, kQtyTextItem, 0, 0x7fff);
 
     GetDialogItem(qtyDialog, kQtyPromptItem, &itemType, &item, &box);

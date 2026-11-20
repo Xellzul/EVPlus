@@ -273,7 +273,6 @@ PrefsDialog::PrefsDialog()
     dialog.Open(kWidth, kHeight, items.data(), items.size(), PrefsDialogUpdate, NULL, &prefsDialog);
     SetDialogGWorld(prefsDialog);
     RedrawDialog(prefsDialog);
-    FrameDefaultButton(prefsDialog, 1);
 }
 
 PrefsDialog::~PrefsDialog()
@@ -342,7 +341,6 @@ bool PrefsDialog::handle(short item)
             MainScreenAnimDraw();
             MainScreenUpdate(1);
         }
-        FrameDefaultButton(prefsDialog, 1);
         return false;
     }
     if (item == windowedItem) {

@@ -76,7 +76,6 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
     FrontWindow(dlg);
     SetDialogGWorld(dlg);
     DrawDialog(dlg);
-    FrameDefaultButton(dlg, 1);
 
     GetDialogItem(dlg, kItemStrictPlay, &type, (Handle *)&h, &box);
     ctl = (ControlPtr)h;

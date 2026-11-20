@@ -1,4 +1,4 @@
-/* appevents.cpp -- the in-game event loop, app switching, window refresh and menu bar */
+/* appevents.cpp -- the in-game event loop, app switching and window refresh */
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -149,16 +149,6 @@ void RefreshWindowBuffer(void)
              0, 0);
     View::Flush();
     ScreenEndScene();
-}
-
-// FUNCTION: EVNOVA 0x0049d7a0
-void HideTheMenuBar(void)
-{
-}
-
-// FUNCTION: EVNOVA 0x0049d7b0
-void ShowTheMenuBar(void)
-{
 }
 
 EXTERN_C_END

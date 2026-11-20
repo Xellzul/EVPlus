@@ -71,7 +71,6 @@ void DoSystemSearch(void)
 
     SetDialogDefaultItem(dlg, 1);
     SetDialogGWorld(dlg);
-    FrameDefaultButton(dlg, 1);
 
     GetDialogItem(dlg, kSearchTextItem, &itemType, &item, &box);
     SetDialogItemText((Handle)item, (const unsigned char *)"\p");

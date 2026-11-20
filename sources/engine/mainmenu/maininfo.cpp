@@ -248,13 +248,11 @@ void MainScreenIdle(void)
     GetGlobalMouse(&mouse);
     if (PtInRectPoint(mouse, &strip)) {
         if (mBarHidden != 0) {
-            ShowTheMenuBar();
             InvalWindowPortRect((WindowRef)gWind);
             mBarHidden = 0;
         }
     } else if (mBarHidden == 0 && inBackground == 0 &&
                settings.windowed == 0) {
-        HideTheMenuBar();
         InvalWindowPortRect((WindowRef)gWind);
         SetPortWindowPort((WindowRef)gWind);
         ForeColor(blackColor);
@@ -348,8 +346,6 @@ void EnterGameFromMainScreen(void)
     PaintRect(&gSpriteWorld->backFrameP->frameRect);
     ForeColor(blackColor);
     SWSetPortToWindow(gSpriteWorld);
-    if (!settings.windowed)
-        HideTheMenuBar();
     RandomizeStars();
     PropagateMissionBitEffects();
     if (systemData[shipData->curSystem].murk < 0)
@@ -393,8 +389,6 @@ void EnterGameFromMainScreen(void)
         PlayGame();
     crashlog("paused");
     crashlog("resetting window attributes");
-    if (!settings.windowed)
-        HideTheMenuBar();
     if (strictPlay && IsDying(shipData) && shipData->type != kShipTypeEscapePod) {
         crashlog("deleting pilot file due to strict play death");
         pstrcpy(pilotName, playerName);
@@ -420,8 +414,6 @@ void EnterGameFromMainScreen(void)
         FlushEvents(2, 0);
     }
     ShowTheCursor();
-    if (!settings.windowed)
-        HideTheMenuBar();
     SWSetPortToWindow(gSpriteWorld);
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect((WindowRef)gWind));

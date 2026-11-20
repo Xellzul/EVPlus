@@ -185,7 +185,6 @@ void SetupWind(void)
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect(gWind));
     if (settings.windowed == 0) {
-        HideTheMenuBar();
         mBarHidden = 1;
     }
     screenCenter.h = View::width * 0.5;
@@ -277,7 +276,6 @@ void InitOffscreen(void)
         CreateGWorldContainer(&menuShownPort, GetMainDevice(), 0, &r);
     }
     if (loadPort.world == NULL) {
-        ShowTheMenuBar();
         ShowTheCursor();
         FadeScreenIn();
         GetIndString(msg, kAlertStrList, 0x27);
@@ -290,7 +288,6 @@ void InitOffscreen(void)
     if (statusOffPort.world != NULL)
         UI::ScaleUIPort(statusOffPort.world);
     if (statusOffPort.world == NULL) {
-        ShowTheMenuBar();
         ShowTheCursor();
         FadeScreenIn();
         GetIndString(msg, kAlertStrList, 0x27);
@@ -374,7 +371,6 @@ void Bye(void)
     ByeLog("disposing buttons");
     SetPortWindowPort((WindowRef)gWind);
     DisposeButtons();
-    ShowTheMenuBar();
 
     ByeLog("disposing sprites");
     for (i = 0; i < kMaxShips; i++) {
