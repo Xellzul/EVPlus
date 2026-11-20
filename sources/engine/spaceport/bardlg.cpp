@@ -57,7 +57,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     short savedStellar;     /* the nav target the map may change, restored after it */
     short savedRoute;
@@ -159,7 +159,7 @@ constexpr short kBarSlotItems[] = { kBarLeaveItem, kBarRaceItem, kBarNewsItem, -
 
 // FUNCTION: EVNOVA 0x0047cdb0
 // MAC: _BarFilter i386 0x00047a4b ppc 0x000503e8
-Boolean BarDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean BarDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
     EventChar c;
@@ -167,10 +167,10 @@ Boolean BarDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 
     if (LeaveRequested(kBarLeaveItem, itemHit))
         return 1;
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (QuickKeyHit(kBarMapItem, kBarPlayerInfoItem, kBarMissionInfoItem, itemHit))
             return 1;
-        c = EventCharOf(ev);
+        c = ev.ch;
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = kBarLeaveItem;
             return 1;
@@ -179,8 +179,8 @@ Boolean BarDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (KeyItemHit(key, kBarKeys, itemHit))
             return 1;
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         BarDialogUpdate();
         return ButtonItemHit(BarButtons().Track(where), kBarSlotItems, itemHit);
     }
@@ -269,7 +269,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 };
 
 void NewsDialog::Run()
@@ -310,19 +310,19 @@ void NewsDialog::Hit(short item)
 
 // FUNCTION: EVNOVA 0x0047d560
 // MAC: _NewsDialogFilter i386 0x00048160 ppc 0x00050acc
-Boolean NewsDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean NewsDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
 
     *itemHit = -1;
-    if ((int)ev->what == kKeyDown &&
-        (IsReturnChar(EventCharOf(ev)) ||
-         EventCharOf(ev) == kEscapeChar)) {
+    if (ev.what == DialogInput::Key &&
+        (IsReturnChar(ev.ch) ||
+         ev.ch == kEscapeChar)) {
         *itemHit = kNewsDoneItem;
         return 1;
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         SetDialogGWorld(newsDialog);
         if (PtInRectPoint(where, GetDialogPortRect(newsDialog)) != 0) {
             *itemHit = kNewsDoneItem;
@@ -507,7 +507,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 };
 
 void RaceDialog::Run()
@@ -618,18 +618,18 @@ void RaceDialog::Hit(short item)
 
 // FUNCTION: EVNOVA 0x0047e150
 // MAC: _RaceFilter i386 0x0004890e ppc 0x00051284
-Boolean RaceDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean RaceDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
 
-    if ((int)ev->what == kKeyDown &&
-        (IsReturnChar(EventCharOf(ev)) ||
-         EventCharOf(ev) == kEscapeChar)) {
+    if (ev.what == DialogInput::Key &&
+        (IsReturnChar(ev.ch) ||
+         ev.ch == kEscapeChar)) {
         *itemHit = kRaceDoneItem;
         return 1;
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         RaceDialogUpdate();
         return ButtonItemHit(RaceButtons().Track(where), itemHit);
     }

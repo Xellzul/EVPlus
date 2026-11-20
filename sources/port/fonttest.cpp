@@ -22,7 +22,6 @@
 #define kFooterRaise    16
 #define kGrey           0x9000
 #define kTickRed        0xffff
-#define kKeyEscape      0x1b
 #define kNameMax        64
 
 typedef struct SampleLine {
@@ -142,7 +141,7 @@ static Boolean WaitForInput(void)
         LastTick = ReadTick();
         WaitTicks(1);
         key = KeyboardGet();
-        if (key == kKeyEscape)
+        if (key == kEscapeChar)
             return 1;
         if (key != 0 || Button() != 0)
             return 0;

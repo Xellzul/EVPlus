@@ -26,7 +26,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     CaptureUse result = CaptureUse::None;
 };
@@ -66,21 +66,21 @@ constexpr KeyItem kCapAssignKeys[] = { { 'm', 1 }, { 'e', 2 } };
 
 // FUNCTION: EVNOVA 0x00498040
 // MAC: _CapturedAssignmentFilter i386 0x00051782 ppc 0x0005a024
-Boolean CapturedAssignmentDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean CapturedAssignmentDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
-    EventKey key;
-    EventWhat what;
+    EventChar key;
+    DialogInput what;
 
-    what = ev->what;
-    if (what == kKeyDown) {
-        key = EventCharOf(ev);
+    what = ev.what;
+    if (what == DialogInput::Key) {
+        key = ev.ch;
         key = tolower(key);
         if (KeyItemHit(key, kCapAssignKeys, itemHit))
             return 1;
     }
-    if (what == kMouseDown) {
-        where = ev->where;
+    if (what == DialogInput::Click) {
+        where = ev.where;
         CapturedAssignmentDialogUpdate();
         return ButtonItemHit(CapAssignButtons().Track(where), itemHit);
     }

@@ -82,6 +82,11 @@ int Mapping::LogicalLength(int device) const
     return MulDivRound(device, logicalX, deviceX);
 }
 
+int Mapping::DeviceLengthY(int logical) const
+{
+    return MulDivRound(logical, deviceY, logicalY);
+}
+
 int Mapping::LogicalX(int device) const
 {
     return left + MulDivFloor(device, logicalX, deviceX);

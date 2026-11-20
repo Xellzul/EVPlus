@@ -104,7 +104,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 };
 
 void PlayerInfoDialog::Run()
@@ -228,15 +228,15 @@ constexpr short kPlayerInfoSlotItems[] = { 1, 2, 3, 4, 5, 7 };
 
 // FUNCTION: EVNOVA 0x0049a3a0
 // MAC: _PlayerInfoFilter i386 0x00053ae9 ppc 0x0005c1b8
-Boolean PlayerInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean PlayerInfoDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
     int c;
 
-    if ((int)ev->what == kKeyDown) {
-        c = EventCharOf(ev);
+    if (ev.what == DialogInput::Key) {
+        c = ev.ch;
         if (c == kTabChar) {
-            if ((*(unsigned short *)&ev->modifiers & shiftKey) != 0)
+            if ((ev.mods & shiftKey) != 0)
                 selPlayerInfoMode -= 1;
             else
                 selPlayerInfoMode += 1;
@@ -253,8 +253,8 @@ Boolean PlayerInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemH
             return 1;
         }
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         PlayerInfoDialogUpdate();
         return ButtonItemHit(PlayerInfoButtons(selPlayerInfoMode).Track(where), kPlayerInfoSlotItems, itemHit);
     }

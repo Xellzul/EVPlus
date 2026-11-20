@@ -273,7 +273,7 @@ EXTERN_CPP_BEGIN
 extern ShortPoint menuTopCorner;
 EXTERN_CPP_END
 
-extern Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
+extern Boolean TextDialogFilter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 EXTERN_CPP_BEGIN
 extern TEHandle offerTextHandle;
 EXTERN_CPP_END

@@ -19,7 +19,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 };
 
 void KeyDialog::Run()
@@ -100,7 +100,7 @@ void KeyDialog::Hit(short item)
 
 // FUNCTION: EVNOVA 0x0048b6d0
 // MAC: _KeyFilter i386 0x00017482 ppc 0x0001b030
-Boolean KeyDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean KeyDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -112,10 +112,10 @@ Boolean KeyDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
     short sel;
 
     SetDialogGWorld(keyDialog);
-    if ((int)ev->what == kMouseDown) {
+    if (ev.what == DialogInput::Click) {
         SetDialogGWorld(keyDialog);
-        v = ev->where.v;
-        h = ev->where.h;
+        v = ev.where.v;
+        h = ev.where.h;
         *itemHit = -1;
         i = 0;
         do {

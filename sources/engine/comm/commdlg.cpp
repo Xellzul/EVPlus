@@ -73,7 +73,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     Boolean hasMission;     /* the ship escorts the player for a mission */
     Boolean isMissionShip;  /* its govt is not talkative */
@@ -444,17 +444,17 @@ void CommDialog::Hit(short item)
 
 // FUNCTION: EVNOVA 0x0047fa40
 // MAC: _CommFilter i386 0x000908ed ppc 0x0009c440
-Boolean CommDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean CommDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
-    int what;
-    EventKey key;
+    DialogInput what;
+    EventChar key;
     short govt;
     Boolean noRefuel;
 
-    what = ev->what;
-    if (what == kKeyDown) {
-        key = EventCharOf(ev);
+    what = ev.what;
+    if (what == DialogInput::Key) {
+        key = ev.ch;
         key = tolower(key);
         if (IsReturnChar(key) || key == 'e' || key == kEscapeChar) {
             *itemHit = 1;
@@ -479,8 +479,8 @@ Boolean CommDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
             return 1;
         }
     }
-    if (what == kMouseDown) {
-        where = ev->where;
+    if (what == DialogInput::Click) {
+        where = ev.where;
         CommDialogUpdate();
         return ButtonItemHit(CommButtons().Track(where), itemHit);
     }
@@ -623,7 +623,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 };
 
 void PlanetCommDialog::Run()
@@ -903,16 +903,16 @@ void PlanetCommDialog::Hit(short item)
 
 // FUNCTION: EVNOVA 0x00481140
 // MAC: _PlanetCommFilter i386 0x000911a9 ppc 0x0009cc58
-Boolean PlanetCommDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean PlanetCommDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
-    int what;
+    DialogInput what;
 
-    what = ev->what;
-    if (what == kKeyDown) {
+    what = ev.what;
+    if (what == DialogInput::Key) {
         EventChar key;
 
-        key = EventCharOf(ev);
+        key = ev.ch;
         key = tolower(key);
         if (IsReturnChar(key) || key == 'e' || key == kEscapeChar) {
             *itemHit = 1;
@@ -944,8 +944,8 @@ Boolean PlanetCommDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemH
             }
         }
     }
-    if (what == kMouseDown) {
-        where = ev->where;
+    if (what == DialogInput::Click) {
+        where = ev.where;
         PlanetCommDialogUpdate();
         return ButtonItemHit(PlanetCommButtons().Track(where), itemHit);
     }
@@ -1338,7 +1338,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     Boolean canHaggle = 0;  /* the one haggle is still allowed */
     short result = 0;       /* 1 accepted, 2 the haggle was refused */
@@ -1405,13 +1405,13 @@ constexpr KeyItem kHaggleKeys[] = { { 'a', 1 }, { 'l', 2 } };
 
 // FUNCTION: EVNOVA 0x004825d0
 // MAC: _HaggleFilter i386 0x00091d9d ppc 0x0009d8e8
-Boolean HaggleDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean HaggleDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
-    EventKey key;
+    EventChar key;
 
-    if ((int)ev->what == kKeyDown) {
-        key = tolower(EventCharOf(ev));
+    if (ev.what == DialogInput::Key) {
+        key = tolower(ev.ch);
         if (IsReturnChar(key)) {
             *itemHit = 1;
             return 1;
@@ -1419,8 +1419,8 @@ Boolean HaggleDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (KeyItemHit(key, kHaggleKeys, itemHit))
             return 1;
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         HaggleDialogUpdate();
         return ButtonItemHit(HaggleButtons().Track(where), itemHit);
     }
@@ -1540,7 +1540,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     short risk;             /* percent chance the hit after a take blows the ship up */
     Boolean risky = 0;      /* the last hit took something */
@@ -1930,19 +1930,19 @@ constexpr short kPlunderSlotItems[] = { 1, 2, 3, 4, 6, 7 };
 
 // FUNCTION: EVNOVA 0x00484c20
 // MAC: _PlunderFilter i386 0x00092f20 ppc 0x0009ee40
-Boolean PlunderDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean PlunderDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
 
-    if ((int)ev->what == kKeyDown) {
-        if (IsReturnChar(EventCharOf(ev)) ||
-            EventCharOf(ev) == kEscapeChar) {
+    if (ev.what == DialogInput::Key) {
+        if (IsReturnChar(ev.ch) ||
+            ev.ch == kEscapeChar) {
             *itemHit = 1;
             return 1;
         }
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         PlunderDialogUpdate();
         return ButtonItemHit(PlunderButtons().Track(where), kPlunderSlotItems, itemHit);
     }
@@ -2237,7 +2237,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 };
 
 void EscortDialog::Run(ShipObj *ship)
@@ -2339,17 +2339,17 @@ constexpr KeyItem kEscortKeys[] = { { 'u', 3 }, { 's', 4 }, { 'r', 2 }, { 'c', 1
 
 // FUNCTION: EVNOVA 0x00485840
 // MAC: _EscortFilter i386 0x000950e9 ppc 0x000a0d7c
-Boolean EscortDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean EscortDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
-    int what;
+    DialogInput what;
 
-    what = ev->what;
-    if (what == kKeyDown) {
+    what = ev.what;
+    if (what == DialogInput::Key) {
         EventChar c;
         EventChar key;
 
-        c = EventCharOf(ev);
+        c = ev.ch;
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 1;
             return 1;
@@ -2358,8 +2358,8 @@ Boolean EscortDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (KeyItemHit(key, kEscortKeys, itemHit))
             return 1;
     }
-    if (what == kMouseDown) {
-        where = ev->where;
+    if (what == DialogInput::Click) {
+        where = ev.where;
         EscortDialogUpdate();
         return ButtonItemHit(EscortButtons().Track(where), itemHit);
     }

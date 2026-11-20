@@ -47,7 +47,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     short savedStellar;     /* the nav target the map may change, restored after it */
     short savedRoute;
@@ -250,7 +250,7 @@ constexpr short kTradeSlotItems[] = { 1, kBuyItem, kSellItem };
 
 // FUNCTION: EVNOVA 0x0048d190
 // MAC: _TradeFilter i386 0x0004e092 ppc 0x00056d08
-Boolean TradeDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean TradeDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -265,16 +265,16 @@ Boolean TradeDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
     SetDialogGWorld(tradeDialog);
     if (LeaveRequested(1, itemHit))
         return 1;
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (QuickKeyHit(2, 16, 17, itemHit))
             return 1;
-        c = EventCharOf(ev);
+        c = ev.ch;
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 1;
             return 1;
         }
         if (c == kTabChar) {
-            if ((*(unsigned short *)&ev->modifiers & shiftKey) != 0)
+            if ((ev.mods & shiftKey) != 0)
                 TradeDialogTabKey(1);
             else
                 TradeDialogTabKey(0);
@@ -287,9 +287,9 @@ Boolean TradeDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (KeyItemHit(c, kTradeKeys, itemHit))
             return 1;
     }
-    if ((int)ev->what == kMouseDown) {
+    if (ev.what == DialogInput::Click) {
         SetDialogGWorld(tradeDialog);
-        where = ev->where;
+        where = ev.where;
         for (i = kFirstRowItem; i <= kLastRowItem; i++) {
             GetDialogItem(tradeDialog, i, &itemType, &item, &box);
             if (PtInRectPoint(where, &box) &&

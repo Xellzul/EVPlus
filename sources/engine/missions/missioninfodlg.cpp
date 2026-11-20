@@ -95,7 +95,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
     static short CountActive();
     static void ShowSelected(short old, bool pick);
     static void Step(short dir);
@@ -261,19 +261,19 @@ void MissionInfoDialog::Step(short dir)
 
 // FUNCTION: EVNOVA 0x00446770
 // MAC: _MissionInfoFilter i386 0x0009d6e5 ppc 0x000a9304
-Boolean MissionInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean MissionInfoDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Rect box;
     short itemType;
     Point where;
     void *item;
-    EventKeyByte c;
+    EventChar c;
     short old;
 
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (QuickKeyHit(6, -1, -1, itemHit))
             return 1;
-        c = EventCharOf(ev);
+        c = ev.ch;
         if (IsReturnChar(c) || c == kEscapeChar || KeyCheck(keyPrefs.missions)) {
             *itemHit = 1;
             return 1;
@@ -283,11 +283,11 @@ Boolean MissionInfoDialog::Filter(DialogPtr unused, EventRecord *ev, short *item
         if (c == kUpArrowChar)
             Step(-1);
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         GetDialogItem(missionInfoDialog, 2, &itemType, (Handle *)&item, &box);
         if (PtInRect(where.h, where.v, &box)) {
-            LClick(where, ev->modifiers, missionInfoList);
+            LClick(where, ev.mods, missionInfoList);
             old = selMissionInfoListItem;
             selMissionInfoListItem = MissionList(missionInfoList).Selected();
             ShowSelected(old, false);

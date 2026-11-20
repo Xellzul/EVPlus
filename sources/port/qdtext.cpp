@@ -339,6 +339,8 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
     int start;
     int end;
     int next;
+    int baseline;
+    int drop;
 
     if (text == NULL || byteCount == 0 || (clipped != 0 && box == NULL))
         return;
@@ -389,12 +391,14 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
             clip.left = deviceBox.left;
         if (clip.top < deviceBox.top)
             clip.top = deviceBox.top;
-        y = logicalBox.top - height;
+        /* lines sit at fixed device offsets from the first baseline, so scrolled text moves as one */
+        baseline = map.Y(logicalBox.top - height + layout.ascent);
+        drop = 0;
         start = 0;
         while (NextLine(map, &glyphs, units, byteCount, start, logicalBox.right - logicalBox.left, &end, &next)) {
-            DrawRun(pix, &glyphs, units + start, end - start, map.X(logicalBox.left), map.Y(y + layout.ascent),
-                    &clip, &color);
-            y += layout.ascent + layout.descent;
+            DrawRun(pix, &glyphs, units + start, end - start, map.X(logicalBox.left),
+                    baseline + map.DeviceLengthY(drop), &clip, &color);
+            drop += layout.ascent + layout.descent;
             start = next;
         }
     }

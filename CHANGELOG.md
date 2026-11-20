@@ -11,4 +11,5 @@
 - Mission computer and bar: available missions are listed correctly by their display weight
 - Rendering in SDL
 - Positional Audio
-- Mouse wheel scroll for shops / galaxy map
+- Mouse wheel scroll for shops / galaxy map / mission texts
+- Shipyard: double-click opens it description

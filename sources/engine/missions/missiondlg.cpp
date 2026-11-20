@@ -33,7 +33,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
     static void ShowSelected(short old, bool pick);
     static void StepDown();
 
@@ -236,10 +236,10 @@ void MissionDialog::StepDown()
 
 // FUNCTION: EVNOVA 0x00440c90
 // MAC: _MissionFilter i386 0x0009f7a9 ppc 0x000ab3fc
-Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean MissionDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     MissionList list(missionList);
-    EventKeyByte key;
+    EventChar key;
     Rect box;
     short itemType;
     Point where;
@@ -248,10 +248,10 @@ Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 
     if (LeaveRequested(kItemDone, itemHit))
         return 1;
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (QuickKeyHit(kItemMap, kItemPlayerInfo, kItemMissionInfo, itemHit))
             return 1;
-        key = EventCharOf(ev);
+        key = ev.ch;
         key = tolower(key);
         if (IsReturnChar(key) || key == kEscapeChar) {
             *itemHit = kItemDone;
@@ -298,11 +298,11 @@ Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         GetDialogItem(missionDialog, 2, &itemType, (Handle *)&item, &box);
         if (PtInRect(where.h, where.v, &box)) {
-            LClick(where, ev->modifiers, missionList);
+            LClick(where, ev.mods, missionList);
             old = selMissionListItem;
             selMissionListItem = list.Selected();
             ShowSelected(old, false);
@@ -310,7 +310,7 @@ Boolean MissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         GetDialogItem(missionDialog, 3, &itemType, (Handle *)&item, &box);
         /* BUG: when the list fits it reaches into item 3; a click there moves the hilite but not the selection */
         if (PtInRect(where.h, where.v, &box))
-            LClick(where, ev->modifiers, missionList);
+            LClick(where, ev.mods, missionList);
         MissionDialogUpdate();
         return ButtonItemHit(MissionButtons().Track(where), kMissionSlotItems, itemHit);
     }

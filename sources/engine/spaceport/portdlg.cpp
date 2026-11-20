@@ -78,7 +78,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 };
 
 void PortDialog::Run(SpobRecord *spob, short stellar)
@@ -301,7 +301,7 @@ constexpr short kPortSlotItems[] = { 12, 4, 7, 8, 9, 10, 11 };
  */
 // FUNCTION: EVNOVA 0x004928a0
 // MAC: _PortFilter i386 0x0004f041 ppc 0x00057c18
-Boolean PortDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean PortDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Rect box;
     short itemType;
@@ -327,7 +327,7 @@ Boolean PortDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         }
     }
     *itemHit = -1;
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (KeyCheck(keyPrefs.map) && mapDialog == NULL) {
             *itemHit = 3;
             return 1;
@@ -340,7 +340,7 @@ Boolean PortDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
             *itemHit = 14;
             return 1;
         }
-        c = EventCharOf(ev);
+        c = ev.ch;
         c = tolower(c);
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 12;
@@ -349,8 +349,8 @@ Boolean PortDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (KeyItemHit(c, kPortKeys, itemHit))
             return 1;
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         PortDialogUpdate();
         button = PlanetButtons().Track(where);
         GetDialogItem(portDialog, 5, &itemType, (Handle *)&item, &box);

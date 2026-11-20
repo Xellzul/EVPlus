@@ -19,6 +19,7 @@ public:
     void Scroll(short dv) const;
     bool Key(EventChar c, short *itemHit) const;        /* arrows, Home/End, PgUp/PgDn; true when used */
     bool Press(Point where, short *itemHit, ButtonBar &buttons) const;   /* a held up/down button */
+    bool Wheel(short *itemHit) const;                   /* one wheel notch as an up/down item hit */
     void Step(short itemHit) const;                     /* an up/down item hit scrolls one line */
     void InvalidateChanged(Boolean &savedUp, Boolean &savedDown) const;  /* redraw buttons whose state changed */
 

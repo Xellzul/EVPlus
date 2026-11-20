@@ -66,7 +66,7 @@ void IterateInGameEventLoop(short tickCount)
 
 // FUNCTION: EVNOVA 0x00497cf0
 // MAC: _SwitchedIn i386 0x000513a4 ppc 0x00059ca0
-void SwitchedIn(EventRecord *ev)
+void SwitchedIn(void)
 {
     inBackground = 0;
     lastFPSUpdateTime = 0;
@@ -81,7 +81,7 @@ void SwitchedIn(EventRecord *ev)
 
 // FUNCTION: EVNOVA 0x00497d50
 // MAC: _SwitchedOut i386 0x0004f381 ppc 0x00057ff8
-void SwitchedOut(EventRecord *ev)
+void SwitchedOut(void)
 {
     void *snd;
 

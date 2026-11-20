@@ -24,6 +24,9 @@ public:
     /* a horizontal device length in logical pixels, rounded */
     int LogicalLength(int device) const;
 
+    /* a vertical logical length in device pixels, rounded */
+    int DeviceLengthY(int logical) const;
+
     /* back from device to logical, for the mouse */
     int LogicalX(int device) const;
     int LogicalY(int device) const;

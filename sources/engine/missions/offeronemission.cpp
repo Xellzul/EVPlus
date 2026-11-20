@@ -53,7 +53,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     short mission;
     Boolean refused = 0;
@@ -405,19 +405,19 @@ static constexpr short kSingleMissionSlotItems[] = { kItemAccept, kItemRefuse, -
 
 // FUNCTION: EVNOVA 0x00447170
 // MAC: _SingleMissionFilter i386 0x00098d9a ppc 0x000a4984
-Boolean SingleMissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean SingleMissionDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
     int acceptKey;
     int refuseKey;
     EventChar c;
-    int what;
+    DialogInput what;
 
     if (QuickKeyHit(kBriefItemMap, kBriefItemPlayerInfo, kBriefItemMissionInfo, itemHit))
         return 1;
-    what = ev->what;
-    if ((int)ev->what == kKeyDown) {
-        c = EventCharOf(ev);
+    what = ev.what;
+    if (ev.what == DialogInput::Key) {
+        c = ev.ch;
         c = tolower(c);
         if (IsReturnChar(c)) {
             *itemHit = kItemAccept;
@@ -438,14 +438,16 @@ Boolean SingleMissionDialog::Filter(DialogPtr unused, EventRecord *ev, short *it
         if (OfferText().Key(c, itemHit))
             return 1;
     }
-    if (what == kMouseDown) {
-        where = ev->where;
+    if (what == DialogInput::Click) {
+        where = ev.where;
         SingleMissionButtons buttons;
         if (OfferText().Press(where, itemHit, buttons))
             return 1;
         SingleMissionDialogUpdate();
         return ButtonItemHit(buttons.Track(where), kSingleMissionSlotItems, itemHit);
     }
+    if (what == DialogInput::Idle && OfferText().Wheel(itemHit))
+        return 1;
     return 0;
 }
 

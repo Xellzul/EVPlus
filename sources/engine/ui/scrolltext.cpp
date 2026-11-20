@@ -157,6 +157,21 @@ bool ScrollingText::Press(Point where, short *itemHit, ButtonBar &buttons) const
     return false;
 }
 
+bool ScrollingText::Wheel(short *itemHit) const
+{
+    int wheel = MouseTakeWheel();
+
+    if (wheel > 0 && canScrollTextUp != 0) {
+        *itemHit = layout.upItem;
+        return true;
+    }
+    if (wheel < 0 && canScrollTextDown != 0) {
+        *itemHit = layout.downItem;
+        return true;
+    }
+    return false;
+}
+
 void ScrollingText::Step(short itemHit) const
 {
     if (itemHit == layout.upItem && canScrollTextUp != 0)

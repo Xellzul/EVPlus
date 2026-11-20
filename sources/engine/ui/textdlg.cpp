@@ -274,15 +274,15 @@ static constexpr short kTextSlotItems[] = { 1, 5, 6 };
 
 // FUNCTION: EVNOVA 0x00499440
 // MAC: _TextDialogFilter i386 0x00051f77 ppc 0x0005a820
-Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean TextDialogFilter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Point where;
     EventChar c;
 
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (QuickKeyHit(4, -1, -1, itemHit))
             return 1;
-        c = EventCharOf(ev);
+        c = ev.ch;
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 1;
             return 1;
@@ -290,9 +290,9 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (DialogText().Key(c, itemHit))
             return 1;
     }
-    if ((int)ev->what == kMouseDown) {
+    if (ev.what == DialogInput::Click) {
         SetDialogGWorld(textDialog);
-        where = ev->where;
+        where = ev.where;
         TextButtons buttons;
         if (DialogText().Press(where, itemHit, buttons))
             return 1;
@@ -302,6 +302,8 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         buttons.Draw(-1);
         return 1;
     }
+    if (ev.what == DialogInput::Idle && DialogText().Wheel(itemHit))
+        return 1;
     return 0;
 }
 

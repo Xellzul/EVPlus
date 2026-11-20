@@ -49,7 +49,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     short savedTargetStellar;   /* the nav target the map may change, restored after it */
     short savedUnk6A;
@@ -356,14 +356,14 @@ constexpr short kShipyardSlotItems[] = { 7, 1, 10, 12, 13 };
 
 // FUNCTION: EVNOVA 0x00493fc0
 // MAC: _ShipyardFilter i386 0x00060449 ppc 0x00068154
-Boolean ShipyardDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean ShipyardDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Rect box;
     Rect movieBox;
     short itemType;
     Handle item;
     Point where;
-    EventKey c;
+    EventChar c;
     short i;
     short count;
     short old;
@@ -376,8 +376,8 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit
     LoopingMovieIdle();
     *itemHit = -1;
     CalcShipCanBuy();
-    if ((int)ev->what == kKeyDown) {
-        c = EventCharOf(ev);
+    if (ev.what == DialogInput::Key) {
+        c = ev.ch;
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 7;
             return 1;
@@ -472,14 +472,14 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit
             }
         }
     }
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (QuickKeyHit(3, 4, 11, itemHit))
             return 1;
-        c = tolower(EventCharOf(ev));
+        c = tolower(ev.ch);
         return 0;
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         GetDialogItem(shipyardDialog, kGridItem, &itemType, &item, &box);
         if (PtInRectPoint(where, &box)) {
             count = (where.h - box.left) / kGridCellWidth;
@@ -523,20 +523,20 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit
                     }
                 }
                 if (selShipListItem == lastClickItem && selShipListItem != -1 &&
-                    ev->when - lastClickTime <= 15) {
+                    ev.when - lastClickTime <= 15) {
                     ShipyardDialogUpdate();
                     DoShipyardDescription(selShipyardItem);
                     SetDialogGWorld(shipyardDialog);
                     RedrawDialog(shipyardDialog);
                 }
                 lastClickItem = selShipListItem;
-                lastClickTime = ev->when;
+                lastClickTime = ev.when;
             }
         }
         ShipyardDialogUpdate();
         return ButtonItemHit(ShipyardButtons().Track(where), kShipyardSlotItems, itemHit);
     }
-    if ((int)ev->what == kNullEvent) {
+    if (ev.what == DialogInput::Idle) {
         /* the wheel: one notch presses scroll up (12) or down (13) while that button is lit */
         wheel = MouseTakeWheel();
         if (wheel > 0 && shipyardScroll >= kGridCols) {
@@ -806,7 +806,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 };
 
 void ShipDescDialog::Run()
@@ -846,7 +846,7 @@ void ShipDescDialog::Hit(short item)
 
 // FUNCTION: EVNOVA 0x004959d0
 // MAC: _ShipDescFilter i386 0x000510e5 ppc 0x00059a0c
-Boolean ShipDescDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean ShipDescDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     short itemType;
     void *item;
@@ -857,18 +857,18 @@ Boolean ShipDescDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit
     short hit;
     EventChar c;
 
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (QuickKeyHit(4, 2, 6, itemHit))
             return 1;
-        c = EventCharOf(ev);
+        c = ev.ch;
         c = tolower(c);
         if (IsReturnChar(c) || c == kEscapeChar || c == ' ') {
             *itemHit = 1;
             return 1;
         }
     }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
+    if (ev.what == DialogInput::Click) {
+        where = ev.where;
         GetDialogItem(shipDescDialog, 1, &itemType, (Handle *)&item, &box);
         if (PtInRectPoint(where, &box)) {
             GetIndString(label, kLabelStrList, kLabelStrIdx);

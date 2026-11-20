@@ -54,7 +54,7 @@ public:
 
 private:
     void Hit(short item) override;
-    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+    static Boolean Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
 
     short savedUnk6C;                   /* the nav target the map may change, restored after it */
     short savedUnk6A;
@@ -571,19 +571,19 @@ constexpr short kOutfitSlotItems[] = { 1, 7, 4, 10, 11 };
 
 // FUNCTION: EVNOVA 0x004903c0
 // MAC: _OutfitFilter i386 0x00058039 ppc 0x00060298
-Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean OutfitDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHit)
 {
     Rect box;
     short itemType;
     Handle item;
     Point where;
-    EventKey c;
+    EventChar c;
     short i;
     short count;
     short old;
     short oldPos;
     short row;
-    int what;
+    int index;
     int wheel;
 
     if (LeaveRequested(1, itemHit))
@@ -603,10 +603,10 @@ Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         canSell = 0;
         canBuy = 0;
     }
-    if ((int)ev->what == kKeyDown) {
+    if (ev.what == DialogInput::Key) {
         if (QuickKeyHit(2, -1, 13, itemHit))
             return 1;
-        c = EventCharOf(ev);
+        c = ev.ch;
         if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 1;
             return 1;
@@ -664,13 +664,13 @@ Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
                     selOutfitListItem = 0;
                 else
                     selOutfitListItem = kGridCells - 1;
-                what = selOutfitListItem;
-                what += outfitScroll;
-                selOutfitItem = dockedPortItems[what];
+                index = selOutfitListItem;
+                index += outfitScroll;
+                selOutfitItem = dockedPortItems[index];
                 while (selOutfitItem == -1 && selOutfitListItem > 0) {
-                    what--;
+                    index--;
                     selOutfitListItem--;
-                    selOutfitItem = dockedPortItems[what];
+                    selOutfitItem = dockedPortItems[index];
                 }
             }
             if (selOutfitItem != old) {
@@ -694,11 +694,10 @@ Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
     }
-    what = ev->what;
-    if (what == kMouseDown) {
+    if (ev.what == DialogInput::Click) {
         SetDialogGWorld(outfitDialog);
         RedrawDialog(outfitDialog);
-        where = ev->where;
+        where = ev.where;
         GetDialogItem(outfitDialog, kGridItem, &itemType, &item, &box);
         if (PtInRectPoint(where, &box)) {
             count = (where.h - box.left) / kGridCellWidth;
@@ -743,7 +742,7 @@ Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
                     }
                 }
                 lastClickItem = selOutfitListItem;
-                lastClickTime = ev->when;
+                lastClickTime = ev.when;
                 *itemHit = -1;
                 return 1;
             }
@@ -751,7 +750,7 @@ Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         OutfitDialogUpdate();
         return ButtonItemHit(OutfitButtons().Track(where), kOutfitSlotItems, itemHit);
     }
-    if (what == kNullEvent) {
+    if (ev.what == DialogInput::Idle) {
         /* the wheel: one notch presses scroll up (10) or down (11) while that button is lit */
         wheel = MouseTakeWheel();
         if (wheel > 0 && outfitScroll >= kGridCols) {

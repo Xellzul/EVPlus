@@ -53,7 +53,7 @@ public:
 
 private:
     void Hit(short itemHit) override;
-    static Boolean Filter(DialogPtr dlg, EventRecord *event, short *itemHit);
+    static Boolean Filter(DialogPtr dlg, const DialogEvent &event, short *itemHit);
 
     short routeLen;     /* the hyper route's length */
     Rect box;           /* the map picture item's rect */
@@ -504,10 +504,10 @@ static constexpr short kMapSlotItems[] = {
 
 // FUNCTION: EVNOVA 0x004a74f0
 // MAC: _MapFilter i386 0x00013c63 ppc 0x000175a8
-Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
+Boolean MapDialog::Filter(DialogPtr dlg, const DialogEvent &event, short *itemHit)
 {
     Handle item;
-    EventKeyByte key;
+    EventChar key;
     short i;
     short j;
     short k;
@@ -519,7 +519,7 @@ Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
     short list[kSpobHyperLinks];
     Rect box;
     short itemType;
-    EventWhat what;
+    DialogInput what;
     Point pt;
 
     if (mapZoom > 0.5)
@@ -531,9 +531,9 @@ Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
     else
         canZoomOut = 0;
     didUpdateMap = 0;
-    what = event->what;
-    if (what == kKeyDown) {
-        key = tolower(EventCharOf(event));
+    what = event.what;
+    if (what == DialogInput::Key) {
+        key = tolower(event.ch);
         if (IsReturnChar(key) || key == kEscapeChar) {
             *itemHit = kItemAccept;
             return 1;
@@ -562,7 +562,7 @@ Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
                     }
                     if (cur == -1)
                         cur = 0;
-                    else if ((*(unsigned short *)&event->modifiers & shiftKey) != 0) {
+                    else if ((event.mods & shiftKey) != 0) {
                         if (cur == 0)
                             cur = n - 1;
                         else
@@ -668,8 +668,8 @@ Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
             return 1;
         }
     }
-    if ((int)event->what == kMouseDown) {
-        pt = event->where;
+    if (event.what == DialogInput::Click) {
+        pt = event.where;
         GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
         if (PtInRect(pt.h, pt.v, &box) != 0) {
             *itemHit = kMapPictItem;
@@ -679,7 +679,7 @@ Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
         SetDialogGWorld(mapDialog);
         return ButtonItemHit(MapButtons().Track(pt), kMapSlotItems, itemHit);
     }
-    if ((int)event->what == kNullEvent && settings.showMapBorders != 0
+    if (event.what == DialogInput::Idle && settings.showMapBorders != 0
         && influenceCoordsCached != 0) {
         if (nextInfluenceSyst < 0) {
             nextInfluenceSyst = 0;
@@ -707,7 +707,7 @@ Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
             }
         }
     }
-    if ((int)event->what == kNullEvent) {
+    if (event.what == DialogInput::Idle) {
         /* the wheel: one notch up presses + while it is lit, one notch down - */
         i = MouseTakeWheel();
         if (i > 0 && canZoomIn != 0) {

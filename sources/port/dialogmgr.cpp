@@ -19,7 +19,6 @@ DialogPtr gCurDialog;
 int32_t gDialogCount;
 DialogPtr gDialogStack[16];
 int32_t gBlinkTick;
-int32_t gLastModifiers;
 uint32_t gClickTime;
 void *gClickDialog;
 void *gClickItem;
@@ -190,17 +189,6 @@ typedef struct CntlTemplate {
 #define kDLOGType 0x444c4f47
 #define kDITLType 0x4449544c
 #define kDlogDitlWord 9                 /* the DLOG template's word with its DITL's id */
-
-/* keys come back from KeyboardGet2 as BurgerLib ASCII codes */
-#define ASCII_BACKSPACE  0x08
-#define ASCII_TAB        0x09
-#define ASCII_DOWNARROW  0x0a
-#define ASCII_UPARROW    0x0b
-#define ASCII_RETURN     0x0d
-#define ASCII_ESCAPE     0x1b
-#define ASCII_RIGHTARROW 0x15
-#define ASCII_LEFTARROW  0x96
-#define ASCII_DELETE     0x97
 
 /*
  * Build a dialog from its DLOG and DITL (win 0x004cf760) and make it current.
@@ -1027,6 +1015,12 @@ static int DeviceX(int logical)
     return CurrentGrafPort != NULL ? UI::Mapping(CurrentGrafPort->pix).X(logical) : logical;
 }
 
+/* Hand one event to the dialog's filter. */
+static Boolean RunFilter(DialogPtr dlg, const DialogEvent &ev, short *itemHit)
+{
+    return ((DialogEventProc)dlg->eventProc)(dlg, ev, itemHit);
+}
+
 // FUNCTION: EVNOVA 0x004cfdd0
 void ModalDialog(void *filterProc, short *itemHitPtr)
 {
@@ -1053,7 +1047,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     ControlRecord *rec;
     short lastV;
     short boxTop;
-    int32_t key;
+    bool gotKey;
     short boxLeft;
     int32_t shift;
     int32_t item;
@@ -1070,7 +1064,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     int32_t pos;
     int32_t located;
     int32_t editKind;
-    EventRecord event;
+    DialogEvent event = {};
     Point pt2;
 
     handled = 0;
@@ -1078,11 +1072,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     dlg = gCurDialog;
     mods = GetKeyModifiers();
     HandleIntroMusic(0);
-    key = KeyboardGet2();
-    if (key != 0) {
-        keyChar = key;
-        keyChar &= 0xff;
-    }
+    gotKey = KeyboardGet2(&keyChar);
     MouseReadButtons();
     if (MouseClicked != 0) {
         MouseClicked = 0;
@@ -1098,6 +1088,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
             gCurDialog->needsUpdate = 1;
     }
     itemHit = 0;
+    // BUG (all versions): a key popped above is lost when a click is taken in its place.
     if (clicked != 0) {
         GetGlobalMouse(&pt2);
         localH = pt2.h - dlg->bounds.left;
@@ -1127,10 +1118,11 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
         if (dlg->eventProc != NULL) {
             event.where.h = localH;
             event.where.v = clicked;
-            event.modifiers = mods;
+            event.mods = mods;
+            event.when = TickCount();
             saved = *(uint32_t *)&itemHit;   /* the exe's dword load; `= itemHit' is movsx */
-            event.what = kMouseDown;
-            res = ((DialogEventProc)dlg->eventProc)(dlg, &event, &itemHit);
+            event.what = DialogInput::Click;
+            res = RunFilter(dlg, event, &itemHit);
             if (res != 0)
                 dlg->needsUpdate = 1;
             else
@@ -1231,16 +1223,16 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
             }
         }
     } else {
-        if (key != 0) {
+        if (gotKey) {
             if (dlg->eventProc != NULL) {
                 GetGlobalMouse(&pt);
                 event.where.h = pt.h - dlg->bounds.left;
                 event.where.v = pt.v - dlg->bounds.top;
-                event.what = kKeyDown;
-                event.message = key;
-                event.modifiers = mods;
-                handled = ((DialogEventProc)dlg->eventProc)(dlg, &event,
-                                                            &itemHit);
+                event.what = DialogInput::Key;
+                event.ch = keyChar;
+                event.mods = mods;
+                event.when = TickCount();
+                handled = RunFilter(dlg, event, &itemHit);
                 if (handled != 0)
                     dlg->needsUpdate = 1;
                 else
@@ -1248,7 +1240,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
             }
             if (handled == 0 && keyChar != 0) {
                 switch (keyChar) {
-                case ASCII_TAB:
+                case kTabChar:
                     shift = KeyIsDown(kScanLShift) || KeyIsDown(kScanRShift);
                     item = dlg->editItem;
                     clicked = item;
@@ -1293,7 +1285,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                     }
                     dlg->needsUpdate = 1;
                     break;
-                case ASCII_RETURN:
+                case kReturnChar:
                     keyItem = dlg->defaultItem;
                     if (keyItem == 0)
                         break;
@@ -1301,7 +1293,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                     itemHit = rec->itemNo;
                     dlg->needsUpdate = 1;
                     break;
-                case ASCII_ESCAPE:
+                case kEscapeChar:
                     tick = dlg->cancelItem;
                     if (tick == 0)
                         break;
@@ -1330,12 +1322,12 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                             break;
                         }
                         dlg->needsUpdate = 1;
-                    } else if (keyChar == ASCII_UPARROW) {
+                    } else if (keyChar == kUpArrowChar) {
                         if (editKind == kListItem && editRec->value > 1) {
                             editRec->value -= 1;
                             dlg->needsUpdate = 1;
                         }
-                    } else if (keyChar == ASCII_DOWNARROW) {
+                    } else if (keyChar == kDownArrowChar) {
                         if (editKind == kListItem) {
                             if (editRec->value < ((DlgListRec *)editRec->data)->count) {
                                 editRec->value += 1;
@@ -1349,12 +1341,12 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
         } else {
             if (dlg->eventProc != NULL) {
                 GetGlobalMouse(&pt);
-                event.what = kNullEvent;
+                event.what = DialogInput::Idle;
                 event.where.h = pt.h - dlg->bounds.left;
                 event.where.v = pt.v - dlg->bounds.top;
-                event.modifiers = mods;
-                res = ((DialogEventProc)dlg->eventProc)(dlg, &event,
-                                                        &itemHit);
+                event.mods = mods;
+                event.when = TickCount();
+                res = RunFilter(dlg, event, &itemHit);
                 if (res != 0)
                     dlg->needsUpdate = 1;
                 else
@@ -1363,7 +1355,6 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
         }
     }
     *itemHitPtr = itemHit;
-    gLastModifiers = mods;
     found = 0;
     for (i = 0; i < gDialogCount; i++)
         found = found || gDialogStack[i]->needsUpdate;
@@ -1408,29 +1399,29 @@ void EditTextKey(ControlRecord *rec, int32_t key, int32_t mods)
     GetControlText(rec, buf);
     len = strlen(buf);
     switch (key) {
-    case ASCII_UPARROW:
+    case kUpArrowChar:
         rec->minValue = 0;
         if ((mods & shiftKey) == 0)
             rec->maxValue = rec->minValue;
         break;
-    case ASCII_LEFTARROW:
+    case kLeftArrowChar:
         if (rec->minValue > 0)
             rec->minValue -= 1;
         if ((mods & shiftKey) == 0)
             rec->maxValue = rec->minValue;
         break;
-    case ASCII_DOWNARROW:
+    case kDownArrowChar:
         rec->maxValue = len;
         if ((mods & shiftKey) == 0)
             rec->minValue = rec->maxValue;
         break;
-    case ASCII_RIGHTARROW:
+    case kRightArrowChar:
         if (rec->maxValue < len)
             rec->maxValue += 1;
         if ((mods & shiftKey) == 0)
             rec->minValue = rec->maxValue;
         break;
-    case ASCII_BACKSPACE:
+    case kBackspaceChar:
         if (rec->maxValue != rec->minValue) {
             memmove(buf + rec->minValue, buf + rec->maxValue,
                     len - rec->maxValue + 1);
@@ -1454,7 +1445,7 @@ void EditTextKey(ControlRecord *rec, int32_t key, int32_t mods)
             rec->maxValue = rec->minValue;
         }
         break;
-    case ASCII_DELETE:
+    case kDeleteChar:
         if (rec->maxValue != rec->minValue) {
             memmove(buf + rec->minValue, buf + rec->maxValue,
                     len - rec->maxValue + 1);
@@ -2260,9 +2251,9 @@ void WinGameActivate(int on)
     if (Win95ApplsActive != 0 && gWind != NULL)
         gNeedUpdateFlag = 1;
     if (Win95ApplsActive != 0)
-        SwitchedIn(0);
+        SwitchedIn();
     else
-        SwitchedOut(0);
+        SwitchedOut();
     HandleIntroMusic(0);
 }
 

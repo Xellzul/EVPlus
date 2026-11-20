@@ -18,16 +18,6 @@ typedef struct Point {
     short h;
 } Point;
 
-#pragma pack(push, 1)
-typedef struct EventRecord {
-    unsigned short what;
-    int32_t message;
-    int32_t when;
-    Point where;
-    short modifiers;
-} EventRecord;
-#pragma pack(pop)
-
 typedef struct CGrafPort *CWindowPtr;
 typedef struct ControlRecord {
     int32_t kind;
@@ -524,28 +514,12 @@ extern char *PtoCstr(unsigned char *str);
 extern unsigned char *CtoPstr(char *str);
 
 #define kBlue555  0x001f
-#define kCharCodeMask  0xff
-#define kEscapeChar    0x1b
 #define kGreen555 0x03e0
-#define kKeyDown       3
-#define kMouseDown     1
-#define kNullEvent   0
 #define kPictType 0x50494354   /* 'PICT' */
 #define kSoundType 0x736e6420  /* 'snd ' */
 #define kStringType 0x53545220 /* 'STR ' */
 #define kStringListType 0x53545223UL /* 'STR#' */
 #define kRed555   0x7c00
-#define kReturnChar    0x0d
-#define kTabChar       0x09
-#define IsReturnChar(c) ((c) == kReturnChar)
-#define kDownArrowChar  0x0a
-#define kEndChar       0x93
-#define kHomeChar      0x91
-#define kLeftArrowChar  0x96
-#define kPageDownChar   0x94
-#define kPageUpChar     0x92
-#define kRightArrowChar 0x15
-#define kUpArrowChar    0x0b
 
 
 #define shiftKey    0x0200
@@ -557,15 +531,8 @@ extern unsigned char *CtoPstr(char *str);
 /* a byte pointer stepped through a cast lvalue: gcc then keeps the pointer in its stack slot, which 1.1.1's bytes witness */
 #define PtrAddBytes(p, n) (*(char **)&(p) += (n))
 
-/* the character in a key event: 1.0.10's filters hold it in a char */
+/* a key character from the key queue, 0..255 */
 typedef int EventChar;
-#define EventCharOf(ev) ((ev)->message & kCharCodeMask)
-
-/* 1.1.1's filters hold that character in a short (EventKey) or a char (EventKeyByte), and some keep the
-   event's what in a short (EventWhat) */
-#define EventKey EventChar
-#define EventKeyByte EventChar
-#define EventWhat int
 
 /* a character held in a local across tolower's calls in the win port and 1.0.10; 1.1.1 reads its source again */
 #define HeldChar(held, src) (held)
@@ -618,9 +585,18 @@ extern Rect *GetDialogPortRect(DialogPtr dlg);
 #define kMinFontSize 10                     /* GetFont makes a smaller font this size */
 struct FontSpec;
 extern int GetFont(short fontID, short size, short style, struct FontSpec *spec);
+/* what ModalDialog hands the filter on each pass: one key, one click, or nothing (Idle) */
+enum class DialogInput : unsigned char { Idle, Key, Click };
+struct DialogEvent {
+    DialogInput what;
+    EventChar ch;                       /* Key: the key character; 0 for Shift, Ctrl or Alt */
+    Point where;                        /* the mouse now, dialog-local */
+    int32_t mods;                       /* shiftKey, controlKey, optionKey held now */
+    uint32_t when;                      /* TickCount() at this pass */
+};
 /* the procs a dialog record carries: its update (draw) proc and its event filter */
 typedef void (*DialogUpdateProc)(void);
-typedef Boolean (*DialogEventProc)(DialogPtr dlg, EventRecord *ev, short *itemHit);
+typedef Boolean (*DialogEventProc)(DialogPtr dlg, const DialogEvent &ev, short *itemHit);
 
 extern void GetGlobalMouse(Point *pt);
 extern void GetMouse(Point *pt);
@@ -656,7 +632,7 @@ extern unsigned char KeyCheck(ScanCode scanCode);
 extern int32_t GetKeyModifiers(void);
 extern void KeyboardScanCodeToString(char *buf, uint32_t size, ScanCode code);
 extern unsigned int KeyIsDown(ScanCode scanCode);
-extern int32_t KeyboardGet2(void);
+extern bool KeyboardGet2(int *ch);
 extern void Line(short dh, short dv);
 extern void LineTo(short h, short v);
 extern void *ST_LoadSndResource(short id);
@@ -755,7 +731,6 @@ extern uint32_t gClickTime;
 extern int32_t gDialogCount;
 extern DialogPtr gCurDialog;
 extern unsigned char gGammaRamp[32];
-extern int32_t gLastModifiers;
 extern SpriteWorldPtr gSpriteWorld;
 
 extern SpriteRec *masterShipSprite[768];
