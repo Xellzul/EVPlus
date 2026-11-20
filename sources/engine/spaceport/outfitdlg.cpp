@@ -603,6 +603,7 @@ Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
     short oldPos;
     short row;
     int what;
+    int wheel;
 
     if (LeaveRequested(1, itemHit))
         return 1;
@@ -768,6 +769,25 @@ Boolean OutfitDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
         }
         OutfitDialogUpdate();
         return ButtonItemHit(OutfitButtons().Track(where), kOutfitSlotItems, itemHit);
+    }
+    if (what == kNullEvent) {
+        /* the wheel: one notch presses scroll up (10) or down (11) while that button is lit */
+        wheel = MouseTakeWheel();
+        if (wheel > 0 && outfitScroll >= kGridCols) {
+            *itemHit = 10;
+            return 1;
+        }
+        if (wheel < 0) {
+            count = 0;
+            for (i = 0; i < kMaxOutfits; i++) {
+                if (dockedPortItems[i] != -1)
+                    count++;
+            }
+            if (outfitScroll < count - kGridCells) {
+                *itemHit = 11;
+                return 1;
+            }
+        }
     }
     return OfferDue(8, itemHit);
 }

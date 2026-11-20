@@ -87,6 +87,9 @@ extern void MainScreenRolloverDraw(void);
 extern void MainScreenUpdate(short which);
 extern int MouseReadButtons(void);
 extern void MouseReadPosition(int32_t *h, int32_t *v);
+/* one wheel notch taken: 1 up, -1 down, 0 none */
+extern int MouseTakeWheel(void);
+extern void MouseFlushWheel(void);
 extern void PlayMainScreenClickSound(void);
 extern void PrepareAllSprites(void);
 extern void SetGWorldContainer(GWorldContainer *gwc);

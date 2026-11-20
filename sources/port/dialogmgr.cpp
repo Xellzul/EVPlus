@@ -676,6 +676,7 @@ static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsig
     gDialogCount += 1;
     gCurDialog = dlg;
     MouseClicked = 0;
+    MouseFlushWheel();
     return dlg;
 }
 
@@ -796,6 +797,7 @@ void DisposeDialog(DialogPtr dlg)
     } else {
         gCurDialog = NULL;
     }
+    MouseFlushWheel();
     RedrawDialogs(1);
     ScreenEndScene();
 }

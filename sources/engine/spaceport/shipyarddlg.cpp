@@ -387,6 +387,7 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit
     short old;
     short oldPos;
     short row;
+    int wheel;
 
     if (LeaveRequested(7, itemHit))
         return 1;
@@ -552,6 +553,25 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit
         }
         ShipyardDialogUpdate();
         return ButtonItemHit(ShipyardButtons().Track(where), kShipyardSlotItems, itemHit);
+    }
+    if ((int)ev->what == kNullEvent) {
+        /* the wheel: one notch presses scroll up (12) or down (13) while that button is lit */
+        wheel = MouseTakeWheel();
+        if (wheel > 0 && shipyardScroll >= kGridCols) {
+            *itemHit = 0xc;
+            return 1;
+        }
+        if (wheel < 0) {
+            count = 0;
+            for (i = 0; i < kMaxShipTypes; i++) {
+                if (dockedPortShipTypes[i] != -1)
+                    count++;
+            }
+            if (shipyardScroll < count - kGridCells) {
+                *itemHit = 0xd;
+                return 1;
+            }
+        }
     }
     if (shipBuyMode == 0)
         return OfferDue(8, itemHit);

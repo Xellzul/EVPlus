@@ -719,6 +719,18 @@ Boolean MapDialog::Filter(DialogPtr dlg, EventRecord *event, short *itemHit)
             }
         }
     }
+    if ((int)event->what == kNullEvent) {
+        /* the wheel: one notch up presses + while it is lit, one notch down - */
+        i = MouseTakeWheel();
+        if (i > 0 && canZoomIn != 0) {
+            *itemHit = kMapZoomInItem;
+            return 1;
+        }
+        if (i < 0 && canZoomOut != 0) {
+            *itemHit = kMapZoomOutItem;
+            return 1;
+        }
+    }
     return 0;
 }
 

@@ -24,9 +24,11 @@ static Word32 Win95MouseButton;                  /* 0x008701a0 */
 static int32_t Win95MouseX;                      /* 0x0087001c */
 static int32_t Win95MouseY;                      /* 0x00870020 */
 static int LastScan;                             /* the last key pressed: the key a typed character came from */
+static int32_t WheelNotches;                     /* whole wheel notches not taken yet; > 0 = up */
 int32_t MouseClicked;                            /* 0x0087017c */
 
 #define kKeyQueueMask   0x7f
+#define kWheelBacklog   3                /* wheel notches kept for later dialog passes */
 #define kKeyAsciiMask   0xff
 
 /* Queue one key; a full queue drops it. */
@@ -262,6 +264,26 @@ void MouseReadPosition(int32_t *h, int32_t *v)
     }
 }
 
+/* Take one wheel notch: 1 up, -1 down, 0 none. */
+int MouseTakeWheel(void)
+{
+    if (WheelNotches > 0) {
+        WheelNotches--;
+        return 1;
+    }
+    if (WheelNotches < 0) {
+        WheelNotches++;
+        return -1;
+    }
+    return 0;
+}
+
+/* Forget the wheel notches not taken. */
+void MouseFlushWheel(void)
+{
+    WheelNotches = 0;
+}
+
 /* Win95ProcessMessage (BurgerLib InKeyboardWin95, 0x004d7330) and the window procedure's part
    (WinGameWndProc, port/dialogmgr.cpp), on an SDL event in place of a Win32 message. */
 static void Win95ProcessEvent(const SDL_Event *e)
@@ -309,8 +331,16 @@ static void Win95ProcessEvent(const SDL_Event *e)
     case SDL_EVENT_QUIT:
         WinGameClose();
         return;
-    case SDL_EVENT_KEY_UP:
     case SDL_EVENT_MOUSE_WHEEL:
+        /* integer_y: SDL's whole notches, trackpad fractions summed, in the system's scroll direction; a few
+           kept at most, so a flicked wheel does not keep scrolling after it stops */
+        WheelNotches += e->wheel.integer_y;
+        if (WheelNotches > kWheelBacklog)
+            WheelNotches = kWheelBacklog;
+        if (WheelNotches < -kWheelBacklog)
+            WheelNotches = -kWheelBacklog;
+        break;
+    case SDL_EVENT_KEY_UP:
         break;
     default:
         return;
