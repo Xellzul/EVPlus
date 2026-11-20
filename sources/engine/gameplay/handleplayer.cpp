@@ -102,8 +102,6 @@ EXTERN_C_BEGIN
                                                             /* 0x00475830 */
                                                             /* 0x00470220 */
 
-#define mapLink j
-
 // FUNCTION: EVNOVA 0x0044aa70
 // MAC: _HandlePlayer i386 0x00068390 ppc 0x00070b28
 void HandlePlayer(ShipObj *player)
@@ -111,6 +109,7 @@ void HandlePlayer(ShipObj *player)
     Boolean jumping;
     short i;
     short j;
+    short mapLink;
     short n;
     short count;
     short days;

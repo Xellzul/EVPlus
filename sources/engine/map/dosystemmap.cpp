@@ -1309,8 +1309,6 @@ void CueNextHyperRouteDest(void)
     }
 }
 
-#define gateLink j
-
 // FUNCTION: EVNOVA 0x004a8100
 // MAC: _DrawMap i386 0x0000e568 ppc 0x00011df8
 void DrawMap(Rect box)
@@ -1323,6 +1321,7 @@ void DrawMap(Rect box)
     short angle;
     short i;
     short j;
+    short gateLink;
     short savedX;
     short savedY;
     short w;

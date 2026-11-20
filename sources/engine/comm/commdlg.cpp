@@ -1522,8 +1522,6 @@ private:
 
 void PlunderDialog::Run()
 {
-#define n i
-#define idx i
     short pers;
     char c;
     short avail;
@@ -1531,6 +1529,7 @@ void PlunderDialog::Run()
     short j;
     short i;
     short qty;
+    short outfit;
     unsigned char text[256];
     unsigned char tmp[256];
 
@@ -1549,25 +1548,24 @@ void PlunderDialog::Run()
         }
         if (count > 0) {
             do {
-                n = Rand(kMaxOutfits);
-                idx = n;
-            } while (outfitSystem[idx].itemClass != personData[pers].grantClass
-                     || HasMaxOfItem(n, 0, 0) != 0);
+                outfit = Rand(kMaxOutfits);
+            } while (outfitSystem[outfit].itemClass != personData[pers].grantClass
+                     || HasMaxOfItem(outfit, 0, 0) != 0);
             qty = ((Rand(51) + 50) * personData[pers].grantCount / 100.0);
             if (qty <= 0)
                 qty = 1;
             ShipStatsToSystemInfo();
             avail = ShipFreeMass();
-            while (qty > 0 && outfitSystem[idx].mass * qty > avail)
+            while (qty > 0 && outfitSystem[outfit].mass * qty > avail)
                 qty--;
             if (qty > 0) {
                 for (j = 0; j < qty; j++)
-                    GrantOutfitItem(n);
+                    GrantOutfitItem(outfit);
                 SystemInfoToShipStats();
                 strcpy((char *)text, "");
                 StrcatIndCString((char *)text, kGameStrList, 0x6a);
                 if (qty == 1) {
-                    c = tolower(lcOutfitName[idx][1]);
+                    c = tolower(lcOutfitName[outfit][1]);
                     if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
                         StrcatIndCString((char *)text, kGameStrList, 0x18a);
                     else
@@ -1581,9 +1579,9 @@ void PlunderDialog::Run()
                 }
                 strcat((char *)text, " ");
                 if (qty > 1)
-                    pstrcpy(tmp, lcPluralOutfitName[idx]);
+                    pstrcpy(tmp, lcPluralOutfitName[outfit]);
                 else
-                    pstrcpy(tmp, lcOutfitName[idx]);
+                    pstrcpy(tmp, lcOutfitName[outfit]);
                 PtoCstr(tmp);
                 strcat((char *)text, (char *)tmp);
                 strcat((char *)text, " ");
@@ -1610,15 +1608,13 @@ void PlunderDialog::Run()
     dialog.Close();
     SWSetPortToWindow(gSpriteWorld);
     ResetPlayerPrecalcedValues();
-#undef n
-#undef idx
 }
 
 void PlunderDialog::Hit(short item)
 {
-#define space qty
     short i;
     short qty;
+    short fuelSpace;
     short found;
     short govt;
     short type;
@@ -1778,12 +1774,12 @@ void PlunderDialog::Hit(short item)
         PlunderDialogUpdate();
         if (salvageFuelQty > 0) {
             PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-            space = (ShipFuelCapacity(shipData) - shipData->fuel);
-            if (space > salvageFuelQty)
-                space = salvageFuelQty;
+            fuelSpace = (ShipFuelCapacity(shipData) - shipData->fuel);
+            if (fuelSpace > salvageFuelQty)
+                fuelSpace = salvageFuelQty;
             SWSetPortToWindow(gSpriteWorld);
-            if (space > 0) {
-                shipData->fuel = shipData->fuel + space;
+            if (fuelSpace > 0) {
+                shipData->fuel = shipData->fuel + fuelSpace;
                 if (shipData->fuel >= ShipFuelCapacity(shipData))
                     DisplayComm((PStrChar *)fuelString[1], kCommFrames);
                 else
@@ -1902,7 +1898,6 @@ void PlunderDialog::Hit(short item)
         HandleComm();
         SetDialogGWorld(plunderDialog);
     }
-#undef space
 }
 
 constexpr short kPlunderSlotItems[] = { 1, 2, 3, 4, 6, 7 };
