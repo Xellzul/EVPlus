@@ -263,17 +263,9 @@ void MainScreenIdle(void)
     }
 }
 
-/*
- * mainMenuCenter is h-then-v, NOT QuickDraw's Point order: +0 takes
- * (left+right)/2 and +2 takes (top+bottom)/2. The two guards deliberately
- * re-read loadPort.bounds rather than interfacePicRect, and are deliberately
- * non-parallel - `< 768` on the height, `<= 640` on the width.
- */
+/* mainMenuCenter is h-then-v, NOT QuickDraw's Point order */
 
 #define kInterfacePictID    0x1f40
-#define kMinFullHeight      768
-#define kMinFullWidth       640
-#define kSmallScreenNudge   60
 #define kMenuHalfWidth      512
 #define kMenuHalfHeight     384
 
@@ -290,10 +282,6 @@ void SetupInterfaceBackground(void)
     if (pic != 0) {
         interfacePicRect = MenuArt()->bounds;
         CenterPict(pic, &interfacePicRect);
-        if (MenuArt()->bounds.bottom - MenuArt()->bounds.top < kMinFullHeight)
-            OffsetRect(&interfacePicRect, 0, -kSmallScreenNudge);
-        if (MenuArt()->bounds.right - MenuArt()->bounds.left <= kMinFullWidth)
-            OffsetRect(&interfacePicRect, -kSmallScreenNudge, 0);
         mainMenuCenter.h = (interfacePicRect.left + interfacePicRect.right) / 2;
         mainMenuCenter.v = (interfacePicRect.top + interfacePicRect.bottom) / 2;
         menuTopCorner.h = mainMenuCenter.h - kMenuHalfWidth;
