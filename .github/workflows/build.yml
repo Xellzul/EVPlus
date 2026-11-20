@@ -94,17 +94,24 @@ jobs:
           case ${{ matrix.preset }} in
             windows) cp evnova64.exe *.dll "../../$out/" ;;
             linux)   cp evnova64 *.so.* "../../$out/" ;;
-            macos)   cp evnova64 *.dylib "../../$out/" ;;
+            macos)   ver=0.0.0
+                     case "$GITHUB_REF" in refs/tags/v*) ver=${GITHUB_REF_NAME#v} ;; esac
+                     sh ../../cmake/make-macos-app.sh . "../../$out" "$ver" ;;
           esac
           cp FFmpeg-COPYING.LGPLv2.1.txt "../../$out/"
           cd ../..
           cp README.md CHANGELOG.md "$out/"
-          tar -czf "$out.tar.gz" "$out"
+          if [ ${{ matrix.preset }} = macos ]; then
+            # ditto keeps the app's signature and attributes, which tar from a Linux-style archive can lose
+            ditto -c -k --keepParent "$out" "$out.zip"
+          else
+            tar -czf "$out.tar.gz" "$out"
+          fi
 
       - uses: actions/upload-artifact@v7
         with:
           name: evplus-${{ matrix.preset }}
-          path: evplus-${{ matrix.preset }}.tar.gz
+          path: evplus-${{ matrix.preset }}.${{ matrix.preset == 'macos' && 'zip' || 'tar.gz' }}
           if-no-files-found: error
 
       # the FFmpeg source the builds were made from, published with a release (LGPL)

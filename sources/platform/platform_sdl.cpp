@@ -739,7 +739,26 @@ const char *PlatExeFolder(void)
 {
     const char *base = SDL_GetBasePath();
 
-    return base != NULL ? base : "";
+    if (base == NULL)
+        return "";
+#ifdef __APPLE__
+    /* in an app bundle the game's files sit beside the .app, as with the Mac versions */
+    static char beside[kPlatPathMax];
+    const char *bundle = SDL_strstr(base, ".app/Contents/");
+
+    if (bundle != NULL) {
+        size_t length = (size_t)(bundle - base);
+
+        while (length > 0 && base[length - 1] != '/')
+            length--;
+        if (length > 0 && length < sizeof beside) {
+            SDL_memcpy(beside, base, length);
+            beside[length] = '\0';
+            return beside;
+        }
+    }
+#endif
+    return base;
 }
 
 int PlatListFiles(const char *where, const char *pattern, void (*found)(const char *path, void *ctx), void *ctx)
