@@ -3,8 +3,6 @@
 #ifndef CEFIX_H
 #define CEFIX_H
 
-#include "int32.h"
-#include "burgertypes.h"
 #include "keycodes.h"
 
 #include <stdio.h>

@@ -6,7 +6,6 @@
 #include "keycodes.h"
 
 #include <stdio.h>
-#include <string.h>
 #ifndef _WIN32
 #include <strings.h>
 #endif

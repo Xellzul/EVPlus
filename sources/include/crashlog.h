@@ -8,7 +8,6 @@
 #ifndef CRASHLOG_H
 #define CRASHLOG_H
 
-#include <stdio.h>
 #include "macport.h"
 
 #ifdef __cplusplus

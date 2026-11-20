@@ -1,7 +1,6 @@
 /* ai.h -- what an AI ship decides to do: targets, threats, escorts, orders. Notes: Research/notes/ai.md */
 #ifndef AI_H
 #define AI_H
-#include "gametypes.h"
 #include "resources.h"
 #include "shipobj.h"
 
