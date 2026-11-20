@@ -14,6 +14,17 @@ extern "C" {
 #define kDescMovieDoubled   0x0002
 #define kDescMovieFade      0x0004
 
+/* the trade center's and outfitter's quantity limit */
+#define kMaxTradeQty   0x7d00
+
+/* the grid filters' arrow keys: virtual key codes in 1.1.1, characters on win */
+#define kGridLeftKey        kLeftArrowChar
+#define kGridRightKey       kRightArrowChar
+#define kGridUpKey          kUpArrowChar
+#define kGridDownKey        kDownArrowChar
+#define kGridPageUpKey      kPageUpChar
+#define kGridPageDownKey    kPageDownChar
+
 void CommDialogUpdate(void);
 extern void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t lCell,
                          short lDataOffset, short lDataLen, ScrollRec **lHandle);

@@ -41,6 +41,8 @@ extern void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short dep
                                   Rect *bounds);
 extern void DisposeGWorldContainer(GWorldContainer *gwc);
 extern void DoMainScreen(void);
+/* the menu icon cache draws into a port on mac, into the port's container on win */
+#define MenuIconPort(gwc) (gwc)
 extern Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest,
                            Rect *destRect);
 extern void DrawIndString(short strListID, short index);
