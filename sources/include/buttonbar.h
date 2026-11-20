@@ -1,4 +1,4 @@
-/* buttonbar.h -- a dialog's row of picture buttons (DrawButton), drawn and pressed as one */
+/* buttonbar.h -- a dialog's row of picture buttons (DrawButton), drawn and pressed as one; filter helpers */
 #pragma once
 #include <array>
 #include "macport.h"
@@ -50,3 +50,38 @@ private:
     const short *order;             /* hit-test order, default 0..count-1 */
     bool drawing = false;
 };
+
+/* A filter's mouse-down: *itemHit = slot + 1 for the slot Track returned, else -1. Returns 1, the filter's
+   "handled" result, so a filter can end with `return ButtonItemHit(...)`. */
+inline Boolean ButtonItemHit(short button, short *itemHit)
+{
+    *itemHit = button >= 0 ? button + 1 : -1;
+    return 1;
+}
+
+/* the same with each slot's item from a table (-1 for a slot that reports nothing) */
+template <short N>
+Boolean ButtonItemHit(short button, const short (&slotItems)[N], short *itemHit)
+{
+    *itemHit = button >= 0 && button < N ? slotItems[button] : -1;
+    return 1;
+}
+
+/* a key that stands for a dialog item */
+struct KeyItem {
+    EventChar key;
+    short item;
+};
+
+/* *itemHit = the item of the first entry whose key is c; false if none is */
+template <short N>
+bool KeyItemHit(EventChar c, const KeyItem (&keys)[N], short *itemHit)
+{
+    for (const KeyItem &k : keys) {
+        if (c == k.key) {
+            *itemHit = k.item;
+            return true;
+        }
+    }
+    return false;
+}

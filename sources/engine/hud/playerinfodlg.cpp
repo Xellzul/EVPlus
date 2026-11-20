@@ -236,15 +236,16 @@ void DoPlayerInfoDialog(void)
     FlushEvents(7, 0);
 }
 
+static constexpr short kPlayerInfoSlotItems[] = { 1, 2, 3, 4, 5, 7 };
+
 // FUNCTION: EVNOVA 0x0049a3a0
 // MAC: _PlayerInfoFilter i386 0x00053ae9 ppc 0x0005c1b8
 Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
     int c;
 
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         c = EventCharOf(ev);
         if (c == kTabChar) {
             if ((*(unsigned short *)&ev->modifiers & shiftKey) != 0)
@@ -259,47 +260,15 @@ Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             *itemHit = selPlayerInfoMode + 1;
             return 1;
         }
-        if ((int)ev->what == kKeyDown) {
-            if (IsReturnChar(c) || c == kEscapeChar || KeyCheck(keyPrefs.playerInfo)) {
-                *itemHit = 1;
-                return 1;
-            }
+        if (IsReturnChar(c) || c == kEscapeChar || KeyCheck(keyPrefs.playerInfo)) {
+            *itemHit = 1;
+            return 1;
         }
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         PlayerInfoDialogUpdate();
-        button = PlayerInfoButtons(selPlayerInfoMode).Track(where);
-        if (button == 0) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = 2;
-            return 1;
-        }
-        if (button == 2) {
-            *itemHit = 3;
-            return 1;
-        }
-        if (button == 3) {
-            *itemHit = 4;
-            return 1;
-        }
-        if (button == 4) {
-            *itemHit = 5;
-            return 1;
-        }
-        if (button == 5) {
-            *itemHit = 7;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        PlayerInfoDialogUpdate();
-        return 0;
+        return ButtonItemHit(PlayerInfoButtons(selPlayerInfoMode).Track(where), kPlayerInfoSlotItems, itemHit);
     }
     return 0;
 }

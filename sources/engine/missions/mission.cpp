@@ -1883,11 +1883,9 @@ void QuickMissionFailure(short mission)
 
 #define kListCaptionIdx  0x167
 
-/* the port's own codes */
-
+static constexpr short kMissionSlotItems[] = { kItemAccept, kItemDone };
 
 /* the port's list entry points */
-
 // FUNCTION: EVNOVA 0x00440c90
 // MAC: _MissionFilter i386 0x0009f7a9 ppc 0x000ab3fc
 Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -1899,14 +1897,12 @@ Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     Point cell;
     void *item;
     short old;
-    short button;
 
     if (absquatulateStr[0] != 0) {
-        ev->what = kMouseDown;
         *itemHit = kItemDone;
         return 1;
     }
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         QuickKeyCheckHandler();
         if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
             *itemHit = kItemMap;
@@ -1922,19 +1918,17 @@ Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         }
         key = EventCharOf(ev);
         key = tolower(key);
-        if ((int)ev->what == kKeyDown) {
-            if (IsReturnChar(key) || key == kEscapeChar) {
-                *itemHit = kItemDone;
-                return 1;
-            }
-            if (key == 'l') {
-                *itemHit = kItemDone;
-                return 1;
-            }
-            if (key == 'a' && selMissionListItem != -1) {
-                *itemHit = kItemAccept;
-                return 1;
-            }
+        if (IsReturnChar(key) || key == kEscapeChar) {
+            *itemHit = kItemDone;
+            return 1;
+        }
+        if (key == 'l') {
+            *itemHit = kItemDone;
+            return 1;
+        }
+        if (key == 'a' && selMissionListItem != -1) {
+            *itemHit = kItemAccept;
+            return 1;
         }
         if (key == kTabChar) {
             cell.h = 0;
@@ -2082,21 +2076,7 @@ Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (PtInRect(where.h, where.v, &box))
             LClick(where, ev->modifiers, missionList);
         MissionDialogUpdate();
-        button = MissionButtons().Track(where);
-        if (button == 0) {
-            *itemHit = kItemAccept;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = kItemDone;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        SetDialogGWorld(missionDialog);
-        MissionDialogUpdate();
+        return ButtonItemHit(MissionButtons().Track(where), kMissionSlotItems, itemHit);
     }
     return 0;
 }
@@ -3763,6 +3743,8 @@ void DoMissionInfoDialog(void)
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
 }
 
+static constexpr short kMissionInfoSlotItems[] = { 1, 5 };
+
 // FUNCTION: EVNOVA 0x00446770
 // MAC: _MissionInfoFilter i386 0x0009d6e5 ppc 0x000a9304
 Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -3776,20 +3758,17 @@ Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     short old;
     short i;
     short count;
-    short button;
 
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         QuickKeyCheckHandler();
         if (QuickKeyCheck(keyPrefs.map)) {
             *itemHit = 6;
             return 1;
         }
         c = EventCharOf(ev);
-        if ((int)ev->what == kKeyDown) {
-            if (IsReturnChar(c) || c == kEscapeChar || KeyCheck(keyPrefs.missions)) {
-                *itemHit = 1;
-                return 1;
-            }
+        if (IsReturnChar(c) || c == kEscapeChar || KeyCheck(keyPrefs.missions)) {
+            *itemHit = 1;
+            return 1;
         }
         if (c == kTabChar || c == kDownArrowChar) {
             cell.h = 0;
@@ -3903,21 +3882,7 @@ Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
         MissionInfoDialogUpdate();
-        button = MissionInfoButtons().Track(where);
-        if (button == 0) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = 5;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        SetDialogGWorld(missionInfoDialog);
-        MissionInfoDialogUpdate();
+        return ButtonItemHit(MissionInfoButtons().Track(where), kMissionInfoSlotItems, itemHit);
     }
     return 0;
 }
@@ -3977,12 +3942,13 @@ void MissionInfoDialogUpdate(void)
     }
 }
 
+static constexpr short kSingleMissionSlotItems[] = { kItemAccept, kItemRefuse, -1, -1 };
+
 // FUNCTION: EVNOVA 0x00447170
 // MAC: _SingleMissionFilter i386 0x00098d9a ppc 0x000a4984
 Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
     int acceptKey;
     int refuseKey;
     EventChar c;
@@ -4002,25 +3968,23 @@ Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         return 1;
     }
     what = ev->what;
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         c = EventCharOf(ev);
         c = tolower(c);
-        if (what == kKeyDown) {
-            if (IsReturnChar(c)) {
+        if (IsReturnChar(c)) {
+            *itemHit = kItemAccept;
+            return 1;
+        }
+        refuseKey = missionButtonLabel[1][1];
+        acceptKey = missionButtonLabel[0][1];
+        if (tolower(acceptKey) != tolower(refuseKey)) {
+            if (c == tolower(acceptKey)) {
                 *itemHit = kItemAccept;
                 return 1;
             }
-            refuseKey = missionButtonLabel[1][1];
-            acceptKey = missionButtonLabel[0][1];
-            if (tolower(acceptKey) != tolower(refuseKey)) {
-                if (c == tolower(acceptKey)) {
-                    *itemHit = kItemAccept;
-                    return 1;
-                }
-                if (canRefuseMission != 0 && c == tolower(refuseKey)) {
-                    *itemHit = kItemRefuse;
-                    return 1;
-                }
+            if (canRefuseMission != 0 && c == tolower(refuseKey)) {
+                *itemHit = kItemRefuse;
+                return 1;
             }
         }
         if (OfferText().Key(c, itemHit))
@@ -4032,21 +3996,7 @@ Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (OfferText().Press(where, itemHit, buttons))
             return 1;
         SingleMissionDialogUpdate();
-        button = buttons.Track(where);
-        if (button == 0) {
-            *itemHit = kItemAccept;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = kItemRefuse;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if (what == kUpdateEvt) {
-        SetDialogGWorld(missionDialog);
-        SingleMissionDialogUpdate();
+        return ButtonItemHit(buttons.Track(where), kSingleMissionSlotItems, itemHit);
     }
     return 0;
 }

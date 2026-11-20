@@ -311,26 +311,25 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
     }
 }
 
+static constexpr short kTextSlotItems[] = { 1, 5, 6 };
+
 // FUNCTION: EVNOVA 0x00499440
 // MAC: _TextDialogFilter i386 0x00051f77 ppc 0x0005a820
 Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
     EventChar c;
 
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         QuickKeyCheckHandler();
         if (QuickKeyCheck(keyPrefs.map)) {
             *itemHit = 4;
             return 1;
         }
         c = EventCharOf(ev);
-        if ((int)ev->what == kKeyDown) {
-            if (IsReturnChar(c) || c == kEscapeChar) {
-                *itemHit = 1;
-                return 1;
-            }
+        if (IsReturnChar(c) || c == kEscapeChar) {
+            *itemHit = 1;
+            return 1;
         }
         if (DialogText().Key(c, itemHit))
             return 1;
@@ -342,23 +341,10 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (DialogText().Press(where, itemHit, buttons))
             return 1;
         TextDialogUpdate();
-        button = buttons.Track(where);
-        if (button == 0)
-            *itemHit = 1;
-        else if (button == 1)
-            *itemHit = 5;
-        else if (button == 2)
-            *itemHit = 6;
-        else
-            *itemHit = -1;
+        ButtonItemHit(buttons.Track(where), kTextSlotItems, itemHit);
         SetDialogGWorld(textDialog);
         buttons.Draw(-1);
         return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        if (gPause != 0)
-            mainScreenBackgroundDirty = 1;
-        TextDialogUpdate();
     }
     return 0;
 }

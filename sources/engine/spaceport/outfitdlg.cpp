@@ -596,6 +596,9 @@ void DoOutfitDialog(void)
     ResetMissionOfferVenue();
 }
 
+static constexpr KeyItem kOutfitKeys[] = { { 'b', 7 }, { 's', 4 } };
+static constexpr short kOutfitSlotItems[] = { 1, 7, 4, 10, 11 };
+
 // FUNCTION: EVNOVA 0x004903c0
 // MAC: _OutfitFilter i386 0x00058039 ppc 0x00060298
 Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -607,15 +610,12 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     EventKey c;
     short i;
     short count;
-    int32_t slot;
     short old;
     short oldPos;
     short row;
-    short button;
     int what;
 
     if ((absquatulateStr)[0] != 0) {
-        ev->what = kMouseDown;
         *itemHit = 1;
         return 1;
     }
@@ -634,7 +634,7 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         canSell = 0;
         canBuy = 0;
     }
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         QuickKeyCheckHandler();
         if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
             *itemHit = 2;
@@ -645,22 +645,13 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             return 1;
         }
         c = EventCharOf(ev);
-        if (((int)ev->what == kKeyDown && IsReturnChar(c)) || c == kEscapeChar) {
-            ev->what = kMouseDown;
+        if (IsReturnChar(c) || c == kEscapeChar) {
             *itemHit = 1;
             return 1;
         }
         c = tolower(c);
-        if (c == 'b') {
-            ev->what = kMouseDown;
-            *itemHit = 7;
+        if (KeyItemHit(c, kOutfitKeys, itemHit))
             return 1;
-        }
-        if (c == 's') {
-            ev->what = kMouseDown;
-            *itemHit = 4;
-            return 1;
-        }
         if (c == kGridLeftKey || c == kGridRightKey || c == kGridUpKey ||
             c == kGridDownKey || c == kGridPageUpKey || c == kGridPageDownKey) {
             old = selOutfitItem;
@@ -796,33 +787,7 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
         OutfitDialogUpdate();
-        button = OutfitButtons().Track(where);
-        if (button == 0) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = 7;
-            return 1;
-        }
-        if (button == 2) {
-            *itemHit = 4;
-            return 1;
-        }
-        if (button == 3) {
-            *itemHit = 10;
-            return 1;
-        }
-        if (button == 4) {
-            *itemHit = 11;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if (what == kUpdateEvt) {
-        OutfitDialogUpdate();
-        return 1;
+        return ButtonItemHit(OutfitButtons().Track(where), kOutfitSlotItems, itemHit);
     }
     if (ReadTick() >= missionOfferTime) {
         *itemHit = 8;

@@ -222,39 +222,36 @@ void DoBarDialog(void)
 #define kTextInset    10
 #define kBodyMargin   4
 
-/*
- * Rewriting ev->what to mouseDown on the way out is how the caller is told
- * this was a key that acts like a click.
- */
+static constexpr KeyItem kBarKeys[] = {
+    { 'g', kBarRaceItem }, { 'r', kBarRaceItem },
+    { 'w', kBarNewsItem }, { 'n', kBarNewsItem },
+    { 'h', kBarHireItem }, { 'e', kBarHireItem },
+};
+static constexpr short kBarSlotItems[] = { kBarLeaveItem, kBarRaceItem, kBarNewsItem, -1, kBarHireItem, -1 };
 
 // FUNCTION: EVNOVA 0x0047cdb0
 // MAC: _BarFilter i386 0x00047a4b ppc 0x000503e8
 Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
     EventChar c;
     EventChar key;
 
     if (absquatulateStr[0] != 0) {
-        ev->what = kMouseDown;
         *itemHit = kBarLeaveItem;
         return 1;
     }
     if ((int)ev->what == kKeyDown) {
         QuickKeyCheckHandler();
         if (QuickKeyCheck(keyPrefs.map)) {
-            ev->what = kMouseDown;
             *itemHit = kBarMapItem;
             return 1;
         }
         if (QuickKeyCheck(keyPrefs.playerInfo) && infoDialog == NULL) {
-            ev->what = kMouseDown;
             *itemHit = kBarPlayerInfoItem;
             return 1;
         }
         if (QuickKeyCheck(keyPrefs.missions) && missionInfoDialog == NULL) {
-            ev->what = kMouseDown;
             *itemHit = kBarMissionInfoItem;
             return 1;
         }
@@ -264,53 +261,18 @@ Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             return 1;
         }
         key = tolower(c);
-        if (key == 'g' || key == 'r') {
-            ev->what = kMouseDown;
-            *itemHit = kBarRaceItem;
+        if (KeyItemHit(key, kBarKeys, itemHit))
             return 1;
-        }
-        if (key == 'w' || key == 'n') {
-            ev->what = kMouseDown;
-            *itemHit = kBarNewsItem;
-            return 1;
-        }
-        if (key == 'h' || key == 'e') {
-            ev->what = kMouseDown;
-            *itemHit = kBarHireItem;
-            return 1;
-        }
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         BarDialogUpdate();
-        button = BarButtons().Track(where);
-        if (button == 0) {
-            *itemHit = kBarLeaveItem;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = kBarRaceItem;
-            return 1;
-        }
-        if (button == 2) {
-            *itemHit = kBarNewsItem;
-            return 1;
-        }
-        if (button == 4) {
-            *itemHit = kBarHireItem;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
+        return ButtonItemHit(BarButtons().Track(where), kBarSlotItems, itemHit);
     }
     if (ReadTick() >= missionOfferTime) {
         *itemHit = kBarOfferItem;
         missionOfferTime = ReadTick() + Rand(30) + 30;
         return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        BarDialogUpdate();
-        return 0;
     }
     return 0;
 }
@@ -436,14 +398,8 @@ Boolean NewsDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             return 1;
         }
     }
-    if ((int)ev->what == kUpdateEvt) {
-        NewsDialogUpdate();
-        return 0;
-    }
     return 0;
 }
-
-#define kRaceButtonCount 6
 
 // FUNCTION: EVNOVA 0x0047d600
 // MAC: _RandomizeNewsDialog i386 0x00048238 ppc 0x00050bd0
@@ -691,7 +647,6 @@ void DoRaceDialog(void)
 Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
 
     if ((int)ev->what == kKeyDown &&
         (IsReturnChar(EventCharOf(ev)) ||
@@ -702,17 +657,7 @@ Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         RaceDialogUpdate();
-        button = RaceButtons().Track(where);
-        if (button >= 0 && button < kRaceButtonCount) {
-            *itemHit = button + 1;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        RaceDialogUpdate();
-        return 0;
+        return ButtonItemHit(RaceButtons().Track(where), itemHit);
     }
     return 0;
 }

@@ -145,9 +145,6 @@ Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             BusyIdle();
         return 1;
     }
-    if ((int)ev->what != kUpdateEvt)
-        return 0;
-    KeyDialogUpdate();
     return 0;
 }
 

@@ -25,10 +25,8 @@
 #include "game.h"
 #include "endianswap.h"
 #include "dialog.h"
+#include "gamedialog.h"
 #include "buttons.h"
-
-/* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
-#define kCommButtons  3
 
 DialogPtr commDialog;
 DialogPtr haggleDialog;
@@ -474,7 +472,6 @@ short DoShipCommPayment(void)
 Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
     int what;
     EventKey key;
     short govt;
@@ -510,16 +507,7 @@ Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if (what == kMouseDown) {
         where = ev->where;
         CommDialogUpdate();
-        button = CommButtons().Track(where);
-        if (button >= 0 && button <= kCommButtons) {
-            *itemHit = button + 1;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if (what == kUpdateEvt) {
-        CommDialogUpdate();
+        return ButtonItemHit(CommButtons().Track(where), itemHit);
     }
     return 0;
 }
@@ -605,8 +593,6 @@ void CommDialogUpdate(void)
  * it is, the release being refused outright for stellars carrying the second
  * flags2 bit.
  */
-
-#define kStellarCommButtons 2
 
 /* SpriteWorld's FrameRec, head only: the cel's rect sits at +0x22 */
 
@@ -901,7 +887,6 @@ void DoPlanetCommDialog(short stellar)
 Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
     int what;
 
     what = ev->what;
@@ -943,16 +928,7 @@ Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if (what == kMouseDown) {
         where = ev->where;
         PlanetCommDialogUpdate();
-        button = PlanetCommButtons().Track(where);
-        if (button >= 0 && button <= kStellarCommButtons) {
-            *itemHit = button + 1;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if (what == kUpdateEvt) {
-        PlanetCommDialogUpdate();
+        return ButtonItemHit(PlanetCommButtons().Track(where), itemHit);
     }
     return 0;
 }
@@ -1325,32 +1301,36 @@ void LoadAdvice(void)
 #define kItemDone             1
 #define kItemHaggle           2
 
+namespace {
+
 // FUNCTION: EVNOVA 0x00482280
 // MAC: _DoHaggleDialog i386 0x00091e67 ppc 0x0009d9e4
-short DoHaggleDialog(Boolean raise, short chance)
-{
-    float scratch;
-    int32_t fscratch;
-    short itemHit;
-    int32_t conv;
-    short result;
-    Boolean canHaggle;
-    Boolean done;
+/* The haggle dialog: the price can be haggled once if the opening roll allowed it. */
+class HaggleDialog final : public GameDialog {
+public:
+    short Run(Boolean raise, short chance);
 
-    done = 0;
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    Boolean canHaggle = 0;  /* the one haggle is still allowed */
+    short result = 0;       /* 1 accepted, 2 the haggle was refused */
+};
+
+short HaggleDialog::Run(Boolean raise, short chance)
+{
     if (raise != 0)
         haggleMode = kHaggleRaise;
     else
         haggleMode = kHaggleLower;
-    result = 0;
     if (Rand(kHaggleChanceMax) <= chance)
         canHaggle = 1;
     else
         canHaggle = 0;
 
-    Dialog dialog;
     Picture backdrop(haggleBackgroundPic);
-    dialog.Open(kHaggleDlogID, HaggleDialogUpdate, HaggleFilter, &haggleDialog, DialogClose::NoFlash);
+    dialog.Open(kHaggleDlogID, HaggleDialogUpdate, Filter, &haggleDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return 0;
 
@@ -1358,48 +1338,50 @@ short DoHaggleDialog(Boolean raise, short chance)
     SetDialogGWorld(haggleDialog);
     HaggleDialogUpdate();
     FlushEvents(everyEvent - diskMask, 0);
-
-    do {
-        if (gQuit != 0)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == kItemDone) {
-            HaggleButtons().Draw(-1);
-            if (result != 2)
-                result = 1;
-            done = 1;
-        }
-        if (itemHit == kItemHaggle) {
-            if (canHaggle != 0) {
-                if (haggleMode == kHaggleRaise)
-                    haggleVal *= 1.33;
-                if (haggleMode == kHaggleLower)
-                    haggleVal *= 0.75;
-                conv = haggleVal;
-                conv *= 0.01;
-                haggleVal = conv * kHaggleRound;
-                HaggleDialogUpdate();
-                canHaggle = 0;
-                result = 1;
-            } else {
-                result = 2;
-                done = 1;
-            }
-            HaggleButtons().Draw(-1);
-        }
-    } while (done == 0);
+    Loop();
 
     backdrop.Release();
     dialog.Close();
     return result;
 }
 
+void HaggleDialog::Hit(short item)
+{
+    int32_t conv;
+
+    if (item == kItemDone) {
+        HaggleButtons().Draw(-1);
+        if (result != 2)
+            result = 1;
+        done = 1;
+    }
+    if (item == kItemHaggle) {
+        if (canHaggle != 0) {
+            if (haggleMode == kHaggleRaise)
+                haggleVal *= 1.33;
+            if (haggleMode == kHaggleLower)
+                haggleVal *= 0.75;
+            conv = haggleVal;
+            conv *= 0.01;
+            haggleVal = conv * kHaggleRound;
+            HaggleDialogUpdate();
+            canHaggle = 0;
+            result = 1;
+        } else {
+            result = 2;
+            done = 1;
+        }
+        HaggleButtons().Draw(-1);
+    }
+}
+
+constexpr KeyItem kHaggleKeys[] = { { 'a', 1 }, { 'l', 2 } };
+
 // FUNCTION: EVNOVA 0x004825d0
 // MAC: _HaggleFilter i386 0x00091d9d ppc 0x0009d8e8
-Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
+Boolean HaggleDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
     EventKey key;
 
     if ((int)ev->what == kKeyDown) {
@@ -1408,34 +1390,22 @@ Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             *itemHit = 1;
             return 1;
         }
-        if (key == 'a') {
-            *itemHit = 1;
+        if (KeyItemHit(key, kHaggleKeys, itemHit))
             return 1;
-        }
-        if (key == 'l') {
-            *itemHit = 2;
-            return 1;
-        }
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         HaggleDialogUpdate();
-        button = HaggleButtons().Track(where);
-        if (button == 0) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = 2;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        HaggleDialogUpdate();
+        return ButtonItemHit(HaggleButtons().Track(where), itemHit);
     }
     return 0;
+}
+
+} // namespace
+
+short DoHaggleDialog(Boolean raise, short chance)
+{
+    return HaggleDialog().Run(raise, chance);
 }
 
 // FUNCTION: EVNOVA 0x004826a0
@@ -1533,34 +1503,37 @@ void LoadStellarResponse(short which)
 #define kPlunderDlogID 0x3f3
 #define kPlunderPictID 0x2143
 
+namespace {
+
 // FUNCTION: EVNOVA 0x00482940
 // MAC: _DoPlunderDialog i386 0x0009302b ppc 0x0009ef7c
-void DoPlunderDialog(void)
+/* Plundering a disabled ship. Each take raises the risk, and the hit after a take can blow the ship up. */
+class PlunderDialog final : public GameDialog {
+public:
+    void Run();
+
+private:
+    void Hit(short item) override;
+    static Boolean Filter(DialogPtr unused, EventRecord *ev, short *itemHit);
+
+    short risk;             /* percent chance the hit after a take blows the ship up */
+    Boolean risky = 0;      /* the last hit took something */
+};
+
+void PlunderDialog::Run()
 {
 #define n i
 #define idx i
-#define space qty
     short pers;
     char c;
     short avail;
     short count;
-    short itemHit;
     short j;
     short i;
     short qty;
-    short found;
-    short govt;
-    short type;
-    Boolean ok;
-    Boolean ok2;
-    short risk;
-    Boolean risky;
-    Boolean done;
     unsigned char text[256];
     unsigned char tmp[256];
 
-    risky = 0;
-    done = 0;
     risk = Rand(26) + 15;
     SetPlunderValues();
 
@@ -1623,292 +1596,15 @@ void DoPlunderDialog(void)
     }
 
     ShowTheCursor();
-    Dialog dialog;
     Picture backdrop(plunderBackgroundPic);
-    dialog.Open(kPlunderDlogID, PlunderDialogUpdate, PlunderFilter, &plunderDialog, DialogClose::NoFlash);
+    dialog.Open(kPlunderDlogID, PlunderDialogUpdate, Filter, &plunderDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
     backdrop.Load(kPlunderPictID);
     SetDialogGWorld(plunderDialog);
     PlunderDialogUpdate();
     FlushEvents(everyEvent - diskMask, 0);
-    do {
-        if (gQuit)
-            done = 1;
-        itemHit = dialog.Modal();
-        if (itemHit == 1) {
-            risk = -1;
-            risky = 0;
-            PlunderDialogUpdate();
-            PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-            done = 1;
-        }
-        if (risky != 0 && Rand(100) <= risk) {
-            shipData[shipData->targetShip].shield = 0;
-            shipData[shipData->targetShip].armor = 0;
-            shipData[shipData->targetShip].deathTimer = 0;
-            PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-            GetIndString(text, kGameStrList, 0x71);
-            DisplayComm((PStrChar *)text, kCommFrames);
-            SetDialogGWorld(plunderDialog);
-            break;
-        }
-        risky = 0;
-        if (itemHit == 2) {
-            PlunderDialogUpdate();
-            if (salvageType != -1) {
-                if (salvageQty > TotalFleetHolds() - TotalCargo(shipData))
-                    salvageQty = TotalFleetHolds() - TotalCargo(shipData);
-                if (salvageQty <= 0) {
-                    PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                    GetIndString(text, kGameStrList, 0x72);
-                    DisplayComm((PStrChar *)text, kCommFrames);
-                } else {
-                    strcpy((char *)text, "");
-                    StrcatIndCString((char *)text, kGameStrList, 0x73);
-                    strcat((char *)text, " ");
-                    NumToString(salvageQty, tmp);
-                    PtoCstr(tmp);
-                    strcat((char *)text, (char *)tmp);
-                    if (salvageQty == 1)
-                        pstrcpy(tmp, tonString);
-                    else
-                        pstrcpy(tmp, tonsString);
-                    PtoCstr(tmp);
-                    strcat((char *)text, (char *)tmp);
-                    StrcatIndCString((char *)text, kGameStrList, 0x187);
-                    strcat((char *)text, " ");
-                    pstrcpy(tmp, lcCargoName[salvageType]);
-                    PtoCstr(tmp);
-                    strcat((char *)text, (char *)tmp);
-                    strcat((char *)text, " ");
-                    StrcatIndCString((char *)text, kGameStrList, 0x6c);
-                    CtoPstr((char *)text);
-                    PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                    DisplayComm((PStrChar *)text, kCommFrames);
-                    shipData->cargo[salvageType] += salvageQty;
-                    statusRedraw[kRedrawCargo] = 1;
-                    salvageQty = 0;
-                    salvageType = -1;
-                    SetDialogGWorld(plunderDialog);
-                    RedrawDialog(plunderDialog);
-                }
-                salvageType = -1;
-                risk *= 2.0;
-                risky = 1;
-            } else {
-                PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-            }
-        }
-        if (itemHit == 3) {
-            SetDialogGWorld(plunderDialog);
-            PlunderDialogUpdate();
-            if (salvageCredits > 0) {
-                PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                strcpy((char *)text, "");
-                StrcatIndCString((char *)text, kGameStrList, 0x74);
-                strcat((char *)text, " ");
-                strcat((char *)text, creditsCString);
-                strcat((char *)text, " ");
-                StrcatIndCString((char *)text, kGameStrList, 0x6c);
-                CtoPstr((char *)text);
-                DisplayComm((PStrChar *)text, kCommFrames);
-                shipData->credits += salvageCredits;
-                risk *= 1.25;
-                risky = 1;
-                statusRedraw[kRedrawCargo] = 1;
-                DrawStatus();
-                salvageCredits = 0;
-                SetDialogGWorld(plunderDialog);
-                RedrawDialog(plunderDialog);
-            } else {
-                PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-            }
-        }
-        if (itemHit == 4) {
-            PlunderDialogUpdate();
-            ShipStatsToSystemInfo();
-            found = -1;
-            if (salvageAmmoType != (SalvageAmmo)-1) {
-                for (i = 0; i < kMaxOutfits; i++) {
-                    if (outfitSystem[i].modType[0] == kOutfModAmmo
-                        && salvageAmmoType == (SalvageAmmo)outfitSystem[i].modVal[0]) {
-                        found = i;
-                        break;
-                    }
-                }
-            }
-            if (found != -1) {
-                qty = 0;
-                for (;;) {
-                    if (!(ShipFreeMass() >= outfitSystem[found].mass
-                          && qty < salvageAmmoQty
-                          && HasMaxOfItem(found, 0, 0) == 0))
-                        break;
-                    shipData->weap[(short)salvageAmmoType].ammo++;
-                    qty++;
-                    ShipStatsToSystemInfo();
-                }
-                if (qty > 0) {
-                    strcpy((char *)text, "");
-                    StrcatIndCString((char *)text, kGameStrList, 0x73);
-                    strcat((char *)text, " ");
-                    StrcatOrdinalNumber(qty, (char *)text, 0);
-                    strcat((char *)text, " ");
-                    if (qty > 1)
-                        pstrcpy(tmp, lcPluralOutfitName[found]);
-                    else
-                        pstrcpy(tmp, lcOutfitName[found]);
-                    PtoCstr(tmp);
-                    strcat((char *)text, (char *)tmp);
-                    strcat((char *)text, " ");
-                    StrcatIndCString((char *)text, kGameStrList, 0x6c);
-                    CtoPstr((char *)text);
-                    PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                    DisplayComm((PStrChar *)text, kCommFrames);
-                } else {
-                    PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                    GetIndString(text, kGameStrList, 0x75);
-                    DisplayComm((PStrChar *)text, kCommFrames);
-                }
-                statusRedraw[kRedrawWeap] = 1;
-                risk *= 2.0;
-                risky = 1;
-                salvageAmmoQty = 0;
-                salvageAmmoType = -1;
-                SetDialogGWorld(plunderDialog);
-                RedrawDialog(plunderDialog);
-            } else {
-                PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-            }
-        }
-        if (itemHit == 6) {
-            PlunderDialogUpdate();
-            if (salvageFuelQty > 0) {
-                PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                space = (ShipFuelCapacity(shipData) - shipData->fuel);
-                if (space > salvageFuelQty)
-                    space = salvageFuelQty;
-                SWSetPortToWindow(gSpriteWorld);
-                if (space > 0) {
-                    shipData->fuel = shipData->fuel + space;
-                    if (shipData->fuel >= ShipFuelCapacity(shipData))
-                        DisplayComm((PStrChar *)fuelString[1], kCommFrames);
-                    else
-                        DisplayComm((PStrChar *)fuelString[2], kCommFrames);
-                } else {
-                    DisplayComm((PStrChar *)fuelString[3], kCommFrames);
-                }
-                statusRedraw[kRedrawFuel] = 1;
-                DrawStatus();
-                risk *= 1.5;
-                risky = 1;
-                salvageFuelQty = 0;
-                SetDialogGWorld(plunderDialog);
-                RedrawDialog(plunderDialog);
-            } else {
-                PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-            }
-        }
-        if (itemHit == 7) {
-            PlunderDialogUpdate();
-            govt = shipData[shipData->targetShip].govt;
-            if (govt != -1 && (govtData[govt].flags & kGovtAlwaysDisabled) != 0)
-                captureOdds = -1;
-            if ((Rand(100) <= captureOdds || cheatsActive != 0)
-                && captureOdds > 0) {
-                if (Rand(10) == 0) {
-                    done = 1;
-                    shipData[shipData->targetShip].shield = 0;
-                    shipData[shipData->targetShip].armor = 0;
-                    shipData[shipData->targetShip].deathTimer = 0;
-                    GetIndString(text, kGameStrList, 0x71);
-                    DisplayComm((PStrChar *)text, kCommFrames);
-                    SetDialogGWorld(plunderDialog);
-                } else {
-                    PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-                    if (CanHireEscorts() != 0) {
-                        if (shipClass[shipData->type].crew > 0)
-                            ok = DoCapturedShipAssignmentDialog();
-                        else
-                            ok = 0;
-                        if (ok != 0) {
-                            done = 1;
-                            GetIndString(text, kGameStrList, 0x77);
-                            pstrcpy(tmp, shipClass[shipData[shipData->targetShip].type].name);
-                            tmp[0]++;
-                            tmp[tmp[0]++] = ' ';
-                            tmp[tmp[0]++] = Rand(9) + '1';
-                            tmp[tmp[0]++] = Rand(9) + '1';
-                            tmp[tmp[0]++] = Rand(9) + '1';
-                            tmp[tmp[0]] = 0;
-                            ok2 = EVTextInputDialog(text, tmp, 0x40);
-                            SetDialogGWorld(plunderDialog);
-                            if (ok2 != 0) {
-                                pstrcpy(shipName, textInputString);
-                                SetDialogGWorld(plunderDialog);
-                                DoShipCapture(&shipData[shipData->targetShip], 0);
-                                SetDialogGWorld(plunderDialog);
-                                LoadIntfResource();
-                            } else {
-                                GetIndString(text, kGameStrList, 0x7a);
-                                DisplayComm((PStrChar *)text, kCommFrames);
-                                SetDialogGWorld(plunderDialog);
-                            }
-                        } else {
-                            done = 1;
-                            type = shipData[shipData->targetShip].type;
-                            crashlog_mission_bit_set("capturing",
-                                                     (char *)shipClass[type].name, 1,
-                                                     type + kFirstResourceID, shipClass[type].onCapture);
-                            EvalMissionBitSetString(shipClass[shipData[shipData->targetShip].type].onCapture);
-                            shipData[shipData->targetShip].aiType = kShipTypeEscort;
-                            shipData[shipData->targetShip].parentShip = 0;
-                            shipData[shipData->targetShip].hired = 0;
-                            shipData[shipData->targetShip].armor =
-                                ShipArmorCapacity(&shipData[shipData->targetShip]) * 0.5;
-                            shipData[shipData->targetShip].govt = -1;
-                            shipData[shipData->targetShip].persType = -1;
-                            shipData[shipData->targetShip].targetShip = -1;
-                            shipData[shipData->targetShip].boarded = 1;
-                            shipData[shipData->targetShip].cloakDir = 0;
-                            shipData[shipData->targetShip].cloak = 0;
-                            shipData[shipData->targetShip].defenseStellar = -1;
-                            shipData[shipData->targetShip].grudge = 0;
-                            shipData[shipData->targetShip].targetShip = -1;
-                            shipData[shipData->targetShip].sellOnLanding = 0;
-                            shipData[shipData->targetShip].upgradeOnLanding = 0;
-                            shipData[shipData->targetShip].fuelRegenState = -1;
-                            AISetup(&shipData[shipData->targetShip]);
-                            AIShipCapturedByPlayer(&shipData[shipData->targetShip]);
-                            for (i = 0; i < 4; i++)
-                                shipData[shipData->targetShip].jamming[i] = -1;
-                            GetIndString(text, kGameStrList, 0x7b);
-                            DisplayComm((PStrChar *)text, kCommFrames);
-                            SetDialogGWorld(plunderDialog);
-                            statusRedraw[kRedrawCargo] = 1;
-                        }
-                    } else {
-                        PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-                        GetIndString(text, kGameStrList, 0x7c);
-                        DisplayComm((PStrChar *)text, kCommFrames);
-                        SetDialogGWorld(plunderDialog);
-                    }
-                }
-            } else {
-                done = 1;
-                PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-                GetIndString(text, kGameStrList, 0x7d);
-                DisplayComm((PStrChar *)text, kCommFrames);
-                SetDialogGWorld(plunderDialog);
-            }
-        }
-        if (done == 0) {
-            PlunderDialogUpdate();
-            HandleComm();
-            SetDialogGWorld(plunderDialog);
-        }
-    } while (done == 0);
+    Loop();
     backdrop.Release();
     SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
@@ -1916,7 +1612,327 @@ void DoPlunderDialog(void)
     ResetPlayerPrecalcedValues();
 #undef n
 #undef idx
+}
+
+void PlunderDialog::Hit(short item)
+{
+#define space qty
+    short i;
+    short qty;
+    short found;
+    short govt;
+    short type;
+    CaptureUse use;
+    Boolean ok2;
+    unsigned char text[256];
+    unsigned char tmp[256];
+
+    if (item == 1) {
+        risk = -1;
+        risky = 0;
+        PlunderDialogUpdate();
+        PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+        done = 1;
+    }
+    if (risky != 0 && Rand(100) <= risk) {
+        shipData[shipData->targetShip].shield = 0;
+        shipData[shipData->targetShip].armor = 0;
+        shipData[shipData->targetShip].deathTimer = 0;
+        PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+        GetIndString(text, kGameStrList, 0x71);
+        DisplayComm((PStrChar *)text, kCommFrames);
+        SetDialogGWorld(plunderDialog);
+        done = 1;
+        return;
+    }
+    risky = 0;
+    if (item == 2) {
+        PlunderDialogUpdate();
+        if (salvageType != -1) {
+            if (salvageQty > TotalFleetHolds() - TotalCargo(shipData))
+                salvageQty = TotalFleetHolds() - TotalCargo(shipData);
+            if (salvageQty <= 0) {
+                PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+                GetIndString(text, kGameStrList, 0x72);
+                DisplayComm((PStrChar *)text, kCommFrames);
+            } else {
+                strcpy((char *)text, "");
+                StrcatIndCString((char *)text, kGameStrList, 0x73);
+                strcat((char *)text, " ");
+                NumToString(salvageQty, tmp);
+                PtoCstr(tmp);
+                strcat((char *)text, (char *)tmp);
+                if (salvageQty == 1)
+                    pstrcpy(tmp, tonString);
+                else
+                    pstrcpy(tmp, tonsString);
+                PtoCstr(tmp);
+                strcat((char *)text, (char *)tmp);
+                StrcatIndCString((char *)text, kGameStrList, 0x187);
+                strcat((char *)text, " ");
+                pstrcpy(tmp, lcCargoName[salvageType]);
+                PtoCstr(tmp);
+                strcat((char *)text, (char *)tmp);
+                strcat((char *)text, " ");
+                StrcatIndCString((char *)text, kGameStrList, 0x6c);
+                CtoPstr((char *)text);
+                PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+                DisplayComm((PStrChar *)text, kCommFrames);
+                shipData->cargo[salvageType] += salvageQty;
+                statusRedraw[kRedrawCargo] = 1;
+                salvageQty = 0;
+                salvageType = -1;
+                SetDialogGWorld(plunderDialog);
+                RedrawDialog(plunderDialog);
+            }
+            salvageType = -1;
+            risk *= 2.0;
+            risky = 1;
+        } else {
+            PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+        }
+    }
+    if (item == 3) {
+        SetDialogGWorld(plunderDialog);
+        PlunderDialogUpdate();
+        if (salvageCredits > 0) {
+            PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+            strcpy((char *)text, "");
+            StrcatIndCString((char *)text, kGameStrList, 0x74);
+            strcat((char *)text, " ");
+            strcat((char *)text, creditsCString);
+            strcat((char *)text, " ");
+            StrcatIndCString((char *)text, kGameStrList, 0x6c);
+            CtoPstr((char *)text);
+            DisplayComm((PStrChar *)text, kCommFrames);
+            shipData->credits += salvageCredits;
+            risk *= 1.25;
+            risky = 1;
+            statusRedraw[kRedrawCargo] = 1;
+            DrawStatus();
+            salvageCredits = 0;
+            SetDialogGWorld(plunderDialog);
+            RedrawDialog(plunderDialog);
+        } else {
+            PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+        }
+    }
+    if (item == 4) {
+        PlunderDialogUpdate();
+        ShipStatsToSystemInfo();
+        found = -1;
+        if (salvageAmmoType != (SalvageAmmo)-1) {
+            for (i = 0; i < kMaxOutfits; i++) {
+                if (outfitSystem[i].modType[0] == kOutfModAmmo
+                    && salvageAmmoType == (SalvageAmmo)outfitSystem[i].modVal[0]) {
+                    found = i;
+                    break;
+                }
+            }
+        }
+        if (found != -1) {
+            qty = 0;
+            for (;;) {
+                if (!(ShipFreeMass() >= outfitSystem[found].mass
+                      && qty < salvageAmmoQty
+                      && HasMaxOfItem(found, 0, 0) == 0))
+                    break;
+                shipData->weap[(short)salvageAmmoType].ammo++;
+                qty++;
+                ShipStatsToSystemInfo();
+            }
+            if (qty > 0) {
+                strcpy((char *)text, "");
+                StrcatIndCString((char *)text, kGameStrList, 0x73);
+                strcat((char *)text, " ");
+                StrcatOrdinalNumber(qty, (char *)text, 0);
+                strcat((char *)text, " ");
+                if (qty > 1)
+                    pstrcpy(tmp, lcPluralOutfitName[found]);
+                else
+                    pstrcpy(tmp, lcOutfitName[found]);
+                PtoCstr(tmp);
+                strcat((char *)text, (char *)tmp);
+                strcat((char *)text, " ");
+                StrcatIndCString((char *)text, kGameStrList, 0x6c);
+                CtoPstr((char *)text);
+                PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+                DisplayComm((PStrChar *)text, kCommFrames);
+            } else {
+                PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+                GetIndString(text, kGameStrList, 0x75);
+                DisplayComm((PStrChar *)text, kCommFrames);
+            }
+            statusRedraw[kRedrawWeap] = 1;
+            risk *= 2.0;
+            risky = 1;
+            salvageAmmoQty = 0;
+            salvageAmmoType = -1;
+            SetDialogGWorld(plunderDialog);
+            RedrawDialog(plunderDialog);
+        } else {
+            PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+        }
+    }
+    if (item == 6) {
+        PlunderDialogUpdate();
+        if (salvageFuelQty > 0) {
+            PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+            space = (ShipFuelCapacity(shipData) - shipData->fuel);
+            if (space > salvageFuelQty)
+                space = salvageFuelQty;
+            SWSetPortToWindow(gSpriteWorld);
+            if (space > 0) {
+                shipData->fuel = shipData->fuel + space;
+                if (shipData->fuel >= ShipFuelCapacity(shipData))
+                    DisplayComm((PStrChar *)fuelString[1], kCommFrames);
+                else
+                    DisplayComm((PStrChar *)fuelString[2], kCommFrames);
+            } else {
+                DisplayComm((PStrChar *)fuelString[3], kCommFrames);
+            }
+            statusRedraw[kRedrawFuel] = 1;
+            DrawStatus();
+            risk *= 1.5;
+            risky = 1;
+            salvageFuelQty = 0;
+            SetDialogGWorld(plunderDialog);
+            RedrawDialog(plunderDialog);
+        } else {
+            PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+        }
+    }
+    if (item == 7) {
+        PlunderDialogUpdate();
+        govt = shipData[shipData->targetShip].govt;
+        if (govt != -1 && (govtData[govt].flags & kGovtAlwaysDisabled) != 0)
+            captureOdds = -1;
+        if ((Rand(100) <= captureOdds || cheatsActive != 0)
+            && captureOdds > 0) {
+            if (Rand(10) == 0) {
+                done = 1;
+                shipData[shipData->targetShip].shield = 0;
+                shipData[shipData->targetShip].armor = 0;
+                shipData[shipData->targetShip].deathTimer = 0;
+                GetIndString(text, kGameStrList, 0x71);
+                DisplayComm((PStrChar *)text, kCommFrames);
+                SetDialogGWorld(plunderDialog);
+            } else {
+                PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
+                if (CanHireEscorts() != 0) {
+                    if (shipClass[shipData->type].crew > 0)
+                        use = DoCapturedShipAssignmentDialog();
+                    else
+                        use = CaptureUse::Escort;
+                    if (use == CaptureUse::Flagship) {
+                        done = 1;
+                        GetIndString(text, kGameStrList, 0x77);
+                        pstrcpy(tmp, shipClass[shipData[shipData->targetShip].type].name);
+                        tmp[0]++;
+                        tmp[tmp[0]++] = ' ';
+                        tmp[tmp[0]++] = Rand(9) + '1';
+                        tmp[tmp[0]++] = Rand(9) + '1';
+                        tmp[tmp[0]++] = Rand(9) + '1';
+                        tmp[tmp[0]] = 0;
+                        ok2 = EVTextInputDialog(text, tmp, 0x40);
+                        SetDialogGWorld(plunderDialog);
+                        if (ok2 != 0) {
+                            pstrcpy(shipName, textInputString);
+                            SetDialogGWorld(plunderDialog);
+                            DoShipCapture(&shipData[shipData->targetShip], 0);
+                            SetDialogGWorld(plunderDialog);
+                            LoadIntfResource();
+                        } else {
+                            GetIndString(text, kGameStrList, 0x7a);
+                            DisplayComm((PStrChar *)text, kCommFrames);
+                            SetDialogGWorld(plunderDialog);
+                        }
+                    } else if (use == CaptureUse::Escort) {
+                        done = 1;
+                        type = shipData[shipData->targetShip].type;
+                        crashlog_mission_bit_set("capturing",
+                                                 (char *)shipClass[type].name, 1,
+                                                 type + kFirstResourceID, shipClass[type].onCapture);
+                        EvalMissionBitSetString(shipClass[shipData[shipData->targetShip].type].onCapture);
+                        shipData[shipData->targetShip].aiType = kShipTypeEscort;
+                        shipData[shipData->targetShip].parentShip = 0;
+                        shipData[shipData->targetShip].hired = 0;
+                        shipData[shipData->targetShip].armor =
+                            ShipArmorCapacity(&shipData[shipData->targetShip]) * 0.5;
+                        shipData[shipData->targetShip].govt = -1;
+                        shipData[shipData->targetShip].persType = -1;
+                        shipData[shipData->targetShip].targetShip = -1;
+                        shipData[shipData->targetShip].boarded = 1;
+                        shipData[shipData->targetShip].cloakDir = 0;
+                        shipData[shipData->targetShip].cloak = 0;
+                        shipData[shipData->targetShip].defenseStellar = -1;
+                        shipData[shipData->targetShip].grudge = 0;
+                        shipData[shipData->targetShip].targetShip = -1;
+                        shipData[shipData->targetShip].sellOnLanding = 0;
+                        shipData[shipData->targetShip].upgradeOnLanding = 0;
+                        shipData[shipData->targetShip].fuelRegenState = -1;
+                        AISetup(&shipData[shipData->targetShip]);
+                        AIShipCapturedByPlayer(&shipData[shipData->targetShip]);
+                        for (i = 0; i < 4; i++)
+                            shipData[shipData->targetShip].jamming[i] = -1;
+                        GetIndString(text, kGameStrList, 0x7b);
+                        DisplayComm((PStrChar *)text, kCommFrames);
+                        SetDialogGWorld(plunderDialog);
+                        statusRedraw[kRedrawCargo] = 1;
+                    } else {
+                        done = 1;
+                    }
+                } else {
+                    PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+                    GetIndString(text, kGameStrList, 0x7c);
+                    DisplayComm((PStrChar *)text, kCommFrames);
+                    SetDialogGWorld(plunderDialog);
+                }
+            }
+        } else {
+            done = 1;
+            PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
+            GetIndString(text, kGameStrList, 0x7d);
+            DisplayComm((PStrChar *)text, kCommFrames);
+            SetDialogGWorld(plunderDialog);
+        }
+    }
+    if (done == 0) {
+        PlunderDialogUpdate();
+        HandleComm();
+        SetDialogGWorld(plunderDialog);
+    }
 #undef space
+}
+
+constexpr short kPlunderSlotItems[] = { 1, 2, 3, 4, 6, 7 };
+
+// FUNCTION: EVNOVA 0x00484c20
+// MAC: _PlunderFilter i386 0x00092f20 ppc 0x0009ee40
+Boolean PlunderDialog::Filter(DialogPtr unused, EventRecord *ev, short *itemHit)
+{
+    Point where;
+
+    if ((int)ev->what == kKeyDown) {
+        if (IsReturnChar(EventCharOf(ev)) ||
+            EventCharOf(ev) == kEscapeChar) {
+            *itemHit = 1;
+            return 1;
+        }
+    }
+    if ((int)ev->what == kMouseDown) {
+        where = ev->where;
+        PlunderDialogUpdate();
+        return ButtonItemHit(PlunderButtons().Track(where), kPlunderSlotItems, itemHit);
+    }
+    return 0;
+}
+
+} // namespace
+
+void DoPlunderDialog(void)
+{
+    PlunderDialog().Run();
 }
 
 // FUNCTION: EVNOVA 0x00484230
@@ -2065,57 +2081,6 @@ void SetPlunderValues(void)
         captureOdds = 0;
     if (CanHireEscorts() == 0)
         captureOdds = 0;
-}
-
-// FUNCTION: EVNOVA 0x00484c20
-// MAC: _PlunderFilter i386 0x00092f20 ppc 0x0009ee40
-Boolean PlunderFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
-{
-    Point where;
-    short button;
-
-    if ((int)ev->what == kKeyDown) {
-        if (IsReturnChar(EventCharOf(ev)) ||
-            EventCharOf(ev) == kEscapeChar) {
-            *itemHit = 1;
-            return 1;
-        }
-    }
-    if ((int)ev->what == kMouseDown) {
-        where = ev->where;
-        PlunderDialogUpdate();
-        button = PlunderButtons().Track(where);
-        if (button == 0) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = 2;
-            return 1;
-        }
-        if (button == 2) {
-            *itemHit = 3;
-            return 1;
-        }
-        if (button == 3) {
-            *itemHit = 4;
-            return 1;
-        }
-        if (button == 4) {
-            *itemHit = 6;
-            return 1;
-        }
-        if (button == 5) {
-            *itemHit = 7;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        PlunderDialogUpdate();
-    }
-    return 0;
 }
 
 // FUNCTION: EVNOVA 0x00484d30
@@ -2344,12 +2309,13 @@ void DoEscortDialog(ShipObj *ship)
     SWSetPortToWindow(gSpriteWorld);
 }
 
+static constexpr KeyItem kEscortKeys[] = { { 'u', 3 }, { 's', 4 }, { 'r', 2 }, { 'c', 1 } };
+
 // FUNCTION: EVNOVA 0x00485840
 // MAC: _EscortFilter i386 0x000950e9 ppc 0x000a0d7c
 Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 {
     Point where;
-    short button;
     int what;
 
     what = ev->what;
@@ -2363,48 +2329,13 @@ Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             return 1;
         }
         key = tolower(c);
-        if (key == 'u') {
-            *itemHit = 3;
+        if (KeyItemHit(key, kEscortKeys, itemHit))
             return 1;
-        }
-        if (key == 's') {
-            *itemHit = 4;
-            return 1;
-        }
-        if (key == 'r') {
-            *itemHit = 2;
-            return 1;
-        }
-        if (key == 'c') {
-            *itemHit = 1;
-            return 1;
-        }
     }
     if (what == kMouseDown) {
         where = ev->where;
         EscortDialogUpdate();
-        button = EscortButtons().Track(where);
-        if (button == 0) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = 2;
-            return 1;
-        }
-        if (button == 2) {
-            *itemHit = 3;
-            return 1;
-        }
-        if (button == 3) {
-            *itemHit = 4;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if (what == kUpdateEvt) {
-        EscortDialogUpdate();
+        return ButtonItemHit(EscortButtons().Track(where), itemHit);
     }
     return 0;
 }

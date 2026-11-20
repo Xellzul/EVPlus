@@ -524,7 +524,6 @@ extern void IncrementDate(DateTimeRec *date, int32_t daysToAdd);
 extern char *PtoCstr(unsigned char *str);
 extern unsigned char *CtoPstr(char *str);
 
-#define kAutoKey       5
 #define kBlue555  0x001f
 #define kCharCodeMask  0xff
 #define kEscapeChar    0x1b
@@ -548,7 +547,6 @@ extern unsigned char *CtoPstr(char *str);
 #define kPageUpChar     0x92
 #define kRightArrowChar 0x15
 #define kUpArrowChar    0x0b
-#define kUpdateEvt     6
 
 
 #define shiftKey    0x0200

@@ -1028,6 +1028,10 @@ void RedrawNebulaeOffscreen(void)
 }
 
 
+static constexpr short kMapSlotItems[] = {
+    kItemAccept, kMapZoomOutItem, kMapZoomInItem, kMapClearRouteItem, kMapBordersItem, kMapSearchItem,
+};
+
 // FUNCTION: EVNOVA 0x004a74f0
 // MAC: _MapFilter i386 0x00013c63 ppc 0x000175a8
 Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
@@ -1058,9 +1062,9 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
         canZoomOut = 0;
     didUpdateMap = 0;
     what = event->what;
-    if (what == kKeyDown || what == kAutoKey) {
+    if (what == kKeyDown) {
         key = tolower(EventCharOf(event));
-        if (what == kKeyDown && (IsReturnChar(key) || key == kEscapeChar)) {
+        if (IsReturnChar(key) || key == kEscapeChar) {
             *itemHit = kItemAccept;
             return 1;
         } else if ((key == kTabChar || key == '\\') && onPlanet == 0) {
@@ -1139,13 +1143,13 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
                 else
                     selSystem = shipData[0].curSystem;
             }
-        } else if (what == kKeyDown && key == 'c') {
+        } else if (key == 'c') {
             *itemHit = kMapClearRouteItem;
             return 1;
-        } else if (what == kKeyDown && key == 'b') {
+        } else if (key == 'b') {
             *itemHit = kMapBordersItem;
             return 1;
-        } else if (what == kKeyDown && key == ' ') {
+        } else if (key == ' ') {
             PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
             mapScroll.h = systemData[shipData[0].curSystem].pos.h;
             mapScroll.v = systemData[shipData[0].curSystem].pos.v;
@@ -1186,10 +1190,10 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
             GetDialogItem(mapDialog, kMapPictItem,&itemType, &item, &box);
             if (settings.showMapBorders != 0)
                 RecalcAllMapInfluence(&box);
-        } else if (what == kKeyDown && (key == 'f' || key == 's')) {
+        } else if (key == 'f' || key == 's') {
             *itemHit = kMapSearchItem;
             return 1;
-        } else if (what == kKeyDown && KeyCheck(keyPrefs.map) != 0) {
+        } else if (KeyCheck(keyPrefs.map) != 0) {
             *itemHit = kItemAccept;
             return 1;
         }
@@ -1203,32 +1207,7 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
         }
         MapDialogUpdate();
         SetDialogGWorld(mapDialog);
-        sys = MapButtons().Track(pt);
-        if (sys == 0) {
-            *itemHit = kItemAccept;
-            return 1;
-        } else if (sys == 1) {
-            *itemHit = kMapZoomOutItem;
-            return 1;
-        } else if (sys == 2) {
-            *itemHit = kMapZoomInItem;
-            return 1;
-        } else if (sys == 3) {
-            *itemHit = kMapClearRouteItem;
-            return 1;
-        } else if (sys == 4) {
-            *itemHit = kMapBordersItem;
-            return 1;
-        } else if (sys == 5) {
-            *itemHit = kMapSearchItem;
-            return 1;
-        } else {
-            *itemHit = -1;
-            return 1;
-        }
-    }
-    if ((int)event->what == kUpdateEvt) {
-        MapDialogUpdate();
+        return ButtonItemHit(MapButtons().Track(pt), kMapSlotItems, itemHit);
     }
     if ((int)event->what == kNullEvent && settings.showMapBorders != 0
         && influenceCoordsCached != 0) {

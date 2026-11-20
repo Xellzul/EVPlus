@@ -282,6 +282,9 @@ void DoTradeDialog(void)
     ResetMissionOfferVenue();
 }
 
+static constexpr KeyItem kTradeKeys[] = { { 'b', kBuyItem }, { 's', kSellItem } };
+static constexpr short kTradeSlotItems[] = { 1, kBuyItem, kSellItem };
+
 // FUNCTION: EVNOVA 0x0048d190
 // MAC: _TradeFilter i386 0x0004e092 ppc 0x00056d08
 Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -295,15 +298,13 @@ Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     short last;
     short i;
     EventChar c;
-    short button;
 
     SetDialogGWorld(tradeDialog);
     if (absquatulateStr[0] != 0) {
-        ev->what = kMouseDown;
         *itemHit = 1;
         return 1;
     }
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         QuickKeyCheckHandler();
         if (QuickKeyCheck(keyPrefs.map)) {
             *itemHit = 2;
@@ -318,12 +319,9 @@ Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             return 1;
         }
         c = EventCharOf(ev);
-        if ((int)ev->what == kKeyDown) {
-            if (IsReturnChar(c) || c == kEscapeChar) {
-                ev->what = kMouseDown;
-                *itemHit = 1;
-                return 1;
-            }
+        if (IsReturnChar(c) || c == kEscapeChar) {
+            *itemHit = 1;
+            return 1;
         }
         if (c == kTabChar) {
             if ((*(unsigned short *)&ev->modifiers & shiftKey) != 0)
@@ -336,14 +334,8 @@ Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (c == kUpArrowChar)
             TradeDialogTabKey(1);
         c = tolower(c);
-        if (c == 'b') {
-            *itemHit = kBuyItem;
+        if (KeyItemHit(c, kTradeKeys, itemHit))
             return 1;
-        }
-        if (c == 's') {
-            *itemHit = kSellItem;
-            return 1;
-        }
     }
     if ((int)ev->what == kMouseDown) {
         SetDialogGWorld(tradeDialog);
@@ -382,30 +374,12 @@ Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
         TradeDialogUpdate();
-        button = TradeButtons().Track(where);
-        if (button == 0) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = kBuyItem;
-            return 1;
-        }
-        if (button == 2) {
-            *itemHit = kSellItem;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
+        return ButtonItemHit(TradeButtons().Track(where), kTradeSlotItems, itemHit);
     }
     if (ReadTick() >= missionOfferTime) {
         *itemHit = 15;
         missionOfferTime = ReadTick() + Rand(30) + 30;
         return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        TradeDialogUpdate();
-        return 0;
     }
     return 0;
 }

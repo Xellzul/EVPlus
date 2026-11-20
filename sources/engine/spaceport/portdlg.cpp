@@ -319,19 +319,22 @@ void DoPortDialog(SpobRecord *spob, short stellar)
     onPlanet = 0;
 }
 
-#define kActivateEvt  8
-
 #define kAmbientPeriod   480
 
 
 #define kNameBaseline 0x12
 #define kNameSize     0x12
 
+static constexpr KeyItem kPortKeys[] = {
+    { 'r', 4 }, { 'f', 4 }, { 'c', 7 }, { 't', 7 },
+    { 'o', 8 }, { 's', 9 }, { 'n', 10 }, { 'b', 11 },
+};
+static constexpr short kPortSlotItems[] = { 12, 4, 7, 8, 9, 10, 11 };
+
 /*
  * A click inside item 5 - the planet image - reports the image rather than
  * whatever button the tracker thought it was over.
  */
-
 // FUNCTION: EVNOVA 0x004928a0
 // MAC: _PortFilter i386 0x0004f041 ppc 0x00057c18
 Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -345,7 +348,6 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
 
     *itemHit = -1;
     if ((absquatulateStr)[0] != 0) {
-        ev->what = kMouseDown;
         *itemHit = 12;
         return 1;
     }
@@ -353,8 +355,6 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         canDoMissions = 0;
     else
         canDoMissions = 1;
-    if ((int)ev->what == kActivateEvt && ambientNoiseDelay != 0)
-        ambientNoiseDelay = ReadTick() + kAmbientPeriod + Rand(kAmbientPeriod);
     if (planetSnd != NULL) {
         if ((dockedPort->flags2 & kSpobLoopSound) != 0) {
             if (ST_IsSoundPlaying(planetSnd) == 0)
@@ -365,8 +365,6 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         }
     }
     *itemHit = -1;
-    if ((int)ev->what == kActivateEvt)
-        ambientNoiseDelay = ReadTick() + kAmbientPeriod + Rand(kAmbientPeriod);
     if ((int)ev->what == kKeyDown) {
         if (KeyCheck(keyPrefs.map) && mapDialog == NULL) {
             *itemHit = 3;
@@ -383,34 +381,11 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         c = EventCharOf(ev);
         c = tolower(c);
         if (IsReturnChar(c) || c == kEscapeChar) {
-            ev->what = kMouseDown;
             *itemHit = 12;
             return 1;
         }
-        if (c == 'r' || c == 'f') {
-            *itemHit = 4;
+        if (KeyItemHit(c, kPortKeys, itemHit))
             return 1;
-        }
-        if (c == 'c' || c == 't') {
-            *itemHit = 7;
-            return 1;
-        }
-        if (c == 'o') {
-            *itemHit = 8;
-            return 1;
-        }
-        if (c == 's') {
-            *itemHit = 9;
-            return 1;
-        }
-        if (c == 'n') {
-            *itemHit = 10;
-            return 1;
-        }
-        if (c == 'b') {
-            *itemHit = 11;
-            return 1;
-        }
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
@@ -421,40 +396,7 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             *itemHit = 5;
             return 1;
         }
-        if (button == 0) {
-            *itemHit = 12;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = 4;
-            return 1;
-        }
-        if (button == 2) {
-            *itemHit = 7;
-            return 1;
-        }
-        if (button == 3) {
-            *itemHit = 8;
-            return 1;
-        }
-        if (button == 4) {
-            *itemHit = 9;
-            return 1;
-        }
-        if (button == 5) {
-            *itemHit = 10;
-            return 1;
-        }
-        if (button == 6) {
-            *itemHit = 11;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        PortDialogUpdate();
-        return 1;
+        return ButtonItemHit(button, kPortSlotItems, itemHit);
     }
     return 0;
 }

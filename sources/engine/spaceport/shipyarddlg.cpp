@@ -394,6 +394,8 @@ void DoShipyardDialog(void)
     ResetMissionOfferVenue();
 }
 
+static constexpr short kShipyardSlotItems[] = { 7, 1, 10, 12, 13 };
+
 // FUNCTION: EVNOVA 0x00493fc0
 // MAC: _ShipyardFilter i386 0x00060449 ppc 0x00068154
 Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
@@ -406,40 +408,31 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     EventKey c;
     short i;
     short count;
-    int32_t slot;
     short old;
     short oldPos;
     short row;
-    short button;
-    int32_t cell;
 
     if ((absquatulateStr)[0] != 0) {
-        ev->what = kMouseDown;
         *itemHit = 7;
         return 1;
     }
     LoopingMovieIdle();
     *itemHit = -1;
     CalcShipCanBuy();
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         c = EventCharOf(ev);
-        if ((int)ev->what == kKeyDown) {
-            if (IsReturnChar(c) || c == kEscapeChar) {
-                ev->what = kMouseDown;
-                *itemHit = 7;
-                return 1;
-            }
-            c = tolower(c);
-            if ((c == 'b' && shipBuyMode == 0) || (c == 'h' && shipBuyMode == 1)) {
-                ev->what = kMouseDown;
-                *itemHit = 1;
-                return 1;
-            }
-            if (c == ' ') {
-                ev->what = kMouseDown;
-                *itemHit = 10;
-                return 1;
-            }
+        if (IsReturnChar(c) || c == kEscapeChar) {
+            *itemHit = 7;
+            return 1;
+        }
+        c = tolower(c);
+        if ((c == 'b' && shipBuyMode == 0) || (c == 'h' && shipBuyMode == 1)) {
+            *itemHit = 1;
+            return 1;
+        }
+        if (c == ' ') {
+            *itemHit = 10;
+            return 1;
         }
         if (c == kGridLeftKey || c == kGridRightKey || c == kGridUpKey ||
             c == kGridDownKey || c == kGridPageUpKey || c == kGridPageDownKey) {
@@ -522,7 +515,7 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
     }
-    if ((int)ev->what == kKeyDown || (int)ev->what == kAutoKey) {
+    if ((int)ev->what == kKeyDown) {
         QuickKeyCheckHandler();
         if (QuickKeyCheck(keyPrefs.map) && mapDialog == NULL) {
             *itemHit = 3;
@@ -595,29 +588,7 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
         ShipyardDialogUpdate();
-        button = ShipyardButtons().Track(where);
-        if (button == 0) {
-            *itemHit = 7;
-            return 1;
-        }
-        if (button == 1) {
-            *itemHit = 1;
-            return 1;
-        }
-        if (button == 2) {
-            *itemHit = 10;
-            return 1;
-        }
-        if (button == 3) {
-            *itemHit = 12;
-            return 1;
-        }
-        if (button == 4) {
-            *itemHit = 13;
-            return 1;
-        }
-        *itemHit = -1;
-        return 1;
+        return ButtonItemHit(ShipyardButtons().Track(where), kShipyardSlotItems, itemHit);
     }
     if (shipBuyMode == 0) {
         if (ReadTick() >= missionOfferTime) {
@@ -625,10 +596,6 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             missionOfferTime = ReadTick() + Rand(30) + 30;
             return 1;
         }
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        ShipyardDialogUpdate();
-        return 0;
     }
     return 0;
 }
@@ -968,15 +935,9 @@ Boolean ShipDescFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         c = EventCharOf(ev);
         c = tolower(c);
         if (IsReturnChar(c) || c == kEscapeChar || c == ' ') {
-            ev->what = kMouseDown;
             *itemHit = 1;
             return 1;
         }
-    }
-    if ((int)ev->what == kUpdateEvt) {
-        DrawDialog(shipDescDialog);
-        ShipDescDialogUpdate();
-        return 0;
     }
     if ((int)ev->what == kMouseDown) {
         where = ev->where;

@@ -39,7 +39,9 @@ extern Boolean shipyardEgg;
 EXTERN_CPP_END
 extern void DisposeButtons(void);
 extern void DoBarDialog(void);
-extern Boolean DoCapturedShipAssignmentDialog(void);
+/* what the player makes of a captured ship; None when the game quits during the choice */
+enum class CaptureUse : unsigned char { None, Flagship, Escort };
+extern CaptureUse DoCapturedShipAssignmentDialog(void);
 extern void DoCommDialog(short ship);
 extern void DoEscortDialog(ShipObj *ship);
 extern void DoKeyDialog(void);
@@ -257,7 +259,6 @@ EXTERN_CPP_END
 extern Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit);
 Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
@@ -266,7 +267,6 @@ Boolean KeyFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
-Boolean PlunderFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
 extern Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit);
