@@ -612,7 +612,6 @@ extern void FillRectWithColor(Rect *r, RGBColor *color);
 extern short FindFirstCoLocatedSystem(short sys);
 extern short FindPriorLoadedShipSprite(short value, short count, short field);
 extern void DisposeClonedSprite(SpritePtr *p);
-extern void ShowWindowNoFlash(void *arg);
 extern void DisposeDialogNoFlash(void *dlg);
 extern void FlushEvents(unsigned short whichMask, unsigned short stopMask);
 extern void FrameOval(Rect *r);
@@ -708,7 +707,6 @@ extern void TETextBox(const void *text, int32_t length, Rect *box, short just);
 extern int MeasureWrappedText(const char *text, int byteCount, int width);
 extern void NumToString(int32_t value, unsigned char *str);
 extern void QDGetPictureBounds(PicHandle pic, Rect *r);
-extern void HideWindow(CWindowPtr window);
 extern void *GetGWorldDevice(CGrafPtr port);
 extern void DisposeGWorld(CGrafPtr port);
 extern void DebugStr(const char *message);
@@ -817,7 +815,6 @@ extern void InvalDialogRect(DialogPtr dlg, Rect *box);
 extern void ModalDialog(void *filterProc, short *itemHitPtr);
 extern void DisposeDialog(DialogPtr dlg);
 /* the body is empty, but every caller passes an argument */
-extern void ShowMacWindow(void *arg);
 extern void GetDialogItem(DialogPtr dlg, int32_t item, short *type, Handle *handle,
                           Rect *box);
 void GetControlText(ControlPtr ctl, char *text);
@@ -874,9 +871,6 @@ extern short GetPixDepth(PixMapPtr pm);
 #define ForeColor(c) RGBForeColor(c)
 #define RGBBackColor(c) BackColor(c)
 #define GetWindowVisRgn(window) GetCWindowVisRgn(window)
-/* the port keeps no window order: SelectWindow and BringToFront keep only their argument */
-#define SelectWindow(window) ((void)(window))
-#define BringToFront(window) ((void)(window))
 
 #ifdef __cplusplus
 }

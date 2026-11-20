@@ -95,14 +95,10 @@ void DoBarDialog(void)
         return;
     Picture backdrop(barBackgroundPic);
     backdrop.Load(barPic != NULL ? kBarPictID : kPlainBarPictID);
-    CenterWindow(FrontWindow(barDialog), FrontWindow(portDialog));
-    ShowWindowNoFlash(FrontWindow(barDialog));
     FlushEvents(everyEvent - diskMask, 0);
     SetDialogGWorld(barDialog);
     RedrawDialog(barDialog);
     BarDialogUpdate();
-    SelectWindow(FrontWindow(barDialog));
-    BringToFront(FrontWindow(barDialog));
     do {
         if (gQuit)
             done = 1;
@@ -371,13 +367,9 @@ void DoNewsDialog(void)
     dialog.Open(kDlg1014ID, NewsDialogUpdate, NewsDialogFilter, &newsDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
-    CenterWindow(FrontWindow(newsDialog), FrontWindow(barDialog));
-    ShowWindowNoFlash(FrontWindow(newsDialog));
     SetDialogGWorld(newsDialog);
     FlushEvents(everyEvent - diskMask, 0);
     NewsDialogUpdate();
-    SelectWindow(FrontWindow(newsDialog));
-    BringToFront(FrontWindow(newsDialog));
     done = 0;
     do {
         if (gQuit != 0)
@@ -610,14 +602,10 @@ void DoRaceDialog(void)
             racers[i][j].Load(kRaceRunnerPict + 10 * j + i);
         }
     }
-    CenterWindow(FrontWindow(raceDialog), FrontWindow(portDialog));
-    ShowWindowNoFlash(FrontWindow(raceDialog));
     FlushEvents(everyEvent - diskMask, 0);
     SetDialogGWorld(raceDialog);
     RedrawDialog(raceDialog);
     RaceDialogUpdate();
-    SelectWindow(FrontWindow(raceDialog));
-    BringToFront(FrontWindow(raceDialog));
     done = 0;
     do {
         if (gQuit != 0)

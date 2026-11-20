@@ -288,8 +288,6 @@ void DoMissionDialog(void)
         return;
     Picture backdrop(missionBackgroundPic[0]);
     backdrop.Load(kMissionPictID);
-    CenterWindow(FrontWindow(missionDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(missionDialog));
     SetDialogGWorld(missionDialog);
     FlushEvents(everyEvent - diskMask, 0);
     reenterMissionDialog = 0;
@@ -305,8 +303,6 @@ void DoMissionDialog(void)
         MungeBriefing(1, dockedPortMissions[0][selMissionListItem]);
     }
     MissionDialogUpdate();
-    SelectWindow(FrontWindow(missionDialog));
-    BringToFront(FrontWindow(missionDialog));
     do {
         if (gQuit != 0)
             done = 1;
@@ -2573,7 +2569,6 @@ short OfferOneMission(short mission)
             backdrops[i].Load(kNarrowPictBase + i);
     }
 
-    CenterWindow(FrontWindow(missionDialog), gWind);
     MungeBriefing(1, mission);
     SetDialogGWorld(missionDialog);
 
@@ -2710,14 +2705,11 @@ short OfferOneMission(short mission)
     savedUp = canScrollTextUp;
     savedDown = canScrollTextDown;
 
-    ShowWindowNoFlash(FrontWindow(missionDialog));
     SetDialogGWorld(missionDialog);
     FlushEvents(everyEvent - diskMask, 0);
     ForeColor(blackColor);
     RedrawDialog(missionDialog);
     SingleMissionDialogUpdate();
-    SelectWindow(FrontWindow(missionDialog));
-    BringToFront(FrontWindow(missionDialog));
 
     do {
         if (gQuit != 0)
@@ -3683,8 +3675,6 @@ void DoMissionInfoDialog(void)
         return;
     Picture backdrop(missionInfoBackgroundPic);
     backdrop.Load(kMissionInfoPictID);
-    CenterWindow(FrontWindow(missionInfoDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(missionInfoDialog));
     SetDialogGWorld(missionInfoDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(missionInfoDialog);
@@ -3696,8 +3686,6 @@ void DoMissionInfoDialog(void)
     showAbortMissionButton =
         currentMissions[activeMissions[selMissionInfoListItem]].canAbort;
     MissionInfoDialogUpdate();
-    SelectWindow(FrontWindow(missionInfoDialog));
-    BringToFront(FrontWindow(missionInfoDialog));
     do {
         if (gQuit != 0)
             done = 1;

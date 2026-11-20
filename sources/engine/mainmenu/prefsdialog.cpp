@@ -271,9 +271,6 @@ PrefsDialog::PrefsDialog()
 
     savedSprites = SpriteSettings::Now();
     dialog.Open(kWidth, kHeight, items.data(), items.size(), PrefsDialogUpdate, NULL, &prefsDialog);
-    if (gWind != NULL)
-        CenterWindow(FrontWindow(prefsDialog), gWind);
-    ShowMacWindow(FrontWindow(prefsDialog));
     SetDialogGWorld(prefsDialog);
     RedrawDialog(prefsDialog);
     FrameDefaultButton(prefsDialog, 1);

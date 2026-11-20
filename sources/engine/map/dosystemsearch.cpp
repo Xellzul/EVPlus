@@ -70,9 +70,6 @@ void DoSystemSearch(void)
         return;
 
     SetDialogDefaultItem(dlg, 1);
-    CenterWindow(FrontWindow(dlg), FrontWindow(mapDialog));
-    ShowMacWindow(FrontWindow(dlg));
-    SelectWindow(FrontWindow(dlg));
     SetDialogGWorld(dlg);
     FrameDefaultButton(dlg, 1);
 

@@ -147,15 +147,11 @@ void DoSystemMap(void)
         selSystem = shipData->curSystem;
     RedrawNebulaeOffscreen();
     backdrop.Load(kMapPictID);
-    CenterWindow(FrontWindow(mapDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(mapDialog));
     SWSetPortToWindow(gSpriteWorld);
     SetDialogGWorld(mapDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(mapDialog);
     MapDialogUpdate();
-    SelectWindow(FrontWindow(mapDialog));
-    BringToFront(FrontWindow(mapDialog));
     CreateMapTriggerRgn();
     GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
     if (settings.showMapBorders != 0)

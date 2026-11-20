@@ -33,9 +33,6 @@ void DoKeyDialog(void)
         return;
 
     KeyPrefsToSlotTable();
-    if (gWind != NULL)
-        CenterWindow(FrontWindow(keyDialog), gWind);
-    ShowMacWindow(FrontWindow(keyDialog));
     FrontWindow(keyDialog);
     SetDialogGWorld(keyDialog);
     RedrawDialog(keyDialog);

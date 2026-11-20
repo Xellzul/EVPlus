@@ -27,7 +27,6 @@ extern short commDialogMode;
 extern Boolean shipyardEgg;
 EXTERN_CPP_END
 extern void DisposeButtons(void);
-extern void CenterWindow(void *front, void *window);
 extern void DoBarDialog(void);
 extern Boolean DoCapturedShipAssignmentDialog(void);
 extern void DoCommDialog(short ship);

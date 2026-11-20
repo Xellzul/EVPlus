@@ -181,7 +181,6 @@ void SetupWind(void)
     crashlog_print(", ");
     crashlog_print_num(bottom);
     crashlog_print(")\n");
-    ShowWindowNoFlash(gWind);
     SetPortWindowPort(gWind);
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect(gWind));
@@ -278,7 +277,6 @@ void InitOffscreen(void)
         CreateGWorldContainer(&menuShownPort, GetMainDevice(), 0, &r);
     }
     if (loadPort.world == NULL) {
-        HideWindow((WindowRef)gWind);
         ShowTheMenuBar();
         ShowTheCursor();
         FadeScreenIn();
@@ -292,7 +290,6 @@ void InitOffscreen(void)
     if (statusOffPort.world != NULL)
         UI::ScaleUIPort(statusOffPort.world);
     if (statusOffPort.world == NULL) {
-        HideWindow((WindowRef)gWind);
         ShowTheMenuBar();
         ShowTheCursor();
         FadeScreenIn();
@@ -604,7 +601,6 @@ void Bye(void)
     DisposeDialogs();
 
     ByeLog("disposing window");
-    HideWindow((WindowRef)gWind);
     DisposeWindow(gWind);
     gWind = NULL;
 

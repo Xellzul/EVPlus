@@ -211,14 +211,10 @@ void DoTradeDialog(void)
         return;
     Picture backdrop(tradeBackgroundPic);
     backdrop.Load(kTradePictID);
-    CenterWindow(FrontWindow(tradeDialog), FrontWindow(portDialog));
     selTradeItem = 7;
     TradeDialogTabKey(0);
-    ShowWindowNoFlash(FrontWindow(tradeDialog));
     SetDialogGWorld(tradeDialog);
     TradeDialogUpdate();
-    SelectWindow(FrontWindow(tradeDialog));
-    BringToFront(FrontWindow(tradeDialog));
     OfferMissionFromPort(kTradeVenue);
     RedrawDialog(tradeDialog);
     do {
@@ -959,17 +955,13 @@ void DoOutfitDialog(void)
     Picture backdrop(outfitBackgroundPic);
     Picture preview(previewPic);
     backdrop.Load(kOutfitPictID);
-    CenterWindow(FrontWindow(outfitDialog), FrontWindow(portDialog));
     GetDialogItem(outfitDialog, kGridItem, &itemType, (Handle *)&item, &box);
     SetupListRects((Point *)&box);
     strncpy(dialogDescTextPtr, "", 3);
-    ShowWindowNoFlash(FrontWindow(outfitDialog));
     SetDialogGWorld(outfitDialog);
     FlushEvents(everyEvent - diskMask, 0);
     ForeColor(blackColor);
     OutfitDialogUpdate();
-    SelectWindow(FrontWindow(outfitDialog));
-    BringToFront(FrontWindow(outfitDialog));
     OfferMissionFromPort(kOutfitVenue);
     RedrawDialog(outfitDialog);
 
@@ -2116,22 +2108,18 @@ void DoPortDialog(SpobRecord *spob, short stellar)
     } else {
         planetSnd = NULL;
     }
-    CenterWindow(FrontWindow(portDialog), gWind);
     if (SpobUninhabited(dockedPort) != 0)
         canDoMissions = 0;
     else
         canDoMissions = 1;
     SetDialogGWorld(portDialog);
     BackColor(blackColor);
-    ShowWindowNoFlash(FrontWindow(portDialog));
     BackColor(whiteColor);
     SetDialogGWorld(portDialog);
     FlushEvents(everyEvent - diskMask, 0);
     ForeColor(blackColor);
     RedrawDialog(portDialog);
     PortDialogUpdate();
-    SelectWindow(FrontWindow(portDialog));
-    BringToFront(FrontWindow(portDialog));
     SWSetPortToWorkArea(gSpriteWorld);
     ForeColor(blackColor);
     PaintRect(&gSpriteWorld->workFrameP->frameRect);
@@ -2565,17 +2553,13 @@ void DoShipyardDialog(void)
     Picture backdrop(shipyardBackgroundPic);
     Picture preview(previewPic);
     backdrop.Load(kShipyardPictID);
-    CenterWindow(FrontWindow(shipyardDialog), FrontWindow(portDialog));
     GetDialogItem(shipyardDialog, kGridItem, &itemType, (Handle *)&item, &box);
     SetupListRects((Point *)&box);
     strncpy(dialogDescTextPtr, "", 3);
-    ShowWindowNoFlash(FrontWindow(shipyardDialog));
     SetDialogGWorld(shipyardDialog);
     FlushEvents(everyEvent - diskMask, 0);
     ForeColor(blackColor);
     ShipyardDialogUpdate();
-    SelectWindow(FrontWindow(shipyardDialog));
-    BringToFront(FrontWindow(shipyardDialog));
     if (shipBuyMode == 0)
         OfferMissionFromPort(5);
     RedrawDialog(shipyardDialog);
@@ -3333,15 +3317,11 @@ void DoShipyardDescription(short ship)
         return;
     Picture backdrop(shipDescBackgroundPic);
     backdrop.Load(descResourcePictId >= kFirstResourceID ? kDescPictID : kPlainDescPictID);
-    CenterWindow(FrontWindow(shipDescDialog), FrontWindow(portDialog));
-    ShowWindowNoFlash(FrontWindow(shipDescDialog));
     SetDialogGWorld(shipDescDialog);
     FlushEvents(everyEvent - diskMask, 0);
     ForeColor(blackColor);
     RedrawDialog(shipDescDialog);
     ShipDescDialogUpdate();
-    SelectWindow(FrontWindow(shipDescDialog));
-    BringToFront(FrontWindow(shipDescDialog));
     do {
         if (gQuit)
             done = 1;
@@ -3969,9 +3949,7 @@ void EVNoteAlert(const unsigned char *text)
         return;
     SetDialogGWorld(alertDialog);
     SetDialogDefaultItem(alertDialog, 1);
-    ShowMacWindow(FrontWindow(alertDialog));
     SetDialogGWorld(alertDialog);
-    SelectWindow(FrontWindow(alertDialog));
     SetDialogGWorld(alertDialog);
     DrawDialog(alertDialog);
     FrameDefaultButton(alertDialog, 1);
@@ -4004,8 +3982,6 @@ Boolean EVYesNoDialog(unsigned char *text)
     if (!dialog.IsOpen())
         return 0;
     SetDialogDefaultItem(alertDialog, 1);
-    ShowMacWindow(FrontWindow(alertDialog));
-    SelectWindow(FrontWindow(alertDialog));
     SetDialogGWorld(alertDialog);
     FrameDefaultButton(alertDialog, 1);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
@@ -4047,8 +4023,6 @@ Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short m
     if (!dialog.IsOpen())
         return 0;
     SetDialogDefaultItem(alertDialog, 1);
-    ShowMacWindow(FrontWindow(alertDialog));
-    SelectWindow(FrontWindow(alertDialog));
     SetDialogGWorld(alertDialog);
     FrameDefaultButton(alertDialog, 1);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
@@ -4242,12 +4216,8 @@ Boolean DoCapturedShipAssignmentDialog(void)
         return 0;
     Picture backdrop(captureBackgroundPic);
     backdrop.Load(kCapturePictID);
-    CenterWindow(FrontWindow(captureDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(captureDialog));
     SetDialogGWorld(captureDialog);
     CapturedAssignmentDialogUpdate();
-    SelectWindow(FrontWindow(captureDialog));
-    BringToFront(FrontWindow(captureDialog));
     FlushEvents(everyEvent - diskMask, 0);
     do {
         if (gQuit)
@@ -4482,8 +4452,6 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
         TECalText(textDialogTextHandle);
     }
     UpdateAllPortDialogs();
-    CenterWindow(FrontWindow(textDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(textDialog));
     SetDialogGWorld(textDialog);
     lastTextScrollTime = ReadTick();
     FlushEvents(everyEvent - diskMask, 0);
@@ -4497,8 +4465,6 @@ void ShowTextDialog(Boolean allowMap, Boolean redrawMission, Boolean showMovie)
     savedUp = canScrollTextUp;
     savedDown = canScrollTextDown;
     TextDialogUpdate();
-    SelectWindow(FrontWindow(textDialog));
-    BringToFront(FrontWindow(textDialog));
     ShowTheCursor();
 
     if (gPause) {
@@ -5126,14 +5092,10 @@ void DoPlayerInfoDialog(void)
         GetDialogItem(infoDialog, 6, &itemType, &item, &box6);
         SetDialogItem(infoDialog, 6, itemType, item, &r);
     }
-    CenterWindow(FrontWindow(infoDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(infoDialog));
     SetDialogGWorld(infoDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(infoDialog);
     PlayerInfoDialogUpdate();
-    SelectWindow(FrontWindow(infoDialog));
-    BringToFront(FrontWindow(infoDialog));
     do {
         if (gQuit != 0)
             done = 1;
@@ -6408,9 +6370,6 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
     if (!dialog.IsOpen())
         return 0;
 
-    CenterWindow(FrontWindow(qtyDialog), gWind);
-    ShowMacWindow(FrontWindow(qtyDialog));
-    SelectWindow(FrontWindow(qtyDialog));
     SetDialogGWorld(qtyDialog);
     FrameDefaultButton(qtyDialog, 1);
     SelectDialogItemText(qtyDialog, kQtyTextItem, 0, 0x7fff);

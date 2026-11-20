@@ -73,8 +73,6 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
         return 0;
 
     SetDialogDefaultItem(dlg, 1);
-    CenterWindow(FrontWindow(dlg), gWind);
-    ShowMacWindow(FrontWindow(dlg));
     FrontWindow(dlg);
     SetDialogGWorld(dlg);
     DrawDialog(dlg);

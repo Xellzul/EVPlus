@@ -363,17 +363,6 @@ void GetPort(CGrafPtr *port)
     *port = CurrentGrafPort;
 }
 
-/* ShowMacWindow (mac _ShowWindow; Win32 owns that name). */
-// FUNCTION: EVNOVA 0x004b8ab0
-void ShowMacWindow(void *arg)
-{
-}
-
-// FUNCTION: EVNOVA 0x004b8ac0
-void HideWindow(CWindowPtr window)
-{
-}
-
 // FUNCTION: EVNOVA 0x004b8ad0
 void DisposeWindow(CWindowPtr window)
 {

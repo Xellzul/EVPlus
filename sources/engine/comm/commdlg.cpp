@@ -238,14 +238,10 @@ void DoCommDialog(short shipIndex)
     FlushEvents(3, 0);
     FlushEvents(4, 0);
     FlushEvents(5, 0);
-    CenterWindow(FrontWindow(commDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(commDialog));
     SetDialogGWorld(commDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(commDialog);
     CommDialogUpdate();
-    SelectWindow(FrontWindow(commDialog));
-    BringToFront(FrontWindow(commDialog));
 
     do {
         if (gQuit)
@@ -716,14 +712,10 @@ void DoPlanetCommDialog(short stellar)
     FlushEvents(3, 0);
     FlushEvents(4, 0);
     FlushEvents(5, 0);
-    CenterWindow(FrontWindow(commDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(commDialog));
     SetDialogGWorld(commDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(commDialog);
     PlanetCommDialogUpdate();
-    SelectWindow(FrontWindow(commDialog));
-    BringToFront(FrontWindow(commDialog));
 
     do {
         if (gQuit)
@@ -1363,12 +1355,8 @@ short DoHaggleDialog(Boolean raise, short chance)
         return 0;
 
     backdrop.Load(kHagglePictID);
-    CenterWindow(FrontWindow(haggleDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(haggleDialog));
     SetDialogGWorld(haggleDialog);
     HaggleDialogUpdate();
-    SelectWindow(FrontWindow(haggleDialog));
-    BringToFront(FrontWindow(haggleDialog));
     FlushEvents(everyEvent - diskMask, 0);
 
     do {
@@ -1641,12 +1629,8 @@ void DoPlunderDialog(void)
     if (!dialog.IsOpen())
         return;
     backdrop.Load(kPlunderPictID);
-    CenterWindow(FrontWindow(plunderDialog), gWind);
-    ShowWindowNoFlash(FrontWindow(plunderDialog));
     SetDialogGWorld(plunderDialog);
     PlunderDialogUpdate();
-    SelectWindow(FrontWindow(plunderDialog));
-    BringToFront(FrontWindow(plunderDialog));
     FlushEvents(everyEvent - diskMask, 0);
     do {
         if (gQuit)
@@ -2280,7 +2264,6 @@ void DoEscortDialog(ShipObj *ship)
         return;
 
     backdrop.Load(kEscortPictID);
-    CenterWindow(FrontWindow(commDialog), gWind);
 
     canUpgradeEscort = 0;
     canSellEscort = 0;
@@ -2295,14 +2278,11 @@ void DoEscortDialog(ShipObj *ship)
     done = 0;
     commDialogMode = 2;
 
-    ShowWindowNoFlash(FrontWindow(commDialog));
     SetDialogGWorld(commDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(commDialog);
     EscortDialogUpdate();
 
-    SelectWindow(FrontWindow(commDialog));
-    BringToFront(FrontWindow(commDialog));
     FlushEvents(1, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
     FlushEvents(2, 0);
     FlushEvents(3, 0);

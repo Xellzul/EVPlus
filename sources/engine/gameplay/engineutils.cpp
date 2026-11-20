@@ -5530,18 +5530,6 @@ unsigned char PlayerBlessedByGovt(short govt, short which)
     return govtData[govt].blessesPlayer[which];
 }
 
-// FUNCTION: EVNOVA 0x0046e8b0
-// MAC: _ShowWindowNoFlash i386 0x00007f6a ppc 0x00009d80
-void ShowWindowNoFlash(void *arg)
-{
-    int saved;
-
-    saved = gDisableUpdatesMode;
-    gDisableUpdatesMode = 1;
-    ShowMacWindow(arg);
-    gDisableUpdatesMode = saved;
-}
-
 // FUNCTION: EVNOVA 0x0046e8e0
 // MAC: _DisposeDialogNoFlash i386 0x00007f91 ppc 0x00009db4
 void DisposeDialogNoFlash(void *dlg)
