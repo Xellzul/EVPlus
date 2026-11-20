@@ -27,6 +27,7 @@
 #include "prototypes.h"
 #include "endianswap.h"
 #include "dialog.h"
+#include "buttons.h"
 
 #define kDudeResName "d\x9f" "de"
 #define kSpobResName "sp\x9a" "b"
@@ -2084,7 +2085,7 @@ Boolean MissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         if (PtInRect(where.h, where.v, &box))
             LClick(where, ev->modifiers, missionList);
         MissionDialogUpdate();
-        button = TrackMissionButtons(where);
+        button = MissionButtons().Track(where);
         if (button == 0) {
             *itemHit = kItemAccept;
             return 1;
@@ -2185,7 +2186,7 @@ void MissionDialogUpdate(void)
     MoveTo(box.left, box.bottom);
     DrawString((unsigned char *)text);
     ForeColor(blackColor);
-    DrawMissionButtons(-1);
+    MissionButtons().Draw(-1);
     if (missionList != NULL)
         ListUpdate(NULL, missionList);
     CopyLoadPortToDialog(missionDialog);
@@ -3739,7 +3740,7 @@ void DoMissionInfoDialog(void)
         if (itemHit == 5) {
             if (selMissionInfoListItem == -1) {
                 PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-                DrawMissionInfoButtons(-1);
+                MissionInfoButtons().Draw(-1);
             } else {
                 if (currentMissions[activeMissions[selMissionInfoListItem]].canAbort != 0) {
                     if ((currentMissions[activeMissions[selMissionInfoListItem]].flags & kMissionAbortPenalty) != 0
@@ -3934,7 +3935,7 @@ Boolean MissionInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
         MissionInfoDialogUpdate();
-        button = TrackMissionInfoButtons(where);
+        button = MissionInfoButtons().Track(where);
         if (button == 0) {
             *itemHit = 1;
             return 1;
@@ -3996,7 +3997,7 @@ void MissionInfoDialogUpdate(void)
             PaintRect(&box);
         }
     }
-    DrawMissionInfoButtons(-1);
+    MissionInfoButtons().Draw(-1);
     if (missionInfoList != NULL)
         ListUpdate(NULL, missionInfoList);
     CopyLoadPortToDialog(missionInfoDialog);
@@ -4102,12 +4103,12 @@ Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                     BusyIdle();
                     ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle, 1, 1);
                     SetDialogGWorld(missionDialog);
-                    DrawSingleMissionButtons(2);
+                    SingleMissionButtons().Draw(2);
                     while (lastTextScrollTime == ReadTick() && StillDown())
                         BusyIdle();
                 }
                 SetDialogGWorld(missionDialog);
-                DrawSingleMissionButtons(-1);
+                SingleMissionButtons().Draw(-1);
                 *itemHit = -1;
                 return 1;
             }
@@ -4120,18 +4121,18 @@ Boolean SingleMissionFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                     BusyIdle();
                     ScrollDialogText(missionDialog, kItemBriefText, offerTextHandle, -1, 1);
                     SetDialogGWorld(missionDialog);
-                    DrawSingleMissionButtons(3);
+                    SingleMissionButtons().Draw(3);
                     while (lastTextScrollTime == ReadTick() && StillDown())
                         BusyIdle();
                 }
                 SetDialogGWorld(missionDialog);
-                DrawSingleMissionButtons(-1);
+                SingleMissionButtons().Draw(-1);
                 *itemHit = -1;
                 return 1;
             }
         }
         SingleMissionDialogUpdate();
-        button = TrackSingleMissionButtons(where);
+        button = SingleMissionButtons().Track(where);
         if (button == 0) {
             *itemHit = kItemAccept;
             return 1;
@@ -4166,7 +4167,7 @@ void SingleMissionDialogUpdate(void)
     PaintRect(GetDialogPortRect(missionDialog));
     DrawDialogBackground(missionBackgroundPic, *GetDialogPortRect(missionDialog),
                          descResourcePictId >= kFirstResourceID);
-    DrawSingleMissionButtons(-1);
+    SingleMissionButtons().Draw(-1);
     if (descResourcePictId >= kFirstResourceID) {
         GetDialogItem(missionDialog, 8, &itemType, (Handle *)&item, &r);
         inside = RectInRgn(&r, GetWindowVisRgn(FrontWindow(missionDialog)));

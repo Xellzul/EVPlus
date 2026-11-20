@@ -25,6 +25,7 @@
 #include "game.h"
 #include "endianswap.h"
 #include "dialog.h"
+#include "buttons.h"
 
 /* the mac engine invalidates a dialog item through the caller's own GetDialogItem locals */
 #define kCommButtons  3
@@ -251,7 +252,7 @@ void DoCommDialog(short shipIndex)
             done = 1;
         itemHit = dialog.Modal();
         if (itemHit == 1) {
-            DrawCommDialogButtons(-1);
+            CommButtons().Draw(-1);
             done = 1;
         }
         if (itemHit == 2) {
@@ -262,9 +263,9 @@ void DoCommDialog(short shipIndex)
                     releaseCommEscort = 1;
                     LoadResponse(0x26);
                     InvalDialogItem(commDialog, 12);
-                    DrawCommDialogButtons(-1);
+                    CommButtons().Draw(-1);
                 } else if (!cantTalk) {
-                    DrawCommDialogButtons(-1);
+                    CommButtons().Draw(-1);
                     if (ExtendedIsThreatToPlayer(commShip)) {
                         missionPending = 0;
                         if (commShip->specialMission != -1
@@ -409,7 +410,7 @@ void DoCommDialog(short shipIndex)
         }
         if (itemHit == 3) {
             PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-            DrawCommDialogButtons(-1);
+            CommButtons().Draw(-1);
             if (IsDisabled(commShip) || isMissionShip)
                 LoadResponse(1);
             else if (ExtendedIsThreatToPlayer(commShip))
@@ -513,7 +514,7 @@ Boolean CommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if (what == kMouseDown) {
         where = ev->where;
         CommDialogUpdate();
-        button = TrackCommDialogButtons(where);
+        button = CommButtons().Track(where);
         if (button >= 0 && button <= kCommButtons) {
             *itemHit = button + 1;
             return 1;
@@ -542,7 +543,7 @@ void CommDialogUpdate(void)
     PaintRect(GetDialogPortRect(commDialog));
     if (commBackgroundPic != NULL)
         DrawPicHandle(commBackgroundPic, GetDialogPortRect(commDialog));
-    DrawCommDialogButtons(-1);
+    CommButtons().Draw(-1);
     GetDialogItem(commDialog, 11, &itemType, &item, &box);
     if (commShipPic != NULL) {
         ForeColor(blackColor);
@@ -732,7 +733,7 @@ void DoPlanetCommDialog(short stellar)
             done = 1;
         if (itemHit == 2 || itemHit == 3) {
             SetDialogGWorld(commDialog);
-            DrawPlanetCommDialogButtons(-1);
+            PlanetCommButtons().Draw(-1);
             LoadResponse(1);
             PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
             if (itemHit == 2) {
@@ -950,7 +951,7 @@ Boolean PlanetCommFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if (what == kMouseDown) {
         where = ev->where;
         PlanetCommDialogUpdate();
-        button = TrackPlanetCommDialogButtons(where);
+        button = PlanetCommButtons().Track(where);
         if (button >= 0 && button <= kStellarCommButtons) {
             *itemHit = button + 1;
             return 1;
@@ -986,7 +987,7 @@ void PlanetCommDialogUpdate(void)
     PaintRect(GetDialogPortRect(commDialog));
     if (commBackgroundPic != NULL)
         DrawPicHandle(commBackgroundPic, GetDialogPortRect(commDialog));
-    DrawPlanetCommDialogButtons(-1);
+    PlanetCommButtons().Draw(-1);
     GetDialogItem(commDialog, 4, &itemType, &item, &box);
     if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
         pstrcpy(text, commResponseString);
@@ -1375,7 +1376,7 @@ short DoHaggleDialog(Boolean raise, short chance)
             done = 1;
         itemHit = dialog.Modal();
         if (itemHit == kItemDone) {
-            DrawHaggleButtons(-1);
+            HaggleButtons().Draw(-1);
             if (result != 2)
                 result = 1;
             done = 1;
@@ -1396,7 +1397,7 @@ short DoHaggleDialog(Boolean raise, short chance)
                 result = 2;
                 done = 1;
             }
-            DrawHaggleButtons(-1);
+            HaggleButtons().Draw(-1);
         }
     } while (done == 0);
 
@@ -1431,7 +1432,7 @@ Boolean HaggleFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         HaggleDialogUpdate();
-        button = TrackHaggleButtons(where);
+        button = HaggleButtons().Track(where);
         if (button == 0) {
             *itemHit = 1;
             return 1;
@@ -1487,7 +1488,7 @@ void HaggleDialogUpdate(void)
         DrawString(creditString);
     DrawString("\p.");
     ForeColor(blackColor);
-    DrawHaggleButtons(-1);
+    HaggleButtons().Draw(-1);
     CopyLoadPortToDialog(haggleDialog);
 }
 
@@ -2099,7 +2100,7 @@ Boolean PlunderFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         PlunderDialogUpdate();
-        button = TrackPlunderButtons(where);
+        button = PlunderButtons().Track(where);
         if (button == 0) {
             *itemHit = 1;
             return 1;
@@ -2242,7 +2243,7 @@ void PlunderDialogUpdate(void)
     DrawString(text);
     DrawString("\p%");
     ForeColor(blackColor);
-    DrawPlunderButtons(-1);
+    PlunderButtons().Draw(-1);
     CopyLoadPortToDialog(plunderDialog);
 }
 
@@ -2402,7 +2403,7 @@ Boolean EscortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if (what == kMouseDown) {
         where = ev->where;
         EscortDialogUpdate();
-        button = TrackEscortButtons(where);
+        button = EscortButtons().Track(where);
         if (button == 0) {
             *itemHit = 1;
             return 1;
@@ -2442,7 +2443,7 @@ void EscortDialogUpdate(void)
     PaintRect(GetDialogPortRect(commDialog));
     if (commBackgroundPic != NULL)
         DrawPicHandle(commBackgroundPic, GetDialogPortRect(commDialog));
-    DrawEscortButtons(-1);
+    EscortButtons().Draw(-1);
     GetDialogItem(commDialog, 11, &itemType, &item, &box);
     if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
         ForeColor(blackColor);

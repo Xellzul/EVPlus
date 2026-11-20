@@ -29,6 +29,7 @@
 #include "ai.h"
 #include "space.h"
 #include "dialog.h"
+#include "buttons.h"
 
 #define kFirstRowItem  4
 #define kLastRowItem   11
@@ -452,7 +453,7 @@ Boolean TradeFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
         TradeDialogUpdate();
-        button = TrackTradeButtons(where);
+        button = TradeButtons().Track(where);
         if (button == 0) {
             *itemHit = 1;
             return 1;
@@ -791,7 +792,7 @@ void TradeDialogUpdate(void)
         FrameRect(&box);
         ForeColor(blackColor);
     }
-    DrawTradeButtons(-1);
+    TradeButtons().Draw(-1);
 
     GetDialogItem(tradeDialog, kNewsItem, &itemType, (Handle *)&item, &box);
     if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(tradeDialog)))) {
@@ -1110,7 +1111,7 @@ void DoOutfitDialog(void)
                 statusRedraw[kRedrawCargo] = 1;
                 DrawStatus();
                 SetDialogGWorld(outfitDialog);
-                DrawOutfitButtons(-1);
+                OutfitButtons().Draw(-1);
             }
         }
         if (itemHit == 4 && canSell) {
@@ -1343,7 +1344,7 @@ void DoOutfitDialog(void)
             statusRedraw[kRedrawCargo] = 1;
             DrawStatus();
             SetDialogGWorld(outfitDialog);
-            DrawOutfitButtons(-1);
+            OutfitButtons().Draw(-1);
         }
         if (itemHit == 10 && outfitScroll >= kGridCols) {
             outfitScroll -= kGridCols;
@@ -1624,7 +1625,7 @@ Boolean OutfitFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
         OutfitDialogUpdate();
-        button = TrackOutfitButtons(where);
+        button = OutfitButtons().Track(where);
         if (button == 0) {
             *itemHit = 1;
             return 1;
@@ -1868,7 +1869,7 @@ void OutfitDialogUpdate(void)
         TETextBox(dialogDescTextPtr, strlen(dialogDescTextPtr), &box, 0);
         InvertRect(&box);
     }
-    DrawOutfitButtons(-1);
+    OutfitButtons().Draw(-1);
     CopyLoadPortToDialog(outfitDialog);
 }
 
@@ -2198,7 +2199,7 @@ void DoPortDialog(SpobRecord *spob, short stellar)
         } else if (itemHit == 7) {
             if (SpobHasTrade(dockedPort) != 0) {
                 SetDialogGWorld(portDialog);
-                DrawPlanetButtons(kAllButtonsOff);
+                PlanetButtons().Draw(kAllButtonsOff);
                 DoTradeDialog();
                 statusRedraw[kRedrawCargo] = 1;
                 DrawStatus();
@@ -2397,7 +2398,7 @@ Boolean PortFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         PortDialogUpdate();
-        button = TrackPlanetButtons(where);
+        button = PlanetButtons().Track(where);
         GetDialogItem(portDialog, 5, &itemType, (Handle *)&item, &box);
         if (PtInRectPoint(where, &box)) {
             *itemHit = 5;
@@ -2487,7 +2488,7 @@ void PortDialogUpdate(void)
         InvertRect(&box);
     }
     SetGWorldContainer(&loadPort);
-    DrawPlanetButtons(-8);
+    PlanetButtons().Draw(-8);
     CopyLoadPortToDialog(portDialog);
 }
 
@@ -3042,7 +3043,7 @@ Boolean ShipyardFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
             }
         }
         ShipyardDialogUpdate();
-        button = TrackShipyardButtons(where);
+        button = ShipyardButtons().Track(where);
         if (button == 0) {
             *itemHit = 7;
             return 1;
@@ -3295,7 +3296,7 @@ void ShipyardDialogUpdate(void)
         TETextBox(dialogDescTextPtr, strlen(dialogDescTextPtr), &box, 0);
         InvertRect(&box);
     }
-    DrawShipyardButtons(-1);
+    ShipyardButtons().Draw(-1);
     CopyLoadPortToDialog(shipyardDialog);
 }
 
@@ -4294,7 +4295,7 @@ Boolean CapturedAssignmentFilter(DialogPtr unused, EventRecord *ev, short *itemH
     if (what == kMouseDown) {
         where = ev->where;
         CapturedAssignmentDialogUpdate();
-        button = TrackCapAssignButtons(where);
+        button = CapAssignButtons().Track(where);
         if (button == 0) {
             *itemHit = 1;
             return 1;
@@ -4336,7 +4337,7 @@ void CapturedAssignmentDialogUpdate(void)
     TETextBox(text, strlen(text), &box, 0);
     ForeColor(blackColor);
     BackColor(whiteColor);
-    DrawCapAssignButtons(-1);
+    CapAssignButtons().Draw(-1);
     CopyLoadPortToDialog(captureDialog);
 }
 
@@ -4839,12 +4840,12 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                     BusyIdle();
                     ScrollDialogText(textDialog, 3, textDialogTextHandle, 1, 1);
                     SetDialogGWorld(textDialog);
-                    DrawTextButtons(1);
+                    TextButtons().Draw(1);
                     while (lastTextScrollTime == ReadTick() && StillDown())
                         BusyIdle();
                 }
                 SetDialogGWorld(textDialog);
-                DrawTextButtons(-1);
+                TextButtons().Draw(-1);
                 *itemHit = -1;
                 return 1;
             }
@@ -4857,18 +4858,18 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
                     BusyIdle();
                     ScrollDialogText(textDialog, 3, textDialogTextHandle, -1, 1);
                     SetDialogGWorld(textDialog);
-                    DrawTextButtons(2);
+                    TextButtons().Draw(2);
                     while (lastTextScrollTime == ReadTick() && StillDown())
                         BusyIdle();
                 }
                 SetDialogGWorld(textDialog);
-                DrawTextButtons(-1);
+                TextButtons().Draw(-1);
                 *itemHit = -1;
                 return 1;
             }
         }
         TextDialogUpdate();
-        button = TrackTextButtons(where);
+        button = TextButtons().Track(where);
         if (button == 0)
             *itemHit = 1;
         else if (button == 1)
@@ -4878,7 +4879,7 @@ Boolean TextDialogFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
         else
             *itemHit = -1;
         SetDialogGWorld(textDialog);
-        DrawTextButtons(-1);
+        TextButtons().Draw(-1);
         return 1;
     }
     if ((int)ev->what == kUpdateEvt) {
@@ -4983,7 +4984,7 @@ void TextDialogUpdate(void)
     PaintRect(GetDialogPortRect(textDialog));
     DrawDialogBackground(textDialogBackgroundPic, *GetDialogPortRect(textDialog),
                          descResourcePictId >= kFirstResourceID);
-    DrawTextButtons(-1);
+    TextButtons().Draw(-1);
     TextFont(smallTextFont);
     TextSize(smallTextSize);
     if (descResourcePictId >= kFirstResourceID) {
@@ -5198,7 +5199,7 @@ Boolean PlayerInfoFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         PlayerInfoDialogUpdate();
-        button = TrackPlayerInfoButtons(selPlayerInfoMode, where);
+        button = PlayerInfoButtons(selPlayerInfoMode).Track(where);
         if (button == 0) {
             *itemHit = 1;
             return 1;
@@ -5608,7 +5609,7 @@ void PlayerInfoDialogUpdate(void)
     }
 
 blit_back:
-    DrawPlayerInfoButtons(selPlayerInfoMode, -1);
+    PlayerInfoButtons(selPlayerInfoMode).Draw(-1);
     CopyLoadPortToDialog(infoDialog);
 }
 

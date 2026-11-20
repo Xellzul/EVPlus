@@ -13,7 +13,7 @@
 #include "burger.h"
 #include "prototypes.h"
 #include "cefix.h"
-#include "buttonbar.h"
+#include "buttons.h"
 
 #define kButtonPictID         7500
 #define kButtonMaskPictID     7600
@@ -36,8 +36,6 @@ Rect buttonPieceRect[kButtonPieceCount];
 unsigned char buttonLabel[kButtonLabelCount][256];
 unsigned char missionButtonLabel[kMissionButtonLabelCount][256];
 
-namespace {
-
 /* the up/down pair of a scrolling text: dim at an end, not drawn when nothing scrolls */
 ButtonLook ScrollLook(bool canScroll)
 {
@@ -46,368 +44,192 @@ ButtonLook ScrollLook(bool canScroll)
     return canScroll ? ButtonLook::Normal : ButtonLook::Dim;
 }
 
-class TradeButtons final : public ButtonBar {
-public:
-    TradeButtons() : ButtonBar(tradeDialog, 3, HitRule::LastWins) {}
+TradeButtons::TradeButtons() : ButtonBar(tradeDialog, 3, HitRule::LastWins) {}
 
-private:
-    void Update(short) override
-    {
-        bool buy = CanBuyGoods(selTradeItem) != 0;
-        bool sell = CanSellGoods(selTradeItem) != 0;
+void TradeButtons::Update(short)
+{
+    bool buy = CanBuyGoods(selTradeItem) != 0;
+    bool sell = CanSellGoods(selTradeItem) != 0;
 
-        Set(kTradeDoneButton, 1, buttonLabel[kDoneButtonLabel]);
-        Set(kTradeBuyButton, 0xd, buttonLabel[kBuyButtonLabel], Lit(buy));
-        Set(kTradeSellButton, 0xe, buttonLabel[kSellButtonLabel], Lit(sell));
-        SetPress(kTradeBuyButton, true, buy);
-        SetPress(kTradeSellButton, true, sell);
+    Set(kTradeDoneButton, 1, buttonLabel[kDoneButtonLabel]);
+    Set(kTradeBuyButton, 0xd, buttonLabel[kBuyButtonLabel], Lit(buy));
+    Set(kTradeSellButton, 0xe, buttonLabel[kSellButtonLabel], Lit(sell));
+    SetPress(kTradeBuyButton, true, buy);
+    SetPress(kTradeSellButton, true, sell);
+}
+
+CapAssignButtons::CapAssignButtons() : ButtonBar(captureDialog, 2, HitRule::FirstWins) {}
+
+void CapAssignButtons::Update(short)
+{
+    Set(0, 1, buttonLabel[kUseAsMyShipButtonLabel]);
+    Set(1, 2, buttonLabel[kUseAsEscortButtonLabel]);
+}
+
+CommButtons::CommButtons() : ButtonBar(commDialog, 3, HitRule::FirstWins) {}
+
+void CommButtons::Update(short)
+{
+    bool quiet = commShip != 0 && commShip->govt != -1
+                 && (govtData[commShip->govt].flags2 & kGovtNotTalkative) != 0;
+    bool hasMission = commShip != 0 && commShip->specialMission != -1
+                      && currentMissionObjectives[commShip->specialMission].active != 0
+                      && currentMissions[commShip->specialMission].shipBehav == kMissionModeEscort;
+    short middle = kRequestAssistButtonLabel;
+
+    if (!quiet && commShip != 0) {
+        if (ExtendedIsThreatToPlayer(commShip) != 0)
+            middle = kBegMercyButtonLabel;
+        else if (commShip->parentShip == 0 && commShip->aiType == kShipTypeEscort && !hasMission)
+            middle = kReleaseButtonLabel;
     }
-};
+    Set(0, 1, buttonLabel[kCloseChannelButtonLabel]);
+    Set(1, quiet ? 4 : 2, buttonLabel[middle], quiet ? ButtonLook::Hidden : ButtonLook::Normal);
+    Set(2, quiet ? 2 : 3, buttonLabel[kGreetingsButtonLabel]);
+}
 
-class CapAssignButtons final : public ButtonBar {
-public:
-    CapAssignButtons() : ButtonBar(captureDialog, 2, HitRule::FirstWins) {}
+PlanetCommButtons::PlanetCommButtons() : ButtonBar(commDialog, 3, HitRule::FirstWins) {}
 
-private:
-    void Update(short) override
-    {
-        Set(0, 1, buttonLabel[kUseAsMyShipButtonLabel]);
-        Set(1, 2, buttonLabel[kUseAsEscortButtonLabel]);
+void PlanetCommButtons::Update(short)
+{
+    static short lastLabel;     /* an always-dominated planet's dim button keeps the label drawn last */
+    const SpobRecord &spob = stellarData[shipData[0].targetStellar];
+    bool third = spob.dominated == 0 || (spob.flags2 & kSpobAlwaysDominated) == 0;
+
+    if (third && Drawing())
+        lastLabel = spob.dominated != 0 ? kReleaseButtonLabel : kDemandTributeButtonLabel;
+    Set(0, 1, buttonLabel[kCloseChannelButtonLabel]);
+    Set(1, 2, buttonLabel[hatesPlayer != 0 ? kOfferBribeButtonLabel : kGreetingsButtonLabel]);
+    Set(2, 3, buttonLabel[lastLabel], Lit(third));
+}
+
+MissionButtons::MissionButtons() : ButtonBar(missionDialog, 2, HitRule::FirstWins) {}
+
+void MissionButtons::Update(short)
+{
+    bool picked = selMissionListItem != -1;
+
+    Set(kMissionAcceptButton, 1, buttonLabel[kAcceptButtonLabel], Lit(picked));
+    Set(kMissionOkButton, 7, buttonLabel[kLeaveButtonLabel]);
+    SetPress(kMissionAcceptButton, picked, picked);
+}
+
+MissionInfoButtons::MissionInfoButtons() : ButtonBar(missionInfoDialog, 2, HitRule::LastWins) {}
+
+void MissionInfoButtons::Update(short)
+{
+    bool picked = selMissionListItem != -1;
+
+    Set(kMissionInfoDoneButton, 1, buttonLabel[kDoneButtonLabel]);
+    Set(kMissionInfoAbortButton, 5, buttonLabel[kAbortButtonLabel],
+        Lit(picked && showAbortMissionButton != 0));
+    SetPress(kMissionInfoAbortButton, picked, picked);
+}
+
+SingleMissionButtons::SingleMissionButtons() : ButtonBar(missionDialog, 4, HitRule::LastWins) {}
+
+void SingleMissionButtons::Update(short)
+{
+    if (canRefuseMission != 0) {
+        Set(0, 1, missionButtonLabel[0]);
+        Set(1, 2, missionButtonLabel[1]);
+    } else {
+        Rect none = { -1, -1, 0, 0 };
+        Set(0, 6, missionButtonLabel[0]);
+        SetBox(1, none, missionButtonLabel[1], ButtonLook::Hidden);
     }
-};
+    Set(2, 9, buttonLabel[kScrollUpButtonLabel], ScrollLook(canScrollTextUp != 0));
+    Set(3, 10, buttonLabel[kScrollDownButtonLabel], ScrollLook(canScrollTextDown != 0));
+}
 
-/* Close / Assist / Greetings; a ship that won't talk has no middle button and its items are 1, 4, 2 */
-class CommButtons final : public ButtonBar {
-public:
-    CommButtons() : ButtonBar(commDialog, 3, HitRule::FirstWins) {}
+PlayerInfoButtons::PlayerInfoButtons(short page) : ButtonBar(infoDialog, 6, HitRule::FirstWins), page(page) {}
 
-private:
-    void Update(short) override
-    {
-        bool quiet = commShip != 0 && commShip->govt != -1
-                     && (govtData[commShip->govt].flags2 & kGovtNotTalkative) != 0;
-        bool hasMission = commShip != 0 && commShip->specialMission != -1
-                          && currentMissionObjectives[commShip->specialMission].active != 0
-                          && currentMissions[commShip->specialMission].shipBehav == kMissionModeEscort;
-        short middle = kRequestAssistButtonLabel;
+void PlayerInfoButtons::Update(short)
+{
+    static constexpr short kLabels[5] = { kDoneButtonLabel, kGeneralButtonLabel, kCargoButtonLabel,
+                                          kExtrasButtonLabel, kHonorsButtonLabel };
+    bool jettison = page == 2 && PlayerHasJettisonableCargo() != 0;
 
-        if (!quiet && commShip != 0) {
-            if (ExtendedIsThreatToPlayer(commShip) != 0)
-                middle = kBegMercyButtonLabel;
-            else if (commShip->parentShip == 0 && commShip->aiType == kShipTypeEscort && !hasMission)
-                middle = kReleaseButtonLabel;
-        }
-        Set(0, 1, buttonLabel[kCloseChannelButtonLabel]);
-        Set(1, quiet ? 4 : 2, buttonLabel[middle], quiet ? ButtonLook::Hidden : ButtonLook::Normal);
-        Set(2, quiet ? 2 : 3, buttonLabel[kGreetingsButtonLabel]);
+    for (short i = 0; i < 5; i++)
+        Set(i, i + 1, buttonLabel[kLabels[i]]);
+    Set(5, 7, buttonLabel[kJettisonButtonLabel], jettison ? ButtonLook::Normal : ButtonLook::Hidden);
+    if (page >= 0 && page < 6)
+        buttons[page].latched = true;
+}
+
+EscortButtons::EscortButtons() : ButtonBar(commDialog, 4, HitRule::FirstWins) {}
+
+void EscortButtons::Update(short)
+{
+    bool upgrading = commShip != 0 && commShip->upgradeOnLanding != 0;
+    bool selling = commShip != 0 && commShip->sellOnLanding != 0;
+
+    Set(0, 1, buttonLabel[kCloseChannelButtonLabel]);
+    Set(1, 2, buttonLabel[kReleaseButtonLabel]);
+    Set(2, 3, buttonLabel[upgrading ? kCancelUpgradeButtonLabel : kUpgradeEscortButtonLabel],
+        Lit(canUpgradeEscort != 0));
+    Set(3, 4, buttonLabel[selling ? kCancelSaleButtonLabel : kSellEscortButtonLabel], Lit(canSellEscort != 0));
+}
+
+HaggleButtons::HaggleButtons() : ButtonBar(haggleDialog, 2, HitRule::LastWins) {}
+
+void HaggleButtons::Update(short)
+{
+    bool paying = haggleMode == 1;
+
+    Set(kHaggleYesButton, 1, buttonLabel[paying ? kAcceptPaymentButtonLabel : kAcceptPriceButtonLabel]);
+    Set(kHaggleNoButton, 2, buttonLabel[paying ? kDemandMoreButtonLabel : kLowerPriceButtonLabel]);
+}
+
+PlunderButtons::PlunderButtons() : ButtonBar(plunderDialog, 6, HitRule::LastWins) {}
+
+void PlunderButtons::Update(short)
+{
+    static constexpr short kItems[6] = { 1, 2, 3, 4, 6, 7 };
+    static constexpr short kLabels[6] = { kAbortButtonLabel, kPlunderCargoButtonLabel, kCreditsButtonLabel,
+                                          kAmmoButtonLabel, kEnergyButtonLabel, kCaptureShipButtonLabel };
+    bool enabled[6] = { true, salvageType != -1, salvageCredits > 0, (short)salvageAmmoType != -1,
+                        salvageFuelQty > 0, captureOdds > 0 };
+
+    for (short i = 0; i < 6; i++) {
+        Set(i, kItems[i], buttonLabel[kLabels[i]], Lit(enabled[i]));
+        SetPress(i, enabled[i], enabled[i]);
     }
-};
+}
 
-class PlanetCommButtons final : public ButtonBar {
-public:
-    PlanetCommButtons() : ButtonBar(commDialog, 3, HitRule::FirstWins) {}
+BarButtons::BarButtons() : ButtonBar(barDialog, 6, HitRule::LastWins) {}
 
-private:
-    void Update(short) override
-    {
-        static short lastLabel;     /* an always-dominated planet's dim button keeps the label drawn last */
-        const SpobRecord &spob = stellarData[shipData[0].targetStellar];
-        bool third = spob.dominated == 0 || (spob.flags2 & kSpobAlwaysDominated) == 0;
+void BarButtons::Update(short)
+{
+    Set(0, 1, buttonLabel[kLeaveButtonLabel]);
+    Set(1, 2, buttonLabel[kGambleButtonLabel]);
+    Set(2, 3, buttonLabel[kHolovidButtonLabel]);
+    Set(3, 4, buttonLabel[0], ButtonLook::Dim);
+    Set(4, 5, buttonLabel[kHireEscortButtonLabel], Lit(CanHireEscorts() != 0));
+    Set(5, 6, buttonLabel[0], ButtonLook::Dim);
+}
 
-        if (third && Drawing())
-            lastLabel = spob.dominated != 0 ? kReleaseButtonLabel : kDemandTributeButtonLabel;
-        Set(0, 1, buttonLabel[kCloseChannelButtonLabel]);
-        Set(1, 2, buttonLabel[hatesPlayer != 0 ? kOfferBribeButtonLabel : kGreetingsButtonLabel]);
-        Set(2, 3, buttonLabel[lastLabel], Lit(third));
+TextButtons::TextButtons() : ButtonBar(textDialog, 3, HitRule::LastWins) {}
+
+void TextButtons::Update(short)
+{
+    Set(0, 1, buttonLabel[kOkButtonLabel]);
+    Set(1, 5, buttonLabel[kScrollUpButtonLabel], ScrollLook(canScrollTextUp != 0));
+    Set(2, 6, buttonLabel[kScrollDownButtonLabel], ScrollLook(canScrollTextDown != 0));
+}
+
+RaceButtons::RaceButtons() : ButtonBar(raceDialog, 6, HitRule::FirstWins) {}
+
+void RaceButtons::Update(short hilited)
+{
+    Set(0, 1, buttonLabel[raceWinner == -1 && raceCount == 0 ? kCancelButtonLabel : kDoneButtonLabel]);
+    Set(1, 2, buttonLabel[kHelpButtonLabel]);
+    for (short i = 0; i < 4; i++) {
+        short frame = raceWinner == i ? 2 : raceWinner != -1 ? 3 : hilited == i + 2 ? 1 : 0;
+        Set(i + 2, i + 3, buttonLabel[0], ButtonLook::Picture).pic = raceButtonPic[i][frame];
     }
-};
+}
 
-class MissionButtons final : public ButtonBar {
-public:
-    MissionButtons() : ButtonBar(missionDialog, 2, HitRule::FirstWins) {}
-
-private:
-    void Update(short) override
-    {
-        bool picked = selMissionListItem != -1;
-
-        Set(kMissionAcceptButton, 1, buttonLabel[kAcceptButtonLabel], Lit(picked));
-        Set(kMissionOkButton, 7, buttonLabel[kLeaveButtonLabel]);
-        SetPress(kMissionAcceptButton, picked, picked);
-    }
-};
-
-class MissionInfoButtons final : public ButtonBar {
-public:
-    MissionInfoButtons() : ButtonBar(missionInfoDialog, 2, HitRule::LastWins) {}
-
-private:
-    void Update(short) override
-    {
-        bool picked = selMissionListItem != -1;
-
-        Set(kMissionInfoDoneButton, 1, buttonLabel[kDoneButtonLabel]);
-        Set(kMissionInfoAbortButton, 5, buttonLabel[kAbortButtonLabel],
-            Lit(picked && showAbortMissionButton != 0));
-        SetPress(kMissionInfoAbortButton, picked, picked);
-    }
-};
-
-/* Yes / No (or a lone OK, then slot 1 is an off-screen box) and the scroll pair */
-class SingleMissionButtons final : public ButtonBar {
-public:
-    SingleMissionButtons() : ButtonBar(missionDialog, 4, HitRule::LastWins) {}
-
-private:
-    void Update(short) override
-    {
-        if (canRefuseMission != 0) {
-            Set(0, 1, missionButtonLabel[0]);
-            Set(1, 2, missionButtonLabel[1]);
-        } else {
-            Rect none = { -1, -1, 0, 0 };
-            Set(0, 6, missionButtonLabel[0]);
-            SetBox(1, none, missionButtonLabel[1], ButtonLook::Hidden);
-        }
-        Set(2, 9, buttonLabel[kScrollUpButtonLabel], ScrollLook(canScrollTextUp != 0));
-        Set(3, 10, buttonLabel[kScrollDownButtonLabel], ScrollLook(canScrollTextDown != 0));
-    }
-};
-
-/* the page tabs (the open page drawn pressed) and Jettison, shown on the cargo page only */
-class PlayerInfoButtons final : public ButtonBar {
-public:
-    explicit PlayerInfoButtons(short page) : ButtonBar(infoDialog, 6, HitRule::FirstWins), page(page) {}
-
-private:
-    void Update(short) override
-    {
-        static constexpr short kLabels[5] = { kDoneButtonLabel, kGeneralButtonLabel, kCargoButtonLabel,
-                                              kExtrasButtonLabel, kHonorsButtonLabel };
-        bool jettison = page == 2 && PlayerHasJettisonableCargo() != 0;
-
-        for (short i = 0; i < 5; i++)
-            Set(i, i + 1, buttonLabel[kLabels[i]]);
-        Set(5, 7, buttonLabel[kJettisonButtonLabel], jettison ? ButtonLook::Normal : ButtonLook::Hidden);
-        if (page >= 0 && page < 6)
-            buttons[page].latched = true;
-    }
-
-    short page;
-};
-
-class EscortButtons final : public ButtonBar {
-public:
-    EscortButtons() : ButtonBar(commDialog, 4, HitRule::FirstWins) {}
-
-private:
-    void Update(short) override
-    {
-        bool upgrading = commShip != 0 && commShip->upgradeOnLanding != 0;
-        bool selling = commShip != 0 && commShip->sellOnLanding != 0;
-
-        Set(0, 1, buttonLabel[kCloseChannelButtonLabel]);
-        Set(1, 2, buttonLabel[kReleaseButtonLabel]);
-        Set(2, 3, buttonLabel[upgrading ? kCancelUpgradeButtonLabel : kUpgradeEscortButtonLabel],
-            Lit(canUpgradeEscort != 0));
-        Set(3, 4, buttonLabel[selling ? kCancelSaleButtonLabel : kSellEscortButtonLabel], Lit(canSellEscort != 0));
-    }
-};
-
-class HaggleButtons final : public ButtonBar {
-public:
-    HaggleButtons() : ButtonBar(haggleDialog, 2, HitRule::LastWins) {}
-
-private:
-    void Update(short) override
-    {
-        bool paying = haggleMode == 1;
-
-        Set(kHaggleYesButton, 1, buttonLabel[paying ? kAcceptPaymentButtonLabel : kAcceptPriceButtonLabel]);
-        Set(kHaggleNoButton, 2, buttonLabel[paying ? kDemandMoreButtonLabel : kLowerPriceButtonLabel]);
-    }
-};
-
-class PlunderButtons final : public ButtonBar {
-public:
-    PlunderButtons() : ButtonBar(plunderDialog, 6, HitRule::LastWins) {}
-
-private:
-    void Update(short) override
-    {
-        static constexpr short kItems[6] = { 1, 2, 3, 4, 6, 7 };
-        static constexpr short kLabels[6] = { kAbortButtonLabel, kPlunderCargoButtonLabel, kCreditsButtonLabel,
-                                              kAmmoButtonLabel, kEnergyButtonLabel, kCaptureShipButtonLabel };
-        bool enabled[6] = { true, salvageType != -1, salvageCredits > 0, (short)salvageAmmoType != -1,
-                            salvageFuelQty > 0, captureOdds > 0 };
-
-        for (short i = 0; i < 6; i++) {
-            Set(i, kItems[i], buttonLabel[kLabels[i]], Lit(enabled[i]));
-            SetPress(i, enabled[i], enabled[i]);
-        }
-    }
-};
-
-/* slots 3 and 5 have no button of their own: dim, with label 0 */
-class BarButtons final : public ButtonBar {
-public:
-    BarButtons() : ButtonBar(barDialog, 6, HitRule::LastWins) {}
-
-private:
-    void Update(short) override
-    {
-        Set(0, 1, buttonLabel[kLeaveButtonLabel]);
-        Set(1, 2, buttonLabel[kGambleButtonLabel]);
-        Set(2, 3, buttonLabel[kHolovidButtonLabel]);
-        Set(3, 4, buttonLabel[0], ButtonLook::Dim);
-        Set(4, 5, buttonLabel[kHireEscortButtonLabel], Lit(CanHireEscorts() != 0));
-        Set(5, 6, buttonLabel[0], ButtonLook::Dim);
-    }
-};
-
-class TextButtons final : public ButtonBar {
-public:
-    TextButtons() : ButtonBar(textDialog, 3, HitRule::LastWins) {}
-
-private:
-    void Update(short) override
-    {
-        Set(0, 1, buttonLabel[kOkButtonLabel]);
-        Set(1, 5, buttonLabel[kScrollUpButtonLabel], ScrollLook(canScrollTextUp != 0));
-        Set(2, 6, buttonLabel[kScrollDownButtonLabel], ScrollLook(canScrollTextDown != 0));
-    }
-};
-
-/* Done (Cancel before the first race) and Help, then the four racers' pictures */
-class RaceButtons final : public ButtonBar {
-public:
-    RaceButtons() : ButtonBar(raceDialog, 6, HitRule::FirstWins) {}
-
-private:
-    void Update(short hilited) override
-    {
-        Set(0, 1, buttonLabel[raceWinner == -1 && raceCount == 0 ? kCancelButtonLabel : kDoneButtonLabel]);
-        Set(1, 2, buttonLabel[kHelpButtonLabel]);
-        for (short i = 0; i < 4; i++) {
-            short frame = raceWinner == i ? 2 : raceWinner != -1 ? 3 : hilited == i + 2 ? 1 : 0;
-            Set(i + 2, i + 3, buttonLabel[0], ButtonLook::Picture).pic = raceButtonPic[i][frame];
-        }
-    }
-};
-
-} // namespace
-
-// FUNCTION: EVNOVA 0x004a04d0
-// MAC: _TrackTradeButtons i386 0x000294cd ppc 0x0002dae4
-short TrackTradeButtons(Point where) { return TradeButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a06a0
-// MAC: _DrawTradeButtons i386 0x000292e2 ppc 0x0002d960
-void DrawTradeButtons(short hilited) { TradeButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a0810
-// MAC: _TrackCapAssignButtons i386 0x000291c7 ppc 0x0002d824
-short TrackCapAssignButtons(Point where) { return CapAssignButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a0950
-// MAC: _DrawCapAssignButtons i386 0x000290c7 ppc 0x0002d738
-void DrawCapAssignButtons(short hilited) { CapAssignButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a09e0
-// MAC: _TrackCommDialogButtons i386 0x00028eff ppc 0x0002d55c
-short TrackCommDialogButtons(Point where) { return CommButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a0bc0
-// MAC: _DrawCommDialogButtons i386 0x00028c43 ppc 0x0002d2a8
-void DrawCommDialogButtons(short hilited) { CommButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a0e50
-// MAC: _TrackPlanetCommDialogButtons i386 0x00028b28 ppc 0x0002d16c
-short TrackPlanetCommDialogButtons(Point where) { return PlanetCommButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a0f90
-// MAC: _DrawPlanetCommDialogButtons i386 0x0002893c ppc 0x0002cf8c
-void DrawPlanetCommDialogButtons(short hilited) { PlanetCommButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a1130
-// MAC: _TrackMissionButtons i386 0x000287f5 ppc 0x0002ce34
-short TrackMissionButtons(Point where) { return MissionButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a1290
-// MAC: _DrawMissionButtons i386 0x00028657 ppc 0x0002ccc8
-void DrawMissionButtons(short hilited) { MissionButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a13c0
-// MAC: _TrackMissionInfoButtons i386 0x0002850e ppc 0x0002cb74
-short TrackMissionInfoButtons(Point where) { return MissionInfoButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a1520
-// MAC: _DrawMissionInfoButtons i386 0x00028359 ppc 0x0002c9f4
-void DrawMissionInfoButtons(short hilited) { MissionInfoButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a1670
-// MAC: _TrackSingleMissionButtons i386 0x00028188 ppc 0x0002c820
-short TrackSingleMissionButtons(Point where) { return SingleMissionButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a1820
-// MAC: _DrawSingleMissionButtons i386 0x00027db8 ppc 0x0002c4d8
-void DrawSingleMissionButtons(short hilited) { SingleMissionButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a1ae0
-// MAC: _TrackPlayerInfoButtons i386 0x00027c4d ppc 0x0002c370
-short TrackPlayerInfoButtons(short page, Point where) { return PlayerInfoButtons(page).Track(where); }
-
-// FUNCTION: EVNOVA 0x004a1c40
-// MAC: _DrawPlayerInfoButtons i386 0x00027aae ppc 0x0002c1e4
-void DrawPlayerInfoButtons(short page, short hilited) { PlayerInfoButtons(page).Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a1d90
-// MAC: _TrackEscortButtons i386 0x00027987 ppc 0x0002c0a0
-short TrackEscortButtons(Point where) { return EscortButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a1ed0
-// MAC: _DrawEscortButtons i386 0x000277a4 ppc 0x0002bea0
-void DrawEscortButtons(short hilited) { EscortButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a2090
-// MAC: _TrackHaggleButtons i386 0x00027670 ppc 0x0002bd78
-short TrackHaggleButtons(Point where) { return HaggleButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a21e0
-// MAC: _DrawHaggleButtons i386 0x0002750d ppc 0x0002bc34
-void DrawHaggleButtons(short hilited) { HaggleButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a22e0
-// MAC: _TrackPlunderButtons i386 0x0002732a ppc 0x0002b9e0
-short TrackPlunderButtons(Point where) { return PlunderButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a24e0
-// MAC: _DrawPlunderButtons i386 0x00027109 ppc 0x0002b784
-void DrawPlunderButtons(short hilited) { PlunderButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a26e0
-// MAC: _TrackBarButtons i386 0x00026fd5 ppc 0x0002b644
-short TrackBarButtons(Point where) { return BarButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a2810
-// MAC: _DrawBarButtons i386 0x00026e1d ppc 0x0002b4d0
-void DrawBarButtons(short hilited) { BarButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a2960
-// MAC: _TrackTextButtons i386 0x00026bb0 ppc 0x0002b25c
-short TrackTextButtons(Point where) { return TextButtons().Track(where); }
-
-// FUNCTION: EVNOVA 0x004a2ac0
-// MAC: _DrawTextButtons i386 0x000269ea ppc 0x0002b090
-void DrawTextButtons(short hilited) { TextButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a2c30
-// MAC: _DrawRaceButtons i386 0x00026617 ppc 0x0002acc4
-void DrawRaceButtons(short hilited) { RaceButtons().Draw(hilited); }
-
-// FUNCTION: EVNOVA 0x004a2de0
-// MAC: _TrackRaceButtons i386 0x0002689d ppc 0x0002af18
-short TrackRaceButtons(Point where) { return RaceButtons().Track(where); }
 
 // FUNCTION: EVNOVA 0x004a2f50
 // MAC: _InitButtons i386 0x00025aa1 ppc 0x0002a1e0

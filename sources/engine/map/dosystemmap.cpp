@@ -22,6 +22,7 @@
 #include "dialog.h"
 #include "viewscale.h"
 #include "space.h"
+#include "buttons.h"
 
 EXTERN_C_BEGIN
 
@@ -392,7 +393,7 @@ void DoSystemMap(void)
                             DrawPicHandle(mapBackgroundPic, GetDialogPortRect(mapDialog));
                         UnsetGWorldContainer(&loadPort);
                         SetDialogGWorld(mapDialog);
-                        DrawMapButtons(-1);
+                        MapButtons().Draw(-1);
                         selSystem = found;
                     }
                 } else {
@@ -560,7 +561,7 @@ void MapDialogUpdate(void)
             canZoomOut = 1;
         else
             canZoomOut = 0;
-        DrawMapButtons(-1);
+        MapButtons().Draw(-1);
     }
     if (partialMapDialogUpdate != 0) {
         ok = 1;
@@ -996,7 +997,7 @@ void MapDialogUpdate(void)
         }
         didUpdateMap = 1;
         SetGWorldContainer(&loadPort);
-        DrawMapButtons(-1);
+        MapButtons().Draw(-1);
         UnsetGWorldContainer(&loadPort);
         CopyLoadPortToDialog(mapDialog);
     }
@@ -1206,7 +1207,7 @@ Boolean MapFilter(DialogPtr dlg, EventRecord *event, short *itemHit)
         }
         MapDialogUpdate();
         SetDialogGWorld(mapDialog);
-        sys = TrackMapButtons(pt);
+        sys = MapButtons().Track(pt);
         if (sys == 0) {
             *itemHit = kItemAccept;
             return 1;

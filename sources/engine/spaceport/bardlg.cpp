@@ -21,6 +21,7 @@
 #include "burger.h"
 #include "cefix.h"
 #include "dialog.h"
+#include "buttons.h"
 
 #define kBarDlogID          0x3fd   /* DLOG 1021, with portrait */
 #define kPlainBarDlogID     0x3f5   /* DLOG 1013 */
@@ -123,7 +124,7 @@ void DoBarDialog(void)
         }
         if (itemHit == kBarNewsItem) {
             SetDialogGWorld(barDialog);
-            DrawBarButtons(-1);
+            BarButtons().Draw(-1);
             DoNewsDialog();
             PortDialogUpdate();
             SetDialogGWorld(barDialog);
@@ -132,7 +133,7 @@ void DoBarDialog(void)
         if (itemHit == kBarHireItem) {
             if (CanHireEscorts()) {
                 SetDialogGWorld(barDialog);
-                DrawBarButtons(-1);
+                BarButtons().Draw(-1);
                 shipBuyMode = 1;
                 DoShipyardDialog();
                 ShipStatsToSystemInfo();
@@ -286,7 +287,7 @@ Boolean BarFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         BarDialogUpdate();
-        button = TrackBarButtons(where);
+        button = BarButtons().Track(where);
         if (button == 0) {
             *itemHit = kBarLeaveItem;
             return 1;
@@ -345,7 +346,7 @@ void BarDialogUpdate(void)
     TETextBox(barDescText, strlen(barDescText), &box, 0);
     InvertRect(&box);
     ForeColor(blackColor);
-    DrawBarButtons(-1);
+    BarButtons().Draw(-1);
     CopyLoadPortToDialog(barDialog);
 }
 
@@ -713,7 +714,7 @@ Boolean RaceFilter(DialogPtr unused, EventRecord *ev, short *itemHit)
     if ((int)ev->what == kMouseDown) {
         where = ev->where;
         RaceDialogUpdate();
-        button = TrackRaceButtons(where);
+        button = RaceButtons().Track(where);
         if (button >= 0 && button < kRaceButtonCount) {
             *itemHit = button + 1;
             return 1;
@@ -740,7 +741,7 @@ void RaceDialogUpdate(void)
     if (raceBackgroundPic != NULL)
         DrawPicHandle(raceBackgroundPic, GetDialogPortRect(raceDialog));
     ForeColor(blackColor);
-    DrawRaceButtons(-1);
+    RaceButtons().Draw(-1);
     CopyLoadPortToDialog(raceDialog);
 }
 
