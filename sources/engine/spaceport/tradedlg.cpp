@@ -833,13 +833,7 @@ void TradeDialogUpdate(void)
         }
     }
 
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(tradeDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(tradeDialog)),
-             GetDialogPortRect(tradeDialog), GetDialogPortRect(tradeDialog), 0,
-             GetWindowVisRgn(FrontWindow(tradeDialog)));
+    CopyLoadPortToDialog(tradeDialog);
 }
 
 #define kStellarBackdropPictID 0x2134
@@ -1875,12 +1869,7 @@ void OutfitDialogUpdate(void)
         InvertRect(&box);
     }
     DrawOutfitButtons(-1);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(outfitDialog);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(outfitDialog)),
-             GetDialogPortRect(outfitDialog), GetDialogPortRect(outfitDialog), 0,
-             NULL);
+    CopyLoadPortToDialog(outfitDialog);
 }
 
 #define kSpecialTechCount  8
@@ -2499,13 +2488,7 @@ void PortDialogUpdate(void)
     }
     SetGWorldContainer(&loadPort);
     DrawPlanetButtons(-8);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(portDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(portDialog)),
-             GetDialogPortRect(portDialog), GetDialogPortRect(portDialog),
-             0, NULL);
+    CopyLoadPortToDialog(portDialog);
 }
 
 #define kShipDescBase 13000    /* desc ID of ship 0's shipyard blurb */
@@ -3313,13 +3296,7 @@ void ShipyardDialogUpdate(void)
         InvertRect(&box);
     }
     DrawShipyardButtons(-1);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(shipyardDialog);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(shipyardDialog)),
-             GetDialogPortRect(shipyardDialog),
-             GetDialogPortRect(shipyardDialog), 0,
-             GetWindowVisRgn(FrontWindow(shipyardDialog)));
+    CopyLoadPortToDialog(shipyardDialog);
 }
 
 
@@ -3886,12 +3863,7 @@ void ShipDescDialogUpdate(void)
         if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipDescDialog))))
             DrawPicHandle(bigShipPic, &box);
     }
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(shipDescDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(shipDescDialog)),
-             GetDialogPortRect(shipDescDialog), GetDialogPortRect(shipDescDialog), 0, 0);
+    CopyLoadPortToDialog(shipDescDialog);
 }
 
 // FUNCTION: EVNOVA 0x00497430
@@ -4365,13 +4337,7 @@ void CapturedAssignmentDialogUpdate(void)
     ForeColor(blackColor);
     BackColor(whiteColor);
     DrawCapAssignButtons(-1);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(captureDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(captureDialog)),
-             GetDialogPortRect(captureDialog), GetDialogPortRect(captureDialog), 0,
-             GetWindowVisRgn(FrontWindow(captureDialog)));
+    CopyLoadPortToDialog(captureDialog);
 }
 
 /*
@@ -4796,11 +4762,7 @@ void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean
         canScrollTextDown = 1;
 
     GetDialogItem(dlg, item, &type, (Handle *)&handle, &box);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(dlg);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(GetDialogPort(dlg)),
-             &box, &box, 0, 0);
+    CopyLoadPortToDialog(dlg, box);
 }
 
 
@@ -5040,13 +5002,7 @@ void TextDialogUpdate(void)
     ForeColor(blackColor);
     BackColor(whiteColor);
     (*textDialogTextHandle)->inPort = (GrafPtr)GetDialogPort(textDialog);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(textDialog);
-    GetDialogItem(textDialog, 1, &itemType, &item, &r);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(textDialog)),
-             GetDialogPortRect(textDialog), GetDialogPortRect(textDialog), 0, NULL);
+    CopyLoadPortToDialog(textDialog);
 }
 
 /*
@@ -5653,15 +5609,7 @@ void PlayerInfoDialogUpdate(void)
 
 blit_back:
     DrawPlayerInfoButtons(selPlayerInfoMode, -1);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(infoDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(infoDialog)),
-             GetDialogPortRect(infoDialog),
-             GetDialogPortRect(infoDialog),
-             0,
-             GetWindowVisRgn(FrontWindow(infoDialog)));
+    CopyLoadPortToDialog(infoDialog);
 }
 
 

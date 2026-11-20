@@ -694,12 +694,7 @@ void MapDialogUpdate(void)
         ForeColor(blackColor);
         didUpdateMap = 1;
         if (partialMapDialogUpdate != 0) {
-            SWSetPortToWindow(gSpriteWorld);
-            SetDialogGWorld(mapDialog);
-            ForeColor(blackColor);
-            CopyBits(GetPortPixMapBits(loadPort.world),
-                     GetPortBitMapForCopyBits(GetDialogPort(mapDialog)),
-                     &box, &box, 0, 0);
+            CopyLoadPortToDialog(mapDialog, box);
         } else {
             SetGWorldContainer(&loadPort);
             ForeColor(blackColor);
@@ -1003,13 +998,7 @@ void MapDialogUpdate(void)
         SetGWorldContainer(&loadPort);
         DrawMapButtons(-1);
         UnsetGWorldContainer(&loadPort);
-        SWSetPortToWindow(gSpriteWorld);
-        SetDialogGWorld(mapDialog);
-        ForeColor(blackColor);
-        CopyBits(GetPortPixMapBits(loadPort.world),
-                 GetPortBitMapForCopyBits(GetDialogPort(mapDialog)),
-                 GetDialogPortRect(mapDialog), GetDialogPortRect(mapDialog),
-                 0, 0);
+        CopyLoadPortToDialog(mapDialog);
     }
 }
 

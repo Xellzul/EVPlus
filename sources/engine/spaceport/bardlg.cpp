@@ -346,12 +346,7 @@ void BarDialogUpdate(void)
     InvertRect(&box);
     ForeColor(blackColor);
     DrawBarButtons(-1);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(barDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(barDialog)),
-             GetDialogPortRect(barDialog), GetDialogPortRect(barDialog), srcCopy, NULL);
+    CopyLoadPortToDialog(barDialog);
 }
 
 // FUNCTION: EVNOVA 0x0047d180
@@ -424,12 +419,7 @@ void NewsDialogUpdate(void)
             GetDialogPortRect(newsDialog)->bottom - kBodyMargin);
     TETextBox(newsString, strlen(newsString), &box, 0);
     InvertRect(&box);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(newsDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(newsDialog)),
-             GetDialogPortRect(newsDialog), GetDialogPortRect(newsDialog), srcCopy, NULL);
+    CopyLoadPortToDialog(newsDialog);
 }
 
 // FUNCTION: EVNOVA 0x0047d560
@@ -751,12 +741,7 @@ void RaceDialogUpdate(void)
         DrawPicHandle(raceBackgroundPic, GetDialogPortRect(raceDialog));
     ForeColor(blackColor);
     DrawRaceButtons(-1);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(raceDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(raceDialog)),
-             GetDialogPortRect(raceDialog), GetDialogPortRect(raceDialog), srcCopy, NULL);
+    CopyLoadPortToDialog(raceDialog);
 }
 
 EXTERN_C_END

@@ -599,12 +599,7 @@ void CommDialogUpdate(void)
     MungeBriefing(0, -1);
     TETextBox(briefingTextPtr, strlen(briefingTextPtr), &textBox, 0);
     InvertRect(&box);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(commDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(commDialog)),
-             GetDialogPortRect(commDialog), GetDialogPortRect(commDialog), 0, NULL);
+    CopyLoadPortToDialog(commDialog);
 }
 
 /*
@@ -1074,13 +1069,7 @@ void PlanetCommDialogUpdate(void)
             TextFace(0);
         }
     }
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(commDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(commDialog)),
-             GetDialogPortRect(commDialog), GetDialogPortRect(commDialog), 0,
-             GetWindowVisRgn(FrontWindow(commDialog)));
+    CopyLoadPortToDialog(commDialog);
 }
 
 #define kAdviceNone         175
@@ -1499,13 +1488,7 @@ void HaggleDialogUpdate(void)
     DrawString("\p.");
     ForeColor(blackColor);
     DrawHaggleButtons(-1);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(haggleDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(haggleDialog)),
-             GetDialogPortRect(haggleDialog), GetDialogPortRect(haggleDialog), 0,
-             GetWindowVisRgn(FrontWindow(haggleDialog)));
+    CopyLoadPortToDialog(haggleDialog);
 }
 
 /*
@@ -2260,13 +2243,7 @@ void PlunderDialogUpdate(void)
     DrawString("\p%");
     ForeColor(blackColor);
     DrawPlunderButtons(-1);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(plunderDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(plunderDialog)),
-             GetDialogPortRect(plunderDialog), GetDialogPortRect(plunderDialog), 0,
-             GetWindowVisRgn(FrontWindow(plunderDialog)));
+    CopyLoadPortToDialog(plunderDialog);
 }
 
 /*
@@ -2558,12 +2535,6 @@ void EscortDialogUpdate(void)
             DrawIndString(kGameStrList, 0x10b);
         }
     }
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(commDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(commDialog)),
-             GetDialogPortRect(commDialog), GetDialogPortRect(commDialog), 0,
-             GetWindowVisRgn(FrontWindow(commDialog)));
+    CopyLoadPortToDialog(commDialog);
 }
 

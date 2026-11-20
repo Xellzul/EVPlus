@@ -2188,13 +2188,7 @@ void MissionDialogUpdate(void)
     DrawMissionButtons(-1);
     if (missionList != NULL)
         ListUpdate(NULL, missionList);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(missionDialog);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(missionDialog)),
-             GetDialogPortRect(missionDialog), GetDialogPortRect(missionDialog), 0,
-             GetWindowVisRgn(FrontWindow(missionDialog)));
+    CopyLoadPortToDialog(missionDialog);
     TextFont(smallTextFont);
     TextSize(smallTextSize);
     if (missionList != NULL) {
@@ -4005,16 +3999,9 @@ void MissionInfoDialogUpdate(void)
     DrawMissionInfoButtons(-1);
     if (missionInfoList != NULL)
         ListUpdate(NULL, missionInfoList);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(missionInfoDialog);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(missionInfoDialog)),
-             GetDialogPortRect(missionInfoDialog),
-             GetDialogPortRect(missionInfoDialog), 0,
-             GetWindowVisRgn(FrontWindow(missionInfoDialog)));
+    CopyLoadPortToDialog(missionInfoDialog);
     TextFont(smallTextFont);
     TextSize(smallTextSize);
-    ForeColor(blackColor);
     if (missionInfoList != NULL) {
         SetDialogGWorld(missionInfoDialog);
         ListUpdate(GetWindowVisRgn(FrontWindow(missionInfoDialog)), missionInfoList);
@@ -4199,12 +4186,7 @@ void SingleMissionDialogUpdate(void)
     ForeColor(blackColor);
     BackColor(whiteColor);
     (*offerTextHandle)->inPort = (GrafPtr)GetDialogPort(missionDialog);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(missionDialog);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetDialogPort(missionDialog)),
-             GetDialogPortRect(missionDialog), GetDialogPortRect(missionDialog), 0,
-             GetWindowVisRgn(FrontWindow(missionDialog)));
+    CopyLoadPortToDialog(missionDialog);
 }
 
 /* validauxsys -- may a mission's auxiliary ships appear in this system? (win 0x00447a30, mac twin _ValidAuxShipSystem @ 0x000992b5). Notes: Research/notes/validauxsys.md */

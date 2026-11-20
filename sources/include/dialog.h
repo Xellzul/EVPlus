@@ -1,4 +1,5 @@
-/* dialog.h -- a modal dialog and the PICTs it draws, both released when they go out of scope */
+/* dialog.h -- a modal dialog and the PICTs it draws, both released when they go out of scope; the copy that ends
+   an update proc */
 #pragma once
 #include "macport.h"
 
@@ -18,6 +19,11 @@ public:
 private:
     PicHandle *slot = nullptr;
 };
+
+/* Copies what was drawn into loadPort onto the dialog (whole port or one box); leaves the dialog's port current
+   with a black fore colour. */
+void CopyLoadPortToDialog(DialogPtr dlg);
+void CopyLoadPortToDialog(DialogPtr dlg, const Rect &box);
 
 enum class DialogClose : unsigned char { Plain, NoFlash };
 
