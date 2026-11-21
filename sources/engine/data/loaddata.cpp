@@ -15,7 +15,6 @@
 #include "gameutil.h"
 #include "stellar.h"
 #include "platform.h"
-#include "viewscale.h"
 #include "sound.h"
 #include "ships.h"
 #include "ai.h"
@@ -334,15 +333,10 @@ void LoadObjectData(void)
                 systemData[i].avgShips = ResRec(SystRes, systemFileHand)->avgShips;
                 systemData[i].govt = ResRec(SystRes, systemFileHand)->govt;
                 systemData[i].message = ResRec(SystRes, systemFileHand)->message;
-                systemData[i].asteroidCount = ResRec(SystRes, systemFileHand)->asteroids;
                 systemData[i].interference = ResRec(SystRes, systemFileHand)->interference;
-                if (systemData[i].asteroidCount > 0) {
-                    systemData[i].asteroidCount *= View::gameWidth / 640.0;
-                    if (systemData[i].asteroidCount > kMaxAsteroids)
-                        systemData[i].asteroidCount = kMaxAsteroids;
-                } else {
+                systemData[i].asteroidCount = ResRec(SystRes, systemFileHand)->asteroids;
+                if (systemData[i].asteroidCount < 0)
                     systemData[i].asteroidCount = 0;
-                }
                 systemData[i].astTypes = ResRec(SystRes, systemFileHand)->astTypes;
                 systemData[i].pos.h = ResRec(SystRes, systemFileHand)->xPos;
                 systemData[i].pos.v = ResRec(SystRes, systemFileHand)->yPos;
@@ -2007,7 +2001,7 @@ void LoadObjectData(void)
     /* ---------------- röid: asteroids ---------------- */
     {
 
-        for (i = 0; i < kMaxAsteroids; i++) {
+        for (i = 0; i < kMaxRoidTypes; i++) {
             asteroidFileHand = GetResource(kRoidType, i + kFirstResourceID);
             if (asteroidFileHand != NULL) {
                 LockAHandle(asteroidFileHand);
@@ -2042,9 +2036,9 @@ void LoadObjectData(void)
                     asteroidType[i].fragCount = 0;
                 for (j = 0; j < 2; j++) {
                     asteroidType[i].fragType[j] = ResRec(RoidRes, asteroidFileHand)->fragType[j];
-                    if (asteroidType[i].fragType[j] >= kFirstResourceID && asteroidType[i].fragType[j] < kFirstResourceID + kMaxAsteroids)
+                    if (asteroidType[i].fragType[j] >= kFirstResourceID && asteroidType[i].fragType[j] < kFirstResourceID + kMaxRoidTypes)
                         asteroidType[i].fragType[j] -= kFirstResourceID;
-                    else if (asteroidType[i].fragType[j] < 0 || asteroidType[i].fragType[j] >= kMaxAsteroids)
+                    else if (asteroidType[i].fragType[j] < 0 || asteroidType[i].fragType[j] >= kMaxRoidTypes)
                         asteroidType[i].fragType[j] = -1;
                 }
                 asteroidType[i].explodType = ResRec(RoidRes, asteroidFileHand)->explodType;
@@ -2370,6 +2364,7 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->scaleFilter = settings.scaleFilter;
     rec->wholePixelScaling = settings.wholePixelScaling != 0;
     rec->stereoPan = settings.stereoPan != 0;
+    rec->asteroidScaling = settings.asteroidScaling != 0;
     rec->uiScale = settings.uiScale;
     KeyPrefsToSlotTable();
     for (i = 0; i <= 35; i++)
@@ -2407,6 +2402,7 @@ static void RecordToPrefs(const PrefsRecord *rec)
         settings.scaleFilter = kScaleFilterLinear;
     settings.wholePixelScaling = rec->wholePixelScaling != 0;
     settings.stereoPan = rec->stereoPan != 0;
+    settings.asteroidScaling = rec->asteroidScaling != 0;
     settings.uiScale = rec->uiScale > 0 ? rec->uiScale : 1.0;
     settings.windowedPending = settings.windowed;
     SetDefaultKeys();

@@ -104,8 +104,10 @@ enum {
 #define kMainButtons     6
 #define kMapPictItem   3
 #define kMasterStellarSprites 256
-#define kMaxAsteroids           16
+#define kMaxAsteroids           1024
+#define kClassicMaxAsteroids    16      /* the count limit without Asteroid Scaling and at 1024x768 */
 #define kMaxRoidTypes           16
+#define kWrapMargin             32      /* asteroids live this far past the screen edge */
 #define kMaxBeams               64
 #define kMaxExplods       0x20
 #define kMaxExplodTypes   64      /* explodType[] entries: bööm 128..191 */

@@ -2065,7 +2065,7 @@ void HandleBeams(unsigned char advance)
                                             hitAngle = size * 10 / 32;
                                             if (abs(diff - angle) <= hitAngle) {
                                                 dist = XYFloatSquaredDist(
-                                                    &shipData[roid].pos,
+                                                    &asteroidData[roid].pos,
                                                     &muzzle);
                                                 if (dist < bestDist || bestRoid == -1) {
                                                     bestDist = dist;
@@ -3413,7 +3413,10 @@ void HandleShot(ShotObj *shot)
         }
         if (weaponStats[shot->weapType].guidance == kGuidancePointDef)
             shot->target = -1;
-        else if (shot->target >= 0 && shot->target < kMaxShips) {
+        else if (shot->guidanceState == kShotStateRock) {     /* target is an asteroid slot */
+            if (shot->target >= kMaxAsteroids)
+                shot->target = -1;
+        } else if (shot->target >= 0 && shot->target < kMaxShips) {
             if (shot->guidanceState == 0 && shipData[shot->target].active == 0) {
                 shot->guidanceState = kShotSpentCode;
                 shot->target = -1;
@@ -3590,7 +3593,7 @@ void HandleShot(ShotObj *shot)
             if ((weaponStats[shot->weapType].flags2 & kWeapNoSubsOnExpire) != 0)
                 noSub = 1;
             if (weaponStats[shot->weapType].subCount > 0 && noSub == 0)
-                SpawnShotSubmunitions(shot, shot->target);
+                SpawnShotSubmunitions(shot, shot->guidanceState == kShotStateRock ? -1 : shot->target);
             if ((weaponStats[shot->weapType].flags & kWeapDetonatesAtEnd) != 0) {
                 CreateExplosion(shot->pos,
                                 weaponStats[shot->weapType].explodType,
@@ -3637,8 +3640,6 @@ void HandleShot(ShotObj *shot)
     }
 }
 
-#define kMinSpriteSpan          8
-#define kWrapMargin             32
 #define kDeadStrength           (-32000)
 
 
@@ -3648,10 +3649,15 @@ void HandleAsteroids(void)
 {
     short i;
     short spriteW;
-    short maxW;
-    short maxH;
     short spriteH;
-    Boolean wrapped;
+    short left;
+    short top;
+    short active;
+    short target;
+    short halfW;
+    short halfH;
+    short j;
+    bool outX;
 
     if (miningShipsActive != 0 && asteroidData[0].active == 0) {
         for (i = 1; i < kMaxAsteroids; i++) {
@@ -3671,17 +3677,12 @@ void HandleAsteroids(void)
         }
     }
 
-    maxW = maxH = kMinSpriteSpan;
-    for (i = 0; i < kMaxAsteroids; i++) {
-        if (masterAsteroidSprite[i] != NULL) {
-            spriteW = GetSpriteXSize(masterAsteroidSprite[i]);
-            if (spriteW > maxW)
-                maxW = spriteW;
-            spriteH = GetSpriteYSize(masterAsteroidSprite[i]);
-            if (spriteH > maxH)
-                maxH = spriteH;
-        }
-    }
+    active = 0;
+    for (i = 0; i < kMaxAsteroids; i++)
+        if (asteroidData[i].active != 0)
+            active++;
+    target = AsteroidTarget();
+
     for (i = 0; i < kMaxAsteroids; i++) {
         if (asteroidData[i].active == 0 || asteroidData[i].strength <= kDeadStrength
                 || killAsteroids != 0) {
@@ -3714,26 +3715,41 @@ void HandleAsteroids(void)
                                  + screenCenter.h - spriteW / 2),
                          ((short)(asteroidData[i].pos.y - shipData->pos.y)
                                  + screenCenter.v - spriteH / 2));
-            wrapped = 0;
-            if (asteroidData[i].sprite->destFrameRect.left > screenCenter.h * 2 + kWrapMargin) {
-                asteroidData[i].pos.x = shipData->pos.x - screenCenter.h - maxW * 2;
-                wrapped = 1;
-            }
-            if (asteroidData[i].sprite->destFrameRect.left < -spriteW * 2 - kWrapMargin) {
-                asteroidData[i].pos.x = shipData->pos.x + screenCenter.h + maxW * 2;
-                wrapped = 1;
-            }
-            if (asteroidData[i].sprite->destFrameRect.top > screenCenter.v * 2 + kWrapMargin) {
-                asteroidData[i].pos.y = shipData->pos.y - screenCenter.v - maxH * 2;
-                wrapped = 1;
-            }
-            if (asteroidData[i].sprite->destFrameRect.top < -spriteH * 2 - kWrapMargin) {
-                asteroidData[i].pos.y = shipData->pos.y + screenCenter.v + maxH * 2;
-                wrapped = 1;
-            }
-            if (wrapped) {
-                SWSetSpriteVisible(asteroidData[i].sprite, 0);
-                asteroidData[i].active = 0;
+            /* once the sprite is kWrapMargin past a screen edge, a fresh asteroid takes its place at the far
+               side of the margin beyond the opposite edge, at a random place along it; asteroids over the
+               system's count are removed instead */
+            left = asteroidData[i].sprite->destFrameRect.left;
+            top = asteroidData[i].sprite->destFrameRect.top;
+            if (left > screenCenter.h * 2 + kWrapMargin || left + spriteW < -kWrapMargin
+                    || top > screenCenter.v * 2 + kWrapMargin || top + spriteH < -kWrapMargin) {
+                outX = left > screenCenter.h * 2 + kWrapMargin || left + spriteW < -kWrapMargin;
+                if (active > target || !RollAsteroid(i)) {
+                    SWSetSpriteVisible(asteroidData[i].sprite, 0);
+                    asteroidData[i].active = 0;
+                    active--;
+                    continue;
+                }
+                for (j = 0; j < kMaxShots; j++)
+                    if (shotData[j].guidanceState == kShotStateRock && shotData[j].target == i)
+                        shotData[j].target = -1;
+                SWCloneFramesFromMaster(asteroidData[i].sprite, masterAsteroidSprite[asteroidData[i].type]);
+                SWSetCurrentFrameIndex(asteroidData[i].sprite, asteroidData[i].frame);
+                spriteW = GetSpriteXSize(asteroidData[i].sprite);
+                spriteH = GetSpriteYSize(asteroidData[i].sprite);
+                halfW = screenCenter.h + spriteW / 2 + kWrapMargin - 2;
+                halfH = screenCenter.v + spriteH / 2 + kWrapMargin - 2;
+                if (outX) {
+                    asteroidData[i].pos.x = shipData->pos.x + (left > 0 ? -halfW : halfW);
+                    asteroidData[i].pos.y = shipData->pos.y + Rand(2 * halfH) - halfH;
+                } else {
+                    asteroidData[i].pos.y = shipData->pos.y + (top > 0 ? -halfH : halfH);
+                    asteroidData[i].pos.x = shipData->pos.x + Rand(2 * halfW) - halfW;
+                }
+                SWSetSpriteLocation(asteroidData[i].sprite,
+                             ((short)(asteroidData[i].pos.x - shipData->pos.x)
+                                     + screenCenter.h - spriteW / 2),
+                             ((short)(asteroidData[i].pos.y - shipData->pos.y)
+                                     + screenCenter.v - spriteH / 2));
             }
         }
     }

@@ -1387,7 +1387,6 @@ void HandlePlayer(ShipObj *player)
             killBoxes = 1;
             killExplods = 1;
             killSmoke = 1;
-            killAsteroids = 1;
             missionSoundID = -1;
             escortMenuOnscreen = 0;
             CreateAsteroids();

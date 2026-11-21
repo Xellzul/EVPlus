@@ -540,8 +540,7 @@ void DoNewPilot(void)
     mapScroll.h = systemData[shipData->curSystem].pos.h;
     mapScroll.v = systemData[shipData->curSystem].pos.v;
     missionSoundID = -1;
-    killShots = killBoxes = killExplods = killSmoke =
-        killAsteroids = 1;
+    killShots = killBoxes = killExplods = killSmoke = 1;
     pstrcpy(newShipName, textInputString);
     CullNameString(newShipName);
     pstrcpy(shipName, newShipName);

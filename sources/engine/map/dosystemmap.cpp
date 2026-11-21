@@ -1013,9 +1013,11 @@ void MapDialogUpdate(void)
                     }
                 }
                 if (systemData[sel].asteroidCount > 0) {
-                    if (systemData[sel].asteroidCount <= 3)
+                    short roids = AsteroidReferenceCount(systemData[sel].asteroidCount);
+
+                    if (roids <= 3)
                         StrcatIndCString((char *)buf, kGameStrList, 0x139);
-                    else if (systemData[sel].asteroidCount <= 6)
+                    else if (roids <= 6)
                         StrcatIndCString((char *)buf, kGameStrList, 0x13a);
                     else
                         StrcatIndCString((char *)buf, kGameStrList, 0x13b);

@@ -13,3 +13,4 @@
 - Positional Audio
 - Mouse wheel scroll for shops / galaxy map / mission texts
 - Shipyard: double-click opens it description
+- Asteroid Scaling based on screen size, asteroid cap increased from 16 to 1024

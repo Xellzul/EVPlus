@@ -354,6 +354,7 @@ typedef struct Settings {
     short scaleFilter;              /* kScaleFilter* */
     Boolean wholePixelScaling;
     Boolean stereoPan;              /* Positional Stereo: distant sounds panned left/right */
+    Boolean asteroidScaling;        /* asteroid count follows the view size */
     double uiScale;                 /* dialogs and status bar, 1.0 = as designed */
 } Settings;
 
@@ -383,6 +384,7 @@ typedef struct PrefsRecord {
     short scaleFilter;
     short wholePixelScaling;
     short stereoPan;
+    short asteroidScaling;
     short keys[36];
     double uiScale;
 } PrefsRecord;

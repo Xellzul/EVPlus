@@ -1,6 +1,6 @@
 /* prefsdialog.cpp -- the Preferences dialog: the items of the game's DITL 4003 without the two that did nothing
    (Share Processor Time, Check For Updates) plus Positional Stereo, in three groups, the third with the display
-   settings. Built in code (NewDialogFromItems); each check box and up/down control is a table entry. */
+   settings, and a Gameplay group under Sound. Built in code (NewDialogFromItems); each check box and up/down control is a table entry. */
 #include "dialogs.h"
 #include "game.h"
 #include "player.h"
@@ -68,9 +68,10 @@ struct StepperItems {
    row; an up/down control two (its label, then the arrows beside its value), three with a line below. */
 class Column {
 public:
-    Column(ItemList &items, short left, const char *heading) : items(items), left(left), top(kFirstRow)
+    Column(ItemList &items, short left, const char *heading, short headingTop = kHeadingTop)
+        : items(items), left(left), top(headingTop + kFirstRow - kHeadingTop)
     {
-        items.add(kDitlStaticText, kHeadingTop, left, kHeadingTop + 16, left + kColWidth, heading);
+        items.add(kDitlStaticText, headingTop, left, headingTop + 16, left + kColWidth, heading);
     }
 
     short check(const char *text)
@@ -166,7 +167,7 @@ private:
 
     ItemList items;
     Dialog dialog;
-    std::array<CheckBox, 13> checks;
+    std::array<CheckBox, 16> checks;
     int checkCount = 0;
     std::array<Stepper, 6> steppers;
     int stepperCount = 0;
@@ -186,6 +187,7 @@ PrefsDialog::PrefsDialog()
     Column graphics(items, kColGraphics, "Graphics");
     Column sound(items, kColSound, "Sound");
     Column display(items, kColDisplay, "Display");
+    Column gameplay(items, kColSound, "Gameplay", kFirstRow + 6 * kRow);   /* below Sound */
 
     auto check = [this](short item, unsigned char *setting, bool inverted = false) {
         checks[checkCount++] = { item, setting, inverted };
@@ -227,6 +229,8 @@ PrefsDialog::PrefsDialog()
         [](const PrefsDialog &, char *value, char *) {
             ListText(kMusicVolStrList, settings.volume, kMaxMusicVol, value);
         });
+
+    check(gameplay.check("Asteroid Scaling"), Flag(settings.asteroidScaling));
 
     windowedItem = display.check("Run in a window");
     check(display.check("Whole-pixel scaling"), Flag(settings.wholePixelScaling));

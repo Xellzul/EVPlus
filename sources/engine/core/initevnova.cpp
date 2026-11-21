@@ -3015,95 +3015,146 @@ void SpawnSmoke(FloatPoint pos, short type, short sprite)
     }
 }
 
+/* the area asteroids live in (the view plus kWrapMargin around it) over that of the 830x768 reference view;
+   50 = an asteroid's size */
+static double AsteroidDensity(void)
+{
+    const double margins = 2 * kWrapMargin + 50;
+
+    return (View::width + margins) * (View::height + margins) / ((830 + margins) * (768 + margins));
+}
+
+/* a system's asteroid count at a 1024x768 game size */
+short AsteroidReferenceCount(short count)
+{
+    double roids;
+
+    if (count <= 0)
+        return 0;
+    roids = count * 1024 / 640.0;
+    return roids > kClassicMaxAsteroids ? kClassicMaxAsteroids : (short)roids;
+}
+
+/* the asteroids the current system keeps around the player; without Asteroid Scaling by game width, at most 16 */
+short AsteroidTarget(void)
+{
+    short count = systemData[shipData[0].curSystem].asteroidCount;
+    int target;
+
+    if (count <= 0)
+        return 0;
+    if (settings.asteroidScaling == 0) {
+        target = (int)(count * (View::gameWidth / 640.0));
+        return target > kClassicMaxAsteroids ? kClassicMaxAsteroids : target;
+    }
+    target = (int)(AsteroidReferenceCount(count) * AsteroidDensity());
+    if (target < 1)
+        target = 1;
+    if (target > kMaxAsteroids)
+        target = kMaxAsteroids;
+    return target;
+}
+
 // FUNCTION: EVNOVA 0x004216b0
 // MAC: _CreateAsteroids i386 0x0003fa05 ppc 0x00046ca8
 void CreateAsteroids(void)
 {
     short i;
-    short w;
-    short h;
 
-    if (systemData[shipData[0].curSystem].asteroidCount > 0) {
-        for (i = 0; i < systemData[shipData[0].curSystem].asteroidCount; i++)
-            SpawnAsteroid(0);
-        w = screenCenter.h + 128;
-        h = screenCenter.v + 128;
-        for (i = 0; i < kMaxAsteroids; i++) {
-            asteroidData[i].pos.x = shipData[0].pos.x + Rand(w) - w * 0.5;
-            asteroidData[i].pos.y = shipData[0].pos.y + Rand(h) - h * 0.5;
-            asteroidData[i].vel.x = (Rand(400) - 200) * 0.01;
-            asteroidData[i].vel.y = (Rand(400) - 200) * 0.01;
-        }
-    } else {
-        killAsteroids = 1;
-    }
+    for (i = 0; i < kMaxAsteroids; i++)
+        asteroidData[i].active = 0;
+    killAsteroids = 0;
+    SpawnAsteroid(0);
 }
 
+/* slot i becomes a fresh asteroid of one of the current system's types: type, frame, spin, strength;
+   false when the system has no asteroid types */
+bool RollAsteroid(short i)
+{
+    short types = systemData[shipData[0].curSystem].astTypes;
+
+    if (types == 0)
+        return false;
+    do {
+        asteroidData[i].type = Rand(kMaxRoidTypes);
+    } while (!(types & (1 << asteroidData[i].type)));
+    asteroidData[i].frame = Rand(masterAsteroidSprite[asteroidData[i].type]->numFrames);
+    asteroidData[i].frameRate = asteroidType[asteroidData[i].type].frameRate * (Rand(41) + 80) * 0.01;
+    if (Rand(2) == 0)
+        asteroidData[i].frameRate *= -1.0;
+    asteroidData[i].strength = asteroidType[asteroidData[i].type].strength;
+    return true;
+}
+
+/* type 0: the whole field at once; else a few new asteroids just off screen */
 // FUNCTION: EVNOVA 0x00421830
 // MAC: _SpawnAsteroid i386 0x0003a233 ppc 0x000406a0
 void SpawnAsteroid(unsigned char type)
 {
-    short w;
-    float radius;
-    short h;
     short i;
-    short active;
+    short room;
+    short rate;
+    short sw;
+    short sh;
+    short hw;
+    short hh;
+    short dx;
+    short dy;
+    SpriteRec *master;
 
     if (systemData[shipData[0].curSystem].asteroidCount <= 0
         || systemData[shipData[0].curSystem].astTypes == 0)
         return;
 
-    active = 0;
+    room = AsteroidTarget();
     for (i = 0; i < kMaxAsteroids; i++)
         if (asteroidData[i].active != 0)
-            active++;
+            room--;
+    if (type != 0) {
+        rate = settings.asteroidScaling != 0 ? (short)(AsteroidDensity() + 0.5) : 1;
+        if (rate < 1)
+            rate = 1;
+        if (room > rate)
+            room = rate;
+    }
 
-    if (active >= systemData[shipData[0].curSystem].asteroidCount)
-        return;
+    for (i = 0; i < kMaxAsteroids && room > 0; i++) {
+        if (asteroidData[i].active != 0)
+            continue;
+        asteroidData[i].active = 1;
+        room--;
 
-    for (i = 0; i < kMaxAsteroids; i++) {
-        if (asteroidData[i].active == 0) {
-            asteroidData[i].active = 1;
+        RollAsteroid(i);
+        master = masterAsteroidSprite[asteroidData[i].type];
+        /* half the area this asteroid lives in: the view plus kWrapMargin, by its sprite's middle */
+        hw = screenCenter.h + GetSpriteXSize(master) / 2 + kWrapMargin - 2;
+        hh = screenCenter.v + GetSpriteYSize(master) / 2 + kWrapMargin - 2;
 
-            w = screenCenter.h + 128;
-            h = screenCenter.v;
-
-            if (type != 0) {
-                radius = h;
-                if (radius < 2.0f)
-                    radius = 2.0f;
-
-                if (Rand(2) == 0) {
-                    asteroidData[i].pos.x = shipData[0].pos.x + radius + Rand(radius / 2.0f);
-                    asteroidData[i].vel.x = Rand(200) * -0.01;
-                } else {
-                    asteroidData[i].pos.x = shipData[0].pos.x - radius - Rand(radius / 2.0f);
-                    asteroidData[i].vel.x = Rand(200) * 0.01;
-                }
-                if (Rand(2) == 0) {
-                    asteroidData[i].pos.y = shipData[0].pos.y + radius + Rand(radius / 2.0f);
-                    asteroidData[i].vel.y = Rand(200) * -0.01;
-                } else {
-                    asteroidData[i].pos.y = shipData[0].pos.y - radius - Rand(radius / 2.0f);
-                    asteroidData[i].vel.y = Rand(200) * 0.01;
-                }
+        if (type != 0) {
+            /* fully off screen anywhere along an edge (each edge by its length) */
+            sw = GetSpriteXSize(master);
+            sh = GetSpriteYSize(master);
+            if (Rand(screenCenter.h + screenCenter.v) < screenCenter.h) {
+                dx = Rand(2 * hw) - hw;
+                dy = screenCenter.v + sh / 2 + 2 + Rand(kWrapMargin - 1);
+                if (Rand(2) == 0)
+                    dy = -dy;
             } else {
-                asteroidData[i].pos.x = shipData[0].pos.x + Rand(w) - w * 0.5;
-                asteroidData[i].pos.y = shipData[0].pos.y + Rand(h) - h * 0.5;
-                asteroidData[i].vel.x = (Rand(400) - 200) * 0.01;
-                asteroidData[i].vel.y = (Rand(400) - 200) * 0.01;
+                dy = Rand(2 * hh) - hh;
+                dx = screenCenter.h + sw / 2 + 2 + Rand(kWrapMargin - 1);
+                if (Rand(2) == 0)
+                    dx = -dx;
             }
-
-            do {
-                asteroidData[i].type = Rand(16);
-            } while (!(systemData[shipData[0].curSystem].astTypes & (1 << asteroidData[i].type)));
-
-            asteroidData[i].frame = Rand(masterAsteroidSprite[asteroidData[i].type]->numFrames);
-            asteroidData[i].frameRate = asteroidType[asteroidData[i].type].frameRate * (Rand(41) + 80) * 0.01;
-            if (Rand(2) == 0)
-                asteroidData[i].frameRate *= -1.0;
-            asteroidData[i].strength = asteroidType[asteroidData[i].type].strength;
-            break;
+            asteroidData[i].pos.x = shipData[0].pos.x + dx;
+            asteroidData[i].pos.y = shipData[0].pos.y + dy;
+            asteroidData[i].vel.x = Rand(200) * (dx > 0 ? -0.01 : 0.01);
+            asteroidData[i].vel.y = Rand(200) * (dy > 0 ? -0.01 : 0.01);
+        } else {
+            /* anywhere in the area */
+            asteroidData[i].pos.x = shipData[0].pos.x + Rand(2 * hw) - hw;
+            asteroidData[i].pos.y = shipData[0].pos.y + Rand(2 * hh) - hh;
+            asteroidData[i].vel.x = (Rand(400) - 200) * 0.01;
+            asteroidData[i].vel.y = (Rand(400) - 200) * 0.01;
         }
     }
 }

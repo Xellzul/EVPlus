@@ -88,7 +88,7 @@ void DoMainScreen(void)
         HandleStellarSystemVisibility();
         MissionPostLoadValidCheck();
         onPlanet = 0;
-        killShots = killBoxes = killExplods = killSmoke = killAsteroids = 1;
+        killShots = killBoxes = killExplods = killSmoke = 1;
         missionSoundID = -1;
         SWSetPortToBackground(gSpriteWorld);
         SetSystemBackgroundColor();
@@ -254,7 +254,7 @@ void MainScreenChoice(short which)
             }
 
             onPlanet = 0;
-            killShots = killBoxes = killExplods = killSmoke = killAsteroids = 1;
+            killShots = killBoxes = killExplods = killSmoke = 1;
             missionSoundID = -1;
             SWHideAllSprites(gSpriteWorld);
             crashlog("finished opening pilot file");

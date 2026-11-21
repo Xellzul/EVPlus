@@ -92,6 +92,9 @@ extern void SpawnParticles(short x, short y, float speed, short spreadPct,
                          short count, short jitter);                  /* 0x004274d0 */
 extern void SpawnShotSubmunitions(ShotObj *shot, short ship);         /* 0x00420d30 mac _SpawnShotSubmunitions */
 extern void SpawnAsteroid(unsigned char type);                        /* 0x00421830 */
+extern short AsteroidReferenceCount(short count);
+extern short AsteroidTarget(void);
+extern bool RollAsteroid(short i);
 extern void SpawnSubAsteroid(FloatPoint *pos, short type);            /* 0x00421e60 */
 
 #ifdef __cplusplus

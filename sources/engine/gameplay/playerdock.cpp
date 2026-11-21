@@ -264,7 +264,6 @@ short PlayerEnterHypergate(void)
             killBoxes = 1;
             killExplods = 1;
             killSmoke = 1;
-            killAsteroids = 1;
             crashlog_print("travelled through hypergate to system ");
             crashlog_print_num(shipData->curSystem + kFirstResourceID);
             crashlog_print(" (");
@@ -595,7 +594,6 @@ void HandlePlayerDockRequest(void)
                 killBoxes = 1;
                 killExplods = 1;
                 killSmoke = 1;
-                killAsteroids = 1;
                 if ((shipClass[ship->type].shanFlags & kShanFoldingParts) != 0 &&
                     (shipClass[ship->type].shanFlags & kShanUnfoldsWhenFiring) != 0) {
                     ship->foldSet = shipClass[ship->type].baseSets - 1;
@@ -625,7 +623,6 @@ void HandlePlayerDockRequest(void)
                 killBoxes = 1;
                 killExplods = 1;
                 killSmoke = 1;
-                killAsteroids = 1;
                 escortMenuOnscreen = 0;
                 dockPermission = 0;
                 ship->targetShip = -1;
@@ -736,6 +733,7 @@ void HandlePlayerDockRequest(void)
                     stellarData[qtStellar].nextFrame = stellarData[qtStellar].curFrame;
                     stellarData[qtStellar].frameTimer = -stellarData[qtStellar].animDelay;
                 }
+                CreateAsteroids();
                 PrepareAllSprites();
                 HandleStellarSystemVisibility();
                 PrepareAllSprites();

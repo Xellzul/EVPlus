@@ -33,6 +33,7 @@ static const PrefsJsonField kPrefsJsonFields[] = {
     { "scaleFilter",    offsetof(PrefsRecord, scaleFilter) },
     { "wholePixelScaling", offsetof(PrefsRecord, wholePixelScaling) },
     { "stereoPan",      offsetof(PrefsRecord, stereoPan) },
+    { "asteroidScaling", offsetof(PrefsRecord, asteroidScaling) },
 };
 #define kPrefsJsonFieldCount (sizeof(kPrefsJsonFields) / sizeof(kPrefsJsonFields[0]))
 
