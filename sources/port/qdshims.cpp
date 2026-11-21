@@ -25,13 +25,9 @@ void GetGlobalMouse(Point *pt)
     int32_t v;
 
     MouseReadPosition(&h, &v);
-    pt->h = h;
-    pt->v = v;
-    if (UI::Enabled()) {
-        UI::Mapping screen(gGamePort.pix);
-        pt->h = (short)screen.LogicalX(h);
-        pt->v = (short)screen.LogicalY(v);
-    }
+    UI::Mapping screen(gGamePort.pix);
+    pt->h = (short)screen.LogicalX(h);
+    pt->v = (short)screen.LogicalY(v);
 }
 
 // FUNCTION: EVNOVA 0x004b68d0

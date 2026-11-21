@@ -9,6 +9,7 @@
 #include "player.h"
 #include "render.h"
 #include "game.h"
+#include "uiscale.h"
 
 #define kIntroPictSlots 4
 
@@ -37,90 +38,93 @@ void ShowIntroScreen(void)
     if (!settings.windowed)
         HideTheCursor();
 
-    for (i = 0; i < kIntroPictSlots; i++) {
-        if (introPictID[i] > 0)
-            picHandle = GetPicture(introPictID[i]);
-        else
-            picHandle = NULL;
+    {
+        UI::MenuScale menu;
+        for (i = 0; i < kIntroPictSlots; i++) {
+            if (introPictID[i] > 0)
+                picHandle = GetPicture(introPictID[i]);
+            else
+                picHandle = NULL;
 
-        SetGWorldContainer(&loadPort);
-        ForeColor(blackColor);
-        PaintRect(&loadPort.bounds);
+            SetGWorldContainer(&loadPort);
+            ForeColor(blackColor);
+            PaintRect(&loadPort.bounds);
 
-        rect = loadPort.bounds;
+            rect = loadPort.bounds;
 
-        if (picHandle != NULL) {
-            CenterPict(picHandle, &rect);
-            DrawPicHandle(picHandle, &rect);
-            QDReleaseResource(picHandle);
-        }
-
-        UnsetGWorldContainer(&loadPort);
-
-        SWSetPortToWindow(gSpriteWorld);
-        ForeColor(blackColor);
-        PaintRect(GetCWindowPortRect((WindowRef)gWind));
-        CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                 &rect, &rect, 0, NULL);
-        QDFlushPortBuffer(GetWindowPort(gWind), NULL);
-
-        SWSetPortToWindow(gSpriteWorld);
-
-        if (introPictID[i] > 0) {
-            snd = ST_LoadSndResource(0x7533);
-            if (snd != NULL) {
-                PlaySound(snd, 0xa, gSoundVolume, gSoundVolume);
+            if (picHandle != NULL) {
+                CenterPict(picHandle, &rect);
+                DrawPicHandle(picHandle, &rect);
+                QDReleaseResource(picHandle);
             }
 
-            HandleIntroMusic(1);
-            FadeScreenIn();
+            UnsetGWorldContainer(&loadPort);
 
-            while (Button() || KeyCheck(kScanReturn) || KeyCheck(kScanSpace) || KeyCheck(keyPrefs.pause)) {
-                BusyIdle();
-                HandleIntroMusic(0);
-            }
+            SWSetPortToWindow(gSpriteWorld);
+            ForeColor(blackColor);
+            PaintRect(GetCWindowPortRect((WindowRef)gWind));
+            CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
+                     &rect, &rect, 0, NULL);
+            QDFlushPortBuffer(GetWindowPort(gWind), NULL);
 
-            hit = 0;
-            startTick = ReadTick();
+            SWSetPortToWindow(gSpriteWorld);
 
-            while (ReadTick() - startTick < (introPictDelay[i] * 0x3c)
-                   && !hit && !KeyCheck(kScanReturn) && !KeyCheck(kScanSpace) && !pictSkipped) {
-                BusyIdle();
-                HandleIntroMusic(0);
-                if (Button()) {
-                    rect = *GetCWindowPortRect((WindowRef)gWind);
-                    GetGlobalMouse(&pt);
-                    if (PtInRectPoint(pt, &rect)) {
-                        hit = 1;
-                    } else {
-                        while (Button()) {
-                            BusyIdle();
-                            HandleIntroMusic(0);
-                            if (ReadTick() - startTick > (introPictDelay[i] * 0x3c))
-                                break;
-                            if (KeyCheck(kScanReturn) || KeyCheck(kScanSpace))
-                                break;
-                            if (KeyCheck(keyPrefs.pause)) {
-                                pictSkipped = 1;
-                                break;
+            if (introPictID[i] > 0) {
+                snd = ST_LoadSndResource(0x7533);
+                if (snd != NULL) {
+                    PlaySound(snd, 0xa, gSoundVolume, gSoundVolume);
+                }
+
+                HandleIntroMusic(1);
+                FadeScreenIn();
+
+                while (Button() || KeyCheck(kScanReturn) || KeyCheck(kScanSpace) || KeyCheck(keyPrefs.pause)) {
+                    BusyIdle();
+                    HandleIntroMusic(0);
+                }
+
+                hit = 0;
+                startTick = ReadTick();
+
+                while (ReadTick() - startTick < (introPictDelay[i] * 0x3c)
+                       && !hit && !KeyCheck(kScanReturn) && !KeyCheck(kScanSpace) && !pictSkipped) {
+                    BusyIdle();
+                    HandleIntroMusic(0);
+                    if (Button()) {
+                        rect = *GetCWindowPortRect((WindowRef)gWind);
+                        GetGlobalMouse(&pt);
+                        if (PtInRectPoint(pt, &rect)) {
+                            hit = 1;
+                        } else {
+                            while (Button()) {
+                                BusyIdle();
+                                HandleIntroMusic(0);
+                                if (ReadTick() - startTick > (introPictDelay[i] * 0x3c))
+                                    break;
+                                if (KeyCheck(kScanReturn) || KeyCheck(kScanSpace))
+                                    break;
+                                if (KeyCheck(keyPrefs.pause)) {
+                                    pictSkipped = 1;
+                                    break;
+                                }
                             }
                         }
                     }
+                    if (KeyCheck(keyPrefs.pause))
+                        pictSkipped = 1;
                 }
-                if (KeyCheck(keyPrefs.pause))
-                    pictSkipped = 1;
+
+                if (snd != NULL) {
+                    ST_HaltSound(snd);
+                    ST_DisposeSound(snd);
+                }
+
+                HandleIntroMusic(1);
+                FadeScreenOut();
+
+                if (pictSkipped)
+                    break;
             }
-
-            if (snd != NULL) {
-                ST_HaltSound(snd);
-                ST_DisposeSound(snd);
-            }
-
-            HandleIntroMusic(1);
-            FadeScreenOut();
-
-            if (pictSkipped)
-                break;
         }
     }
 

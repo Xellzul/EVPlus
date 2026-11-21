@@ -2,6 +2,7 @@
 
 #include "viewscale.h"
 #include "uisprite.h"
+#include "uiscale.h"
 #include "render.h"
 #include "game.h"
 /* the main-screen object's globals; this file ends that object (the .CRT hook) */
@@ -53,6 +54,7 @@ Boolean mainScreenBackgroundDirty;
 // MAC: _MainScreenRolloverDraw i386 0x00017ad4 ppc 0x0001b76c
 void MainScreenRolloverDraw(void)
 {
+    UI::MenuScale menu;
     short idx;
     Rect srcRect;
 

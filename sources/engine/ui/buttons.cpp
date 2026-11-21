@@ -296,7 +296,7 @@ void InitButtons(void)
     buttonColor[1].red = buttonColor[1].green = buttonColor[1].blue = 0x8000;
     buttonColor[2].red = buttonColor[2].green = buttonColor[2].blue = 0x8000;
     SetRect(&bounds, 0, 0, 500, 75);
-    if (UI::Enabled())
+    if (UI::InterfaceScaled())
         SetRect(&bounds, 0, 0, UI::ScreenWidth(), UI::ScreenHeight());     /* buttons drawn where they lie */
     CreateGWorldContainer(&buttonPort, kButtonDevice, gSpriteWorld->pixelDepth, &bounds);
     if (buttonPort.world != 0)
@@ -382,7 +382,7 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
         GWorldContainerSetPort(&buttonPort);
         ForeColor(blackColor);
         box = *bounds;
-        if (!UI::Enabled())
+        if (!UI::InterfaceScaled())
             OffsetRect(&box, -box.left, -box.top);
         CopyBits(GWorldContainerBits(&loadPort), (BitMapPtr)GWorldContainerBits(&buttonPort),
                  bounds, &box, 0, 0);

@@ -4,6 +4,7 @@
 #include "game.h"
 #include "viewscale.h"
 #include "uisprite.h"
+#include "uiscale.h"
 #include "gameutil.h"
 #include "render.h"
 #include "sound.h"
@@ -57,6 +58,7 @@ void DoAboutBox(void)
 // MAC: _TrackMainScreenButtons i386 0x000195b9 ppc 0x0001d30c
 short TrackMainScreenButtons(Point where)
 {
+    UI::MenuScale menu;
     Rect box;
     Point pt;
     short i;

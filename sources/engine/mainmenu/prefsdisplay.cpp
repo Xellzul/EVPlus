@@ -35,10 +35,7 @@ bool SameRatio(double a, double b)
     return fabs(a - b) <= b * kRatioTolerance;
 }
 
-struct Size {
-    int width;
-    int height;
-};
+using Size = PixelSize;
 
 Size DesktopSize()
 {
@@ -48,14 +45,6 @@ Size DesktopSize()
     if (s.width <= 0 || s.height <= 0)
         s = { kOriginalWidth, kOriginalHeight };
     return s;
-}
-
-/* the size a kept resolution stands for: 0 is the desktop's */
-Size ShownSize(Resolution r)
-{
-    Size desktop = DesktopSize();
-
-    return { r.width != 0 ? r.width : desktop.width, r.height != 0 ? r.height : desktop.height };
 }
 
 /* the largest dialog the game and the plug-ins have (DLOG bounds), measured once */
@@ -86,6 +75,38 @@ Size LargestDialog()
 }
 
 } // namespace
+
+PixelSize GameSize(Resolution r)
+{
+    Size desktop = DesktopSize();
+
+    return { r.width != 0 ? r.width : desktop.width, r.height != 0 ? r.height : desktop.height };
+}
+
+PixelSize DrawSize(Resolution r)
+{
+    Size desktop = DesktopSize();
+    Size game = GameSize(r);
+    Size draw = game;
+    double fit = (double)desktop.width / game.width < (double)desktop.height / game.height
+                     ? (double)desktop.width / game.width
+                     : (double)desktop.height / game.height;
+
+    if (fit > 1.0) {
+        draw.width = 2 * (int)(game.width * fit / 2 + 0.5);
+        draw.height = (int)(game.height * fit + 0.5);
+    }
+    return draw;
+}
+
+double BaseUIScale(PixelSize draw)
+{
+    double scale = (double)draw.height / kOriginalHeight;
+
+    if ((double)draw.width / kOriginalWidth < scale)
+        scale = (double)draw.width / kOriginalWidth;
+    return scale > 1.0 ? scale : 1.0;
+}
 
 ResolutionList::ResolutionList() : count(0)
 {
@@ -148,14 +169,14 @@ Resolution ResolutionList::step(Resolution r, int direction) const
 
 void ResolutionList::sizeText(Resolution r, char *out) const
 {
-    Size s = ShownSize(r);
+    Size s = GameSize(r);
 
     snprintf(out, kDisplayTextMax, "%d x %d", s.width, s.height);
 }
 
 void ResolutionList::aspectText(Resolution r, char *out) const
 {
-    Size s = ShownSize(r);
+    Size s = GameSize(r);
     double value = (double)s.width / s.height;
     char ratio[16];
     const char *name = NULL;
@@ -177,18 +198,19 @@ void ResolutionList::aspectText(Resolution r, char *out) const
     snprintf(out, kDisplayTextMax, "%s%s", name, note);
 }
 
-/* every dialog = the game's and the plug-ins' DLOGs and one of ownWidth x ownHeight; in steps of 0.1, never
-   below 1.0 */
+/* every dialog = the game's and the plug-ins' DLOGs and one of ownWidth x ownHeight, on the screen as it is
+   at UI scale 1.0; in steps of 0.1, never below 1.0 */
 double MaxUIScale(Resolution r, short ownWidth, short ownHeight)
 {
-    Size screen = ShownSize(r);
+    Size draw = DrawSize(r);
+    double base = BaseUIScale(draw);
     Size largest = LargestDialog();
     int width = largest.width > ownWidth ? largest.width : ownWidth;
     int height = largest.height > ownHeight ? largest.height : ownHeight;
-    double scale = (double)screen.width / width;
+    double scale = draw.width / base / width;
 
-    if ((double)screen.height / height < scale)
-        scale = (double)screen.height / height;
+    if (draw.height / base / height < scale)
+        scale = draw.height / base / height;
     scale = floor(scale * 10 + 1e-6) / 10;
     return scale < kUIScaleMin ? kUIScaleMin : scale;
 }

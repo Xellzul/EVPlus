@@ -7,8 +7,13 @@ namespace UI {
 namespace {
 
 double gScale = 1.0;
+double gInterfaceScale = 1.0;
+double gMenuScale = 1.0;
+bool gMenuActive;
 short gScreenWidth;
 short gScreenHeight;
+short gMenuWidth;
+short gMenuHeight;
 int gDeviceWidth;
 int gDeviceHeight;
 
@@ -169,7 +174,76 @@ double Scale()
 
 void SetScale(double scale)
 {
-    gScale = scale > 0 ? scale : 1.0;
+    gScale = gInterfaceScale = scale > 0 ? scale : 1.0;
+}
+
+bool InterfaceScaled()
+{
+    return gInterfaceScale != 1.0;
+}
+
+void SetMenuScale(double scale)
+{
+    gMenuScale = scale > 0 ? scale : 1.0;
+    gMenuWidth = (short)(gDeviceWidth / gMenuScale + 0.5);
+    gMenuHeight = (short)(gDeviceHeight / gMenuScale + 0.5);
+}
+
+bool InMenuScale()
+{
+    return gMenuActive;
+}
+
+namespace {
+
+void SetLogicalSize(Rect &bounds, short width, short height)
+{
+    bounds.right = (short)(bounds.left + width);
+    bounds.bottom = (short)(bounds.top + height);
+}
+
+} // namespace
+
+MenuScale::MenuScale() : switched(false)
+{
+    if (gMenuActive || gMenuScale == gScale || gMenuWidth <= 0 || gMenuHeight <= 0)
+        return;
+    switched = true;
+    scale = gScale;
+    screenWidth = gScreenWidth;
+    screenHeight = gScreenHeight;
+    windowBounds = gGamePort.pix.bounds;
+    loadWorld = loadPort.world;
+    gScale = gMenuScale;
+    gScreenWidth = gMenuWidth;
+    gScreenHeight = gMenuHeight;
+    gMenuActive = true;
+    SetLogicalSize(gGamePort.pix.bounds, gMenuWidth, gMenuHeight);
+    gGamePort.pnDeviceOffset = 0;
+    if (loadWorld != NULL) {
+        loadBounds = loadPort.bounds;
+        loadPixBounds = loadWorld->pix.bounds;
+        SetLogicalSize(loadPort.bounds, gMenuWidth, gMenuHeight);
+        SetLogicalSize(loadWorld->pix.bounds, gMenuWidth, gMenuHeight);
+        loadWorld->pnDeviceOffset = 0;
+    }
+}
+
+MenuScale::~MenuScale()
+{
+    if (!switched)
+        return;
+    gScale = scale;
+    gScreenWidth = screenWidth;
+    gScreenHeight = screenHeight;
+    gMenuActive = false;
+    gGamePort.pix.bounds = windowBounds;
+    gGamePort.pnDeviceOffset = 0;
+    if (loadWorld != NULL && loadPort.world == loadWorld) {
+        loadPort.bounds = loadBounds;
+        loadWorld->pix.bounds = loadPixBounds;
+        loadWorld->pnDeviceOffset = 0;
+    }
 }
 
 } // namespace UI

@@ -253,9 +253,14 @@ void InitOffscreen(void)
     CreateGWorldContainer(&loadPort, GetMainDevice(), 0, &r);
     if (loadPort.world != NULL)
         UI::ScaleUIPort(loadPort.world);
-    if (UI::Enabled()) {
-        CreateGWorldContainer(&menuArtPort, GetMainDevice(), 0, &r);
-        CreateGWorldContainer(&menuShownPort, GetMainDevice(), 0, &r);
+    {
+        UI::MenuScale menu;
+        if (UI::Enabled()) {
+            Rect art = *GetCWindowPortRect((WindowRef)gWind);
+            OffsetRect(&art, -art.left, -art.top);
+            CreateGWorldContainer(&menuArtPort, GetMainDevice(), 0, &art);
+            CreateGWorldContainer(&menuShownPort, GetMainDevice(), 0, &art);
+        }
     }
     if (loadPort.world == NULL) {
         ShowTheCursor();
@@ -711,7 +716,7 @@ void LoadSounds(void)
 #define kVideoAlways        0x02
 
 /* The main menu's picture with its logo and slide animations is put together here: at the art's own size when
-   the interface is scaled, so it is stretched as one picture (no seams), else in loadPort as in the original. */
+   the menu is scaled, so it is stretched as one picture (no seams), else in loadPort as in the original. */
 GWorldContainer *MenuArt(void)
 {
     return menuArtPort.world != NULL ? &menuArtPort : &loadPort;
@@ -772,44 +777,33 @@ short startGameHeight;
 double startUIScale;
 
 /* The game plays at the preferences' resolution (0 = the desktop's) and is drawn at the largest size of that
-   shape the desktop holds; the UI scale grows with it. */
+   shape the desktop holds. The UI is scaled to look as on a 1024 x 768 screen, times the UI scale; the main
+   menu without the UI scale. */
 // FUNCTION: EVNOVA 0x004b45e0
 void SetupMonitor(void)
 {
-    int gameW;
-    int gameH;
-    int desktopW;
-    int desktopH;
-    int drawW;
-    int drawH;
-    double fit;
+    Resolution resolution = { settings.gameWidth, settings.gameHeight };
 
     startGameWidth = settings.gameWidth;
     startGameHeight = settings.gameHeight;
-    PlatDesktopSize(&desktopW, &desktopH);
-    gameW = settings.gameWidth != 0 ? settings.gameWidth : desktopW;
-    gameH = settings.gameHeight != 0 ? settings.gameHeight : desktopH;
-    fit = (double)desktopW / gameW < (double)desktopH / gameH ? (double)desktopW / gameW
-                                                               : (double)desktopH / gameH;
-    drawW = gameW;
-    drawH = gameH;
-    if (fit > 1.0) {
-        drawW = 2 * (int)(gameW * fit / 2 + 0.5);
-        drawH = (int)(gameH * fit + 0.5);
-    }
+    PixelSize game = GameSize(resolution);
+    PixelSize draw = DrawSize(resolution);
+    double base = BaseUIScale(draw);
     /* the file may hold any scale: kept to what the Preferences offer, where every dialog fits */
-    double maxUI = MaxUIScale({ settings.gameWidth, settings.gameHeight }, 0, 0);
+    double maxUI = MaxUIScale(resolution, 0, 0);
     if (!(settings.uiScale >= 1.0))
         settings.uiScale = 1.0;
     if (settings.uiScale > maxUI)
         settings.uiScale = maxUI;
-    double scale = settings.uiScale * drawH / gameH;
+    double scale = settings.uiScale * base;
     UI::SetScale(scale);
-    UI::SetScreenSize((short)(drawW / scale + 0.5), (short)(drawH / scale + 0.5), drawW, drawH);
+    UI::SetScreenSize((short)(draw.width / scale + 0.5), (short)(draw.height / scale + 0.5), draw.width,
+                      draw.height);
+    UI::SetMenuScale(base);
     startUIScale = settings.uiScale;
-    View::SetSizes(gameW, gameH, drawW, drawH, settings.uiScale);
+    View::SetSizes(game.width, game.height, draw.width, draw.height, scale);
     ApplyDisplayScaling();
-    SetDisplayToSize(drawW, drawH, kVideoDepth, kVideoFullScreen | kVideoAlways);
+    SetDisplayToSize(draw.width, draw.height, kVideoDepth, kVideoFullScreen | kVideoAlways);
 }
 
 void ApplyBrightness(void)

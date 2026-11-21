@@ -52,10 +52,13 @@ private:
    logical. A scale of 1 leaves it as it is. */
 void ScalePortPixels(CGrafPtr port, double scale);
 
-/* The UI scale in use: device pixels per logical pixel on UI pixel maps. 1 = the interface is not scaled. */
+/* The UI scale in use: device pixels per logical pixel on UI pixel maps; inside a MenuScale the menu scale.
+   1 = the interface is not scaled. */
 double Scale();
 void SetScale(double scale);
 inline bool Enabled() { return Scale() != 1.0; }
+/* the interface (everything outside a MenuScale) is scaled */
+bool InterfaceScaled();
 
 /* A UI port (the screen's scratch pages, dialogs, popups, overlays) made at its logical size gets device
    pixels in the screen's own proportion, so UI ports of one logical size have one device size. */
@@ -69,5 +72,30 @@ void SetScreenSize(short width, short height, int deviceWidth, int deviceHeight)
 /* a logical length or position on the screen, in device pixels */
 int ScreenDeviceX(int logical);
 int ScreenDeviceY(int logical);
+
+/* The menu scale, for the main menu and the startup and intro pictures; set after SetScreenSize. */
+void SetMenuScale(double scale);
+/* a MenuScale is in effect and the menu scale differs from the interface's */
+bool InMenuScale();
+
+/* While it lives, the menu scale is in use: Scale(), the logical screen and the logical bounds of the window
+   and loadPort are the menu's; device pixels stay. Nests; does nothing when both scales are the same. */
+class MenuScale {
+public:
+    MenuScale();
+    ~MenuScale();
+    MenuScale(const MenuScale &) = delete;
+    MenuScale &operator=(const MenuScale &) = delete;
+
+private:
+    bool switched;
+    double scale;
+    short screenWidth;
+    short screenHeight;
+    Rect windowBounds;
+    CGrafPtr loadWorld;
+    Rect loadBounds;
+    Rect loadPixBounds;
+};
 
 } // namespace UI

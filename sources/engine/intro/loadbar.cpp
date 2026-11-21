@@ -2,6 +2,7 @@
 #include "game.h"
 #include "render.h"
 #include "sound.h"
+#include "uiscale.h"
 
 /* the bar's rect comes out of the colr resource */
 
@@ -9,6 +10,7 @@
 // MAC: _InitIntroProgressBar i386 0x00061263 ppc 0x0006904c
 void InitIntroProgressBar(void)
 {
+    UI::MenuScale menu;
     Rect line;
     Rect fill;
     short midH;
@@ -67,6 +69,7 @@ void DeltaIntroProgressBar(double amount)
 // MAC: _DrawIntroProgressBar i386 0x000610ba ppc 0x00068e7c
 void DrawIntroProgressBar(void)
 {
+    UI::MenuScale menu;
     Rect box;
     box.left = gLoadBarBase.left;
     box.top = gLoadBarBase.top;

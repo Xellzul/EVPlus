@@ -28,6 +28,7 @@
 #include "ships.h"
 #include "crashlog.h"
 #include "game.h"
+#include "uiscale.h"
 
 #define kStrListMainScreen   0x8c
 #define kStrNewPilotConfirm     8
@@ -155,7 +156,10 @@ void DoMainScreen(void)
                 i = i + 1;
             } while ((short)i < 3);
             SWSetPortToWindow(gSpriteWorld);
-            GetGlobalMouse(&where);
+            {
+                UI::MenuScale menu;             /* where: in the menu's coordinates */
+                GetGlobalMouse(&where);
+            }
             if (animCut) {
                 SetupInterfaceBackground();
                 MainScreenAnimDraw();

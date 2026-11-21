@@ -17,9 +17,11 @@ namespace {
 
 short gameHeight;
 double scale = 1.0;                 /* screen pixels per game pixel; 1 = drawn as is */
-double uiScale = 1.0;               /* the preferences' UI scale, used inside the view */
+double overlayScale = 1.0;          /* view pixels per logical UI pixel: the UI scale over the view's enlargement */
 SWFrameRec *uiWork;
 SWFrameRec *uiBack;
+SWFrameRec *menuWork;               /* the menu's, when its scale differs from the UI's */
+SWFrameRec *menuBack;
 CGrafPort viewPort;
 std::vector<unsigned short> pixels;
 
@@ -85,10 +87,10 @@ void SetSizes(short gameW, short gameH, short drawW, short drawH, double ui)
 {
     gameWidth = gameW;
     gameHeight = gameH;
-    uiScale = ui;
     scale = gameH > 0 ? (double)drawH / gameH : 1.0;
     if (fabs(scale - 1.0) < 1e-9)
         scale = 1.0;
+    overlayScale = ui / scale;
     width = (short)(UI::ScreenDeviceX(UI::ScreenWidth() - kStatusBarWidth) / scale + 0.5);
     height = gameH;
 }
@@ -166,8 +168,8 @@ Rect OverlayFrameRect(const Rect &viewRect)
 {
     Rect r = viewRect;
 
-    r.right = (short)(r.left + (r.right - r.left) / uiScale + 0.5);
-    r.bottom = (short)(r.top + (r.bottom - r.top) / uiScale + 0.5);
+    r.right = (short)(r.left + (r.right - r.left) / overlayScale + 0.5);
+    r.bottom = (short)(r.top + (r.bottom - r.top) / overlayScale + 0.5);
     return r;
 }
 
@@ -183,8 +185,8 @@ Point ToOverlay(Point pt, const Rect &viewRect)
 {
     Point local;
 
-    local.h = (short)floor((pt.h - viewRect.left) / uiScale);
-    local.v = (short)floor((pt.v - viewRect.top) / uiScale);
+    local.h = (short)floor((pt.h - viewRect.left) / overlayScale);
+    local.v = (short)floor((pt.v - viewRect.top) / overlayScale);
     return local;
 }
 
@@ -225,41 +227,51 @@ void ToView(Point *pt)
     pt->v = (short)floor(screen.Y(pt->v) * (double)height / gVideoHeight);
 }
 
-void CreateUIFrames(Rect bounds)
+static void CreateFramePair(Rect bounds, SWFrameRec **work, SWFrameRec **back)
 {
-    SWCreateFrame(GetGDevice(), &uiWork, &bounds, 16, 1);
-    SWCreateFrame(GetGDevice(), &uiBack, &bounds, 16, 1);
-    for (SWFrameRec *frame : { uiWork, uiBack }) {
+    SWCreateFrame(GetGDevice(), work, &bounds, 16, 1);
+    SWCreateFrame(GetGDevice(), back, &bounds, 16, 1);
+    for (SWFrameRec *frame : { *work, *back }) {
         UI::ScaleUIPort(frame->framePort);
         SWInitializeFrame(frame);
     }
-    SWLockFrame(uiWork);
-    SWLockFrame(uiBack);
+    SWLockFrame(*work);
+    SWLockFrame(*back);
+}
+
+void CreateUIFrames(Rect bounds)
+{
+    CreateFramePair(bounds, &uiWork, &uiBack);
+    UI::MenuScale menu;
+    if (UI::InMenuScale()) {
+        SetRect(&bounds, 0, 0, UI::ScreenWidth() - kStatusBarWidth, UI::ScreenHeight());
+        CreateFramePair(bounds, &menuWork, &menuBack);
+    }
 }
 
 SWFrameRec *UIWork()
 {
-    return uiWork;
+    return UI::InMenuScale() && menuWork != NULL ? menuWork : uiWork;
 }
 
 SWFrameRec *UIBack()
 {
-    return uiBack;
+    return UI::InMenuScale() && menuBack != NULL ? menuBack : uiBack;
 }
 
 void SetPortToUIWork()
 {
-    SWSetPortToFrame(uiWork);
+    SWSetPortToFrame(UIWork());
 }
 
 void SetPortToUIBack()
 {
-    SWSetPortToFrame(uiBack);
+    SWSetPortToFrame(UIBack());
 }
 
 int ScaleInView(int value)
 {
-    return (int)floor(value * uiScale + 0.5);
+    return (int)floor(value * overlayScale + 0.5);
 }
 
 } // namespace View

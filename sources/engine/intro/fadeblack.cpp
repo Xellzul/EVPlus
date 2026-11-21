@@ -2,6 +2,7 @@
 #include "gameutil.h"
 #include "render.h"
 #include "stellar.h"
+#include "uiscale.h"
 
 #define kSplashPictID       0x83
 #define kAmbrosiaLogoPictID 0x1fa4
@@ -10,6 +11,7 @@
 // MAC: _ShowSplashScreen i386 0x00060e68 ppc 0x00068bfc
 void ShowSplashScreen(void)
 {
+    UI::MenuScale menu;
     void *pic;
     Rect *rect;
     Rect box;
@@ -40,6 +42,7 @@ void ShowSplashScreen(void)
 // MAC: _ShowAmbrosiaLogo i386 0x00060fb0 ppc 0x00068d54
 void ShowAmbrosiaLogo(void)
 {
+    UI::MenuScale menu;
     void *pic;
     Rect box;
 

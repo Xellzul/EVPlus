@@ -13,6 +13,7 @@ extern short gameWidth;             /* the game size (Resolution): what the game
 extern short width;                 /* the space view, in game pixels */
 extern short height;
 
+/* uiScale: the UI's device pixels per logical one */
 void SetSizes(short gameW, short gameH, short drawW, short drawH, double uiScale);
 CWindowPtr Open();                  /* the view's buffer and port, for the sprite world */
 void Flush();                       /* the view (enlarged) into its place on the screen, the overlays over it */
@@ -28,7 +29,7 @@ void ScaleOverlayFrame(SWFrameRec *frame);
 Rect ScreenRectOfView(const Rect &viewRect);    /* a rect in the view, in device pixels on the screen */
 int ScaleInView(int value);         /* a length of the interface in view pixels (the UI scale applied) */
 
-/* Scratch frames of the screen's size for the main screen and dialogs. */
+/* Scratch frames of the screen's size for the main screen and dialogs; inside a UI::MenuScale the menu's. */
 void CreateUIFrames(Rect bounds);
 SWFrameRec *UIWork();
 SWFrameRec *UIBack();

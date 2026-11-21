@@ -12,12 +12,14 @@
 #include "ships.h"
 #include "viewscale.h"
 #include "uisprite.h"
+#include "uiscale.h"
 #include "space.h"
 
 // FUNCTION: EVNOVA 0x004873b0
 // MAC: _MainScreenUpdate i386 0x00017c0d ppc 0x0001b8e8
 void MainScreenUpdate(short which)
 {
+    UI::MenuScale menu;
     unsigned char text[256];
     Rect box;
     Rect dst;
@@ -228,6 +230,7 @@ void MainScreenUpdate(short which)
 // MAC: _MainScreenIdle i386 0x00018ae8 ppc 0x0001c6f0
 void MainScreenIdle(void)
 {
+    UI::MenuScale menu;
     Rect strip;
     Point mouse;
 
@@ -264,6 +267,7 @@ void MainScreenIdle(void)
 // MAC: _SetupInterfaceBackground i386 0x0001631d ppc 0x0001a0b4
 void SetupInterfaceBackground(void)
 {
+    UI::MenuScale menu;
     void *pic;
 
     SetGWorldContainer(MenuArt());

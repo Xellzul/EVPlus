@@ -4,6 +4,7 @@
 #include "render.h"
 #include "game.h"
 #include "viewscale.h"
+#include "uiscale.h"
 #include "gameutil.h"
 #include "sound.h"
 #include "crashlog.h"
@@ -122,6 +123,7 @@ void DisposeMainScreenAnim(void)
 // MAC: _MainScreenAnimIdle i386 0x0001883c ppc 0x0001c414
 void MainScreenAnimIdle(void)
 {
+    UI::MenuScale menu;
     short i;
     short oldFrame;
 

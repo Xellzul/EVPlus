@@ -3,11 +3,13 @@
 
 #include "render.h"
 #include "game.h"
+#include "uiscale.h"
 
 // FUNCTION: EVNOVA 0x0048c3c0
 // MAC: _MainScreenAnimDraw i386 0x00016146 ppc 0x00019eb4
 void MainScreenAnimDraw(void)
 {
+    UI::MenuScale menu;
     Rect rect;
     short i;
 

@@ -2,6 +2,7 @@
 
 #include "render.h"
 #include "game.h"
+#include "uiscale.h"
 #define kHiliteStep      4
 
 
@@ -10,6 +11,7 @@
 // MAC: _MainScreenRolloverIdle i386 0x00016462 ppc 0x0001a1f0
 void MainScreenRolloverIdle(void)
 {
+    UI::MenuScale menu;
     short i;
     short newIndex;
     Point pt;
