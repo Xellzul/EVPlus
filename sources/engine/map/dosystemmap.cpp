@@ -40,6 +40,9 @@ EXTERN_C_BEGIN
 #define kMapBordersItem     9
 #define kMapSearchItem      10
 
+#define kPriceLevelStrings  0xc9    /* STR# kGameStrList: Low, Med, High */
+#define kGoodsHeight        0x48    /* room for Goods Traded above Services: six lines */
+
 
 namespace {
 
@@ -735,6 +738,102 @@ void DoSystemMap(void)
                                                  /* 0x004b8df0 */
                                                  /* 0x00468210 */
 
+namespace {
+
+/* a good's price levels (kDemandLow/Medium/High, or-ed) and those under an active disaster */
+struct PriceLevels {
+    short levels;
+    short raised;
+    short lowered;
+};
+
+const RGBColor kRaisedColor = { 0x4000, 0xffff, 0x4000 };
+const RGBColor kLoweredColor = { 0xffff, 0x4000, 0x4000 };
+
+void DrawPiece(const char *text, const RGBColor &color)
+{
+    Str255 piece;
+
+    snprintf((char *)piece, sizeof(piece), "%s", text);
+    CtoPstr((char *)piece);
+    RGBForeColor(&color);
+    DrawString(piece);
+}
+
+/* A good's price levels after its name at (h, v), or indented on the next line when they do not fit the panel;
+   a level under a disaster green (raised) or red (lowered). The extra height used. */
+short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
+{
+    static const short kLevels[] = { kDemandLow, kDemandMedium, kDemandHigh };
+    char names[3][256];
+    char text[1024] = " (";
+    Str255 shown;
+    short extra = 0;
+
+    if (p.levels == 0)
+        return 0;
+    for (short i = 0; i < 3; i++) {
+        names[i][0] = 0;
+        if ((p.levels & kLevels[i]) != 0) {
+            StrcatIndCString(names[i], kGameStrList, kPriceLevelStrings + i);
+            if (text[2] != 0)
+                strcat(text, ", ");
+            strcat(text, names[i]);
+        }
+    }
+    strcat(text, ")");
+    snprintf((char *)shown, sizeof(shown), "%s", text);
+    CtoPstr((char *)shown);
+    const char *open = " (";
+    if (h + StringWidth(shown) > panel.right - 5) {
+        open = "(";
+        h = panel.left + 0x19;
+        v += 0xc;
+        extra = 0xc;
+    }
+    MoveTo(h, v);
+    DrawPiece(open, rgbLightGrey);
+    bool first = true;
+    for (short i = 0; i < 3; i++) {
+        if (names[i][0] == 0)
+            continue;
+        if (!first)
+            DrawPiece(", ", rgbLightGrey);
+        first = false;
+        bool up = (p.raised & kLevels[i]) != 0;
+        bool down = (p.lowered & kLevels[i]) != 0;
+        DrawPiece(names[i], up && !down ? kRaisedColor : down && !up ? kLoweredColor : rgbLightGrey);
+    }
+    DrawPiece(")", rgbLightGrey);
+    ForeColor(whiteColor);
+    return extra;
+}
+
+/* one line of Goods Traded: the name and its price levels (none: 0); the height used */
+short DrawGoodsLine(const unsigned char *name, const PriceLevels &p, const Rect &panel, short v)
+{
+    MoveTo(panel.left + 0xf, v);
+    DrawString(name);
+    if (p.levels == 0)
+        return 0xc;
+    return 0xc + DrawPriceLevels(p, panel, panel.left + 0xf + StringWidth(name), v);
+}
+
+/* a commodity's levels as the preferences show them on the map */
+PriceLevels CommodityLevels(short sys, short commodity)
+{
+    PriceLevels p = { 0, 0, 0 };
+
+    if (settings.mapPrices != 0) {
+        p.levels = SystemPriceLevels(sys, commodity);
+        if (settings.mapDisasters != 0)
+            SystemDisasterLevels(sys, commodity, &p.raised, &p.lowered);
+    }
+    return p;
+}
+
+} // namespace
+
 // FUNCTION: EVNOVA 0x004a51f0
 // MAC: _MapDialogUpdate i386 0x0000f5d1 ppc 0x00012fe8
 void MapDialogUpdate(void)
@@ -766,6 +865,7 @@ void MapDialogUpdate(void)
     short k;
     short n;
     short sw;
+    short goodsExtra = 0;           /* the goods list's height past its room */
 
     for (i = 0; i < kMaxSystems; i++)
         doneFlag[i] = 0;
@@ -1171,19 +1271,27 @@ void MapDialogUpdate(void)
                 } else {
                     xoff = 0;
                     for (k = 0, name = cargoName[0]; k <= 5; k++, name += sizeof(cargoName[0])) {
-                        if (SystemTradesGoods(sel, k) != 0) {
-                            MoveTo(r2.left + 0xf, r2.top + 0xa8 + xoff);
-                            DrawString(name);
-                            xoff += 0xc;
+                        if (SystemTradesGoods(sel, k) != 0)
+                            xoff += DrawGoodsLine(name, CommodityLevels(sel, k), r2, r2.top + 0xa8 + xoff);
+                    }
+                    if (settings.mapPrices != 0) {
+                        short junkLevels[kMaxJunks];
+                        SystemJunkLevels(sel, junkLevels);
+                        for (k = 0; k < kMaxJunks; k++) {
+                            if (junkLevels[k] != 0)
+                                xoff += DrawGoodsLine(junkData[k].name, { junkLevels[k], 0, 0 }, r2,
+                                                      r2.top + 0xa8 + xoff);
                         }
                     }
+                    if (xoff > kGoodsHeight)
+                        goodsExtra = xoff - kGoodsHeight;
                     if (xoff == 0) {
                         MoveTo(r2.left + 0xf, r2.top + 0xa8);
                         DrawIndString(kGameStrList, 0x14f);
                     }
                 }
                 RGBForeColor(&rgbLightGrey);
-                MoveTo(r2.left + 10, r2.top + 0xfa);
+                MoveTo(r2.left + 10, r2.top + 0xfa + goodsExtra);
                 DrawIndString(kGameStrList, 0x148);
                 temp = 0;
                 for (n = 0; n <= 2; n++) {
@@ -1193,13 +1301,13 @@ void MapDialogUpdate(void)
                 if (temp > 0) {
                     ForeColor(whiteColor);
                     if (systemData[sel].exploreLevel < 2) {
-                        MoveTo(r2.left + 0xf, r2.top + 0x107);
+                        MoveTo(r2.left + 0xf, r2.top + 0x107 + goodsExtra);
                         DrawIndString(kGameStrList, 0x136);
                     } else {
                         xoff = 0;
                         for (j = 0; j <= 2; j++) {
                             if (SystemHasService(sel, j) != 0) {
-                                MoveTo(r2.left + 0xf, r2.top + 0x107 + xoff);
+                                MoveTo(r2.left + 0xf, r2.top + 0x107 + goodsExtra + xoff);
                                 DrawIndString(kGameStrList, j + 0x149);
                                 xoff += 0xc;
                             }
@@ -1207,11 +1315,11 @@ void MapDialogUpdate(void)
                     }
                 } else {
                     if (systemData[sel].exploreLevel >= 2) {
-                        MoveTo(r2.left + 0xf, r2.top + 0x106);
+                        MoveTo(r2.left + 0xf, r2.top + 0x106 + goodsExtra);
                         ForeColor(whiteColor);
                         DrawIndString(kGameStrList, 0x14c);
                     } else if (systemData[sel].exploreLevel >= 1) {
-                        MoveTo(r2.left + 0xf, r2.top + 0x106);
+                        MoveTo(r2.left + 0xf, r2.top + 0x106 + goodsExtra);
                         ForeColor(whiteColor);
                         DrawIndString(kGameStrList, 0x136);
                     }

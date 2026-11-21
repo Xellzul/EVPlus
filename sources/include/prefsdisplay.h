@@ -51,7 +51,9 @@ private:
 
 /* the largest UI scale at which every dialog still fits the resolution (one of ownWidth x ownHeight too) */
 double MaxUIScale(Resolution r, short ownWidth, short ownHeight);
-/* the UI scale one step (0.1) up or down, kept between 1.0 and max */
-double StepUIScale(double scale, int direction, double max);
+/* the smallest UI scale: one screen pixel per pixel of the interface */
+double MinUIScale(Resolution r);
+/* the UI scale one step (0.1) up or down, kept between min and max */
+double StepUIScale(double scale, int direction, double min, double max);
 void UIScaleText(double scale, char *out);
 

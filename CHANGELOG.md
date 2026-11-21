@@ -17,3 +17,5 @@
 - Starfield density matches the 1024x768 game on any screen size
 - Shipyard: used ships show their stats against the new ship
 - Shipyard: Total Space shows the space with all standard equipment sold
+- Galaxy map: Goods Traded can show each commodity's price levels
+- Galaxy map: special cargo prices, and active disasters coloured

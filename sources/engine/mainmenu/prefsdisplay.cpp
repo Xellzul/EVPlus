@@ -215,8 +215,13 @@ double MaxUIScale(Resolution r, short ownWidth, short ownHeight)
     return scale < kUIScaleMin ? kUIScaleMin : scale;
 }
 
+double MinUIScale(Resolution r)
+{
+    return 1.0 / BaseUIScale(DrawSize(r));
+}
+
 /* a scale between two steps (one set by hand in the file) goes to the next step */
-double StepUIScale(double scale, int direction, double max)
+double StepUIScale(double scale, int direction, double min, double max)
 {
     double steps;
 
@@ -224,12 +229,12 @@ double StepUIScale(double scale, int direction, double max)
         steps = floor(scale / kUIScaleStep + 1e-6) + 1;
     else
         steps = ceil(scale / kUIScaleStep - 1e-6) - 1;
-    scale = steps * kUIScaleStep;
+    scale = floor(steps * kUIScaleStep * 10 + 0.5) / 10;
     if (scale > max)
         scale = max;
-    if (scale < kUIScaleMin)
-        scale = kUIScaleMin;
-    return floor(scale * 10 + 0.5) / 10;
+    if (scale < min)
+        scale = min;
+    return scale;
 }
 
 void UIScaleText(double scale, char *out)

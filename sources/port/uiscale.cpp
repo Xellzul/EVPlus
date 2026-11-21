@@ -7,7 +7,6 @@ namespace UI {
 namespace {
 
 double gScale = 1.0;
-double gInterfaceScale = 1.0;
 double gMenuScale = 1.0;
 bool gMenuActive;
 short gScreenWidth;
@@ -174,12 +173,7 @@ double Scale()
 
 void SetScale(double scale)
 {
-    gScale = gInterfaceScale = scale > 0 ? scale : 1.0;
-}
-
-bool InterfaceScaled()
-{
-    return gInterfaceScale != 1.0;
+    gScale = scale > 0 ? scale : 1.0;
 }
 
 void SetMenuScale(double scale)

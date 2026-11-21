@@ -355,6 +355,8 @@ typedef struct Settings {
     Boolean wholePixelScaling;
     Boolean stereoPan;              /* Positional Stereo: distant sounds panned left/right */
     Boolean asteroidScaling;        /* asteroid count follows the view size */
+    Boolean mapPrices;              /* the map's Goods Traded show each commodity's price levels */
+    Boolean mapDisasters;           /* with mapPrices: levels under an active disaster coloured */
     double uiScale;                 /* dialogs and status bar, 1.0 = as designed */
 } Settings;
 
@@ -385,6 +387,8 @@ typedef struct PrefsRecord {
     short wholePixelScaling;
     short stereoPan;
     short asteroidScaling;
+    short mapPrices;
+    short mapDisasters;
     short keys[36];
     double uiScale;
 } PrefsRecord;

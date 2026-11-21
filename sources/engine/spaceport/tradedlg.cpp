@@ -57,7 +57,6 @@ void TradeDialog::Run()
 {
     short i;
     double mult;
-    short j;
 
     savedStellar = shipData->targetStellar;
     savedRoute = shipData->navTargetKind;
@@ -93,31 +92,13 @@ void TradeDialog::Run()
                 tradePrice[disasterData[i].commodity] = 5;
         }
     }
-    junkType[0] = -1;
-    junkType[1] = -1;
     tradePrice[6] = tradePrice[7] = 0;
-    for (i = 0; i < kMaxJunks; i++) {
-        for (j = 0; j < 8; j++) {
-            if (junkData[i].boughtAt[j] == shipData->targetStellar) {
-                if (EvalMissionBitTestString(junkData[i].buyOn) != 0) {
-                    junkType[0] = i;
-                    tradePrice[6] = junkData[i].basePrice * mult;
-                    break;
-                }
-            }
-        }
-    }
-    for (i = 0; i < kMaxJunks; i++) {
-        for (j = 0; j < 8; j++) {
-            if (junkData[i].soldAt[j] == shipData->targetStellar) {
-                if (EvalMissionBitTestString(junkData[i].sellOn) != 0) {
-                    junkType[1] = i;
-                    tradePrice[7] = junkData[i].basePrice / mult;
-                    break;
-                }
-            }
-        }
-    }
+    junkType[0] = PortJunk(shipData->targetStellar, true);
+    if (junkType[0] >= 0)
+        tradePrice[6] = junkData[junkType[0]].basePrice * mult;
+    junkType[1] = PortJunk(shipData->targetStellar, false);
+    if (junkType[1] >= 0)
+        tradePrice[7] = junkData[junkType[1]].basePrice / mult;
     missionsOutside = kTradeVenue;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(0x1e) + 0x1e;

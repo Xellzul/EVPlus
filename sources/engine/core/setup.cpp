@@ -1,5 +1,6 @@
 /* setup.cpp -- SpriteWorld, window and offscreen setup and teardown, sounds, display mode, menu art */
 
+#include <math.h>
 #include "burgerplat.h"
 #include "game.h"
 #include "render.h"
@@ -790,12 +791,15 @@ void SetupMonitor(void)
     PixelSize draw = DrawSize(resolution);
     double base = BaseUIScale(draw);
     /* the file may hold any scale: kept to what the Preferences offer, where every dialog fits */
+    double minUI = MinUIScale(resolution);
     double maxUI = MaxUIScale(resolution, 0, 0);
-    if (!(settings.uiScale >= 1.0))
-        settings.uiScale = 1.0;
+    if (!(settings.uiScale >= minUI))
+        settings.uiScale = minUI;
     if (settings.uiScale > maxUI)
         settings.uiScale = maxUI;
     double scale = settings.uiScale * base;
+    if (fabs(scale - 1.0) < 1e-6)
+        scale = 1.0;
     UI::SetScale(scale);
     UI::SetScreenSize((short)(draw.width / scale + 0.5), (short)(draw.height / scale + 0.5), draw.width,
                       draw.height);

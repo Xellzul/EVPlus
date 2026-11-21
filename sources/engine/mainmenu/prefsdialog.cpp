@@ -13,7 +13,7 @@
 namespace {
 
 constexpr short kWidth = 500;
-constexpr short kHeight = 313;
+constexpr short kHeight = 335;
 constexpr short kMaxItems = 48;
 constexpr short kMusicVolStrList = 0x88;
 constexpr short kMaxMusicVol = 8;
@@ -181,10 +181,10 @@ private:
 
 PrefsDialog::PrefsDialog()
 {
-    doneItem = items.add(kDitlButton, 280, 389, 300, 459, "OK");
+    doneItem = items.add(kDitlButton, 302, 389, 322, 459, "OK");
     gTitleItem = items.add(kDitlUserItem, 5, 12, 28, 489);
-    gNoticeItem = items.add(kDitlUserItem, 255, 69, 272, 431);
-    keysItem = items.add(kDitlButton, 280, 49, 300, 184, "Key Settings");
+    gNoticeItem = items.add(kDitlUserItem, 277, 69, 294, 431);
+    keysItem = items.add(kDitlButton, 302, 49, 322, 184, "Key Settings");
 
     Column graphics(items, kColGraphics, "Graphics");
     Column sound(items, kColSound, "Sound");
@@ -234,6 +234,8 @@ PrefsDialog::PrefsDialog()
         });
 
     check(gameplay.check("Asteroid Scaling"), Flag(settings.asteroidScaling));
+    check(gameplay.check("Map Shows Prices"), Flag(settings.mapPrices));
+    check(gameplay.check("Map Shows Disasters"), Flag(settings.mapDisasters));
 
     windowedItem = display.check("Run in a window");
     check(display.check("Whole-pixel scaling"), Flag(settings.wholePixelScaling));
@@ -242,7 +244,10 @@ PrefsDialog::PrefsDialog()
             Resolution r = dialog.resolutions.step({ settings.gameWidth, settings.gameHeight }, direction);
             settings.gameWidth = r.width;
             settings.gameHeight = r.height;
+            double min = MinUIScale(r);
             double max = MaxUIScale(r, kWidth, kHeight);
+            if (settings.uiScale < min)
+                settings.uiScale = min;
             if (settings.uiScale > max)
                 settings.uiScale = max;
         },
@@ -263,9 +268,10 @@ PrefsDialog::PrefsDialog()
         });
     stepper(display.stepper("UI scale:"),
         [](PrefsDialog &, int direction) {
-            double max = MaxUIScale({ settings.gameWidth, settings.gameHeight }, kWidth, kHeight);
+            Resolution r = { settings.gameWidth, settings.gameHeight };
+            double max = MaxUIScale(r, kWidth, kHeight);
             if (direction < 0 || settings.uiScale < max)
-                settings.uiScale = StepUIScale(settings.uiScale, direction, max);
+                settings.uiScale = StepUIScale(settings.uiScale, direction, MinUIScale(r), max);
         },
         [](const PrefsDialog &, char *value, char *) {
             UIScaleText(settings.uiScale, value);

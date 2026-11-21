@@ -583,6 +583,90 @@ Boolean SystemTradesGoods(short sysID, short commodity)
     return 0;
 }
 
+/* the price levels (kDemandLow/Medium/High, or-ed) the system's trade centers set for a commodity */
+/* a stellar of the system's nav slots that is a trade center you can land at */
+static bool IsTradePort(short spob)
+{
+    return spob != -1 && stellarData[spob].loaded != 0
+           && (stellarData[spob].flags & kSpobUninhabited) == 0
+           && StellarIsNormalLandable(&stellarData[spob])
+           && (stellarData[spob].flags & kSpobTradeCenter) != 0;
+}
+
+short SystemPriceLevels(short sysID, short commodity)
+{
+    short levels = 0;
+
+    for (short i = 0; i < kNavSlots; i++) {
+        short spob = systemData[sysID].navDefault[i];
+        if (IsTradePort(spob))
+            levels |= CalcPortDemand(commodity, stellarData[spob].flags);
+    }
+    return levels;
+}
+
+/* the price levels (as SystemPriceLevels) at which an active disaster raises or lowers a commodity's price at
+   one of the system's trade centers */
+void SystemDisasterLevels(short sysID, short commodity, short *raised, short *lowered)
+{
+    *raised = 0;
+    *lowered = 0;
+    for (short i = 0; i < kNavSlots; i++) {
+        short spob = systemData[sysID].navDefault[i];
+        if (!IsTradePort(spob))
+            continue;
+        short level = CalcPortDemand(commodity, stellarData[spob].flags);
+        for (short d = 0; d < kMaxDisasters; d++) {
+            if (disasterData[d].loaded != 0 && disasterData[d].countdown > 0
+                    && disasterData[d].stellarID == spob && disasterData[d].commodity == commodity) {
+                if (disasterData[d].amount > 0)
+                    *raised |= level;
+                else if (disasterData[d].amount < 0)
+                    *lowered |= level;
+            }
+        }
+    }
+}
+
+/* the junk a stellar's trade center buys from the player (or sells to the player), -1 = none; of several,
+   the last */
+short PortJunk(short stellar, bool buys)
+{
+    short found = -1;
+
+    for (short i = 0; i < kMaxJunks; i++) {
+        const short *at = buys ? junkData[i].boughtAt : junkData[i].soldAt;
+        char *when = buys ? junkData[i].buyOn : junkData[i].sellOn;
+        for (short j = 0; j < 8; j++) {
+            if (at[j] == stellar) {
+                if (EvalMissionBitTestString(when) != 0)
+                    found = i;
+                break;
+            }
+        }
+    }
+    return found;
+}
+
+/* each junk's price levels at the system's trade centers: kDemandHigh where one buys it, kDemandLow where one
+   sells it */
+void SystemJunkLevels(short sysID, short *levels)
+{
+    for (short i = 0; i < kMaxJunks; i++)
+        levels[i] = 0;
+    for (short i = 0; i < kNavSlots; i++) {
+        short spob = systemData[sysID].navDefault[i];
+        if (!IsTradePort(spob))
+            continue;
+        short junk = PortJunk(spob, true);
+        if (junk >= 0)
+            levels[junk] |= kDemandHigh;
+        junk = PortJunk(spob, false);
+        if (junk >= 0)
+            levels[junk] |= kDemandLow;
+    }
+}
+
 /* the same scan asking for one of three services by index; a `kind` outside
    0..2 leaves the mask unset, which the original does not guard */
 // FUNCTION: EVNOVA 0x004682d0

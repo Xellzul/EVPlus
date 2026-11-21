@@ -57,8 +57,6 @@ void ScalePortPixels(CGrafPtr port, double scale);
 double Scale();
 void SetScale(double scale);
 inline bool Enabled() { return Scale() != 1.0; }
-/* the interface (everything outside a MenuScale) is scaled */
-bool InterfaceScaled();
 
 /* A UI port (the screen's scratch pages, dialogs, popups, overlays) made at its logical size gets device
    pixels in the screen's own proportion, so UI ports of one logical size have one device size. */

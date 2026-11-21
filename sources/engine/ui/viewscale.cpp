@@ -251,12 +251,12 @@ void CreateUIFrames(Rect bounds)
 
 SWFrameRec *UIWork()
 {
-    return UI::InMenuScale() && menuWork != NULL ? menuWork : uiWork;
+    return UI::InMenuScale() ? menuWork : uiWork;
 }
 
 SWFrameRec *UIBack()
 {
-    return UI::InMenuScale() && menuBack != NULL ? menuBack : uiBack;
+    return UI::InMenuScale() ? menuBack : uiBack;
 }
 
 void SetPortToUIWork()

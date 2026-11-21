@@ -64,6 +64,10 @@ extern Boolean StellarsAreIdentical(short a, short b);
 extern Boolean SystemHasService(short sysID, short kind);
 extern Boolean SystemIsInhabited(short sys);
 extern Boolean SystemTradesGoods(short sysID, short commodity);
+extern short SystemPriceLevels(short sysID, short commodity);
+extern void SystemDisasterLevels(short sysID, short commodity, short *raised, short *lowered);
+extern short PortJunk(short stellar, bool buys);
+extern void SystemJunkLevels(short sysID, short *levels);  /* levels: kMaxJunks entries */
 extern Boolean ValidAuxShipSystem(short sys, short mission);
 EXTERN_CPP_BEGIN
 extern Boolean canZoomIn;

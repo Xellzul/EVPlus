@@ -1292,6 +1292,7 @@ EXTERN_CPP_END
 #define kWeapTypeTop            0x100
 
 #define kDemandHigh         4
+#define kDemandMedium       2
 #define kDemandLow          1
 
 #ifdef __cplusplus

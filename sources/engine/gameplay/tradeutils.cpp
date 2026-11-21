@@ -379,8 +379,6 @@ void DestroyPartialFleetCargo(short shipIndex)
     ResetPlayerPrecalcedValues();
 }
 
-#define kDemandMedium 2
-
 // FUNCTION: EVNOVA 0x00469d30
 // MAC: _CalcPortDemand i386 0x000056b1 ppc 0x00006d04
 short CalcPortDemand(short commodity, uint32_t flags)
