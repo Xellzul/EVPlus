@@ -76,7 +76,6 @@ typedef struct GWorldContainer {
 } GWorldContainer;
 
 extern void GetIndString(unsigned char *str, int strListID, int index);
-extern void GetIniIndString(char *out, int32_t listID, int32_t index);
 extern void nv_UpdateDialogWindow(int all);
 EXTERN_CPP_BEGIN
 extern GWorldContainer iconsPort;
@@ -556,7 +555,6 @@ extern short Alert(short alertID, void *filterProc);
 #define StopAlert(id, filter) Alert(id, filter)
 extern void BackColor(const RGBColor *color);
 extern Boolean Button(void);
-extern void ClosePrefs(void);
 extern void BusyIdle(void);
 extern void Delay(uint32_t numTicks, uint32_t *finalTicks);
 extern void DisposeCIcon(Image_t *icon);
@@ -653,7 +651,6 @@ extern short CapsCenteredPenV(short top, short bottom);
 extern void MoveTo(short h, short v);
 extern void OffsetRect(Rect *r, int dh, int dv);
 extern void OpenDataFiles(void);
-extern void OpenPrefs(void);
 extern void PStr2CStr(char *dst, const unsigned char *src);
 extern void PaintOval(Rect *r);
 extern void PenSize(short width, short height);
@@ -783,7 +780,6 @@ extern void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible);
 extern void SWSetPortToWorkArea(SpriteWorldPtr sw);
 extern void SWSetSpriteWorldMaxFPS(SpriteWorldPtr world, short fps);
 EXTERN_CPP_BEGIN
-extern PrefsFileRec gPrefs;
 EXTERN_CPP_END
 
 extern void SetDialogItemText(Handle item, const unsigned char *pstr);

@@ -1,17 +1,8 @@
-/* prefstr.cpp -- the prefs file: OpenPrefs, ClosePrefs, GetIniIndString (win 0x004bcfa0..0x004bd0c0, tu-map object O28; the next function starts the loaddata.cpp object). Notes: Research/notes/prefstr.md */
-/*
- * prefstr.cpp — read one indexed string out of the port's prefs file
- * (win 0x004bd000).
- *
- * The engine's STR# resources became numbered groups in EVNova.ini: the group
- * is named by the resource id and each string by "S" plus its index, so this
- * is what GetIndString ends up calling.
- */
+/* prefstr.cpp -- the data-file records' globals and the pilot/prefs folder names (tu-map object O28). */
 #include "player.h"
 #include "gameutil.h"
 
 /* the prefs and data-file object's globals: each resource type's file-data record, then its handle */
-PrefsFileRec gPrefs;
 unsigned char stellarFileData[1120];
 Handle stellarFileHand;
 unsigned char systemFileData[428];
@@ -58,50 +49,3 @@ PilotRec **playerFileHand;
 PilotRec2 **altPlayerFileHand;
 char pilotsFolder[2048];
 char gPrefsDirectory[2054];
-
-#define kPrefStringMax 0x100
-
-static const char kPrefsFileName[] = "9:EVNova.ini";
-
-/* opened on first use, so nothing has to sequence it against startup */
-// FUNCTION: EVNOVA 0x004bcfa0
-void OpenPrefs(void)
-{
-    PrefsFileRec *p;
-
-    p = &gPrefs;
-    if (p->file == NULL) {
-        p->file = (struct PrefsNode *)OpenPrefsFile(kPrefsFileName);
-    }
-}
-
-// FUNCTION: EVNOVA 0x004bcfd0
-void ClosePrefs(void)
-{
-    PrefsFileRec *p;
-
-    p = &gPrefs;
-    if (p->file != NULL) {
-        ClosePrefsFile(p->file);
-        p->file = NULL;
-    }
-}
-
-// FUNCTION: EVNOVA 0x004bd000
-void GetIniIndString(char *out, int32_t listID, int32_t index)
-{
-    char group[kPrefStringMax];
-    char key[0x40];
-    struct PrefsNode *found;
-
-    if (out != NULL) {
-        out[0] = 0;
-        NumberToAscii(group, listID, 0);
-        found = PrefsFindGroup(gPrefs.file, group);
-        if (found != NULL) {
-            key[0] = 'S';
-            NumberToAscii(&key[1], index, 0);
-            PrefsGetString(found, key, "", out, kPrefStringMax);
-        }
-    }
-}

@@ -578,10 +578,6 @@ typedef struct RoidRecord {
     uint32_t          color;
 } RoidRecord;
 
-typedef struct PrefsFileRec {
-    struct PrefsNode       *file;
-} PrefsFileRec;
-
 /* the four shot sprite layers, in address order */
 EXTERN_CPP_BEGIN
 extern struct SpriteLayerRec *shotLayer;

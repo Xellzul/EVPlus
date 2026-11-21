@@ -390,8 +390,7 @@ CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
  * tells SpriteWorld where the back buffer went if a world already exists.
  */
 
-/* Two sources in order: an EVNova.ini override keyed by list and index, then the STR#
-   resource. `entry' is seeded from `base' before the count is read (`entry = base + 2'
+/* The STR# resource's string. `entry' is seeded from `base' before the count is read (`entry = base + 2'
    coalesces the pair). */
 
 
@@ -404,11 +403,6 @@ void GetIndString(unsigned char *str, int strListID, int index)
     unsigned char *base;
 
     str[0] = 0;
-    GetIniIndString((char *)str, strListID, index);
-    if (str[0] != 0) {
-        CtoPstr((char *)str);
-        return;
-    }
     h = GetResource(kStringListType, strListID);
     if (h == NULL)
         return;

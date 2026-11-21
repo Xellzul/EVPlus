@@ -345,7 +345,6 @@ void InitEVNova(void)
     RandSeedFromClock();
     KeyboardInit();
     SetDefaultPrefixs();
-    OpenPrefs();
 
     crashlog_open("debuglog.txt");
     crashlog_print("game engine was compiled ");
@@ -492,7 +491,6 @@ void InitEVNova(void)
     FadeScreenOut();
     ShowTheCursor();
     Bye();
-    ClosePrefs();
 }
 
 #define kEscapePodType  0x2ff

@@ -16,9 +16,11 @@ constexpr short kWidth = 500;
 constexpr short kHeight = 313;
 constexpr short kMaxItems = 48;
 constexpr short kMusicVolStrList = 0x88;
-constexpr short kGammaStrList = 0x8b;
 constexpr short kMaxMusicVol = 8;
 constexpr short kMaxGamma = 6;
+const char *const kGammaNames[kMaxGamma + 1] = {
+    "Black Hole", "Darker", "Dark", "Normal", "Bright", "Brighter", "Burn Out Your Retinas"
+};
 constexpr short kBeepChannel = 1;
 constexpr short kUpArrowPict = 134;
 constexpr short kDownArrowPict = 135;
@@ -211,7 +213,8 @@ PrefsDialog::PrefsDialog()
             ApplyBrightness();
         },
         [](const PrefsDialog &, char *value, char *) {
-            ListText(kGammaStrList, settings.gamma, kMaxGamma, value);
+            snprintf(value, kDisplayTextMax, "%s",
+                     settings.gamma >= 0 && settings.gamma <= kMaxGamma ? kGammaNames[settings.gamma] : "???");
         });
 
     check(sound.check("Intro Music"), Flag(settings.introMusic));

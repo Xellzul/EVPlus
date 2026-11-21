@@ -36,7 +36,6 @@ struct DirectorySearch_t;
 struct Image_t;
 struct ListNode;
 struct ListRec;
-struct PrefsNode;
 struct RezFile;
 extern uint32_t GetAPointerSize(void *mem);
 extern void DetachResource(Handle h);
@@ -73,12 +72,6 @@ extern void ExtractAString2(const char *src, ULong *size, Word flags, char *dst,
 extern Word BombFlag;
 extern char ErrorMsg[512];                       /* burgerfatal.cpp */
 extern Word IAmExiting;                          /* burgerfatal2.cpp */
-extern void *PrefFileNewFromMemory(const char *text, uint32_t size);
-extern void ClosePrefsFile(struct PrefsNode *file);
-extern void *OpenPrefsFile(const char *name);
-extern struct PrefsNode *PrefsFindGroup(struct PrefsNode *file, const char *name);
-extern void PrefsGetString(struct PrefsNode *group, const char *key, const char *dflt,
-                           char *out, int32_t outSize);
 #ifdef _WIN32
 extern int stricmp(const char *s1, const char *s2);   /* MSL Extras */
 #else

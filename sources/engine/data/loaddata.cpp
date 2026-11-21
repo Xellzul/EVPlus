@@ -46,7 +46,8 @@ void InitDataFiles(void)
 
     noSavePilotFiles = EVBugResourceFieldTest(12);
     noUpdatePilotData = EVBugResourceFieldTest(13);
-    GetIniIndString(name, kPilotDirList, 3);
+    name[0] = 0;
+    StrcatIndCString(name, kPilotDirList, 3);
     strcpy(pilotsFolder, "");
     strcat(pilotsFolder, name);
     strcat(pilotsFolder, ":");
@@ -72,7 +73,8 @@ void OpenDataFiles(void)
     Handle h;
     short count;
 
-    GetIniIndString(name, kPilotDirList, 3);
+    name[0] = 0;
+    StrcatIndCString(name, kPilotDirList, 3);
     strcpy(path, "");
     strcat(path, name);
     if (CreateDirectoryPath(path) != 0) {
@@ -2328,12 +2330,13 @@ Boolean LoadPluginString(short id, void *dst)
     return 0;
 }
 
-/* The preferences file: the name from EVNova.ini, in the preferences folder, as JSON. */
+/* The preferences file: the name from STR# 130, in the preferences folder, as JSON. */
 static void PrefsPath(char *path)
 {
     char name[256];
 
-    GetIniIndString(name, kPrefsStrList, 1);
+    name[0] = 0;
+    StrcatIndCString(name, kPrefsStrList, 1);
     strcpy(path, gPrefsDirectory);
     strcat(path, name);
     strcat(path, ".json");
@@ -2444,7 +2447,8 @@ void MakeAlias(char *name)
     char base[0x100];
     char path[0x800];
 
-    GetIniIndString(base, kPilotDirList, 4);
+    base[0] = 0;
+    StrcatIndCString(base, kPilotDirList, 4);
     strcpy(path, pilotsFolder);
     strcat(path, base);
     SaveAFile(path, name, strlen(name) + 1);
@@ -2723,7 +2727,8 @@ void OpenLastPilotFile(void)
     short i;
     short j;
 
-    GetIniIndString(name, kPilotDirList, 4);
+    name[0] = 0;
+    StrcatIndCString(name, kPilotDirList, 4);
     strcpy(path, pilotsFolder);
     strcat(path, name);
     data = (char *)LoadAFile(path, &len);
