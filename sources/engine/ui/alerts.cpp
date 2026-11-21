@@ -4,6 +4,7 @@
 #include "render.h"
 #include "ai.h"
 #include "dialog.h"
+#include "platform.h"
 
 DialogPtr alertDialog;
 DialogPtr qtyDialog;
@@ -26,8 +27,14 @@ void EVNoteAlert(const unsigned char *text)
     done = 0;
     Dialog dialog;
     dialog.Open(3000, NULL, NULL, &alertDialog);
-    if (!dialog.IsOpen())
+    if (!dialog.IsOpen()) {
+        char message[256];
+
+        memcpy(message, text + 1, text[0]);
+        message[text[0]] = 0;
+        PlatAlert("EV Nova", message);
         return;
+    }
     SetDialogGWorld(alertDialog);
     SetDialogDefaultItem(alertDialog, 1);
     SetDialogGWorld(alertDialog);
