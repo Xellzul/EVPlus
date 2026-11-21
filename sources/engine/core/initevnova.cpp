@@ -3047,7 +3047,7 @@ short AsteroidTarget(void)
         target = (int)(count * (View::gameWidth / 640.0));
         return target > kClassicMaxAsteroids ? kClassicMaxAsteroids : target;
     }
-    target = (int)(AsteroidReferenceCount(count) * AsteroidDensity());
+    target = (int)(AsteroidReferenceCount(count) * AsteroidDensity() + 0.5);
     if (target < 1)
         target = 1;
     if (target > kMaxAsteroids)

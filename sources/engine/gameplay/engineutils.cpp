@@ -551,6 +551,7 @@ void RandomizeStars(void)
 {
     short i;
     short count;
+    double stars;
     short width;
     short height;
 
@@ -559,8 +560,9 @@ void RandomizeStars(void)
     } else if (gSpriteWorld != NULL) {
         width = gSpriteWorld->windRect.right - gSpriteWorld->windRect.left;
         height = gSpriteWorld->windRect.bottom - gSpriteWorld->windRect.top;
-        count = kStarLayers;
-        count *= height / 600.0;
+        /* kClassicStars over the 830x768 view of a 1024x768 game size, the same density on any view */
+        stars = kClassicStars * ((double)width * height / (830.0 * 768.0)) + 0.5;
+        count = stars > kStarLayers ? kStarLayers : (short)stars;
         for (i = 0; i < kStarLayers; i++) {
             if (i < count) {
                 starData[i].live = 1;
@@ -572,7 +574,7 @@ void RandomizeStars(void)
                 else
                     starData[i].depth = 0;
             } else {
-                starData[i].live = 1;
+                starData[i].live = 0;
             }
         }
     }
