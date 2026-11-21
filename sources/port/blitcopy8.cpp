@@ -6,7 +6,8 @@
    is its only reader), and the row stride at +0x20 */
 
 // FUNCTION: EVNOVA 0x004b7230
-void CopyBitsCopy8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void CopyBitsCopy8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                   int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     int32_t width;
     int32_t height;
@@ -63,7 +64,8 @@ void CopyBitsCopy8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 }
 
 // FUNCTION: EVNOVA 0x004b73b0
-void CopyBitsOr8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void CopyBitsOr8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                 int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     unsigned char *srcP;
     int32_t height;

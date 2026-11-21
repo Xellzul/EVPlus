@@ -1,6 +1,7 @@
 /* buttonbar.cpp -- ButtonBar: draws a dialog's picture buttons and runs the press loop they all share */
 #include "buttonbar.h"
 #include "dialogs.h"
+#include "render.h"
 
 ButtonBar::Button &ButtonBar::Set(short slot, short item, unsigned char *label, ButtonLook look)
 {
@@ -96,6 +97,7 @@ short ButtonBar::Track(Point where)
             }
             drawn = over;
         }
+        MouseFlushWheel();              /* notches turned while held are not taken after the release */
     }
     return drawn;
 }

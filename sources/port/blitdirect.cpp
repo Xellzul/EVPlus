@@ -401,17 +401,20 @@ static void Blit(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *
         CopyScaled(src, dst, srcRect, dstRect, alpha);
 }
 
-void BlitDirect16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void BlitDirect16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                  int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     Blit(src, dst, srcRect, dstRect, 0);
 }
 
-void BlitDirect24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void BlitDirect24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                  int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     Blit(src, dst, srcRect, dstRect, 0);
 }
 
-void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                  int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     Blit(src, dst, srcRect, dstRect, 0);
 }
@@ -419,7 +422,8 @@ void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 /* A black mask pixel makes its source pixel opaque, written into the source itself; maskRect is not
    read. */
 void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect,
-                   Rect *maskRect, Rect *dstRect)
+                   Rect *maskRect, Rect *dstRect,
+                   int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     unsigned char *pixels;
     unsigned char *maskPixels;

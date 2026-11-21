@@ -25,7 +25,7 @@ extern "C" {
 #define kGridPageDownKey    kPageDownChar
 
 void CommDialogUpdate(void);
-extern void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t lCell,
+extern void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, Point *lCell,
                          short lDataOffset, short lDataLen, ScrollRec **lHandle);
 EXTERN_CPP_BEGIN
 extern Boolean reenterMissionDialog;

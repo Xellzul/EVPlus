@@ -8,6 +8,7 @@
 #include "burger.h"
 #include "player.h"
 #include "endianswap.h"
+#include "platform.h"
 
 // FUNCTION: EVNOVA 0x004b7b90
 void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
@@ -59,7 +60,8 @@ void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
 #define kRedBlue555 0x7c1f
 
 // FUNCTION: EVNOVA 0x004b8300
-void CopyBitsAddOver16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void CopyBitsAddOver16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                       int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     int32_t width;
     int32_t height;
@@ -100,7 +102,8 @@ void CopyBitsAddOver16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRec
 }
 
 // FUNCTION: EVNOVA 0x004b8400
-void CopyBitsAdMax16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void CopyBitsAdMax16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                     int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     int32_t width;
     int32_t height;
@@ -159,7 +162,8 @@ void CopyBitsAdMax16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
 }
 
 // FUNCTION: EVNOVA 0x004b8520
-void CopyBitsNone(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void CopyBitsNone(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                  int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
 }
 
@@ -167,38 +171,36 @@ typedef void (*BlitProc)(PixMapPtr srcBits, PixMapPtr dstBits,
                           Rect *srcRect, Rect *dstRect,
                           int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 
-#define BP (BlitProc)
-
 BlitProc copyBitsProcs[5][5] = {             /* 0x00575b28 same-size srcCopy */
-    { NULL, NULL,             NULL,                NULL,             NULL             },
-    { NULL, BP CopyBitsNone, BP CopyBitsCopy8,    BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsCopy16,     BP CopyBitsNone, BP BlitDirect16    },
-    { NULL, BP CopyBitsNone, BP BlitDirect24,        BP CopyBitsNone, BP BlitDirect24    },
-    { NULL, BP CopyBitsNone, BP BlitDirect32,        BP CopyBitsNone, BP BlitDirect32    }
+    { NULL, NULL, NULL, NULL, NULL },
+    { NULL, CopyBitsNone, CopyBitsCopy8, CopyBitsNone, CopyBitsNone },
+    { NULL, CopyBitsNone, CopyBitsCopy16, CopyBitsNone, BlitDirect16 },
+    { NULL, CopyBitsNone, BlitDirect24, CopyBitsNone, BlitDirect24 },
+    { NULL, CopyBitsNone, BlitDirect32, CopyBitsNone, BlitDirect32 }
 };
 
 BlitProc scaleBitsCopyProcs[5][5] = {        /* 0x00575b8c scaled srcCopy */
-    { NULL, NULL,             NULL,                NULL,             NULL             },
-    { NULL, BP CopyBitsNone, BP CopyBitsScale8,   BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP BlitDirect16,        BP CopyBitsNone, BP BlitDirect16    },
-    { NULL, BP CopyBitsNone, BP BlitDirect24,        BP CopyBitsNone, BP BlitDirect24    },
-    { NULL, BP CopyBitsNone, BP BlitDirect32,        BP CopyBitsNone, BP BlitDirect32    }
+    { NULL, NULL, NULL, NULL, NULL },
+    { NULL, CopyBitsNone, CopyBitsScale8, CopyBitsNone, CopyBitsNone },
+    { NULL, CopyBitsNone, BlitDirect16, CopyBitsNone, BlitDirect16 },
+    { NULL, CopyBitsNone, BlitDirect24, CopyBitsNone, BlitDirect24 },
+    { NULL, CopyBitsNone, BlitDirect32, CopyBitsNone, BlitDirect32 }
 };
 
 BlitProc copyBitsAddOverProcs[5][5] = {      /* 0x00575bf0 same-size addOver */
-    { NULL, NULL,             NULL,                NULL,             NULL             },
-    { NULL, BP CopyBitsNone, BP CopyBitsNone,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsAddOver16,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsNone,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsNone,     BP CopyBitsNone, BP CopyBitsNone }
+    { NULL, NULL, NULL, NULL, NULL },
+    { NULL, CopyBitsNone, CopyBitsNone, CopyBitsNone, CopyBitsNone },
+    { NULL, CopyBitsNone, CopyBitsAddOver16, CopyBitsNone, CopyBitsNone },
+    { NULL, CopyBitsNone, CopyBitsNone, CopyBitsNone, CopyBitsNone },
+    { NULL, CopyBitsNone, CopyBitsNone, CopyBitsNone, CopyBitsNone }
 };
 
 BlitProc copyBitsAdMaxProcs[5][5] = {        /* 0x00575c54 same-size adMax */
-    { NULL, NULL,             NULL,                NULL,             NULL             },
-    { NULL, BP CopyBitsNone, BP CopyBitsNone,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsAdMax16,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsNone,     BP CopyBitsNone, BP CopyBitsNone },
-    { NULL, BP CopyBitsNone, BP CopyBitsNone,     BP CopyBitsNone, BP CopyBitsNone }
+    { NULL, NULL, NULL, NULL, NULL },
+    { NULL, CopyBitsNone, CopyBitsNone, CopyBitsNone, CopyBitsNone },
+    { NULL, CopyBitsNone, CopyBitsAdMax16, CopyBitsNone, CopyBitsNone },
+    { NULL, CopyBitsNone, CopyBitsNone, CopyBitsNone, CopyBitsNone },
+    { NULL, CopyBitsNone, CopyBitsNone, CopyBitsNone, CopyBitsNone }
 };
 #define transfer_srcCopy 0
 #define transfer_srcOr   1
@@ -268,7 +270,7 @@ void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits, const Rect *srcRect,
             proc = copyBitsProcs[srcPix->pixelSize / 8][dstPix->pixelSize / 8];
             break;
         case transfer_srcOr:
-            proc = BP CopyBitsOr8;
+            proc = CopyBitsOr8;
             break;
         case transfer_addOver:
             proc = copyBitsAddOverProcs[srcPix->pixelSize / 8][dstPix->pixelSize / 8];
@@ -672,7 +674,8 @@ void *GetCWindowVisRgn(void *window)
 
 // FUNCTION: EVNOVA 0x004b92d0
 void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
-                Rect *srcRect, Rect *maskRect, Rect *dstRect)
+                Rect *srcRect, Rect *maskRect, Rect *dstRect,
+                int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     int32_t srcRow;
     int32_t dstLeft;
@@ -726,7 +729,8 @@ void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
 
 // FUNCTION: EVNOVA 0x004b9400
 void CopyMaskNone(PixMapPtr src, PixMapPtr mask, PixMapPtr dst,
-                  Rect *srcRect, Rect *maskRect, Rect *dstRect)
+                  Rect *srcRect, Rect *maskRect, Rect *dstRect,
+                  int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
 }
 
@@ -736,19 +740,19 @@ typedef void (*BlitMaskProc)(PixMapPtr srcBits, PixMapPtr maskBits,
                              int32_t xFrac, int32_t yFrac);
 
 BlitMaskProc copyMaskProcs[5][5] = {    /* 0x00575cb8 */
-    { NULL, NULL,                      NULL,                      NULL,                      NULL                      },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMask16,   (BlitMaskProc)CopyMaskNone, (BlitMaskProc)BlitDirectMask16 },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone }
+    { NULL, NULL, NULL, NULL, NULL },
+    { NULL, CopyMaskNone, CopyMaskNone, CopyMaskNone, CopyMaskNone },
+    { NULL, CopyMaskNone, CopyMask16, CopyMaskNone, BlitDirectMask16 },
+    { NULL, CopyMaskNone, CopyMaskNone, CopyMaskNone, CopyMaskNone },
+    { NULL, CopyMaskNone, CopyMaskNone, CopyMaskNone, CopyMaskNone }
 };
 
 BlitMaskProc scaleMaskProcs[5][5] = {   /* 0x00575d1c */
-    { NULL, NULL,                      NULL,                      NULL,                      NULL                      },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)BlitDirectMask16, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)BlitDirectMask16 },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone },
-    { NULL, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone, (BlitMaskProc)CopyMaskNone }
+    { NULL, NULL, NULL, NULL, NULL },
+    { NULL, CopyMaskNone, CopyMaskNone, CopyMaskNone, CopyMaskNone },
+    { NULL, CopyMaskNone, BlitDirectMask16, CopyMaskNone, BlitDirectMask16 },
+    { NULL, CopyMaskNone, CopyMaskNone, CopyMaskNone, CopyMaskNone },
+    { NULL, CopyMaskNone, CopyMaskNone, CopyMaskNone, CopyMaskNone }
 };
 
 // FUNCTION: EVNOVA 0x004b9410
@@ -1130,9 +1134,12 @@ void *GetGDevice(void)
     return NULL;
 }
 
+/* the window and GL go before exit(): libraries' own exit handlers run before ours */
 // FUNCTION: EVNOVA 0x004bbd30
 void ExitToShell(void)
 {
+    ShutdownWinGame();
+    PlatQuit();
     exit(0);
 }
 

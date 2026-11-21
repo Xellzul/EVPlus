@@ -113,6 +113,9 @@ void ReleaseVideo(void)
         DeallocAPointer(VideoOffscreen);
         VideoOffscreen = 0;
     }
+    VideoPointer = 0;
+    VideoWidth = 0;
+    VideoHardWidth = 0;
     ScreenWidth = 0;
     ScreenHeight = 0;
 }

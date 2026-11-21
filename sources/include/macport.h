@@ -119,29 +119,41 @@ extern void QDGetCIconBounds(Image_t *icon, Rect *r);
 extern PicHandle GetPictureNoGamma(int picID);
 
 extern void CopyBitsNone(PixMapPtr src, PixMapPtr dst,
-        Rect *srcRect, Rect *dstRect);
+        Rect *srcRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyBitsCopy8(PixMapPtr src, PixMapPtr dst,
-        Rect *srcRect, Rect *dstRect);
+        Rect *srcRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyBitsOr8(PixMapPtr src, PixMapPtr dst,
-        Rect *srcRect, Rect *dstRect);
+        Rect *srcRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyBitsCopy16(PixMapPtr src, PixMapPtr dst,
-        Rect *srcRect, Rect *dstRect);
+        Rect *srcRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyBitsAddOver16(PixMapPtr src, PixMapPtr dst,
-        Rect *srcRect, Rect *dstRect);
+        Rect *srcRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyBitsAdMax16(PixMapPtr src, PixMapPtr dst,
-        Rect *srcRect, Rect *dstRect);
+        Rect *srcRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
         int32_t xStep, int32_t yStep, int32_t xStart, int32_t yStart);
 extern void CopyMaskNone(PixMapPtr src, PixMapPtr mask, PixMapPtr dst,
-        Rect *srcRect, Rect *maskRect, Rect *dstRect);
+        Rect *srcRect, Rect *maskRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 /* blitdirect.cpp: CopyBits / CopyMask procs for direct-colour sources, at the same size or stretched */
-extern void BlitDirect16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect);
-extern void BlitDirect24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect);
-extern void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect);
+extern void BlitDirect16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                         int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
+extern void BlitDirect24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                         int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
+extern void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                         int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect, Rect *maskRect,
-                             Rect *dstRect);
+                             Rect *dstRect,
+                             int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
-        Rect *srcRect, Rect *maskRect, Rect *dstRect);
+        Rect *srcRect, Rect *maskRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 
 extern CGrafPtr GetCWindowGrafPort(CWindowPtr window);
 extern Rect *GetWindowPortRect(CWindowPtr window);
@@ -455,7 +467,7 @@ typedef struct TERec {
 #define TEWrappedHeight(te) ((*(te))->height)
 
 struct ScrollRec;
-typedef void (*ListDrawProcPtr)(short lMessage, unsigned char lSelect, Rect *lRect,
+typedef void (*ListDrawProcPtr)(short lMessage, Boolean lSelect, Rect *lRect,
                                 Point *lCell, short lDataOffset, short lDataLen,
                                 struct ScrollRec **lHandle);
 typedef struct ScrollRec {

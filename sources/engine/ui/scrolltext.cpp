@@ -128,6 +128,7 @@ void ScrollingText::Hold(short dv, short slot, ButtonBar &buttons) const
         while (lastTextScrollTime == ReadTick() && StillDown())
             BusyIdle();
     }
+    MouseFlushWheel();                  /* notches turned while held do not scroll on after the release */
     SetDialogGWorld(dlg);
     buttons.Draw(-1);
 }

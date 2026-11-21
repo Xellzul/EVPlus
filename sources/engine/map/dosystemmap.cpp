@@ -488,6 +488,7 @@ void MapDialog::Hit(short itemHit)
                     ScrollMapDisplay(mouse.h - prevH, mouse.v - prevV);
                     nv_UpdateDialogWindow(0);
                 }
+                MouseFlushWheel();      /* no zoom from notches turned during the drag */
                 if (settings.showMapBorders != 0)
                     RecalcAllMapInfluence(&box);
                 if (mapScroll.h != savedScroll.h

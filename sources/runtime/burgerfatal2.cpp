@@ -2,6 +2,8 @@
 
 #include <stdarg.h>
 #include "burger.h"
+#include "macport.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +29,8 @@ void Fatal(const char *fmt, ...)
         IAmExiting = 1;
         if (fmt != 0)
             DebugXString(ErrorMsg);
+        ShutdownWinGame();
+        PlatQuit();
         exit(kFatalExitCode);
     }
 }

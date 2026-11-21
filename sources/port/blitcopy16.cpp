@@ -2,7 +2,8 @@
 #include "macport.h"
 
 // FUNCTION: EVNOVA 0x004b74c0
-void CopyBitsCopy16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect)
+void CopyBitsCopy16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                    int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     int32_t width;
     int32_t height;

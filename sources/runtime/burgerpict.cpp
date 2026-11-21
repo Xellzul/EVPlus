@@ -206,6 +206,7 @@ Word8 *DecodeImage(const Word8 *Input, Image_t *ImagePtr, Word32 RowBytes, Word 
     Word RowSize;
     Word PackedSize;
     Word BufferSize;
+    Word ExpandSize;
     Word32 Run;
     Word32 Length;
     Word8 *WorkPtr;
@@ -235,9 +236,10 @@ Word8 *DecodeImage(const Word8 *Input, Image_t *ImagePtr, Word32 RowBytes, Word 
         RowBytes = RowSize;
     }
     BufferSize = ImagePtr->Width << 2;
+    ExpandSize = BufferSize > 1024 ? BufferSize : 1024;     /* a 128-byte 1-bit run widens to 1024 */
     Output = (Word8 *)AllocAPointerClear(RowSize * ImagePtr->Height);
     if (Output) {
-        PackedPtr = (Word8 *)AllocAPointer(BufferSize * 2);
+        PackedPtr = (Word8 *)AllocAPointer(BufferSize + ExpandSize);
         if (PackedPtr) {
             ExpandPtr = PackedPtr + BufferSize;
             Height = ImagePtr->Height;
@@ -246,6 +248,9 @@ Word8 *DecodeImage(const Word8 *Input, Image_t *ImagePtr, Word32 RowBytes, Word 
                 if (RowBytes < 8) {
                     RawLength = RowBytes;
                     SrcPtr = ExpandBuffer(ExpandPtr, Input, &RawLength, Depth);
+                    if (RawLength > RowSize) {          /* the row's padding */
+                        RawLength = RowSize;
+                    }
                     memcpy(DestPtr, SrcPtr, RawLength);
                     Input += RowBytes;
                 } else {

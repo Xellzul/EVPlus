@@ -59,7 +59,8 @@ void TESetText(const void *text, int32_t length, TEHandle hTE)
         DeallocAPointer((*hTE)->text);
     (*hTE)->text = (char *)AllocAPointer(length);
     (*hTE)->textLength = length;
-    memcpy((*hTE)->text, text, length);
+    if (length != 0)
+        memcpy((*hTE)->text, text, length);
     TECalText(hTE);
 }
 

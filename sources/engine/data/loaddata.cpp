@@ -80,7 +80,7 @@ void OpenDataFiles(void)
         FadeScreenIn();
         GetIndString(str, kAlertStrList, 0x1d);
         EVNoteAlert(str);
-        exit(0);
+        ExitToShell();
     }
 
     crashlog_print("opening files in ");
@@ -92,7 +92,7 @@ void OpenDataFiles(void)
             FadeScreenIn();
             GetIndString(str, kAlertStrList, 0x1e);
             EVNoteAlert(str);
-            exit(0);
+            ExitToShell();
         }
     }
 
@@ -108,7 +108,7 @@ void OpenDataFiles(void)
                 FadeScreenIn();
                 GetIndString(str, kAlertStrList, 0x1f);
                 EVNoteAlert(str);
-                exit(0);
+                ExitToShell();
             }
         }
     }
@@ -850,9 +850,9 @@ void LoadObjectData(void)
                 rgb.blue = (ResRec(WeapRes, weaponFileHand)->partColor & 0xff) * 256;
                 for (j = 0; j < 8; j++) {
                     factor = (Rand(0x51) + 60) * 0.01;
-                    shade.red = rgb.red * factor;
-                    shade.green = rgb.green * factor;
-                    shade.blue = rgb.blue * factor;
+                    shade.red = (int32_t)(rgb.red * factor);
+                    shade.green = (int32_t)(rgb.green * factor);
+                    shade.blue = (int32_t)(rgb.blue * factor);
                     // BUG (all versions): factor reaches 1.40, so a component above ~0xb6ff wraps when stored in
                     // the unsigned short -- bright particle colours turn dark (mac 1.0.10 clamped the shade, too late)
                     weaponStats[i].partColor[j] = Color2Index(&shade);

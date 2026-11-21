@@ -20,7 +20,7 @@ void MissionList::Create(DialogPtr dlg, const Rect &box, short rows, bool scroll
     SetRect(&cellBounds, 0, 0, 1, rows);
     cellSize.v = kRowHeight;
     cellSize.h = box.right - box.left;
-    list = nv_NewDialog(&box, &cellBounds, cellSize, (ListDrawProcPtr)MissionListDefinition, (CGrafPtr)dlg,
+    list = nv_NewDialog(&box, &cellBounds, cellSize, MissionListDefinition, (CGrafPtr)dlg,
                         scrollBar);
     LockAHandle((Handle)list);
 }

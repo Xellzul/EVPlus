@@ -722,7 +722,8 @@ DialogPtr NewDialogFromItems(short width, short height, const DialogItemSpec *it
             if (length > 255)
                 length = 255;
             p[13] = (unsigned char)length;
-            memcpy(p + 14, items[i].text, length);
+            if (length != 0)
+                memcpy(p + 14, items[i].text, length);
             p += 14 + length;
         }
         if (((p - ditl) & 1) != 0)
@@ -1120,7 +1121,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
             event.where.v = clicked;
             event.mods = mods;
             event.when = TickCount();
-            saved = *(uint32_t *)&itemHit;   /* the exe's dword load; `= itemHit' is movsx */
+            saved = (uint16_t)itemHit;
             event.what = DialogInput::Click;
             res = RunFilter(dlg, event, &itemHit);
             if (res != 0)
@@ -2021,7 +2022,8 @@ void LSetCell(void *text, int32_t length, Point cell, ScrollRec **rec)
     next = cell.v + 1;
     delta = length - ((*rec)->cellArray[next] - start);
     if (delta == 0) {
-        memcpy(*(*rec)->cells + start, text, length);
+        if (length != 0)
+            memcpy(*(*rec)->cells + start, text, length);
         return;
     }
     (*rec)->maxIndex += delta;
@@ -2036,7 +2038,8 @@ void LSetCell(void *text, int32_t length, Point cell, ScrollRec **rec)
     }
     if (delta < 0)
         (*rec)->cells = ResizeAHandle((*rec)->cells, (*rec)->maxIndex);
-    memcpy(*(*rec)->cells + (*rec)->cellArray[lineNo], text, length);
+    if (length != 0)
+        memcpy(*(*rec)->cells + (*rec)->cellArray[lineNo], text, length);
     for (k = next; k <= (*rec)->dataBounds.bottom; k++)
         (*rec)->cellArray[k] += delta;
 }

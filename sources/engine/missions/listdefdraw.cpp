@@ -79,7 +79,7 @@ void MissionHandlePlayerEnteredNewSystem(void)
 
 // FUNCTION: EVNOVA 0x00448a30
 // MAC: _MissionListDefinition i386 0x0009a018 ppc 0x000a5e68
-void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, int32_t lCell,
+void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, Point *lCell,
                    short lDataOffset, short lDataLen, ScrollRec **lHandle)
 {
     void *text;
