@@ -15,3 +15,4 @@
 - Shipyard: double-click opens it description
 - Asteroid Scaling based on screen size, asteroid cap increased from 16 to 1024
 - Starfield density matches the 1024x768 game on any screen size
+- Shipyard: used ships show their stats against the new ship

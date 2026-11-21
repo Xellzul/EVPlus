@@ -909,6 +909,361 @@ void DoShipyardDescription(short ship)
     ShipDescDialog().Run();
 }
 
+static const RGBColor worseRGB = { 0xffff, 0x4000, 0x4000 };
+static const RGBColor betterRGB = { 0x4000, 0xffff, 0x4000 };
+
+/* the value lines of the ship description */
+enum {
+    kStatSpeed,
+    kStatAccel,
+    kStatTurn,
+    kStatShield,
+    kStatArmor,
+    kStatGuns,
+    kStatTurrets,
+    kStatSpace,
+    kStatCargo,
+    kStatFuel,
+    kStatLength,
+    kStatMass,
+    kStatCrew
+};
+
+/* a value line's text: the words before the number, the number (or the whole text when there is none), the
+   words after it; and the number the line compares by */
+typedef struct StatText {
+    char pre[260];                  /* a 255-character STR# plus a space */
+    char num[260];
+    char post[260];
+    int32_t value;
+} StatText;
+
+/* The stock ship of a shipyard variant: the first buyable or hirable ship with its name and display weight.
+   -1 when that is `type' itself or there is none. */
+static short StockShipOf(short type)
+{
+    short i;
+    short len;
+
+    len = shipClass[type].name[0] < 63 ? shipClass[type].name[0] : 63;
+    if (len == 0)
+        return -1;
+    for (i = 0; i < kMaxShipTypes; i++) {
+        if (shipClass[i].techLevel >= 0 && shipClass[i].techLevel != kResUnloaded
+            && (shipClass[i].buyRandom != 0 || shipClass[i].hireRandom != 0)
+            && shipClass[i].dispWeight == shipClass[type].dispWeight
+            && memcmp(shipClass[i].name, shipClass[type].name, len + 1) == 0)
+            return i == type ? -1 : i;
+    }
+    return -1;
+}
+
+/* the free space a ship has left with its standard weapons, ammo and outfits */
+static int32_t FreeMassAfterLoadout(short type)
+{
+    int32_t freeMass;
+    int32_t mass;
+    short i;
+    short j;
+
+    freeMass = shipClass[type].freeMass;
+    for (i = 0; i < kMaxWeapTypes; i++) {
+        if (shipClass[type].weapCount[i] > 0) {
+            for (j = 0; j < kMaxOutfits; j++) {
+                if (outfitSystem[j].modType[0] == kOutfModWeapon
+                    && i == outfitSystem[j].modVal[0]
+                    && outfitSystem[j].techLevel < kOutfTechAbsent) {
+                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[type]);
+                    mass = shipClass[type].weapCount[i] * mass;
+                    if (mass > freeMass)
+                        freeMass = 0;
+                    else
+                        freeMass -= mass;
+                    break;
+                }
+            }
+        }
+        if (shipClass[type].weapAmmo[i] > 0) {
+            for (j = 0; j < kMaxOutfits; j++) {
+                if (outfitSystem[j].modType[0] == kOutfModAmmo
+                    && i == outfitSystem[j].modVal[0]
+                    && outfitSystem[j].techLevel < kOutfTechAbsent) {
+                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[type]);
+                    mass = shipClass[type].weapAmmo[i] * mass;
+                    if (mass > freeMass)
+                        freeMass = 0;
+                    else
+                        freeMass -= mass;
+                    break;
+                }
+            }
+        }
+    }
+    for (i = 0; i < kDefaultOutfitSlots; i++) {
+        if (shipClass[type].defOutfID[i] != -1
+            && shipClass[type].defOutfCount[i] > 0
+            && outfitSystem[shipClass[type].defOutfID[i]].techLevel < kOutfTechAbsent) {
+            mass = AdjustedItemMass(&outfitSystem[shipClass[type].defOutfID[i]],
+                                    &shipClass[type]);
+            mass = shipClass[type].defOutfCount[i] * mass;
+            if (mass > freeMass)
+                freeMass = 0;
+            else
+                freeMass -= mass;
+        }
+    }
+    return freeMass;
+}
+
+/* the kGameStrList word for an acceleration */
+static short AccelWord(float accel)
+{
+    if (accel > 0.073)
+        return 245;
+    if (accel > 0.055)
+        return 246;
+    if (accel > 0.038)
+        return 247;
+    if (accel > 0.025)
+        return 248;
+    if (accel > 0.013)
+        return 249;
+    if (accel > 0.0)
+        return 250;
+    return 396;
+}
+
+/* the kGameStrList word for a turn rate */
+static short TurnWord(float turnRate)
+{
+    if (turnRate <= 0.0f)
+        return 396;
+    if (turnRate <= 1.0f)
+        return 250;
+    if (turnRate <= 2.0f)
+        return 249;
+    if (turnRate <= 3.0f)
+        return 248;
+    if (turnRate <= 4.0f)
+        return 247;
+    if (turnRate <= 5.0f)
+        return 246;
+    return 245;
+}
+
+static void StrcatNumber(char *dst, int32_t value)
+{
+    unsigned char str[256];
+
+    NumToString(value, str);
+    PtoCstr(str);
+    strcat(dst, (char *)str);
+}
+
+/* " ton" or " tons" */
+static void StrcatTons(char *dst, int32_t value)
+{
+    char str[256];
+
+    PStr2CStr(str, value == 1 ? tonString : tonsString);
+    strcat(dst, " ");
+    strcat(dst, str);
+}
+
+/* Value line `stat' of ship `type'. Accel and turn show the word of ship `wordType' (its own when either is N/A)
+   and Player Info's number. */
+static void StatOf(StatText *s, short stat, short type, short wordType)
+{
+    ShipRec *ship;
+    float rate;
+    short word;
+    int32_t freeMass;
+
+    ship = &shipClass[type];
+    s->pre[0] = 0;
+    s->num[0] = 0;
+    s->post[0] = 0;
+    s->value = 0;
+    switch (stat) {
+    case kStatSpeed:
+        s->value = CE_RoundD(ship->maxSpeed * 100.0);
+        StrcatNumber(s->num, s->value);
+        break;
+    case kStatAccel:
+    case kStatTurn:
+        if (stat == kStatAccel) {
+            word = AccelWord(shipClass[wordType].accel);
+            if (word == 396 || AccelWord(ship->accel) == 396)
+                word = AccelWord(ship->accel);
+            rate = ship->accel;
+            if (rate < 0.0f)
+                rate = 0.0f;
+            rate *= 2.0;
+            s->value = CE_TruncF32(rate * 2500.0);
+        } else {
+            word = TurnWord(shipClass[wordType].turnRate);
+            if (word == 396 || TurnWord(ship->turnRate) == 396)
+                word = TurnWord(ship->turnRate);
+            rate = ship->turnRate;
+            if (rate < 1.0f && ship->turnRate > 0.0f)
+                rate = 1.0f;
+            if (rate < 0.0f)
+                rate = 0.0f;
+            s->value = CE_TruncF32(rate * 30.0f);
+        }
+        if (word == 396) {
+            s->value = 0;
+            StrcatIndCString(s->num, kGameStrList, 396);
+        } else {
+            StrcatIndCString(s->pre, kGameStrList, word);
+            strcat(s->pre, " ");
+            StrcatNumber(s->num, s->value);
+        }
+        break;
+    case kStatShield:
+    case kStatArmor:
+        s->value = stat == kStatShield ? ship->shield : ship->armor;
+        if (s->value > 0) {
+            StrcatCommaNumber(s->value, s->num);
+        } else {
+            s->value = 0;
+            StrcatIndCString(s->num, kGameStrList, 335);
+        }
+        break;
+    case kStatGuns:
+    case kStatTurrets:
+        s->value = stat == kStatGuns ? ship->maxGuns : ship->maxTurrets;
+        if (s->value > 0) {
+            StrcatIndCString(s->pre, kGameStrList, 238);
+            strcat(s->pre, " ");
+            StrcatNumber(s->num, s->value);
+        } else {
+            s->value = 0;
+            StrcatIndCString(s->num, kGameStrList, 335);
+        }
+        break;
+    case kStatSpace:
+        s->value = ship->freeMass;
+        freeMass = FreeMassAfterLoadout(type);
+        StrcatNumber(s->num, freeMass);
+        StrcatTons(s->post, freeMass);
+        break;
+    case kStatCargo:
+        s->value = ship->cargo;
+        StrcatNumber(s->num, ship->cargo);
+        StrcatTons(s->post, ship->cargo);
+        break;
+    case kStatFuel:
+        if (ship->fuel == 0) {
+            StrcatIndCString(s->num, kGameStrList, 335);
+        } else {
+            s->value = ship->fuel / 100;
+            StrcatNumber(s->num, s->value);
+            strcat(s->post, " ");
+            StrcatIndCString(s->post, kGameStrList, s->value == 1 ? 239 : 240);
+        }
+        break;
+    case kStatLength:
+        StrcatNumber(s->num, ship->shipLength);
+        strcat(s->post, " ");
+        StrcatIndCString(s->post, kGameStrList, 244);
+        break;
+    case kStatMass:
+        StrcatNumber(s->num, ship->mass);
+        StrcatTons(s->post, ship->mass);
+        break;
+    case kStatCrew:
+        s->value = ship->crew;
+        StrcatNumber(s->num, ship->crew);
+        break;
+    }
+}
+
+/* Value line `stat' of ship `type' at (h, v), its text up to `right'. On a variant of ship `stock', a value
+   whose text differs from the stock ship's shows the stock text struck through, then its own in green when
+   better, red when worse; words both share are drawn once, or dropped when the line is too wide, and when
+   it still is only the new value is shown. */
+static void DrawStatLine(short stat, short type, short stock, short h, short v, short right)
+{
+    StatText now;
+    StatText old;
+    char nowText[768];
+    char oldText[768];
+    char text[1536];
+    const char *pre;
+    const char *struck;
+    const char *shown;
+    const char *post;
+    short left;
+    Rect strike;
+
+    StatOf(&now, stat, type, type);
+    strcpy(nowText, now.pre);
+    strcat(nowText, now.num);
+    strcat(nowText, now.post);
+    MoveTo(h, v);
+    ForeColor(whiteColor);
+    if (stock != -1) {
+        StatOf(&old, stat, stock, type);
+        strcpy(oldText, old.pre);
+        strcat(oldText, old.num);
+        strcat(oldText, old.post);
+    }
+    if (stock == -1 || strcmp(oldText, nowText) == 0) {
+        DrawCString(nowText);
+        return;
+    }
+
+    if (strcmp(old.pre, now.pre) == 0 && strcmp(old.post, now.post) == 0) {
+        pre = now.pre;
+        struck = old.num;
+        shown = now.num;
+        post = now.post;
+    } else {
+        pre = "";
+        struck = oldText;
+        shown = nowText;
+        post = "";
+    }
+    strcpy(text, pre);
+    strcat(text, struck);
+    strcat(text, " ");
+    strcat(text, shown);
+    strcat(text, post);
+    if (TextWidthMacRoman(text, strlen(text)) > right - h) {
+        pre = "";
+        struck = old.num;
+        shown = now.num;
+        post = "";
+        strcpy(text, struck);
+        strcat(text, " ");
+        strcat(text, shown);
+        if (TextWidthMacRoman(text, strlen(text)) > right - h)
+            struck = NULL;
+    }
+
+    if (struck != NULL) {
+        /* a 1 px bar through the middle of the digits, from the pen's start and the widths before it */
+        left = h + TextWidthMacRoman(pre, strlen(pre));
+        strcpy(text, pre);
+        strcat(text, struck);
+        SetRect(&strike, left, v - 4, h + TextWidthMacRoman(text, strlen(text)), v - 3);
+        DrawCString(pre);
+        DrawCString(struck);
+        PaintRect(&strike);
+        DrawCString(" ");
+    }
+    if (stat == kStatLength || stat == kStatMass || now.value == old.value)
+        ForeColor(whiteColor);
+    else if (now.value > old.value)
+        RGBForeColor(&betterRGB);
+    else
+        RGBForeColor(&worseRGB);
+    DrawCString(shown);
+    ForeColor(whiteColor);
+    DrawCString(post);
+}
+
 // FUNCTION: EVNOVA 0x00495c80
 // MAC: _ShipDescDialogUpdate i386 0x0004f915 ppc 0x00058710
 void ShipDescDialogUpdate(void)
@@ -925,8 +1280,9 @@ void ShipDescDialogUpdate(void)
     short itemType;
     short i;
     short j;
-    int32_t freeMass;
-    int32_t mass;
+    short stock;
+    short valueRight;
+    short valueLeft;
 
     SetGWorldContainer(&loadPort);
     ForeColor(blackColor);
@@ -955,6 +1311,9 @@ void ShipDescDialogUpdate(void)
     GetDialogItem(shipDescDialog, 5, &itemType, &item, &box);
     if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipDescDialog)))) {
         sel = selShipyardItem;
+        stock = StockShipOf(sel);
+        valueRight = box.right - 2;
+        valueLeft = box.left + 128;              /* 2 px before the right column's labels */
         ForeColor(blackColor);
         PaintRect(&box);
         ForeColor(whiteColor);
@@ -964,188 +1323,52 @@ void ShipDescDialogUpdate(void)
         RGBForeColor(&rgbMedGrey);
         MoveTo(box.left, (box.top + 12));
         DrawIndString(kGameStrList, 229);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 45), (box.top + 12));
-        NumToString(CE_RoundD(shipClass[sel].maxSpeed * 100.0), buf);
-        DrawString(buf);
+        DrawStatLine(kStatSpeed, sel, stock, box.left + 45, box.top + 12, valueLeft);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo(box.left, (box.top + 24));
         DrawIndString(kGameStrList, 230);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 45), (box.top + 24));
-        if (shipClass[sel].accel > 0.073)
-            DrawIndString(kGameStrList, 245);
-        else if (shipClass[sel].accel > 0.055)
-            DrawIndString(kGameStrList, 246);
-        else if (shipClass[sel].accel > 0.038)
-            DrawIndString(kGameStrList, 247);
-        else if (shipClass[sel].accel > 0.025)
-            DrawIndString(kGameStrList, 248);
-        else if (shipClass[sel].accel > 0.013)
-            DrawIndString(kGameStrList, 249);
-        else if (shipClass[sel].accel > 0.0)
-            DrawIndString(kGameStrList, 250);
-        else
-            DrawIndString(kGameStrList, 396);
+        DrawStatLine(kStatAccel, sel, stock, box.left + 45, box.top + 24, valueLeft);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo(box.left, (box.top + 36));
         DrawIndString(kGameStrList, 231);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 45), (box.top + 36));
-        if (shipClass[sel].turnRate <= 0.0f)
-            DrawIndString(kGameStrList, 396);
-        else if (shipClass[sel].turnRate <= 1.0f)
-            DrawIndString(kGameStrList, 250);
-        else if (shipClass[sel].turnRate <= 2.0f)
-            DrawIndString(kGameStrList, 249);
-        else if (shipClass[sel].turnRate <= 3.0f)
-            DrawIndString(kGameStrList, 248);
-        else if (shipClass[sel].turnRate <= 4.0f)
-            DrawIndString(kGameStrList, 247);
-        else if (shipClass[sel].turnRate <= 5.0f)
-            DrawIndString(kGameStrList, 246);
-        else
-            DrawIndString(kGameStrList, 245);
+        DrawStatLine(kStatTurn, sel, stock, box.left + 45, box.top + 36, valueLeft);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo(box.left, (box.top + 48));
         DrawString(shieldString[0]);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 45), (box.top + 48));
-        if (shipClass[sel].shield > 0)
-            DrawCommaNumber(shipClass[sel].shield);
-        else
-            DrawIndString(kGameStrList, 335);
+        DrawStatLine(kStatShield, sel, stock, box.left + 45, box.top + 48, valueLeft);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo(box.left, (box.top + 60));
         DrawString(armorString[0]);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 45), (box.top + 60));
-        if (shipClass[sel].armor > 0)
-            DrawCommaNumber(shipClass[sel].armor);
-        else
-            DrawIndString(kGameStrList, 335);
+        DrawStatLine(kStatArmor, sel, stock, box.left + 45, box.top + 60, valueLeft);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo(box.left, (box.top + 72));
         DrawIndString(kGameStrList, 232);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 45), (box.top + 72));
-        if (shipClass[sel].maxGuns > 0) {
-            NumToString(shipClass[sel].maxGuns, buf);
-            DrawIndString(kGameStrList, 238);
-            DrawString("\p ");
-            DrawString(buf);
-        } else
-            DrawIndString(kGameStrList, 335);
+        DrawStatLine(kStatGuns, sel, stock, box.left + 45, box.top + 72, valueLeft);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo(box.left, (box.top + 84));
         DrawIndString(kGameStrList, 233);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 45), (box.top + 84));
-        if (shipClass[sel].maxTurrets > 0) {
-            NumToString(shipClass[sel].maxTurrets, buf);
-            DrawIndString(kGameStrList, 238);
-            DrawString("\p ");
-            DrawString(buf);
-        } else
-            DrawIndString(kGameStrList, 335);
-
-        freeMass = shipClass[sel].freeMass;
-        for (i = 0; i < kMaxWeapTypes; i++) {
-            if (shipClass[sel].weapCount[i] > 0) {
-                for (j = 0; j < kMaxOutfits; j++) {
-                    if (outfitSystem[j].modType[0] == kOutfModWeapon
-                        && i == outfitSystem[j].modVal[0]
-                        && outfitSystem[j].techLevel < kOutfTechAbsent) {
-                        mass = AdjustedItemMass(&outfitSystem[j], &shipClass[sel]);
-                        mass = shipClass[sel].weapCount[i] * mass;
-                        if (mass > freeMass)
-                            freeMass = 0;
-                        else
-                            freeMass -= mass;
-                        break;
-                    }
-                }
-            }
-            if (shipClass[sel].weapAmmo[i] > 0) {
-                for (j = 0; j < kMaxOutfits; j++) {
-                    if (outfitSystem[j].modType[0] == kOutfModAmmo
-                        && i == outfitSystem[j].modVal[0]
-                        && outfitSystem[j].techLevel < kOutfTechAbsent) {
-                        mass = AdjustedItemMass(&outfitSystem[j], &shipClass[sel]);
-                        mass = shipClass[sel].weapAmmo[i] * mass;
-                        if (mass > freeMass)
-                            freeMass = 0;
-                        else
-                            freeMass -= mass;
-                        break;
-                    }
-                }
-            }
-        }
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[sel].defOutfID[i] != -1
-                && shipClass[sel].defOutfCount[i] > 0
-                && outfitSystem[shipClass[sel].defOutfID[i]].techLevel < kOutfTechAbsent) {
-                mass = AdjustedItemMass(&outfitSystem[shipClass[sel].defOutfID[i]],
-                                        &shipClass[sel]);
-                mass = shipClass[sel].defOutfCount[i] * mass;
-                if (mass > freeMass)
-                    freeMass = 0;
-                else
-                    freeMass -= mass;
-            }
-        }
+        DrawStatLine(kStatTurrets, sel, stock, box.left + 45, box.top + 84, valueLeft);
 
         MoveTo((box.left + 130), (box.top + 12));
         RGBForeColor(&rgbMedGrey);
         DrawIndString(kGameStrList, 234);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 175), (box.top + 12));
-        NumToString(freeMass, buf);
-        DrawString(buf);
-        DrawString("\p ");
-        if (freeMass == 1)
-            DrawString(tonString);
-        else
-            DrawString(tonsString);
+        DrawStatLine(kStatSpace, sel, stock, box.left + 175, box.top + 12, valueRight);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo((box.left + 130), (box.top + 24));
         DrawIndString(kGameStrList, 110);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 175), (box.top + 24));
-        NumToString(shipClass[sel].cargo, buf);
-        DrawString(buf);
-        DrawString("\p ");
-        if (shipClass[sel].cargo == 1)
-            DrawString(tonString);
-        else
-            DrawString(tonsString);
+        DrawStatLine(kStatCargo, sel, stock, box.left + 175, box.top + 24, valueRight);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo((box.left + 130), (box.top + 36));
         DrawString(fuelString[4]);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 175), (box.top + 36));
-        if (shipClass[sel].fuel == 0)
-            DrawIndString(kGameStrList, 335);
-        else {
-            numWeapTypes = shipClass[sel].fuel / 100;
-            NumToString(numWeapTypes, buf);
-            DrawString(buf);
-            DrawString("\p ");
-            if (numWeapTypes == 1)
-                DrawIndString(kGameStrList, 239);
-            else
-                DrawIndString(kGameStrList, 240);
-        }
-
+        DrawStatLine(kStatFuel, sel, stock, box.left + 175, box.top + 36, valueRight);
         numWeapTypes = 0;
         for (i = 0; i < kMaxWeapTypes; i++) {
             if (shipClass[sel].weapCount[i] > 0)
@@ -1266,34 +1489,18 @@ void ShipDescDialogUpdate(void)
         RGBForeColor(&rgbMedGrey);
         MoveTo((box.left + 130), (box.top + 48));
         DrawIndString(kGameStrList, 235);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 175), (box.top + 48));
-        NumToString(shipClass[sel].shipLength, buf);
-        DrawString(buf);
-        DrawString("\p ");
-        DrawIndString(kGameStrList, 244);
+        DrawStatLine(kStatLength, sel, stock, box.left + 175, box.top + 48, valueRight);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo((box.left + 130), (box.top + 60));
         DrawIndString(kGameStrList, 236);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 175), (box.top + 60));
-        NumToString(shipClass[sel].mass, buf);
-        DrawString(buf);
-        DrawString("\p ");
-        if (shipClass[sel].mass == 1)
-            DrawString(tonString);
-        else
-            DrawString(tonsString);
+        DrawStatLine(kStatMass, sel, stock, box.left + 175, box.top + 60, valueRight);
 
-        if (shipClass[sel].crew > 0) {
+        if (shipClass[sel].crew > 0 || (stock != -1 && shipClass[stock].crew > 0)) {
             RGBForeColor(&rgbMedGrey);
             MoveTo((box.left + 130), (box.top + 72));
             DrawIndString(kGameStrList, 237);
-            ForeColor(whiteColor);
-            MoveTo((box.left + 175), (box.top + 72));
-            NumToString(shipClass[sel].crew, buf);
-            DrawString(buf);
+            DrawStatLine(kStatCrew, sel, stock, box.left + 175, box.top + 72, valueRight);
         }
     }
     GetDialogItem(shipDescDialog, 1, &itemType, &item, &box);

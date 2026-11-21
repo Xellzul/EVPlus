@@ -667,9 +667,15 @@ DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc, DialogEventPro
     short ditlID;
 
     dlogRes = GetResource(kDLOGType, dlogID);
+    if (dlogRes == NULL)
+        return NULL;
     LockAHandle(dlogRes);
     ditlID = SwapEndianShort((const unsigned short *)*dlogRes + kDlogDitlWord);
     ditlRes = GetResource(kDITLType, ditlID);
+    if (ditlRes == NULL) {
+        ReleaseResource(dlogRes);
+        return NULL;
+    }
     LockAHandle(ditlRes);
     dlg = NewDialogFromTemplate((const unsigned short *)*dlogRes, (unsigned char *)*ditlRes, updateProc,
                                 eventProc);
