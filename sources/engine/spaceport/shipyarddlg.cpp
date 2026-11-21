@@ -909,6 +909,7 @@ void DoShipyardDescription(short ship)
     ShipDescDialog().Run();
 }
 
+static const char kTotalSpaceLabel[] = "Total Space:";
 static const RGBColor worseRGB = { 0xffff, 0x4000, 0x4000 };
 static const RGBColor betterRGB = { 0x4000, 0xffff, 0x4000 };
 
@@ -922,6 +923,7 @@ enum {
     kStatGuns,
     kStatTurrets,
     kStatSpace,
+    kStatTotalSpace,
     kStatCargo,
     kStatFuel,
     kStatLength,
@@ -1148,6 +1150,11 @@ static void StatOf(StatText *s, short stat, short type, short wordType)
         StrcatNumber(s->num, freeMass);
         StrcatTons(s->post, freeMass);
         break;
+    case kStatTotalSpace:
+        s->value = ship->freeMass;
+        StrcatNumber(s->num, s->value);
+        StrcatTons(s->post, s->value);
+        break;
     case kStatCargo:
         s->value = ship->cargo;
         StrcatNumber(s->num, ship->cargo);
@@ -1283,6 +1290,7 @@ void ShipDescDialogUpdate(void)
     short stock;
     short valueRight;
     short valueLeft;
+    short totalH;
 
     SetGWorldContainer(&loadPort);
     ForeColor(blackColor);
@@ -1362,13 +1370,20 @@ void ShipDescDialogUpdate(void)
 
         RGBForeColor(&rgbMedGrey);
         MoveTo((box.left + 130), (box.top + 24));
-        DrawIndString(kGameStrList, 110);
-        DrawStatLine(kStatCargo, sel, stock, box.left + 175, box.top + 24, valueRight);
+        DrawCString(kTotalSpaceLabel);
+        totalH = box.left + 130 + TextWidthMacRoman(kTotalSpaceLabel, strlen(kTotalSpaceLabel)) + 4;
+        DrawStatLine(kStatTotalSpace, sel, stock, totalH > box.left + 175 ? totalH : box.left + 175, box.top + 24,
+                     valueRight);
 
         RGBForeColor(&rgbMedGrey);
         MoveTo((box.left + 130), (box.top + 36));
+        DrawIndString(kGameStrList, 110);
+        DrawStatLine(kStatCargo, sel, stock, box.left + 175, box.top + 36, valueRight);
+
+        RGBForeColor(&rgbMedGrey);
+        MoveTo((box.left + 130), (box.top + 48));
         DrawString(fuelString[4]);
-        DrawStatLine(kStatFuel, sel, stock, box.left + 175, box.top + 36, valueRight);
+        DrawStatLine(kStatFuel, sel, stock, box.left + 175, box.top + 48, valueRight);
         numWeapTypes = 0;
         for (i = 0; i < kMaxWeapTypes; i++) {
             if (shipClass[sel].weapCount[i] > 0)
@@ -1487,20 +1502,20 @@ void ShipDescDialogUpdate(void)
         }
 
         RGBForeColor(&rgbMedGrey);
-        MoveTo((box.left + 130), (box.top + 48));
+        MoveTo((box.left + 130), (box.top + 60));
         DrawIndString(kGameStrList, 235);
-        DrawStatLine(kStatLength, sel, stock, box.left + 175, box.top + 48, valueRight);
+        DrawStatLine(kStatLength, sel, stock, box.left + 175, box.top + 60, valueRight);
 
         RGBForeColor(&rgbMedGrey);
-        MoveTo((box.left + 130), (box.top + 60));
+        MoveTo((box.left + 130), (box.top + 72));
         DrawIndString(kGameStrList, 236);
-        DrawStatLine(kStatMass, sel, stock, box.left + 175, box.top + 60, valueRight);
+        DrawStatLine(kStatMass, sel, stock, box.left + 175, box.top + 72, valueRight);
 
         if (shipClass[sel].crew > 0 || (stock != -1 && shipClass[stock].crew > 0)) {
             RGBForeColor(&rgbMedGrey);
-            MoveTo((box.left + 130), (box.top + 72));
+            MoveTo((box.left + 130), (box.top + 84));
             DrawIndString(kGameStrList, 237);
-            DrawStatLine(kStatCrew, sel, stock, box.left + 175, box.top + 72, valueRight);
+            DrawStatLine(kStatCrew, sel, stock, box.left + 175, box.top + 84, valueRight);
         }
     }
     GetDialogItem(shipDescDialog, 1, &itemType, &item, &box);
