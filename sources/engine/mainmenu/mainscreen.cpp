@@ -289,6 +289,7 @@ void MainScreenChoice(short which)
 
     if (which == kMainScreenPrefs) {
         DoPrefsDialog();
+        ReapplyUIScale();
         SWSetPortToWindow(gSpriteWorld);
         MainScreenAnimDraw();
         MainScreenUpdate(1);

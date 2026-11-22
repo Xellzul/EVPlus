@@ -12,7 +12,7 @@ constexpr short kOriginalWidth = 1024;
 constexpr short kOriginalHeight = 768;
 constexpr short kSmallHeight = 600;
 constexpr double kRatioTolerance = 0.01;        /* two ratios this close are the same */
-constexpr double kUIScaleMin = 1.0;
+constexpr double kUIScaleMaxFloor = 1.0;      /* the largest UI scale offered is never below this */
 constexpr double kUIScaleStep = 0.1;
 
 struct AspectName {
@@ -47,29 +47,26 @@ Size DesktopSize()
     return s;
 }
 
-/* the largest dialog the game and the plug-ins have (DLOG bounds), measured once */
+/* the largest dialog the open game files and plug-ins have (DLOG bounds) */
 Size LargestDialog()
 {
-    static Size largest;
+    Size largest = { 1, 1 };
+    int32_t count = CountResources(kDLOGType);
 
-    if (largest.width == 0) {
-        largest = { 1, 1 };
-        int32_t count = CountResources(kDLOGType);
-        for (int32_t i = 1; i <= count; i++) {
-            Handle h = GetIndResource(kDLOGType, (short)i);
-            if (h == NULL)
-                continue;
-            if (GetAHandleSize(h) >= 8) {
-                const unsigned char *t = (const unsigned char *)*h;
-                short height = (short)((t[4] << 8 | t[5]) - (t[0] << 8 | t[1]));
-                short width = (short)((t[6] << 8 | t[7]) - (t[2] << 8 | t[3]));
-                if (width > largest.width)
-                    largest.width = width;
-                if (height > largest.height)
-                    largest.height = height;
-            }
-            ReleaseResource(h);
+    for (int32_t i = 1; i <= count; i++) {
+        Handle h = GetIndResource(kDLOGType, (short)i);
+        if (h == NULL)
+            continue;
+        if (GetAHandleSize(h) >= 8) {
+            const unsigned char *t = (const unsigned char *)*h;
+            short height = (short)((t[4] << 8 | t[5]) - (t[0] << 8 | t[1]));
+            short width = (short)((t[6] << 8 | t[7]) - (t[2] << 8 | t[3]));
+            if (width > largest.width)
+                largest.width = width;
+            if (height > largest.height)
+                largest.height = height;
         }
+        ReleaseResource(h);
     }
     return largest;
 }
@@ -212,7 +209,7 @@ double MaxUIScale(Resolution r, short ownWidth, short ownHeight)
     if (draw.height / base / height < scale)
         scale = draw.height / base / height;
     scale = floor(scale * 10 + 1e-6) / 10;
-    return scale < kUIScaleMin ? kUIScaleMin : scale;
+    return scale < kUIScaleMaxFloor ? kUIScaleMaxFloor : scale;
 }
 
 double MinUIScale(Resolution r)

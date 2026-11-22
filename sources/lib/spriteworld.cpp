@@ -5,10 +5,10 @@
 
 EXTERN_C_BEGIN
 
-// FUNCTION: EVNOVA 0x00477910
-// MAC: _SWCreateSpriteWorldFromWindow i386 0x000b6e56 ppc 0x000c2954
-short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr srcWindowP,
-                                    Rect *worldRectP, Rect *offscreenRectP, short maxDepth)
+/* The window, back and work frames of a world over `srcWindowP': the window frame over `worldRectP' (NULL =
+   the whole port), back and work frames of `offscreenRectP''s size (NULL = the window frame's). */
+static short CreateWorldFrames(CWindowPtr srcWindowP, Rect *worldRectP, Rect *offscreenRectP,
+                               SWFrameRec **windowFramePP, SWFrameRec **backFramePP, SWFrameRec **workFramePP)
 {
     short err = noErr;
     SWFrameRec *windowFrameP, *backFrameP, *workFrameP;
@@ -16,7 +16,6 @@ short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr src
     void *mainGDH;
     Rect *srcRectP;
 
-    *spriteWorldP = 0;
     windowFrameP = backFrameP = workFrameP = 0;
 
     SetPortWindowPort(srcWindowP);
@@ -46,10 +45,6 @@ short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr src
     if ((int)err == noErr)
         err = SWCreateFrame(mainGDH, &workFrameP, &tempRect, 16, kCreateGWorld);
 
-    if ((int)err == noErr)
-        err = SWCreateSpriteWorld(mainGDH, spriteWorldP, windowFrameP,
-                                  backFrameP, workFrameP, maxDepth);
-
     if ((int)err != noErr) {
         if (windowFrameP != 0)
             SWDisposeWindowFrame(&windowFrameP);
@@ -61,9 +56,65 @@ short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr src
             SWDisposeFrame(&workFrameP);
     }
 
+    *windowFramePP = windowFrameP;
+    *backFramePP = backFrameP;
+    *workFramePP = workFrameP;
+    return err;
+}
+
+// FUNCTION: EVNOVA 0x00477910
+// MAC: _SWCreateSpriteWorldFromWindow i386 0x000b6e56 ppc 0x000c2954
+short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr srcWindowP,
+                                    Rect *worldRectP, Rect *offscreenRectP, short maxDepth)
+{
+    short err;
+    SWFrameRec *windowFrameP, *backFrameP, *workFrameP;
+
+    *spriteWorldP = 0;
+
+    err = CreateWorldFrames(srcWindowP, worldRectP, offscreenRectP, &windowFrameP, &backFrameP, &workFrameP);
+
+    if ((int)err == noErr) {
+        err = SWCreateSpriteWorld((void *)(intptr_t)GetMainDevice(), spriteWorldP, windowFrameP,
+                                  backFrameP, workFrameP, maxDepth);
+
+        if ((int)err != noErr) {
+            SWDisposeWindowFrame(&windowFrameP);
+            SWDisposeFrame(&backFrameP);
+            SWDisposeFrame(&workFrameP);
+        }
+    }
+
     SWSetStickyIfError(err);
 
     return err;
+}
+
+/* A locked world's frames made anew over its window port, which changed size, as
+   SWCreateSpriteWorldFromWindow makes them; locked again. */
+short SWResizeSpriteWorld(SpriteWorldPtr spriteWorldP, CWindowPtr srcWindowP, Rect *worldRectP,
+                          Rect *offscreenRectP)
+{
+    short err;
+    SWFrameRec *windowFrameP, *backFrameP, *workFrameP;
+
+    err = CreateWorldFrames(srcWindowP, worldRectP, offscreenRectP, &windowFrameP, &backFrameP, &workFrameP);
+    SWSetStickyIfError(err);
+    if ((int)err != noErr)
+        return err;
+
+    SWDisposeWindowFrame(&spriteWorldP->windowFrameP);
+    SWDisposeFrame(&spriteWorldP->backFrameP);
+    SWDisposeFrame(&spriteWorldP->workFrameP);
+    spriteWorldP->windowFrameP = windowFrameP;
+    spriteWorldP->backFrameP = backFrameP;
+    spriteWorldP->workFrameP = workFrameP;
+    SWSetWorldRects(spriteWorldP);
+
+    SWLockWindowFrame(windowFrameP);
+    SWLockFrame(workFrameP);
+    SWLockFrame(backFrameP);
+    return noErr;
 }
 
 

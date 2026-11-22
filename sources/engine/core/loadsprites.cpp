@@ -821,7 +821,7 @@ void InitSprites(void)
     SWSetSpriteVisible(alertSprite, 0);
     SWSetSpriteDrawProc(alertSprite, BlitPixieRLETranslucentDrawProc);
     SWLockSprite(alertSprite);
-    SWSetSpriteLocation(alertSprite, screenCenter.h * 2 - GetSpriteXSize(alertSprite), 0);
+    PlaceAlertSprite();
 
     SWAddSprite(targetLayer, doubleTimeSprite);
     SWSetCurrentFrameIndex(doubleTimeSprite, 0);
@@ -843,8 +843,13 @@ void InitSprites(void)
 
     ServiceIntroMusic(0);
 
-    SetRect(&commRect, 25, 0, View::width - 50, View::height - 5);
-    commRect.top = commRect.bottom - View::ScaleInView(26 + 4);   /* CommOverlay grows it to the font's two lines */
+    ResetCommRect();
+}
+
+/* the alert sprite, in the view's top right corner */
+void PlaceAlertSprite(void)
+{
+    SWSetSpriteLocation(alertSprite, screenCenter.h * 2 - GetSpriteXSize(alertSprite), 0);
 }
 
 /* 'r' 'l' <MacRoman e-diaeresis, 0x91> '8'/'D' as big-endian ResTypes */

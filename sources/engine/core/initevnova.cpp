@@ -386,6 +386,8 @@ void InitEVNova(void)
     pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
     OpenDataFiles();
     pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
+    ApplyUIScale();
+    ResetScreenRect();
     FadeScreenOut();
 
     cursorHidden = 0;

@@ -57,6 +57,7 @@ extern void DrawStringCentered(const unsigned char *str, short left,
                                short right, short v);
 extern void EndLoopingMovie(void);
 extern SWFrameRec *CommOverlay(void);
+extern void ResetCommRect(void);
 extern void SetupListRects(Point *where);
 extern void InitOffscreen(void);
 extern void HideAmbrosiaLogo(void);
@@ -76,6 +77,7 @@ extern void MainScreenAppear(void);
 extern void LoadMasterStellarSprite(short type);
 extern void LoadShipSprites(void);
 extern void LoadSprites(void);
+extern void PlaceAlertSprite(void);
 extern void LoopingMovieIdle(void);
 extern void MainScreenAnimDraw(void);
 extern void MainScreenChoice(short which);

@@ -63,6 +63,7 @@ extern Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial,
 extern Boolean DoNewPilotNameDialog(Boolean *wantStrictPlay);
 void HaggleDialogUpdate(void);
 extern void InitButtons(void);
+extern void CreateButtonPort(void);
 extern void MissionDialogUpdate(void);
 short DoShipCommPayment(void);
 void OutfitDialogUpdate(void);

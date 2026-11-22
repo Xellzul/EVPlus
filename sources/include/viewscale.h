@@ -29,7 +29,8 @@ void ScaleOverlayFrame(SWFrameRec *frame);
 Rect ScreenRectOfView(const Rect &viewRect);    /* a rect in the view, in device pixels on the screen */
 int ScaleInView(int value);         /* a length of the interface in view pixels (the UI scale applied) */
 
-/* Scratch frames of the screen's size for the main screen and dialogs; inside a UI::MenuScale the menu's. */
+/* Scratch frames of the screen's size for the main screen and dialogs; inside a UI::MenuScale the menu's.
+   CreateUIFrames replaces the ones made before. */
 void CreateUIFrames(Rect bounds);
 SWFrameRec *UIWork();
 SWFrameRec *UIBack();

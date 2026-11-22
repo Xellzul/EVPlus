@@ -333,8 +333,7 @@ bool PrefsDialog::needsRestart() const
 {
     return settings.windowedPending != settings.windowed
            || (gameLoaded != 0 && SpriteSettings::Now() != savedSprites)
-           || settings.gameWidth != startGameWidth || settings.gameHeight != startGameHeight
-           || settings.uiScale != startUIScale;
+           || settings.gameWidth != startGameWidth || settings.gameHeight != startGameHeight;
 }
 
 bool PrefsDialog::handle(short item)

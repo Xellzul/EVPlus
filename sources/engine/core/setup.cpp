@@ -18,6 +18,41 @@
 #include "prefsdisplay.h"
 #include "sound.h"
 
+static void SpriteWorldFailed(void)
+{
+    Str255 str;
+
+    FadeScreenIn();
+    GetIndString(str, kAlertStrList, 36);
+    EVNoteAlert(str);
+    ST_Close();
+    ExitToShell();
+}
+
+/* the floating map's and escort menu's frames and places, for the view's size and the UI scale */
+static void CreateOverlayFrames(void)
+{
+    Rect windRect;
+
+    windRect.top = 0;
+    windRect.left = 0;
+    windRect.right = View::gameWidth * 0.25;
+    if (windRect.right < 200)
+        windRect.right = 200;
+    windRect.bottom = windRect.right;
+    floatingMapRect = windRect;
+    windRect = View::OverlayFrameRect(windRect);
+    SWCreateFrame(GetGDevice(), &floatingMapFrame, &windRect, gSpriteWorld->pixelDepth, 1);
+    View::ScaleOverlayFrame(floatingMapFrame);
+    SWLockFrame(floatingMapFrame);
+    OffsetRect(&floatingMapRect, View::width - (floatingMapRect.right + 16), 150);
+    SetRect(&windRect, 0, 0, 160, 120);
+    SWCreateFrame(GetGDevice(), &floatingEscortMenuFrame, &windRect, gSpriteWorld->pixelDepth, 1);
+    View::ScaleOverlayFrame(floatingEscortMenuFrame);
+    SWLockFrame(floatingEscortMenuFrame);
+    SetRect(&escortMenuRect, 15, 150, 15 + View::ScaleInView(160), 150 + View::ScaleInView(120));
+}
+
 // FUNCTION: EVNOVA 0x004ab980
 // MAC: _SetupSpriteWorld i386 0x00021b3a ppc 0x00025fac
 void SetupSpriteWorld(void)
@@ -35,13 +70,8 @@ void SetupSpriteWorld(void)
     View::CreateUIFrames(windRect);
     SetRect(&windRect, 0, 0, View::width, View::height);
     err = SWCreateSpriteWorldFromWindow(&gSpriteWorld, View::Open(), &windRect, &windRect, 0);
-    if ((int32_t)err != 0) {
-        FadeScreenIn();
-        GetIndString(str, kAlertStrList, 36);
-        EVNoteAlert(str);
-        ST_Close();
-        ExitToShell();
-    }
+    if ((int32_t)err != 0)
+        SpriteWorldFailed();
     gSpriteWorld->screenPort = gWind;
     if (gSpriteWorld->pixelDepth != 16) {
         FadeScreenIn();
@@ -86,23 +116,7 @@ void SetupSpriteWorld(void)
     SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
 
     crashlog("creating scratch frames");
-    windRect.top = 0;
-    windRect.left = 0;
-    windRect.right = View::gameWidth * 0.25;
-    if (windRect.right < 200)
-        windRect.right = 200;
-    windRect.bottom = windRect.right;
-    floatingMapRect = windRect;
-    windRect = View::OverlayFrameRect(windRect);
-    SWCreateFrame(GetGDevice(), &floatingMapFrame, &windRect, gSpriteWorld->pixelDepth, 1);
-    View::ScaleOverlayFrame(floatingMapFrame);
-    SWLockFrame(floatingMapFrame);
-    OffsetRect(&floatingMapRect, View::width - (floatingMapRect.right + 16), 150);
-    SetRect(&windRect, 0, 0, 160, 120);
-    SWCreateFrame(GetGDevice(), &floatingEscortMenuFrame, &windRect, gSpriteWorld->pixelDepth, 1);
-    View::ScaleOverlayFrame(floatingEscortMenuFrame);
-    SWLockFrame(floatingEscortMenuFrame);
-    SetRect(&escortMenuRect, 15, 150, 15 + View::ScaleInView(160), 150 + View::ScaleInView(120));
+    CreateOverlayFrames();
 
     color.red = color.green = color.blue = 0;
     SWSetBackgroundColor(gSpriteWorld, &color);
@@ -114,7 +128,7 @@ void SetupSpriteWorld(void)
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect((WindowRef)gWind));
 
-    spriteClipRect = windRect;
+    spriteClipRect = floatingEscortMenuFrame->frameRect;
     spriteClipRect.top -= 75;
     spriteClipRect.left -= 75;
 
@@ -136,6 +150,13 @@ void SetupSpriteWorld(void)
     if ((int32_t)InitParticles(100000, 0) != 0)
         SWAssertFail("Setup.c", SW_LINE(0x133));
     SWSetPortToBackground(gSpriteWorld);
+}
+
+/* the middle of the space view */
+static void SetScreenCenter(void)
+{
+    screenCenter.h = View::width * 0.5;
+    screenCenter.v = View::height * 0.5;
 }
 
 // FUNCTION: EVNOVA 0x004ac380
@@ -168,8 +189,7 @@ void SetupWind(void)
     if (settings.windowed == 0) {
         mBarHidden = 1;
     }
-    screenCenter.h = View::width * 0.5;
-    screenCenter.v = View::height * 0.5;
+    SetScreenCenter();
 }
 
 #define AllocFailed(var, expr) (var = (expr), !(var != NULL))
@@ -240,6 +260,25 @@ int32_t fullScreenRestore;
 GWorldContainer menuArtPort;            /* MenuArt() */
 GWorldContainer menuShownPort;          /* the menu art last stretched into loadPort */
 
+/* the status bar's picture, as high as `screen' */
+static void CreateStatusOffPort(Rect screen)
+{
+    unsigned char msg[256];
+
+    screen.right = screen.left + kStatusBarWidth;
+    CreateGWorldContainer(&statusOffPort, GetMainDevice(), 0, &screen);
+    if (statusOffPort.world != NULL)
+        UI::ScaleUIPort(statusOffPort.world);
+    if (statusOffPort.world == NULL) {
+        ShowTheCursor();
+        FadeScreenIn();
+        GetIndString(msg, kAlertStrList, 0x27);
+        EVNoteAlert(msg);
+        ST_Close();
+        ExitToShell();
+    }
+}
+
 // FUNCTION: EVNOVA 0x004ac950
 // MAC: _InitOffscreen i386 0x0001bd21 ppc 0x0001fe24
 void InitOffscreen(void)
@@ -271,18 +310,7 @@ void InitOffscreen(void)
         ST_Close();
         ExitToShell();
     }
-    r.right = r.left + kStatusBarWidth;
-    CreateGWorldContainer(&statusOffPort, GetMainDevice(), 0, &r);
-    if (statusOffPort.world != NULL)
-        UI::ScaleUIPort(statusOffPort.world);
-    if (statusOffPort.world == NULL) {
-        ShowTheCursor();
-        FadeScreenIn();
-        GetIndString(msg, kAlertStrList, 0x27);
-        EVNoteAlert(msg);
-        ST_Close();
-        ExitToShell();
-    }
+    CreateStatusOffPort(r);
     SWSetPortToWindow(gSpriteWorld);
 }
 
@@ -787,27 +815,94 @@ void SetupMonitor(void)
 
     startGameWidth = settings.gameWidth;
     startGameHeight = settings.gameHeight;
-    PixelSize game = GameSize(resolution);
+    ApplyUIScale();
     PixelSize draw = DrawSize(resolution);
+    ApplyDisplayScaling();
+    SetDisplayToSize(draw.width, draw.height, kVideoDepth, kVideoFullScreen | kVideoAlways);
+}
+
+/* The scales and sizes for a UI scale at a resolution drawn at `draw', the UI scale kept to what the
+   Preferences offer there (where every dialog fits); returns the UI scale used. */
+static double SetUIScales(Resolution resolution, PixelSize draw, double uiScale)
+{
+    PixelSize game = GameSize(resolution);
     double base = BaseUIScale(draw);
-    /* the file may hold any scale: kept to what the Preferences offer, where every dialog fits */
     double minUI = MinUIScale(resolution);
     double maxUI = MaxUIScale(resolution, 0, 0);
-    if (!(settings.uiScale >= minUI))
-        settings.uiScale = minUI;
-    if (settings.uiScale > maxUI)
-        settings.uiScale = maxUI;
-    double scale = settings.uiScale * base;
+    if (!(uiScale >= minUI))
+        uiScale = minUI;
+    if (uiScale > maxUI)
+        uiScale = maxUI;
+    double scale = uiScale * base;
     if (fabs(scale - 1.0) < 1e-6)
         scale = 1.0;
     UI::SetScale(scale);
     UI::SetScreenSize((short)(draw.width / scale + 0.5), (short)(draw.height / scale + 0.5), draw.width,
                       draw.height);
     UI::SetMenuScale(base);
-    startUIScale = settings.uiScale;
     View::SetSizes(game.width, game.height, draw.width, draw.height, scale);
-    ApplyDisplayScaling();
-    SetDisplayToSize(draw.width, draw.height, kVideoDepth, kVideoFullScreen | kVideoAlways);
+    return uiScale;
+}
+
+/* The preferences' UI scale, kept to its range, to the screen's sizes; again once the plug-ins' dialogs are
+   known. */
+void ApplyUIScale(void)
+{
+    Resolution resolution = { startGameWidth, startGameHeight };
+
+    settings.uiScale = SetUIScales(resolution, DrawSize(resolution), settings.uiScale);
+    startUIScale = settings.uiScale;
+}
+
+/* A UI scale changed in the Preferences, to the running game: the scales, the screen's and the view's sizes,
+   and every port and frame made for them. The resolution stays as the game started. */
+void ReapplyUIScale(void)
+{
+    Resolution running = { startGameWidth, startGameHeight };
+    PixelSize draw = { (int)gVideoWidth, (int)gVideoHeight };
+    Rect r;
+
+    if (settings.uiScale == startUIScale || gSpriteWorld == NULL || UI::InMenuScale())
+        return;
+    SWSetPortToWindow(gSpriteWorld);
+    double used = SetUIScales(running, draw, settings.uiScale);
+    if (settings.gameWidth == startGameWidth && settings.gameHeight == startGameHeight)
+        settings.uiScale = used;
+    startUIScale = settings.uiScale;
+
+    ResetScreenRect();
+    gGamePort.pix.bounds = mainWindRect;
+    gGamePort.pnDeviceOffset = 0;
+    SetScreenCenter();
+
+    r = mainWindRect;
+    r.right -= kStatusBarWidth;
+    View::CreateUIFrames(r);
+
+    SetRect(&r, 0, 0, View::width, View::height);
+    if (SWResizeSpriteWorld(gSpriteWorld, View::Open(), &r, &r) != 0)
+        SpriteWorldFailed();
+    SWDisposeFrame(&floatingMapFrame);
+    SWDisposeFrame(&floatingEscortMenuFrame);
+    CreateOverlayFrames();
+    redrawEscortMenu = 1;
+
+    loadPort.bounds = mainWindRect;
+    if (loadPort.world != NULL) {
+        loadPort.world->pix.bounds = mainWindRect;
+        loadPort.world->pnDeviceOffset = 0;
+    }
+    DisposeGWorldContainer(&statusOffPort);
+    CreateStatusOffPort(mainWindRect);
+    lastIntfResourceID = -1;
+    DisposeGWorldContainer(&buttonPort);
+    CreateButtonPort();
+
+    ResetCommRect();
+    if (alertSprite != NULL)
+        PlaceAlertSprite();
+    mainScreenBackgroundDirty = 1;
+    SWSetPortToWindow(gSpriteWorld);
 }
 
 void ApplyBrightness(void)

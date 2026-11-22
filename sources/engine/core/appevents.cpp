@@ -84,6 +84,7 @@ void SwitchedIn(void)
 void SwitchedOut(void)
 {
     void *snd;
+    CGrafPtr savedPort;
 
     inBackground = 1;
     if (introMusicMovie != NULL)
@@ -96,9 +97,11 @@ void SwitchedOut(void)
     OSCursorReset();
     cursorHidden = 0;
     ShowTheCursor();
+    GetPort(&savedPort);
     SWSetPortToWindow(gSpriteWorld);
     ForeColor(blackColor);
     BackColor(whiteColor);
+    SetPort(savedPort);
 }
 
 /*

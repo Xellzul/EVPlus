@@ -583,7 +583,6 @@ Boolean SystemTradesGoods(short sysID, short commodity)
     return 0;
 }
 
-/* the price levels (kDemandLow/Medium/High, or-ed) the system's trade centers set for a commodity */
 /* a stellar of the system's nav slots that is a trade center you can land at */
 static bool IsTradePort(short spob)
 {
@@ -593,6 +592,7 @@ static bool IsTradePort(short spob)
            && (stellarData[spob].flags & kSpobTradeCenter) != 0;
 }
 
+/* the price levels (kDemandLow/Medium/High, or-ed) the system's trade centers set for a commodity */
 short SystemPriceLevels(short sysID, short commodity)
 {
     short levels = 0;

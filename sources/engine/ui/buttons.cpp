@@ -295,6 +295,14 @@ void InitButtons(void)
     buttonColor[0].red = buttonColor[0].green = buttonColor[0].blue = 0xffff;
     buttonColor[1].red = buttonColor[1].green = buttonColor[1].blue = 0x8000;
     buttonColor[2].red = buttonColor[2].green = buttonColor[2].blue = 0x8000;
+    CreateButtonPort();
+}
+
+/* the port buttons are put together in, for the UI scale in use */
+void CreateButtonPort(void)
+{
+    Rect bounds;
+
     SetRect(&bounds, 0, 0, 500, 75);
     if (UI::Enabled())
         SetRect(&bounds, 0, 0, UI::ScreenWidth(), UI::ScreenHeight());     /* buttons drawn where they lie */

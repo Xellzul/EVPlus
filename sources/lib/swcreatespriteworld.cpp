@@ -11,6 +11,20 @@ int SWEnterSpriteWorld(void)
     return 0;
 }
 
+/* The world's rects from its window and back frames. */
+void SWSetWorldRects(SpriteWorldRec *spriteWorldP)
+{
+    spriteWorldP->windRect = spriteWorldP->windowFrameP->frameRect;
+    spriteWorldP->backRect = spriteWorldP->backFrameP->frameRect;
+    spriteWorldP->originalWindRect = spriteWorldP->windowFrameP->frameRect;
+    spriteWorldP->originalBackRect = spriteWorldP->backFrameP->frameRect;
+    spriteWorldP->visScrollRect = spriteWorldP->windowFrameP->frameRect;
+    OffsetRect(&spriteWorldP->visScrollRect, -spriteWorldP->visScrollRect.left,
+               -spriteWorldP->visScrollRect.top);
+    spriteWorldP->offscreenScrollRect = spriteWorldP->visScrollRect;
+    spriteWorldP->oldVisScrollRect = spriteWorldP->visScrollRect;
+}
+
 // FUNCTION: EVNOVA 0x00477640
 // MAC: _SWCreateSpriteWorld i386 0x000b6b92 ppc 0x000c26d8
 short SWCreateSpriteWorld(void *mainGDH, SpriteWorldRec **spriteWorldP,
@@ -51,13 +65,7 @@ short SWCreateSpriteWorld(void *mainGDH, SpriteWorldRec **spriteWorldP,
         tempSpriteWorldP->postEraseCallBack = 0;
         tempSpriteWorldP->postDrawCallBack = 0;
 
-        tempSpriteWorldP->windRect = windowFrameP->frameRect;
-
-        tempSpriteWorldP->backRect = backFrameP->frameRect;
-
-        tempSpriteWorldP->originalWindRect = windowFrameP->frameRect;
-
-        tempSpriteWorldP->originalBackRect = backFrameP->frameRect;
+        SWSetWorldRects(tempSpriteWorldP);
 
         tempSpriteWorldP->headUpdateRectP = 0;
 
@@ -72,16 +80,6 @@ short SWCreateSpriteWorld(void *mainGDH, SpriteWorldRec **spriteWorldP,
         tempSpriteWorldP->worldMoveProc = 0;
         tempSpriteWorldP->thereAreNonScrollingLayers = 0;
         tempSpriteWorldP->fastBlit = 1;
-
-        tempSpriteWorldP->visScrollRect = windowFrameP->frameRect;
-
-        OffsetRect(&tempSpriteWorldP->visScrollRect,
-                   -tempSpriteWorldP->visScrollRect.left,
-                   -tempSpriteWorldP->visScrollRect.top);
-
-        tempSpriteWorldP->offscreenScrollRect = tempSpriteWorldP->visScrollRect;
-
-        tempSpriteWorldP->oldVisScrollRect = tempSpriteWorldP->visScrollRect;
 
         tempSpriteWorldP->tileLayerArray = 0;
         tempSpriteWorldP->tilingCache = 0;

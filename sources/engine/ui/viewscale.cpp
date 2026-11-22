@@ -241,6 +241,10 @@ static void CreateFramePair(Rect bounds, SWFrameRec **work, SWFrameRec **back)
 
 void CreateUIFrames(Rect bounds)
 {
+    for (SWFrameRec **frame : { &uiWork, &uiBack, &menuWork, &menuBack }) {
+        if (*frame != NULL)
+            SWDisposeFrame(frame);
+    }
     CreateFramePair(bounds, &uiWork, &uiBack);
     UI::MenuScale menu;
     if (UI::InMenuScale()) {

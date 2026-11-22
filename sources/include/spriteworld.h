@@ -20,6 +20,9 @@ typedef unsigned char MaskType;
 extern short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP,
         CWindowPtr srcWindowP, Rect *worldRectP, Rect *offscreenRectP,
         short maxDepth);                                 /* 0x00477910 */
+/* a world's frames made anew for its window port's new size; the world stays locked */
+extern short SWResizeSpriteWorld(SpriteWorldPtr spriteWorldP, CWindowPtr srcWindowP,
+        Rect *worldRectP, Rect *offscreenRectP);
 extern void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x00478480 */
 extern void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x004781f0 */
 extern void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP,
@@ -261,6 +264,7 @@ extern short SWCreateSpriteWorld(void *mainGDH, SpriteWorldRec **spriteWorldP,
                                  SWFrameRec *windowFrameP, SWFrameRec *backFrameP,
                                  SWFrameRec *workFrameP, short maxDepth);
                                                          /* 0x00477640 */
+extern void SWSetWorldRects(SpriteWorldRec *spriteWorldP);
 extern short SWCreateGWorldFromPictResource(SpriteWorldPtr destSpriteWorld,
                                     CGrafPtr *pictGWorldP, short pictResID,
                                     Boolean useGetPicture); /* 0x00478f30 */

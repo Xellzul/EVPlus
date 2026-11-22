@@ -184,10 +184,12 @@ extern Boolean mBarHidden;
 extern Rect mainWindRect;
 extern short startGameWidth;                /* the preferences' resolution the game started with */
 extern short startGameHeight;
-extern double startUIScale;                 /* the preferences' UI scale the game started with */
+extern double startUIScale;                 /* the preferences' UI scale last applied */
 extern GWorldContainer *MenuArt(void);
 extern void ShowMenuArt(const Rect &area, bool onlyChanged = false);
 extern void SetupMonitor(void);
+extern void ApplyUIScale(void);
+extern void ReapplyUIScale(void);
 extern void ApplyDisplayScaling(void);
 extern void ApplyBrightness(void);
 extern short menuFontID;

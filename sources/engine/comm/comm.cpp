@@ -23,6 +23,7 @@ static struct {
     RGBColor color;
 } gCommStyle = { 0, kCommTextSize, { 0xffff, 0xffff, 0xffff } };
 static bool gCommDrawn;                 /* CommOverlay's frame shows the message */
+static SWFrameRec *gCommFrame;          /* CommOverlay's */
 
 /* The comm message in its box on the current port, on the system's background colour. */
 static void DrawCommText(Rect *box)
@@ -59,6 +60,16 @@ static void FitCommRect(SWFrameRec *frame)
         commRect.top = commRect.bottom - need;
 }
 
+/* The comm strip along the bottom of the view, for the view's size and the UI scale; CommOverlay makes its
+   frame anew. */
+void ResetCommRect(void)
+{
+    SetRect(&commRect, 25, 0, View::width - 50, View::height - 5);
+    commRect.top = commRect.bottom - View::ScaleInView(26 + 4);   /* CommOverlay grows it to the font's two lines */
+    if (gCommFrame != NULL)
+        SWDisposeFrame(&gCommFrame);
+}
+
 /* Shows `msg' in the comm strip for `count' frames; Flush lays it over the view (CommOverlay). */
 // FUNCTION: EVNOVA 0x0047e2d0
 // MAC: _DisplayComm i386 0x00090201 ppc 0x0009be7c
@@ -82,7 +93,7 @@ void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const
    when there is none. The frame is drawn again only when the message or the system's colour changes. */
 SWFrameRec *CommOverlay(void)
 {
-    static SWFrameRec *frame;
+    SWFrameRec *&frame = gCommFrame;
     static Rect bounds;
     static RGBColor drawnOn;                /* the system colour the frame was drawn on */
     if (commCount <= 0)
