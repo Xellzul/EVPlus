@@ -86,6 +86,37 @@ short firstShipShieldIndex;
 short shipSpriteLoaded[kMaxShipTypes][6];
 
 
+/* loads one sprite layer of a ship: a clone of an earlier ship's layer with the same image, else the RLE
+   resource, else the PICT converted to RLE */
+static void LoadShipLayerSprite(SpritePtr *master, short shipType, short slot, short spinID, short maskID,
+                                short xSize, short ySize, int rleFrames, int pictFrames, const char *rleText,
+                                const char *pictText, const char *convertText)
+{
+    short i;
+    short err;
+
+    i = FindPriorLoadedShipSprite(spinID, shipType, slot);
+    if (i != -1) {
+        SWCloneSprite(master[i], &master[shipType], NULL);
+        SWLockSprite(master[shipType]);
+    } else if (ResourceExists(kRLEDResType, spinID)) {
+        err = SWCreateSpriteFromRLEResource(&master[shipType], NULL, spinID, rleFrames, 0);
+        if ((int32_t)err != 0)
+            SpriteLoadFailed(rleText, shipType + kFirstResourceID, 2, shipType + kFirstResourceID, err);
+        SWLockSprite(master[shipType]);
+    } else {
+        err = SWCreateSpriteFromSinglePictXY(gSpriteWorld, &master[shipType], NULL, spinID, maskID, xSize, ySize,
+                                             0, 0, pictFrames, 1);
+        if ((int32_t)err != 0)
+            SpriteLoadFailed(pictText, shipType + kFirstResourceID, 3, shipType + kFirstResourceID, err);
+        master[shipType]->numFrames = pictFrames;
+        SWLockSprite(master[shipType]);
+        err = ConvertSpriteToRLE(master[shipType]);
+        if ((int32_t)err != 0)
+            SpriteLoadFailed(convertText, shipType + kFirstResourceID, 4, shipType + kFirstResourceID, err);
+    }
+}
+
 // FUNCTION: EVNOVA 0x004b4ee0
 // MAC: _LoadExtendedShipSprites i386 0x000226af ppc 0x00026b28
 short LoadExtendedShipSprites(short shipType)
@@ -135,31 +166,22 @@ short LoadExtendedShipSprites(short shipType)
             if (ResourceExists(kRLEDResType, spinID)) {
                 err = SWCreateSpriteFromRLEResource(&masterShipSprite[shipType], NULL,
                                                     spinID, count, 0);
-                if ((int32_t)err != 0) {
-                    crashlog_print("error loading ship base sprite from RLE, " kShanTypeName " ID ");
-                    crashlog_print_num(shipType + kFirstResourceID);
-                    crashlog_print("\n");
-                    ReportSpriteLoadError(2, shipType + kFirstResourceID, err);
-                }
+                if ((int32_t)err != 0)
+                    SpriteLoadFailed("error loading ship base sprite from RLE, " kShanTypeName " ID ",
+                                     shipType + kFirstResourceID, 2, shipType + kFirstResourceID, err);
                 SWLockSprite(masterShipSprite[shipType]);
             } else {
                 err = SWCreateSpriteFromSinglePictXY(gSpriteWorld, &masterShipSprite[shipType],
                                                      NULL, spinID, maskID, xSize, ySize, 0, 0,
                                                      shipClass[shipType].framesPer * setCount, 1);
-                if ((int32_t)err != 0) {
-                    crashlog_print("error loading ship base sprite from PICT, " kShanTypeName " ID ");
-                    crashlog_print_num(shipType + kFirstResourceID);
-                    crashlog_print("\n");
-                    ReportSpriteLoadError(3, shipType + kFirstResourceID, err);
-                }
+                if ((int32_t)err != 0)
+                    SpriteLoadFailed("error loading ship base sprite from PICT, " kShanTypeName " ID ",
+                                     shipType + kFirstResourceID, 3, shipType + kFirstResourceID, err);
                 SWLockSprite(masterShipSprite[shipType]);
                 err = ConvertSpriteToRLE(masterShipSprite[shipType]);
-                if ((int32_t)err != 0) {
-                    crashlog_print("error converting ship base sprite to RLE, " kShanTypeName " ID ");
-                    crashlog_print_num(shipType + kFirstResourceID);
-                    crashlog_print("\n");
-                    ReportSpriteLoadError(4, shipType + kFirstResourceID, err);
-                }
+                if ((int32_t)err != 0)
+                    SpriteLoadFailed("error converting ship base sprite to RLE, " kShanTypeName " ID ",
+                                     shipType + kFirstResourceID, 4, shipType + kFirstResourceID, err);
                 masterShipSprite[shipType]->numFrames =
                     shipClass[shipType].framesPer * setCount;
             }
@@ -185,47 +207,12 @@ short LoadExtendedShipSprites(short shipType)
             xSize = (*shipSpriteInfoHand)->altXSize;
             ySize = (*shipSpriteInfoHand)->altYSize;
 
-            i = FindPriorLoadedShipSprite(spinID, shipType, 1);
-            if (i != -1) {
-                SWCloneSprite(masterShipAltSprite[i], &masterShipAltSprite[shipType], NULL);
-                SWLockSprite(masterShipAltSprite[shipType]);
-            } else {
-                if (ResourceExists(kRLEDResType, spinID)) {
-                    err = SWCreateSpriteFromRLEResource(&masterShipAltSprite[shipType], NULL,
-                                                        spinID,
-                                                        shipClass[shipType].altSets *
-                                                            shipClass[shipType].framesPer, 0);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship alt sprite from RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(2, shipType + kFirstResourceID, err);
-                    }
-                    SWLockSprite(masterShipAltSprite[shipType]);
-                } else {
-                    err = SWCreateSpriteFromSinglePictXY(gSpriteWorld,
-                                                         &masterShipAltSprite[shipType], NULL,
-                                                         spinID, maskID, xSize, ySize, 0, 0,
-                                                         shipClass[shipType].framesPer *
-                                                             shipClass[shipType].altSets, 1);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship alt sprite from PICT, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(3, shipType + kFirstResourceID, err);
-                    }
-                    masterShipAltSprite[shipType]->numFrames =
-                        shipClass[shipType].framesPer * shipClass[shipType].altSets;
-                    SWLockSprite(masterShipAltSprite[shipType]);
-                    err = ConvertSpriteToRLE(masterShipAltSprite[shipType]);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error converting ship alt sprite to RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(4, shipType + kFirstResourceID, err);
-                    }
-                }
-            }
+            LoadShipLayerSprite(masterShipAltSprite, shipType, 1, spinID, maskID, xSize, ySize,
+                                shipClass[shipType].altSets * shipClass[shipType].framesPer,
+                                shipClass[shipType].framesPer * shipClass[shipType].altSets,
+                                "error loading ship alt sprite from RLE, " kShanTypeName " ID ",
+                                "error loading ship alt sprite from PICT, " kShanTypeName " ID ",
+                                "error converting ship alt sprite to RLE, " kShanTypeName " ID ");
             shipSpriteLoaded[shipType][1] = spinID;
             total += masterShipAltSprite[shipType]->numFrames;
         }
@@ -236,44 +223,11 @@ short LoadExtendedShipSprites(short shipType)
             xSize = (*shipSpriteInfoHand)->glowXSize;
             ySize = (*shipSpriteInfoHand)->glowYSize;
 
-            i = FindPriorLoadedShipSprite(spinID, shipType, 2);
-            if (i != -1) {
-                SWCloneSprite(masterShipGlowSprite[i], &masterShipGlowSprite[shipType], NULL);
-                SWLockSprite(masterShipGlowSprite[shipType]);
-            } else {
-                if (ResourceExists(kRLEDResType, spinID)) {
-                    err = SWCreateSpriteFromRLEResource(&masterShipGlowSprite[shipType], NULL,
-                                                        spinID, count, 0);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship glow sprite from RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(2, shipType + kFirstResourceID, err);
-                    }
-                    SWLockSprite(masterShipGlowSprite[shipType]);
-                } else {
-                    err = SWCreateSpriteFromSinglePictXY(gSpriteWorld,
-                                                         &masterShipGlowSprite[shipType], NULL,
-                                                         spinID, maskID, xSize, ySize, 0, 0,
-                                                         shipClass[shipType].framesPer * setCount, 1);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship glow sprite from PICT, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(3, shipType + kFirstResourceID, err);
-                    }
-                    masterShipGlowSprite[shipType]->numFrames =
-                        shipClass[shipType].framesPer * setCount;
-                    SWLockSprite(masterShipGlowSprite[shipType]);
-                    err = ConvertSpriteToRLE(masterShipGlowSprite[shipType]);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error converting ship glow sprite to RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(4, shipType + kFirstResourceID, err);
-                    }
-                }
-            }
+            LoadShipLayerSprite(masterShipGlowSprite, shipType, 2, spinID, maskID, xSize, ySize, count,
+                                shipClass[shipType].framesPer * setCount,
+                                "error loading ship glow sprite from RLE, " kShanTypeName " ID ",
+                                "error loading ship glow sprite from PICT, " kShanTypeName " ID ",
+                                "error converting ship glow sprite to RLE, " kShanTypeName " ID ");
             shipSpriteLoaded[shipType][2] = spinID;
             total += masterShipGlowSprite[shipType]->numFrames;
         }
@@ -284,44 +238,11 @@ short LoadExtendedShipSprites(short shipType)
             xSize = (*shipSpriteInfoHand)->lightXSize;
             ySize = (*shipSpriteInfoHand)->lightYSize;
 
-            i = FindPriorLoadedShipSprite(lightID, shipType, 3);
-            if (i != -1) {
-                SWCloneSprite(masterShipLightSprite[i], &masterShipLightSprite[shipType], NULL);
-                SWLockSprite(masterShipLightSprite[shipType]);
-            } else {
-                if (ResourceExists(kRLEDResType, lightID)) {
-                    err = SWCreateSpriteFromRLEResource(&masterShipLightSprite[shipType], NULL,
-                                                        lightID, count, 0);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship light sprite from RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(2, shipType + kFirstResourceID, err);
-                    }
-                    SWLockSprite(masterShipLightSprite[shipType]);
-                } else {
-                    err = SWCreateSpriteFromSinglePictXY(gSpriteWorld,
-                                                         &masterShipLightSprite[shipType], NULL,
-                                                         lightID, maskID, xSize, ySize, 0, 0,
-                                                         shipClass[shipType].framesPer * setCount, 1);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship light sprite from PICT, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(3, shipType + kFirstResourceID, err);
-                    }
-                    masterShipLightSprite[shipType]->numFrames =
-                        shipClass[shipType].framesPer * setCount;
-                    SWLockSprite(masterShipLightSprite[shipType]);
-                    err = ConvertSpriteToRLE(masterShipLightSprite[shipType]);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error converting ship light sprite to RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(4, shipType + kFirstResourceID, err);
-                    }
-                }
-            }
+            LoadShipLayerSprite(masterShipLightSprite, shipType, 3, lightID, maskID, xSize, ySize, count,
+                                shipClass[shipType].framesPer * setCount,
+                                "error loading ship light sprite from RLE, " kShanTypeName " ID ",
+                                "error loading ship light sprite from PICT, " kShanTypeName " ID ",
+                                "error converting ship light sprite to RLE, " kShanTypeName " ID ");
             shipClass[shipType].blinkMode = (*shipSpriteInfoHand)->blinkMode;
             for (j = 0; j < 4; j++)
                 shipClass[shipType].blinkValue[j] = (*shipSpriteInfoHand)->blinkValue[j];
@@ -341,45 +262,11 @@ short LoadExtendedShipSprites(short shipType)
             xSize = (*shipSpriteInfoHand)->weapXSize;
             ySize = (*shipSpriteInfoHand)->weapYSize;
 
-            i = FindPriorLoadedShipSprite(spinID, shipType, 4);
-            if (i != -1) {
-                SWCloneSprite(masterShipWeaponSprite[i],
-                              &masterShipWeaponSprite[shipType], NULL);
-                SWLockSprite(masterShipWeaponSprite[shipType]);
-            } else {
-                if (ResourceExists(kRLEDResType, spinID)) {
-                    err = SWCreateSpriteFromRLEResource(&masterShipWeaponSprite[shipType], NULL,
-                                                        spinID, count, 0);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship weapon sprite from RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(2, shipType + kFirstResourceID, err);
-                    }
-                    SWLockSprite(masterShipWeaponSprite[shipType]);
-                } else {
-                    err = SWCreateSpriteFromSinglePictXY(gSpriteWorld,
-                                                         &masterShipWeaponSprite[shipType], NULL,
-                                                         spinID, maskID, xSize, ySize, 0, 0,
-                                                         shipClass[shipType].framesPer * setCount, 1);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship weapon sprite from PICT, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(3, shipType + kFirstResourceID, err);
-                    }
-                    masterShipWeaponSprite[shipType]->numFrames =
-                        shipClass[shipType].framesPer * setCount;
-                    SWLockSprite(masterShipWeaponSprite[shipType]);
-                    err = ConvertSpriteToRLE(masterShipWeaponSprite[shipType]);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error converting ship weapon sprite to RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(4, shipType + kFirstResourceID, err);
-                    }
-                }
-            }
+            LoadShipLayerSprite(masterShipWeaponSprite, shipType, 4, spinID, maskID, xSize, ySize, count,
+                                shipClass[shipType].framesPer * setCount,
+                                "error loading ship weapon sprite from RLE, " kShanTypeName " ID ",
+                                "error loading ship weapon sprite from PICT, " kShanTypeName " ID ",
+                                "error converting ship weapon sprite to RLE, " kShanTypeName " ID ");
             shipSpriteLoaded[shipType][4] = spinID;
             total += masterShipWeaponSprite[shipType]->numFrames;
         }
@@ -399,31 +286,22 @@ short LoadExtendedShipSprites(short shipType)
                 if (ResourceExists(kRLEDResType, spinID)) {
                     err = SWCreateSpriteFromRLEResource(&masterShipShieldSprite[shipType], NULL,
                                                         spinID, count, 0);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship shield sprite from RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(2, shipType + kFirstResourceID, err);
-                    }
+                    if ((int32_t)err != 0)
+                        SpriteLoadFailed("error loading ship shield sprite from RLE, " kShanTypeName " ID ",
+                                         shipType + kFirstResourceID, 2, shipType + kFirstResourceID, err);
                     SWLockSprite(masterShipShieldSprite[shipType]);
                 } else {
                     err = SWCreateSpriteFromSinglePictXY(gSpriteWorld,
                                                          &masterShipShieldSprite[shipType], NULL,
                                                          spinID, maskID, xSize, ySize, 0, 0, 0, 1);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error loading ship shield sprite from PICT, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(3, shipType + kFirstResourceID, err);
-                    }
+                    if ((int32_t)err != 0)
+                        SpriteLoadFailed("error loading ship shield sprite from PICT, " kShanTypeName " ID ",
+                                         shipType + kFirstResourceID, 3, shipType + kFirstResourceID, err);
                     SWLockSprite(masterShipShieldSprite[shipType]);
                     err = ConvertSpriteToRLE(masterShipShieldSprite[shipType]);
-                    if ((int32_t)err != 0) {
-                        crashlog_print("error converting ship shield sprite to RLE, " kShanTypeName " ID ");
-                        crashlog_print_num(shipType + kFirstResourceID);
-                        crashlog_print("\n");
-                        ReportSpriteLoadError(4, shipType + kFirstResourceID, err);
-                    }
+                    if ((int32_t)err != 0)
+                        SpriteLoadFailed("error converting ship shield sprite to RLE, " kShanTypeName " ID ",
+                                         shipType + kFirstResourceID, 4, shipType + kFirstResourceID, err);
                 }
             }
             shipSpriteLoaded[shipType][5] = spinID;

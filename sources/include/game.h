@@ -114,6 +114,7 @@ extern Boolean PlayerCanUseAmmoType(short weapon);
 extern Boolean PlayerHasJettisonableCargo(void);
 extern void RefreshWindowBuffer(void);
 extern void ReportSpriteLoadError(short label, short value, short special);
+extern void SpriteLoadFailed(const char *prefix, int logNum, short label, short value, short err);
 extern void ResetGameData(void);
 extern short SelectDudeFieldFromSystem(SystRecord *syst);
 extern void AdjustWarpSoundSpeed(double rate);
