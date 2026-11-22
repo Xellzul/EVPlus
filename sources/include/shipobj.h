@@ -1,5 +1,6 @@
-/* shipobj.h -- the runtime ship object (shipData, stride 0xc948 on win, 0xc940 on mac) and the shot record. Notes: Research/notes/shipobj.md */
+/* shipobj.h -- the runtime ship object (shipData) and the shot record. Notes: Research/notes/shipobj.md */
 #include "gametypes.h"
+#include "gameconst.h"
 
 #ifndef SHIPOBJ_H
 #define SHIPOBJ_H
@@ -9,6 +10,14 @@ extern "C" {
 #endif
 
 struct ShipRec;
+
+/* a ship's state for one weapon type: owned count, ammo, reload countdown, shots in the current burst */
+typedef struct ShipWeapon {
+    short count;
+    short ammo;
+    float reloadTimer;
+    short burstCount;
+} ShipWeapon;
 
 typedef struct ShipObj {
     struct SpriteRec *sprite;
@@ -77,7 +86,7 @@ typedef struct ShipObj {
     Boolean canScoop;
     Boolean escortMayAttack;
     char padC5[3];
-    WeapRecord weap[256];
+    ShipWeapon weap[kMaxWeapTypes];
     short aiState;
     short aiSubstate;
     short aggression;

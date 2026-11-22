@@ -4,7 +4,7 @@
 #include "render.h"
 #include "cefix.h"
 
-#define kVersionText        "EV Nova Community Edition r4"
+#define kVersionText        "EV (plus) Nova Community Edition r4 "
 #define kVersionGrey        0x8000
 #define kVersionLeft        5
 #define kVersionRaise       6           /* baseline above the backdrop's bottom edge */

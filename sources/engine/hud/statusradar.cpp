@@ -8,40 +8,12 @@
 #include "space.h"
 #include "game.h"
 
-/* the cargo panel is statusOffRect[7], the weapon readout statusOffRect[5] */
-
-/* wëap runtime record, stride 0xc8; only the three fields read here */
-
-
-
-/*
- * DrawStatusTarg's own records.  resources.h has all three in full, but its
- * WeapRecord collides with the local one this file already carries for
- * DrawStatusWeap, so the three are windowed here the same way -- only the
- * fields this readout touches, padded to the real stride.
- */
-
-
-
-/* the target readout is statusOffRect[6] */
-
-/* shïp Flags bits this readout tests */
-
-/* shïp Flags3 bits */
-
-
-/* the navigation readout is statusOffRect[4] */
-
-/* the two resource records this readout walks, windowed here because
-   resources.h's WeapRecord collides with the local one above */
-
-/* the stellar sprite record, reached here only through its frame pointer */
-
 /* the radar is statusOffRect[0] */
 #define kRadarRect          0
 #define kRadarScale         0.03125     /* 1/32: system units to radar pixels */
 #define kRadarStaticFrames  10
 #define kRadarArrowDist     7000000.0   /* draw the departure arrow past this */
+
 // FUNCTION: EVNOVA 0x0045d600
 // MAC: _DrawStatusRadar i386 0x000496e0 ppc 0x000520ec
 void DrawStatusRadar(Boolean highlight)

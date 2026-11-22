@@ -509,12 +509,12 @@ EXTERN_CPP_BEGIN
 extern MissionState *currentMissionObjectives;
 EXTERN_CPP_END
 
-/* one type: weaponStats[] and each ship's weap[], whose copy keeps count, ammo and reload countdown here */
+/* a weaponStats[] entry */
 typedef struct WeapRecord {
-    union { short lifetime; short count; };
+    short                  lifetime;
     short                  damage[2];      /* mass, energy */
     short                  guidance;
-    union { short ammoType; short ammo; };
+    short                  ammoType;
     short                  graphic;
     short                  inaccuracy;
     short                  sound;
@@ -533,7 +533,7 @@ typedef struct WeapRecord {
     unsigned short         smokeSet;
     char pad2A[0x2];
     float                  speed100;
-    union { float reload; float reloadTimer; };
+    float                  reload;
     float                  partVel[8];
     float                  hitPartVel;
     float                  guidedTurn;

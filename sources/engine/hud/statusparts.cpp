@@ -12,33 +12,6 @@
 #include "missions.h"
 #include "burgermath.h"
 
-/* the cargo panel is statusOffRect[7], the weapon readout statusOffRect[5] */
-
-/* wëap runtime record, stride 0xc8; only the three fields read here */
-
-
-
-/*
- * DrawStatusTarg's own records.  resources.h has all three in full, but its
- * WeapRecord collides with the local one this file already carries for
- * DrawStatusWeap, so the three are windowed here the same way -- only the
- * fields this readout touches, padded to the real stride.
- */
-
-
-
-/* the target readout is statusOffRect[6] */
-
-/* shïp Flags bits this readout tests */
-
-/* shïp Flags3 bits */
-
-
-/* the navigation readout is statusOffRect[4] */
-
-/* the two resource records this readout walks, windowed here because
-   resources.h's WeapRecord collides with the local one above */
-
 // FUNCTION: EVNOVA 0x0045e400
 // MAC: _DrawStatusNav i386 0x00049f43 ppc 0x00052bcc
 void DrawStatusNav(void)

@@ -131,49 +131,29 @@ void OpenDataFiles(void)
     }
 }
 
-/* NebuRecord is loaded without LockAHandle or AdjustHandleSize. */
-
 /* the mac keeps a resource unpurgeable while it is read and purgeable again after; the port's
    resources never purge */
 #define ResourceNoPurge(h)
 #define ResourcePurge(h)
 #define LoadingIntroMusic() HandleIntroMusic(0)
 
-
-// FUNCTION: EVNOVA 0x004bd3c0
-// MAC: _LoadObjectData i386 0x000771b0 ppc 0x00080100
-void LoadObjectData(void)
+/* a resource ID to its table index; -1 below the first ID */
+static inline short ResIndex(short id)
 {
-    short loaded;
-    short n;
+    return id >= kFirstResourceID ? id - kFirstResourceID : -1;
+}
+
+static void LoadStellars(unsigned char *name)
+{
     short j;
     short i;
-    short prev;
     short found;
     short resID;
     uint32_t resType;
     short count;
-    short k;
-    short gunTally, turretTally;
-    short maxGuns, maxTurrets;
-    float base;
-    int32_t tradeEst;
-    short mountCount[8];
-    short mountID[8];
-    unsigned char name[256];
-    short mountAmmo[8];
-    RGBColor rgb;
-    Boolean used[kMaxStellars];
 
-    if (EVBugResourceFieldTest(0))
-        return;
-    SWSetPortToWindow(gSpriteWorld);
-
-    /* ---------------- spöb: stellar objects ---------------- */
-    {
-
-        found = 0;
-        count = CountResources(kSpobType);
+    found = 0;
+    count = CountResources(kSpobType);
     if (count == 0)
         crashlog("warning: no " kSpobResName " resources found");
     for (i = 0; i < kMaxStellars; i++) {
@@ -183,58 +163,53 @@ void LoadObjectData(void)
             LockAHandle(stellarFileHand);
             ResourceNoPurge(stellarFileHand);
             found++;
+            const SpobRes &res = *ResRec(SpobRes, stellarFileHand);
             GetResInfo(stellarFileHand, &resID, &resType, name);
             TrimResourceName(name);
             strncpy((char *)stellarData[i].name, (char *)name, 31);
-            stellarData[i].pos.h = ResRec(SpobRes, stellarFileHand)->xPos;
-            stellarData[i].pos.v = ResRec(SpobRes, stellarFileHand)->yPos;
-            stellarData[i].type = ResRec(SpobRes, stellarFileHand)->type;
-            stellarData[i].flags = ResRec(SpobRes, stellarFileHand)->flags;
-            stellarData[i].flags2 = ResRec(SpobRes, stellarFileHand)->flags2;
-            stellarData[i].govt = ResRec(SpobRes, stellarFileHand)->govt;
-            stellarData[i].minStatus = ResRec(SpobRes, stellarFileHand)->minStatus;
-            stellarData[i].techLevel = ResRec(SpobRes, stellarFileHand)->techLevel;
-            stellarData[i].customPict = ResRec(SpobRes, stellarFileHand)->custPicID;
-            stellarData[i].customSound = ResRec(SpobRes, stellarFileHand)->custSndID;
-            stellarData[i].landingFee = ResRec(SpobRes, stellarFileHand)->fee;
-            stellarData[i].gravity = ResRec(SpobRes, stellarFileHand)->gravity;
-            stellarData[i].weapon = ResRec(SpobRes, stellarFileHand)->weapon;
-            if (stellarData[i].govt >= kFirstResourceID)
-                stellarData[i].govt -= kFirstResourceID;
-            else
-                stellarData[i].govt = -1;
-            stellarData[i].strength = ResRec(SpobRes, stellarFileHand)->strength;
+            stellarData[i].pos.h = res.xPos;
+            stellarData[i].pos.v = res.yPos;
+            stellarData[i].type = res.type;
+            stellarData[i].flags = res.flags;
+            stellarData[i].flags2 = res.flags2;
+            stellarData[i].govt = res.govt;
+            stellarData[i].minStatus = res.minStatus;
+            stellarData[i].techLevel = res.techLevel;
+            stellarData[i].customPict = res.custPicID;
+            stellarData[i].customSound = res.custSndID;
+            stellarData[i].landingFee = res.fee;
+            stellarData[i].gravity = res.gravity;
+            stellarData[i].weapon = res.weapon;
+            stellarData[i].govt = ResIndex(stellarData[i].govt);
+            stellarData[i].strength = res.strength;
             stellarData[i].deadCounter = stellarData[i].strength;
-            stellarData[i].deadType = ResRec(SpobRes, stellarFileHand)->deadType;
-            stellarData[i].deadDays = ResRec(SpobRes, stellarFileHand)->deadTime;
+            stellarData[i].deadType = res.deadType;
+            stellarData[i].deadDays = res.deadTime;
             stellarData[i].deadDaysLeft = 0;
-            stellarData[i].explodType = ResRec(SpobRes, stellarFileHand)->explodType;
+            stellarData[i].explodType = res.explodType;
             if (stellarData[i].explodType < 0)
                 stellarData[i].explodType = -1;
             if (stellarData[i].deadType < 0 || stellarData[i].deadType >= kMasterStellarSprites)
                 stellarData[i].deadType = stellarData[i].type;
-            strcpy(stellarData[i].onDestroy, ResRec(SpobRes, stellarFileHand)->onDestroy);
-            strcpy(stellarData[i].onRegen, ResRec(SpobRes, stellarFileHand)->onRegen);
+            strcpy(stellarData[i].onDestroy, res.onDestroy);
+            strcpy(stellarData[i].onRegen, res.onRegen);
             for (j = 0; j < 3; j++)
-                stellarData[i].specialTech[j] = ResRec(SpobRes, stellarFileHand)->specialTech[j];
+                stellarData[i].specialTech[j] = res.specialTech[j];
             for (j = 0; j < 5; j++)
-                stellarData[i].specialTech[j + 3] = ResRec(SpobRes, stellarFileHand)->specialTech2[j];
+                stellarData[i].specialTech[j + 3] = res.specialTech2[j];
             stellarData[i].loaded = 1;
             stellarData[i].prepared = 1;
             stellarData[i].dominated = 0;
-            stellarData[i].tribute = ResRec(SpobRes, stellarFileHand)->tribute;
+            stellarData[i].tribute = res.tribute;
             if (stellarData[i].tribute <= 0)
                 stellarData[i].tribute = stellarData[i].techLevel * 1000;
-            stellarData[i].defCount = ResRec(SpobRes, stellarFileHand)->defCount;
-            stellarData[i].defenseDude = ResRec(SpobRes, stellarFileHand)->defenseDude;
-            stellarData[i].animDelay = ResRec(SpobRes, stellarFileHand)->animDelay;
-            stellarData[i].frame0Bias = ResRec(SpobRes, stellarFileHand)->frame0Bias;
+            stellarData[i].defCount = res.defCount;
+            stellarData[i].defenseDude = res.defenseDude;
+            stellarData[i].animDelay = res.animDelay;
+            stellarData[i].frame0Bias = res.frame0Bias;
             for (j = 0; j < kSpobHyperLinks; j++) {
-                stellarData[i].hyperLinks[j] = ResRec(SpobRes, stellarFileHand)->hyperLink[j];
-                if (stellarData[i].hyperLinks[j] >= kFirstResourceID)
-                    stellarData[i].hyperLinks[j] -= kFirstResourceID;
-                else
-                    stellarData[i].hyperLinks[j] = -1;
+                stellarData[i].hyperLinks[j] = res.hyperLink[j];
+                stellarData[i].hyperLinks[j] = ResIndex(stellarData[i].hyperLinks[j]);
             }
             if (stellarData[i].defCount > 1000) {
                 if (stellarData[i].defCount > 10000)
@@ -243,18 +218,12 @@ void LoadObjectData(void)
                     stellarData[i].defWaveSize = stellarData[i].defCount / 10 - 100;
             } else
                 stellarData[i].defWaveSize = stellarData[i].defCount;
-            if (stellarData[i].defenseDude >= kFirstResourceID)
-                stellarData[i].defenseDude -= kFirstResourceID;
-            else
-                stellarData[i].defenseDude = -1;
+            stellarData[i].defenseDude = ResIndex(stellarData[i].defenseDude);
             if (stellarData[i].techLevel < 0)
                 stellarData[i].techLevel = 0;
-            strcpy(stellarData[i].onDominate, ResRec(SpobRes, stellarFileHand)->onDominate);
-            strcpy(stellarData[i].onRelease, ResRec(SpobRes, stellarFileHand)->onRelease);
-            if (stellarData[i].weapon >= kFirstResourceID)
-                stellarData[i].weapon -= kFirstResourceID;
-            else
-                stellarData[i].weapon = -1;
+            strcpy(stellarData[i].onDominate, res.onDominate);
+            strcpy(stellarData[i].onRelease, res.onRelease);
+            stellarData[i].weapon = ResIndex(stellarData[i].weapon);
             AdjustHandleSize(stellarFileHand, 0x45e);
             ResourcePurge(stellarFileHand);
             ReleaseResource(stellarFileHand);
@@ -303,249 +272,258 @@ void LoadObjectData(void)
     }
     if (!gameLoaded)
         IterateInGameEventLoop(10);
-    }
+}
 
-    /* ---------------- sÿst: systems ---------------- */
-    {
-        short link, target, total;
+static void LoadSystems(unsigned char *name)
+{
+    short n;
+    short j;
+    short i;
+    short prev;
+    short found;
+    short resID;
+    uint32_t resType;
+    short count;
+    Boolean used[kMaxStellars];
+    short link, target, total;
 
-        found = 0;
-        count = CountResources(kSystType);
-        if (count == 0)
-            crashlog("warning: no " kSystResName " resources found");
-        for (i = 0; i < kMaxSystems; i++) {
-            systemData[i].loaded = 0;
-            systemData[i].prepared = 0;
-            systemData[i].govt = -32767;
-            for (j = 0; j < kMaxSystemLinks; j++)
-                systemData[i].links[j] = -1;
-            systemFileHand = GetResource(kSystType, i + kFirstResourceID);
-            if (systemFileHand != NULL) {
-                LockAHandle(systemFileHand);
-                ResourceNoPurge(systemFileHand);
-                found++;
-                GetResInfo(systemFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                strncpy((char *)systemData[i].name, (char *)name, 31);
-                systemData[i].loaded = 1;
-                systemData[i].prepared = 1;
-                for (j = 0; j < 8; j++) {
-                    systemData[i].dudeTypes[j] = ResRec(SystRes, systemFileHand)->dudeTypes[j];
-                    systemData[i].dudeProbs[j] = ResRec(SystRes, systemFileHand)->probs[j];
-                }
-                systemData[i].avgShips = ResRec(SystRes, systemFileHand)->avgShips;
-                systemData[i].govt = ResRec(SystRes, systemFileHand)->govt;
-                systemData[i].message = ResRec(SystRes, systemFileHand)->message;
-                systemData[i].interference = ResRec(SystRes, systemFileHand)->interference;
-                systemData[i].asteroidCount = ResRec(SystRes, systemFileHand)->asteroids;
-                if (systemData[i].asteroidCount < 0)
-                    systemData[i].asteroidCount = 0;
-                systemData[i].astTypes = ResRec(SystRes, systemFileHand)->astTypes;
-                systemData[i].pos.h = ResRec(SystRes, systemFileHand)->xPos;
-                systemData[i].pos.v = ResRec(SystRes, systemFileHand)->yPos;
-                if (systemData[i].govt >= kFirstResourceID && systemData[i].govt < kFirstResourceID + kMaxGovts)
-                    systemData[i].govt -= kFirstResourceID;
-                else
-                    systemData[i].govt = -1;
-                systemData[i].rgb.red = ((ResRec(SystRes, systemFileHand)->bkgndColor >> 16) & 0xff) * 256;
-                systemData[i].rgb.green = ((ResRec(SystRes, systemFileHand)->bkgndColor >> 8) & 0xff) * 256;
-                systemData[i].rgb.blue = (ResRec(SystRes, systemFileHand)->bkgndColor & 0xff) * 256;
-                systemData[i].rgb.red &= 0xfc00;
-                systemData[i].rgb.green &= 0xfc00;
-                systemData[i].rgb.blue &= 0xfc00;
-                /* BUG: a bright channel (0xF8 or more) wraps to 0, so the ship tint loses it */
-                systemData[i].mapPixel = Pixel::FromColorRounded(systemData[i].rgb);
-                systemData[i].murk = ResRec(SystRes, systemFileHand)->murk;
-                if (systemData[i].murk > 100)
-                    systemData[i].murk = 100;
-                else if (systemData[i].murk < 8 && systemData[i].murk > 0)
-                    systemData[i].murk = 0;
-                else if (systemData[i].murk < 0)
-                    systemData[i].murk = -1;
-                total = 0;                       /* valid dude prob total */
-                systemData[i].fleetCount = 0;
-                systemData[i].fleetProbTotal = 0;
-                for (j = 0; j < 8; j++) {
-                    short dude = systemData[i].dudeTypes[j];
-                    if (dude >= kFirstResourceID && dude < kFirstResourceID + kMaxDudes) {
-                        systemData[i].dudeTypes[j] -= kFirstResourceID;
-                        total += systemData[i].dudeProbs[j];
-                    } else {
-                        if (dude <= -kFirstResourceID && dude > -(kFirstResourceID + kMaxFleets)) {
-                            /* negative dude entries reference fleets */
-                            systemData[i].fleets[systemData[i].fleetCount] = abs(dude) - kFirstResourceID;
-                            systemData[i].fleetProbs[systemData[i].fleetCount] = systemData[i].dudeProbs[j];
-                            systemData[i].fleetCount++;
-                            systemData[i].fleetProbTotal += systemData[i].dudeProbs[j];
-                        }
-                        systemData[i].dudeTypes[j] = -1;
-                        systemData[i].dudeProbs[j] = 0;
-                    }
-                }
-                if (total != 100 && total > 0) {
-                    for (j = 0; j < 8; j++)
-                        systemData[i].dudeProbs[j] *= 100.0 / (float)total;
-                }
-                for (j = 0; j < kMaxSystemLinks; j++) {
-                    link = total = ResRec(SystRes, systemFileHand)->con[j];
-                    if (link >= kFirstResourceID && link < kFirstResourceID + kMaxSystems)
-                        systemData[i].links[j] = link - kFirstResourceID;
-                    else
-                        systemData[i].links[j] = -1;
-                }
-                for (j = 0; j < kNavSlots; j++) {
-                    target = ResRec(SystRes, systemFileHand)->nav[j];
-                    if (target >= kFirstResourceID && target < kFirstResourceID + kMaxStellars) {
-                        systemData[i].navDefault[j] = target - kFirstResourceID;
-                        if (!stellarData[systemData[i].navDefault[j]].prepared) {
-                            crashlog_print("warning: ignoring reference to nonexistent stellar ID ");
-                            crashlog_print_num(systemData[i].navDefault[j] + kFirstResourceID);
-                            crashlog_print(" in system ");
-                            crashlog_print_pstr(systemData[i].name);
-                            crashlog_print(" (");
-                            crashlog_print_num(i + kFirstResourceID);
-                            crashlog_print(")\n");
-                            systemData[i].navDefault[j] = -1;
-                        }
-                    } else {
-                        systemData[i].navDefault[j] = -1;
-                    }
-                }
-                for (j = 0; j < 8; j++) {
-                    systemData[i].persons[j] = ResRec(SystRes, systemFileHand)->person[j];
-                    systemData[i].persProbs[j] = ResRec(SystRes, systemFileHand)->personProb[j];
-                    if (systemData[i].persons[j] >= kFirstResourceID && systemData[i].persons[j] < kFirstResourceID + kMaxPersons - 1)
-                        systemData[i].persons[j] -= kFirstResourceID;
-                    else
-                        systemData[i].persons[j] = -1;
-                    if (systemData[i].persProbs[j] < 0)
-                        systemData[i].persProbs[j] = 0;
-                    if (systemData[i].persProbs[j] > 100)
-                        systemData[i].persProbs[j] = 100;
-                }
-                systemData[i].reinforceFleet = ResRec(SystRes, systemFileHand)->reinfFleet;
-                systemData[i].reinforceTime = ResRec(SystRes, systemFileHand)->reinfTime;
-                systemData[i].reinforceInterval = ResRec(SystRes, systemFileHand)->reinfInterval;
-                if (systemData[i].reinforceFleet >= kFirstResourceID) {
-                    systemData[i].reinforceFleet -= kFirstResourceID;
-                    if (systemData[i].reinforceInterval < 1)
-                        systemData[i].reinforceInterval = 1;
+    found = 0;
+    count = CountResources(kSystType);
+    if (count == 0)
+        crashlog("warning: no " kSystResName " resources found");
+    for (i = 0; i < kMaxSystems; i++) {
+        systemData[i].loaded = 0;
+        systemData[i].prepared = 0;
+        systemData[i].govt = -32767;
+        for (j = 0; j < kMaxSystemLinks; j++)
+            systemData[i].links[j] = -1;
+        systemFileHand = GetResource(kSystType, i + kFirstResourceID);
+        if (systemFileHand != NULL) {
+            LockAHandle(systemFileHand);
+            ResourceNoPurge(systemFileHand);
+            found++;
+            const SystRes &res = *ResRec(SystRes, systemFileHand);
+            GetResInfo(systemFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            strncpy((char *)systemData[i].name, (char *)name, 31);
+            systemData[i].loaded = 1;
+            systemData[i].prepared = 1;
+            for (j = 0; j < 8; j++) {
+                systemData[i].dudeTypes[j] = res.dudeTypes[j];
+                systemData[i].dudeProbs[j] = res.probs[j];
+            }
+            systemData[i].avgShips = res.avgShips;
+            systemData[i].govt = res.govt;
+            systemData[i].message = res.message;
+            systemData[i].interference = res.interference;
+            systemData[i].asteroidCount = res.asteroids;
+            if (systemData[i].asteroidCount < 0)
+                systemData[i].asteroidCount = 0;
+            systemData[i].astTypes = res.astTypes;
+            systemData[i].pos.h = res.xPos;
+            systemData[i].pos.v = res.yPos;
+            if (systemData[i].govt >= kFirstResourceID && systemData[i].govt < kFirstResourceID + kMaxGovts)
+                systemData[i].govt -= kFirstResourceID;
+            else
+                systemData[i].govt = -1;
+            systemData[i].rgb.red = ((res.bkgndColor >> 16) & 0xff) * 256;
+            systemData[i].rgb.green = ((res.bkgndColor >> 8) & 0xff) * 256;
+            systemData[i].rgb.blue = (res.bkgndColor & 0xff) * 256;
+            systemData[i].rgb.red &= 0xfc00;
+            systemData[i].rgb.green &= 0xfc00;
+            systemData[i].rgb.blue &= 0xfc00;
+            /* BUG: a bright channel (0xF8 or more) wraps to 0, so the ship tint loses it */
+            systemData[i].mapPixel = Pixel::FromColorRounded(systemData[i].rgb);
+            systemData[i].murk = res.murk;
+            if (systemData[i].murk > 100)
+                systemData[i].murk = 100;
+            else if (systemData[i].murk < 8 && systemData[i].murk > 0)
+                systemData[i].murk = 0;
+            else if (systemData[i].murk < 0)
+                systemData[i].murk = -1;
+            total = 0;                       /* valid dude prob total */
+            systemData[i].fleetCount = 0;
+            systemData[i].fleetProbTotal = 0;
+            for (j = 0; j < 8; j++) {
+                short dude = systemData[i].dudeTypes[j];
+                if (dude >= kFirstResourceID && dude < kFirstResourceID + kMaxDudes) {
+                    systemData[i].dudeTypes[j] -= kFirstResourceID;
+                    total += systemData[i].dudeProbs[j];
                 } else {
-                    systemData[i].reinforceFleet = -1;
-                }
-                systemData[i].reinforceTimer = 0;
-                systemData[i].reinforceDaysLeft = 0;
-                strcpy(systemData[i].visibility, ResRec(SystRes, systemFileHand)->visibility);
-                AdjustHandleSize(systemFileHand, 0x1ac);
-                ResourcePurge(systemFileHand);
-                ReleaseResource(systemFileHand);
-                LoadingIntroMusic();
-            } else {
-                strcpy(systemData[i].visibility, "");
-            }
-            if (found >= count)
-                break;
-        }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
-
-        /* co-location chains: systems sharing a map position form linked groups */
-        for (i = 0; i < kMaxSystems; i++) {
-            systemData[i].colocGroup = -1;
-            systemData[i].colocNext = -1;
-        }
-        for (i = 0; i < kMaxSystems; i++) {
-            if (systemData[i].loaded && systemData[i].colocGroup == -1) {
-                prev = i;
-                systemData[i].colocGroup = i;
-                for (j = 0; j < kMaxSystems; j++) {
-                    if (systemData[j].loaded &&
-                        systemData[j].pos.h == systemData[i].pos.h &&
-                        systemData[j].pos.v == systemData[i].pos.v &&
-                        (systemData[j].colocGroup == -1 || j > i)) {
-                        systemData[prev].colocNext = j;
-                        systemData[j].colocGroup = i;
-                        prev = j;
+                    if (dude <= -kFirstResourceID && dude > -(kFirstResourceID + kMaxFleets)) {
+                        /* negative dude entries reference fleets */
+                        systemData[i].fleets[systemData[i].fleetCount] = abs(dude) - kFirstResourceID;
+                        systemData[i].fleetProbs[systemData[i].fleetCount] = systemData[i].dudeProbs[j];
+                        systemData[i].fleetCount++;
+                        systemData[i].fleetProbTotal += systemData[i].dudeProbs[j];
                     }
+                    systemData[i].dudeTypes[j] = -1;
+                    systemData[i].dudeProbs[j] = 0;
                 }
             }
-        }
-
-        /* drop links to nonexistent systems */
-        for (i = 0; i < kMaxSystems; i++) {
-            if (systemData[i].prepared) {
-                for (j = 0; j < kMaxSystemLinks; j++) {
-                    link = systemData[i].links[j];
-                    if (systemData[i].links[j] != -1 && !systemData[systemData[i].links[j]].prepared) {
-                        systemData[i].links[j] = -1;
-                        crashlog_print("warning: ignoring link from ");
+            if (total != 100 && total > 0) {
+                for (j = 0; j < 8; j++)
+                    systemData[i].dudeProbs[j] *= 100.0 / (float)total;
+            }
+            for (j = 0; j < kMaxSystemLinks; j++) {
+                link = total = res.con[j];
+                if (link >= kFirstResourceID && link < kFirstResourceID + kMaxSystems)
+                    systemData[i].links[j] = link - kFirstResourceID;
+                else
+                    systemData[i].links[j] = -1;
+            }
+            for (j = 0; j < kNavSlots; j++) {
+                target = res.nav[j];
+                if (target >= kFirstResourceID && target < kFirstResourceID + kMaxStellars) {
+                    systemData[i].navDefault[j] = target - kFirstResourceID;
+                    if (!stellarData[systemData[i].navDefault[j]].prepared) {
+                        crashlog_print("warning: ignoring reference to nonexistent stellar ID ");
+                        crashlog_print_num(systemData[i].navDefault[j] + kFirstResourceID);
+                        crashlog_print(" in system ");
                         crashlog_print_pstr(systemData[i].name);
                         crashlog_print(" (");
                         crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(") to nonexistent system ");
-                        crashlog_print_num(link + kFirstResourceID);
-                        crashlog_print("\n");
+                        crashlog_print(")\n");
+                        systemData[i].navDefault[j] = -1;
                     }
+                } else {
+                    systemData[i].navDefault[j] = -1;
+                }
+            }
+            for (j = 0; j < 8; j++) {
+                systemData[i].persons[j] = res.person[j];
+                systemData[i].persProbs[j] = res.personProb[j];
+                if (systemData[i].persons[j] >= kFirstResourceID && systemData[i].persons[j] < kFirstResourceID + kMaxPersons - 1)
+                    systemData[i].persons[j] -= kFirstResourceID;
+                else
+                    systemData[i].persons[j] = -1;
+                if (systemData[i].persProbs[j] < 0)
+                    systemData[i].persProbs[j] = 0;
+                if (systemData[i].persProbs[j] > 100)
+                    systemData[i].persProbs[j] = 100;
+            }
+            systemData[i].reinforceFleet = res.reinfFleet;
+            systemData[i].reinforceTime = res.reinfTime;
+            systemData[i].reinforceInterval = res.reinfInterval;
+            if (systemData[i].reinforceFleet >= kFirstResourceID) {
+                systemData[i].reinforceFleet -= kFirstResourceID;
+                if (systemData[i].reinforceInterval < 1)
+                    systemData[i].reinforceInterval = 1;
+            } else {
+                systemData[i].reinforceFleet = -1;
+            }
+            systemData[i].reinforceTimer = 0;
+            systemData[i].reinforceDaysLeft = 0;
+            strcpy(systemData[i].visibility, res.visibility);
+            AdjustHandleSize(systemFileHand, 0x1ac);
+            ResourcePurge(systemFileHand);
+            ReleaseResource(systemFileHand);
+            LoadingIntroMusic();
+        } else {
+            strcpy(systemData[i].visibility, "");
+        }
+        if (found >= count)
+            break;
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+
+    /* co-location chains: systems sharing a map position form linked groups */
+    for (i = 0; i < kMaxSystems; i++) {
+        systemData[i].colocGroup = -1;
+        systemData[i].colocNext = -1;
+    }
+    for (i = 0; i < kMaxSystems; i++) {
+        if (systemData[i].loaded && systemData[i].colocGroup == -1) {
+            prev = i;
+            systemData[i].colocGroup = i;
+            for (j = 0; j < kMaxSystems; j++) {
+                if (systemData[j].loaded &&
+                    systemData[j].pos.h == systemData[i].pos.h &&
+                    systemData[j].pos.v == systemData[i].pos.v &&
+                    (systemData[j].colocGroup == -1 || j > i)) {
+                    systemData[prev].colocNext = j;
+                    systemData[j].colocGroup = i;
+                    prev = j;
                 }
             }
         }
+    }
 
-        /* canonicalize links to group leaders, drop self- and duplicate links */
-        for (i = 0; i < kMaxSystems; i++) {
-            if (systemData[i].prepared) {
-                for (n = 0; n < kMaxSystemLinks; n++) {
-                    link = systemData[i].links[n];
-                    if (link != -1) {
-                        systemData[i].links[n] = FindFirstCoLocatedSystem(link);
-                        if (systemData[i].links[n] == FindFirstCoLocatedSystem(i))
-                            systemData[i].links[n] = -1;
-                    }
-                }
-                for (j = 0; j < kMaxSystemLinks; j++) {
-                    if (systemData[i].links[j] != -1) {
-                        total = 0;
-                        for (n = 0; n <= j; n++)
-                            if (systemData[i].links[n] == systemData[i].links[j])
-                                total++;
-                        if (total > 1)
-                            systemData[i].links[j] = -1;
-                    }
+    /* drop links to nonexistent systems */
+    for (i = 0; i < kMaxSystems; i++) {
+        if (systemData[i].prepared) {
+            for (j = 0; j < kMaxSystemLinks; j++) {
+                link = systemData[i].links[j];
+                if (systemData[i].links[j] != -1 && !systemData[systemData[i].links[j]].prepared) {
+                    systemData[i].links[j] = -1;
+                    crashlog_print("warning: ignoring link from ");
+                    crashlog_print_pstr(systemData[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") to nonexistent system ");
+                    crashlog_print_num(link + kFirstResourceID);
+                    crashlog_print("\n");
                 }
             }
         }
+    }
 
-        /* assume implicit reciprocal links */
-        for (i = 0; i < kMaxSystems; i++) {
-            if (systemData[i].prepared) {
-                for (j = 0; j < kMaxSystemLinks; j++) {
-                    link = systemData[i].links[j];
-                    if (link != -1) {
-                        link = FindFirstCoLocatedSystem(link);
-                        if (link >= 0 && link < kMaxSystems && link != i) {
-                            Boolean haveBack = 0;
-                            for (n = 0; n < kMaxSystemLinks; n++) {
-                                if (systemData[link].links[n] != -1 &&
-                                    FindFirstCoLocatedSystem(systemData[link].links[n]) ==
-                                        FindFirstCoLocatedSystem(i)) {
-                                    haveBack = 1;
-                                    break;
-                                }
+    /* canonicalize links to group leaders, drop self- and duplicate links */
+    for (i = 0; i < kMaxSystems; i++) {
+        if (systemData[i].prepared) {
+            for (n = 0; n < kMaxSystemLinks; n++) {
+                link = systemData[i].links[n];
+                if (link != -1) {
+                    systemData[i].links[n] = FindFirstCoLocatedSystem(link);
+                    if (systemData[i].links[n] == FindFirstCoLocatedSystem(i))
+                        systemData[i].links[n] = -1;
+                }
+            }
+            for (j = 0; j < kMaxSystemLinks; j++) {
+                if (systemData[i].links[j] != -1) {
+                    total = 0;
+                    for (n = 0; n <= j; n++)
+                        if (systemData[i].links[n] == systemData[i].links[j])
+                            total++;
+                    if (total > 1)
+                        systemData[i].links[j] = -1;
+                }
+            }
+        }
+    }
+
+    /* assume implicit reciprocal links */
+    for (i = 0; i < kMaxSystems; i++) {
+        if (systemData[i].prepared) {
+            for (j = 0; j < kMaxSystemLinks; j++) {
+                link = systemData[i].links[j];
+                if (link != -1) {
+                    link = FindFirstCoLocatedSystem(link);
+                    if (link >= 0 && link < kMaxSystems && link != i) {
+                        Boolean haveBack = 0;
+                        for (n = 0; n < kMaxSystemLinks; n++) {
+                            if (systemData[link].links[n] != -1 &&
+                                FindFirstCoLocatedSystem(systemData[link].links[n]) ==
+                                    FindFirstCoLocatedSystem(i)) {
+                                haveBack = 1;
+                                break;
                             }
-                            if (!haveBack) {
-                                crashlog_print("warning: assuming implicit reciprocal link from ");
-                                crashlog_print_pstr(systemData[i].name);
-                                crashlog_print(" (");
-                                crashlog_print_num(i + kFirstResourceID);
-                                crashlog_print(") to ");
-                                crashlog_print_pstr(systemData[link].name);
-                                crashlog_print(" (");
-                                crashlog_print_num(link + kFirstResourceID);
-                                crashlog_print(")\n");
-                                for (n = 0; n < kMaxSystemLinks; n++) {
-                                    if (systemData[link].links[n] == -1) {
-                                        systemData[link].links[n] = FindFirstCoLocatedSystem(i);
-                                        break;
-                                    }
+                        }
+                        if (!haveBack) {
+                            crashlog_print("warning: assuming implicit reciprocal link from ");
+                            crashlog_print_pstr(systemData[i].name);
+                            crashlog_print(" (");
+                            crashlog_print_num(i + kFirstResourceID);
+                            crashlog_print(") to ");
+                            crashlog_print_pstr(systemData[link].name);
+                            crashlog_print(" (");
+                            crashlog_print_num(link + kFirstResourceID);
+                            crashlog_print(")\n");
+                            for (n = 0; n < kMaxSystemLinks; n++) {
+                                if (systemData[link].links[n] == -1) {
+                                    systemData[link].links[n] = FindFirstCoLocatedSystem(i);
+                                    break;
                                 }
                             }
                         }
@@ -553,1118 +531,1160 @@ void LoadObjectData(void)
                 }
             }
         }
-
-        /* orphan stellars: every prepared spob must appear in some navDefault */
-        if (crashlog_isactive()) {
-            for (i = 0; i < kMaxStellars; i++)
-                used[i] = 0;
-            for (i = 0; i < kMaxSystems; i++) {
-                for (j = 0; j < kNavSlots; j++) {
-                    if (systemData[i].navDefault[j] >= 0 && systemData[i].navDefault[j] < kMaxStellars)
-                        used[systemData[i].navDefault[j]] = 1;
-                }
-            }
-            for (i = 0; i < kMaxStellars; i++) {
-                if (stellarData[i].prepared && !used[i]) {
-                    stellarData[i].loaded = 0;
-                    stellarData[i].prepared = 0;
-                    crashlog_print("warning: stellar ");
-                    if (stellarData[i].name[0] == 0)
-                        crashlog_print("\"\"");
-                    else
-                        crashlog_print_pstr(stellarData[i].name);
-                    crashlog_print(" (");
-                    crashlog_print_num(i + kFirstResourceID);
-                    crashlog_print(") does not exist in any system\n");
-                }
-            }
-        }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
     }
 
-    /* ---------------- oütf: outfit items ---------------- */
-    {
+    /* orphan stellars: every prepared spob must appear in some navDefault */
+    if (crashlog_isactive()) {
+        for (i = 0; i < kMaxStellars; i++)
+            used[i] = 0;
+        for (i = 0; i < kMaxSystems; i++) {
+            for (j = 0; j < kNavSlots; j++) {
+                if (systemData[i].navDefault[j] >= 0 && systemData[i].navDefault[j] < kMaxStellars)
+                    used[systemData[i].navDefault[j]] = 1;
+            }
+        }
+        for (i = 0; i < kMaxStellars; i++) {
+            if (stellarData[i].prepared && !used[i]) {
+                stellarData[i].loaded = 0;
+                stellarData[i].prepared = 0;
+                crashlog_print("warning: stellar ");
+                if (stellarData[i].name[0] == 0)
+                    crashlog_print("\"\"");
+                else
+                    crashlog_print_pstr(stellarData[i].name);
+                crashlog_print(" (");
+                crashlog_print_num(i + kFirstResourceID);
+                crashlog_print(") does not exist in any system\n");
+            }
+        }
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+}
 
-        found = 0;
-        count = CountResources(kOutfType);
-        for (i = 0; i < kMaxOutfits; i++) {
-            outfitSystemFileHand = GetResource(kOutfType, i + kFirstResourceID);
-            if (outfitSystemFileHand != NULL) {
-                found++;
-                LockAHandle(outfitSystemFileHand);
-                ResourceNoPurge(outfitSystemFileHand);
-                outfitSystem[i].techLevel = ResRec(OutfRes, outfitSystemFileHand)->techLevel;
-                outfitSystem[i].cost = ResRec(OutfRes, outfitSystemFileHand)->cost;
-                outfitSystem[i].mass = ResRec(OutfRes, outfitSystemFileHand)->mass;
-                outfitSystem[i].modType[0] = ResRec(OutfRes, outfitSystemFileHand)->modType;
-                outfitSystem[i].modVal[0] = ResRec(OutfRes, outfitSystemFileHand)->modVal;
-                outfitSystem[i].maxCount = ResRec(OutfRes, outfitSystemFileHand)->max;
-                outfitSystem[i].itemClass = ResRec(OutfRes, outfitSystemFileHand)->itemClass;
-                outfitSystem[i].dispWeight = ResRec(OutfRes, outfitSystemFileHand)->dispWeight;
-                outfitSystem[i].scanMask = ResRec(OutfRes, outfitSystemFileHand)->scanMask;
-                outfitSystem[i].buyRandom = ResRec(OutfRes, outfitSystemFileHand)->buyRandom;
-                if (outfitSystem[i].buyRandom < 0)
-                    outfitSystem[i].buyRandom = 0;
-                if (outfitSystem[i].buyRandom > 100)
-                    outfitSystem[i].buyRandom = 100;
-                outfitSystem[i].govtRestrict = ResRec(OutfRes, outfitSystemFileHand)->require3;
-                if ((outfitSystem[i].govtRestrict < ResClassBase(0)
-                        || outfitSystem[i].govtRestrict >= ResClassBase(0) + kMaxGovts) &&
-                    (outfitSystem[i].govtRestrict < ResClassBase(1)
-                        || outfitSystem[i].govtRestrict >= ResClassBase(1) + kMaxGovts) &&
-                    (outfitSystem[i].govtRestrict < ResClassBase(2)
-                        || outfitSystem[i].govtRestrict >= ResClassBase(2) + kMaxGovts) &&
-                    (outfitSystem[i].govtRestrict < ResClassBase(3)
-                        || outfitSystem[i].govtRestrict >= ResClassBase(3) + kMaxGovts))
-                    outfitSystem[i].govtRestrict = -1;
-                strcpy(outfitSystem[i].availability, ResRec(OutfRes, outfitSystemFileHand)->availability);
-                strcpy(outfitSystem[i].onPurchase, ResRec(OutfRes, outfitSystemFileHand)->onPurchase);
-                strcpy(outfitSystem[i].onSell, ResRec(OutfRes, outfitSystemFileHand)->onSell);
-                AdjustHandleSize(outfitSystemFileHand, 0x404);
-                outfitSystem[i].persistent = 0;
-                outfitSystem[i].flags = ResRec(OutfRes, outfitSystemFileHand)->flags;
-                if (OutfPersistent(&outfitSystem[i]))
-                    outfitSystem[i].persistent = 1;
-                GetResInfo(outfitSystemFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                strncpy((char *)outfitSystem[i].name, (char *)name, 63);
-                outfitSystem[i].modType[1] = ResRec(OutfRes, outfitSystemFileHand)->modType2;
-                outfitSystem[i].modVal[1] = ResRec(OutfRes, outfitSystemFileHand)->modVal2;
-                outfitSystem[i].modType[2] = ResRec(OutfRes, outfitSystemFileHand)->modType3;
-                outfitSystem[i].modVal[2] = ResRec(OutfRes, outfitSystemFileHand)->modVal3;
-                outfitSystem[i].modType[3] = ResRec(OutfRes, outfitSystemFileHand)->modType4;
-                outfitSystem[i].modVal[3] = ResRec(OutfRes, outfitSystemFileHand)->modVal4;
-                for (j = 0; j < kOutfMods; j++) {
-                    if ((outfitSystem[i].modType[j] == OutfMod::Weapon || outfitSystem[i].modType[j] == OutfMod::Ammo ||
-                         outfitSystem[i].modType[j] == OutfMod::FakeID) &&outfitSystem[i].modVal[j] >= kFirstResourceID)
-                        outfitSystem[i].modVal[j] -= kFirstResourceID;
+static void LoadOutfits(unsigned char *name)
+{
+    short n;
+    short j;
+    short i;
+    short found;
+    short resID;
+    uint32_t resType;
+    short count;
+
+    found = 0;
+    count = CountResources(kOutfType);
+    for (i = 0; i < kMaxOutfits; i++) {
+        outfitSystemFileHand = GetResource(kOutfType, i + kFirstResourceID);
+        if (outfitSystemFileHand != NULL) {
+            found++;
+            LockAHandle(outfitSystemFileHand);
+            ResourceNoPurge(outfitSystemFileHand);
+            const OutfRes *res = ResRec(OutfRes, outfitSystemFileHand);
+            outfitSystem[i].techLevel = res->techLevel;
+            outfitSystem[i].cost = res->cost;
+            outfitSystem[i].mass = res->mass;
+            outfitSystem[i].modType[0] = res->modType;
+            outfitSystem[i].modVal[0] = res->modVal;
+            outfitSystem[i].maxCount = res->max;
+            outfitSystem[i].itemClass = res->itemClass;
+            outfitSystem[i].dispWeight = res->dispWeight;
+            outfitSystem[i].scanMask = res->scanMask;
+            outfitSystem[i].buyRandom = res->buyRandom;
+            if (outfitSystem[i].buyRandom < 0)
+                outfitSystem[i].buyRandom = 0;
+            if (outfitSystem[i].buyRandom > 100)
+                outfitSystem[i].buyRandom = 100;
+            outfitSystem[i].govtRestrict = res->require3;
+            if ((outfitSystem[i].govtRestrict < ResClassBase(0)
+                    || outfitSystem[i].govtRestrict >= ResClassBase(0) + kMaxGovts) &&
+                (outfitSystem[i].govtRestrict < ResClassBase(1)
+                    || outfitSystem[i].govtRestrict >= ResClassBase(1) + kMaxGovts) &&
+                (outfitSystem[i].govtRestrict < ResClassBase(2)
+                    || outfitSystem[i].govtRestrict >= ResClassBase(2) + kMaxGovts) &&
+                (outfitSystem[i].govtRestrict < ResClassBase(3)
+                    || outfitSystem[i].govtRestrict >= ResClassBase(3) + kMaxGovts))
+                outfitSystem[i].govtRestrict = -1;
+            strcpy(outfitSystem[i].availability, res->availability);
+            strcpy(outfitSystem[i].onPurchase, res->onPurchase);
+            strcpy(outfitSystem[i].onSell, res->onSell);
+            AdjustHandleSize(outfitSystemFileHand, 0x404);
+            res = ResRec(OutfRes, outfitSystemFileHand);   /* AdjustHandleSize may move the record */
+            outfitSystem[i].persistent = 0;
+            outfitSystem[i].flags = res->flags;
+            if (OutfPersistent(&outfitSystem[i]))
+                outfitSystem[i].persistent = 1;
+            GetResInfo(outfitSystemFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            strncpy((char *)outfitSystem[i].name, (char *)name, 63);
+            outfitSystem[i].modType[1] = res->modType2;
+            outfitSystem[i].modVal[1] = res->modVal2;
+            outfitSystem[i].modType[2] = res->modType3;
+            outfitSystem[i].modVal[2] = res->modVal3;
+            outfitSystem[i].modType[3] = res->modType4;
+            outfitSystem[i].modVal[3] = res->modVal4;
+            for (j = 0; j < kOutfMods; j++) {
+                if ((outfitSystem[i].modType[j] == OutfMod::Weapon || outfitSystem[i].modType[j] == OutfMod::Ammo ||
+                     outfitSystem[i].modType[j] == OutfMod::FakeID) &&outfitSystem[i].modVal[j] >= kFirstResourceID)
+                    outfitSystem[i].modVal[j] -= kFirstResourceID;
+            }
+            outfitSystem[i].contributes[0] = res->contribute1;
+            outfitSystem[i].contributes[1] = res->contribute2;
+            outfitSystem[i].requires[0] = res->require1;
+            outfitSystem[i].requires[1] = res->require2;
+            strcpy((char *)outfitShortNames[i], res->shortName);
+            strcpy((char *)lcOutfitName[i], res->lcName);
+            strcpy((char *)lcPluralOutfitName[i], res->lcPlural);
+            CtoPstr((char *)outfitShortNames[i]);
+            CtoPstr((char *)lcOutfitName[i]);
+            CtoPstr((char *)lcPluralOutfitName[i]);
+            ResourcePurge(outfitSystemFileHand);
+            ReleaseResource(outfitSystemFileHand);
+            if (outfitSystem[i].buyRandom > 0 && crashlog_isactive()) {
+                if (!ResourceExists(kPictType, i + 6000)) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(outfitSystem[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") lacks outfit picture\n");
                 }
-                outfitSystem[i].contributes[0] = ResRec(OutfRes, outfitSystemFileHand)->contribute1;
-                outfitSystem[i].contributes[1] = ResRec(OutfRes, outfitSystemFileHand)->contribute2;
-                outfitSystem[i].requires[0] = ResRec(OutfRes, outfitSystemFileHand)->require1;
-                outfitSystem[i].requires[1] = ResRec(OutfRes, outfitSystemFileHand)->require2;
-                strcpy((char *)outfitShortNames[i], ResRec(OutfRes, outfitSystemFileHand)->shortName);
-                strcpy((char *)lcOutfitName[i], ResRec(OutfRes, outfitSystemFileHand)->lcName);
-                strcpy((char *)lcPluralOutfitName[i], ResRec(OutfRes, outfitSystemFileHand)->lcPlural);
-                CtoPstr((char *)outfitShortNames[i]);
-                CtoPstr((char *)lcOutfitName[i]);
-                CtoPstr((char *)lcPluralOutfitName[i]);
-                ResourcePurge(outfitSystemFileHand);
-                ReleaseResource(outfitSystemFileHand);
-                if (outfitSystem[i].buyRandom > 0 && crashlog_isactive()) {
-                    if (!ResourceExists(kPictType, i + 6000)) {
-                        crashlog_print("warning: ");
-                        crashlog_print_pstr(outfitSystem[i].name);
-                        crashlog_print(" (");
-                        crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(") lacks outfit picture\n");
-                    }
-                    if (!ResourceExists(kDescType, i + 3000)) {
-                        crashlog_print("warning: ");
-                        crashlog_print_pstr(outfitSystem[i].name);
-                        crashlog_print(" (");
-                        crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(") lacks description\n");
-                    }
-                }
-                LoadingIntroMusic();
-            } else {
-                strcpy(outfitSystem[i].availability, "");
-                strcpy(outfitSystem[i].onPurchase, "");
-                strcpy(outfitSystem[i].onSell, "");
-                outfitSystem[i].techLevel = kOutfTechAbsent;
-                outfitSystem[i].mass = 0;
-                for (j = 0; j < kOutfMods; j++) {
-                    outfitSystem[i].modType[j] = 0;
-                    outfitSystem[i].modVal[j] = 0;
+                if (!ResourceExists(kDescType, i + 3000)) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(outfitSystem[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") lacks description\n");
                 }
             }
-            if (found >= count)
-                break;
+            LoadingIntroMusic();
+        } else {
+            strcpy(outfitSystem[i].availability, "");
+            strcpy(outfitSystem[i].onPurchase, "");
+            strcpy(outfitSystem[i].onSell, "");
+            outfitSystem[i].techLevel = kOutfTechAbsent;
+            outfitSystem[i].mass = 0;
+            for (j = 0; j < kOutfMods; j++) {
+                outfitSystem[i].modType[j] = 0;
+                outfitSystem[i].modVal[j] = 0;
+            }
         }
+        if (found >= count)
+            break;
+    }
 
-        /* alias outfits that share a lowercase display name */
+    /* alias outfits that share a lowercase display name */
+    for (i = 0; i < kMaxOutfits; i++) {
+        outfitSystem[i].sameNameIndex = i;
+        if (outfitSystem[i].techLevel < kOutfTechAbsent) {
+            /* no `i > 0` guard in the original: the for-entry test covers it
+             * (the exe has a single i-compare here, ours had two) */
+            if (lcOutfitName[i][0] != 0) {
+                for (j = 0; j < i; j++) {
+                    if (outfitSystem[j].techLevel < kOutfTechAbsent &&
+                        lcOutfitName[j][0] != 0 && lcOutfitName[i][0] == lcOutfitName[j][0]) {
+                        n = 0;
+                        while (n < lcOutfitName[i][0] &&
+                               lcOutfitName[i][1 + n] == lcOutfitName[j][1 + n])
+                            n++;
+                        if (n == lcOutfitName[i][0]) {
+                            outfitSystem[i].sameNameIndex = j;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+}
+
+static void LoadWeapons(unsigned char *name)
+{
+    short n;
+    short j;
+    short i;
+    short found;
+    short resID;
+    uint32_t resType;
+    short count;
+    float base;
+    RGBColor rgb;
+    RGBColor shade;
+    float factor;
+    short g;
+
+    found = 0;
+    n = count = CountResources(kWeapType);
+    for (i = 0; i < kMaxWeapTypes; i++)
+        weaponStats[i].guidance = kResAbsent;
+    for (i = 0; i < kMaxWeapTypes; i++) {
+        weaponFileHand = GetResource(kWeapType, i + kFirstResourceID);
+        if (weaponFileHand != NULL) {
+            found++;
+            LockAHandle(weaponFileHand);
+            ResourceNoPurge(weaponFileHand);
+            const WeapRes &res = *ResRec(WeapRes, weaponFileHand);
+            weaponStats[i].reload = res.reload;
+            weaponStats[i].lifetime = res.count;
+            weaponStats[i].damage[0] = res.massDmg[0];
+            weaponStats[i].damage[1] = res.massDmg[1];
+            weaponStats[i].guidance = res.guidance;
+            weaponStats[i].speed100 = res.speed / 100.0;
+            weaponStats[i].ammoType = res.ammoType;
+            weaponStats[i].graphic = res.graphic;
+            weaponStats[i].inaccuracy = res.inaccuracy;
+            weaponStats[i].sound = res.sound;
+            weaponStats[i].impact = res.impact;
+            weaponStats[i].recoil = res.recoil;
+            weaponStats[i].explodType = res.explodType;
+            weaponStats[i].proxRadius = res.proxRadius;
+            weaponStats[i].blastRadius = res.blastRadius;
+            weaponStats[i].flags = res.flags;
+            weaponStats[i].flags2 = res.flags2;
+            weaponStats[i].flags3 = res.flags3;
+            weaponStats[i].durability = res.durability;
+            weaponStats[i].maxAmmo = res.maxAmmo;
+            weaponStats[i].seeker = res.seeker;
+            weaponStats[i].ionization = res.ionization;
+            weaponStats[i].exitType = res.exitType;
+            weaponStats[i].burstCount = res.burstCount;
+            weaponStats[i].burstReload = res.burstReload;
+            weaponStats[i].guidedTurn = res.guidedTurn * 0.1;
+            if (weaponStats[i].inaccuracy == -1)
+                weaponStats[i].inaccuracy = 0;
+            for (j = 0; j < 4; j++) {
+                weaponStats[i].jamVuln[j] = res.jamVuln[j];
+                if (weaponStats[i].jamVuln[j] < 0)
+                    weaponStats[i].jamVuln[j] = 0;
+                if (weaponStats[i].jamVuln[j] > 100)
+                    weaponStats[i].jamVuln[j] = 100;
+            }
+            if (res.liColor == 0) {
+                rgb.red = rgb.green = 0x200;
+                rgb.blue = 0xffff;
+            } else {
+                rgb.red = ((res.liColor >> 16) & 0xff) * 256;
+                rgb.green = ((res.liColor >> 8) & 0xff) * 256;
+                rgb.blue = (res.liColor & 0xff) * 256;
+            }
+            ClampRGB(rgb);
+            weaponStats[i].ionizeColor = Color2Index(&rgb);
+            if (weaponStats[i].burstCount <= 0)
+                weaponStats[i].burstCount = -1;
+            weaponStats[i].beamLength = res.beamLength;
+            weaponStats[i].beamWidth = res.beamWidth;
+            weaponStats[i].coronaFalloff = res.falloff;
+            weaponStats[i].beamColor = res.beamColor;
+            weaponStats[i].coronaColor = res.coronaColor;
+            if (weaponStats[i].beamLength > 0 && weaponStats[i].coronaFalloff <= 0)
+                weaponStats[i].coronaFalloff = 16;
+            weaponStats[i].lightningDensity = res.liCohesive;
+            weaponStats[i].lightningAmplitude = res.liAmplitude;
+            if (weaponStats[i].lightningDensity > 0) {
+                if (weaponStats[i].lightningDensity < 2)
+                    weaponStats[i].lightningDensity = 2;
+                weaponStats[i].coronaFalloff = 0;
+                if (weaponStats[i].beamWidth < 1)
+                    weaponStats[i].beamWidth = 1;
+                if (weaponStats[i].lightningAmplitude < 1)
+                    weaponStats[i].lightningAmplitude = 1;
+            }
+            weaponStats[i].subCount = res.subCount;
+            weaponStats[i].subType = res.subType;
+            weaponStats[i].subTheta = res.subTheta;
+            weaponStats[i].subLimit = res.subLimit;
+            if (weaponStats[i].subTheta == -1)
+                weaponStats[i].subTheta = 0;
+            if (weaponStats[i].subType >= kFirstResourceID && weaponStats[i].subType < kFirstResourceID + kMaxWeapTypes)
+                weaponStats[i].subType -= kFirstResourceID;
+            else
+                weaponStats[i].subType = -1;
+            if (weaponStats[i].guidance != kGuidanceBeam && weaponStats[i].guidance != kGuidanceTurretBeam
+                && weaponStats[i].guidance != kGuidancePDBeam)
+                weaponStats[i].decayShots = weaponStats[i].coronaFalloff;
+            else
+                weaponStats[i].decayShots = 0;
+            weaponStats[i].proxSafety = res.proxSafety;
+            if (weaponStats[i].subCount <= 0 || weaponStats[i].subType < 0) {
+                weaponStats[i].subCount = 0;
+                weaponStats[i].subType = -1;
+            }
+            if (weaponStats[i].guidance == kGuidanceBeam || weaponStats[i].guidance == kGuidanceTurretBeam
+                || weaponStats[i].guidance == kGuidancePDBeam) {
+                weaponStats[i].rgbScratch.red = ((weaponStats[i].beamColor >> 16) & 0xff) * 256;
+                weaponStats[i].rgbScratch.green = ((weaponStats[i].beamColor >> 8) & 0xff) * 256;
+                weaponStats[i].rgbScratch.blue = (weaponStats[i].beamColor & 0xff) * 256;
+                weaponStats[i].beamColor = Pixel::FromRGB24(weaponStats[i].beamColor);
+                weaponStats[i].coronaColor = Pixel::FromRGB24(weaponStats[i].coronaColor);
+            }
+            weaponStats[i].hitParticles = res.hitParticles;
+            rgb.red = ((res.hitPartColor >> 16) & 0xff) * 256;
+            rgb.green = ((res.hitPartColor >> 8) & 0xff) * 256;
+            rgb.blue = (res.hitPartColor & 0xff) * 256;
+            ClampRGB(rgb);
+            weaponStats[i].hitPartColor = Color2Index(&rgb);
+            weaponStats[i].hitPartLife = res.hitPartLife;
+            weaponStats[i].hitPartVel = res.hitPartVel * 0.01;
+            GetResInfo(weaponFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            pstrcpy(weapName[i], name);
+            weaponStats[i].smokeSet = res.smokeSet;
+            weaponStats[i].decay = res.decay;
+            weaponStats[i].particles = res.particles;
+            weaponStats[i].partLifeMin = res.partLifeMin;
+            weaponStats[i].partLifeMax = res.partLifeMax;
+            base = res.partVel * 0.01;
+            rgb.red = ((res.partColor >> 16) & 0xff) * 256;
+            rgb.green = ((res.partColor >> 8) & 0xff) * 256;
+            rgb.blue = (res.partColor & 0xff) * 256;
+            for (j = 0; j < 8; j++) {
+                factor = (Rand(0x51) + 60) * 0.01;
+                shade.red = (int32_t)(rgb.red * factor);
+                shade.green = (int32_t)(rgb.green * factor);
+                shade.blue = (int32_t)(rgb.blue * factor);
+                // BUG (all versions): factor reaches 1.40, so a component above ~0xb6ff wraps when stored in
+                // the unsigned short -- bright particle colours turn dark (mac 1.0.10 clamped the shade, too late)
+                weaponStats[i].partColor[j] = Color2Index(&shade);
+                weaponStats[i].partVel[j] = base * factor;
+            }
+            if (weaponStats[i].smokeSet >= 8)
+                weaponStats[i].smokeSet = 0;
+            if (weaponStats[i].guidance == 2) {
+                weaponStats[i].guidance = kGuidanceHoming;
+                weaponStats[i].seeker = 0x30fe;
+            }
+            AdjustHandleSize(weaponFileHand, 0x86);
+            ResourcePurge(weaponFileHand);
+            ReleaseResource(weaponFileHand);
+            LoadingIntroMusic();
+        }
+        if (found >= n)
+            break;
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+
+    /* ammo-source sanity warnings */
+    if (crashlog_isactive()) {
+        for (i = 0; i < kMaxWeapTypes; i++) {
+            if (weaponStats[i].guidance != kResAbsent) {
+                short ammo = weaponStats[i].ammoType;
+                if (ammo >= 0 && ammo < kMaxWeapTypes &&
+                    weaponStats[i].guidance != kGuidanceBay &&
+                    (ammo != weaponStats[ammo].ammoType ||
+                     weaponStats[ammo].guidance == kGuidanceBay)) {
+                    crashlog_print("warning: weapon ");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(" probably shouldn't draw ammo from weapon ");
+                    crashlog_print_num(ammo + kFirstResourceID);
+                    crashlog_print("\n");
+                }
+            }
+        }
         for (i = 0; i < kMaxOutfits; i++) {
-            outfitSystem[i].sameNameIndex = i;
             if (outfitSystem[i].techLevel < kOutfTechAbsent) {
-                /* no `i > 0` guard in the original: the for-entry test covers it
-                 * (the exe has a single i-compare here, ours had two) */
-                if (lcOutfitName[i][0] != 0) {
-                    for (j = 0; j < i; j++) {
-                        if (outfitSystem[j].techLevel < kOutfTechAbsent &&
-                            lcOutfitName[j][0] != 0 && lcOutfitName[i][0] == lcOutfitName[j][0]) {
-                            n = 0;
-                            while (n < lcOutfitName[i][0] &&
-                                   lcOutfitName[i][1 + n] == lcOutfitName[j][1 + n])
-                                n++;
-                            if (n == lcOutfitName[i][0]) {
-                                outfitSystem[i].sameNameIndex = j;
+                for (count = 0; count < kOutfMods; count++) {
+                    if (outfitSystem[i].modType[count] == OutfMod::Ammo) {
+                        j = outfitSystem[i].modVal[count];
+                        g = weaponStats[j].guidance;
+                        if (g != kResAbsent) {
+                            if (g != kGuidanceBay && j != weaponStats[j].ammoType) {
+                                crashlog_print("warning: outfit item ");
+                                crashlog_print_num(i + kFirstResourceID);
+                                crashlog_print(" grants ammo to weapon ");
+                                crashlog_print_num(j + kFirstResourceID);
+                                if (weaponStats[j].ammoType >= 0 &&
+                                    weaponStats[j].ammoType < kMaxWeapTypes)
+                                    crashlog_print(", which doesn't use its own ammo\n");
+                                else
+                                    crashlog_print(", which doesn't use ammo\n");
+                            }
+                        } else {
+                            crashlog_print("warning: outfit item ");
+                            crashlog_print_num(i + kFirstResourceID);
+                            crashlog_print(" grants ammo to nonexisent weapon\n");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /* total range: beams use beam length, shots walk the submunition chain */
+    for (i = 0; i < kMaxWeapTypes; i++) {
+        weaponStats[i].totalRange = 0;
+        g = weaponStats[i].guidance;
+        if (weaponStats[i].guidance == kGuidanceUnguided || weaponStats[i].guidance == kGuidanceHoming || weaponStats[i].guidance == kGuidanceTurret || weaponStats[i].guidance == kGuidanceRocket || weaponStats[i].guidance == kGuidanceFrontQuad || weaponStats[i].guidance == kGuidanceRearQuad || weaponStats[i].guidance == kGuidancePointDef) {
+            n = i;
+            do {
+                weaponStats[i].totalRange += (double)(weaponStats[n].speed100 * weaponStats[n].lifetime);
+                if (weaponStats[n].subCount > 0) {
+                    short nxt = weaponStats[n].subType;
+                    if (n == nxt) {
+                        if (weaponStats[n].subLimit > 0)
+                            weaponStats[i].totalRange += (double)(weaponStats[n].subLimit *
+                                weaponStats[n].speed100 * weaponStats[n].lifetime);
+                        n = -1;
+                    } else {
+                        n = nxt;
+                    }
+                } else {
+                    n = -1;
+                }
+            } while (n != -1);
+        } else if (g == kGuidanceBeam || g == kGuidanceTurretBeam || g == kGuidancePDBeam) {
+            weaponStats[i].totalRange = weaponStats[i].beamLength;
+        }
+    }
+}
+
+static void LoadShipClasses(unsigned char *name)
+{
+    short n;
+    short i;
+    short resID;
+    uint32_t resType;
+    short count;
+    short k;
+    short gunTally, turretTally;
+    short maxGuns, maxTurrets;
+    int32_t tradeEst;
+    short mountCount[8];
+    short mountID[8];
+    short mountAmmo[8];
+    short shipCount;
+    int32_t mass;
+    short j;
+    short weapID;
+
+    shipCount = CountResources(kShipType);
+    if (shipCount == 0)
+        crashlog("warning: no " kShipResName " resources found");
+    for (i = 0; i < kMaxShipTypes; i++) {
+        shipClassFileHand = GetResource(kShipType, i + kFirstResourceID);
+        if (shipClassFileHand != NULL) {
+            LockAHandle(shipClassFileHand);
+            ResourceNoPurge(shipClassFileHand);
+            const ShipRes *res = ResRec(ShipRes, shipClassFileHand);
+            shipClass[i].cargo = res->cargo;
+            shipClass[i].shield = res->shield;
+            shipClass[i].accel = res->accel / 10000.0;
+            shipClass[i].maxSpeed = res->speed / 100.0;
+            shipClass[i].turnRate = res->turn * 0.1;
+            shipClass[i].fuel = res->energy;
+            shipClass[i].freeMass = res->freeSpace;
+            shipClass[i].armor = res->armor;
+            shipClass[i].maxGuns = res->maxGun;
+            shipClass[i].maxTurrets = res->maxTur;
+            shipClass[i].techLevel = res->techLevel;
+            shipClass[i].cost = res->cost;
+            shipClass[i].deathDelay = res->deathDelay;
+            shipClass[i].mass = res->mass;
+            shipClass[i].shipLength = res->length;
+            shipClass[i].inherentAI = res->inherentAI;
+            shipClass[i].crew = res->crew;
+            shipClass[i].strength = res->strength;
+            shipClass[i].flags = res->flags;
+            shipClass[i].flags2 = res->flags2;
+            shipClass[i].flags3 = res->flags3;
+            shipClass[i].dispWeight = res->dispWeight;
+            shipClass[i].podCount = res->podCount;
+            shipClass[i].buyRandom = res->buyRandom;
+            shipClass[i].hireRandom = res->hireRandom;
+            if (InGovtClass(res->inherentGovt, 0)) {
+                shipClass[i].inherentGovt = res->inherentGovt - ResClassBase(0);
+                shipClass[i].inherentGovtB = shipClass[i].inherentGovt;
+            } else if (InGovtClass(res->inherentGovt, 1)) {
+                shipClass[i].inherentGovt = -1;
+                shipClass[i].inherentGovtB = res->inherentGovt - ResClassBase(1);
+            } else if (InGovtClass(res->inherentGovt, 2)) {
+                shipClass[i].inherentGovt = res->inherentGovt - ResClassBase(2);
+                shipClass[i].inherentGovtB = -1;
+            } else {
+                shipClass[i].inherentGovt = -1;
+                shipClass[i].inherentGovtB = -1;
+            }
+            if (shipClass[i].buyRandom > 100)
+                shipClass[i].buyRandom = 100;
+            if (shipClass[i].hireRandom > 100)
+                shipClass[i].hireRandom = 100;
+            if (shipClass[i].strength < 1)
+                shipClass[i].strength = 1;
+            shipClass[i].upgradeTo = res->upgradeTo;
+            shipClass[i].escUpgradeCost = res->escUpgrdCost;
+            shipClass[i].tradeIn = res->escSellValue;
+            shipClass[i].upgradeTo = ResIndex(shipClass[i].upgradeTo);
+            if (shipClass[i].escUpgradeCost < 0)
+                shipClass[i].escUpgradeCost = 0;
+            if (shipClass[i].tradeIn <= 0)
+                shipClass[i].tradeIn = shipClass[i].cost * 0.1;
+            shipClass[i].escortType = res->escortType;
+            if (shipClass[i].escortType < 0 || shipClass[i].escortType > 3) {
+                if (shipClass[i].inherentAI >= 3) {
+                    if (shipClass[i].mass < 50)
+                        shipClass[i].escortType = 0;
+                    else if (shipClass[i].mass < 200)
+                        shipClass[i].escortType = 1;
+                    else
+                        shipClass[i].escortType = 2;
+                } else {
+                    shipClass[i].escortType = 3;
+                }
+            }
+            if (shipClass[i].escortType == 0)
+                shipClass[i].aiSkill = 80;
+            else if (shipClass[i].escortType == 1)
+                shipClass[i].aiSkill = 90;
+            else
+                shipClass[i].aiSkill = 100;
+            shipClass[i].explode1 = res->explode[0];
+            shipClass[i].explode2 = res->explode[1];
+            shipClass[i].shieldRech = res->shieldRe;
+            shipClass[i].armorRech = res->armorRe;
+            if (shipClass[i].shieldRech > 0.0f)
+                shipClass[i].shieldRech *= 0.001;
+            else
+                shipClass[i].shieldRech = 0;
+            if (shipClass[i].armorRech > 0.0f)
+                shipClass[i].armorRech *= 0.001;
+            else
+                shipClass[i].armorRech = 0;
+            shipClass[i].deionize = res->deionize;
+            shipClass[i].ionizeMax = res->ionizeMax;
+            if (shipClass[i].deionize > 0.0f)
+                shipClass[i].deionize *= 0.01;
+            else
+                shipClass[i].deionize = 1.0f;
+            if (shipClass[i].ionizeMax <= 0)
+                shipClass[i].ionizeMax = 0;
+            shipClass[i].keyCarried = res->keyCarried;
+            shipClass[i].keyCarried = ResIndex(shipClass[i].keyCarried);
+            if (shipClass[i].strength < 1)
+                shipClass[i].strength = 1;
+            if (shipClass[i].cargo < 0) {
+                shipClass[i].cargo *= -1;
+                shipClass[i].cargoNotFixed = 0;
+            } else {
+                shipClass[i].cargoNotFixed = 1;
+            }
+            if (shipClass[i].shield < 0)
+                shipClass[i].shield *= -5;
+            if (shipClass[i].crew < 0)
+                shipClass[i].crew = 0;
+            for (j = 0; j < 4; j++) {
+                mountID[j + 4] = -1;
+                mountID[j] = mountID[j + 4];
+                weapID = res->wType[j];
+                if (weapID >= kFirstResourceID && weapID < kFirstResourceID + kMaxWeapTypes) {
+                    mountID[j] = weapID;
+                    mountCount[j] = res->wCount[j];
+                    mountAmmo[j] = res->ammo[j];
+                } else {
+                    mountID[j] = -1;
+                }
+                weapID = res->wType2[j];
+                if (weapID >= kFirstResourceID && weapID < kFirstResourceID + kMaxWeapTypes) {
+                    mountID[j + 4] = weapID;
+                    mountCount[j + 4] = res->wCount2[j];
+                    mountAmmo[j + 4] = res->ammo2[j];
+                } else {
+                    mountID[j + 4] = -1;
+                }
+            }
+            shipClass[i].defOutfID[0] = res->defaultItems[0];
+            shipClass[i].defOutfID[1] = res->defaultItems[1];
+            shipClass[i].defOutfID[2] = res->defaultItems[2];
+            shipClass[i].defOutfID[3] = res->defaultItems[3];
+            shipClass[i].defOutfID[4] = res->defaultItems2[0];
+            shipClass[i].defOutfID[5] = res->defaultItems2[1];
+            shipClass[i].defOutfID[6] = res->defaultItems2[2];
+            shipClass[i].defOutfID[7] = res->defaultItems2[3];
+            shipClass[i].defOutfCount[0] = res->itemCount[0];
+            shipClass[i].defOutfCount[1] = res->itemCount[1];
+            shipClass[i].defOutfCount[2] = res->itemCount[2];
+            shipClass[i].defOutfCount[3] = res->itemCount[3];
+            shipClass[i].defOutfCount[4] = res->itemCount2[0];
+            shipClass[i].defOutfCount[5] = res->itemCount2[1];
+            shipClass[i].defOutfCount[6] = res->itemCount2[2];
+            shipClass[i].defOutfCount[7] = res->itemCount2[3];
+            for (count = 0; count < kDefaultOutfitSlots; count++) {
+                if (shipClass[i].defOutfID[count] >= kFirstResourceID && shipClass[i].defOutfID[count] < kFirstResourceID + kMaxOutfits) {
+                    shipClass[i].defOutfID[count] -= kFirstResourceID;
+                    if (shipClass[i].defOutfCount[count] < 0)
+                        shipClass[i].defOutfCount[count] = 0;
+                } else {
+                    shipClass[i].defOutfID[count] = -1;
+                    shipClass[i].defOutfCount[count] = 0;
+                }
+            }
+            shipClass[i].fuelRegen = res->fuelRegen;
+            shipClass[i].skillVar = res->skillVar;
+            if (shipClass[i].skillVar < 1)
+                shipClass[i].skillVar = 1;
+            if (shipClass[i].skillVar > 50)
+                shipClass[i].skillVar = 50;
+            shipClass[i].contributes[0] = res->contribute1;
+            shipClass[i].contributes[1] = res->contribute2;
+            shipClass[i].requires[0] = res->require1;
+            shipClass[i].requires[1] = res->require2;
+            tradeEst = shipClass[i].cost * 0.25;
+            gunTally = 0;
+            turretTally = 0;
+            for (count = 0; count < 8; count++) {
+                if (mountID[count] >= kFirstResourceID && mountID[count] < kFirstResourceID + kMaxWeapTypes) {
+                    shipClass[i].weapCount[mountID[count] - kFirstResourceID] = mountCount[count];
+                    shipClass[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
+                    if (mountCount[count] > 0) {
+                        for (j = 0; j < kMaxOutfits; j++) {
+                            if (outfitSystem[j].modType[0] == OutfMod::Weapon &&
+                                outfitSystem[j].modVal[0] == mountID[count] - kFirstResourceID &&
+                                outfitSystem[j].techLevel < kOutfTechAbsent) {
+                                mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountCount[count];
+                                shipClass[i].freeMass += mass;
+                                if (!outfitSystem[j].persistent)
+                                    tradeEst = tradeEst +
+                                        (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[count]) * 0.5;
+                                if (outfitSystem[j].flags & kOutfFixedGun)
+                                    gunTally += mountCount[count];
+                                if (outfitSystem[j].flags & kOutfTurret)
+                                    turretTally += mountCount[count];
                                 break;
                             }
                         }
                     }
-                }
-            }
-        }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
-    }
-
-    /* ---------------- wëap: weapons ---------------- */
-    {
-        RGBColor shade;
-        float factor;
-        short g;
-
-        found = 0;
-        n = count = CountResources(kWeapType);
-        for (i = 0; i < kMaxWeapTypes; i++)
-            weaponStats[i].guidance = kResAbsent;
-        for (i = 0; i < kMaxWeapTypes; i++) {
-            weaponFileHand = GetResource(kWeapType, i + kFirstResourceID);
-            if (weaponFileHand != NULL) {
-                found++;
-                LockAHandle(weaponFileHand);
-                ResourceNoPurge(weaponFileHand);
-                weaponStats[i].reload = ResRec(WeapRes, weaponFileHand)->reload;
-                weaponStats[i].lifetime = ResRec(WeapRes, weaponFileHand)->count;
-                weaponStats[i].damage[0] = ResRec(WeapRes, weaponFileHand)->massDmg[0];
-                weaponStats[i].damage[1] = ResRec(WeapRes, weaponFileHand)->massDmg[1];
-                weaponStats[i].guidance = ResRec(WeapRes, weaponFileHand)->guidance;
-                weaponStats[i].speed100 = ResRec(WeapRes, weaponFileHand)->speed / 100.0;
-                weaponStats[i].ammoType = ResRec(WeapRes, weaponFileHand)->ammoType;
-                weaponStats[i].graphic = ResRec(WeapRes, weaponFileHand)->graphic;
-                weaponStats[i].inaccuracy = ResRec(WeapRes, weaponFileHand)->inaccuracy;
-                weaponStats[i].sound = ResRec(WeapRes, weaponFileHand)->sound;
-                weaponStats[i].impact = ResRec(WeapRes, weaponFileHand)->impact;
-                weaponStats[i].recoil = ResRec(WeapRes, weaponFileHand)->recoil;
-                weaponStats[i].explodType = ResRec(WeapRes, weaponFileHand)->explodType;
-                weaponStats[i].proxRadius = ResRec(WeapRes, weaponFileHand)->proxRadius;
-                weaponStats[i].blastRadius = ResRec(WeapRes, weaponFileHand)->blastRadius;
-                weaponStats[i].flags = ResRec(WeapRes, weaponFileHand)->flags;
-                weaponStats[i].flags2 = ResRec(WeapRes, weaponFileHand)->flags2;
-                weaponStats[i].flags3 = ResRec(WeapRes, weaponFileHand)->flags3;
-                weaponStats[i].durability = ResRec(WeapRes, weaponFileHand)->durability;
-                weaponStats[i].maxAmmo = ResRec(WeapRes, weaponFileHand)->maxAmmo;
-                weaponStats[i].seeker = ResRec(WeapRes, weaponFileHand)->seeker;
-                weaponStats[i].ionization = ResRec(WeapRes, weaponFileHand)->ionization;
-                weaponStats[i].exitType = ResRec(WeapRes, weaponFileHand)->exitType;
-                weaponStats[i].burstCount = ResRec(WeapRes, weaponFileHand)->burstCount;
-                weaponStats[i].burstReload = ResRec(WeapRes, weaponFileHand)->burstReload;
-                weaponStats[i].guidedTurn = ResRec(WeapRes, weaponFileHand)->guidedTurn * 0.1;
-                if (weaponStats[i].inaccuracy == -1)
-                    weaponStats[i].inaccuracy = 0;
-                for (j = 0; j < 4; j++) {
-                    weaponStats[i].jamVuln[j] = ResRec(WeapRes, weaponFileHand)->jamVuln[j];
-                    if (weaponStats[i].jamVuln[j] < 0)
-                        weaponStats[i].jamVuln[j] = 0;
-                    if (weaponStats[i].jamVuln[j] > 100)
-                        weaponStats[i].jamVuln[j] = 100;
-                }
-                if (ResRec(WeapRes, weaponFileHand)->liColor == 0) {
-                    rgb.red = rgb.green = 0x200;
-                    rgb.blue = 0xffff;
-                } else {
-                    rgb.red = ((ResRec(WeapRes, weaponFileHand)->liColor >> 16) & 0xff) * 256;
-                    rgb.green = ((ResRec(WeapRes, weaponFileHand)->liColor >> 8) & 0xff) * 256;
-                    rgb.blue = (ResRec(WeapRes, weaponFileHand)->liColor & 0xff) * 256;
-                }
-                ClampRGB(rgb);
-                weaponStats[i].ionizeColor = Color2Index(&rgb);
-                if (weaponStats[i].burstCount <= 0)
-                    weaponStats[i].burstCount = -1;
-                weaponStats[i].beamLength = ResRec(WeapRes, weaponFileHand)->beamLength;
-                weaponStats[i].beamWidth = ResRec(WeapRes, weaponFileHand)->beamWidth;
-                weaponStats[i].coronaFalloff = ResRec(WeapRes, weaponFileHand)->falloff;
-                weaponStats[i].beamColor = ResRec(WeapRes, weaponFileHand)->beamColor;
-                weaponStats[i].coronaColor = ResRec(WeapRes, weaponFileHand)->coronaColor;
-                if (weaponStats[i].beamLength > 0 && weaponStats[i].coronaFalloff <= 0)
-                    weaponStats[i].coronaFalloff = 16;
-                weaponStats[i].lightningDensity = ResRec(WeapRes, weaponFileHand)->liCohesive;
-                weaponStats[i].lightningAmplitude = ResRec(WeapRes, weaponFileHand)->liAmplitude;
-                if (weaponStats[i].lightningDensity > 0) {
-                    if (weaponStats[i].lightningDensity < 2)
-                        weaponStats[i].lightningDensity = 2;
-                    weaponStats[i].coronaFalloff = 0;
-                    if (weaponStats[i].beamWidth < 1)
-                        weaponStats[i].beamWidth = 1;
-                    if (weaponStats[i].lightningAmplitude < 1)
-                        weaponStats[i].lightningAmplitude = 1;
-                }
-                weaponStats[i].subCount = ResRec(WeapRes, weaponFileHand)->subCount;
-                weaponStats[i].subType = ResRec(WeapRes, weaponFileHand)->subType;
-                weaponStats[i].subTheta = ResRec(WeapRes, weaponFileHand)->subTheta;
-                weaponStats[i].subLimit = ResRec(WeapRes, weaponFileHand)->subLimit;
-                if (weaponStats[i].subTheta == -1)
-                    weaponStats[i].subTheta = 0;
-                if (weaponStats[i].subType >= kFirstResourceID && weaponStats[i].subType < kFirstResourceID + kMaxWeapTypes)
-                    weaponStats[i].subType -= kFirstResourceID;
-                else
-                    weaponStats[i].subType = -1;
-                if (weaponStats[i].guidance != kGuidanceBeam && weaponStats[i].guidance != kGuidanceTurretBeam
-                    && weaponStats[i].guidance != kGuidancePDBeam)
-                    weaponStats[i].decayShots = weaponStats[i].coronaFalloff;
-                else
-                    weaponStats[i].decayShots = 0;
-                weaponStats[i].proxSafety = ResRec(WeapRes, weaponFileHand)->proxSafety;
-                if (weaponStats[i].subCount <= 0 || weaponStats[i].subType < 0) {
-                    weaponStats[i].subCount = 0;
-                    weaponStats[i].subType = -1;
-                }
-                if (weaponStats[i].guidance == kGuidanceBeam || weaponStats[i].guidance == kGuidanceTurretBeam
-                    || weaponStats[i].guidance == kGuidancePDBeam) {
-                    weaponStats[i].rgbScratch.red = ((weaponStats[i].beamColor >> 16) & 0xff) * 256;
-                    weaponStats[i].rgbScratch.green = ((weaponStats[i].beamColor >> 8) & 0xff) * 256;
-                    weaponStats[i].rgbScratch.blue = (weaponStats[i].beamColor & 0xff) * 256;
-                    weaponStats[i].beamColor = Pixel::FromRGB24(weaponStats[i].beamColor);
-                    weaponStats[i].coronaColor = Pixel::FromRGB24(weaponStats[i].coronaColor);
-                }
-                weaponStats[i].hitParticles = ResRec(WeapRes, weaponFileHand)->hitParticles;
-                rgb.red = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 16) & 0xff) * 256;
-                rgb.green = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 8) & 0xff) * 256;
-                rgb.blue = (ResRec(WeapRes, weaponFileHand)->hitPartColor & 0xff) * 256;
-                ClampRGB(rgb);
-                weaponStats[i].hitPartColor = Color2Index(&rgb);
-                weaponStats[i].hitPartLife = ResRec(WeapRes, weaponFileHand)->hitPartLife;
-                weaponStats[i].hitPartVel = ResRec(WeapRes, weaponFileHand)->hitPartVel * 0.01;
-                GetResInfo(weaponFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                pstrcpy(weapName[i], name);
-                weaponStats[i].smokeSet = ResRec(WeapRes, weaponFileHand)->smokeSet;
-                weaponStats[i].decay = ResRec(WeapRes, weaponFileHand)->decay;
-                weaponStats[i].particles = ResRec(WeapRes, weaponFileHand)->particles;
-                weaponStats[i].partLifeMin = ResRec(WeapRes, weaponFileHand)->partLifeMin;
-                weaponStats[i].partLifeMax = ResRec(WeapRes, weaponFileHand)->partLifeMax;
-                base = ResRec(WeapRes, weaponFileHand)->partVel * 0.01;
-                rgb.red = ((ResRec(WeapRes, weaponFileHand)->partColor >> 16) & 0xff) * 256;
-                rgb.green = ((ResRec(WeapRes, weaponFileHand)->partColor >> 8) & 0xff) * 256;
-                rgb.blue = (ResRec(WeapRes, weaponFileHand)->partColor & 0xff) * 256;
-                for (j = 0; j < 8; j++) {
-                    factor = (Rand(0x51) + 60) * 0.01;
-                    shade.red = (int32_t)(rgb.red * factor);
-                    shade.green = (int32_t)(rgb.green * factor);
-                    shade.blue = (int32_t)(rgb.blue * factor);
-                    // BUG (all versions): factor reaches 1.40, so a component above ~0xb6ff wraps when stored in
-                    // the unsigned short -- bright particle colours turn dark (mac 1.0.10 clamped the shade, too late)
-                    weaponStats[i].partColor[j] = Color2Index(&shade);
-                    weaponStats[i].partVel[j] = base * factor;
-                }
-                if (weaponStats[i].smokeSet >= 8)
-                    weaponStats[i].smokeSet = 0;
-                if (weaponStats[i].guidance == 2) {
-                    weaponStats[i].guidance = kGuidanceHoming;
-                    weaponStats[i].seeker = 0x30fe;
-                }
-                AdjustHandleSize(weaponFileHand, 0x86);
-                ResourcePurge(weaponFileHand);
-                ReleaseResource(weaponFileHand);
-                LoadingIntroMusic();
-            }
-            if (found >= n)
-                break;
-        }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
-
-        /* ammo-source sanity warnings */
-        if (crashlog_isactive()) {
-            for (i = 0; i < kMaxWeapTypes; i++) {
-                if (weaponStats[i].guidance != kResAbsent) {
-                    short ammo = weaponStats[i].ammoType;
-                    if (ammo >= 0 && ammo < kMaxWeapTypes &&
-                        weaponStats[i].guidance != kGuidanceBay &&
-                        (ammo != weaponStats[ammo].ammoType ||
-                         weaponStats[ammo].guidance == kGuidanceBay)) {
-                        crashlog_print("warning: weapon ");
-                        crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(" probably shouldn't draw ammo from weapon ");
-                        crashlog_print_num(ammo + kFirstResourceID);
-                        crashlog_print("\n");
-                    }
-                }
-            }
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (outfitSystem[i].techLevel < kOutfTechAbsent) {
-                    for (count = 0; count < kOutfMods; count++) {
-                        if (outfitSystem[i].modType[count] == OutfMod::Ammo) {
-                            j = outfitSystem[i].modVal[count];
-                            g = weaponStats[j].guidance;
-                            if (g != kResAbsent) {
-                                if (g != kGuidanceBay && j != weaponStats[j].ammoType) {
-                                    crashlog_print("warning: outfit item ");
-                                    crashlog_print_num(i + kFirstResourceID);
-                                    crashlog_print(" grants ammo to weapon ");
-                                    crashlog_print_num(j + kFirstResourceID);
-                                    if (weaponStats[j].ammoType >= 0 &&
-                                        weaponStats[j].ammoType < kMaxWeapTypes)
-                                        crashlog_print(", which doesn't use its own ammo\n");
-                                    else
-                                        crashlog_print(", which doesn't use ammo\n");
-                                }
-                            } else {
-                                crashlog_print("warning: outfit item ");
-                                crashlog_print_num(i + kFirstResourceID);
-                                crashlog_print(" grants ammo to nonexisent weapon\n");
-                            }
+                    if (mountAmmo[count] > 0) {
+                        if (weaponStats[mountID[count] - kFirstResourceID].guidance == kGuidanceBay)
+                            n = mountID[count] - kFirstResourceID;
+                        else {
+                            n = weaponStats[mountID[count] - kFirstResourceID].ammoType;
+                            if (n < 0 || n >= kMaxWeapTypes)
+                                n = -1;
                         }
-                    }
-                }
-            }
-        }
-
-        /* total range: beams use beam length, shots walk the submunition chain */
-        for (i = 0; i < kMaxWeapTypes; i++) {
-            weaponStats[i].totalRange = 0;
-            g = weaponStats[i].guidance;
-            if (weaponStats[i].guidance == kGuidanceUnguided || weaponStats[i].guidance == kGuidanceHoming || weaponStats[i].guidance == kGuidanceTurret || weaponStats[i].guidance == kGuidanceRocket || weaponStats[i].guidance == kGuidanceFrontQuad || weaponStats[i].guidance == kGuidanceRearQuad || weaponStats[i].guidance == kGuidancePointDef) {
-                n = i;
-                do {
-                    weaponStats[i].totalRange += (double)(weaponStats[n].speed100 * weaponStats[n].lifetime);
-                    if (weaponStats[n].subCount > 0) {
-                        short nxt = weaponStats[n].subType;
-                        if (n == nxt) {
-                            if (weaponStats[n].subLimit > 0)
-                                weaponStats[i].totalRange += (double)(weaponStats[n].subLimit *
-                                    weaponStats[n].speed100 * weaponStats[n].lifetime);
-                            n = -1;
-                        } else {
-                            n = nxt;
-                        }
-                    } else {
-                        n = -1;
-                    }
-                } while (n != -1);
-            } else if (g == kGuidanceBeam || g == kGuidanceTurretBeam || g == kGuidancePDBeam) {
-                weaponStats[i].totalRange = weaponStats[i].beamLength;
-            }
-        }
-    }
-
-    /* ---------------- shïp: ship classes ---------------- */
-    {
-        short shipCount;
-        Handle h;
-        char *res;
-        int32_t mass;
-        short j;
-        short weapID;
-
-        shipCount = CountResources(kShipType);
-        if (shipCount == 0)
-            crashlog("warning: no " kShipResName " resources found");
-        for (i = 0; i < kMaxShipTypes;i++) {
-            shipClassFileHand = GetResource(kShipType, i + kFirstResourceID);
-            if (shipClassFileHand != NULL) {
-                LockAHandle(shipClassFileHand);
-                ResourceNoPurge(shipClassFileHand);
-                shipClass[i].cargo = ResRec(ShipRes, shipClassFileHand)->cargo;
-                shipClass[i].shield = ResRec(ShipRes, shipClassFileHand)->shield;
-                shipClass[i].accel = ResRec(ShipRes, shipClassFileHand)->accel / 10000.0;
-                shipClass[i].maxSpeed = ResRec(ShipRes, shipClassFileHand)->speed / 100.0;
-                shipClass[i].turnRate = ResRec(ShipRes, shipClassFileHand)->turn * 0.1;
-                shipClass[i].fuel = ResRec(ShipRes, shipClassFileHand)->energy;
-                shipClass[i].freeMass = ResRec(ShipRes, shipClassFileHand)->freeSpace;
-                shipClass[i].armor = ResRec(ShipRes, shipClassFileHand)->armor;
-                shipClass[i].maxGuns = ResRec(ShipRes, shipClassFileHand)->maxGun;
-                shipClass[i].maxTurrets = ResRec(ShipRes, shipClassFileHand)->maxTur;
-                shipClass[i].techLevel = ResRec(ShipRes, shipClassFileHand)->techLevel;
-                shipClass[i].cost = ResRec(ShipRes, shipClassFileHand)->cost;
-                shipClass[i].deathDelay = ResRec(ShipRes, shipClassFileHand)->deathDelay;
-                shipClass[i].mass = ResRec(ShipRes, shipClassFileHand)->mass;
-                shipClass[i].shipLength = ResRec(ShipRes, shipClassFileHand)->length;
-                shipClass[i].inherentAI = ResRec(ShipRes, shipClassFileHand)->inherentAI;
-                shipClass[i].crew = ResRec(ShipRes, shipClassFileHand)->crew;
-                shipClass[i].strength = ResRec(ShipRes, shipClassFileHand)->strength;
-                shipClass[i].flags = ResRec(ShipRes, shipClassFileHand)->flags;
-                shipClass[i].flags2 = ResRec(ShipRes, shipClassFileHand)->flags2;
-                shipClass[i].flags3 = ResRec(ShipRes, shipClassFileHand)->flags3;
-                shipClass[i].dispWeight = ResRec(ShipRes, shipClassFileHand)->dispWeight;
-                shipClass[i].podCount = ResRec(ShipRes, shipClassFileHand)->podCount;
-                shipClass[i].buyRandom = ResRec(ShipRes, shipClassFileHand)->buyRandom;
-                shipClass[i].hireRandom = ResRec(ShipRes, shipClassFileHand)->hireRandom;
-                if (InGovtClass(ResRec(ShipRes, shipClassFileHand)->inherentGovt, 0)) {
-                    shipClass[i].inherentGovt = ResRec(ShipRes, shipClassFileHand)->inherentGovt - ResClassBase(0);
-                    shipClass[i].inherentGovtB = shipClass[i].inherentGovt;
-                } else if (InGovtClass(ResRec(ShipRes, shipClassFileHand)->inherentGovt, 1)) {
-                    shipClass[i].inherentGovt = -1;
-                    shipClass[i].inherentGovtB = ResRec(ShipRes, shipClassFileHand)->inherentGovt - ResClassBase(1);
-                } else if (InGovtClass(ResRec(ShipRes, shipClassFileHand)->inherentGovt, 2)) {
-                    shipClass[i].inherentGovt = ResRec(ShipRes, shipClassFileHand)->inherentGovt - ResClassBase(2);
-                    shipClass[i].inherentGovtB = -1;
-                } else {
-                    shipClass[i].inherentGovt = -1;
-                    shipClass[i].inherentGovtB = -1;
-                }
-                if (shipClass[i].buyRandom > 100)
-                    shipClass[i].buyRandom = 100;
-                if (shipClass[i].hireRandom > 100)
-                    shipClass[i].hireRandom = 100;
-                if (shipClass[i].strength < 1)
-                    shipClass[i].strength = 1;
-                shipClass[i].upgradeTo = ResRec(ShipRes, shipClassFileHand)->upgradeTo;
-                shipClass[i].escUpgradeCost = ResRec(ShipRes, shipClassFileHand)->escUpgrdCost;
-                shipClass[i].tradeIn = ResRec(ShipRes, shipClassFileHand)->escSellValue;
-                if (shipClass[i].upgradeTo >= kFirstResourceID)
-                    shipClass[i].upgradeTo -= kFirstResourceID;
-                else
-                    shipClass[i].upgradeTo = -1;
-                if (shipClass[i].escUpgradeCost < 0)
-                    shipClass[i].escUpgradeCost = 0;
-                if (shipClass[i].tradeIn <= 0)
-                    shipClass[i].tradeIn = shipClass[i].cost * 0.1;
-                shipClass[i].escortType = ResRec(ShipRes, shipClassFileHand)->escortType;
-                if (shipClass[i].escortType < 0 || shipClass[i].escortType > 3) {
-                    if (shipClass[i].inherentAI >= 3) {
-                        if (shipClass[i].mass < 50)
-                            shipClass[i].escortType = 0;
-                        else if (shipClass[i].mass < 200)
-                            shipClass[i].escortType = 1;
-                        else
-                            shipClass[i].escortType = 2;
-                    } else {
-                        shipClass[i].escortType = 3;
-                    }
-                }
-                if (shipClass[i].escortType == 0)
-                    shipClass[i].aiSkill = 80;
-                else if (shipClass[i].escortType == 1)
-                    shipClass[i].aiSkill = 90;
-                else
-                    shipClass[i].aiSkill = 100;
-                shipClass[i].explode1 = ResRec(ShipRes, shipClassFileHand)->explode[0];
-                shipClass[i].explode2 = ResRec(ShipRes, shipClassFileHand)->explode[1];
-                shipClass[i].shieldRech = ResRec(ShipRes, shipClassFileHand)->shieldRe;
-                shipClass[i].armorRech = ResRec(ShipRes, shipClassFileHand)->armorRe;
-                if (shipClass[i].shieldRech > 0.0f)
-                    shipClass[i].shieldRech *= 0.001;
-                else
-                    shipClass[i].shieldRech = 0;
-                if (shipClass[i].armorRech > 0.0f)
-                    shipClass[i].armorRech *= 0.001;
-                else
-                    shipClass[i].armorRech = 0;
-                shipClass[i].deionize = ResRec(ShipRes, shipClassFileHand)->deionize;
-                shipClass[i].ionizeMax = ResRec(ShipRes, shipClassFileHand)->ionizeMax;
-                if (shipClass[i].deionize > 0.0f)
-                    shipClass[i].deionize *= 0.01;
-                else
-                    shipClass[i].deionize = 1.0f;
-                if (shipClass[i].ionizeMax <= 0)
-                    shipClass[i].ionizeMax = 0;
-                shipClass[i].keyCarried = ResRec(ShipRes, shipClassFileHand)->keyCarried;
-                if (shipClass[i].keyCarried >= kFirstResourceID)
-                    shipClass[i].keyCarried -= kFirstResourceID;
-                else
-                    shipClass[i].keyCarried = -1;
-                if (shipClass[i].strength < 1)
-                    shipClass[i].strength = 1;
-                if (shipClass[i].cargo < 0) {
-                    shipClass[i].cargo *= -1;
-                    shipClass[i].cargoNotFixed = 0;
-                } else {
-                    shipClass[i].cargoNotFixed = 1;
-                }
-                if (shipClass[i].shield < 0)
-                    shipClass[i].shield *= -5;
-                if (shipClass[i].crew < 0)
-                    shipClass[i].crew = 0;
-                for (j = 0; j < 4; j++) {
-                    h = shipClassFileHand;
-                    mountID[j + 4] = -1;
-                    mountID[j] = mountID[j + 4];
-                    weapID = ((ShipRes *)(res = *shipClassFileHand))->wType[j];
-                    if (weapID >= kFirstResourceID && weapID < kFirstResourceID + kMaxWeapTypes) {
-                        char *p = *h;
-
-                        mountID[j] = weapID;
-                        mountCount[j] = ((ShipRes *)p)->wCount[j];
-                        mountAmmo[j] = ((ShipRes *)p)->ammo[j];
-                    } else {
-                        mountID[j] = -1;
-                    }
-                    weapID = ((ShipRes *)res)->wType2[j];
-                    if (weapID >= kFirstResourceID && weapID < kFirstResourceID + kMaxWeapTypes) {
-                        char *p = *h;
-
-                        mountID[j + 4] = weapID;
-                        mountCount[j + 4] = ((ShipRes *)p)->wCount2[j];
-                        mountAmmo[j + 4] = ((ShipRes *)p)->ammo2[j];
-                    } else {
-                        mountID[j + 4] = -1;
-                    }
-                }
-                shipClass[i].defOutfID[0] = ResRec(ShipRes, shipClassFileHand)->defaultItems[0];
-                shipClass[i].defOutfID[1] = ResRec(ShipRes, shipClassFileHand)->defaultItems[1];
-                shipClass[i].defOutfID[2] = ResRec(ShipRes, shipClassFileHand)->defaultItems[2];
-                shipClass[i].defOutfID[3] = ResRec(ShipRes, shipClassFileHand)->defaultItems[3];
-                shipClass[i].defOutfID[4] = ResRec(ShipRes, shipClassFileHand)->defaultItems2[0];
-                shipClass[i].defOutfID[5] = ResRec(ShipRes, shipClassFileHand)->defaultItems2[1];
-                shipClass[i].defOutfID[6] = ResRec(ShipRes, shipClassFileHand)->defaultItems2[2];
-                shipClass[i].defOutfID[7] = ResRec(ShipRes, shipClassFileHand)->defaultItems2[3];
-                shipClass[i].defOutfCount[0] = ResRec(ShipRes, shipClassFileHand)->itemCount[0];
-                shipClass[i].defOutfCount[1] = ResRec(ShipRes, shipClassFileHand)->itemCount[1];
-                shipClass[i].defOutfCount[2] = ResRec(ShipRes, shipClassFileHand)->itemCount[2];
-                shipClass[i].defOutfCount[3] = ResRec(ShipRes, shipClassFileHand)->itemCount[3];
-                shipClass[i].defOutfCount[4] = ResRec(ShipRes, shipClassFileHand)->itemCount2[0];
-                shipClass[i].defOutfCount[5] = ResRec(ShipRes, shipClassFileHand)->itemCount2[1];
-                shipClass[i].defOutfCount[6] = ResRec(ShipRes, shipClassFileHand)->itemCount2[2];
-                shipClass[i].defOutfCount[7] = ResRec(ShipRes, shipClassFileHand)->itemCount2[3];
-                for (count = 0; count < kDefaultOutfitSlots; count++) {
-                    if (shipClass[i].defOutfID[count] >= kFirstResourceID && shipClass[i].defOutfID[count] < kFirstResourceID + kMaxOutfits) {
-                        shipClass[i].defOutfID[count] -= kFirstResourceID;
-                        if (shipClass[i].defOutfCount[count] < 0)
-                            shipClass[i].defOutfCount[count] = 0;
-                    } else {
-                        shipClass[i].defOutfID[count] = -1;
-                        shipClass[i].defOutfCount[count] = 0;
-                    }
-                }
-                shipClass[i].fuelRegen = ResRec(ShipRes, shipClassFileHand)->fuelRegen;
-                shipClass[i].skillVar = ResRec(ShipRes, shipClassFileHand)->skillVar;
-                if (shipClass[i].skillVar < 1)
-                    shipClass[i].skillVar = 1;
-                if (shipClass[i].skillVar > 50)
-                    shipClass[i].skillVar = 50;
-                shipClass[i].contributes[0] = ResRec(ShipRes, shipClassFileHand)->contribute1;
-                shipClass[i].contributes[1] = ResRec(ShipRes, shipClassFileHand)->contribute2;
-                shipClass[i].requires[0] = ResRec(ShipRes, shipClassFileHand)->require1;
-                shipClass[i].requires[1] = ResRec(ShipRes, shipClassFileHand)->require2;
-                tradeEst = shipClass[i].cost * 0.25;
-                gunTally = 0;
-                turretTally = 0;
-                for (count = 0; count < 8; count++) {
-                    if (mountID[count] >= kFirstResourceID && mountID[count] < kFirstResourceID + kMaxWeapTypes) {
-                        shipClass[i].weapCount[mountID[count] - kFirstResourceID] = mountCount[count];
-                        shipClass[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
-                        if (mountCount[count] > 0) {
+                        if (n != -1) {
                             for (j = 0; j < kMaxOutfits; j++) {
-                                if (outfitSystem[j].modType[0] == OutfMod::Weapon &&
-                                    outfitSystem[j].modVal[0] == mountID[count] - kFirstResourceID &&
+                                if (outfitSystem[j].modType[0] == OutfMod::Ammo &&
+                                    outfitSystem[j].modVal[0] == n &&
                                     outfitSystem[j].techLevel < kOutfTechAbsent) {
-                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountCount[count];
+                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountAmmo[count];
                                     shipClass[i].freeMass += mass;
+                                    // BUG (all versions): ammo priced by mountCount, not mountAmmo; only feeds
+                                    // the crashlog trade-in warning
                                     if (!outfitSystem[j].persistent)
                                         tradeEst = tradeEst +
                                             (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[count]) * 0.5;
-                                    if (outfitSystem[j].flags & kOutfFixedGun)
-                                        gunTally += mountCount[count];
-                                    if (outfitSystem[j].flags & kOutfTurret)
-                                        turretTally += mountCount[count];
                                     break;
                                 }
                             }
                         }
-                        if (mountAmmo[count] > 0) {
-                            if (weaponStats[mountID[count] - kFirstResourceID].guidance == kGuidanceBay)
-                                n = mountID[count] - kFirstResourceID;
-                            else {
-                                n = weaponStats[mountID[count] - kFirstResourceID].ammoType;
-                                if (n < 0 || n >= kMaxWeapTypes)
-                                    n = -1;
-                            }
-                            if (n != -1) {
-                                for (j = 0; j < kMaxOutfits; j++) {
-                                    if (outfitSystem[j].modType[0] == OutfMod::Ammo &&
-                                        outfitSystem[j].modVal[0] == n &&
-                                        outfitSystem[j].techLevel < kOutfTechAbsent) {
-                                    mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountAmmo[count];
-                                    shipClass[i].freeMass += mass;
-                                        // BUG (all versions): ammo priced by mountCount, not mountAmmo; only feeds
-                                        // the crashlog trade-in warning
-                                        if (!outfitSystem[j].persistent)
-                                            tradeEst = tradeEst +
-                                                (AdjustedItemCost(&outfitSystem[j], &shipClass[i]) * mountCount[count]) * 0.5;
-                                        break;
-                                    }
-                                }
-                            }
+                    }
+                }
+            }
+            maxGuns = shipClass[i].maxGuns;
+            maxTurrets = shipClass[i].maxTurrets;
+            for (k = 0; k < kDefaultOutfitSlots; k++) {
+                if (shipClass[i].defOutfID[k] != -1 && shipClass[i].defOutfCount[k] > 0 &&
+                    outfitSystem[shipClass[i].defOutfID[k]].techLevel < kOutfTechAbsent) {
+                    mass = AdjustedItemMass(&outfitSystem[shipClass[i].defOutfID[k]], &shipClass[i]) *
+                           shipClass[i].defOutfCount[k];
+                    shipClass[i].freeMass += mass;
+                    if (!outfitSystem[shipClass[i].defOutfID[k]].persistent)
+                        tradeEst = tradeEst +
+                            (AdjustedItemCost(&outfitSystem[shipClass[i].defOutfID[k]], &shipClass[i]) *
+                             shipClass[i].defOutfCount[k]) * 0.5;
+                    if (crashlog_isactive()) {
+                        for (j = 0; j < kOutfMods; j++) {
+                            if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == OutfMod::GunSlots)
+                                maxGuns += outfitSystem[shipClass[i].defOutfID[k]].modVal[j];
+                            if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == OutfMod::TurretSlots)
+                                maxTurrets += outfitSystem[shipClass[i].defOutfID[k]].modVal[j];
                         }
                     }
                 }
-                maxGuns = shipClass[i].maxGuns;
-                maxTurrets = shipClass[i].maxTurrets;
-                for (k = 0; k < kDefaultOutfitSlots; k++) {
-                    if (shipClass[i].defOutfID[k] != -1 && shipClass[i].defOutfCount[k] > 0 &&
-                        outfitSystem[shipClass[i].defOutfID[k]].techLevel < kOutfTechAbsent) {
-                        mass = AdjustedItemMass(&outfitSystem[shipClass[i].defOutfID[k]], &shipClass[i]) *
-                               shipClass[i].defOutfCount[k];
-                        shipClass[i].freeMass += mass;
-                        if (!outfitSystem[shipClass[i].defOutfID[k]].persistent)
-                            tradeEst = tradeEst +
-                                (AdjustedItemCost(&outfitSystem[shipClass[i].defOutfID[k]], &shipClass[i]) *
-                                 shipClass[i].defOutfCount[k]) * 0.5;
-                        if (crashlog_isactive()) {
-                            for (j = 0; j < kOutfMods; j++) {
-                                if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == OutfMod::GunSlots)
-                                    maxGuns += outfitSystem[shipClass[i].defOutfID[k]].modVal[j];
-                                if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == OutfMod::TurretSlots)
-                                    maxTurrets += outfitSystem[shipClass[i].defOutfID[k]].modVal[j];
-                            }
-                        }
-                    }
-                }
-                if (shipClass[i].flags & kShipSlowJump)
-                    shipClass[i].mobilityFactor = 0.7f;
-                else if (shipClass[i].flags & kShipSemiFastJump)
-                    shipClass[i].mobilityFactor = 1.3f;
-                else if (shipClass[i].flags & kShipFastJump)
-                    shipClass[i].mobilityFactor = 1.6f;
-                else
-                    shipClass[i].mobilityFactor = 1.0f;
-                shipClass[i].mobilityFactor *= 1.3;
-                if (shipClass[i].mobilityFactor < 0.0f)
-                    shipClass[i].mobilityFactor = 0.5f;
-                strcpy(shipClass[i].availability, ResRec(ShipRes, shipClassFileHand)->availability);
-                strcpy(shipClass[i].appearOn, ResRec(ShipRes, shipClassFileHand)->appearOn);
-                strcpy(shipClass[i].onPurchase, ResRec(ShipRes, shipClassFileHand)->onPurchase);
-                strcpy(shipClass[i].onCapture, ResRec(ShipRes, shipClassFileHand)->onCapture);
-                strcpy(shipClass[i].onRetire, ResRec(ShipRes, shipClassFileHand)->onRetire);
-                AdjustHandleSize(shipClassFileHand, 0x744);
-                GetResInfo(shipClassFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                strncpy((char *)shipClass[i].name, (char *)name, 63);
-                strcpy((char *)shipyardShortNames[i], ResRec(ShipRes, shipClassFileHand)->shortName);
-                strcpy((char *)shipyardLongNames[i], ResRec(ShipRes, shipClassFileHand)->longName);
-                strcpy((char *)shipCommNames[i], ResRec(ShipRes, shipClassFileHand)->commName);
-                strcpy((char *)shipMovieFilenames[i], ResRec(ShipRes, shipClassFileHand)->movieName);
-                strcpy((char *)shipClass[i].subtitle, ResRec(ShipRes, shipClassFileHand)->subtitle);
-                CtoPstr((char *)shipyardShortNames[i]);
-                CtoPstr((char *)shipyardLongNames[i]);
-                CtoPstr((char *)shipCommNames[i]);
-                CtoPstr((char *)shipMovieFilenames[i]);
-                CtoPstr((char *)shipClass[i].subtitle);
-                if (crashlog_isactive()) {
-                    if (maxGuns < 0) {
-                        crashlog_print("warning: ");
-                        crashlog_print_pstr(shipClass[i].name);
-                        crashlog_print(" (");
-                        crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(") has a maximum gun count of ");
-                        crashlog_print_num(maxGuns);
-                        crashlog_print("\n");
-                    }
-                    if (maxTurrets < 0) {
-                        crashlog_print("warning: ");
-                        crashlog_print_pstr(shipClass[i].name);
-                        crashlog_print(" (");
-                        crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(") has a maximum turret count of ");
-                        crashlog_print_num(maxTurrets);
-                        crashlog_print("\n");
-                    }
-                    if (gunTally > maxGuns) {
-                        crashlog_print("warning: ");
-                        crashlog_print_pstr(shipClass[i].name);
-                        crashlog_print(" (");
-                        crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(") has ");
-                        crashlog_print_num(gunTally);
-                        crashlog_print(" gun-type weapon");
-                        if (gunTally > 1)
-                            crashlog_print("s");
-                        crashlog_print(" but its maximum is ");
-                        crashlog_print_num(maxGuns);
-                        crashlog_print("\n");
-                    }
-                    if (turretTally > maxTurrets) {
-                        crashlog_print("warning: ");
-                        crashlog_print_pstr(shipClass[i].name);
-                        crashlog_print(" (");
-                        crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(") has ");
-                        crashlog_print_num(turretTally);
-                        crashlog_print(" turreted weapon");
-                        if (turretTally > 1)
-                            crashlog_print("s");
-                        crashlog_print(" but its maximum is ");
-                        crashlog_print_num(maxTurrets);
-                        crashlog_print("\n");
-                    }
-                }
-                if (tradeEst > shipClass[i].cost && shipClass[i].buyRandom != 0) {
+            }
+            if (shipClass[i].flags & kShipSlowJump)
+                shipClass[i].mobilityFactor = 0.7f;
+            else if (shipClass[i].flags & kShipSemiFastJump)
+                shipClass[i].mobilityFactor = 1.3f;
+            else if (shipClass[i].flags & kShipFastJump)
+                shipClass[i].mobilityFactor = 1.6f;
+            else
+                shipClass[i].mobilityFactor = 1.0f;
+            shipClass[i].mobilityFactor *= 1.3;
+            if (shipClass[i].mobilityFactor < 0.0f)
+                shipClass[i].mobilityFactor = 0.5f;
+            strcpy(shipClass[i].availability, res->availability);
+            strcpy(shipClass[i].appearOn, res->appearOn);
+            strcpy(shipClass[i].onPurchase, res->onPurchase);
+            strcpy(shipClass[i].onCapture, res->onCapture);
+            strcpy(shipClass[i].onRetire, res->onRetire);
+            AdjustHandleSize(shipClassFileHand, 0x744);
+            res = ResRec(ShipRes, shipClassFileHand);   /* AdjustHandleSize may move the record */
+            GetResInfo(shipClassFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            strncpy((char *)shipClass[i].name, (char *)name, 63);
+            strcpy((char *)shipyardShortNames[i], res->shortName);
+            strcpy((char *)shipyardLongNames[i], res->longName);
+            strcpy((char *)shipCommNames[i], res->commName);
+            strcpy((char *)shipMovieFilenames[i], res->movieName);
+            strcpy((char *)shipClass[i].subtitle, res->subtitle);
+            CtoPstr((char *)shipyardShortNames[i]);
+            CtoPstr((char *)shipyardLongNames[i]);
+            CtoPstr((char *)shipCommNames[i]);
+            CtoPstr((char *)shipMovieFilenames[i]);
+            CtoPstr((char *)shipClass[i].subtitle);
+            if (crashlog_isactive()) {
+                if (maxGuns < 0) {
                     crashlog_print("warning: ");
                     crashlog_print_pstr(shipClass[i].name);
                     crashlog_print(" (");
                     crashlog_print_num(i + kFirstResourceID);
-                    crashlog_print(") has a trade-in value of ");
-                    crashlog_print_num(tradeEst);
-                    crashlog_print(" but costs only ");
-                    crashlog_print_num(shipClass[i].cost);
+                    crashlog_print(") has a maximum gun count of ");
+                    crashlog_print_num(maxGuns);
                     crashlog_print("\n");
                 }
-                ResourcePurge(shipClassFileHand);
-                ReleaseResource(shipClassFileHand);
-                if (crashlog_isactive()) {
-                    if (shipClass[i].buyRandom != 0) {
-                        if (!ResourceExists(kDescType, i + 13000)) {
-                            crashlog_print("warning: ");
-                            crashlog_print_pstr(shipClass[i].name);
-                            crashlog_print(" (");
-                            crashlog_print_num(i + kFirstResourceID);
-                            crashlog_print(") lacks purchase description\n");
-                        }
-                        for (count = 0; count < kMaxWeapTypes; count++) {
-                            if (shipClass[i].weapCount[count] > 0) {
-                                short granted = 0;
-
-                                for (j = 0; j < kMaxOutfits; j++) {
-                                    for (k = 0; k < kOutfMods; k++) {
-                                        if (outfitSystem[j].modType[k] == OutfMod::Weapon &&
-                                            outfitSystem[j].modVal[k] == count) {
-                                            granted++;
-                                            break;
-                                        }
-                                    }
-                                    if (granted > 0)
-                                        break;
-                                }
-                                if (granted == 0) {
-                                    crashlog_print("warning: weapon ID ");
-                                    crashlog_print_num(count + kFirstResourceID);
-                                    crashlog_print(" on ship type ");
-                                    crashlog_print_num(i + kFirstResourceID);
-                                    crashlog_print(" lacks corresponding " kOutfResName " resource\n");
-                                }
-                            }
-                        }
-                    }
-                    if (shipClass[i].hireRandom != 0 &&
-                        !ResourceExists(kDescType, i + 14000)) {
+                if (maxTurrets < 0) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(shipClass[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") has a maximum turret count of ");
+                    crashlog_print_num(maxTurrets);
+                    crashlog_print("\n");
+                }
+                if (gunTally > maxGuns) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(shipClass[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") has ");
+                    crashlog_print_num(gunTally);
+                    crashlog_print(" gun-type weapon");
+                    if (gunTally > 1)
+                        crashlog_print("s");
+                    crashlog_print(" but its maximum is ");
+                    crashlog_print_num(maxGuns);
+                    crashlog_print("\n");
+                }
+                if (turretTally > maxTurrets) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(shipClass[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") has ");
+                    crashlog_print_num(turretTally);
+                    crashlog_print(" turreted weapon");
+                    if (turretTally > 1)
+                        crashlog_print("s");
+                    crashlog_print(" but its maximum is ");
+                    crashlog_print_num(maxTurrets);
+                    crashlog_print("\n");
+                }
+            }
+            if (tradeEst > shipClass[i].cost && shipClass[i].buyRandom != 0) {
+                crashlog_print("warning: ");
+                crashlog_print_pstr(shipClass[i].name);
+                crashlog_print(" (");
+                crashlog_print_num(i + kFirstResourceID);
+                crashlog_print(") has a trade-in value of ");
+                crashlog_print_num(tradeEst);
+                crashlog_print(" but costs only ");
+                crashlog_print_num(shipClass[i].cost);
+                crashlog_print("\n");
+            }
+            ResourcePurge(shipClassFileHand);
+            ReleaseResource(shipClassFileHand);
+            if (crashlog_isactive()) {
+                if (shipClass[i].buyRandom != 0) {
+                    if (!ResourceExists(kDescType, i + 13000)) {
                         crashlog_print("warning: ");
                         crashlog_print_pstr(shipClass[i].name);
                         crashlog_print(" (");
                         crashlog_print_num(i + kFirstResourceID);
-                        crashlog_print(") lacks hiring description\n");
+                        crashlog_print(") lacks purchase description\n");
                     }
-                }
-                LoadingIntroMusic();
-            } else {
-                strcpy(shipClass[i].availability, "");
-                strcpy(shipClass[i].appearOn, "");
-                strcpy(shipClass[i].onPurchase, "");
-                strcpy(shipClass[i].onCapture, "");
-                strcpy(shipClass[i].onRetire, "");
-                shipClass[i].techLevel = kResAbsent;
-                shipClass[i].shield = 1;
-            }
-        }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
-    }
+                    for (count = 0; count < kMaxWeapTypes; count++) {
+                        if (shipClass[i].weapCount[count] > 0) {
+                            short granted = 0;
 
-    /* ---------------- düde: dudes ---------------- */
-    {
-        short i;
-
-        found = 0;
-        count = CountResources(kDudeType);
-        for (i = 0; i < kMaxDudes; i++) {
-            dudeFileHand = GetResource(kDudeType, i + kFirstResourceID);
-            if (dudeFileHand != NULL) {
-                found++;
-                LockAHandle(dudeFileHand);
-                ResourceNoPurge(dudeFileHand);
-                dudeData[i].aiType = ResRec(DudeRes, dudeFileHand)->aiType;
-                dudeData[i].govt = ResRec(DudeRes, dudeFileHand)->govt;
-                dudeData[i].flags = ResRec(DudeRes, dudeFileHand)->booty;
-                dudeData[i].adviceFlags = ResRec(DudeRes, dudeFileHand)->infoTypes;
-                if (dudeData[i].govt >= kFirstResourceID && dudeData[i].govt < kFirstResourceID + kMaxGovts)
-                    dudeData[i].govt -= kFirstResourceID;
-                else
-                    dudeData[i].govt = -1;
-                for (j = 0; j < kDudeShipSlots; j++) {
-                    dudeData[i].shipTypes[j] = ResRec(DudeRes, dudeFileHand)->shipTypes[j];
-                    dudeData[i].shipProbs[j] = ResRec(DudeRes, dudeFileHand)->probs[j];
-                    if (dudeData[i].shipTypes[j] >= kFirstResourceID && dudeData[i].shipTypes[j] < kFirstResourceID + kMaxShipTypes) {
-                        dudeData[i].shipTypes[j] -= kFirstResourceID;
-                        if (shipClass[dudeData[i].shipTypes[j]].techLevel == kResAbsent) {
-                            crashlog_print("warning: " kDudeResName " resource ");
-                            crashlog_print_num(i + kFirstResourceID);
-                            crashlog_print(" refers to nonexistent ship type ");
-                            crashlog_print_num(dudeData[i].shipTypes[j] + kFirstResourceID);
-                            crashlog_print("\n");
-                            dudeData[i].shipTypes[j] = -1;
-                        }
-                    } else {
-                        dudeData[i].shipTypes[j] = -1;
-                        dudeData[i].shipProbs[j] = 0;
-                    }
-                }
-                AdjustHandleSize(dudeFileHand, 0x58);
-                ResourcePurge(dudeFileHand);
-                ReleaseResource(dudeFileHand);
-                dudeData[i].loaded = 1;
-                LoadingIntroMusic();
-            } else {
-                dudeData[i].loaded = 0;
-            }
-            if (found >= count)
-                break;
-        }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
-    }
-
-    /* ---------------- gövt: governments ---------------- */
-    {
-        int32_t k;
-
-        found = 0;
-        count = CountResources(kGovtType);
-        for (i = 0; i < kMaxGovts; i++) {
-            govtFileHand = GetResource(kGovtType, i + kFirstResourceID);
-            if (govtFileHand != NULL) {
-                found++;
-                LockAHandle(govtFileHand);
-                ResourceNoPurge(govtFileHand);
-                govtData[i].loaded = 1;
-                govtData[i].flags = ResRec(GovtRes, govtFileHand)->flags;
-                govtData[i].flags2 = ResRec(GovtRes, govtFileHand)->flags2;
-                govtData[i].crimeTol = ResRec(GovtRes, govtFileHand)->crimeTol;
-                govtData[i].scanFine = ResRec(GovtRes, govtFileHand)->scanFine;
-                govtData[i].initialRec = ResRec(GovtRes, govtFileHand)->initialRec;
-                govtData[i].voiceType = ResRec(GovtRes, govtFileHand)->voiceType;
-                if (govtData[i].voiceType >= 0 && govtData[i].voiceType < kVoiceSets) {
-                    govtData[i].voiceClass = -1;
-                } else if (govtData[i].voiceType >= 1000 && govtData[i].voiceType < 1000 + kVoiceSets) {
-                    govtData[i].voiceType -= 1000;
-                    govtData[i].voiceClass = 1;
-                } else if (govtData[i].voiceType >= 2000 && govtData[i].voiceType < 2000 + kVoiceSets) {
-                    govtData[i].voiceType -= 2000;
-                    govtData[i].voiceClass = 0;
-                } else {
-                    govtData[i].voiceType = -1;
-                    govtData[i].voiceClass = -1;
-                }
-                for (j = 0; j < 4; j++) {
-                    govtData[i].inhJam[j] = ResRec(GovtRes, govtFileHand)->inhJam[j];
-                    if (govtData[i].inhJam[j] > 100)
-                        govtData[i].inhJam[j] = 100;
-                    if (govtData[i].inhJam[j] < 0)
-                        govtData[i].inhJam[j] = 0;
-                }
-                if (ResRec(GovtRes, govtFileHand)->skillMult > 0)
-                    govtData[i].skillMult = ResRec(GovtRes, govtFileHand)->skillMult * 0.01;
-                else
-                    govtData[i].skillMult = 1.0f;
-                govtData[i].maxOdds = ResRec(GovtRes, govtFileHand)->maxOdds * 0.01;
-                if (govtData[i].maxOdds < 0.01)
-                    govtData[i].maxOdds = 0.01f;
-                for (j = 0; j <= 4; j++)
-                    govtData[i].penalties[j] = ResRec(GovtRes, govtFileHand)->penalty[j];
-                for (k = 0; k < 4; k++) {
-                    govtData[i].classes[k] = ResRec(GovtRes, govtFileHand)->classes[k];
-                    govtData[i].allies[k] = ResRec(GovtRes, govtFileHand)->allies[k];
-                    govtData[i].enemies[k] = ResRec(GovtRes, govtFileHand)->enemies[k];
-                }
-                govtData[i].scanMask = ResRec(GovtRes, govtFileHand)->scanMask;
-                govtData[i].requires[0] = ResRec(GovtRes, govtFileHand)->require[0];
-                govtData[i].requires[1] = ResRec(GovtRes, govtFileHand)->require[1];
-                govtData[i].rgb.red = ((ResRec(GovtRes, govtFileHand)->color >> 16) & 0xff) * 256;
-                govtData[i].rgb.green = ((ResRec(GovtRes, govtFileHand)->color >> 8) & 0xff) * 256;
-                govtData[i].rgb.blue = (ResRec(GovtRes, govtFileHand)->color & 0xff) * 256;
-                govtData[i].rgb2.red = (ResRec(GovtRes, govtFileHand)->shipColor >> 19) & 0x1f;
-                govtData[i].rgb2.green = (ResRec(GovtRes, govtFileHand)->shipColor >> 11) & 0x1f;
-                govtData[i].rgb2.blue = (ResRec(GovtRes, govtFileHand)->shipColor >> 3) & 0x1f;
-                govtData[i].rgbBytes.red = govtData[i].rgb.red >> 8;
-                govtData[i].rgbBytes.green = govtData[i].rgb.green >> 8;
-                govtData[i].rgbBytes.blue = govtData[i].rgb.blue >> 8;
-                govtData[i].interfaceID = ResRec(GovtRes, govtFileHand)->interfaceID;
-                if (govtData[i].interfaceID < kFirstResourceID)
-                    govtData[i].interfaceID = -1;
-                govtData[i].newsPict = ResRec(GovtRes, govtFileHand)->newsPic;
-                if (govtData[i].newsPict < kFirstResourceID)
-                    govtData[i].newsPict = -1;
-                GetResInfo(govtFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                strncpy((char *)govtData[i].name, (char *)name, 31);
-                strcpy((char *)govtTargStrings[i], ResRec(GovtRes, govtFileHand)->targetCode);
-                strcpy((char *)govtShortNames[i], ResRec(GovtRes, govtFileHand)->commName);
-                strcpy((char *)govtMediumNames[i], ResRec(GovtRes, govtFileHand)->mediumName);
-                CtoPstr((char *)govtTargStrings[i]);
-                CtoPstr((char *)govtShortNames[i]);
-                CtoPstr((char *)govtMediumNames[i]);
-                AdjustHandleSize(govtFileHand, 0xc0);
-                ResourcePurge(govtFileHand);
-                ReleaseResource(govtFileHand);
-                LoadingIntroMusic();
-            } else {
-                govtData[i].loaded = 0;
-            }
-            if (found >= count)
-                break;
-        }
-
-        /* allies/enemies consistency check over all pairs */
-        if (crashlog_isactive()) {
-            for (i = 0; i < kMaxGovts; i++) {
-                if (govtData[i].loaded) {
-                    for (n = i + 1; n < kMaxGovts; n++) {
-                        if (govtData[n].loaded &&
-                            GovtEnemies(i, n) && GovtAllies(i, n)) {
-                            crashlog_print("warning: govts ");
-                            crashlog_print_num(i + kFirstResourceID);
-                            crashlog_print(" and ");
-                            crashlog_print_num(n + kFirstResourceID);
-                            crashlog_print(" are simultaneously allies and enemies\n");
+                            for (j = 0; j < kMaxOutfits; j++) {
+                                for (k = 0; k < kOutfMods; k++) {
+                                    if (outfitSystem[j].modType[k] == OutfMod::Weapon &&
+                                        outfitSystem[j].modVal[k] == count) {
+                                        granted++;
+                                        break;
+                                    }
+                                }
+                                if (granted > 0)
+                                    break;
+                            }
+                            if (granted == 0) {
+                                crashlog_print("warning: weapon ID ");
+                                crashlog_print_num(count + kFirstResourceID);
+                                crashlog_print(" on ship type ");
+                                crashlog_print_num(i + kFirstResourceID);
+                                crashlog_print(" lacks corresponding " kOutfResName " resource\n");
+                            }
                         }
                     }
                 }
+                if (shipClass[i].hireRandom != 0 &&
+                    !ResourceExists(kDescType, i + 14000)) {
+                    crashlog_print("warning: ");
+                    crashlog_print_pstr(shipClass[i].name);
+                    crashlog_print(" (");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(") lacks hiring description\n");
+                }
             }
+            LoadingIntroMusic();
+        } else {
+            strcpy(shipClass[i].availability, "");
+            strcpy(shipClass[i].appearOn, "");
+            strcpy(shipClass[i].onPurchase, "");
+            strcpy(shipClass[i].onCapture, "");
+            strcpy(shipClass[i].onRetire, "");
+            shipClass[i].techLevel = kResAbsent;
+            shipClass[i].shield = 1;
         }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
     }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+}
 
-    /* ---------------- përs: persons ---------------- */
-    {
-        found = 0;
-        n = count = CountResources(kPersType);
-        for (i = 0; i < kMaxPersons;i++) {
-            personData[i].loaded = 0;
-            personData[i].aiType = -1;
-            personFileHand = GetResource(kPersType, i + kFirstResourceID);
-            if (personFileHand != NULL) {
-                found++;
-                LockAHandle(personFileHand);
-                ResourceNoPurge(personFileHand);
-                personData[i].linkSyst = ResRec(PersRes, personFileHand)->linkSyst;
-                personData[i].govt = ResRec(PersRes, personFileHand)->govt;
-                personData[i].aiType = ResRec(PersRes, personFileHand)->aiType;
-                personData[i].aggression = ResRec(PersRes, personFileHand)->aggress;
-                personData[i].coward = ResRec(PersRes, personFileHand)->coward;
-                personData[i].shipType = ResRec(PersRes, personFileHand)->shipType;
-                if (personData[i].shipType >= kFirstResourceID && personData[i].shipType < kFirstResourceID + kMaxShipTypes) {
-                    personData[i].shipType -= kFirstResourceID;
-                    if (shipClass[personData[i].shipType].techLevel == kResAbsent) {
-                        crashlog_print("warning: p\x91" "rs resource ");
+static void LoadDudes(void)
+{
+    short j;
+    short found;
+    short count;
+    short i;
+
+    found = 0;
+    count = CountResources(kDudeType);
+    for (i = 0; i < kMaxDudes; i++) {
+        dudeFileHand = GetResource(kDudeType, i + kFirstResourceID);
+        if (dudeFileHand != NULL) {
+            found++;
+            LockAHandle(dudeFileHand);
+            ResourceNoPurge(dudeFileHand);
+            const DudeRes &res = *ResRec(DudeRes, dudeFileHand);
+            dudeData[i].aiType = res.aiType;
+            dudeData[i].govt = res.govt;
+            dudeData[i].flags = res.booty;
+            dudeData[i].adviceFlags = res.infoTypes;
+            if (dudeData[i].govt >= kFirstResourceID && dudeData[i].govt < kFirstResourceID + kMaxGovts)
+                dudeData[i].govt -= kFirstResourceID;
+            else
+                dudeData[i].govt = -1;
+            for (j = 0; j < kDudeShipSlots; j++) {
+                dudeData[i].shipTypes[j] = res.shipTypes[j];
+                dudeData[i].shipProbs[j] = res.probs[j];
+                if (dudeData[i].shipTypes[j] >= kFirstResourceID && dudeData[i].shipTypes[j] < kFirstResourceID + kMaxShipTypes) {
+                    dudeData[i].shipTypes[j] -= kFirstResourceID;
+                    if (shipClass[dudeData[i].shipTypes[j]].techLevel == kResAbsent) {
+                        crashlog_print("warning: " kDudeResName " resource ");
                         crashlog_print_num(i + kFirstResourceID);
                         crashlog_print(" refers to nonexistent ship type ");
-                        crashlog_print_num(personData[i].shipType + kFirstResourceID);
+                        crashlog_print_num(dudeData[i].shipTypes[j] + kFirstResourceID);
                         crashlog_print("\n");
-                        personData[i].shipType = -1;
+                        dudeData[i].shipTypes[j] = -1;
                     }
                 } else {
-                    personData[i].shipType = 0;
+                    dudeData[i].shipTypes[j] = -1;
+                    dudeData[i].shipProbs[j] = 0;
                 }
-                personData[i].credits = ResRec(PersRes, personFileHand)->credits;
-                personData[i].shieldMod = ResRec(PersRes, personFileHand)->shieldMod;
-                personData[i].shieldMod = personData[i].shieldMod / 100.0;
-                personData[i].commQuote = ResRec(PersRes, personFileHand)->commQuote;
-                personData[i].hailQuote = ResRec(PersRes, personFileHand)->hailQuote;
-                personData[i].linkMission = ResRec(PersRes, personFileHand)->linkMission;
-                personData[i].flags = ResRec(PersRes, personFileHand)->flags;
-                personData[i].flags2 = ResRec(PersRes, personFileHand)->flags2;
-                personData[i].hailPict = ResRec(PersRes, personFileHand)->hailPict;
-                personData[i].shipColor.red = (ResRec(PersRes, personFileHand)->shipColor >> 19) & 0x1f;
-                personData[i].shipColor.green = (ResRec(PersRes, personFileHand)->shipColor >> 11) & 0x1f;
-                personData[i].shipColor.blue = (ResRec(PersRes, personFileHand)->shipColor >> 3) & 0x1f;
-                if (personData[i].linkMission >= kFirstResourceID)
-                    personData[i].linkMission -= kFirstResourceID;
-                else
-                    personData[i].linkMission = -1;
-                if (personData[i].hailPict < kFirstResourceID)
-                    personData[i].hailPict = -1;
-                if (personData[i].govt >= kFirstResourceID && personData[i].govt < kFirstResourceID + kMaxGovts)
-                    personData[i].govt -= kFirstResourceID;
-                else
-                    personData[i].govt = -1;
-                personData[i].grantClass = ResRec(PersRes, personFileHand)->grantClass;
-                personData[i].grantCount = ResRec(PersRes, personFileHand)->grantCount;
-                personData[i].grantProb = ResRec(PersRes, personFileHand)->grantProb;
-                if (personData[i].grantClass <= 0) {
-                    personData[i].grantClass = -1;
-                    personData[i].grantCount = 0;
-                    personData[i].grantProb = 0;
-                } else {
-                    if (personData[i].grantProb < 0)
-                        personData[i].grantProb = 0;
-                    if (personData[i].grantCount < 0)
-                        personData[i].grantCount = 0;
-                    if (personData[i].grantProb > 100)
-                        personData[i].grantProb = 100;
-                }
-                mountID[1] = ResRec(PersRes, personFileHand)->weapType.left;
-                mountID[0] = ResRec(PersRes, personFileHand)->weapType.top;
-                mountID[3] = ResRec(PersRes, personFileHand)->weapType.right;
-                mountID[2] = ResRec(PersRes, personFileHand)->weapType.bottom;
-                mountCount[1] = ResRec(PersRes, personFileHand)->weapCount.left;
-                mountCount[0] = ResRec(PersRes, personFileHand)->weapCount.top;
-                mountCount[3] = ResRec(PersRes, personFileHand)->weapCount.right;
-                mountCount[2] = ResRec(PersRes, personFileHand)->weapCount.bottom;
-                mountAmmo[1] = ResRec(PersRes, personFileHand)->ammoLoad.left;
-                mountAmmo[0] = ResRec(PersRes, personFileHand)->ammoLoad.top;
-                mountAmmo[3] = ResRec(PersRes, personFileHand)->ammoLoad.right;
-                mountAmmo[2] = ResRec(PersRes, personFileHand)->ammoLoad.bottom;
-                for (j = 0; j < kMaxWeapTypes; j++) {
-                    personData[i].weapCount[j] = 0;
-                    personData[i].weapAmmo[j] = 0;
-                }
-                for (count = 0; count <= 3; count++) {
-                    if (mountID[count] >= kFirstResourceID) {
-                        personData[i].weapCount[mountID[count] - kFirstResourceID] = mountCount[count];
-                        personData[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
-                    }
-                }
-                strcpy(personData[i].subtitle, ResRec(PersRes, personFileHand)->subtitle);
-                strcpy(personData[i].activeOn, ResRec(PersRes, personFileHand)->activateOn);
-                CtoPstr(personData[i].subtitle);
-                AdjustHandleSize(personFileHand, 400);
-                personData[i].loaded = 1;
-                GetResInfo(personFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                strncpy(personData[i].name, (char *)name, 30);
-                ResourcePurge(personFileHand);
-                ReleaseResource(personFileHand);
-                personData[i].prepared = 1;
-                LoadingIntroMusic();
+            }
+            AdjustHandleSize(dudeFileHand, 0x58);
+            ResourcePurge(dudeFileHand);
+            ReleaseResource(dudeFileHand);
+            dudeData[i].loaded = 1;
+            LoadingIntroMusic();
+        } else {
+            dudeData[i].loaded = 0;
+        }
+        if (found >= count)
+            break;
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+}
+
+static void LoadGovernments(unsigned char *name)
+{
+    short n;
+    short j;
+    short i;
+    short found;
+    short resID;
+    uint32_t resType;
+    short count;
+    int32_t k;
+
+    found = 0;
+    count = CountResources(kGovtType);
+    for (i = 0; i < kMaxGovts; i++) {
+        govtFileHand = GetResource(kGovtType, i + kFirstResourceID);
+        if (govtFileHand != NULL) {
+            found++;
+            LockAHandle(govtFileHand);
+            ResourceNoPurge(govtFileHand);
+            const GovtRes &res = *ResRec(GovtRes, govtFileHand);
+            govtData[i].loaded = 1;
+            govtData[i].flags = res.flags;
+            govtData[i].flags2 = res.flags2;
+            govtData[i].crimeTol = res.crimeTol;
+            govtData[i].scanFine = res.scanFine;
+            govtData[i].initialRec = res.initialRec;
+            govtData[i].voiceType = res.voiceType;
+            if (govtData[i].voiceType >= 0 && govtData[i].voiceType < kVoiceSets) {
+                govtData[i].voiceClass = -1;
+            } else if (govtData[i].voiceType >= 1000 && govtData[i].voiceType < 1000 + kVoiceSets) {
+                govtData[i].voiceType -= 1000;
+                govtData[i].voiceClass = 1;
+            } else if (govtData[i].voiceType >= 2000 && govtData[i].voiceType < 2000 + kVoiceSets) {
+                govtData[i].voiceType -= 2000;
+                govtData[i].voiceClass = 0;
             } else {
-                strcpy(personData[i].activeOn, "");
-                personData[i].name[0] = 0;
+                govtData[i].voiceType = -1;
+                govtData[i].voiceClass = -1;
+            }
+            for (j = 0; j < 4; j++) {
+                govtData[i].inhJam[j] = res.inhJam[j];
+                if (govtData[i].inhJam[j] > 100)
+                    govtData[i].inhJam[j] = 100;
+                if (govtData[i].inhJam[j] < 0)
+                    govtData[i].inhJam[j] = 0;
+            }
+            if (res.skillMult > 0)
+                govtData[i].skillMult = res.skillMult * 0.01;
+            else
+                govtData[i].skillMult = 1.0f;
+            govtData[i].maxOdds = res.maxOdds * 0.01;
+            if (govtData[i].maxOdds < 0.01)
+                govtData[i].maxOdds = 0.01f;
+            for (j = 0; j <= 4; j++)
+                govtData[i].penalties[j] = res.penalty[j];
+            for (k = 0; k < 4; k++) {
+                govtData[i].classes[k] = res.classes[k];
+                govtData[i].allies[k] = res.allies[k];
+                govtData[i].enemies[k] = res.enemies[k];
+            }
+            govtData[i].scanMask = res.scanMask;
+            govtData[i].requires[0] = res.require[0];
+            govtData[i].requires[1] = res.require[1];
+            govtData[i].rgb.red = ((res.color >> 16) & 0xff) * 256;
+            govtData[i].rgb.green = ((res.color >> 8) & 0xff) * 256;
+            govtData[i].rgb.blue = (res.color & 0xff) * 256;
+            govtData[i].rgb2.red = (res.shipColor >> 19) & 0x1f;
+            govtData[i].rgb2.green = (res.shipColor >> 11) & 0x1f;
+            govtData[i].rgb2.blue = (res.shipColor >> 3) & 0x1f;
+            govtData[i].rgbBytes.red = govtData[i].rgb.red >> 8;
+            govtData[i].rgbBytes.green = govtData[i].rgb.green >> 8;
+            govtData[i].rgbBytes.blue = govtData[i].rgb.blue >> 8;
+            govtData[i].interfaceID = res.interfaceID;
+            if (govtData[i].interfaceID < kFirstResourceID)
+                govtData[i].interfaceID = -1;
+            govtData[i].newsPict = res.newsPic;
+            if (govtData[i].newsPict < kFirstResourceID)
+                govtData[i].newsPict = -1;
+            GetResInfo(govtFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            strncpy((char *)govtData[i].name, (char *)name, 31);
+            strcpy((char *)govtTargStrings[i], res.targetCode);
+            strcpy((char *)govtShortNames[i], res.commName);
+            strcpy((char *)govtMediumNames[i], res.mediumName);
+            CtoPstr((char *)govtTargStrings[i]);
+            CtoPstr((char *)govtShortNames[i]);
+            CtoPstr((char *)govtMediumNames[i]);
+            AdjustHandleSize(govtFileHand, 0xc0);
+            ResourcePurge(govtFileHand);
+            ReleaseResource(govtFileHand);
+            LoadingIntroMusic();
+        } else {
+            govtData[i].loaded = 0;
+        }
+        if (found >= count)
+            break;
+    }
+
+    /* allies/enemies consistency check over all pairs */
+    if (crashlog_isactive()) {
+        for (i = 0; i < kMaxGovts; i++) {
+            if (govtData[i].loaded) {
+                for (n = i + 1; n < kMaxGovts; n++) {
+                    if (govtData[n].loaded &&
+                        GovtEnemies(i, n) && GovtAllies(i, n)) {
+                        crashlog_print("warning: govts ");
+                        crashlog_print_num(i + kFirstResourceID);
+                        crashlog_print(" and ");
+                        crashlog_print_num(n + kFirstResourceID);
+                        crashlog_print(" are simultaneously allies and enemies\n");
+                    }
+                }
+            }
+        }
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+}
+
+static void LoadPersons(unsigned char *name)
+{
+    short n;
+    short j;
+    short i;
+    short found;
+    short resID;
+    uint32_t resType;
+    short count;
+    short mountCount[8];
+    short mountID[8];
+    short mountAmmo[8];
+
+    found = 0;
+    n = count = CountResources(kPersType);
+    for (i = 0; i < kMaxPersons;i++) {
+        personData[i].loaded = 0;
+        personData[i].aiType = -1;
+        personFileHand = GetResource(kPersType, i + kFirstResourceID);
+        if (personFileHand != NULL) {
+            found++;
+            LockAHandle(personFileHand);
+            ResourceNoPurge(personFileHand);
+            const PersRes &res = *ResRec(PersRes, personFileHand);
+            personData[i].linkSyst = res.linkSyst;
+            personData[i].govt = res.govt;
+            personData[i].aiType = res.aiType;
+            personData[i].aggression = res.aggress;
+            personData[i].coward = res.coward;
+            personData[i].shipType = res.shipType;
+            if (personData[i].shipType >= kFirstResourceID && personData[i].shipType < kFirstResourceID + kMaxShipTypes) {
+                personData[i].shipType -= kFirstResourceID;
+                if (shipClass[personData[i].shipType].techLevel == kResAbsent) {
+                    crashlog_print("warning: p\x91" "rs resource ");
+                    crashlog_print_num(i + kFirstResourceID);
+                    crashlog_print(" refers to nonexistent ship type ");
+                    crashlog_print_num(personData[i].shipType + kFirstResourceID);
+                    crashlog_print("\n");
+                    personData[i].shipType = -1;
+                }
+            } else {
                 personData[i].shipType = 0;
+            }
+            personData[i].credits = res.credits;
+            personData[i].shieldMod = res.shieldMod;
+            personData[i].shieldMod = personData[i].shieldMod / 100.0;
+            personData[i].commQuote = res.commQuote;
+            personData[i].hailQuote = res.hailQuote;
+            personData[i].linkMission = res.linkMission;
+            personData[i].flags = res.flags;
+            personData[i].flags2 = res.flags2;
+            personData[i].hailPict = res.hailPict;
+            personData[i].shipColor.red = (res.shipColor >> 19) & 0x1f;
+            personData[i].shipColor.green = (res.shipColor >> 11) & 0x1f;
+            personData[i].shipColor.blue = (res.shipColor >> 3) & 0x1f;
+            personData[i].linkMission = ResIndex(personData[i].linkMission);
+            if (personData[i].hailPict < kFirstResourceID)
+                personData[i].hailPict = -1;
+            if (personData[i].govt >= kFirstResourceID && personData[i].govt < kFirstResourceID + kMaxGovts)
+                personData[i].govt -= kFirstResourceID;
+            else
                 personData[i].govt = -1;
-                personData[i].prepared = 0;
+            personData[i].grantClass = res.grantClass;
+            personData[i].grantCount = res.grantCount;
+            personData[i].grantProb = res.grantProb;
+            if (personData[i].grantClass <= 0) {
+                personData[i].grantClass = -1;
+                personData[i].grantCount = 0;
+                personData[i].grantProb = 0;
+            } else {
+                if (personData[i].grantProb < 0)
+                    personData[i].grantProb = 0;
+                if (personData[i].grantCount < 0)
+                    personData[i].grantCount = 0;
+                if (personData[i].grantProb > 100)
+                    personData[i].grantProb = 100;
             }
-            if (found >= n)
-                break;
+            mountID[1] = res.weapType.left;
+            mountID[0] = res.weapType.top;
+            mountID[3] = res.weapType.right;
+            mountID[2] = res.weapType.bottom;
+            mountCount[1] = res.weapCount.left;
+            mountCount[0] = res.weapCount.top;
+            mountCount[3] = res.weapCount.right;
+            mountCount[2] = res.weapCount.bottom;
+            mountAmmo[1] = res.ammoLoad.left;
+            mountAmmo[0] = res.ammoLoad.top;
+            mountAmmo[3] = res.ammoLoad.right;
+            mountAmmo[2] = res.ammoLoad.bottom;
+            for (j = 0; j < kMaxWeapTypes; j++) {
+                personData[i].weapCount[j] = 0;
+                personData[i].weapAmmo[j] = 0;
+            }
+            for (count = 0; count <= 3; count++) {
+                if (mountID[count] >= kFirstResourceID) {
+                    personData[i].weapCount[mountID[count] - kFirstResourceID] = mountCount[count];
+                    personData[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
+                }
+            }
+            strcpy(personData[i].subtitle, res.subtitle);
+            strcpy(personData[i].activeOn, res.activateOn);
+            CtoPstr(personData[i].subtitle);
+            AdjustHandleSize(personFileHand, 400);
+            personData[i].loaded = 1;
+            GetResInfo(personFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            strncpy(personData[i].name, (char *)name, 30);
+            ResourcePurge(personFileHand);
+            ReleaseResource(personFileHand);
+            personData[i].prepared = 1;
+            LoadingIntroMusic();
+        } else {
+            strcpy(personData[i].activeOn, "");
+            personData[i].name[0] = 0;
+            personData[i].shipType = 0;
+            personData[i].govt = -1;
+            personData[i].prepared = 0;
         }
+        if (found >= n)
+            break;
+    }
 
-        /* alias persons that share a name prefix */
-        for (count = 0; count < kMaxPersons;count++)
-            personData[count].sameNameIndex = count;
-        for (i = 0; i < kMaxPersons;i++) {
-            if (personData[i].name[0] > 0) {
-                for (j = 0; j < i; j++) {
-                    if (personData[j].name[0] > 0 &&
-                        j == personData[j].sameNameIndex &&
-                        strncmp(&personData[i].name[1],
-                                &personData[j].name[1],
-                                personData[i].name[0]) == 0) {
-                        personData[i].sameNameIndex = j;
-                        break;
-                    }
+    /* alias persons that share a name prefix */
+    for (count = 0; count < kMaxPersons;count++)
+        personData[count].sameNameIndex = count;
+    for (i = 0; i < kMaxPersons;i++) {
+        if (personData[i].name[0] > 0) {
+            for (j = 0; j < i; j++) {
+                if (personData[j].name[0] > 0 &&
+                    j == personData[j].sameNameIndex &&
+                    strncmp(&personData[i].name[1],
+                            &personData[j].name[1],
+                            personData[i].name[0]) == 0) {
+                    personData[i].sameNameIndex = j;
+                    break;
                 }
             }
         }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
+    }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
 
-        /* systems must reference existing dudes and persons */
-        for (j = 0; j < kMaxSystems; j++) {
-            if (systemData[j].prepared) {
-                for (n = 0; n < 8; n++) {
-                    if (systemData[j].dudeTypes[n] != -1 && !dudeData[systemData[j].dudeTypes[n]].loaded) {
-                        crashlog_print("warning: system ");
-                        crashlog_print_num(j + kFirstResourceID);
-                        crashlog_print(" makes reference to nonexistent " kDudeResName " resource ");
-                        crashlog_print_num(systemData[j].dudeTypes[n] + kFirstResourceID);
-                        crashlog_print("\n");
-                        systemData[j].dudeTypes[n] = -1;
-                    }
+    /* systems must reference existing dudes and persons */
+    for (j = 0; j < kMaxSystems; j++) {
+        if (systemData[j].prepared) {
+            for (n = 0; n < 8; n++) {
+                if (systemData[j].dudeTypes[n] != -1 && !dudeData[systemData[j].dudeTypes[n]].loaded) {
+                    crashlog_print("warning: system ");
+                    crashlog_print_num(j + kFirstResourceID);
+                    crashlog_print(" makes reference to nonexistent " kDudeResName " resource ");
+                    crashlog_print_num(systemData[j].dudeTypes[n] + kFirstResourceID);
+                    crashlog_print("\n");
+                    systemData[j].dudeTypes[n] = -1;
                 }
-                for (n = 0; n < 8; n++) {
-                    if (systemData[j].persons[n] != -1) {
+            }
+            for (n = 0; n < 8; n++) {
+                if (systemData[j].persons[n] != -1) {
                     i = systemData[j].persons[n];
                     if (!personData[i].prepared) {
                         crashlog_print("warning: system ");
@@ -1674,88 +1694,103 @@ void LoadObjectData(void)
                         crashlog_print("\n");
                         systemData[j].persons[n] = -1;
                     }
-                    }
                 }
             }
         }
     }
+}
 
-    /* ---------------- öops: news ---------------- */
-    {
+static void LoadDisasters(unsigned char *name)
+{
+    short i;
+    short found;
+    short resID;
+    uint32_t resType;
+    short count;
 
-        found = 0;
-        count = CountResources(kOopsType);
-        for (i = 0; i < kMaxDisasters; i++) {
-            disasterData[i].freq = -1;
-            disasterData[i].countdown = -1;
-            disasterData[i].duration = -1;
-            disasterData[i].stellarID = -1;
-            disasterData[i].stellar = -32767;
-            disasterData[i].loaded = 0;
-        }
-        for (i = 0; i < kMaxDisasters; i++) {
-            disasterFileHand = GetResource(kOopsType, i + kFirstResourceID);
-            if (disasterFileHand != NULL) {
-                found++;
-                LockAHandle(disasterFileHand);
-                ResourceNoPurge(disasterFileHand);
-                disasterData[i].stellar = ResRec(OopsRes, disasterFileHand)->stellar;
-                disasterData[i].commodity = ResRec(OopsRes, disasterFileHand)->commodity;
-                disasterData[i].amount = ResRec(OopsRes, disasterFileHand)->priceDelta;
-                disasterData[i].duration = ResRec(OopsRes, disasterFileHand)->duration;
-                disasterData[i].freq = ResRec(OopsRes, disasterFileHand)->freq;
-                disasterData[i].countdown = 0;
-                if (disasterData[i].commodity > 5)
-                    disasterData[i].commodity = 5;
-                if (disasterData[i].commodity < 0)
-                    disasterData[i].commodity = -1;
-                strcpy(disasterData[i].text, ResRec(OopsRes, disasterFileHand)->activateOn);
-                disasterData[i].loaded = 1;
-                AdjustHandleSize(disasterFileHand, 0x11a);
-                GetResInfo(disasterFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                pstrcpy(disasterData[i].name, name);
-                ResourcePurge(disasterFileHand);
-                ReleaseResource(disasterFileHand);
-                LoadingIntroMusic();
-            } else {
-                strcpy(disasterData[i].text, "");
-            }
-            if (found >= count)
-                break;
-        }
+    found = 0;
+    count = CountResources(kOopsType);
+    for (i = 0; i < kMaxDisasters; i++) {
+        disasterData[i].freq = -1;
+        disasterData[i].countdown = -1;
+        disasterData[i].duration = -1;
+        disasterData[i].stellarID = -1;
+        disasterData[i].stellar = -32767;
+        disasterData[i].loaded = 0;
     }
+    for (i = 0; i < kMaxDisasters; i++) {
+        disasterFileHand = GetResource(kOopsType, i + kFirstResourceID);
+        if (disasterFileHand != NULL) {
+            found++;
+            LockAHandle(disasterFileHand);
+            ResourceNoPurge(disasterFileHand);
+            const OopsRes &res = *ResRec(OopsRes, disasterFileHand);
+            disasterData[i].stellar = res.stellar;
+            disasterData[i].commodity = res.commodity;
+            disasterData[i].amount = res.priceDelta;
+            disasterData[i].duration = res.duration;
+            disasterData[i].freq = res.freq;
+            disasterData[i].countdown = 0;
+            if (disasterData[i].commodity > 5)
+                disasterData[i].commodity = 5;
+            if (disasterData[i].commodity < 0)
+                disasterData[i].commodity = -1;
+            strcpy(disasterData[i].text, res.activateOn);
+            disasterData[i].loaded = 1;
+            AdjustHandleSize(disasterFileHand, 0x11a);
+            GetResInfo(disasterFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            pstrcpy(disasterData[i].name, name);
+            ResourcePurge(disasterFileHand);
+            ReleaseResource(disasterFileHand);
+            LoadingIntroMusic();
+        } else {
+            strcpy(disasterData[i].text, "");
+        }
+        if (found >= count)
+            break;
+    }
+}
 
-    /* ---------------- nëbu: nebulae ---------------- */
+/* NebuRecord is loaded without LockAHandle or AdjustHandleSize. */
+static void LoadNebulae(void)
+{
+    short i;
+
     for (i = 0; i < kMaxNebulae; i++) {
-
         nebulaData[i].width = nebulaData[i].height = 0;
         nebulaData[i].explored = 0;
         nebulaFileHand = GetResource(kNebuType, i + kFirstResourceID);
         if (nebulaFileHand != NULL) {
             ResourceNoPurge(nebulaFileHand);
-            nebulaData[i].xPos = ResRec(NebuRes, nebulaFileHand)->xPos;
-            nebulaData[i].yPos = ResRec(NebuRes, nebulaFileHand)->yPos;
-            nebulaData[i].width = ResRec(NebuRes, nebulaFileHand)->xSize;
-            nebulaData[i].height = ResRec(NebuRes, nebulaFileHand)->ySize;
-            strcpy(nebulaData[i].activeOn, ResRec(NebuRes, nebulaFileHand)->activeOn);
-            strcpy(nebulaData[i].onExplore, ResRec(NebuRes, nebulaFileHand)->onExplore);
+            const NebuRes &res = *ResRec(NebuRes, nebulaFileHand);
+            nebulaData[i].xPos = res.xPos;
+            nebulaData[i].yPos = res.yPos;
+            nebulaData[i].width = res.xSize;
+            nebulaData[i].height = res.ySize;
+            strcpy(nebulaData[i].activeOn, res.activeOn);
+            strcpy(nebulaData[i].onExplore, res.onExplore);
             ResourcePurge(nebulaFileHand);
             ReleaseResource(nebulaFileHand);
             LoadingIntroMusic();
         }
     }
+}
 
-    /* ---------------- bööm: explosions ---------------- */
+static void LoadExplodTypes(void)
+{
+    short i;
+
     for (i = 0; i < kMaxExplodTypes; i++) {
         explodType[i].frameRate = 0.25f;
         explodType[i].sound = -1;
         explodType[i].graphic = i;
         boomFileHand = GetResource(kBoomType, i + kFirstResourceID);
         if (boomFileHand != NULL) {
-            explodType[i].frameRate = ResRec(BoomRes, boomFileHand)->frameAdvance;
-            explodType[i].sound = ResRec(BoomRes, boomFileHand)->soundIndex;
-            explodType[i].graphic = ResRec(BoomRes, boomFileHand)->graphicIndex;
+            const BoomRes &res = *ResRec(BoomRes, boomFileHand);
+            explodType[i].frameRate = res.frameAdvance;
+            explodType[i].sound = res.soundIndex;
+            explodType[i].graphic = res.graphicIndex;
             explodType[i].frameRate *= 0.01;
             ReleaseResource(boomFileHand);
             LoadingIntroMusic();
@@ -1763,367 +1798,415 @@ void LoadObjectData(void)
     }
     if (!gameLoaded)
         IterateInGameEventLoop(10);
+}
 
-    /* ---------------- flët: fleets ---------------- */
-    {
+static void LoadFleets(void)
+{
+    short j;
+    short i;
+    short found;
+    short count;
 
-        found = 0;
-        count = CountResources(kFletType);
-        for (i = 0; i < kMaxFleets; i++) {
-            fleetData[i].leadShipType = -1;
-            fleetFileHand = GetResource(kFletType, i + kFirstResourceID);
-            if (fleetFileHand != NULL) {
-                found++;
-                LockAHandle(fleetFileHand);
-                ResourceNoPurge(fleetFileHand);
-                fleetData[i].leadShipType = ResRec(FletRes, fleetFileHand)->leadShip;
-                if (fleetData[i].leadShipType >= kFirstResourceID)
-                    fleetData[i].leadShipType -= kFirstResourceID;
-                else
-                    fleetData[i].leadShipType = 0;
-                fleetData[i].govt = ResRec(FletRes, fleetFileHand)->govt;
-                fleetData[i].linkSyst = ResRec(FletRes, fleetFileHand)->linkSyst;
-                fleetData[i].quoteStrList = ResRec(FletRes, fleetFileHand)->quote;
-                fleetData[i].flags = ResRec(FletRes, fleetFileHand)->flags;
-                if (fleetData[i].govt >= kFirstResourceID)
-                    fleetData[i].govt -= kFirstResourceID;
-                else
-                    fleetData[i].govt = -1;
-                for (j = 0; j <= 3; j++) {   /* exe's back-edge is `cmp ax,3 / jle` */
-                    fleetData[i].escortTypes[j] = ResRec(FletRes, fleetFileHand)->escortShip[j];
-                    if (fleetData[i].escortTypes[j] >= kFirstResourceID) {
-                        fleetData[i].escortTypes[j] -= kFirstResourceID;
-                        fleetData[i].escortMin[j] = ResRec(FletRes, fleetFileHand)->minCount[j];
-                        fleetData[i].escortMax[j] = ResRec(FletRes, fleetFileHand)->maxCount[j];
-                    } else {
-                        fleetData[i].escortTypes[j] = -1;
-                        fleetData[i].escortMin[j] = 0;
-                        fleetData[i].escortMax[j] = 0;
-                    }
+    found = 0;
+    count = CountResources(kFletType);
+    for (i = 0; i < kMaxFleets; i++) {
+        fleetData[i].leadShipType = -1;
+        fleetFileHand = GetResource(kFletType, i + kFirstResourceID);
+        if (fleetFileHand != NULL) {
+            found++;
+            LockAHandle(fleetFileHand);
+            ResourceNoPurge(fleetFileHand);
+            const FletRes &res = *ResRec(FletRes, fleetFileHand);
+            fleetData[i].leadShipType = res.leadShip;
+            if (fleetData[i].leadShipType >= kFirstResourceID)
+                fleetData[i].leadShipType -= kFirstResourceID;
+            else
+                fleetData[i].leadShipType = 0;
+            fleetData[i].govt = res.govt;
+            fleetData[i].linkSyst = res.linkSyst;
+            fleetData[i].quoteStrList = res.quote;
+            fleetData[i].flags = res.flags;
+            fleetData[i].govt = ResIndex(fleetData[i].govt);
+            for (j = 0; j <= 3; j++) {   /* exe's back-edge is `cmp ax,3 / jle` */
+                fleetData[i].escortTypes[j] = res.escortShip[j];
+                if (fleetData[i].escortTypes[j] >= kFirstResourceID) {
+                    fleetData[i].escortTypes[j] -= kFirstResourceID;
+                    fleetData[i].escortMin[j] = res.minCount[j];
+                    fleetData[i].escortMax[j] = res.maxCount[j];
+                } else {
+                    fleetData[i].escortTypes[j] = -1;
+                    fleetData[i].escortMin[j] = 0;
+                    fleetData[i].escortMax[j] = 0;
                 }
-                strcpy(fleetData[i].activateOn, ResRec(FletRes, fleetFileHand)->activateOn);
-                AdjustHandleSize(fleetFileHand, 0x132);
-                ResourcePurge(fleetFileHand);
-                ReleaseResource(fleetFileHand);
-                LoadingIntroMusic();
-            } else {
-                strcpy(fleetData[i].activateOn, "");
             }
-            if (found >= count)
-                break;
+            strcpy(fleetData[i].activateOn, res.activateOn);
+            AdjustHandleSize(fleetFileHand, 0x132);
+            ResourcePurge(fleetFileHand);
+            ReleaseResource(fleetFileHand);
+            LoadingIntroMusic();
+        } else {
+            strcpy(fleetData[i].activateOn, "");
         }
-        if (!gameLoaded)
-            IterateInGameEventLoop(10);
+        if (found >= count)
+            break;
     }
+    if (!gameLoaded)
+        IterateInGameEventLoop(10);
+}
 
-    /* ---------------- jünk: junk commodities ---------------- */
-    {
+static void LoadJunks(unsigned char *name)
+{
+    short loaded;
+    short n;
+    short j;
+    short i;
+    short resID;
+    uint32_t resType;
+    short count;
 
-        loaded = 0;
-        count = CountResources(kJunkType);
-        for (i = 0; i < kMaxJunks; i++) {
+    loaded = 0;
+    count = CountResources(kJunkType);
+    for (i = 0; i < kMaxJunks; i++) {
+        for (j = 0; j < 8; j++) {
+            junkData[i].boughtAt[j] = -1;
+            junkData[i].soldAt[j] = -1;
+        }
+        junkData[i].basePrice = -1;
+    }
+    for (i = 0; i < kMaxJunks; i++) {
+        junkData[i].held = 0;
+        junkFileHand = GetResource(kJunkType, i + kFirstResourceID);
+        if (junkFileHand != NULL) {
+            loaded++;
+            LockAHandle(junkFileHand);
+            ResourceNoPurge(junkFileHand);
+            const JunkRes &res = *ResRec(JunkRes, junkFileHand);
+            junkData[i].basePrice = res.basePrice;
+            junkData[i].flags = res.flags;
+            junkData[i].scanMask = res.scanMask;
+            if (junkData[i].basePrice < 0) {
+                crashlog_print("warning: junk type ");
+                crashlog_print_num(i + kFirstResourceID);
+                crashlog_print(" has invalid base price\n");
+                junkData[i].basePrice = 0;
+            }
             for (j = 0; j < 8; j++) {
-                junkData[i].boughtAt[j] = -1;
-                junkData[i].soldAt[j] = -1;
+                junkData[i].boughtAt[j] = res.boughtAt[j];
+                junkData[i].soldAt[j] = res.soldAt[j];
+                junkData[i].boughtAt[j] = ResIndex(junkData[i].boughtAt[j]);
+                junkData[i].soldAt[j] = ResIndex(junkData[i].soldAt[j]);
             }
-            junkData[i].basePrice = -1;
+            GetResInfo(junkFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            strncpy((char *)junkData[i].name, (char *)name, 63);
+            strcpy(junkData[i].lcName, res.lcName);
+            strcpy(junkData[i].abbrev, res.abbrev);
+            strcpy(junkData[i].buyOn, res.buyOn);
+            strcpy(junkData[i].sellOn, res.sellOn);
+            ResourcePurge(junkFileHand);
+            ReleaseResource(junkFileHand);
+            LoadingIntroMusic();
         }
-        for (i = 0; i < kMaxJunks; i++) {
-            junkData[i].held = 0;
-            junkFileHand = GetResource(kJunkType, i + kFirstResourceID);
-            if (junkFileHand != NULL) {
-                loaded++;
-                LockAHandle(junkFileHand);
-                ResourceNoPurge(junkFileHand);
-                junkData[i].basePrice = ResRec(JunkRes, junkFileHand)->basePrice;
-                junkData[i].flags = ResRec(JunkRes, junkFileHand)->flags;
-                junkData[i].scanMask = ResRec(JunkRes, junkFileHand)->scanMask;
-                if (junkData[i].basePrice < 0) {
-                    crashlog_print("warning: junk type ");
-                    crashlog_print_num(i + kFirstResourceID);
-                    crashlog_print(" has invalid base price\n");
-                    junkData[i].basePrice = 0;
-                }
+        if (loaded >= count)
+            break;
+    }
+
+    /* trade centers must trade something */
+    for (i = 0; i < kMaxStellars; i++) {
+        if (stellarData[i].prepared &&
+            (stellarData[i].flags & (kSpobCanLand | kSpobTradeCenter)) ==
+                (kSpobCanLand | kSpobTradeCenter) &&
+            !SpobIsHyperOrWorm(&stellarData[i]) &&
+            (stellarData[i].flags & kSpobPriceBits) == 0) {
+            n = 0;
+            for (count = 0; count < kMaxJunks; count++) {
                 for (j = 0; j < 8; j++) {
-                    junkData[i].boughtAt[j] = ResRec(JunkRes, junkFileHand)->boughtAt[j];
-                    junkData[i].soldAt[j] = ResRec(JunkRes, junkFileHand)->soldAt[j];
-                    if (junkData[i].boughtAt[j] >= kFirstResourceID)
-                        junkData[i].boughtAt[j] -= kFirstResourceID;
-                    else
-                        junkData[i].boughtAt[j] = -1;
-                    if (junkData[i].soldAt[j] >= kFirstResourceID)
-                        junkData[i].soldAt[j] -= kFirstResourceID;
-                    else
-                        junkData[i].soldAt[j] = -1;
-                }
-                GetResInfo(junkFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                strncpy((char *)junkData[i].name, (char *)name, 63);
-                strcpy(junkData[i].lcName, ResRec(JunkRes, junkFileHand)->lcName);
-                strcpy(junkData[i].abbrev, ResRec(JunkRes, junkFileHand)->abbrev);
-                strcpy(junkData[i].buyOn, ResRec(JunkRes, junkFileHand)->buyOn);
-                strcpy(junkData[i].sellOn, ResRec(JunkRes, junkFileHand)->sellOn);
-                ResourcePurge(junkFileHand);
-                ReleaseResource(junkFileHand);
-                LoadingIntroMusic();
-            }
-            if (loaded >= count)
-                break;
-        }
-
-        /* trade centers must trade something */
-        for (i = 0; i < kMaxStellars; i++) {
-                if (stellarData[i].prepared &&
-                (stellarData[i].flags & (kSpobCanLand | kSpobTradeCenter)) ==
-                    (kSpobCanLand | kSpobTradeCenter) &&
-                !SpobIsHyperOrWorm(&stellarData[i]) &&
-                (stellarData[i].flags & kSpobPriceBits) == 0) {
-                n = 0;
-                for (count = 0; count < kMaxJunks; count++) {
-                    for (j = 0; j < 8; j++) {
-                        if (i == junkData[count].boughtAt[j] || i == junkData[count].soldAt[j]) {
-                            n++;
-                            break;
-                        }
+                    if (i == junkData[count].boughtAt[j] || i == junkData[count].soldAt[j]) {
+                        n++;
+                        break;
                     }
                 }
-                if (n == 0) {
-                    crashlog_print("warning: ");
-                    crashlog_print_pstr(stellarData[i].name);
-                    crashlog_print(" (");
-                    crashlog_print_num(i + kFirstResourceID);
-                    crashlog_print(") has a trade center but trades no goods\n");
-                    stellarData[i].flags = stellarData[i].flags & ~kSpobTradeCenter;
-                }
+            }
+            if (n == 0) {
+                crashlog_print("warning: ");
+                crashlog_print_pstr(stellarData[i].name);
+                crashlog_print(" (");
+                crashlog_print_num(i + kFirstResourceID);
+                crashlog_print(") has a trade center but trades no goods\n");
+                stellarData[i].flags = stellarData[i].flags & ~kSpobTradeCenter;
             }
         }
     }
+}
 
-    /* ---------------- crön: cron events ---------------- */
-    {
+static void LoadCrons(void)
+{
+    short j;
+    short i;
 
-        CountResources(kCronType);   /* result unused; the loop walks every slot */
-        for (i = 0; i < kMaxCrons; i++) {
-            cronEvent[i].active = 0;
-            cronEvent[i].loaded = 0;
-            cronEvent[i].random = -1;
-            cronEvent[i].duration = -1;
-            cronEvent[i].daysLeft = 0;
-            cronEvent[i].holdoffLeft = 0;
-            cronFileHand = GetResource(kCronType, i + kFirstResourceID);
-            if (cronFileHand != NULL) {
-                LockAHandle(cronFileHand);
-                cronEvent[i].firstDay = ResRec(CronRes, cronFileHand)->firstDay;
-                cronEvent[i].firstMonth = ResRec(CronRes, cronFileHand)->firstMonth;
-                cronEvent[i].firstYear = ResRec(CronRes, cronFileHand)->firstYear;
-                cronEvent[i].lastDay = ResRec(CronRes, cronFileHand)->lastDay;
-                cronEvent[i].lastMonth = ResRec(CronRes, cronFileHand)->lastMonth;
-                cronEvent[i].lastYear = ResRec(CronRes, cronFileHand)->lastYear;
-                cronEvent[i].random = ResRec(CronRes, cronFileHand)->random;
-                cronEvent[i].duration = ResRec(CronRes, cronFileHand)->duration;
-                cronEvent[i].preHoldoff = ResRec(CronRes, cronFileHand)->preHoldoff;
-                cronEvent[i].postHoldoff = ResRec(CronRes, cronFileHand)->postHoldoff;
-                cronEvent[i].flags = ResRec(CronRes, cronFileHand)->indNewsStr;
-                for (j = 0; j < 4; j++) {
-                    cronEvent[i].govts[j] = ResRec(CronRes, cronFileHand)->newsGovt[j];
-                    cronEvent[i].govtValues[j] = ResRec(CronRes, cronFileHand)->govtNewsStr[j];
-                    if (cronEvent[i].govts[j] >= kFirstResourceID) {
-                        cronEvent[i].govts[j] -= kFirstResourceID;
-                    } else {
-                        cronEvent[i].govts[j] = -1;
-                        cronEvent[i].govtValues[j] = -1;
-                    }
-                    if (cronEvent[i].govtValues[j] < -1)
-                        cronEvent[i].govtValues[j] = -1;
+    CountResources(kCronType);   /* result unused; the loop walks every slot */
+    for (i = 0; i < kMaxCrons; i++) {
+        cronEvent[i].active = 0;
+        cronEvent[i].loaded = 0;
+        cronEvent[i].random = -1;
+        cronEvent[i].duration = -1;
+        cronEvent[i].daysLeft = 0;
+        cronEvent[i].holdoffLeft = 0;
+        cronFileHand = GetResource(kCronType, i + kFirstResourceID);
+        if (cronFileHand != NULL) {
+            LockAHandle(cronFileHand);
+            const CronRes &res = *ResRec(CronRes, cronFileHand);
+            cronEvent[i].firstDay = res.firstDay;
+            cronEvent[i].firstMonth = res.firstMonth;
+            cronEvent[i].firstYear = res.firstYear;
+            cronEvent[i].lastDay = res.lastDay;
+            cronEvent[i].lastMonth = res.lastMonth;
+            cronEvent[i].lastYear = res.lastYear;
+            cronEvent[i].random = res.random;
+            cronEvent[i].duration = res.duration;
+            cronEvent[i].preHoldoff = res.preHoldoff;
+            cronEvent[i].postHoldoff = res.postHoldoff;
+            cronEvent[i].flags = res.indNewsStr;
+            for (j = 0; j < 4; j++) {
+                cronEvent[i].govts[j] = res.newsGovt[j];
+                cronEvent[i].govtValues[j] = res.govtNewsStr[j];
+                if (cronEvent[i].govts[j] >= kFirstResourceID) {
+                    cronEvent[i].govts[j] -= kFirstResourceID;
+                } else {
+                    cronEvent[i].govts[j] = -1;
+                    cronEvent[i].govtValues[j] = -1;
                 }
-                cronEvent[i].indNewsStr = ResRec(CronRes, cronFileHand)->flags;
-                for (j = 0; j <= 1; j++) {
-                    cronEvent[i].contributes[j] = ResRec(CronRes, cronFileHand)->contribute[j];
-                    cronEvent[i].requires[j] = ResRec(CronRes, cronFileHand)->require[j];
-                }
-                strcpy(cronEvent[i].enableOn, ResRec(CronRes, cronFileHand)->enableOn);
-                strcpy(cronEvent[i].onStart, ResRec(CronRes, cronFileHand)->onStart);
-                strcpy(cronEvent[i].onEnd, ResRec(CronRes, cronFileHand)->onEnd);
-                cronEvent[i].loaded = 1;
-                AdjustHandleSize(cronFileHand, 0x336);
-                ResourcePurge(cronFileHand);
-                ReleaseResource(cronFileHand);
-                LoadingIntroMusic();
+                if (cronEvent[i].govtValues[j] < -1)
+                    cronEvent[i].govtValues[j] = -1;
             }
+            cronEvent[i].indNewsStr = res.flags;
+            for (j = 0; j <= 1; j++) {
+                cronEvent[i].contributes[j] = res.contribute[j];
+                cronEvent[i].requires[j] = res.require[j];
+            }
+            strcpy(cronEvent[i].enableOn, res.enableOn);
+            strcpy(cronEvent[i].onStart, res.onStart);
+            strcpy(cronEvent[i].onEnd, res.onEnd);
+            cronEvent[i].loaded = 1;
+            AdjustHandleSize(cronFileHand, 0x336);
+            ResourcePurge(cronFileHand);
+            ReleaseResource(cronFileHand);
+            LoadingIntroMusic();
         }
     }
+}
 
-    /* ---------------- ränk: ranks ---------------- */
-    {
+static void LoadRanks(unsigned char *name)
+{
+    short i;
+    short resID;
+    uint32_t resType;
 
-        for (i = 0; i < kMaxRanks; i++) {
-            rankData[i].govt = -1;
-            rankData[i].active = 0;
-            rankFileHand = GetResource(kRankType, i + kFirstResourceID);
-            if (rankFileHand != NULL) {
-                LockAHandle(rankFileHand);
-                rankData[i].loaded = 1;
-                rankData[i].govt = ResRec(RankRes, rankFileHand)->attachTo;
-                if (rankData[i].govt >= kFirstResourceID)
-                    rankData[i].govt -= kFirstResourceID;
-                else
-                    rankData[i].govt = -1;
-                rankData[i].priority = ResRec(RankRes, rankFileHand)->weight;
-                rankData[i].contributes[0] = ResRec(RankRes, rankFileHand)->contribute[0];
-                rankData[i].contributes[1] = ResRec(RankRes, rankFileHand)->contribute[1];
-                rankData[i].flags = ResRec(RankRes, rankFileHand)->priceMod;
-                rankData[i].salary = ResRec(RankRes, rankFileHand)->salary;
-                rankData[i].salaryCap = ResRec(RankRes, rankFileHand)->salaryCap;
-                rankData[i].priceMod = ResRec(RankRes, rankFileHand)->flags;
-                if (rankData[i].priceMod <= 0)
-                    rankData[i].priceMod = 100;
-                GetResInfo(rankFileHand, &resID, &resType, name);
-                TrimResourceName(name);
-                PtoCstr(name);
-                strncpy(rankData[i].name, (char *)name, 127);
-                strcpy(rankData[i].convName, ResRec(RankRes, rankFileHand)->name);
-                strcpy(rankData[i].shortName, ResRec(RankRes, rankFileHand)->shortName);
-                AdjustHandleSize(rankFileHand, 0x98);
-                ResourcePurge(rankFileHand);
-                ReleaseResource(rankFileHand);
-                LoadingIntroMusic();
-            } else {
-                rankData[i].loaded = 0;
-                strcpy(rankData[i].name, "");
-                strcpy(rankData[i].convName, "");
-                strcpy(rankData[i].shortName, "");
-            }
+    for (i = 0; i < kMaxRanks; i++) {
+        rankData[i].govt = -1;
+        rankData[i].active = 0;
+        rankFileHand = GetResource(kRankType, i + kFirstResourceID);
+        if (rankFileHand != NULL) {
+            LockAHandle(rankFileHand);
+            const RankRes &res = *ResRec(RankRes, rankFileHand);
+            rankData[i].loaded = 1;
+            rankData[i].govt = res.attachTo;
+            rankData[i].govt = ResIndex(rankData[i].govt);
+            rankData[i].priority = res.weight;
+            rankData[i].contributes[0] = res.contribute[0];
+            rankData[i].contributes[1] = res.contribute[1];
+            rankData[i].flags = res.priceMod;
+            rankData[i].salary = res.salary;
+            rankData[i].salaryCap = res.salaryCap;
+            rankData[i].priceMod = res.flags;
+            if (rankData[i].priceMod <= 0)
+                rankData[i].priceMod = 100;
+            GetResInfo(rankFileHand, &resID, &resType, name);
+            TrimResourceName(name);
+            PtoCstr(name);
+            strncpy(rankData[i].name, (char *)name, 127);
+            strcpy(rankData[i].convName, res.name);
+            strcpy(rankData[i].shortName, res.shortName);
+            AdjustHandleSize(rankFileHand, 0x98);
+            ResourcePurge(rankFileHand);
+            ReleaseResource(rankFileHand);
+            LoadingIntroMusic();
+        } else {
+            rankData[i].loaded = 0;
+            strcpy(rankData[i].name, "");
+            strcpy(rankData[i].convName, "");
+            strcpy(rankData[i].shortName, "");
         }
     }
+}
 
-    /* ---------------- röid: asteroids ---------------- */
-    {
+static void LoadAsteroidTypes(void)
+{
+    short j;
+    short i;
+    RGBColor rgb;
 
-        for (i = 0; i < kMaxRoidTypes; i++) {
-            asteroidFileHand = GetResource(kRoidType, i + kFirstResourceID);
-            if (asteroidFileHand != NULL) {
-                LockAHandle(asteroidFileHand);
-                asteroidType[i].strength = ResRec(RoidRes, asteroidFileHand)->strength;
-                if (asteroidType[i].strength < 1)
-                    asteroidType[i].strength = 1;
-                asteroidType[i].frameRate = (float)ResRec(RoidRes, asteroidFileHand)->spinRate * 0.01;
-                asteroidType[i].yieldType = ResRec(RoidRes, asteroidFileHand)->yieldType;
-                asteroidType[i].yieldQty = ResRec(RoidRes, asteroidFileHand)->yieldQty;
-                if (asteroidType[i].yieldQty < 0) {
-                    asteroidType[i].yieldQty = 0;
-                    asteroidType[i].yieldType = -1;
-                }
-                if (asteroidType[i].yieldType < 0 ||
-                    (asteroidType[i].yieldType > 6 && asteroidType[i].yieldType < 1000) ||
-                    asteroidType[i].yieldType >= 1000 + kMaxJunks) {
-                    asteroidType[i].yieldType = -1;
-                    asteroidType[i].yieldQty = 0;
-                }
-                asteroidType[i].partCount = ResRec(RoidRes, asteroidFileHand)->partCount;
-                if (asteroidType[i].partCount < 0)
-                    asteroidType[i].partCount = 0;
-                asteroidType[i].color = ResRec(RoidRes, asteroidFileHand)->partColor;
-                rgb.red = ((asteroidType[i].color >> 16) & 0xff) * 256;
-                rgb.green = ((asteroidType[i].color >> 8) & 0xff) * 256;
-                rgb.blue = (asteroidType[i].color & 0xff) * 256;
-                asteroidType[i].color = Pixel::FromColor(rgb);
-                asteroidType[i].fragCount = ResRec(RoidRes, asteroidFileHand)->fragCount;
-                if (asteroidType[i].fragCount < 0)
-                    asteroidType[i].fragCount = 0;
-                for (j = 0; j < 2; j++) {
-                    asteroidType[i].fragType[j] = ResRec(RoidRes, asteroidFileHand)->fragType[j];
-                    if (asteroidType[i].fragType[j] >= kFirstResourceID && asteroidType[i].fragType[j] < kFirstResourceID + kMaxRoidTypes)
-                        asteroidType[i].fragType[j] -= kFirstResourceID;
-                    else if (asteroidType[i].fragType[j] < 0 || asteroidType[i].fragType[j] >= kMaxRoidTypes)
-                        asteroidType[i].fragType[j] = -1;
-                }
-                asteroidType[i].explodType = ResRec(RoidRes, asteroidFileHand)->explodType;
-                if (asteroidType[i].explodType < 0 ||
-                    (asteroidType[i].explodType >= kMaxExplodTypes && asteroidType[i].explodType < 1000) ||
-                    asteroidType[i].explodType >= 1000 + kMaxExplodTypes)
-                    asteroidType[i].explodType = -1;
-                asteroidType[i].mass = ResRec(RoidRes, asteroidFileHand)->mass;
-                AdjustHandleSize(asteroidFileHand, 0x28);
-                ResourcePurge(asteroidFileHand);
-                ReleaseResource(asteroidFileHand);
-                LoadingIntroMusic();
+    for (i = 0; i < kMaxRoidTypes; i++) {
+        asteroidFileHand = GetResource(kRoidType, i + kFirstResourceID);
+        if (asteroidFileHand != NULL) {
+            LockAHandle(asteroidFileHand);
+            const RoidRes &res = *ResRec(RoidRes, asteroidFileHand);
+            asteroidType[i].strength = res.strength;
+            if (asteroidType[i].strength < 1)
+                asteroidType[i].strength = 1;
+            asteroidType[i].frameRate = (float)res.spinRate * 0.01;
+            asteroidType[i].yieldType = res.yieldType;
+            asteroidType[i].yieldQty = res.yieldQty;
+            if (asteroidType[i].yieldQty < 0) {
+                asteroidType[i].yieldQty = 0;
+                asteroidType[i].yieldType = -1;
             }
+            if (asteroidType[i].yieldType < 0 ||
+                (asteroidType[i].yieldType > 6 && asteroidType[i].yieldType < 1000) ||
+                asteroidType[i].yieldType >= 1000 + kMaxJunks) {
+                asteroidType[i].yieldType = -1;
+                asteroidType[i].yieldQty = 0;
+            }
+            asteroidType[i].partCount = res.partCount;
+            if (asteroidType[i].partCount < 0)
+                asteroidType[i].partCount = 0;
+            asteroidType[i].color = res.partColor;
+            rgb.red = ((asteroidType[i].color >> 16) & 0xff) * 256;
+            rgb.green = ((asteroidType[i].color >> 8) & 0xff) * 256;
+            rgb.blue = (asteroidType[i].color & 0xff) * 256;
+            asteroidType[i].color = Pixel::FromColor(rgb);
+            asteroidType[i].fragCount = res.fragCount;
+            if (asteroidType[i].fragCount < 0)
+                asteroidType[i].fragCount = 0;
+            for (j = 0; j < 2; j++) {
+                asteroidType[i].fragType[j] = res.fragType[j];
+                if (asteroidType[i].fragType[j] >= kFirstResourceID && asteroidType[i].fragType[j] < kFirstResourceID + kMaxRoidTypes)
+                    asteroidType[i].fragType[j] -= kFirstResourceID;
+                else if (asteroidType[i].fragType[j] < 0 || asteroidType[i].fragType[j] >= kMaxRoidTypes)
+                    asteroidType[i].fragType[j] = -1;
+            }
+            asteroidType[i].explodType = res.explodType;
+            if (asteroidType[i].explodType < 0 ||
+                (asteroidType[i].explodType >= kMaxExplodTypes && asteroidType[i].explodType < 1000) ||
+                asteroidType[i].explodType >= 1000 + kMaxExplodTypes)
+                asteroidType[i].explodType = -1;
+            asteroidType[i].mass = res.mass;
+            AdjustHandleSize(asteroidFileHand, 0x28);
+            ResourcePurge(asteroidFileHand);
+            ReleaseResource(asteroidFileHand);
+            LoadingIntroMusic();
         }
     }
+}
 
-    /* ---------------- cölr: interface colors ---------------- */
+static void LoadInterfaceColors(unsigned char *name)
+{
     colorFileHand = GetIndResource(kColrType, 1);
     if (colorFileHand != NULL) {
         short k;
         int c;
 
         LockAHandle(colorFileHand);
+        const ColrRes &res = *ResRec(ColrRes, colorFileHand);
         for (c = 0; c < 2; c++) {
-            menuTextColor[c].blue = (ResRec(ColrRes, colorFileHand)->menuColor[c] & 0xff) * 256;
-            menuTextColor[c].green = ((ResRec(ColrRes, colorFileHand)->menuColor[c] >> 8) & 0xff) * 256;
-            menuTextColor[c].red = ((ResRec(ColrRes, colorFileHand)->menuColor[c] >> 16) & 0xff) * 256;
+            menuTextColor[c].blue = (res.menuColor[c] & 0xff) * 256;
+            menuTextColor[c].green = ((res.menuColor[c] >> 8) & 0xff) * 256;
+            menuTextColor[c].red = ((res.menuColor[c] >> 16) & 0xff) * 256;
         }
         for (c = 0; c < 2; c++) {
-            shopGridColor[c].blue = (ResRec(ColrRes, colorFileHand)->gridColor[c] & 0xff) * 256;
-            shopGridColor[c].green = ((ResRec(ColrRes, colorFileHand)->gridColor[c] >> 8) & 0xff) * 256;
-            shopGridColor[c].red = ((ResRec(ColrRes, colorFileHand)->gridColor[c] >> 16) & 0xff) * 256;
+            shopGridColor[c].blue = (res.gridColor[c] & 0xff) * 256;
+            shopGridColor[c].green = ((res.gridColor[c] >> 8) & 0xff) * 256;
+            shopGridColor[c].red = ((res.gridColor[c] >> 16) & 0xff) * 256;
         }
         for (k = 0; k < 3; k++) {
-            progressColor[k].blue = (ResRec(ColrRes, colorFileHand)->progressColor[k] & 0xff) * 256;
-            progressColor[k].green = ((ResRec(ColrRes, colorFileHand)->progressColor[k] >> 8) & 0xff) * 256;
-            progressColor[k].red = ((ResRec(ColrRes, colorFileHand)->progressColor[k] >> 16) & 0xff) * 256;
+            progressColor[k].blue = (res.progressColor[k] & 0xff) * 256;
+            progressColor[k].green = ((res.progressColor[k] >> 8) & 0xff) * 256;
+            progressColor[k].red = ((res.progressColor[k] >> 16) & 0xff) * 256;
         }
         for (k = 0; k < 3; k++) {
-            buttonColor[k].blue = (ResRec(ColrRes, colorFileHand)->buttonColor[k] & 0xff) * 256;
-            buttonColor[k].green = ((ResRec(ColrRes, colorFileHand)->buttonColor[k] >> 8) & 0xff) * 256;
-            buttonColor[k].red = ((ResRec(ColrRes, colorFileHand)->buttonColor[k] >> 16) & 0xff) * 256;
+            buttonColor[k].blue = (res.buttonColor[k] & 0xff) * 256;
+            buttonColor[k].green = ((res.buttonColor[k] >> 8) & 0xff) * 256;
+            buttonColor[k].red = ((res.buttonColor[k] >> 16) & 0xff) * 256;
         }
         for (k = 0; k < kMainButtons; k++) {
-            menuButtonPos[k].h = ResRec(ColrRes, colorFileHand)->buttonPos[k * 2];
-            menuButtonPos[k].v = ResRec(ColrRes, colorFileHand)->buttonPos[k * 2 + 1];
+            menuButtonPos[k].h = res.buttonPos[k * 2];
+            menuButtonPos[k].v = res.buttonPos[k * 2 + 1];
         }
-        floatingBorderColor.blue = (ResRec(ColrRes, colorFileHand)->floatingMapColor & 0xff) * 256;
-        floatingBorderColor.green = ((ResRec(ColrRes, colorFileHand)->floatingMapColor >> 8) & 0xff) * 256;
-        floatingBorderColor.red = ((ResRec(ColrRes, colorFileHand)->floatingMapColor >> 16) & 0xff) * 256;
-        escortMenuColor.blue = (ResRec(ColrRes, colorFileHand)->escortHiliteColor & 0xff) * 256;
-        escortMenuColor.green = ((ResRec(ColrRes, colorFileHand)->escortHiliteColor >> 8) & 0xff) * 256;
-        escortMenuColor.red = ((ResRec(ColrRes, colorFileHand)->escortHiliteColor >> 16) & 0xff) * 256;
-        ldefColors[0].blue = (ResRec(ColrRes, colorFileHand)->listColor[0] & 0xff) * 256;
-        ldefColors[0].green = ((ResRec(ColrRes, colorFileHand)->listColor[0] >> 8) & 0xff) * 256;
-        ldefColors[0].red = ((ResRec(ColrRes, colorFileHand)->listColor[0] >> 16) & 0xff) * 256;
-        ldefColors[1].blue = (ResRec(ColrRes, colorFileHand)->listColor[1] & 0xff) * 256;
-        ldefColors[1].green = ((ResRec(ColrRes, colorFileHand)->listColor[1] >> 8) & 0xff) * 256;
-        ldefColors[1].red = ((ResRec(ColrRes, colorFileHand)->listColor[1] >> 16) & 0xff) * 256;
-        ldefColors[2].blue = (ResRec(ColrRes, colorFileHand)->listColor[2] & 0xff) * 256;
-        ldefColors[2].green = ((ResRec(ColrRes, colorFileHand)->listColor[2] >> 8) & 0xff) * 256;
-        ldefColors[2].red = ((ResRec(ColrRes, colorFileHand)->listColor[2] >> 16) & 0xff) * 256;
-        progressDefRect.top = ResRec(ColrRes, colorFileHand)->progressBar.top;
-        progressDefRect.left = ResRec(ColrRes, colorFileHand)->progressBar.left;
-        progressDefRect.bottom = ResRec(ColrRes, colorFileHand)->progressBar.bottom;
-        progressDefRect.right = ResRec(ColrRes, colorFileHand)->progressBar.right;
-        strcpy((char *)name, ResRec(ColrRes, colorFileHand)->menuFont);
+        floatingBorderColor.blue = (res.floatingMapColor & 0xff) * 256;
+        floatingBorderColor.green = ((res.floatingMapColor >> 8) & 0xff) * 256;
+        floatingBorderColor.red = ((res.floatingMapColor >> 16) & 0xff) * 256;
+        escortMenuColor.blue = (res.escortHiliteColor & 0xff) * 256;
+        escortMenuColor.green = ((res.escortHiliteColor >> 8) & 0xff) * 256;
+        escortMenuColor.red = ((res.escortHiliteColor >> 16) & 0xff) * 256;
+        ldefColors[0].blue = (res.listColor[0] & 0xff) * 256;
+        ldefColors[0].green = ((res.listColor[0] >> 8) & 0xff) * 256;
+        ldefColors[0].red = ((res.listColor[0] >> 16) & 0xff) * 256;
+        ldefColors[1].blue = (res.listColor[1] & 0xff) * 256;
+        ldefColors[1].green = ((res.listColor[1] >> 8) & 0xff) * 256;
+        ldefColors[1].red = ((res.listColor[1] >> 16) & 0xff) * 256;
+        ldefColors[2].blue = (res.listColor[2] & 0xff) * 256;
+        ldefColors[2].green = ((res.listColor[2] >> 8) & 0xff) * 256;
+        ldefColors[2].red = ((res.listColor[2] >> 16) & 0xff) * 256;
+        progressDefRect.top = res.progressBar.top;
+        progressDefRect.left = res.progressBar.left;
+        progressDefRect.bottom = res.progressBar.bottom;
+        progressDefRect.right = res.progressBar.right;
+        strcpy((char *)name, res.menuFont);
         CtoPstr((char *)name);
         GetFNum(name, &menuFontID);
-        menuTextSize = ResRec(ColrRes, colorFileHand)->menuFontSize;
-        strcpy((char *)name, ResRec(ColrRes, colorFileHand)->buttonFont);
+        menuTextSize = res.menuFontSize;
+        strcpy((char *)name, res.buttonFont);
         CtoPstr((char *)name);
         GetFNum(name, &buttonFontID);
-        buttonFontSize = ResRec(ColrRes, colorFileHand)->buttonFontSize;
-        logoDestPoint.h = ResRec(ColrRes, colorFileHand)->logoPos[0];
-        logoDestPoint.v = ResRec(ColrRes, colorFileHand)->logoPos[1];
-        rolloverDestPoint.h = ResRec(ColrRes, colorFileHand)->rolloverPos[0];
-        rolloverDestPoint.v = ResRec(ColrRes, colorFileHand)->rolloverPos[1];
+        buttonFontSize = res.buttonFontSize;
+        logoDestPoint.h = res.logoPos[0];
+        logoDestPoint.v = res.logoPos[1];
+        rolloverDestPoint.h = res.rolloverPos[0];
+        rolloverDestPoint.v = res.rolloverPos[1];
         for (k = 0; k < 3; k++) {
-            slideDestPoint[k].h = ResRec(ColrRes, colorFileHand)->slidePos[k * 2];
-            slideDestPoint[k].v = ResRec(ColrRes, colorFileHand)->slidePos[k * 2 + 1];
+            slideDestPoint[k].h = res.slidePos[k * 2];
+            slideDestPoint[k].v = res.slidePos[k * 2 + 1];
         }
         AdjustHandleSize(colorFileHand, 0xf4);
         ResourcePurge(colorFileHand);
         ReleaseResource(colorFileHand);
         LoadingIntroMusic();
     }
+}
 
-    /* ---------------- l33t: easter egg ---------------- */
+
+// FUNCTION: EVNOVA 0x004bd3c0
+// MAC: _LoadObjectData i386 0x000771b0 ppc 0x00080100
+void LoadObjectData(void)
+{
+    /* BUG: strncpy of a Pascal name (no NUL) also copies what follows it in this buffer into the name tables
+       (the tail of an earlier, longer name), and a name as long as its field keeps its full length byte.
+       Readers stop at the length byte. One buffer for all loaders keeps those bytes. */
+    unsigned char name[256] = {};
+
+    if (EVBugResourceFieldTest(0))
+        return;
+    SWSetPortToWindow(gSpriteWorld);
+
+    LoadStellars(name);
+    LoadSystems(name);
+    LoadOutfits(name);
+    LoadWeapons(name);
+    LoadShipClasses(name);
+    LoadDudes();
+    LoadGovernments(name);
+    LoadPersons(name);
+    LoadDisasters(name);
+    LoadNebulae();
+    LoadExplodTypes();
+    LoadFleets();
+    LoadJunks(name);
+    LoadCrons();
+    LoadRanks(name);
+    LoadAsteroidTypes();
+    LoadInterfaceColors(name);
+
+    /* l33t: easter egg */
     if (CountResources(kLeetType) > 0)
         leetMode = 1;
 }
