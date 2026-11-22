@@ -93,6 +93,15 @@ extern const char *FontFamilyName(short familyID);
 extern void FontRealName(short familyID, short size, short style, char *out, int outSize);
 extern void DrawTextRun(const void *text, uint32_t byteCount, Rect *box,
                         Boolean clipped, int height);
+/* bytes start..end - 1 of a text drawn in `color' */
+struct TextSpan {
+    uint32_t start;
+    uint32_t end;
+    RGBColor color;
+};
+extern int DrawTextSpans(const void *text, uint32_t byteCount, Rect *box, int scroll,
+                         const TextSpan *spans, int spanCount);
+extern int MeasureTextSpans(const void *text, uint32_t byteCount, Rect *box);
 extern CGrafPtr CurrentGrafPort;
 extern void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits,
                      const Rect *srcRect, const Rect *dstRect,

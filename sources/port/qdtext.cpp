@@ -240,7 +240,7 @@ static int Blend(int old, int target, int a)
     return old + (moved >= 0 ? moved + kFull / 2 : moved - kFull / 2) / kFull;
 }
 
-/* the port's foreground colour through the gamma ramp, a channel in 8 bits, as the exe hands it to GDI */
+/* a text colour through the gamma ramp, a channel in 8 bits, as the exe hands it to GDI */
 typedef struct TextColor {
     int r;
     int g;
@@ -318,13 +318,71 @@ static int DrawRun(PixMap *pix, const FontSpec *spec, const TextUnit *units, int
     return pen;
 }
 
+/* `rgb' as a TextColor */
+static TextColor GammaColor(const RGBColor &rgb)
+{
+    TextColor color;
+
+    color.r = (unsigned char)(gGammaRamp[rgb.red >> 11] * 8);
+    color.g = (unsigned char)(gGammaRamp[rgb.green >> 11] * 8);
+    color.b = (unsigned char)(gGammaRamp[rgb.blue >> 11] * 8);
+    return color;
+}
+
+/* Wrapped lines into `box' (logical, pixel-map coordinates), the first `scroll' rows above its top, each
+   span in its own colour; pix NULL only measures. Returns the height of all lines. */
+static int DrawWrapped(PixMap *pix, const UI::Mapping &map, const TextStyle &layout, const FontSpec *glyphs,
+                       const TextUnit *units, int count, const Rect &box, int scroll, const ClipRect *clip,
+                       const TextColor *color, const TextSpan *spans, int spanCount)
+{
+    TextColor spanColor;
+    const TextColor *runColor;
+    int baseline;
+    int drop;
+    int start;
+    int end;
+    int next;
+    int pos;
+    int stop;
+    int pen;
+    int span;
+
+    /* lines sit at fixed device offsets from the first baseline, so scrolled text moves as one */
+    baseline = map.Y(box.top - scroll + layout.ascent);
+    drop = 0;
+    start = 0;
+    span = 0;
+    while (NextLine(map, glyphs, units, count, start, box.right - box.left, &end, &next)) {
+        pen = map.X(box.left);
+        pos = start;
+        while (pos < end) {
+            while (span < spanCount && (int)spans[span].end <= pos)
+                span++;
+            if (span < spanCount && (int)spans[span].start <= pos) {
+                stop = (int)spans[span].end < end ? (int)spans[span].end : end;
+                spanColor = GammaColor(spans[span].color);
+                runColor = &spanColor;
+            } else {
+                stop = span < spanCount && (int)spans[span].start < end ? (int)spans[span].start : end;
+                runColor = color;
+            }
+            pen = DrawRun(pix, glyphs, units + pos, stop - pos, pen, baseline + map.DeviceLengthY(drop), clip,
+                          runColor);
+            pos = stop;
+        }
+        drop += layout.ascent + layout.descent;
+        start = next;
+    }
+    return drop;
+}
+
 /* Rectangles are in the pixel map's own pixels, the port's bounds not applied to `box', as the exe gives
    them to GDI. Rows and line pitch are in logical pixels at the port's size; widths and line breaks come from
    the device advances of the glyphs drawn. Unclipped text starts at the pen's device x and leaves the pen at
    the logical pixel nearest its end, the rest in pnDeviceOffset, so the next run continues exactly. clipped != 0
-   wraps into `box' and needs one. */
-// FUNCTION: EVNOVA 0x004bc760
-void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, int height)
+   wraps into `box' and needs one; then the height of the wrapped lines is returned. draw 0 only measures. */
+static int DrawTextCore(const void *text, uint32_t byteCount, Rect *box, char clipped, int height,
+                        const TextSpan *spans, int spanCount, char draw)
 {
     CGrafPtr port;
     PixMap *pix;
@@ -337,30 +395,27 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
     Rect deviceBox;
     int x;
     int y;
-    int start;
     int end;
-    int next;
-    int baseline;
-    int drop;
+    int wrapped;
 
     if (text == NULL || byteCount == 0 || (clipped != 0 && box == NULL))
-        return;
+        return 0;
     port = CurrentGrafPort;
     if (port == NULL || !CurrentStyle(&layout))
-        return;
+        return 0;
     UI::Mapping map(port->pix);
     if (!FontAt(&glyphs, map.ScaleY()))
-        return;
+        return 0;
     units = (TextUnit *)AllocAPointer(byteCount * sizeof(TextUnit));
     if (units == NULL)
-        return;
+        return 0;
     FromMacRoman((const char *)text, byteCount, units);
 
     /* the exe draws on the screen port through the window, where it does not reach the game's picture */
     pix = (port->offscreen != 0 && (port->pix.pixelSize == 16 || port->pix.pixelSize == 32)) ? &port->pix : NULL;
-    color.r = (unsigned char)(gGammaRamp[port->foreColor.red >> 11] * 8);
-    color.g = (unsigned char)(gGammaRamp[port->foreColor.green >> 11] * 8);
-    color.b = (unsigned char)(gGammaRamp[port->foreColor.blue >> 11] * 8);
+    if (draw == 0)
+        pix = NULL;
+    color = GammaColor(port->foreColor);
 
     clip.left = 0;
     clip.top = 0;
@@ -375,6 +430,7 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
         if (clip.bottom > deviceBox.bottom)
             clip.bottom = deviceBox.bottom;
     }
+    wrapped = 0;
     if (clipped == 0) {
         x = map.X(port->pnLoc.h) + port->pnDeviceOffset;
         y = port->pnLoc.v - port->txSize;
@@ -392,18 +448,31 @@ void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, 
             clip.left = deviceBox.left;
         if (clip.top < deviceBox.top)
             clip.top = deviceBox.top;
-        /* lines sit at fixed device offsets from the first baseline, so scrolled text moves as one */
-        baseline = map.Y(logicalBox.top - height + layout.ascent);
-        drop = 0;
-        start = 0;
-        while (NextLine(map, &glyphs, units, byteCount, start, logicalBox.right - logicalBox.left, &end, &next)) {
-            DrawRun(pix, &glyphs, units + start, end - start, map.X(logicalBox.left),
-                    baseline + map.DeviceLengthY(drop), &clip, &color);
-            drop += layout.ascent + layout.descent;
-            start = next;
-        }
+        wrapped = DrawWrapped(pix, map, layout, &glyphs, units, byteCount, logicalBox, height, &clip, &color,
+                              spans, spanCount);
     }
     DeallocAPointer(units);
+    return wrapped;
+}
+
+// FUNCTION: EVNOVA 0x004bc760
+void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, int height)
+{
+    DrawTextCore(text, byteCount, box, clipped, height, NULL, 0, 1);
+}
+
+/* DrawTextRun wrapped into `box', scrolled up by `scroll' rows, with the bytes of each span (sorted, not
+   overlapping) in its colour and the rest in the foreground colour. Returns the height of all lines. */
+int DrawTextSpans(const void *text, uint32_t byteCount, Rect *box, int scroll, const TextSpan *spans,
+                  int spanCount)
+{
+    return DrawTextCore(text, byteCount, box, 1, scroll, spans, spanCount, 1);
+}
+
+/* the height DrawTextSpans wraps the text into `box' */
+int MeasureTextSpans(const void *text, uint32_t byteCount, Rect *box)
+{
+    return DrawTextCore(text, byteCount, box, 1, 0, NULL, 0, 0);
 }
 
 // FUNCTION: EVNOVA 0x004bca70

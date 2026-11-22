@@ -4499,8 +4499,6 @@ void SpawnParticles(short x, short y, float speed, short spreadPct,
     }
 }
 
-#define kMapGovtClassBase 1000
-
 // FUNCTION: EVNOVA 0x00427770
 // MAC: _GrantOutfitItem i386 0x00044d4f ppc 0x0004cd00
 void GrantOutfitItem(short outfit)
@@ -4524,7 +4522,7 @@ void GrantOutfitItem(short outfit)
             v = outfitSystem[outfit].modVal[i];
             if (v > 0) {
                 AutoSetExploration(shipData[0].curSystem, v, 2);
-            } else if (v == -1) {
+            } else if (v == kMapIndependent) {
                 for (s = 0; s < kMaxSystems; s++) {
                     if (systemData[s].loaded != 0 && systemData[s].govt == -1
                             && SystemIsInhabited(s) != 0)

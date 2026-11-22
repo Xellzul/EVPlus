@@ -23,3 +23,4 @@
 - Key settings: keys bound twice are shown in red
 - Escort hiring: shows the daily pay under the hiring price
 - Player Info: Jump Time in days
+- Outfitter: description lists the outfit's effects and weapon stats

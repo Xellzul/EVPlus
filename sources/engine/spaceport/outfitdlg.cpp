@@ -13,6 +13,10 @@
 #include "gamedialog.h"
 #include "buttons.h"
 
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+
 DialogPtr outfitDialog;
 char dialogDescTextPtr[8192];
 short selOutfitItem;
@@ -42,6 +46,551 @@ RGBColor shopGridColor[2];
 
 
 namespace {
+
+constexpr double kFramesPerSecond = 30.0;
+constexpr int kDetailsSize = sizeof(dialogDescTextPtr) + 4096;
+constexpr int kMaxSpans = 32;
+constexpr int kMaxNamesListed = 4;
+
+/* the description box's scroll in pixel rows, and its limit and step from the last draw */
+int descScroll;
+short descScrollOutfit = -1;
+int descMaxScroll;
+int descLineHeight;
+
+/* the characters a 64-byte Pascal name holds */
+int NameLength(const unsigned char *name)
+{
+    return name[0] > 62 ? 62 : name[0];
+}
+
+/* a Pascal name as a C string */
+void NameOf(const unsigned char *name, char *out, int size)
+{
+    int n;
+
+    n = NameLength(name);
+    if (n > size - 1)
+        n = size - 1;
+    memcpy(out, name + 1, n);
+    out[n] = 0;
+}
+
+bool OutfitLoaded(short outfit)
+{
+    return outfit >= 0 && outfit < kMaxOutfits && outfitSystem[outfit].techLevel < kOutfTechAbsent;
+}
+
+bool WeaponLoaded(short weap)
+{
+    return weap >= 0 && weap < kMaxWeapTypes && weaponStats[weap].guidance != kResAbsent;
+}
+
+bool IsBeam(short guidance)
+{
+    return guidance == kGuidanceBeam || guidance == kGuidanceTurretBeam || guidance == kGuidancePDBeam;
+}
+
+const char *GuidanceName(short guidance)
+{
+    switch (guidance) {
+    case kGuidanceUnguided: return "unguided";
+    case kGuidanceBeam: return "beam";
+    case kGuidanceHoming: return "homing";
+    case kGuidanceTurretBeam: return "turret beam";
+    case kGuidanceTurret: return "turret";
+    case kGuidanceFreefall: return "freefall bomb";
+    case kGuidanceRocket: return "rocket";
+    case kGuidanceFrontQuad: return "front quadrant turret";
+    case kGuidanceRearQuad: return "rear quadrant turret";
+    case kGuidancePointDef: return "point defence turret";
+    case kGuidancePDBeam: return "point defence beam";
+    case kGuidanceBay: return "fighter bay";
+    default: return NULL;
+    }
+}
+
+/* `value' to `decimals' places with trailing zeros dropped, signed when `sign' */
+const char *Num(char *out, int size, double value, int decimals, bool sign)
+{
+    double scale;
+    char *dot;
+    char *p;
+
+    scale = pow(10.0, decimals);
+    value = floor(value * scale + 0.5) / scale;
+    snprintf(out, size, sign ? "%+.*f" : "%.*f", decimals, value);
+    dot = strchr(out, '.');
+    if (dot != NULL) {
+        p = out + strlen(out) - 1;
+        while (p > dot && *p == '0')
+            *p-- = 0;
+        if (p == dot)
+            *p = 0;
+    }
+    return out;
+}
+
+const RGBColor *SignColor(double value)
+{
+    if (value > 0)
+        return &betterRGB;
+    if (value < 0)
+        return &worseRGB;
+    return NULL;
+}
+
+/* green when lower, red when higher */
+const RGBColor *LowerBetterColor(double value)
+{
+    return SignColor(-value);
+}
+
+/* the first n bytes equal, ASCII letters in either case */
+bool EqualFold(const char *a, const char *b, uint32_t n)
+{
+    unsigned char x;
+    unsigned char y;
+    uint32_t i;
+
+    for (i = 0; i < n; i++) {
+        x = (unsigned char)a[i];
+        y = (unsigned char)b[i];
+        if (x >= 'A' && x <= 'Z')
+            x += 'a' - 'A';
+        if (y >= 'A' && y <= 'Z')
+            y += 'a' - 'A';
+        if (x != y)
+            return false;
+    }
+    return true;
+}
+
+bool SameName(const unsigned char *a, const unsigned char *b)
+{
+    return NameLength(a) == NameLength(b) && memcmp(a + 1, b + 1, NameLength(a)) == 0;
+}
+
+/* The selected outfit's description with its unmet "Requires:" parts in red, then one line per effect of
+   buying one, coloured by whether it helps. */
+class OutfitDetails {
+public:
+    void Build(short outfit);
+    void Plain(const char *desc);
+    const char *Text() const { return text; }
+    uint32_t Length() const { return length; }
+    const TextSpan *Spans() const { return spans; }
+    int SpanCount() const { return spanCount; }
+
+private:
+    void Append(const char *s, int n);
+    void AddSpan(uint32_t start, uint32_t end, const RGBColor *color);
+    void Line(const RGBColor *color, const char *format, ...);
+    void ColorRequires(short outfit);
+    void ColorPart(short outfit, uint32_t start, uint32_t end, const uint32_t *have);
+    void Effect(short outfit, short slot);
+    void Weapon(short weap);
+    void AmmoFor(short weap);
+
+    char text[kDetailsSize];
+    uint32_t length;
+    TextSpan spans[kMaxSpans];
+    int spanCount;
+    bool hasLines;
+};
+
+void OutfitDetails::Append(const char *s, int n)
+{
+    if (n > (int)(sizeof(text) - 1 - length))
+        n = sizeof(text) - 1 - length;
+    memcpy(text + length, s, n);
+    length += n;
+    text[length] = 0;
+}
+
+void OutfitDetails::AddSpan(uint32_t start, uint32_t end, const RGBColor *color)
+{
+    if (color == NULL || end <= start || spanCount >= kMaxSpans)
+        return;
+    spans[spanCount].start = start;
+    spans[spanCount].end = end;
+    spans[spanCount].color = *color;
+    spanCount++;
+}
+
+void OutfitDetails::Line(const RGBColor *color, const char *format, ...)
+{
+    char line[256];
+    va_list args;
+    uint32_t start;
+
+    va_start(args, format);
+    vsnprintf(line, sizeof(line), format, args);
+    va_end(args);
+    if (length > 0)
+        Append(hasLines ? "\r" : "\r\r", hasLines ? 1 : 2);
+    hasLines = true;
+    start = length;
+    Append(line, strlen(line));
+    AddSpan(start, length, color);
+}
+
+void OutfitDetails::Plain(const char *desc)
+{
+    length = 0;
+    text[0] = 0;
+    spanCount = 0;
+    hasLines = false;
+    Append(desc, strlen(desc));
+}
+
+void OutfitDetails::Build(short outfit)
+{
+    short slot;
+
+    Plain(dialogDescTextPtr);
+    while (length > 0 && (text[length - 1] == '\r' || text[length - 1] == '\n' || text[length - 1] == ' '))
+        text[--length] = 0;
+    ColorRequires(outfit);
+    if (outfitSystem[outfit].mass < 0)
+        Line(&betterRGB, "%+d %s free space", -outfitSystem[outfit].mass,
+             outfitSystem[outfit].mass == -1 ? "ton" : "tons");
+    for (slot = 0; slot < kOutfMods; slot++)
+        Effect(outfit, slot);
+}
+
+/* each ", "-separated part of a line starting "Requires:" that names a licence outfit */
+void OutfitDetails::ColorRequires(short outfit)
+{
+    uint32_t have[2];
+    uint32_t pos;
+    uint32_t start;
+    uint32_t end;
+    uint32_t stop;
+
+    GetPlayerContributeBits(&have[0], &have[1]);
+    for (pos = 0; pos < length; pos++) {
+        if (pos > 0 && text[pos - 1] != '\r' && text[pos - 1] != '\n')
+            continue;
+        if (length - pos < 9 || !EqualFold(text + pos, "requires:", 9))
+            continue;
+        stop = pos + 9;
+        while (stop < length && text[stop] != '\r' && text[stop] != '\n')
+            stop++;
+        start = pos + 9;
+        while (start < stop) {
+            end = start;
+            while (end < stop && text[end] != ',')
+                end++;
+            ColorPart(outfit, start, end, have);
+            start = end + 1;
+        }
+        pos = stop;
+    }
+}
+
+void OutfitDetails::ColorPart(short outfit, uint32_t start, uint32_t end, const uint32_t *have)
+{
+    uint32_t contrib[2];
+    uint32_t need[2];
+    uint32_t n;
+    short i;
+    bool found;
+
+    while (start < end && text[start] == ' ')
+        start++;
+    while (end > start && (text[end - 1] == ' ' || text[end - 1] == '.'))
+        end--;
+    if (end <= start)
+        return;
+    contrib[0] = contrib[1] = 0;
+    found = false;
+    for (i = 0; i < kMaxOutfits; i++) {
+        if (!OutfitLoaded(i))
+            continue;
+        n = NameLength(outfitSystem[i].name);
+        if (n == 0 || n != end - start || !EqualFold((const char *)outfitSystem[i].name + 1, text + start, n))
+            continue;
+        contrib[0] |= outfitSystem[i].contributes[0];
+        contrib[1] |= outfitSystem[i].contributes[1];
+        found = true;
+    }
+    if (!found)
+        return;
+    need[0] = contrib[0] & outfitSystem[outfit].requires[0];
+    need[1] = contrib[1] & outfitSystem[outfit].requires[1];
+    if (need[0] == 0 && need[1] == 0)
+        return;
+    if ((have[0] & need[0]) != need[0] || (have[1] & need[1]) != need[1])
+        AddSpan(start, end, &worseRGB);
+}
+
+/* up to kMaxNamesListed outfit names, ", "-separated */
+void NameList(char *out, int size, const short *list, int count, int total)
+{
+    char name[64];
+    int i;
+
+    out[0] = 0;
+    for (i = 0; i < count; i++) {
+        NameOf(outfitSystem[list[i]].name, name, sizeof(name));
+        if (i > 0)
+            strncat(out, ", ", size - strlen(out) - 1);
+        strncat(out, name, size - strlen(out) - 1);
+    }
+    if (total > count)
+        strncat(out, ", ...", size - strlen(out) - 1);
+}
+
+/* the launchers this ammunition loads, or the bays this fighter flies from */
+void OutfitDetails::AmmoFor(short weap)
+{
+    short list[kMaxNamesListed];
+    char names[256];
+    int count;
+    int total;
+    short w;
+    short i;
+    int k;
+    bool bay;
+
+    if (!WeaponLoaded(weap))
+        return;
+    bay = weaponStats[weap].guidance == kGuidanceBay;
+    count = total = 0;
+    for (i = 0; i < kMaxOutfits; i++) {
+        if (!OutfitLoaded(i) || outfitSystem[i].modType[0] != OutfMod::Weapon)
+            continue;
+        w = outfitSystem[i].modVal[0];
+        if (!WeaponLoaded(w))
+            continue;
+        if (bay ? w != weap : (weaponStats[w].guidance == kGuidanceBay || weaponStats[w].ammoType != weap))
+            continue;
+        for (k = 0; k < count; k++) {
+            if (SameName(outfitSystem[list[k]].name, outfitSystem[i].name))
+                break;
+        }
+        if (k < count)
+            continue;
+        total++;
+        if (count < kMaxNamesListed)
+            list[count++] = i;
+    }
+    if (count == 0)
+        return;
+    NameList(names, sizeof(names), list, count, total);
+    Line(NULL, bay ? "Fighter for: %s" : "Ammunition for: %s", names);
+}
+
+void OutfitDetails::Weapon(short weap)
+{
+    const WeapRecord *w;
+    const char *guidance;
+    char a[32];
+    char b[32];
+    char name[64];
+    short ammo;
+    short ship;
+    short i;
+    bool beam;
+    double factor;
+    double fuel;
+
+    if (!WeaponLoaded(weap))
+        return;
+    w = &weaponStats[weap];
+    guidance = GuidanceName(w->guidance);
+    if (w->guidance == kGuidanceBay) {
+        if (guidance != NULL)
+            Line(NULL, "Guidance: %s", guidance);
+        ship = w->ammoType - kFirstResourceID;
+        if (ship >= 0 && ship < kMaxShipTypes && shipClass[ship].techLevel != kResAbsent
+            && shipClass[ship].techLevel != kResUnloaded) {
+            NameOf(shipClass[ship].name, name, sizeof(name));
+            if (w->maxAmmo > 0)
+                Line(NULL, "Launches: %s, holds %d", name, w->maxAmmo);
+            else
+                Line(NULL, "Launches: %s", name);
+        }
+        return;
+    }
+    beam = IsBeam(w->guidance);
+    factor = beam && w->lifetime > 1 ? w->lifetime : 1.0;     /* a beam hits every frame it lasts */
+    if (w->damage[0] > 0 || w->damage[1] > 0)
+        Line(NULL, "Damage: %s armor / %s shield", Num(a, sizeof(a), w->damage[0] * factor, 2, false),
+             Num(b, sizeof(b), w->damage[1] * factor, 2, false));
+    Num(a, sizeof(a), w->reload <= 1.0f ? kFramesPerSecond : kFramesPerSecond / w->reload, 2, false);
+    Line(NULL, "Fire rate: %s %s/s", a, strcmp(a, "1") == 0 ? "shot" : "shots");
+    if (w->totalRange > 0)
+        Line(NULL, "Range: %ld", lround(w->totalRange));
+    if (!beam && lround(w->speed100 * 100.0) > 0)
+        Line(NULL, "Speed: %ld", lround(w->speed100 * 100.0));
+    if (guidance != NULL)
+        Line(NULL, "Guidance: %s", guidance);
+    if (w->ammoType >= 0 && w->ammoType < kMaxWeapTypes) {
+        ammo = -1;
+        for (i = 0; i < kMaxOutfits && ammo == -1; i++) {
+            if (OutfitLoaded(i) && outfitSystem[i].modType[0] == OutfMod::Ammo
+                && outfitSystem[i].modVal[0] == w->ammoType)
+                ammo = i;
+        }
+        if (ammo != -1)
+            NameOf(outfitSystem[ammo].name, name, sizeof(name));
+        else
+            strcpy(name, "uses ammunition");
+        if (weaponStats[w->ammoType].maxAmmo > 0)
+            Line(NULL, "Ammo: %s, max %d per launcher", name, weaponStats[w->ammoType].maxAmmo);
+        else
+            Line(NULL, "Ammo: %s", name);
+    } else if (w->ammoType < -kWeapAmmoFuelBase) {
+        fuel = (-w->ammoType - kWeapAmmoFuelBase) * 0.1;
+        if ((w->flags3 & kWeapAmmoAtBurstEnd) != 0) {
+            if (w->burstCount > 0)
+                Line(NULL, "Fuel per burst: %s", Num(a, sizeof(a), fuel, 2, false));
+        } else if (w->reload <= 1.0f) {
+            Line(NULL, "Fuel: %s /s", Num(a, sizeof(a), fuel * kFramesPerSecond, 2, false));
+        } else {
+            Line(NULL, "Fuel per shot: %s", Num(a, sizeof(a), fuel, 2, false));
+        }
+    }
+    if (w->blastRadius > 0)
+        Line(NULL, "Blast radius: %d", w->blastRadius);
+    if (w->ionization > 0)
+        Line(NULL, "Ion: %s", Num(a, sizeof(a), w->ionization * factor, 2, false));
+    if (w->burstCount > 0)
+        Line(NULL, "Burst: %d, reload %s s", w->burstCount,
+             Num(a, sizeof(a), w->burstReload / kFramesPerSecond, 2, false));
+}
+
+void OutfitDetails::Effect(short outfit, short slot)
+{
+    const OutfRecord &o = outfitSystem[outfit];
+    short type;
+    short v;
+    short target;
+    char a[32];
+    char name[64];
+    char other[64];
+    char cloak[160];
+
+    type = o.modType[slot];
+    v = o.modVal[slot];
+    switch (type) {
+    case OutfMod::Weapon:
+        if (slot == 0)
+            Weapon(v);
+        return;
+    case OutfMod::Ammo:
+        if (slot == 0)
+            AmmoFor(v);
+        return;
+    case OutfMod::EscapePod: Line(&betterRGB, "Escape pod"); return;
+    case OutfMod::DensityScanner: Line(&betterRGB, "Density scanner"); return;
+    case OutfMod::IFF: Line(&betterRGB, "IFF"); return;
+    case OutfMod::AutoRefuel: Line(&betterRGB, "Refuels on landing"); return;
+    case OutfMod::AutoEject: Line(&betterRGB, "Ejects when the ship is destroyed"); return;
+    case OutfMod::FakeID: Line(&betterRGB, "Fake ID"); return;
+    case OutfMod::CloakScanner: Line(&betterRGB, "Cloak scanner"); return;
+    case OutfMod::Scoop: Line(&betterRGB, "Asteroid scoop"); return;
+    case OutfMod::FastJump: Line(&betterRGB, "Fast jump"); return;
+    case OutfMod::Inertialess: Line(&betterRGB, "Inertialess"); return;
+    case OutfMod::ResistGravity: Line(&betterRGB, "Resists gravity"); return;
+    case OutfMod::ResistDeadly: Line(&betterRGB, "Resists deadly planets"); return;
+    case OutfMod::Paint: Line(&betterRGB, "Paint job"); return;
+    case OutfMod::BlockReinforce: Line(&betterRGB, "Blocks reinforcements"); return;
+    case OutfMod::IFFScrambler: Line(&betterRGB, "IFF scrambler"); return;
+    case OutfMod::RepairDroids: Line(&betterRGB, "Repair droids"); return;
+    case OutfMod::BombDestroys: Line(&worseRGB, "Bomb: destroys your ship"); return;
+    case OutfMod::BombDisables: Line(&worseRGB, "Bomb: disables your ship"); return;
+    case OutfMod::Afterburner: Line(&betterRGB, "Afterburner (%d fuel/s)", v); return;
+    case OutfMod::Map:
+        if (v > 0)
+            Line(&betterRGB, "Maps systems within %d %s", v, v == 1 ? "jump" : "jumps");
+        else if (v == kMapIndependent)
+            Line(&betterRGB, "Maps inhabited independent systems");
+        else if (v <= -kMapGovtClassBase)
+            Line(&betterRGB, "Maps systems of government class %d", -(v + kMapGovtClassBase));
+        return;
+    case OutfMod::Cloak:
+        strcpy(cloak, "Cloaking device");
+        if (v & kCloakRadarVisible)
+            strcat(cloak, ", visible on radar");
+        if (v & kCloakZeroesShields)
+            strcat(cloak, ", shields drop to 0");
+        if (v & kCloakDecloakOnHit)
+            strcat(cloak, ", ends when hit");
+        if ((v >> 4) & 0xf)
+            snprintf(cloak + strlen(cloak), sizeof(cloak) - strlen(cloak), ", %d fuel/s", (v >> 4) & 0xf);
+        if ((v >> 8) & 0xf)
+            snprintf(cloak + strlen(cloak), sizeof(cloak) - strlen(cloak), ", %d shield/s", (v >> 8) & 0xf);
+        if (v & kCloakArea)
+            strcat(cloak, ", cloaks the area");
+        Line(&betterRGB, "%s", cloak);
+        return;
+    case OutfMod::MultiJump:
+        if (v > 0)
+            Line(&betterRGB, "Jumps up to %d systems at once", v + 1);
+        return;
+    case OutfMod::RaiseMax:
+        target = v - kFirstResourceID;
+        if (OutfitLoaded(target)) {
+            NameOf(outfitSystem[target].name, other, sizeof(other));
+            NameOf(o.name, name, sizeof(name));
+            Line(&betterRGB, "Max %s: %d per %s", other, outfitSystem[target].maxCount, name);
+        }
+        return;
+    case OutfMod::Marines:
+        if (v > 0)
+            Line(&betterRGB, "+%d crew (boarding)", v);
+        else if (v < 0)
+            Line(&betterRGB, "+%d%% capture odds", -v);
+        return;
+    }
+    if (v == 0)
+        return;
+    switch (type) {
+    case OutfMod::Cargo:
+        Line(SignColor(v), "%+d %s cargo space", v, v == 1 || v == -1 ? "ton" : "tons");
+        break;
+    case OutfMod::ShieldBoost: Line(SignColor(v), "%+d shield", v); break;
+    case OutfMod::Armor: Line(SignColor(v), "%+d armor", v); break;
+    case OutfMod::ShieldRech:
+        Line(SignColor(v), "%s shield/s", Num(a, sizeof(a), v * 0.001 * kFramesPerSecond, 2, true));
+        break;
+    case OutfMod::ArmorRech:
+        Line(SignColor(v), "%s armor/s", Num(a, sizeof(a), v * 0.001 * kFramesPerSecond, 2, true));
+        break;
+    case OutfMod::Accel: Line(SignColor(v), "%s acceleration", Num(a, sizeof(a), v / 2.0, 1, true)); break;
+    case OutfMod::Speed: Line(SignColor(v), "%+d speed", v); break;
+    case OutfMod::Turn: Line(SignColor(v), "%s turn rate", Num(a, sizeof(a), v * 0.01 * kFramesPerSecond, 1, true)); break;
+    case OutfMod::FuelCapacity: Line(SignColor(v), "%+d fuel", v); break;
+    case OutfMod::FuelRegen:
+        Line(SignColor(v), "%s fuel/s", Num(a, sizeof(a), kFramesPerSecond / v, 2, true));
+        break;
+    case OutfMod::DaysPerJump:
+        Line(LowerBetterColor(v), "%+d %s per jump", v, v == 1 || v == -1 ? "day" : "days");
+        break;
+    case OutfMod::HyperSafeDist: Line(LowerBetterColor(v), "%+d jump distance", v); break;
+    case OutfMod::Interference: Line(SignColor(v), "%+d interference", -v); break;
+    case OutfMod::Murk: Line(LowerBetterColor(v), "%+d murk", v); break;
+    case OutfMod::Jam1:
+    case OutfMod::Jam2:
+    case OutfMod::Jam3:
+    case OutfMod::Jam4:
+        Line(SignColor(v), "Jamming type %d: %+d%%", type - OutfMod::Jam1 + 1, v);
+        break;
+    case OutfMod::Deionize:
+        Line(SignColor(v), "%s ion/s deionization", Num(a, sizeof(a), v * 0.01 * kFramesPerSecond, 2, true));
+        break;
+    case OutfMod::IonCapacity: Line(SignColor(v), "%+d ion capacity", v); break;
+    case OutfMod::GunSlots:
+        Line(SignColor(v), "%+d gun %s", v, v == 1 || v == -1 ? "slot" : "slots");
+        break;
+    case OutfMod::TurretSlots:
+        Line(SignColor(v), "%+d turret %s", v, v == 1 || v == -1 ? "slot" : "slots");
+        break;
+    }
+}
 
 // FUNCTION: EVNOVA 0x0048ea70
 // MAC: _DoOutfitDialog i386 0x0005bacf ppc 0x00063b20
@@ -76,6 +625,9 @@ void OutfitDialog::Run()
     selOutfitItem = -1;
     selOutfitListItem = -1;
     outfitScroll = 0;
+    descScroll = 0;
+    descScrollOutfit = -1;
+    descMaxScroll = 0;
     boughtMap = boughtID = 0;
     canBuy = canSell = 0;
     ShipStatsToSystemInfo();
@@ -583,6 +1135,7 @@ Boolean OutfitDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *ite
     short row;
     int index;
     int wheel;
+    int oldScroll;
 
     if (LeaveRequested(1, itemHit))
         return 1;
@@ -749,8 +1302,23 @@ Boolean OutfitDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *ite
         return ButtonItemHit(OutfitButtons().Track(where), kOutfitSlotItems, itemHit);
     }
     if (ev.what == DialogInput::Idle) {
-        /* the wheel: one notch presses scroll up (10) or down (11) while that button is lit */
+        /* the wheel: over an overflowing description one notch scrolls it a line, else it presses
+           scroll up (10) or down (11) while that button is lit */
         wheel = MouseTakeWheel();
+        if (wheel != 0 && descMaxScroll > 0) {
+            GetDialogItem(outfitDialog, 6, &itemType, &item, &box);
+            if (PtInRectPoint(ev.where, &box)) {
+                oldScroll = descScroll;
+                descScroll -= wheel * descLineHeight;
+                if (descScroll < 0)
+                    descScroll = 0;
+                if (descScroll > descMaxScroll)
+                    descScroll = descMaxScroll;
+                if (descScroll != oldScroll)
+                    RedrawDialog(outfitDialog);
+                wheel = 0;
+            }
+        }
         if (wheel > 0 && outfitScroll >= kGridCols) {
             *itemHit = 10;
             return 1;
@@ -979,11 +1547,32 @@ void OutfitDialogUpdate(void)
         }
     }
     GetDialogItem(outfitDialog, 6, &itemType, &item, &box);
+    if (selOutfitItem != descScrollOutfit) {
+        descScroll = 0;
+        descScrollOutfit = selOutfitItem;
+    }
     if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(outfitDialog)))) {
+        static OutfitDetails details;
+
         TextFont(smallTextFont);
         TextSize(smallTextSize);
-        TETextBox(dialogDescTextPtr, strlen(dialogDescTextPtr), &box, 0);
-        InvertRect(&box);
+        if (selOutfitListItem != -1 && selOutfitItem >= 0 && selOutfitItem < kMaxOutfits)
+            details.Build(selOutfitItem);
+        else
+            details.Plain(dialogDescTextPtr);
+        descLineHeight = TextLineHeight();
+        descMaxScroll = MeasureTextSpans(details.Text(), details.Length(), &box) - (box.bottom - box.top);
+        if (descMaxScroll < 0)
+            descMaxScroll = 0;
+        else if (descLineHeight > 0)
+            descMaxScroll = (descMaxScroll + descLineHeight - 1) / descLineHeight * descLineHeight;
+        if (descScroll > descMaxScroll)
+            descScroll = descMaxScroll;
+        ForeColor(blackColor);
+        PaintRect(&box);
+        ForeColor(whiteColor);
+        DrawTextSpans(details.Text(), details.Length(), &box, descScroll, details.Spans(), details.SpanCount());
+        ForeColor(blackColor);
     }
     OutfitButtons().Draw(-1);
     CopyLoadPortToDialog(outfitDialog);

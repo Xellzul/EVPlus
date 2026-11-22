@@ -39,11 +39,6 @@ Boolean ShipObj::VisibleTo(ShipObj *viewer)
     return 1;
 }
 
-/* Cloak value bits */
-#define kCloakRadarVisible 2
-#define kCloakZeroesShields 4
-#define kCloakDecloakOnHit 8
-#define kCloakArea 0x1000
 /* CloakScanner value bits */
 #define kScanSeeOnRadar 1
 #define kScanSeeOnScreen 2

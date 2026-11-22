@@ -1322,6 +1322,12 @@ enum : short {
     BombDisables = 50
 };
 }
+#define kCloakRadarVisible  0x0002  /* ModType Cloak value bits */
+#define kCloakZeroesShields 0x0004
+#define kCloakDecloakOnHit  0x0008
+#define kCloakArea          0x1000
+#define kMapIndependent     (-1)    /* ModType Map: inhabited independent systems */
+#define kMapGovtClassBase   1000    /* ModType Map: -(1000 + class) maps that government class */
 #define kStrOf                 0x187   /* STR# 2002: "of" */
 #define kStrAnd                0x188   /* STR# 2002: "and" */
 #define kPrefsStrList   0x82
