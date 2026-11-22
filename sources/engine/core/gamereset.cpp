@@ -721,6 +721,7 @@ void SetDefaultKeys(void)
     keyPrefs.escortOrder[1] = kScanD;
     keyPrefs.escortOrder[2] = kScanV;
     keyPrefs.escortOrder[3] = kScanC;
+    keyPrefs.speedUp = kScanCapsLock;
 }
 
 // FUNCTION: EVNOVA 0x004b4690

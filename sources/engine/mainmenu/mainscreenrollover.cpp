@@ -6,7 +6,6 @@
 #include "render.h"
 #include "game.h"
 /* the main-screen object's globals; this file ends that object (the .CRT hook) */
-PicHandle keyPic;
 short keyDialogSel;
 short introTextID;
 short introPictID[4];

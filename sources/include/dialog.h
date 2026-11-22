@@ -1,6 +1,7 @@
 /* dialog.h -- a modal dialog and the PICTs it draws, both released when they go out of scope; the copy that ends
-   an update proc */
+   an update proc; the items of a dialog built in code */
 #pragma once
+#include <array>
 #include "macport.h"
 
 /* A PICT kept in the global an update proc draws from; released and cleared when destroyed. */
@@ -24,6 +25,23 @@ private:
    with a black fore colour. */
 void CopyLoadPortToDialog(DialogPtr dlg);
 void CopyLoadPortToDialog(DialogPtr dlg, const Rect &box);
+
+/* the items of a dialog built in code, numbered from 1 as they are added */
+class ItemList {
+public:
+    short add(unsigned char kind, short top, short left, short bottom, short right, const char *text = nullptr,
+              short resID = 0)
+    {
+        items[count] = { kind, top, left, bottom, right, text, resID };
+        return ++count;
+    }
+    const DialogItemSpec *data() const { return items.data(); }
+    short size() const { return count; }
+
+private:
+    std::array<DialogItemSpec, 64> items;
+    short count = 0;
+};
 
 enum class DialogClose : unsigned char { Plain, NoFlash };
 

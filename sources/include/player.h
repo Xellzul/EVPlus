@@ -165,6 +165,7 @@ extern float weapTargetExpand;
 
 extern Boolean escortGroupFlag[5];
 extern ScanCode newKeyPrefs[40];
+#define kBindingCount 35            /* the key bindings: Key Settings rows, prefs file slots */
 EXTERN_CPP_END
 
 extern Boolean ShipIsInertialess(ShipObj *ship);

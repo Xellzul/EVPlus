@@ -14,13 +14,9 @@ struct Rect;
 struct DialogRecord;
 
 /* cestartup.cpp */
-#define kCEIniSection       "EV Nova"
-
-extern int ceX2Hotkey;
 extern unsigned char ceRunInAWindow;
 
 void CE_Startup(void);
-void CE_ReadX2Hotkey(void);
 unsigned char CE_IsWindowed(void);
 void CE_ToggleFullscreen(void);
 

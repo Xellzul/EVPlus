@@ -189,7 +189,6 @@ extern PicHandle haggleBackgroundPic;
 extern short haggleMode;
 extern int32_t haggleVal;
 extern Boolean hatesPlayer;
-extern PicHandle keyPic;
 extern short lastRaceWinner;
 extern uint32_t lastTextScrollTime;
 extern unsigned char lcOutfitName[512][256];

@@ -70,9 +70,8 @@ extern int PlatPollEvent(union SDL_Event *e);
 extern void PlatWaitEvent(int ms);                         /* returns once an event waits, or after ms */
 /* 1 while the key with this scan code (kScan*) is held, as of the events read so far */
 extern int PlatKeyIsDown(int scan);
-/* the toggle state of a key named by its Windows virtual-key code (ddraw.ini's key_x2mode): the lock
-   keys answer their lock state, a letter, digit or function key flips at each press */
-extern int PlatKeyToggled(int winKey);
+/* a lock key's (Caps, Num, Scroll Lock) lock state, 1 or 0; -1 for any other key */
+extern int PlatKeyLockState(int scan);
 
 /* -- cursor --------------------------------------------------------------------------------------- */
 extern void PlatCursorShow(int show);

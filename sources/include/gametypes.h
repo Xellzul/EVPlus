@@ -735,6 +735,7 @@ typedef struct KeyPrefs {
     ScanCode               quickKey[5];
     ScanCode               escortOrder[4];
     ScanCode               toggleFPS;
+    ScanCode               speedUp;
 } KeyPrefs;
 
 #ifdef __cplusplus

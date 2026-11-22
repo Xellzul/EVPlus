@@ -87,7 +87,9 @@ extern short InitParticles(int numElements, int gravity);
 extern void DisposeParticles(void);
 extern void DoAboutBox(void);
 extern void InitMainScreen(void);
-extern ScanCode FirstKeyDown(void);
+/* the first bindable key held; Caps Lock only when capsLock */
+extern ScanCode FirstKeyDown(bool capsLock);
+extern Boolean SpeedUpKeyOn(void);           /* the speed-up key asks for double time */
 extern Boolean GovtSharedClass(short a, short b);
 extern void HandleAlertSprite(void);
 extern void HandleDoubleTimeSprite(void);

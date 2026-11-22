@@ -14,7 +14,6 @@ namespace {
 
 constexpr short kWidth = 500;
 constexpr short kHeight = 335;
-constexpr short kMaxItems = 48;
 constexpr short kMusicVolStrList = 0x88;
 constexpr short kMaxMusicVol = 8;
 constexpr short kMaxGamma = 6;
@@ -40,23 +39,6 @@ const char *const kFilterNames[kScaleFilterCount] = { "Nearest", "Linear", "Pixe
 
 short gTitleItem;                           /* the dialog's user items, for PrefsDialogUpdate */
 short gNoticeItem;
-
-/* the dialog's items, numbered as they are added */
-class ItemList {
-public:
-    short add(unsigned char kind, short top, short left, short bottom, short right, const char *text = NULL,
-              short resID = 0)
-    {
-        items[count] = { kind, top, left, bottom, right, text, resID };
-        return ++count;
-    }
-    const DialogItemSpec *data() const { return items.data(); }
-    short size() const { return count; }
-
-private:
-    std::array<DialogItemSpec, kMaxItems> items;
-    short count = 0;
-};
 
 /* an up/down control's items: its value, the line below it (or 0), and the two arrows */
 struct StepperItems {

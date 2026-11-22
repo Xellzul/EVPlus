@@ -35,7 +35,7 @@ void CenterPict(void *pict, Rect *bounds)
 
 
 // FUNCTION: EVNOVA 0x00466810
-ScanCode FirstKeyDown(void)
+ScanCode FirstKeyDown(bool capsLock)
 {
     ScanCode code;
     char name[16];
@@ -47,8 +47,12 @@ ScanCode FirstKeyDown(void)
         code = ScanCode(i);
         switch (code) {
         case kScan1: case kScan2: case kScan3: case kScan4:
-        case kScanCapsLock: case kScanF1: case kScanF2: case kScanF3: case kScanF4: case kScanF5:
+        case kScanF1: case kScanF2: case kScanF3: case kScanF4: case kScanF5:
         case kScanLGui: case kScanRGui:
+            break;
+        case kScanCapsLock:
+            if (capsLock && KeyIsDown(code) != 0)
+                return code;
             break;
         default:
             if (KeyIsDown(code) != 0) {
@@ -101,6 +105,7 @@ void KeyPrefsToSlotTable(void)
     newKeyPrefs[31] = keyPrefs.playerInfo;
     newKeyPrefs[32] = keyPrefs.missions;
     newKeyPrefs[33] = keyPrefs.toggleFPS;
+    newKeyPrefs[34] = keyPrefs.speedUp;
 }
 
 // FUNCTION: EVNOVA 0x00466a30
@@ -140,6 +145,7 @@ void SlotTableToKeyPrefs(void)
     keyPrefs.playerInfo = newKeyPrefs[31];
     keyPrefs.missions = newKeyPrefs[32];
     keyPrefs.toggleFPS = newKeyPrefs[33];
+    keyPrefs.speedUp = newKeyPrefs[34];
 }
 
 
@@ -149,7 +155,7 @@ Boolean DupKeyCheck(ScanCode value, short skip)
 {
     short i;
 
-    for (i = 0; i < 0x22; i++) {
+    for (i = 0; i < kBindingCount; i++) {
         if (value == newKeyPrefs[i] && i != skip)
             return 1;
     }

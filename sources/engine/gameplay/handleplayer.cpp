@@ -16,6 +16,7 @@
 #include "crashlog.h"
 #include "viewscale.h"
 #include "screen.h"
+#include "platform.h"
 
 /* the cheat keys HandlePlayer reads by code */
 #define kScanExploreCheat   kScanLang1
@@ -62,6 +63,8 @@ Boolean escortMenuFlag;
 Boolean escortGroupFlag[5];
 Boolean escortCommandFlag[4];
 Boolean pauseKeyFlag;
+static Boolean speedUpFlag;
+static Boolean speedUpToggled;
 short selEscortGroup;
 short lastEscortCount;
 
@@ -1958,6 +1961,15 @@ void HandlePlayer(ShipObj *player)
         framerateFlag = 0;
     }
 
+    if (QuickKeyCheck(keyPrefs.speedUp)) {
+        if (!speedUpFlag) {
+            speedUpFlag = 1;
+            speedUpToggled = !speedUpToggled;
+        }
+    } else {
+        speedUpFlag = 0;
+    }
+
     if (cheatsActive) {
         if (QuickKeyCheck(kScanBackspace)) {
             if (ST_IsSoundPlaying(warpUpSnd[0])) {
@@ -3250,11 +3262,20 @@ void SetAllKeyCmdFlags(void)
     framerateFlag = 1;
     escortMenuFlag = 1;
     pauseKeyFlag = 1;
+    speedUpFlag = 1;
     ackCommFlag = 1;
     for (i = 0; i < 5; i++)
         escortGroupFlag[i] = 1;
     for (i = 0; i < 4; i++)
         escortCommandFlag[i] = 1;
+}
+
+/* a lock key as its lock state; any other key on and off by its presses in flight */
+Boolean SpeedUpKeyOn(void)
+{
+    int lock = PlatKeyLockState((int)keyPrefs.speedUp);
+
+    return lock >= 0 ? lock != 0 : speedUpToggled;
 }
 
 #define kStrEscortPrefix    0x86   /* + the AI-type filter's own name */

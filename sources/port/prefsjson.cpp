@@ -5,8 +5,6 @@
 #include "burger.h"
 #include "player.h"
 
-#define kPrefsKeyCount      34          /* the bindings in use; the record holds 36 slots */
-
 typedef struct PrefsJsonField {
     const char *name;
     size_t offset;
@@ -79,7 +77,7 @@ void PrefsJsonLoad(const char *path, PrefsRecord *rec)
         if (yyjson_is_num(yyjson_obj_get(root, "uiScale")))
             rec->uiScale = yyjson_get_num(yyjson_obj_get(root, "uiScale"));
         keys = yyjson_obj_get(root, "keys");
-        for (i = 0; i < kPrefsKeyCount; i++)
+        for (i = 0; i < kBindingCount; i++)
             ReadShort(yyjson_arr_get(keys, i), &rec->keys[i]);
     }
     yyjson_doc_free(doc);
@@ -102,7 +100,7 @@ void PrefsJsonSave(const char *path, PrefsRecord *rec)
     for (i = 0; i < kPrefsJsonFieldCount; i++)
         yyjson_mut_obj_add_int(doc, root, kPrefsJsonFields[i].name, *FieldOf(rec, i));
     yyjson_mut_obj_add_real(doc, root, "uiScale", rec->uiScale);
-    keys = yyjson_mut_arr_with_sint16(doc, rec->keys, kPrefsKeyCount);
+    keys = yyjson_mut_arr_with_sint16(doc, rec->keys, kBindingCount);
     yyjson_mut_obj_add_val(doc, root, "keys", keys);
     text = yyjson_mut_write(doc, YYJSON_WRITE_PRETTY_TWO_SPACES | YYJSON_WRITE_NEWLINE_AT_END, &length);
     if (text != NULL) {

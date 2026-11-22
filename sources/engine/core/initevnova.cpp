@@ -357,7 +357,6 @@ void InitEVNova(void)
 
     crashlog("opening data files & loading prefs");
     InitDataFiles();
-    CE_ReadX2Hotkey();
     LoadPrefs();
 
     crashlog("initializing monitor");
@@ -683,7 +682,7 @@ void PlayGame(void)
                 missionSoundID = -1;
                 if (ST_IsSoundPlaying(warpUpSnd[1]) != 0) {
                     doubleTime = 1;
-                } else if (PlatKeyToggled(ceX2Hotkey)) {
+                } else if (SpeedUpKeyOn()) {
                     if (abs(AngularDifference(shipData[0].heading,
                                 shipData[0].desiredHeading)) <= 10
                             && ST_IsSoundPlaying(warpUpSnd[0]) != 0) {

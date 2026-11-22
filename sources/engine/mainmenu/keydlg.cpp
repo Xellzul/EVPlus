@@ -1,4 +1,6 @@
-/* keydlg.cpp -- the key-binding dialog's update proc (win 0x0048b860). Notes: Research/notes/keydlg.md */
+/* keydlg.cpp -- the key-binding dialog (win 0x0048b860), built in code: DITL 4002's buttons and rows plus a Speed
+   Up row; the labels, headings and dotted group frames (PICT 139 there) drawn by the update proc.
+   Notes: Research/notes/keydlg.md */
 
 #include "game.h"
 #include "player.h"
@@ -6,10 +8,153 @@
 #include "render.h"
 #include "gamedialog.h"
 
-#define kBindingCount 0x22
-
-
 namespace {
+
+constexpr short kWidth = 594;
+constexpr short kHeight = 353;
+constexpr short kOKItem = 1;
+constexpr short kCancelItem = 2;
+constexpr short kDefaultItem = 3;
+constexpr short kPanelItem = 4;
+constexpr short kFirstBindingItem = 5;
+constexpr short kSpeedUpRow = 34;
+constexpr short kRowWidth = 81;
+constexpr short kRowHeight = 22;
+constexpr short kRowPitch = 24;
+constexpr short kNoNameStrIndex = 0x119;
+constexpr short kRowTextInset = 5;
+constexpr short kRowBaseline = 15;
+constexpr short kLabelBaseline = 14;        /* below the row's top; a two-line label 8 above and 4 below it */
+constexpr short kHeadingInset = 11;         /* from the frame's left; the frame's dots leave 4 before, 7 after it */
+constexpr short kAltGap = 4;                /* "Alt" ends this far left of the row */
+
+/* a binding row's label, two lines when `more` is set; alt: "Alt" before the key */
+struct Row {
+    const char *label;
+    const char *more;
+    bool alt;
+};
+
+/* in binding order (newKeyPrefs) */
+constexpr Row kRows[kBindingCount] = {
+    { "Accelerate:", nullptr, false },
+    { "Reverse Course:", nullptr, false },
+    { "Rotate Right:", nullptr, false },
+    { "Rotate Left:", nullptr, false },
+    { "Afterburner:", nullptr, false },
+    { "Autopilot:", nullptr, false },
+    { "Hyperspace Mode:", nullptr, false },
+    { "Hyper Select:", nullptr, false },
+    { "Hyper Jump:", nullptr, false },
+    { "Nav System Off:", nullptr, false },
+    { "Communicate:", nullptr, false },
+    { "Land/Dock:", nullptr, false },
+    { "Fire Primary:", nullptr, false },
+    { "Fire", " Secondary:", false },
+    { "Select", " Secondary:", false },
+    { "Weap. Safety:", nullptr, false },
+    { "Target Select:", nullptr, false },
+    { "Closest Targ:", nullptr, false },
+    { "Escort Menu:", nullptr, false },
+    { "Attack Target:", nullptr, false },
+    { "Defend Me:", nullptr, false },
+    { "Hold Position:", nullptr, false },
+    { "Recall:", "(alt = dock)", false },
+    { "Pause:", nullptr, false },
+    { "Acknowledge:", nullptr, false },
+    { "Board:", nullptr, false },
+    { "Jettison Cargo:", nullptr, true },
+    { "Eject:", nullptr, true },
+    { "Self-Destruct:", nullptr, true },
+    { "Engage Cloak:", nullptr, false },
+    { "Galaxy Map:", nullptr, false },
+    { "Player Info:", nullptr, false },
+    { "Mission Info:", nullptr, false },
+    { "Show Framerate:", nullptr, false },
+    { "Speed Up:", nullptr, false },
+};
+
+/* a group of rows: its dotted frame and heading, where its labels and rows start */
+struct Group {
+    const char *heading;
+    Rect frame;
+    short labelLeft;
+    short rowLeft;
+    short rowTop;
+    short firstRow;
+    short rowCount;
+};
+
+constexpr Group kGroups[] = {
+    { "Navigation Controls:", { 9, 6, 312, 190 }, 15, 102, 19, 0, 12 },
+    { "Battle Controls:", { 9, 205, 167, 389 }, 211, 301, 19, 12, 6 },
+    { "Escort Controls:", { 178, 205, 312, 389 }, 211, 301, 188, 18, 5 },
+    { "Miscellaneous Controls:", { 9, 404, 312, 588 }, 412, 500, 19, 23, 12 },
+};
+
+Rect RowBox(const Group &group, short row)
+{
+    Rect box;
+    short top = group.rowTop + (row - group.firstRow) * kRowPitch;
+
+    SetRect(&box, group.rowLeft, top, group.rowLeft + kRowWidth, top + kRowHeight);
+    return box;
+}
+
+/* a 50% dotted frame, its top line left out from gapFrom to gapTo */
+void DrawDots(const Rect &frame, short gapFrom, short gapTo)
+{
+    auto dot = [](short h, short v) {
+        Rect r;
+
+        if (((h + v) & 1) != 0) {
+            SetRect(&r, h, v, h + 1, v + 1);
+            PaintRect(&r);
+        }
+    };
+
+    for (short h = frame.left; h < frame.right; h++) {
+        if (h < gapFrom || h >= gapTo)
+            dot(h, frame.top);
+        dot(h, frame.bottom - 1);
+    }
+    for (short v = frame.top + 1; v < frame.bottom - 1; v++) {
+        dot(frame.left, v);
+        dot(frame.right - 1, v);
+    }
+}
+
+void DrawGroups()
+{
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    ForeColor(blackColor);
+    for (const Group &group : kGroups) {
+        short headingLeft = group.frame.left + kHeadingInset;
+
+        DrawDots(group.frame, headingLeft - 4, headingLeft + MeasureCString(group.heading) + 7);
+        MoveTo(headingLeft, group.frame.top + 3);
+        DrawCString(group.heading);
+        for (short i = group.firstRow; i < group.firstRow + group.rowCount; i++) {
+            const Row &row = kRows[i];
+            Rect box = RowBox(group, i);
+
+            if (row.more == nullptr) {
+                MoveTo(group.labelLeft, box.top + kLabelBaseline);
+                DrawCString(row.label);
+            } else {
+                MoveTo(group.labelLeft, box.top + kLabelBaseline - 8);
+                DrawCString(row.label);
+                MoveTo(group.labelLeft, box.top + kLabelBaseline + 4);
+                DrawCString(row.more);
+            }
+            if (row.alt) {
+                MoveTo(box.left - kAltGap - MeasureCString("Alt"), box.top + kLabelBaseline);
+                DrawCString("Alt");
+            }
+        }
+    }
+}
 
 // FUNCTION: EVNOVA 0x0048b280
 /* The key bindings: a key pressed binds the selected row; OK saves them unless a key is bound twice. */
@@ -24,7 +169,19 @@ private:
 
 void KeyDialog::Run()
 {
-    dialog.Open(0xfa2, KeyDialogUpdate, Filter, &keyDialog);
+    ItemList items;
+
+    items.add(kDitlButton, 323, 507, 343, 577, "OK");
+    items.add(kDitlButton, 323, 425, 343, 495, "Cancel");
+    items.add(kDitlButton, 323, 77, 343, 199, "Set Default");
+    items.add(kDitlUserItem, 5, 6, 312, 588);
+    for (const Group &group : kGroups) {
+        for (short i = group.firstRow; i < group.firstRow + group.rowCount; i++) {
+            Rect box = RowBox(group, i);
+            items.add(kDitlUserItem, box.top, box.left, box.bottom, box.right);
+        }
+    }
+    dialog.Open(kWidth, kHeight, items.data(), items.size(), KeyDialogUpdate, Filter, &keyDialog);
     if (!dialog.IsOpen())
         return;
 
@@ -32,15 +189,12 @@ void KeyDialog::Run()
     FrontWindow(keyDialog);
     SetDialogGWorld(keyDialog);
     RedrawDialog(keyDialog);
-    Picture pic(keyPic);
-    pic.Load(0x8b);
 
     KeyDialogUpdate();
     Loop();
 
     if (gWind != NULL)
         SWSetPortToWindow(gSpriteWorld);
-    pic.Release();
     dialog.Close();
 }
 
@@ -52,7 +206,7 @@ void KeyDialog::Hit(short item)
     ScanCode localBuf[kBindingCount];
     ScanCode defaultBuf[kBindingCount];
 
-    if (item == 1) {
+    if (item == kOKItem) {
         matched = 0;
         for (j = 0; j < kBindingCount; j++) {
             if (DupKeyCheck(newKeyPrefs[j], j)) {
@@ -69,9 +223,9 @@ void KeyDialog::Hit(short item)
             SavePrefs();
         }
     }
-    if (item == 2)
+    if (item == kCancelItem)
         done = 1;
-    if (item == 3) {
+    if (item == kDefaultItem) {
         KeyPrefsToSlotTable();
         for (i = 0; i < kBindingCount; i++)
             localBuf[i] = newKeyPrefs[i];
@@ -87,16 +241,11 @@ void KeyDialog::Hit(short item)
         keyDialogSel = 0;
         RedrawDialog(keyDialog);
     }
-    if (item >= 5 && item <= 0x27) {
-        keyDialogSel = item - 5;
+    if (item >= kFirstBindingItem && item < kFirstBindingItem + kBindingCount) {
+        keyDialogSel = item - kFirstBindingItem;
         RedrawDialog(keyDialog);
     }
 }
-
-#define kFirstBindingItem   5
-#define kNoNameStrIndex  0x119
-#define kRowTextInset       5
-#define kRowBaseline      0xf
 
 // FUNCTION: EVNOVA 0x0048b6d0
 // MAC: _KeyFilter i386 0x00017482 ppc 0x0001b030
@@ -129,7 +278,7 @@ Boolean KeyDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHi
         } while ((short)i < kBindingCount);
         return 0;
     }
-    code = FirstKeyDown();
+    code = FirstKeyDown(keyDialogSel == kSpeedUpRow);
     if (code != kScanNone && keyDialogSel != -1) {
         newKeyPrefs[keyDialogSel] = code;
         sel = keyDialogSel;
@@ -163,12 +312,14 @@ void KeyDialogUpdate(void)
     short i;
 
     SetDialogGWorld(keyDialog);
-    GetDialogItem(keyDialog, 4, &itemType, &item, &picBox);
+    GetDialogItem(keyDialog, kPanelItem, &itemType, &item, &picBox);
     View::SetPortToUIWork();
+    ForeColor(whiteColor);
+    PaintRect(&picBox);
+    DrawGroups();
     ForeColor(blackColor);
     TextFont(0);
     TextSize(12);
-    DrawPicHandle(keyPic, &picBox);
     for (i = 0; i < kBindingCount; i++) {
         GetDialogItem(keyDialog, i + kFirstBindingItem, &itemType, &item, &itemBox);
         if (RectInRgn(&itemBox, GetWindowVisRgn(FrontWindow(keyDialog)))) {

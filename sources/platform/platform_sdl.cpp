@@ -8,7 +8,6 @@
 #endif
 #include "platform.h"
 
-#define kToggleCount    256             /* the keys key_x2mode can name all lie below this */
 #define kFocusNotes     16              /* focus losses waiting in SDL's queue, a power of 2 */
 #define kBytesPerPixel  2
 #define kDefaultRefresh 60              /* Hz, when the display does not tell */
@@ -44,7 +43,6 @@ static bool gWholePixel;                /* PlatVideoSetScaling's wholePixel */
 
 static int gButtons;                    /* mouse buttons held, a bit each */
 static SDL_Scancode gSwallowedKey;      /* the Enter of Alt+Enter: the game sees neither its press nor its release */
-static unsigned char gToggled[kToggleCount];
 static bool gActive;                    /* the game was last told the window has the keyboard */
 
 #define kPullFrames     1024            /* asked of a pull function at a time */
@@ -505,8 +503,6 @@ static bool OwnPart(SDL_Event *e)
             gSwallowedKey = code;
             return false;
         }
-        if (!e->key.repeat && (unsigned)code < kToggleCount)
-            gToggled[code] ^= 1;
         return true;
     case SDL_EVENT_KEY_UP:
         code = OneKey(e->key.scancode);
@@ -601,26 +597,17 @@ int PlatKeyIsDown(int scan)
     return scan < count && state[scan];
 }
 
-int PlatKeyToggled(int winKey)
+int PlatKeyLockState(int scan)
 {
     SDL_Keymod mod;
-    SDL_Scancode code;
 
     mod = SDL_GetModState();
-    switch (winKey) {
-    case 0x14:  return (mod & SDL_KMOD_CAPS) != 0;          /* VK_CAPITAL */
-    case 0x90:  return (mod & SDL_KMOD_NUM) != 0;           /* VK_NUMLOCK */
-    case 0x91:  return (mod & SDL_KMOD_SCROLL) != 0;        /* VK_SCROLL */
+    switch (scan) {
+    case SDL_SCANCODE_CAPSLOCK:     return (mod & SDL_KMOD_CAPS) != 0;
+    case SDL_SCANCODE_NUMLOCKCLEAR: return (mod & SDL_KMOD_NUM) != 0;
+    case SDL_SCANCODE_SCROLLLOCK:   return (mod & SDL_KMOD_SCROLL) != 0;
     }
-    if (winKey >= '0' && winKey <= '9')
-        code = SDL_GetScancodeFromKey((SDL_Keycode)winKey, NULL);
-    else if (winKey >= 'A' && winKey <= 'Z')
-        code = SDL_GetScancodeFromKey((SDL_Keycode)(winKey - 'A' + 'a'), NULL);
-    else if (winKey >= 0x70 && winKey <= 0x7b)              /* VK_F1..VK_F12 */
-        code = (SDL_Scancode)(SDL_SCANCODE_F1 + (winKey - 0x70));
-    else
-        return 0;
-    return (unsigned)code < kToggleCount ? gToggled[code] : 0;
+    return -1;
 }
 
 /* -- cursor --------------------------------------------------------------------------------------- */
