@@ -560,6 +560,17 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
     return 0;
 }
 
+/* the hire box's daily "Pay: <n> cr" line */
+void DrawEscortPay(const Rect &box, int32_t pay)
+{
+    MoveTo(box.left, box.top + 0x18);
+    DrawIndString(kGameStrList, 0x129);
+    MoveTo(box.left + 0x46, box.top + 0x18);
+    DrawCommaNumber(pay);
+    DrawString("\p ");
+    DrawIndString(kGameStrList, 0x22);
+}
+
 } // namespace
 
 void DoShipyardDialog(void)
@@ -765,9 +776,10 @@ void ShipyardDialogUpdate(void)
                 DrawCommaNumber(0.1 * tradeIn);
                 DrawString("\p ");
                 DrawIndString(kGameStrList, 0x22);
-                MoveTo(box.left, (box.top + 0x24));
+                DrawEscortPay(box, (int32_t)(0.01 * shipClass[selShipyardItem].cost));
+                MoveTo(box.left, (box.top + 0x30));
                 DrawIndString(kGameStrList, 0xd9);
-                MoveTo((box.left + 0x46), (box.top + 0x24));
+                MoveTo((box.left + 0x46), (box.top + 0x30));
                 DrawCommaNumber(shipData->credits);
                 DrawString("\p ");
                 DrawIndString(kGameStrList, 0x22);
