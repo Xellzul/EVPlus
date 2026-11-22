@@ -141,6 +141,7 @@ public:
     void run();
 
     ResolutionList resolutions;
+    double uiSize;                          /* the UI scale on the screen, kept across Resolution steps */
 
 private:
     void show();
@@ -167,6 +168,7 @@ PrefsDialog::PrefsDialog()
     gTitleItem = items.add(kDitlUserItem, 5, 12, 28, 489);
     gNoticeItem = items.add(kDitlUserItem, 277, 69, 294, 431);
     keysItem = items.add(kDitlButton, 302, 49, 322, 184, "Key Settings");
+    uiSize = settings.uiScale * BaseUIScale(DrawSize({ settings.gameWidth, settings.gameHeight }));
 
     Column graphics(items, kColGraphics, "Graphics");
     Column sound(items, kColSound, "Sound");
@@ -228,6 +230,7 @@ PrefsDialog::PrefsDialog()
             settings.gameHeight = r.height;
             double min = MinUIScale(r);
             double max = MaxUIScale(r, kWidth, kHeight);
+            settings.uiScale = dialog.uiSize / BaseUIScale(DrawSize(r));
             if (settings.uiScale < min)
                 settings.uiScale = min;
             if (settings.uiScale > max)
@@ -249,11 +252,12 @@ PrefsDialog::PrefsDialog()
             snprintf(value, kDisplayTextMax, "%s", kFilterNames[settings.scaleFilter]);
         });
     stepper(display.stepper("UI scale:"),
-        [](PrefsDialog &, int direction) {
+        [](PrefsDialog &dialog, int direction) {
             Resolution r = { settings.gameWidth, settings.gameHeight };
             double max = MaxUIScale(r, kWidth, kHeight);
             if (direction < 0 || settings.uiScale < max)
                 settings.uiScale = StepUIScale(settings.uiScale, direction, MinUIScale(r), max);
+            dialog.uiSize = settings.uiScale * BaseUIScale(DrawSize(r));
         },
         [](const PrefsDialog &, char *value, char *) {
             UIScaleText(settings.uiScale, value);

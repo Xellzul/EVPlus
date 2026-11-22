@@ -853,17 +853,19 @@ void ApplyUIScale(void)
 }
 
 /* A UI scale changed in the Preferences, to the running game: the scales, the screen's and the view's sizes,
-   and every port and frame made for them. The resolution stays as the game started. */
+   and every port and frame made for them. The resolution stays as the game started; the UI keeps the size on
+   the screen the Preferences' resolution gives it. */
 void ReapplyUIScale(void)
 {
     Resolution running = { startGameWidth, startGameHeight };
+    Resolution chosen = { settings.gameWidth, settings.gameHeight };
     PixelSize draw = { Screen::Get().width, Screen::Get().height };
     Rect r;
 
     if (settings.uiScale == startUIScale || gSpriteWorld == NULL || UI::InMenuScale())
         return;
     SWSetPortToWindow(gSpriteWorld);
-    double used = SetUIScales(running, draw, settings.uiScale);
+    double used = SetUIScales(running, draw, settings.uiScale * BaseUIScale(DrawSize(chosen)) / BaseUIScale(draw));
     if (settings.gameWidth == startGameWidth && settings.gameHeight == startGameHeight)
         settings.uiScale = used;
     startUIScale = settings.uiScale;
