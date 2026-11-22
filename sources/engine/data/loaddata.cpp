@@ -2731,7 +2731,17 @@ short WritePilotData(short stellar)
         DeallocAHandle(playerFileHand);
         DeallocAHandle(altPlayerFileHand);
         fclose(f);
+    } else {
+        crashlog("pilot not saved: cannot open or allocate");
+        if (f != NULL)
+            fclose(f);
+        if (playerFileHand != NULL)
+            DeallocAHandle(playerFileHand);
+        if (altPlayerFileHand != NULL)
+            DeallocAHandle(altPlayerFileHand);
     }
+    playerFileHand = NULL;
+    altPlayerFileHand = NULL;
     MakeAlias(path);
     return 0;
 }
@@ -2813,8 +2823,7 @@ void OpenLastPilotFile(void)
     strcpy(path, pilotsFolder);
     strcat(path, name);
     data = (char *)LoadAFile(path, &len);
-    // BUG: reads data[-1] when the last-pilot file is empty (len == 0)
-    if (data != NULL && data[len - 1] != 0) {
+    if (data != NULL && (len == 0 || data[len - 1] != 0)) {
         data = (char *)ResizeAPointer(data, len + 1);
         data[len] = 0;
     }
@@ -3556,16 +3565,11 @@ short LoadPilotData(char *path)
     crashlog("dumping pilot log");
     DumpPilotLog();
 
-    if (junk == 0)
-        goto ok;
-    return kPilotHasJunk; /* BUG: f is not closed on this path, only the junk == 0 path reaches fclose */
+    fclose(f);
+    return junk != 0 ? kPilotHasJunk : kPilotOK;
 
 badFile:
     return kPilotUnreadable;
-
-ok:
-    fclose(f);
-    return kPilotOK;
 }
 
 // FUNCTION: EVNOVA 0x004cd030
