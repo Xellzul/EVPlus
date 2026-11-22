@@ -353,6 +353,8 @@ void KeyDialogUpdate(void)
                 ForeColor(blackColor);
                 MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
             }
+            if (DupKeyCheck(newKeyPrefs[i], i))
+                RGBForeColor(&redRGB);
             KeyboardScanCodeToString((char *)name, sizeof(name), newKeyPrefs[i]);
             CtoPstr((char *)name);
             if (name[0] == 0)

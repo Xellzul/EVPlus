@@ -20,3 +20,4 @@
 - Galaxy map: Goods Traded can show each commodity's price levels
 - Galaxy map: special cargo prices, and active disasters coloured
 - Player Info: shield and armor show their raw values
+- Key settings: keys bound twice are shown in red
