@@ -217,6 +217,8 @@ extern short raceWinner;
 EXTERN_CPP_END
 extern RGBColor *redColor;
 extern RGBColor redRGB;
+extern const RGBColor betterRGB;    /* green: a better or raised value */
+extern const RGBColor worseRGB;     /* red: a worse or lowered value */
 EXTERN_CPP_BEGIN
 extern Boolean releaseCommEscort;
 extern short responseRandom;

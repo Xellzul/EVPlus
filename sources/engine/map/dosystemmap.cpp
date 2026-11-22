@@ -41,6 +41,7 @@ EXTERN_C_BEGIN
 #define kMapSearchItem      10
 
 #define kPriceLevelStrings  0xc9    /* STR# kGameStrList: Low, Med, High */
+#define kDisasterStrings    0xcc    /* STR# kGameStrList: Higher, Lower */
 #define kGoodsHeight        0x48    /* room for Goods Traded above Services: six lines */
 
 
@@ -747,9 +748,6 @@ struct PriceLevels {
     short lowered;
 };
 
-const RGBColor kRaisedColor = { 0x4000, 0xffff, 0x4000 };
-const RGBColor kLoweredColor = { 0xffff, 0x4000, 0x4000 };
-
 void DrawPiece(const char *text, const RGBColor &color)
 {
     Str255 piece;
@@ -761,17 +759,21 @@ void DrawPiece(const char *text, const RGBColor &color)
 }
 
 /* A good's price levels after its name at (h, v), or indented on the next line when they do not fit the panel;
-   a level under a disaster green (raised) or red (lowered). The extra height used. */
+   a level under a disaster is followed by ": Higher" (green) or ": Lower" (red). The extra height used. */
 short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
 {
     static const short kLevels[] = { kDemandLow, kDemandMedium, kDemandHigh };
     char names[3][256];
+    char higher[256] = "";
+    char lower[256] = "";
     char text[1024] = " (";
     Str255 shown;
     short extra = 0;
 
     if (p.levels == 0)
         return 0;
+    StrcatIndCString(higher, kGameStrList, kDisasterStrings);
+    StrcatIndCString(lower, kGameStrList, kDisasterStrings + 1);
     for (short i = 0; i < 3; i++) {
         names[i][0] = 0;
         if ((p.levels & kLevels[i]) != 0) {
@@ -779,6 +781,16 @@ short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
             if (text[2] != 0)
                 strcat(text, ", ");
             strcat(text, names[i]);
+            bool up = (p.raised & kLevels[i]) != 0;
+            bool down = (p.lowered & kLevels[i]) != 0;
+            if (up || down)
+                strcat(text, ": ");
+            if (up)
+                strcat(text, higher);
+            if (up && down)
+                strcat(text, "/");
+            if (down)
+                strcat(text, lower);
         }
     }
     strcat(text, ")");
@@ -800,9 +812,17 @@ short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
         if (!first)
             DrawPiece(", ", rgbLightGrey);
         first = false;
+        DrawPiece(names[i], rgbLightGrey);
         bool up = (p.raised & kLevels[i]) != 0;
         bool down = (p.lowered & kLevels[i]) != 0;
-        DrawPiece(names[i], up && !down ? kRaisedColor : down && !up ? kLoweredColor : rgbLightGrey);
+        if (up || down)
+            DrawPiece(": ", rgbLightGrey);
+        if (up)
+            DrawPiece(higher, betterRGB);
+        if (up && down)
+            DrawPiece("/", rgbLightGrey);
+        if (down)
+            DrawPiece(lower, worseRGB);
     }
     DrawPiece(")", rgbLightGrey);
     ForeColor(whiteColor);

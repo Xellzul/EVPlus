@@ -474,10 +474,15 @@ void TradeDialogUpdate(void)
                         disasterData[k].stellarID == shipData->targetStellar &&
                         i == disasterData[k].commodity) {
                         found = 1;
-                        if (disasterData[k].amount > 0)
+                        if (disasterData[k].amount > 0) {
+                            RGBForeColor(&betterRGB);
                             DrawIndString(kGameStrList, 0xcc);
-                        if (disasterData[k].amount < 0)
+                        }
+                        if (disasterData[k].amount < 0) {
+                            RGBForeColor(&worseRGB);
                             DrawIndString(kGameStrList, 0xcd);
+                        }
+                        RGBForeColor((RGBColor *)&ldefColors[0]);
                         break;
                     }
                 }

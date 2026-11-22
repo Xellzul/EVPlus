@@ -356,7 +356,7 @@ typedef struct Settings {
     Boolean stereoPan;              /* Positional Stereo: distant sounds panned left/right */
     Boolean asteroidScaling;        /* asteroid count follows the view size */
     Boolean mapPrices;              /* the map's Goods Traded show each commodity's price levels */
-    Boolean mapDisasters;           /* with mapPrices: levels under an active disaster coloured */
+    Boolean mapDisasters;           /* with mapPrices: a level under an active disaster gets Higher/Lower */
     double uiScale;                 /* dialogs and status bar, 1.0 = as designed */
 } Settings;
 

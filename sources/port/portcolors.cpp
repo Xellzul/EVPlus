@@ -19,6 +19,9 @@ RGBColor *redColor = &redRGB;                    /* 0x00575ae4 */
 static RGBColor cyanRGB = { 0x0000, 0xffff, 0xffff };    /* 0x00575ae8 */
 RGBColor *cyanColor = &cyanRGB;                  /* 0x00575af0 */
 
+extern const RGBColor betterRGB = { 0x4000, 0xffff, 0x4000 };
+extern const RGBColor worseRGB = { 0xffff, 0x4000, 0x4000 };
+
 EXTERN_C_END
 
 #define kGammaSteps  32

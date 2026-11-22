@@ -922,8 +922,6 @@ void DoShipyardDescription(short ship)
 }
 
 static const char kTotalSpaceLabel[] = "Total Space:";
-static const RGBColor worseRGB = { 0xffff, 0x4000, 0x4000 };
-static const RGBColor betterRGB = { 0x4000, 0xffff, 0x4000 };
 
 /* the value lines of the ship description */
 enum {
