@@ -20,6 +20,8 @@ typedef struct SoundRequest {
     unsigned short rightLevel;
 } SoundRequest;
 
+/* the original mixer (16 channels, `channels' of them heard) instead of SDL's (32, all heard); for the next ST_Open */
+extern void ST_UseOriginalMixer(bool on);
 /* the toolkit: channels heard at once, the output rate (16.16, 0 = the default) */
 extern int32_t ST_Open(unsigned short channels, uint32_t rate);
 extern void ST_Close(void);

@@ -1,6 +1,7 @@
 /* atsound.cpp -- the Sound Toolkit's channel table: bringing the sound layer up and down, and starting and
    halting sounds over the channels, a new sound taking the place of a quieter or lower-priority one.
-   Loading is in atsndload.cpp, the mix in atsnddrv.cpp. Notes: Research/notes/atsound.md */
+   Loading is in atsndload.cpp, the mix in atsnddrv.cpp (original) or atsndvoice.cpp (SDL).
+   Notes: Research/notes/atsound.md */
 
 #include "burgerchan.h"
 
@@ -8,19 +9,25 @@ int32_t gMaxVoices;                               /* 0x00870958 channels */
 int32_t gCookieCounter;                               /* 0x00870df4 */
 unsigned char gSoundToolOpen;                      /* 0x00870e12, live flag */
 int32_t gNumVoices;                               /* 0x00870db0, in use */
-SoundChannel gTheVoices[kSoundChannels];       /* 0x0086f718 */
+SoundChannel gTheVoices[kMaxVoiceSlots];       /* 0x0086f718 */
+int32_t gVoiceSlots = kSoundChannels;
+bool gOriginalMixer;
+static bool gWantOriginalMixer;
 Mutex gCriticalSection;                             /* 0x0086dc88, the lock (16 bytes of storage in the exe) */
 ULong gSampleRate;                                   /* 0x0086ff90 */
 
-#define kMaxChannels    kSoundChannels
 /* the mix is 16-bit stereo at this rate (16.16): what the exe chose on a machine with DirectSound */
 #define kOutputRate     0xac440000UL                     /* 44100.0 */
 
+void ST_UseOriginalMixer(bool on)
+{
+    gWantOriginalMixer = on;
+}
 
-// FUNCTION: EVNOVA 0x004d6290
-int32_t ST_Open(unsigned short channels, uint32_t device)
+static int32_t OpenTool(unsigned short channels, uint32_t device, bool original, bool offline)
 {
     int32_t err, e;
+    int32_t i;
 
     err = 0;
     if (gSoundToolOpen != 0)
@@ -32,21 +39,31 @@ int32_t ST_Open(unsigned short channels, uint32_t device)
         goto done;
     }
 
-    gMaxVoices = channels;
-    if (gMaxVoices > kMaxChannels)
-        gMaxVoices = kMaxChannels;
+    gOriginalMixer = original;
+    if (gOriginalMixer) {
+        gVoiceSlots = kSoundChannels;
+        gMaxVoices = channels;
+        if (gMaxVoices > kSoundChannels)
+            gMaxVoices = kSoundChannels;
+    } else {
+        gVoiceSlots = kMaxVoiceSlots;
+        gMaxVoices = kMaxVoiceSlots;
+    }
 
     gCookieCounter = 1;
     gNumVoices = 0;
-    memset(gTheVoices, 0, kChannelTable);
+    memset(gTheVoices, 0, sizeof gTheVoices);
+    for (i = 0; i < kMaxVoiceSlots; i++)
+        gTheVoices[i].out = (unsigned char)i;
 
     if (device == 0)
         gSampleRate = kOutputRate;
     else
         gSampleRate = device;
 
-    e = _ST_CreateSoundPump();
+    e = gOriginalMixer ? _ST_CreateSoundPump() : _ST_OpenVoices(offline);
     if (e != 0) {
+        CriticalDispose(&gCriticalSection);
         err = e;
         goto done;
     }
@@ -57,12 +74,26 @@ done:
     return err;
 }
 
+// FUNCTION: EVNOVA 0x004d6290
+int32_t ST_Open(unsigned short channels, uint32_t device)
+{
+    return OpenTool(channels, device, gWantOriginalMixer, false);
+}
+
+int32_t _ST_OpenOffline(void)
+{
+    return OpenTool(kMaxVoiceSlots, 0, false, true);
+}
+
 // FUNCTION: EVNOVA 0x004d6440
 void ST_Close(void)
 {
     if (gSoundToolOpen != 0) {
         ST_HaltSound(0);
-        _ST_DisposeSoundPump();
+        if (gOriginalMixer)
+            _ST_DisposeSoundPump();
+        else
+            _ST_CloseVoices();
         CriticalDispose(&gCriticalSection);
         gSoundToolOpen = 0;
     }
@@ -101,6 +132,7 @@ ULong ST_PlaySoundParam(SoundRequest *req)
     SoundChannel *src;
     SoundChannel *dst;
     int32_t tail;
+    unsigned char out;
 
     tail = 0;
     id = 0;
@@ -115,7 +147,9 @@ ULong ST_PlaySoundParam(SoundRequest *req)
 
         i = 0;
         CriticalEnter(&gCriticalSection);
-        while (i < kSoundChannels && gTheVoices[i].sound != 0 && preempt == 0) {
+        if (!gOriginalMixer)
+            _ST_ReapVoices();
+        while (i < gVoiceSlots && gTheVoices[i].sound != 0 && preempt == 0) {
             if (req->priority >= gTheVoices[i].priority
                 && req->rightLevel + req->leftLevel
                    >= gTheVoices[i].leftLevel + gTheVoices[i].rightLevel)
@@ -124,14 +158,18 @@ ULong ST_PlaySoundParam(SoundRequest *req)
                 i++;
         }
 
-        if (i >= kSoundChannels) {
+        if (i >= gVoiceSlots) {
             CriticalLeave(&gCriticalSection);
             return 0;
         }
 
-        if (gNumVoices >= kSoundChannels)
-            gNumVoices = kSoundChannels - 1;
+        if (gNumVoices >= gVoiceSlots)
+            gNumVoices = gVoiceSlots - 1;
 
+        /* the new row takes the free row's voice, or the voice of the row it pushes off the end */
+        out = gTheVoices[gNumVoices].out;
+        if (gTheVoices[gNumVoices].sound != 0 && !gOriginalMixer)
+            _ST_StopVoice(out);
         src = &gTheVoices[i];
         dst = &gTheVoices[i + 1];
         tail = (gNumVoices - i) * kChannelBytes;
@@ -150,6 +188,7 @@ ULong ST_PlaySoundParam(SoundRequest *req)
         gTheVoices[i].leftLevel = req->leftLevel;
         gTheVoices[i].rightLevel = req->rightLevel;
         gTheVoices[i].finished = 0;
+        gTheVoices[i].out = out;
 
         if (req->id != 0) {
             gTheVoices[i].id = req->id;
@@ -160,6 +199,8 @@ ULong ST_PlaySoundParam(SoundRequest *req)
 
         id = gTheVoices[i].id;
         gNumVoices++;
+        if (!gOriginalMixer)
+            _ST_StartVoice(&gTheVoices[i], req->rate);
         CriticalLeave(&gCriticalSection);
     }
     return id;
@@ -180,6 +221,8 @@ static unsigned short CountPlaying(uintptr_t key)
     if (gSoundToolOpen != 0) {
         i = 0;
         CriticalEnter(&gCriticalSection);
+        if (!gOriginalMixer)
+            _ST_ReapVoices();
         while (i < gNumVoices) {
             if (ChannelMatches(&gTheVoices[i], key))
                 found = found + 1;
@@ -205,23 +248,13 @@ unsigned short ST_IsSoundIdPlaying(uint32_t id)
 static void HaltMatching(uintptr_t key)
 {
     ULong i;
-    SoundChannel *src;
-    SoundChannel *dst;
-    int32_t tail;
 
     if (gSoundToolOpen != 0) {
         i = 0;
         CriticalEnter(&gCriticalSection);
         while (i < gNumVoices) {
             if (ChannelMatches(&gTheVoices[i], key)) {
-                gNumVoices--;
-                dst = &gTheVoices[i];
-                src = dst + 1;
-                tail = (gNumVoices - i) * kChannelBytes;
-                if (tail != 0)
-                    memmove(dst, src, tail);
-                dst = &gTheVoices[gNumVoices];
-                memset(dst, 0, kChannelBytes);
+                _ST_HaltASound((short)i);
             } else {
                 i++;
             }
@@ -242,15 +275,19 @@ void ST_HaltSoundId(uint32_t id)
         HaltMatching(id);
 }
 
-/* Drop one channel and close the table up behind it. */
+/* Drop one channel and close the table up behind it; the row freed at the end keeps the channel's voice. */
 // FUNCTION: EVNOVA 0x004d6890
 void _ST_HaltASound(short index)
 {
     SoundChannel *src;
     SoundChannel *dst;
     int32_t tail;
+    unsigned char out;
 
     if (gSoundToolOpen != 0) {
+        out = gTheVoices[index].out;
+        if (!gOriginalMixer)
+            _ST_StopVoice(out);
         gNumVoices--;
         src = &gTheVoices[index + 1];
         dst = &gTheVoices[index];
@@ -259,5 +296,6 @@ void _ST_HaltASound(short index)
             memmove(dst, src, tail);
         dst = &gTheVoices[gNumVoices];
         memset(dst, 0, kChannelBytes);
+        dst->out = out;
     }
 }

@@ -1,7 +1,7 @@
 /* platform.h -- the operating-system services the game runs on. Plain C types cross this header, and SDL's
    events (the game's event pump, runtime/burgerkbwin.cpp, reads them).
    On SDL (platform/platform_sdl.cpp, every platform): start-up, the window and its frame, the events, the cursor,
-   the audio outputs, the clocks, the debug log. Per system (platform/platform_win.cpp, platform_unix.cpp):
+   the audio outputs and voices, the clocks, the debug log. Per system (platform/platform_win.cpp, platform_unix.cpp):
    opening files and changing folder by a UTF-8 path, the program's file type, the installed fonts. */
 #ifndef PLATFORM_H
 #define PLATFORM_H
@@ -93,6 +93,23 @@ extern void PlatAudioLock(PlatAudio *s);                   /* excludes the pull 
 extern void PlatAudioUnlock(PlatAudio *s);
 extern int PlatAudioDrained(PlatAudio *s);                 /* the pull ended and what it gave was played */
 extern void PlatAudioClose(PlatAudio *s);                  /* synchronous: the pull is never called after */
+
+/* -- voices: sounds played at once, resampled and summed by SDL into the default output (the Sound Tool's
+   channels, runtime/atsndvoice.cpp). Each voice plays a copy of the 16-bit stereo frames it is given. ------ */
+typedef struct PlatVoices PlatVoices;
+/* `count' voices, the whole mix scaled by `gain'. Offline: played by nothing, only by PlatVoicesRender.
+   NULL when there is no audio device (offline: when the streams cannot be made) */
+extern PlatVoices *PlatVoicesOpen(int count, float gain, int offline);
+extern void PlatVoicesClose(PlatVoices *v);
+/* voice `index' drops what it played and plays `count' frames recorded at `rate' Hz, `speed' times as fast
+   (0.01..100); 0 = started */
+extern int PlatVoicesStart(PlatVoices *v, int index, const int16_t *frames, int count, int rate, double speed);
+extern void PlatVoicesStop(PlatVoices *v, int index);
+extern int PlatVoicesEnded(PlatVoices *v, int index);      /* it has nothing left to play */
+/* offline: the next `frames' frames of the mix, float stereo at kPlatVoicesRenderRate, summed as the device
+   sums them (voice count-1 first, a clamp to -1..1 after each); `unclamped' (may be NULL) gets the plain sum */
+#define kPlatVoicesRenderRate 48000
+extern void PlatVoicesRender(PlatVoices *v, float *out, float *unclamped, int frames);
 
 /* -- locks: one thread at a time; the thread that holds one may take it again ----------------------- */
 typedef struct PlatMutex PlatMutex;

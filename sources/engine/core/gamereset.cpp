@@ -660,6 +660,7 @@ void SetDefaultPrefs(void)
     settings.asteroidScaling = 1;
     settings.mapPrices = 0;
     settings.mapDisasters = 0;
+    settings.originalSound = 0;
     settings.uiScale = 1.0;
     pstrcpy(lastPlayerName, "\p");
 }

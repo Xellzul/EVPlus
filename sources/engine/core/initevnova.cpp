@@ -393,6 +393,7 @@ void InitEVNova(void)
     cursorHidden = 0;
     if (settings.windowed == 0)
         HideTheCursor();
+    ST_UseOriginalMixer(settings.originalSound != 0);
     ST_Open(8, 0);
 
     crashlog("loading sounds");

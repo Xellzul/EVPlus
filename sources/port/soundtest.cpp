@@ -2,21 +2,37 @@
    soundtest_load.txt: every snd resource as ST_LoadSndResource decodes it (length, rate, a hash of the
    samples) and what ParseSoundFileImage makes of it.
    soundtest.raw: a scripted run of sounds (levels, pan, rates, priorities, more voices than are heard, halts by
-   id and by sound, one sound started again each time it ends) mixed through _ST_MixerDispatch in pulls of
-   512 frames: 16-bit stereo at the mixer's rate, no header. The device is kept out for the run by holding
-   the mixer's lock. soundtest.txt: what each call returned and the voices in use after each pull.
-   Each file must stay the same before and after a change; build/devtools/scaletest.sh runs it. */
+   id and by sound, one sound started again each time it ends) mixed by the original mixer through
+   _ST_MixerDispatch in pulls of 512 frames: 16-bit stereo at the mixer's rate, no header. The device is kept
+   out for the run by holding the mixer's lock. soundtest.txt: what each call returned and the voices in use
+   after each pull; soundtest_voices.txt: the ids playing after each pull.
+   soundtest_sdl.raw / .txt / _voices.txt: the same script on SDL's voices rendered offline, float stereo at
+   kPlatVoicesRenderRate, each pull as long as the original's.
+   soundtest_fight_{orig,sdl}.wav: a busy fight (panned shots, explosions, a looping sound started again, the
+   alert), soundtest_warp_{orig,sdl}.wav: the warp-up at mobility 1.0, 0.7 and 1.5, both at the top volume;
+   soundtest_wav.txt: their peak voices, peak before clamping and clipped samples, also at the default volume.
+   The original's files must stay the same before and after a change; build/devtools/scaletest.sh runs it. */
 
+#include <math.h>
+#include <algorithm>
 #include <vector>
 #include "burgerchan.h"
 #include "burgerplat.h"
+#include "game.h"
 #include "macport.h"
 #include "platform.h"
+#include "player.h"
+#include "render.h"
+#include "sound.h"
 
 namespace {
 
 constexpr ULong kPullFrames = 512;
 constexpr int kPulls = 320;
+constexpr int kOriginalRate = 44100;
+constexpr int kVoiceStepShift = 4;      /* the channel's 16.16 step to PCM_Mixer's 20.12 */
+constexpr short kTopVolume = 8;          /* the preferences' volume: its top and its default */
+constexpr short kDefaultVolume = 5;
 
 /* the sounds the script plays: click, warp up, warp out, engine beep, shots, explosions, red alert */
 constexpr short kClipIds[] = { 0x258, 0x80, 0x82, 0x96, 0xc8, 0xc9, 0xca, 0xcb, 0x12c, 0x12d, 0x172 };
@@ -89,7 +105,6 @@ ULong Play(Sound *sound, unsigned short priority, unsigned short left, unsigned 
     return ST_PlaySoundParam(&req);
 }
 
-/* what the script does before pull `pull' */
 uint32_t gFirstId;                      /* the first channel id of the run */
 
 /* a channel id counted from the run's first (1), so the log does not depend on the sounds played before it */
@@ -102,6 +117,7 @@ long RunId(uint32_t id)
     return (long)(id - gFirstId) + 1;
 }
 
+/* what the script does before pull `pull' */
 void Script(int pull, Sound *const *clips, FILE *log)
 {
     static ULong warpId;
@@ -161,43 +177,358 @@ void Script(int pull, Sound *const *clips, FILE *log)
     }
 }
 
+
+/* a fight around the player: ships firing from where they are, the player's own gun, explosions now and then,
+   a looping sound started again each time it ends, the red alert twice */
+constexpr int kFightPulls = 690;        /* 8 s */
+constexpr uint64_t kFightSeed = 0x5eed;
+
+struct FightShip {
+    float x;
+    float y;
+    int period;                         /* pulls between shots */
+    int phase;
+    int clip;
+};
+
+constexpr FightShip kFightShips[] = {
+    { -900, -300, 19, 0, kShot0 }, { 1200, 200, 22, 4, kShot1 }, { -300, 800, 25, 7, kShot2 },
+    { 600, -1100, 21, 2, kShot3 }, { -1600, 900, 27, 5, kShot1 },
+};
+
+void Fight(int pull, Sound *const *clips, uint64_t *seed)
+{
+    FloatPoint player = { 0, 0 };
+    FloatPoint at;
+
+    for (const FightShip &ship : kFightShips) {
+        if (pull % ship.period == ship.phase) {
+            at.x = ship.x + (float)(PlatRand(seed, 200) - 100);
+            at.y = ship.y + (float)(PlatRand(seed, 200) - 100);
+            PlaySoundDistance(-1, clips[ship.clip], 3, &at, &player);
+        }
+    }
+    if (pull < 400 && pull % 12 == 0)
+        PlaySoundDistance(-1, clips[kShot0], 3, &player, &player);
+    if (PlatRand(seed, 45) == 0) {
+        at.x = (float)(PlatRand(seed, 3000) - 1500);
+        at.y = (float)(PlatRand(seed, 2000) - 1000);
+        PlaySoundDistance(-1, clips[kExplod0 + PlatRand(seed, 2)], 6, &at, &player);
+    }
+    if (pull >= 50 && pull < 600 && clips[kBeep] != NULL && ST_IsSoundPlaying(clips[kBeep]) == 0) {
+        at.x = kFightShips[1].x;
+        at.y = kFightShips[1].y;
+        PlaySoundDistance(-1, clips[kBeep], 3, &at, &player);
+    }
+    if (pull == 120 || pull == 450)
+        PlaySound(clips[kAlert], 50, gSoundVolume, gSoundVolume);
+}
+
+/* the warp-up as the player's ship plays it (handleplayer.cpp), at each mobility, half a second apart */
+constexpr double kWarpMobility[] = { 1.0, 0.7, 1.5 };
+constexpr int kWarpCount = 3;
+constexpr int kWarpGapPulls = 43;
+constexpr int kWarpMaxPulls = 4000;
+
+struct WarpRun {
+    int next;                           /* the next mobility */
+    int startAt;                        /* the pull it starts at */
+    bool playing;
+};
+
+/* false once the last has ended and its gap passed */
+bool Warp(int pull, Sound *warp, WarpRun *w)
+{
+    if (w->playing && ST_IsSoundPlaying(warp) == 0) {
+        w->playing = false;
+        w->startAt = pull + kWarpGapPulls;
+    }
+    if (!w->playing && pull >= w->startAt) {
+        if (w->next == kWarpCount)
+            return false;
+        warpUpSoundSpec.sound = warp;
+        AdjustWarpSoundSpeed(kWarpMobility[w->next++]);
+        ST_PlaySoundParam(&warpUpSoundSpec);
+        w->playing = true;
+    }
+    return true;
+}
+
+/* the voice counts, the largest sample before clamping (1 = full scale), the samples clamped */
+struct MixStats {
+    int peakVoices;
+    long voicePulls;                    /* voices summed over the pulls */
+    int pulls;
+    double peak;
+    long clipped;
+    long samples;
+};
+
+/* frames of the SDL render before pull n: as long as n pulls of the original */
+long SdlFramesBefore(int n)
+{
+    return (long)((int64_t)n * kPullFrames * kPlatVoicesRenderRate / kOriginalRate);
+}
+
+/* one pull of the open mixer, under its lock */
+class Mixer {
+public:
+    explicit Mixer(bool sdl) : sdl_(sdl), stats_() {}
+
+    /* mixes pull `pull' into Data(); stats kept when asked */
+    void Pull(int pull, bool stats)
+    {
+        if (gNumVoices > stats_.peakVoices)
+            stats_.peakVoices = gNumVoices;
+        stats_.voicePulls += gNumVoices;
+        stats_.pulls++;
+        if (sdl_)
+            PullSdl(pull, stats);
+        else
+            PullOriginal(stats);
+    }
+
+    const void *Data() const { return sdl_ ? (const void *)float_.data() : (const void *)short_.data(); }
+    size_t Bytes() const { return sdl_ ? float_.size() * sizeof(float) : short_.size() * sizeof(short); }
+    const MixStats &Stats() const { return stats_; }
+
+private:
+    void PullOriginal(bool stats)
+    {
+        short_.assign(kPullFrames * 2, 0);
+        if (stats) {
+            /* each heard voice alone, from a copy of where it is: what the mix adds before saturating */
+            sum_.assign(kPullFrames * 2, 0);
+            voice_.resize(kPullFrames * 2);
+            for (int i = 0; i < gNumVoices && i < gMaxVoices; i++) {
+                SoundChannel *chan = &gTheVoices[i];
+                MixVoice copy = chan->voice;
+                short *out = voice_.data();
+
+                memset(voice_.data(), 0, voice_.size() * sizeof(short));
+                PCM_Mixer(chan->data, &out, kPullFrames, chan->stream >> kVoiceStepShift, &copy, chan->leftLevel,
+                          chan->rightLevel);
+                for (size_t j = 0; j < sum_.size(); j++)
+                    sum_[j] += voice_[j];
+            }
+        }
+        _ST_MixerDispatch(short_.data(), kPullFrames);
+        if (stats) {
+            for (size_t j = 0; j < sum_.size(); j++) {
+                if (fabs(sum_[j] / 32768.0) > stats_.peak)
+                    stats_.peak = fabs(sum_[j] / 32768.0);
+                if (sum_[j] != short_[j])
+                    stats_.clipped++;
+            }
+            stats_.samples += (long)sum_.size();
+        }
+    }
+
+    void PullSdl(int pull, bool stats)
+    {
+        int frames = (int)(SdlFramesBefore(pull + 1) - SdlFramesBefore(pull));
+
+        float_.resize((size_t)frames * 2);
+        unclamped_.resize((size_t)frames * 2);
+        _ST_RenderVoices(float_.data(), stats ? unclamped_.data() : NULL, frames);
+        _ST_ReapVoices();
+        if (stats) {
+            for (size_t j = 0; j < float_.size(); j++) {
+                if (fabs(unclamped_[j]) > stats_.peak)
+                    stats_.peak = fabs(unclamped_[j]);
+                if (fabs(unclamped_[j] - float_[j]) > 1e-6)
+                    stats_.clipped++;
+            }
+            stats_.samples += (long)float_.size();
+        }
+    }
+
+    bool sdl_;
+    MixStats stats_;
+    std::vector<short> short_;
+    std::vector<short> voice_;
+    std::vector<int32_t> sum_;
+    std::vector<float> float_;
+    std::vector<float> unclamped_;
+};
+
+void Put16(unsigned char *p, uint32_t v)
+{
+    p[0] = (unsigned char)v;
+    p[1] = (unsigned char)(v >> 8);
+}
+
+void Put32(unsigned char *p, uint32_t v)
+{
+    Put16(p, v);
+    Put16(p + 2, v >> 16);
+}
+
+/* a stereo WAV header: 16-bit PCM, or 32-bit float */
+void WavHeader(FILE *f, bool isFloat, int rate, uint32_t dataBytes)
+{
+    unsigned char h[44];
+    uint32_t bits = isFloat ? 32 : 16;
+    uint32_t block = 2 * bits / 8;
+
+    memcpy(h, "RIFF", 4);
+    Put32(h + 4, 36 + dataBytes);
+    memcpy(h + 8, "WAVEfmt ", 8);
+    Put32(h + 16, 16);
+    Put16(h + 20, isFloat ? 3 : 1);
+    Put16(h + 22, 2);
+    Put32(h + 24, (uint32_t)rate);
+    Put32(h + 28, (uint32_t)rate * block);
+    Put16(h + 32, block);
+    Put16(h + 34, bits);
+    memcpy(h + 36, "data", 4);
+    Put32(h + 40, dataBytes);
+    fseek(f, 0, SEEK_SET);
+    fwrite(h, 1, sizeof h, f);
+}
+
+void LogVoices(FILE *log, int pull)
+{
+    std::vector<long> ids;
+
+    for (int i = 0; i < gNumVoices; i++)
+        ids.push_back(RunId(gTheVoices[i].id));
+    std::sort(ids.begin(), ids.end());
+    fprintf(log, "pull %d:", pull);
+    for (long id : ids)
+        fprintf(log, " %ld", id);
+    fprintf(log, "\n");
+}
+
+/* the script through the open mixer */
+void Capture(bool sdl, const char *rawName, const char *logName, const char *voicesName, Sound *const *clips)
+{
+    FILE *log = PlatFileOpen(logName, "wb");
+    FILE *out = PlatFileOpen(rawName, "wb");
+    FILE *voices = PlatFileOpen(voicesName, "wb");
+    Mixer mixer(sdl);
+
+    if (log != NULL && out != NULL && voices != NULL) {
+        fprintf(log, "sound tool open %d, rate %08x, %d heard of %d\n", (int)gSoundToolOpen, (unsigned)gSampleRate,
+                (int)gMaxVoices, (int)gVoiceSlots);
+        for (int i = 0; i < kClipCount; i++)
+            fprintf(log, "snd %d: %s\n", kClipIds[i], clips[i] != NULL ? "loaded" : "missing");
+        gFirstId = 0;
+        CriticalEnter(&gCriticalSection);
+        ST_HaltSound(0);
+        for (int pull = 0; pull < kPulls; pull++) {
+            Script(pull, clips, log);
+            mixer.Pull(pull, false);
+            fwrite(mixer.Data(), 1, mixer.Bytes(), out);
+            fprintf(log, "pull %d: %d voices\n", pull, (int)gNumVoices);
+            LogVoices(voices, pull);
+        }
+        ST_HaltSound(0);
+        CriticalLeave(&gCriticalSection);
+    }
+    if (voices != NULL)
+        fclose(voices);
+    if (out != NULL)
+        fclose(out);
+    if (log != NULL)
+        fclose(log);
+}
+
+/* a scenario through the open mixer at a preferences volume, into a WAV file unless name is NULL, its numbers
+   into `stats' under `title' */
+void Render(bool sdl, const char *name, const char *title, Sound *const *clips, FILE *stats, bool warp, short volume)
+{
+    FILE *out = name != NULL ? PlatFileOpen(name, "wb") : NULL;
+    Mixer mixer(sdl);
+    uint64_t seed = kFightSeed;
+    WarpRun run = { 0, 0, false };
+    uint32_t bytes = 0;
+    int pulls = 0;
+
+    if (name != NULL && out == NULL)
+        return;
+    settings.volume = volume;
+    AdjustSoundVolume();
+    if (out != NULL)
+        WavHeader(out, sdl, sdl ? kPlatVoicesRenderRate : kOriginalRate, 0);
+    CriticalEnter(&gCriticalSection);
+    ST_HaltSound(0);
+    for (pulls = 0; warp ? pulls < kWarpMaxPulls : pulls < kFightPulls; pulls++) {
+        if (warp) {
+            if (!Warp(pulls, clips[kWarpUp], &run))
+                break;
+        } else {
+            Fight(pulls, clips, &seed);
+        }
+        mixer.Pull(pulls, true);
+        if (out != NULL)
+            fwrite(mixer.Data(), 1, mixer.Bytes(), out);
+        bytes += (uint32_t)mixer.Bytes();
+    }
+    ST_HaltSound(0);
+    CriticalLeave(&gCriticalSection);
+    if (out != NULL) {
+        WavHeader(out, sdl, sdl ? kPlatVoicesRenderRate : kOriginalRate, bytes);
+        fclose(out);
+    }
+
+    const MixStats &m = mixer.Stats();
+    if (stats != NULL)
+        fprintf(stats, "%s, volume %d: %d pulls, voices at most %d (%d heard), %.1f on average, peak before "
+                "clamping %.3f, clipped %ld of %ld samples\n", title, volume, pulls, m.peakVoices,
+                m.peakVoices < gMaxVoices ? m.peakVoices : (int)gMaxVoices,
+                m.pulls != 0 ? (double)m.voicePulls / m.pulls : 0.0, m.peak, m.clipped, m.samples);
+}
+
+void RunAll(bool sdl, Sound *const *clips, FILE *stats)
+{
+    if (sdl)
+        Capture(true, "soundtest_sdl.raw", "soundtest_sdl.txt", "soundtest_sdl_voices.txt", clips);
+    else
+        Capture(false, "soundtest.raw", "soundtest.txt", "soundtest_voices.txt", clips);
+    const char *fight = sdl ? "soundtest_fight_sdl.wav" : "soundtest_fight_orig.wav";
+    const char *warp = sdl ? "soundtest_warp_sdl.wav" : "soundtest_warp_orig.wav";
+
+    Render(sdl, fight, fight, clips, stats, false, kTopVolume);
+    Render(sdl, NULL, fight, clips, stats, false, kDefaultVolume);
+    Render(sdl, warp, warp, clips, stats, true, kTopVolume);
+    Render(sdl, NULL, warp, clips, stats, true, kDefaultVolume);
+}
+
 } // namespace
 
 void DebugSoundTest(void)
 {
     Sound *clips[kClipCount];
-    std::vector<short> mix(kPullFrames * 2);
+    bool original = gOriginalMixer;
+    short volume = settings.volume;
+    Boolean stereoPan = settings.stereoPan;
+    SoundRequest warpSpec = warpUpSoundSpec;
+    FILE *stats;
 
     LogLoads();
-    FILE *log = PlatFileOpen("soundtest.txt", "wb");
-    FILE *out = PlatFileOpen("soundtest.raw", "wb");
-    if (log == NULL || out == NULL) {
-        if (log != NULL)
-            fclose(log);
-        if (out != NULL)
-            fclose(out);
-        return;
-    }
-    fprintf(log, "sound tool open %d, rate %08x, %d heard of %d\n", (int)gSoundToolOpen, (unsigned)gSampleRate,
-            (int)gMaxVoices, kSoundChannels);
-    for (int i = 0; i < kClipCount; i++) {
+    for (int i = 0; i < kClipCount; i++)
         clips[i] = ST_LoadSndResource(kClipIds[i]);
-        fprintf(log, "snd %d: %s\n", kClipIds[i], clips[i] != NULL ? "loaded" : "missing");
-    }
+    stats = PlatFileOpen("soundtest_wav.txt", "wb");
+    settings.stereoPan = 1;
 
-    CriticalEnter(&gCriticalSection);
-    ST_HaltSound(0);
-    for (int pull = 0; pull < kPulls; pull++) {
-        Script(pull, clips, log);
-        _ST_MixerDispatch(mix.data(), kPullFrames);
-        fwrite(mix.data(), sizeof(short), mix.size(), out);
-        fprintf(log, "pull %d: %d voices\n", pull, (int)gNumVoices);
-    }
-    ST_HaltSound(0);
-    CriticalLeave(&gCriticalSection);
+    ST_Close();
+    ST_UseOriginalMixer(true);
+    ST_Open(8, 0);
+    RunAll(false, clips, stats);
+    ST_Close();
+    _ST_OpenOffline();
+    RunAll(true, clips, stats);
+    ST_Close();
+    ST_UseOriginalMixer(original);
+    ST_Open(8, 0);
 
+    settings.volume = volume;
+    AdjustSoundVolume();
+    settings.stereoPan = stereoPan;
+    warpUpSoundSpec = warpSpec;
+    if (stats != NULL)
+        fclose(stats);
     for (Sound *clip : clips)
         ST_DisposeSound(clip);
-    fclose(out);
-    fclose(log);
 }

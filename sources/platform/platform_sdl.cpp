@@ -1,5 +1,5 @@
 /* platform_sdl.cpp -- platform.h on SDL3, the same on every platform: start-up, the window and its frame, the
-   events, the cursor, the audio outputs, the clocks, the debug log. Built without any game header. */
+   events, the cursor, the audio outputs and voices, the clocks, the debug log. Built without any game header. */
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>          /* makes `main' below the program's entry on every system */
@@ -59,8 +59,19 @@ struct PlatAudio {
     PlatAudio *next;
 };
 
+struct PlatVoices {
+    SDL_AudioDeviceID device;           /* 0 offline, or once the layer has shut down */
+    int count;
+    float gain;
+    SDL_AudioStream **streams;          /* NULL entries once the layer has shut down */
+    float *work;                        /* offline: one voice's frames */
+    int workFrames;
+    PlatVoices *next;
+};
+
 static bool gAudioUp;
 static PlatAudio *gAudioOutputs;        /* the open ones, for PlatQuit */
+static PlatVoices *gVoicePools;         /* likewise */
 /* for each focus loss still in SDL's queue, in order: it went to another window of this program */
 static bool gFocusNote[kFocusNotes];
 static unsigned gFocusNoteHead;
@@ -78,15 +89,31 @@ int PlatInit(void)
     return 0;
 }
 
+static void DropVoices(PlatVoices *v)
+{
+    int i;
+
+    for (i = 0; i < v->count; i++) {
+        SDL_DestroyAudioStream(v->streams[i]);
+        v->streams[i] = NULL;
+    }
+    if (v->device != 0)
+        SDL_CloseAudioDevice(v->device);
+    v->device = 0;
+}
+
 void PlatQuit(void)
 {
     PlatAudio *s;
+    PlatVoices *v;
 
-    /* outputs the game still holds lose their stream here: closing them later only frees the record */
+    /* outputs and voices the game still holds lose their streams here: closing them later only frees the record */
     for (s = gAudioOutputs; s != NULL; s = s->next) {
         SDL_DestroyAudioStream(s->stream);
         s->stream = NULL;
     }
+    for (v = gVoicePools; v != NULL; v = v->next)
+        DropVoices(v);
     gAudioUp = false;
     PlatVideoClose();
     if (gRenderer != NULL)
@@ -709,6 +736,160 @@ void PlatAudioClose(PlatAudio *s)
     if (s->stream != NULL)
         SDL_DestroyAudioStream(s->stream);      /* waits for a pull that is running */
     SDL_free(s);
+}
+
+/* -- voices --------------------------------------------------------------------------------------- */
+
+#define kVoiceChannels      2
+#define kVoiceMinSpeed      0.01                /* SDL's frequency ratio range */
+#define kVoiceMaxSpeed      100.0
+
+void PlatVoicesClose(PlatVoices *v)
+{
+    PlatVoices **link;
+
+    if (v == NULL)
+        return;
+    for (link = &gVoicePools; *link != NULL; link = &(*link)->next) {
+        if (*link == v) {
+            *link = v->next;
+            break;
+        }
+    }
+    DropVoices(v);
+    SDL_free(v->streams);
+    SDL_free(v->work);
+    SDL_free(v);
+}
+
+PlatVoices *PlatVoicesOpen(int count, float gain, int offline)
+{
+    SDL_AudioSpec src;
+    SDL_AudioSpec dst;
+    PlatVoices *v;
+    int i;
+
+    if (!offline && !gAudioUp)
+        return NULL;
+    v = (PlatVoices *)SDL_calloc(1, sizeof *v);
+    if (v == NULL)
+        return NULL;
+    v->gain = gain;
+    v->streams = (SDL_AudioStream **)SDL_calloc(count, sizeof *v->streams);
+    if (v->streams == NULL) {
+        SDL_free(v);
+        return NULL;
+    }
+    v->count = count;
+    v->next = gVoicePools;
+    gVoicePools = v;
+
+    src.format = SDL_AUDIO_S16;
+    src.channels = kVoiceChannels;
+    src.freq = kPlatVoicesRenderRate;
+    dst.format = SDL_AUDIO_F32;
+    dst.channels = kVoiceChannels;
+    dst.freq = kPlatVoicesRenderRate;
+    for (i = 0; i < count; i++) {
+        /* a bound stream takes the device's format */
+        v->streams[i] = SDL_CreateAudioStream(&src, offline ? &dst : NULL);
+        if (v->streams[i] == NULL) {
+            PlatVoicesClose(v);
+            return NULL;
+        }
+    }
+    if (!offline) {
+        v->device = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
+        if (v->device == 0 || !SDL_BindAudioStreams(v->device, v->streams, count)) {
+            PlatVoicesClose(v);
+            return NULL;
+        }
+        SDL_SetAudioDeviceGain(v->device, gain);
+    }
+    return v;
+}
+
+static SDL_AudioStream *VoiceStream(PlatVoices *v, int index)
+{
+    if (v == NULL || index < 0 || index >= v->count)
+        return NULL;
+    return v->streams[index];
+}
+
+int PlatVoicesStart(PlatVoices *v, int index, const int16_t *frames, int count, int rate, double speed)
+{
+    SDL_AudioStream *stream = VoiceStream(v, index);
+    SDL_AudioSpec spec;
+    bool ok;
+
+    if (stream == NULL || rate <= 0 || count < 0 || count > SDL_MAX_SINT32 / (int)(kVoiceChannels * sizeof *frames))
+        return -1;
+    if (speed < kVoiceMinSpeed)
+        speed = kVoiceMinSpeed;
+    if (speed > kVoiceMaxSpeed)
+        speed = kVoiceMaxSpeed;
+    spec.format = SDL_AUDIO_S16;
+    spec.channels = kVoiceChannels;
+    spec.freq = rate;
+    /* the device must not pull from it half set up */
+    SDL_LockAudioStream(stream);
+    SDL_ClearAudioStream(stream);
+    ok = SDL_SetAudioStreamFormat(stream, &spec, NULL)
+         && SDL_SetAudioStreamFrequencyRatio(stream, (float)speed)
+         && SDL_PutAudioStreamData(stream, frames, count * kVoiceChannels * (int)sizeof *frames)
+         && SDL_FlushAudioStream(stream);
+    if (!ok)
+        SDL_ClearAudioStream(stream);
+    SDL_UnlockAudioStream(stream);
+    return ok ? 0 : -1;
+}
+
+void PlatVoicesStop(PlatVoices *v, int index)
+{
+    SDL_AudioStream *stream = VoiceStream(v, index);
+
+    if (stream != NULL)
+        SDL_ClearAudioStream(stream);
+}
+
+int PlatVoicesEnded(PlatVoices *v, int index)
+{
+    SDL_AudioStream *stream = VoiceStream(v, index);
+
+    return stream == NULL || SDL_GetAudioStreamAvailable(stream) <= 0;
+}
+
+void PlatVoicesRender(PlatVoices *v, float *out, float *unclamped, int frames)
+{
+    int bytes = frames * kVoiceChannels * (int)sizeof *out;
+    int got;
+    int i;
+    int j;
+
+    SDL_memset(out, 0, bytes);
+    if (unclamped != NULL)
+        SDL_memset(unclamped, 0, bytes);
+    if (v == NULL)
+        return;
+    if (v->workFrames < frames) {
+        float *work = (float *)SDL_realloc(v->work, bytes);
+        if (work == NULL)
+            return;
+        v->work = work;
+        v->workFrames = frames;
+    }
+    for (i = v->count - 1; i >= 0; i--) {
+        if (v->streams[i] == NULL)
+            continue;
+        got = SDL_GetAudioStreamData(v->streams[i], v->work, bytes);
+        if (got <= 0)
+            continue;
+        SDL_MixAudio((Uint8 *)out, (const Uint8 *)v->work, SDL_AUDIO_F32, (Uint32)got, v->gain);
+        if (unclamped != NULL) {
+            for (j = 0; j < got / (int)sizeof *out; j++)
+                unclamped[j] += v->work[j] * v->gain;
+        }
+    }
 }
 
 /* -- the program's entry and its arguments, which SDL hands over as UTF-8 ------------------------- */
