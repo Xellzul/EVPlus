@@ -448,9 +448,9 @@ void ResetPlayer(Boolean newPilot)
     shipData->govt = -1;
     shipData->aiType = -1;
     shipData->curSystem = 0;
-    shipData->shield = ShipShieldCapacity(shipData);
-    shipData->armor = ShipArmorCapacity(shipData);
-    shipData->fuel = ShipFuelCapacity(shipData);
+    shipData->shield = shipData->ShieldCapacity();
+    shipData->armor = shipData->ArmorCapacity();
+    shipData->fuel = shipData->FuelCapacity();
     shipData->targetShip = -1;
     shipData->targetStellar = -1;
     shipData->navTargetKind = -1;

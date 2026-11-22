@@ -40,8 +40,6 @@ RGBColor shopGridColor[2];
 #define kOutfitPictID    0x2136
 #define kOutfitVenue     6
 
-#define kOutfModRaiseMax 0x1b   /* outfit ModType 27: raises another outfit's maximum */
-
 
 namespace {
 
@@ -129,17 +127,17 @@ void OutfitDialog::Run()
 
     Loop();
 
-    k = ShipFuelCapacity(shipData);
+    k = shipData->FuelCapacity();
     if (shipData->fuel > k) {
         shipData->fuel = k;
         statusRedraw[kRedrawFuel] = 1;
     }
-    i = ShipShieldCapacity(shipData);
+    i = shipData->ShieldCapacity();
     if (shipData->shield > i) {
         shipData->shield = i;
         statusRedraw[kRedrawShield] = 1;
     }
-    j = ShipArmorCapacity(shipData);
+    j = shipData->ArmorCapacity();
     if (shipData->armor > j) {
         shipData->armor = j;
         statusRedraw[kRedrawShield] = 1;
@@ -326,7 +324,7 @@ void OutfitDialog::Hit(short item)
             }
             if (canSell) {
                 for (i = 0; i < kOutfMods; i++) {
-                    if (outfitSystem[selOutfitItem].modType[i] == kOutfModRaiseMax
+                    if (outfitSystem[selOutfitItem].modType[i] == OutfMod::RaiseMax
                         && outfitSystem[selOutfitItem].modVal[i] >= kFirstResourceID
                         && outfitSystem[selOutfitItem].modVal[i] < kFirstResourceID + kMaxOutfits) {
                         shortfall = shipSystems[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]
@@ -371,7 +369,7 @@ void OutfitDialog::Hit(short item)
                 }
                 weapID = -1;
                 for (i = 0; i < kOutfMods; i++) {
-                    if (outfitSystem[selOutfitItem].modType[i] == kOutfModWeapon) {
+                    if (outfitSystem[selOutfitItem].modType[i] == OutfMod::Weapon) {
                         weapID = outfitSystem[selOutfitItem].modVal[i];
                         break;
                     }
@@ -390,7 +388,7 @@ void OutfitDialog::Hit(short item)
                                 && shipData[m].aiType == kShipTypeFighter
                                 && shipData[m].type
                                    == weaponStats[weapID].ammoType - kFirstResourceID
-                                && !IsDisabled(&shipData[m]))
+                                && !shipData[m].IsDisabled())
                                 ammo++;
                         }
                     }
@@ -411,7 +409,7 @@ void OutfitDialog::Hit(short item)
                             k = -1;
                             for (m = 0; m < kMaxOutfits; m++) {
                                 for (j = 0; j < kOutfMods; j++) {
-                                    if (outfitSystem[m].modType[j] == kOutfModAmmo
+                                    if (outfitSystem[m].modType[j] == OutfMod::Ammo
                                         && outfitSystem[m].modVal[j] == weapID) {
                                         k = m;
                                         break;
@@ -473,7 +471,7 @@ void OutfitDialog::Hit(short item)
                     shipData->credits += cost;
                     for (j = 0; j < kOutfMods; j++) {
                         if (shipSystems[selOutfitItem] <= 0) {
-                            if (outfitSystem[selOutfitItem].modType[j] == kOutfModWeapon
+                            if (outfitSystem[selOutfitItem].modType[j] == OutfMod::Weapon
                                 && shipData->selectedWeapon
                                    == outfitSystem[selOutfitItem].modVal[j]) {
                                 shipData->selectedWeapon = -1;
@@ -1037,16 +1035,16 @@ Boolean CanBuyOutfitItem(short outfit)
             isMap = 0;
             isFakeID = 0;
             for (i = 0; i < kOutfMods; i++) {
-                if (outfitSystem[outfit].modType[i] == kOutfModCargo) {
+                if (outfitSystem[outfit].modType[i] == OutfMod::Cargo) {
                     isCargo = 1;
                     cargoDelta = outfitSystem[outfit].modVal[i];
                 }
-                if (outfitSystem[outfit].modType[i] == kModTypeMap)
+                if (outfitSystem[outfit].modType[i] == OutfMod::Map)
                     isMap = 1;
-                if (outfitSystem[outfit].modType[i] == kModTypeFakeID)
+                if (outfitSystem[outfit].modType[i] == OutfMod::FakeID)
                     isFakeID = 1;
             }
-            if (outfitSystem[outfit].modType[0] == kOutfModAmmo) {
+            if (outfitSystem[outfit].modType[0] == OutfMod::Ammo) {
                 if (outfitSystem[outfit].modVal[0] >= 0) {
                     if (weaponStats[outfitSystem[outfit].modVal[0]].guidance ==
                             kGuidanceBay) {

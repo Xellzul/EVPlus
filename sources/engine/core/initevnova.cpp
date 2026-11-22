@@ -289,28 +289,7 @@ short menuFontID;
 short menuTextSize;
 short smallTextFont;
 short smallTextSize;
-float playerShieldCapacity;
-float playerShieldRechargeRate;
-float playerArmorCapacity;
-float playerArmorRechargeRate;
-float playerFuelCapacity;
-float playerTurnRate;
-float playerAccelRate;
-float playerMaxSpeed;
-float playerIonizeMax;
-float playerDeionizeRate;
-float playerABFuelUsage;
-short playerHasAfterburner;
-short playerHasDensityScanner;
-short playerHasIFF;
-short playerAntiInterference;
-short playerEffectiveMurk;
-short playerCanTargetUntargetableShips;
-short playerCanTargetCloakedShips;
-short playerHasInertialDamper;
-short playerResistsGravity;
-short playerResistsDeadlyStellars;
-short playerHasAreaCloak;
+PlayerStats playerStats;
 short playerSabotaged;
 Boolean playerHasIllegalJunk;
 Boolean playerHasIllegalOutfits;
@@ -988,7 +967,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
         }
     }
 
-    wasDisabled = IsDisabled(ship);
+    wasDisabled = ship->IsDisabled();
 
     if (impact < 0 && fromAttack != 0 && attacker >= 0 && attacker < kMaxShips) {
         if (FloatAbs(shipData[attacker].pos.x - ship->pos.x) < kImpactCancelRange
@@ -1003,13 +982,13 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
             AdjustedAccel(angle, impact / (float)shipClass[ship->type].mass,
                           &ship->vel, shipClass[ship->type].maxSpeed);
             if (ship->index == 0 && abOn != 0 && gravitySourcesPresent == 0)
-                SpeedLimit(&ship->vel, ShipMaxSpeed(ship) * kPlayerKnockbackScale);
+                SpeedLimit(&ship->vel, ship->MaxSpeed() * kPlayerKnockbackScale);
             else
-                SpeedLimit(&ship->vel, ShipMaxSpeed(ship));
+                SpeedLimit(&ship->vel, ship->MaxSpeed());
         }
     }
 
-    wasDying = IsDying(ship);
+    wasDying = ship->IsDying();
 
     if (armorOnly != 0) {
         if (armorDmg > 0) {
@@ -1030,17 +1009,17 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
                 else
                     ship->armor -= armorDmg;
             }
-            capacity = ShipShieldCapacity(ship);
+            capacity = ship->ShieldCapacity();
             if (ship->shield < -capacity * kShieldOvershoot)
                 ship->shield = -capacity * kShieldOvershoot;
         }
     }
 
-    if (clampArmor != 0 && IsDisabled(ship) && wasDisabled == 0) {
+    if (clampArmor != 0 && ship->IsDisabled() && wasDisabled == 0) {
         if ((shipClass[ship->type].flags & kShipArmorDisableTenth) != 0)
-            ship->armor = ShipArmorCapacity(ship) * kTenthArmorFraction + 1.0;
+            ship->armor = ship->ArmorCapacity() * kTenthArmorFraction + 1.0;
         else
-            ship->armor = ShipArmorCapacity(ship) * kDisableArmorFraction + 1.0;
+            ship->armor = ship->ArmorCapacity() * kDisableArmorFraction + 1.0;
     }
 
     enemy = 0;
@@ -1051,7 +1030,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
         enemy = 1;
     }
     if (enemy != 0 && ship->defenseStellar == -1) {
-        if (IsDisabled(ship) && wasDisabled == 0)
+        if (ship->IsDisabled() && wasDisabled == 0)
             SlapWithPenalty(shipData->curSystem, ship->govt, 1, ship->specialMission);
         if (ship->armor <= 0.0f && wasDying == 0 && !ShipIsDerelict(ship)) {
             SlapWithPenalty(shipData->curSystem, ship->govt, 3, ship->specialMission);
@@ -1059,7 +1038,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
         }
     }
 
-    if (IsDisabled(ship)) {
+    if (ship->IsDisabled()) {
         if (ship->specialMission >= 0 && ship->specialMission < kMaxActiveMissions
                 && ship->defenseStellar == -1 && wasDisabled == 0) {
             if (currentMissionObjectives[ship->specialMission].active != 0) {
@@ -1111,7 +1090,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
     }
 
     /* `&`, not `&&`: the exe ANDs the two booleans with `test eax,ebx` */
-    if (ship->index == 0 && (IsDying(ship) & (wasDying == 0))) {
+    if (ship->index == 0 && (ship->IsDying() & (wasDying == 0))) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         GetIndString((unsigned char *)msg, kGameStrList, kStrPlayerKilled);
         DisplayComm((PStrChar *)msg, kCommFrames);
@@ -1273,10 +1252,10 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
             ship->annoyance = 0;
             if ((shipClass[ship->type].flags2 & kShipCloaksWhenAttacked) != 0
                     && (attacker >= 0 && attacker < kMaxShips
-                        && ShipCanCloak(ship)
+                        && ship->CanCloak()
                         && !IsShipFightingMe(ship, &shipData[attacker]))) {
                 AIForceBurstReload(ship);
-                DoShipCloak(ship);
+                ship->DoCloak();
             }
             wasDying = 0;
             if (ship->defenseStellar == -1) {
@@ -1350,7 +1329,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
         statusRedraw[kRedrawShield] = 1;
     if (fromAttack != 0 && ship->decloaksWhenHit == 1
             && (ship->cloak == kFullCloak || ship->cloakDir >= 1))
-        DoShipUncloak(ship);
+        ship->DoUncloak();
 }
 
 // FUNCTION: EVNOVA 0x0041ad50
@@ -1364,7 +1343,7 @@ void DeleteAllComputerShips(Boolean force, Boolean keepPlayer)
         remove = 1;
         if (shipData[i].aiType >= kShipTypeFighter && shipData[i].parentShip == 0
                 && shipData[i].defenseStellar == -1 && shipData[i].specialMission == -1) {
-            if (IsDisabled(&shipData[i]))
+            if (shipData[i].IsDisabled())
                 remove = 1;
             else if (force == 0)
                 remove = 0;
@@ -1427,7 +1406,7 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
 
     for (i = 1; i < kMaxShips; i++) {
         if (shipData[i].parentShip == 0 && shipData[i].active != 0) {
-            if (IsDisabled(&shipData[i]) != 0) {
+            if (shipData[i].IsDisabled() != 0) {
                 shipData[i].active = 0;
                 if (shipData[i].parentShip == 0
                         && shipData[i].aiType == kShipTypeEscort
@@ -1436,7 +1415,7 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
                     DestroyPartialFleetCargo(i);
             } else {
                 if (shipData[i].specialMission == -1) {
-                    if (IsDisabled(&shipData[i])) {
+                    if (shipData[i].IsDisabled()) {
                         shipData[i].active = 0;
                         shipData[i].parentShip = -1;
                     } else {
@@ -1532,7 +1511,7 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
                             }
                             shipData[slot].lastStellar = -2;
                             if (currentMissions[m].shipStart == kMissionShipCloaked)
-                                DoShipCloak(&shipData[slot]);
+                                shipData[slot].DoCloak();
                         } else {
                             crashlog_print("warning: couldn't create ship for mission ID ");
                             crashlog_print_num(currentMissions[m].misnIndex + kFirstResourceID);
@@ -1686,7 +1665,7 @@ short RandomShipSpawn(short sys, short reserve)
         shipData[slot].hired = 0;
         shipData[slot].hailed = 0;
         shipData[slot].hasAfterburner = AIHasAfterburner(&shipData[slot]);
-        shipData[slot].canScoop = ShipCanScoop(&shipData[slot]);
+        shipData[slot].canScoop = shipData[slot].CanScoop();
         shipData[slot].auxMission = -1;
         shipData[slot].escortOrder = -1;
         shipData[slot].persType = -1;
@@ -1758,7 +1737,7 @@ short HyperShipSpawn(short sys)
     } else {
         slot = RandomShipSpawn(sys, kSpawnReserve);
         if (slot != -1) {
-            if (ShipFuelCapacity(&shipData[slot]) <= 0) {
+            if (shipData[slot].FuelCapacity() <= 0) {
                 shipData[slot].active = 0;
                 return -1;
             }
@@ -2167,8 +2146,8 @@ void RespawnEscort(ShipObj *ship, unsigned char full)
     ship->ionization = 0;
     ship->escortMayAttack = 0;
     if (full) {
-        ship->shield = ShipShieldCapacity(ship);
-        ship->armor = ShipArmorCapacity(ship);
+        ship->shield = ship->ShieldCapacity();
+        ship->armor = ship->ArmorCapacity();
     }
     ship->curSystem = shipData->curSystem;
     ship->heading = shipData->heading;
@@ -2222,7 +2201,7 @@ unsigned char LaunchFighter(ShipObj *parent, short fighterType)
     shipData[slot].tractorShip = -1;
     shipData[slot].hailed = 0;
     shipData[slot].hasAfterburner = AIHasAfterburner(&shipData[slot]);
-    shipData[slot].canScoop = ShipCanScoop(&shipData[slot]);
+    shipData[slot].canScoop = shipData[slot].CanScoop();
     shipData[slot].hired = 0;
     shipData[slot].auxMission = -1;
     shipData[slot].aiType = kShipTypeFighter;
@@ -2271,8 +2250,8 @@ unsigned char LaunchFighter(ShipObj *parent, short fighterType)
     shipData[slot].fuelRegenState = -1;
     shipData[slot].escortMayAttack = 0;
     shipData[slot].voiceClass = Rand(2);
-    shipData[slot].shield = ShipShieldCapacity(&shipData[slot]);
-    shipData[slot].armor = ShipArmorCapacity(&shipData[slot]);
+    shipData[slot].shield = shipData[slot].ShieldCapacity();
+    shipData[slot].armor = shipData[slot].ArmorCapacity();
     if (shipClass[shipData[slot].type].inherentGovtB != -1
         && govtData[shipClass[shipData[slot].type].inherentGovtB].voiceClass != -1)
         shipData[slot].voiceClass =
@@ -2318,7 +2297,7 @@ unsigned char LaunchFighter(ShipObj *parent, short fighterType)
         shipData[slot].heading += Rand(inacc * 2) - inacc;
     AdjustedAccel(shipData[slot].heading, weaponStats[fighterType].speed100,
                   &shipData[slot].vel,
-                  ShipMaxSpeed(&shipData[slot]));
+                  shipData[slot].MaxSpeed());
     for (i = 0; i < kMaxWeapTypes; i++) {
         shipData[slot].weap[i].count = shipClass[shipData[slot].type].weapCount[i];
         shipData[slot].weap[i].ammo = shipClass[shipData[slot].type].weapAmmo[i];
@@ -2620,7 +2599,7 @@ short SpawnShot(short ship, short target, short weapType, Boolean flag)
     /* the disable-only re-check */
     if (shotData[slot].disableOnly == 0 && 0 < ship && ship < kMaxShips &&
         target != -1) {
-        if (IsDisabled(&shipData[target]) == 0 &&
+        if (shipData[target].IsDisabled() == 0 &&
             AIShipIsPlunderingShip(&shipData[ship], &shipData[target]) != 0) {
             shotData[slot].disableOnly = 1;
         }
@@ -3208,7 +3187,7 @@ short SpawnStellarDefenseShip(short stellar)
             shipData[ship].heading = Rand(kFullCircle);
             shipData[ship].vel.x = shipData[ship].vel.y = 0;
             shipData[ship].accelMag = 0;
-            Accel(shipData[ship].heading, ShipMaxSpeed(&shipData[ship]),
+            Accel(shipData[ship].heading, shipData[ship].MaxSpeed(),
                   &shipData[ship].vel);
             AIMakeShipAttackPlayer(&shipData[ship]);
             stellarData[stellar].defenseActive = 1;
@@ -3288,7 +3267,7 @@ short SpawnEscort(short shipType, short fromSpob)
         shipData[slot].dude = -1;
         shipData[slot].hailed = 0;
         shipData[slot].hasAfterburner = AIHasAfterburner(&shipData[slot]);
-        shipData[slot].canScoop = ShipCanScoop(&shipData[slot]);
+        shipData[slot].canScoop = shipData[slot].CanScoop();
         shipData[slot].hired = 1;
         shipData[slot].specialMission = -1;
         shipData[slot].auxMission = -1;
@@ -3351,7 +3330,7 @@ void DoEscortLand(void)
         for (i = 1; i < kMaxShips; i++) {
             if (shipData[i].active
                 && shipData[i].parentShip == 0
-                && !IsDisabled(&shipData[i])
+                && !shipData[i].IsDisabled()
                 && shipData[i].aiType == kShipTypeEscort
                 && shipData[i].sellOnLanding
                 && shipData[i].specialMission == -1) {
@@ -3470,7 +3449,7 @@ void DoEscortPayment(short days)
             if (shipData[i].active == 0) continue;
             if (shipData[i].parentShip != 0) continue;
             if (shipData[i].aiType != kShipTypeEscort) continue;
-            if (IsDisabled(&shipData[i])) continue;
+            if (shipData[i].IsDisabled()) continue;
 
             skip = 0;
             if (shipData[i].specialMission != -1) {
@@ -3626,7 +3605,7 @@ short SpawnPerson(short sys, unsigned char noDisabled, short person)
                 shipData[slot].aggression = personData[pick].aggression;
                 shipData[slot].hailed = 0;
                 shipData[slot].hasAfterburner = AIHasAfterburner(&shipData[slot]);
-                shipData[slot].canScoop = ShipCanScoop(&shipData[slot]);
+                shipData[slot].canScoop = shipData[slot].CanScoop();
                 shipData[slot].escortOrder = -1;
                 if ((personData[pick].flags & kPersEscapePod) != 0)
                     shipData[slot].hasAfterburner = 1;
@@ -3724,7 +3703,7 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
         shipData[slotL].hired = 0;
         shipData[slotL].hailed = 0;
         shipData[slotL].hasAfterburner = AIHasAfterburner(&shipData[slotL]);
-        shipData[slotL].canScoop = ShipCanScoop(&shipData[slotL]);
+        shipData[slotL].canScoop = shipData[slotL].CanScoop();
         shipData[slotL].auxMission = -1;
         shipData[slotL].escortOrder = -1;
         shipData[slotL].index = slot;
@@ -3765,14 +3744,14 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
             shipData[slotR].aiType = kShipTypeEscort;
             shipData[slotR].defenseStellar = -1;
             shipData[slotR].grudge = 0;
-            shipData[slotR].fuel = ShipFuelCapacity(&shipData[slotR]);
-            if (IsDisabled(&shipData[slotR]) != 0) {
+            shipData[slotR].fuel = shipData[slotR].FuelCapacity();
+            if (shipData[slotR].IsDisabled() != 0) {
                 if ((shipClass[shipData[slotL].type].flags & kShipArmorDisableTenth) != 0)
                     shipData[slotR].armor =
-                        ShipArmorCapacity(&shipData[slotR]) * 0.1 + 1.0;
+                        shipData[slotR].ArmorCapacity() * 0.1 + 1.0;
                 else
                     shipData[slotR].armor =
-                        ShipArmorCapacity(&shipData[slotR]) * 0.3333 + 1.0;
+                        shipData[slotR].ArmorCapacity() * 0.3333 + 1.0;
             }
             prevParent[slotL] = 0;
             AISetup(&shipData[((int)slotL)]);
@@ -3815,8 +3794,8 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
                      &playerPaint.blue);
         for (i = 0; i <= kLastCommodity; i++)
             shipData[0].cargo[i] = me->cargo[i];
-        if (ShipFuelCapacity(shipData) > 0)
-            shipData[0].fuel = Rand(ShipFuelCapacity(shipData));
+        if (shipData->FuelCapacity() > 0)
+            shipData[0].fuel = Rand(shipData->FuelCapacity());
         else
             shipData[0].fuel = 0;
         shipData[0].aiType = -1;
@@ -3833,7 +3812,7 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
             keep = 0;
             for (i = 0; i < kMaxOutfits; i++) {
                 for (m = 0; m < kOutfMods; m++) {
-                    if (outfitSystem[i].modType[m] == 1 && w == outfitSystem[i].modVal[m]
+                    if (outfitSystem[i].modType[m] == OutfMod::Weapon && w == outfitSystem[i].modVal[m]
                             && outfitSystem[i].persistent != 0) {
                         keep = 1;
                         break;
@@ -3934,8 +3913,6 @@ void DisasterHandler(void)
     }
 }
 
-#define kOutfModType19  0x13
-
 // FUNCTION: EVNOVA 0x004250f0
 // MAC: _DoAutoRefuel i386 0x00041bc5 ppc 0x0004949c
 void DoAutoRefuel(void)
@@ -3949,7 +3926,7 @@ void DoAutoRefuel(void)
     for (i = 0; i < kMaxOutfits; i++) {
         if (shipSystems[i] > 0) {
             for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == kOutfModType19) {
+                if (outfitSystem[i].modType[j] == OutfMod::AutoRefuel) {
                     found = 1;
                     break;
                 }
@@ -3957,7 +3934,7 @@ void DoAutoRefuel(void)
         }
     }
 
-    amount = ShipFuelCapacity(shipData);
+    amount = shipData->FuelCapacity();
     if (found) {
         if ((short)shipData->fuel < amount) {
             shipData->fuel = (short)shipData->fuel;
@@ -4169,7 +4146,7 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
         shipData[slot].persType = -1;
         shipData[slot].specialMission = -1;
         shipData[slot].hasAfterburner = AIHasAfterburner(&shipData[slot]);
-        shipData[slot].canScoop = ShipCanScoop(&shipData[slot]);
+        shipData[slot].canScoop = shipData[slot].CanScoop();
         AISetup(&shipData[slot]);
         if ((fleetData[f].flags & kFleetFlagRandomCargo) &&
             shipClass[shipData[slot].type].inherentAI <= kShipTypeBraveTrader &&
@@ -4405,7 +4382,7 @@ Boolean ShotCanHitShip(ShotObj *shot, ShipObj *ship)
                     && ship->defenseStellar == shipData[shot->owner].defenseStellar)
                 return 0;
 
-            if (shot->hitRoll > shipClass[ship->type].aiSkill && !IsDisabled(ship))
+            if (shot->hitRoll > shipClass[ship->type].aiSkill && !ship->IsDisabled())
                 return 0;
             if (ship->index == 0)
                 nearPlayer = 1;
@@ -4522,8 +4499,6 @@ void SpawnParticles(short x, short y, float speed, short spreadPct,
     }
 }
 
-#define kModTypePaint   43
-
 #define kMapGovtClassBase 1000
 
 // FUNCTION: EVNOVA 0x00427770
@@ -4545,7 +4520,7 @@ void GrantOutfitItem(short outfit)
     paintSet = 0;
     fakeID = 0;
     for (i = 0; i < kOutfMods; i++) {
-        if (outfitSystem[outfit].modType[i] == kModTypeMap) {
+        if (outfitSystem[outfit].modType[i] == OutfMod::Map) {
             v = outfitSystem[outfit].modVal[i];
             if (v > 0) {
                 AutoSetExploration(shipData[0].curSystem, v, 2);
@@ -4574,7 +4549,7 @@ void GrantOutfitItem(short outfit)
         }
     }
     for (i = 0; i < kOutfMods; i++) {
-        if (outfitSystem[outfit].modType[i] == kModTypePaint) {
+        if (outfitSystem[outfit].modType[i] == OutfMod::Paint) {
             playerPaint.red =
                 ((unsigned short)outfitSystem[outfit].modVal[i] >> 10) & 0x1f;
             playerPaint.green =
@@ -4586,7 +4561,7 @@ void GrantOutfitItem(short outfit)
         }
     }
     for (i = 0; i < kOutfMods; i++) {
-        if (outfitSystem[outfit].modType[i] == kModTypeFakeID) {
+        if (outfitSystem[outfit].modType[i] == OutfMod::FakeID) {
             fakeID = 1;
             break;
         }
@@ -4595,7 +4570,7 @@ void GrantOutfitItem(short outfit)
         if (paintSet == 0) {
             if (fakeID != 0) {
                 for (i = 0; i < kOutfMods; i++) {
-                    if (outfitSystem[outfit].modType[i] == kModTypeFakeID) {
+                    if (outfitSystem[outfit].modType[i] == OutfMod::FakeID) {
                         for (s = 0; s < kMaxSystems; s++) {
                             if (systemData[s].loaded != 0) {
                                 if (outfitSystem[outfit].modVal[i] == -1) {
@@ -4661,7 +4636,7 @@ void SpawnBeam(short ship, short target, short weapType, short unused, short mou
             beamData[i].target = target;
             beamData[i].disableOnly = WeaponDisableOnly(weapType);
             if (beamData[i].disableOnly == 0 && ship > 0 && flag != 1 && target != -1
-                    && !IsDisabled(&shipData[target])
+                    && !shipData[target].IsDisabled()
                     && AIShipIsPlunderingShip(&shipData[ship], &shipData[target]))
                 beamData[i].disableOnly = 1;
             return;

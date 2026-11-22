@@ -2,6 +2,7 @@
 
 #include "ai.h"
 #include "game.h"
+#include "outfitmods.h"
 #include "player.h"
 #include "ships.h"
 #include "gameutil.h"
@@ -29,7 +30,7 @@ void ShipStatsToSystemInfo(void)
             continue;
         if (outfitSystem[i].techLevel >= 0x8000)
             continue;
-        if (outfitSystem[i].modType[0] == kOutfModWeapon
+        if (outfitSystem[i].modType[0] == OutfMod::Weapon
                 && outfitSystem[i].modVal[0] >= 0 && outfitSystem[i].modVal[0] < kMaxWeapTypes) {
             slot = outfitSystem[i].modVal[0];
             if (shipSystems[i] >= countBuf[slot]) {
@@ -38,7 +39,7 @@ void ShipStatsToSystemInfo(void)
             } else {
                 countBuf[slot] -= shipSystems[i];
             }
-        } else if (outfitSystem[i].modType[0] == kOutfModAmmo
+        } else if (outfitSystem[i].modType[0] == OutfMod::Ammo
                 && outfitSystem[i].modVal[0] >= 0 && outfitSystem[i].modVal[0] < kMaxWeapTypes) {
             slot = outfitSystem[i].modVal[0];
             if (shipSystems[i] >= ammoBuf[slot]) {
@@ -58,7 +59,7 @@ void ShipStatsToSystemInfo(void)
     for (k = 0; k < kMaxWeapTypes; k++) {
         if (countBuf[k] > 0) {
             for (i = 0; i < kMaxOutfits; i++) {
-                if (outfitSystem[i].techLevel < 0x8000 && outfitSystem[i].modType[0] == kOutfModWeapon
+                if (outfitSystem[i].techLevel < 0x8000 && outfitSystem[i].modType[0] == OutfMod::Weapon
                         && outfitSystem[i].modVal[0] == k) {
                     shipSystems[i] += countBuf[k];
                     countBuf[k] = 0;
@@ -68,7 +69,7 @@ void ShipStatsToSystemInfo(void)
         }
         if (ammoBuf[k] > 0) {
             for (i = 0; i < kMaxOutfits; i++) {
-                if (outfitSystem[i].techLevel < 0x8000 && outfitSystem[i].modType[0] == kOutfModAmmo
+                if (outfitSystem[i].techLevel < 0x8000 && outfitSystem[i].modType[0] == OutfMod::Ammo
                         && outfitSystem[i].modVal[0] == k) {
                     shipSystems[i] += ammoBuf[k];
                     ammoBuf[k] = 0;
@@ -104,9 +105,9 @@ void SystemInfoToShipStats(void)
             continue;
         if (outfitSystem[i].techLevel >= kOutfTechAbsent)
             continue;
-        if (outfitSystem[i].modType[0] == kOutfModWeapon)
+        if (outfitSystem[i].modType[0] == OutfMod::Weapon)
             shipData->weap[outfitSystem[i].modVal[0]].count += shipSystems[i];
-        if (outfitSystem[i].modType[0] == kOutfModAmmo)
+        if (outfitSystem[i].modType[0] == OutfMod::Ammo)
             shipData->weap[outfitSystem[i].modVal[0]].ammo += shipSystems[i];
     }
 
@@ -137,245 +138,188 @@ int32_t ShipFreeMass(void)
     return free;
 }
 
-/*
- * Both walk the 512 outfit slots and check each owned outfit's four mod slots
- * (modType 4 = shield boost, 15 = afterburner); both results are cached in
- * player-scoped globals that other code invalidates.
- */
-
-#define kOutfModShieldBoost 4
+/* the player's values are cached in playerStats until ResetPlayerPrecalcedValues */
 
 // FUNCTION: EVNOVA 0x00463550
 // MAC: _ShipShieldCapacity i386 0x00002995 ppc 0x000034e8
-float ShipShieldCapacity(ShipObj *ship)
+float ShipObj::ShieldCapacity()
 {
-    int32_t i;
     float cap;
-    short j;
 
-    cap = shipClass[ship->type].shield;
-    if (ship->index == 0) {
-        if (playerShieldCapacity >= 0.0f) {
-            cap = playerShieldCapacity;
+    cap = Class().shield;
+    if (IsPlayer()) {
+        if (playerStats.shieldCapacity >= 0.0f) {
+            cap = playerStats.shieldCapacity;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModShieldBoost)
-                            cap += outfitSystem[i].modVal[j] * shipSystems[i];
-                    }
-                }
-            }
+            ForEachPlayerMod(OutfMod::ShieldBoost, [&](short val, short owned) {
+                cap += val * owned;
+                return false;
+            });
             if (cap < 0.0f)
                 cap = 0.0f;
-            playerShieldCapacity = cap;
+            playerStats.shieldCapacity = cap;
         }
     } else {
-        if (ship->persType != -1) {
-            if (personData[ship->persType].shieldMod > 0.0f)
-                cap = cap * personData[ship->persType].shieldMod;
+        if (persType != -1) {
+            if (personData[persType].shieldMod > 0.0f)
+                cap = cap * personData[persType].shieldMod;
         }
     }
-    if (ship->index != 0 && ship->aiType == kShipTypeFighter)
+    if (!IsPlayer() && aiType == kShipTypeFighter)
         cap *= 1.333;
     return cap;
 }
 
-#define kOutfModShieldRech 5
-
 // FUNCTION: EVNOVA 0x00463680
 // MAC: _ShipShieldRechargeRate i386 0x00002abb ppc 0x0000367c
-float ShipShieldRechargeRate(ShipObj *ship)
+float ShipObj::ShieldRechargeRate()
 {
-    short i;
     float cap;
-    short j;
     int tmp;
 
-    cap = shipClass[tmp = ship->type].shieldRech;
-    if (ship->index == 0) {
-        if (playerShieldRechargeRate >= 0.0f) {
-            cap = playerShieldRechargeRate;
+    cap = shipClass[tmp = type].shieldRech;
+    if (IsPlayer()) {
+        if (playerStats.shieldRechargeRate >= 0.0f) {
+            cap = playerStats.shieldRechargeRate;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModShieldRech)
-                            cap += (float)outfitSystem[i].modVal[j] * 0.001
-                                   * shipSystems[i];
-                    }
-                }
-            }
+            ForEachPlayerMod(OutfMod::ShieldRech, [&](short val, short owned) {
+                cap += (float)val * 0.001 * owned;
+                return false;
+            });
             if (cap < 0.0f)
                 cap = 0.0f;
-            playerShieldRechargeRate = cap;
+            playerStats.shieldRechargeRate = cap;
         }
     }
     if (cap < 0.0f)
         cap = 0.0f;
-    if (ship->index != 0 && ship->aiType == kShipTypeFighter)
+    if (!IsPlayer() && aiType == kShipTypeFighter)
         cap *= 1.333;
     return cap;
 }
 
-/*
- * The persType guard is a RANGE here (0 <= pers < 1024, the array's own size)
- * where the shield twin tests `pers != -1`, and the base is `fild`ed from a
- * long (`armor` at ShipRec+0x60) where shieldRech's was a float.
- */
-
-#define kOutfModArmor 6
+/* persType is range-checked here; ShieldCapacity only tests != -1 */
 
 // FUNCTION: EVNOVA 0x004637a0
 // MAC: _ShipArmorCapacity i386 0x00002bc0 ppc 0x000037e4
-float ShipArmorCapacity(ShipObj *ship)
+float ShipObj::ArmorCapacity()
 {
-    short i;
     float cap;
-    short j;
     short pers;
 
-    cap = shipClass[ship->type].armor;
-    if (ship->index == 0) {
-        if (playerArmorCapacity >= 0.0f) {
-            cap = playerArmorCapacity;
+    cap = Class().armor;
+    if (IsPlayer()) {
+        if (playerStats.armorCapacity >= 0.0f) {
+            cap = playerStats.armorCapacity;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModArmor)
-                            cap += outfitSystem[i].modVal[j] * shipSystems[i];
-                    }
-                }
-            }
+            ForEachPlayerMod(OutfMod::Armor, [&](short val, short owned) {
+                cap += val * owned;
+                return false;
+            });
             if (cap < 0.0f)
                 cap = 0.0f;
-            playerArmorCapacity = cap;
+            playerStats.armorCapacity = cap;
         }
     } else {
-        pers = ship->persType;
+        pers = persType;
         if (pers >= 0 && pers < kMaxPersons) {
             if (personData[pers].shieldMod > 0.0f)
                 cap = cap * personData[pers].shieldMod;
         }
     }
-    if (ship->index != 0 && ship->aiType == kShipTypeFighter)
+    if (!IsPlayer() && aiType == kShipTypeFighter)
         cap *= 1.333;
     return cap;
 }
 
-#define kOutfModArmorRech 0x1d
-
 // FUNCTION: EVNOVA 0x004638e0
 // MAC: _ShipArmorRechargeRate i386 0x00002e0e ppc 0x00003acc
-float ShipArmorRechargeRate(ShipObj *ship)
+float ShipObj::ArmorRechargeRate()
 {
-    short i;
     float cap;
-    short j;
 
-    if (IsDisabled(ship))
+    if (IsDisabled())
         return 0.0f;
-    cap = shipClass[ship->type].armorRech;
-    if (ship->index == 0) {
-        if (playerArmorRechargeRate >= 0.0f) {
-            cap = playerArmorRechargeRate;
+    cap = Class().armorRech;
+    if (IsPlayer()) {
+        if (playerStats.armorRechargeRate >= 0.0f) {
+            cap = playerStats.armorRechargeRate;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModArmorRech)
-                            cap += (float)outfitSystem[i].modVal[j] * 0.001
-                                   * shipSystems[i];
-                    }
-                }
-            }
+            ForEachPlayerMod(OutfMod::ArmorRech, [&](short val, short owned) {
+                cap += (float)val * 0.001 * owned;
+                return false;
+            });
             if (cap < 0.0f)
                 cap = 0.0f;
-            playerArmorRechargeRate = cap;
+            playerStats.armorRechargeRate = cap;
         }
     }
     if (cap < 0.0f)
         cap = 0.0f;
-    if (ship->index == 0 && cheatsActive != 0)
+    if (IsPlayer() && cheatsActive != 0)
         cap *= 50.0f;
     return cap;
 }
 
-#define kOutfModType12  0xc
 #define kMaxFuel        32000
 
 // FUNCTION: EVNOVA 0x00463a20
 // MAC: _ShipFuelCapacity i386 0x00002f21 ppc 0x00003c74
-short ShipFuelCapacity(ShipObj *ship)
+short ShipObj::FuelCapacity()
 {
-    short i;
-    short j;
     int32_t total;
 
-    total = shipClass[ship->type].fuel;
-    if (ship->index == 0) {
-        if (playerFuelCapacity >= 0.0f) {
-            total = playerFuelCapacity;
+    total = Class().fuel;
+    if (IsPlayer()) {
+        if (playerStats.fuelCapacity >= 0.0f) {
+            total = playerStats.fuelCapacity;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType12)
-                            total += outfitSystem[i].modVal[j]
-                                     * shipSystems[i];
-                    }
-                }
-            }
+            ForEachPlayerMod(OutfMod::FuelCapacity, [&](short val, short owned) {
+                total += val * owned;
+                return false;
+            });
             if (total < 0)
                 total = 0;
             if (total > kMaxFuel)
                 total = kMaxFuel;
-            playerFuelCapacity = total;
+            playerStats.fuelCapacity = total;
         }
     }
     return total;
 }
 
-#define kOutfModType18  0x12
-
 // FUNCTION: EVNOVA 0x00463b30
 // MAC: _ShipFuelGenRate i386 0x00002ffb ppc 0x00003d88
-Boolean ShipFuelGenRate(ShipObj *ship, float *rate)
+Boolean ShipObj::FuelGenRate(float *rate)
 {
     short i;
     short j;
 
-    if (ship->fuelRegenState < 0) {
-        ship->fuelRegenState = 0;
-        ship->fuelRegenRate = 0;
-        if (shipClass[ship->type].fuelRegen > 0 &&
-            ((shipClass[ship->type].flags & kShipFuelRegen) != 0 ||
-             ship->index != 0)) {
-            ship->fuelRegenState = 1;
-            ship->fuelRegenRate = 1.0 / (float)shipClass[ship->type].fuelRegen;
+    if (fuelRegenState < 0) {
+        fuelRegenState = 0;
+        fuelRegenRate = 0;
+        if (Class().fuelRegen > 0 &&
+            ((Class().flags & kShipFuelRegen) != 0 ||
+             !IsPlayer())) {
+            fuelRegenState = 1;
+            fuelRegenRate = 1.0 / (float)Class().fuelRegen;
         }
-        if (ship->index == 0) {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType18) {
-                            ship->fuelRegenState = 1;
-                            ship->fuelRegenRate += (float)shipSystems[i] * (1.0 / (float)outfitSystem[i].modVal[j]);
-                        }
-                    }
-                }
-            }
+        if (IsPlayer()) {
+            ForEachPlayerMod(OutfMod::FuelRegen, [&](short val, short owned) {
+                fuelRegenState = 1;
+                fuelRegenRate += (float)owned * (1.0 / (float)val);
+                return false;
+            });
         } else {
             for (i = 0; i < kDefaultOutfitSlots; i++) {
-                if (shipClass[ship->type].defOutfCount[i] > 0) {
-                    short id = shipClass[ship->type].defOutfID[i];
+                if (Class().defOutfCount[i] > 0) {
+                    short id = Class().defOutfID[i];
 
                     if (id >= 0 && id < kMaxOutfits) {
                         for (j = 0; j < kOutfMods; j++) {
-                            if (outfitSystem[id].modType[j] == kOutfModType18) {
-                                ship->fuelRegenState = 1;
-                                ship->fuelRegenRate += (float)shipClass[ship->type].defOutfCount[i]
+                            if (outfitSystem[id].modType[j] == OutfMod::FuelRegen) {
+                                fuelRegenState = 1;
+                                fuelRegenRate += (float)Class().defOutfCount[i]
                                     * (1.0 / (float)outfitSystem[id].modVal[j]);
                             }
                         }
@@ -384,53 +328,42 @@ Boolean ShipFuelGenRate(ShipObj *ship, float *rate)
             }
         }
     }
-    if (ship->fuelRegenState == 0) {
+    if (fuelRegenState == 0) {
         *rate = 0;
         return 0;
     }
-    *rate = ship->fuelRegenRate;
+    *rate = fuelRegenRate;
     return 1;
 }
 
-#define kOutfModSpeed    8
-
-#define kOutfModTurn    9
-
 // FUNCTION: EVNOVA 0x00463e70
 // MAC: _ShipTurnRate i386 0x000032f7 ppc 0x000041b8
-float ShipTurnRate(ShipObj *ship)
+float ShipObj::TurnRate()
 {
-    short i;
     float v;
-    short j;
     float ratio;
 
-    v = shipClass[ship->type].turnRate;
-    if (ship->index == 0) {
-        if (playerTurnRate >= 0.0f) {
-            v = playerTurnRate;
+    v = Class().turnRate;
+    if (IsPlayer()) {
+        if (playerStats.turnRate >= 0.0f) {
+            v = playerStats.turnRate;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModTurn)
-                            v += outfitSystem[i].modVal[j]
-                                 * shipSystems[i] * 0.01;
-                    }
-                }
-            }
-            if (v < 1.0f && shipClass[ship->type].turnRate > 0.0f)
+            ForEachPlayerMod(OutfMod::Turn, [&](short val, short owned) {
+                v += val * owned * 0.01;
+                return false;
+            });
+            if (v < 1.0f && Class().turnRate > 0.0f)
                 v = 1.0f;
-            playerTurnRate = v;
+            playerStats.turnRate = v;
         }
     } else {
-        if (ship->tractorShip != -1 && ship->tractorShip != ship->index)
+        if (tractorShip != -1 && tractorShip != index)
             v *= 0.333;
     }
-    if (shipClass[ship->type].turnRate >= 1.0f && v < 1.0f)
+    if (Class().turnRate >= 1.0f && v < 1.0f)
         v = 1.0f;
-    if (ship->ionization > 0.0f && ship->jumpTimer <= 0.0f) {
-        ratio = ShipIonizationFactor(ship);
+    if (ionization > 0.0f && jumpTimer <= 0.0f) {
+        ratio = IonizationFactor();
         if (ratio > 0.7)
             ratio = 0.7f;
         v *= (1.0 - ratio);
@@ -440,51 +373,42 @@ float ShipTurnRate(ShipObj *ship)
     return v;
 }
 
-#define kOutfModAccel   7
-
 // FUNCTION: EVNOVA 0x004640a0
 // MAC: _ShipAccelRate i386 0x0000353b ppc 0x00004490
-float ShipAccelRate(ShipObj *ship)
+float ShipObj::AccelRate()
 {
-    short i;
     float v;
-    short j;
     float ratio;
 
-    v = shipClass[ship->type].accel;
-    if (ship->index == 0) {
-        if (playerAccelRate >= 0.0f) {
-            v = playerAccelRate;
+    v = Class().accel;
+    if (IsPlayer()) {
+        if (playerStats.accelRate >= 0.0f) {
+            v = playerStats.accelRate;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModAccel)
-                            v += (float)((float)(outfitSystem[i].modVal[j] / 10000.0)
-                                 * shipSystems[i]);
-                    }
-                }
-            }
+            ForEachPlayerMod(OutfMod::Accel, [&](short val, short owned) {
+                v += (float)((float)(val / 10000.0) * owned);
+                return false;
+            });
             if (v < 0.0f)
                 v = 0.0f;
-            playerAccelRate = v;
+            playerStats.accelRate = v;
         }
         v *= 2.0;
     } else {
-        if ((shipClass[ship->type].flags & kShipPlanetType) != 0)
+        if ((Class().flags & kShipPlanetType) != 0)
             return 0.0f;
-        v *= ship->skill;
-        if (ship->govt != -1)
-            v *= govtData[ship->govt].skillMult;
-        if (ship->tractorShip != -1 && ship->tractorShip != ship->index)
+        v *= skill;
+        if (govt != -1)
+            v *= govtData[govt].skillMult;
+        if (tractorShip != -1 && tractorShip != index)
             v *= 0.333;
-        else if (ship->parentShip == 0)
+        else if (parentShip == 0)
             v *= 2.0;
         else
             v *= 2.0;
     }
-    if (ship->ionization > 0.0f) {
-        ratio = ShipIonizationFactor(ship);
+    if (ionization > 0.0f) {
+        ratio = IonizationFactor();
         if (ratio > 0.7)
             ratio = 0.7f;
         v *= (1.0 - ratio);
@@ -496,40 +420,33 @@ float ShipAccelRate(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x004642e0
 // MAC: _ShipMaxSpeed i386 0x000036f2 ppc 0x000046c4
-float ShipMaxSpeed(ShipObj *ship)
+float ShipObj::MaxSpeed()
 {
-    short i;
     float v;
-    short j;
 
-    v = shipClass[ship->type].maxSpeed;
-    if (ship->index == 0) {
-        if (playerMaxSpeed >= 0.0f) {
-            v = playerMaxSpeed;
+    v = Class().maxSpeed;
+    if (IsPlayer()) {
+        if (playerStats.maxSpeed >= 0.0f) {
+            v = playerStats.maxSpeed;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModSpeed)
-                            v += (float)((float)(outfitSystem[i].modVal[j] / 100.0)
-                                 * shipSystems[i]);
-                    }
-                }
-            }
+            ForEachPlayerMod(OutfMod::Speed, [&](short val, short owned) {
+                v += (float)((float)(val / 100.0) * owned);
+                return false;
+            });
             if (v < 0.0f)
                 v = 0.0f;
-            playerMaxSpeed = v;
+            playerStats.maxSpeed = v;
         }
     } else {
-        if ((shipClass[ship->type].flags & kShipPlanetType) != 0)
+        if ((Class().flags & kShipPlanetType) != 0)
             return 0.0f;
-        v *= ship->skill;
-        if (ship->govt != -1)
-            v *= govtData[ship->govt].skillMult;
-        if (ship->tractorShip != -1 && ship->tractorShip != ship->index)
+        v *= skill;
+        if (govt != -1)
+            v *= govtData[govt].skillMult;
+        if (tractorShip != -1 && tractorShip != index)
             v *= 0.333;
     }
-    if (ship->index == 0 || ship->parentShip == 0) {
+    if (IsPlayer() || parentShip == 0) {
         if (strictPlay == 0)
             v *= 1.5;
     }
@@ -540,42 +457,31 @@ float ShipMaxSpeed(ShipObj *ship)
 
 /* Guidance 99 is the carried-ship type. */
 
-#define kOutfModBay      11
-
 // FUNCTION: EVNOVA 0x004644a0
 // MAC: _HasEscapePod i386 0x0000b83d ppc 0x0000e3e0
-Boolean HasEscapePod(ShipObj *ship)
+Boolean ShipObj::HasEscapePod()
 {
-    short i;
-    short j;
-
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModBay)
-                        return 1;
-                }
-            }
-        }
+    if (IsPlayer()) {
+        if (PlayerHasMod(OutfMod::EscapePod))
+            return 1;
     }
-    if (HasEscapeShip(ship))
+    if (HasEscapeShip())
         return 1;
     return 0;
 }
 
 // FUNCTION: EVNOVA 0x00464520
 // MAC: _HasEscapeShip i386 0x0000386e ppc 0x000048c4
-Boolean HasEscapeShip(ShipObj *ship)
+Boolean ShipObj::HasEscapeShip()
 {
     short i;
-    short type;
+    short escType;
 
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (weaponStats[i].guidance == kGuidanceBay &&
-            ship->weap[i].ammo > 0) {
-            type = weaponStats[i].ammoType - 128;
-            if ((shipClass[type].flags & kShipEscapeShip) != 0)
+            weap[i].ammo > 0) {
+            escType = weaponStats[i].ammoType - 128;
+            if ((shipClass[escType].flags & kShipEscapeShip) != 0)
                 return 1;
         }
     }
@@ -584,17 +490,17 @@ Boolean HasEscapeShip(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x00464590
 // MAC: _EscapeShipType i386 0x000038d0 ppc 0x00004938
-short EscapeShipType(ShipObj *ship)
+short ShipObj::EscapeShipType()
 {
     short i;
-    short type;
+    short escType;
 
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (weaponStats[i].guidance == kGuidanceBay &&
-            ship->weap[i].ammo > 0) {
-            type = weaponStats[i].ammoType - 128;
-            if ((shipClass[type].flags & kShipEscapeShip) != 0)
-                return type;
+            weap[i].ammo > 0) {
+            escType = weaponStats[i].ammoType - 128;
+            if ((shipClass[escType].flags & kShipEscapeShip) != 0)
+                return escType;
         }
     }
     return -1;
@@ -602,15 +508,15 @@ short EscapeShipType(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x00464600
 // MAC: _EscapeShipWeapType i386 0x00003936 ppc 0x000049ac
-short EscapeShipWeapType(ShipObj *ship)
+short ShipObj::EscapeShipWeapType()
 {
     short i;
-    short type;
+    short escType;
 
     for (i = 0; i < kMaxWeapTypes; i++) {
-        if (weaponStats[i].guidance == kGuidanceBay && ship->weap[i].ammo > 0) {
-            type = weaponStats[i].ammoType - kFirstResourceID;
-            if ((shipClass[type].flags & kShipEscapeShip) != 0)
+        if (weaponStats[i].guidance == kGuidanceBay && weap[i].ammo > 0) {
+            escType = weaponStats[i].ammoType - kFirstResourceID;
+            if ((shipClass[escType].flags & kShipEscapeShip) != 0)
                 return i;
         }
     }
@@ -619,18 +525,18 @@ short EscapeShipWeapType(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x00464670
 // MAC: _KeyCarriedShipTypeOnboard i386 0x0000399c ppc 0x00004a28
-Boolean KeyCarriedShipTypeOnboard(ShipObj *ship)
+Boolean ShipObj::KeyCarriedShipTypeOnboard()
 {
     short i;
     short escort;
     short bay;
 
-    escort = shipClass[ship->type].keyCarried;
+    escort = Class().keyCarried;
     if (escort == -1)
         return 0;
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (weaponStats[i].guidance == kGuidanceBay &&
-            ship->weap[i].count > 0 && ship->weap[i].ammo > 0) {
+            weap[i].count > 0 && weap[i].ammo > 0) {
             bay = (weaponStats[i].ammoType - 128);
             if (bay == escort)
                 return 1;
@@ -639,142 +545,94 @@ Boolean KeyCarriedShipTypeOnboard(ShipObj *ship)
     return 0;
 }
 
-#define kOutfModType20 0x14
-#define kOutfModType15 0xf
-
-/* does the player own any outfit carrying modifier type 0x14 */
-
 // FUNCTION: EVNOVA 0x00464700
 // MAC: _HasAutoEject i386 0x00003a14 ppc 0x00004ab4
-Boolean HasAutoEject(ShipObj *ship)
+Boolean ShipObj::HasAutoEject()
 {
-    short i;
-    short j;
-
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType20)
-                        return 1;
-                }
-            }
-        }
+    if (IsPlayer()) {
+        if (PlayerHasMod(OutfMod::AutoEject))
+            return 1;
     }
     return 0;
 }
 
 // FUNCTION: EVNOVA 0x00464760
 // MAC: _HasAfterburner i386 0x00003a6d ppc 0x00004b24
-Boolean HasAfterburner(ShipObj *ship)
+Boolean ShipObj::HasAfterburner()
 {
-    short i;
-    short j;
-
     if (cheatsActive != 0)
         return 1;
-    if (ship->index == 0) {
-        if (playerHasAfterburner >= 0) {
-            if (playerHasAfterburner != 0)
+    if (IsPlayer()) {
+        if (playerStats.hasAfterburner >= 0) {
+            if (playerStats.hasAfterburner != 0)
                 return 1;
         } else {
-            playerHasAfterburner = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType15) {
-                            playerHasAfterburner = 1;
-                            return 1;
-                        }
-                    }
-                }
+            playerStats.hasAfterburner = 0;
+            if (PlayerHasMod(OutfMod::Afterburner)) {
+                playerStats.hasAfterburner = 1;
+                return 1;
             }
         }
     }
     return 0;
 }
 
-#define kOutfModType33  0x21
-
 // FUNCTION: EVNOVA 0x00464810
 // MAC: _ShipECM i386 0x00003aff ppc 0x00004bdc
-short ShipECM(ShipObj *ship, short kind)
+short ShipObj::ECM(short kind)
 {
-    short i;
-    short j;
-
-    if (ship == NULL)
-        return 0;
     if (kind < 0 || kind >= 4)
         return 0;
-    if (IsDisabled(ship))
+    if (IsDisabled())
         return 0;
-    if (ship->jamming[kind] >= 0)
-        return ship->jamming[kind];
+    if (jamming[kind] >= 0)
+        return jamming[kind];
 
-    if (shipClass[ship->type].inherentGovtB >= 0 &&
-        shipClass[ship->type].inherentGovtB < kMaxGovts)
-        ship->jamming[kind] =
-            govtData[shipClass[ship->type].inherentGovtB].inhJam[kind];
+    if (Class().inherentGovtB >= 0 &&
+        Class().inherentGovtB < kMaxGovts)
+        jamming[kind] =
+            govtData[Class().inherentGovtB].inhJam[kind];
     else
-        ship->jamming[kind] = 0;
+        jamming[kind] = 0;
 
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType33 + kind)
-                        ship->jamming[kind] += outfitSystem[i].modVal[j];
-                }
-            }
-        }
+    if (IsPlayer()) {
+        ForEachPlayerMod(OutfMod::Jam1 + kind, [&](short val, short) {
+            jamming[kind] += val;
+            return false;
+        });
     } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType33 + kind)
-                        ship->jamming[kind] +=
-                            outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j];
-                }
-            }
-        }
-        if (ship->govt >= 0 && ship->govt < kMaxGovts &&
-            (govtData[ship->govt].flags & kGovtFreighterHalfJam) != 0)
-            ship->jamming[kind] = ship->jamming[kind] / 2;
+        ForEachDefaultMod(Class(), OutfMod::Jam1 + kind, [&](short val, short) {
+            jamming[kind] += val;
+            return false;
+        });
+        if (govt >= 0 && govt < kMaxGovts &&
+            (govtData[govt].flags & kGovtFreighterHalfJam) != 0)
+            jamming[kind] = jamming[kind] / 2;
     }
 
-    if (ship->jamming[kind] < 0)
-        ship->jamming[kind] = 0;
-    if (ship->jamming[kind] > 100)
-        ship->jamming[kind] = 100;
-    return ship->jamming[kind];
+    if (jamming[kind] < 0)
+        jamming[kind] = 0;
+    if (jamming[kind] > 100)
+        jamming[kind] = 100;
+    return jamming[kind];
 }
-
-#define kOutfModType22 0x16
 
 // FUNCTION: EVNOVA 0x00465550
 // MAC: _ShipHyperTransitTime i386 0x000043d0 ppc 0x00005774
-short ShipHyperTransitTime(ShipObj *ship)
+short ShipObj::HyperTransitTime()
 {
-    short i;
-    short j;
     short count;
 
     count = 1;
-    if (shipClass[ship->type].mass >= 100)
+    if (Class().mass >= 100)
         count++;
-    if (shipClass[ship->type].mass >= 200)
+    if (Class().mass >= 200)
         count++;
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType22)
-                        count += outfitSystem[i].modVal[j] * shipSystems[i];
-                }
-            }
-        }
+    if (IsPlayer()) {
+        ForEachPlayerMod(OutfMod::DaysPerJump, [&](short val, short owned) {
+            count += val * owned;
+            return false;
+        });
     }
     if (count < 1)
         count = 1;
@@ -785,26 +643,19 @@ short ShipHyperTransitTime(ShipObj *ship)
  * A squared range: floored at zero and then squared, so the caller can compare
  * against a squared distance without a square root.
  */
-#define kOutfModType23 0x17
 
 // FUNCTION: EVNOVA 0x00465610
 // MAC: _ShipHyperSafeDist i386 0x00004485 ppc 0x00005830
-int32_t ShipHyperSafeDist(ShipObj *ship)
+int32_t ShipObj::HyperSafeDist()
 {
-    short i;
-    short j;
     int32_t range;
 
     range = 1000;
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType23)
-                        range += outfitSystem[i].modVal[j] * shipSystems[i];
-                }
-            }
-        }
+    if (IsPlayer()) {
+        ForEachPlayerMod(OutfMod::HyperSafeDist, [&](short val, short owned) {
+            range += val * owned;
+            return false;
+        });
     }
     if (range < 0)
         range = 0;
@@ -815,119 +666,86 @@ int32_t ShipHyperSafeDist(ShipObj *ship)
  * Cached in a short that is below -100 until computed and clamped to -100..100
  * once it is.
  */
-#define kOutfModType24 0x18
 
 // FUNCTION: EVNOVA 0x0046abb0
 // MAC: _ShipAntiInterference i386 0x00005f2c ppc 0x0000772c
 short ShipAntiInterference(void)
 {
-    short i;
-    short j;
     short total;
 
-    if (playerAntiInterference < -100) {
+    if (playerStats.antiInterference < -100) {
         total = 0;
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType24)
-                        total += outfitSystem[i].modVal[j] * shipSystems[i];
-                }
-            }
-        }
+        ForEachPlayerMod(OutfMod::Interference, [&](short val, short owned) {
+            total += val * owned;
+            return false;
+        });
         if (total > 100)
             total = 100;
         if (total < -100)
             total = -100;
-        playerAntiInterference = total;
+        playerStats.antiInterference = total;
         return total;
     }
-    return playerAntiInterference;
+    return playerStats.antiInterference;
 }
-
-#define kOutfModType39 0x27
 
 // FUNCTION: EVNOVA 0x0046c080
 // MAC: _ShipDeionizationRate i386 0x00006ec3 ppc 0x00008908
-float ShipDeionizationRate(ShipObj *ship)
+float ShipObj::DeionizationRate()
 {
-    short i;
-    short j;
     float value;
 
-    value = shipClass[ship->type].deionize;
-    if (ship->index == 0) {
-        if (playerDeionizeRate >= 0.0f) {
-            value = playerDeionizeRate;
+    value = Class().deionize;
+    if (IsPlayer()) {
+        if (playerStats.deionizeRate >= 0.0f) {
+            value = playerStats.deionizeRate;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType39)
-                            value = value + outfitSystem[i].modVal[j] * 0.01 *
-                                    shipSystems[i];
-                    }
-                }
-            }
-            playerDeionizeRate = value;
+            ForEachPlayerMod(OutfMod::Deionize, [&](short val, short owned) {
+                value = value + val * 0.01 * owned;
+                return false;
+            });
+            playerStats.deionizeRate = value;
         }
     }
     return value;
 }
 
-#define kOutfModType40 0x28
-
 // FUNCTION: EVNOVA 0x0046c160
 // MAC: _ShipIonizationFactor i386 0x00003225 ppc 0x00004094
-float ShipIonizationFactor(ShipObj *ship)
+float ShipObj::IonizationFactor()
 {
-    short i;
-    short j;
     float total;
 
-    total = shipClass[ship->type].ionizeMax;
-    if (ship->index == 0) {
-        if (playerIonizeMax >= 0.0f) {
-            total = playerIonizeMax;
+    total = Class().ionizeMax;
+    if (IsPlayer()) {
+        if (playerStats.ionizeMax >= 0.0f) {
+            total = playerStats.ionizeMax;
         } else {
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType40)
-                            total = total + outfitSystem[i].modVal[j] *
-                                    shipSystems[i];
-                    }
-                }
-            }
-            playerIonizeMax = total;
+            ForEachPlayerMod(OutfMod::IonCapacity, [&](short val, short owned) {
+                total = total + val * owned;
+                return false;
+            });
+            playerStats.ionizeMax = total;
         }
     }
     if (total > 0.0f)
-        return ship->ionization / total;
+        return ionization / total;
     return 0.0f;
 }
-
-#define kOutfModType28 0x1c
 
 // FUNCTION: EVNOVA 0x0046c250
 // MAC: _PlayerEffectiveMurk i386 0x00006f8f ppc 0x00008a18
 short PlayerEffectiveMurk(void)
 {
-    short i;
-    short j;
     short level;
 
     level = systemData[shipData[0].curSystem].murk;
     if (level < 0)
         level = 0;
-    for (i = 0; i < kMaxOutfits; i++) {
-        if (shipSystems[i] > 0) {
-            for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == kOutfModType28)
-                    level += outfitSystem[i].modVal[j] * shipSystems[i];
-            }
-        }
-    }
+    ForEachPlayerMod(OutfMod::Murk, [&](short val, short owned) {
+        level += val * owned;
+        return false;
+    });
     if (level < 0)
         level = 0;
     if (level > 100)
@@ -935,68 +753,37 @@ short PlayerEffectiveMurk(void)
     return level;
 }
 
-#define kOutfModType31 0x1f
-
 // FUNCTION: EVNOVA 0x0046cb90
 // MAC: _ShipCanScoop i386 0x000075c7 ppc 0x000090dc
-Boolean ShipCanScoop(ShipObj *ship)
+Boolean ShipObj::CanScoop()
 {
-    short i;
-    short j;
-
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType31)
-                        return 1;
-                }
-            }
-        }
+    if (IsPlayer()) {
+        if (PlayerHasMod(OutfMod::Scoop))
+            return 1;
     } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType31)
-                        return 1;
-                }
-            }
-        }
+        if (DefaultHasMod(Class(), OutfMod::Scoop))
+            return 1;
     }
     return 0;
 }
 
-#define kOutfModType32 0x20
-
 // FUNCTION: EVNOVA 0x0046cdd0
 // MAC: _ShipJumpsPerJump i386 0x000077b4 ppc 0x00009394
-short ShipJumpsPerJump(ShipObj *ship)
+short ShipObj::JumpsPerJump()
 {
-    short i;
-    short j;
     short total;
 
     total = 1;
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType32)
-                        total += outfitSystem[i].modVal[j];
-                }
-            }
-        }
+    if (IsPlayer()) {
+        ForEachPlayerMod(OutfMod::MultiJump, [&](short val, short) {
+            total += val;
+            return false;
+        });
     } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType32)
-                        total += outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j];
-                }
-            }
-        }
+        ForEachDefaultMod(Class(), OutfMod::MultiJump, [&](short val, short) {
+            total += val;
+            return false;
+        });
     }
     if (total < 1)
         total = 1;
@@ -1005,7 +792,7 @@ short ShipJumpsPerJump(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x0046cec0
 // MAC: _ShipMaxWeaponRange i386 0x0000bafd ppc 0x0000e734
-short ShipMaxWeaponRange(ShipObj *ship)
+short ShipObj::MaxWeaponRange()
 {
     int32_t best;
     int32_t range;
@@ -1013,7 +800,7 @@ short ShipMaxWeaponRange(ShipObj *ship)
 
     best = 0;
     for (i = 0; i < kMaxWeapTypes; i++) {
-        if (ship->weap[i].count > 0 && WeaponHasAmmo(ship, i) != 0) {
+        if (weap[i].count > 0 && WeaponHasAmmo(this, i) != 0) {
             if (weaponStats[i].guidance == kGuidanceBeam
                     || weaponStats[i].guidance == kGuidanceTurretBeam) {
                 range = weaponStats[i].beamLength;
@@ -1036,46 +823,47 @@ short ShipMaxWeaponRange(ShipObj *ship)
     return (best >= 0x7fff) ? 0x7fff : best;
 }
 
-#define kOutfModType37 0x25
-
 // FUNCTION: EVNOVA 0x0046d080
 // MAC: _ShipCanExpiditeJumps i386 0x00007872 ppc 0x00009498
-Boolean ShipCanExpiditeJumps(ShipObj *ship)
+Boolean ShipObj::CanExpediteJumps()
 {
-    short i;
-    short j;
-
-    if ((shipClass[ship->type].flags2 & kShipJumpsAtSpeed) != 0)
+    if ((Class().flags2 & kShipJumpsAtSpeed) != 0)
         return 1;
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType37)
-                        return 1;
-                }
-            }
-        }
+    if (IsPlayer()) {
+        if (PlayerHasMod(OutfMod::FastJump))
+            return 1;
     } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType37)
-                        return 1;
-                }
-            }
-        }
+        if (DefaultHasMod(Class(), OutfMod::FastJump))
+            return 1;
     }
     return 0;
 }
 
-/* the modType values this routine reacts to */
-#define kModCloak  0x1f
-#define kModJam2C  0x2c
-#define kModJam30  0x30
-#define kModScan2F 0x2f
-#define kModScan32 0x32
+void PlayerStats::Reset()
+{
+    shieldCapacity = -1.0f;
+    shieldRechargeRate = -1.0f;
+    armorCapacity = -1.0f;
+    armorRechargeRate = -1.0f;
+    turnRate = -1.0f;
+    accelRate = -1.0f;
+    maxSpeed = -1.0f;
+    fuelCapacity = -1.0f;
+    ionizeMax = -1.0f;
+    deionizeRate = -1.0f;
+    hasAfterburner = -1;
+    hasDensityScanner = -1;
+    hasIFF = -1;
+    hasInertialDamper = -1;
+    antiInterference = 0x8300;
+    effectiveMurk = -1;
+    canTargetUntargetableShips = -1;
+    canTargetCloakedShips = -1;
+    abFuelUsage = -1.0f;
+    resistsGravity = -1;
+    resistsDeadlyStellars = -1;
+    hasAreaCloak = -1;
+}
 
 // FUNCTION: EVNOVA 0x0046d4b0
 // MAC: _ResetPlayerPrecalcedValues i386 0x0000c357 ppc 0x0000f0c8
@@ -1088,28 +876,7 @@ void ResetPlayerPrecalcedValues(void)
     short m;
     short k;
 
-    playerShieldCapacity = -1.0f;
-    playerShieldRechargeRate = -1.0f;
-    playerArmorCapacity = -1.0f;
-    playerArmorRechargeRate = -1.0f;
-    playerTurnRate = -1.0f;
-    playerAccelRate = -1.0f;
-    playerMaxSpeed = -1.0f;
-    playerFuelCapacity = -1.0f;
-    playerIonizeMax = -1.0f;
-    playerDeionizeRate = -1.0f;
-    playerHasAfterburner = -1;
-    playerHasDensityScanner = -1;
-    playerHasIFF = -1;
-    playerHasInertialDamper = -1;
-    playerAntiInterference = 0x8300;
-    playerEffectiveMurk = -1;
-    playerCanTargetUntargetableShips = -1;
-    playerCanTargetCloakedShips = -1;
-    playerABFuelUsage = -1.0f;
-    playerResistsGravity = -1;
-    playerResistsDeadlyStellars = -1;
-    playerHasAreaCloak = -1;
+    playerStats.Reset();
     playerHasIllegalJunk = 0;
     playerHasIllegalOutfits = 0;
     playerSabotaged = 0;
@@ -1139,16 +906,16 @@ void ResetPlayerPrecalcedValues(void)
     for (i = 0; i < kMaxOutfits; i++) {
         if (shipSystems[i] > 0) {
             for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == kModScan2F) {
+                if (outfitSystem[i].modType[j] == OutfMod::BombDestroys) {
                     playerSabotaged = 1;
                     sabotageCounter = 0.0f;
                 }
-                if (outfitSystem[i].modType[j] == kModScan32) {
+                if (outfitSystem[i].modType[j] == OutfMod::BombDisables) {
                     if (playerSabotaged < 1)
                         playerSabotaged = 2;
                     sabotageCounter = 0.0f;
                 }
-                if (outfitSystem[i].modType[j] == kModJam2C) {
+                if (outfitSystem[i].modType[j] == OutfMod::BlockReinforce) {
                     if (outfitSystem[i].modVal[j] == -1) {
                         allReinforcementsInhibited = 1;
                     } else {
@@ -1164,7 +931,7 @@ void ResetPlayerPrecalcedValues(void)
                         }
                     }
                 }
-                if (outfitSystem[i].modType[j] == kModJam30) {
+                if (outfitSystem[i].modType[j] == OutfMod::IFFScrambler) {
                     for (k = 0; k < kMaxGovts; k++) {
                         for (m = 0; m < kGovtClasses; m++) {
                             if (govtData[k].classes[m] ==
@@ -1176,7 +943,7 @@ void ResetPlayerPrecalcedValues(void)
                         }
                     }
                 }
-                if (outfitSystem[i].modType[j] == kModCloak)
+                if (outfitSystem[i].modType[j] == OutfMod::Scoop)
                     shipData->canScoop = 1;
             }
         }
@@ -1232,37 +999,26 @@ void ResetPlayerPrecalcedValues(void)
         }
     }
     playerRepairInhibit = -1.0f;
-    playerEffectiveMurk = PlayerEffectiveMurk();
+    playerStats.effectiveMurk = PlayerEffectiveMurk();
 }
-
-#define kOutfModType38 0x26
 
 // FUNCTION: EVNOVA 0x0046df70
 // MAC: _ShipIsInertialess i386 0x000079c2 ppc 0x00009640
-Boolean ShipIsInertialess(ShipObj *ship)
+Boolean ShipObj::IsInertialess()
 {
-    short i;
-    short j;
-
-    if (ship->index != 0 && ship->parentShip != -1 && IsShipInCloseForm(ship))
+    if (!IsPlayer() && parentShip != -1 && IsShipInCloseForm(this))
         return 0;
-    if ((shipClass[ship->type].flags2 & kShipInertialess) != 0)
+    if ((Class().flags2 & kShipInertialess) != 0)
         return 1;
-    if (ship->index == 0) {
-        if (playerHasInertialDamper >= 0) {
-            if (playerHasInertialDamper != 0)
+    if (IsPlayer()) {
+        if (playerStats.hasInertialDamper >= 0) {
+            if (playerStats.hasInertialDamper != 0)
                 return 1;
         } else {
-            playerHasInertialDamper = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType38) {
-                            playerHasInertialDamper = 1;
-                            return 1;
-                        }
-                    }
-                }
+            playerStats.hasInertialDamper = 0;
+            if (PlayerHasMod(OutfMod::Inertialess)) {
+                playerStats.hasInertialDamper = 1;
+                return 1;
             }
         }
     }
@@ -1276,109 +1032,76 @@ Boolean ShipIsInertialess(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x0046e060
 // MAC: _ShipAfterburnerFuelUsage i386 0x00007a82 ppc 0x00009758
-float ShipAfterburnerFuelUsage(ShipObj *ship)
+float ShipObj::AfterburnerFuelUsage()
 {
     short i;
     short j;
 
-    if (ship->index == 0) {
-        if (playerABFuelUsage < 0.0) {
-            playerABFuelUsage = 0.0f;
+    if (IsPlayer()) {
+        if (playerStats.abFuelUsage < 0.0) {
+            playerStats.abFuelUsage = 0.0f;
             for (i = 0; i < kMaxOutfits; i++) {
                 if (shipSystems[i] > 0) {
                     for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType15) {
-                            playerABFuelUsage = outfitSystem[i].modVal[j] * 0.0333;
+                        if (outfitSystem[i].modType[j] == OutfMod::Afterburner) {
+                            playerStats.abFuelUsage = outfitSystem[i].modVal[j] * 0.0333;
                             break;
                         }
                     }
                 }
             }
         }
-        return playerABFuelUsage;
+        return playerStats.abFuelUsage;
     }
     return 0.0f;
 }
 
-#define kOutfModType41 0x29
-
 // FUNCTION: EVNOVA 0x0046e120
 // MAC: _ShipResistsGravity i386 0x00007b10 ppc 0x00009850
-short ShipResistsGravity(ShipObj *ship)
+short ShipObj::ResistsGravity()
 {
-    short i;
-    short j;
-
-    if ((shipClass[ship->type].flags3 & kShipIgnoresDeadly) != 0)
+    if ((Class().flags3 & kShipIgnoresDeadly) != 0)
         return 1;
-    if (ShipIsInertialess(ship))
+    if (IsInertialess())
         return 1;
-    if (ship->index == 0) {
-        if (playerResistsGravity != -1) {
-            if (playerResistsGravity != 0)
+    if (IsPlayer()) {
+        if (playerStats.resistsGravity != -1) {
+            if (playerStats.resistsGravity != 0)
                 return 1;
         } else {
-            playerResistsGravity = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType41) {
-                            playerResistsGravity = 1;
-                            break;
-                        }
-                    }
-                }
-            }
+            playerStats.resistsGravity = 0;
+            if (PlayerHasMod(OutfMod::ResistGravity))
+                playerStats.resistsGravity = 1;
         }
-        return playerResistsGravity;
+        return playerStats.resistsGravity;
     }
     return 0;
 }
-
-#define kOutfModType42 0x2a
 
 // FUNCTION: EVNOVA 0x0046e210
 // MAC: _ShipResistsDeadlyStellars i386 0x00007bbe ppc 0x00009950
-short ShipResistsDeadlyStellars(ShipObj *ship)
+short ShipObj::ResistsDeadlyStellars()
 {
-    short i;
-    short j;
-
-    if ((shipClass[ship->type].flags3 & kShipIgnoresDeadly) != 0)
+    if ((Class().flags3 & kShipIgnoresDeadly) != 0)
         return 1;
-    if (ship->index == 0) {
-        if (playerResistsDeadlyStellars != -1) {
-            if (playerResistsDeadlyStellars != 0)
+    if (IsPlayer()) {
+        if (playerStats.resistsDeadlyStellars != -1) {
+            if (playerStats.resistsDeadlyStellars != 0)
                 return 1;
         } else {
-            playerResistsDeadlyStellars = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType42) {
-                            playerResistsDeadlyStellars = 1;
-                            break;
-                        }
-                    }
-                }
-            }
+            playerStats.resistsDeadlyStellars = 0;
+            if (PlayerHasMod(OutfMod::ResistDeadly))
+                playerStats.resistsDeadlyStellars = 1;
         }
-        return playerResistsDeadlyStellars;
+        return playerStats.resistsDeadlyStellars;
     }
     return 0;
 }
 
-#define kOutfModType49 0x31
-
-#define kShipDefOutfits 8
-
 // FUNCTION: EVNOVA 0x0046e540
 // MAC: _ShipCanSelfRepair i386 0x00009134 ppc 0x0000b258
-Boolean ShipCanSelfRepair(ShipObj *ship)
+Boolean ShipObj::CanSelfRepair()
 {
-    short i;
-    short j;
-
     if (gSpeedMult > 0.0) {
         if (Rand((500.0 / gSpeedMult)) != 0)
             return 0;
@@ -1386,28 +1109,15 @@ Boolean ShipCanSelfRepair(ShipObj *ship)
         if (Rand(500) != 0)
             return 0;
     }
-    if (IsDying(ship))
+    if (IsDying())
         return 0;
 
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType49)
-                        return 1;
-                }
-            }
-        }
+    if (IsPlayer()) {
+        if (PlayerHasMod(OutfMod::RepairDroids))
+            return 1;
     } else {
-        for (i = 0; i < kShipDefOutfits; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j]
-                            == kOutfModType49)
-                        return 1;
-                }
-            }
-        }
+        if (DefaultHasMod(Class(), OutfMod::RepairDroids))
+            return 1;
     }
     return 0;
 }

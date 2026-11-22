@@ -79,9 +79,6 @@ EXTERN_C_BEGIN
 #define SWWindowFrame(sw)   ((sw)->windowFrameP)
 #define SWWindowRect(sw)    (&(sw)->windRect)
 
-#define kOutfModType47      0x2f
-#define kOutfModType50      0x32
-
                                                             /* 0x004b8ca0 */
                                                             /* 0x0046aad0 */
                                                             /* 0x004192d0 */
@@ -165,13 +162,13 @@ void HandlePlayer(ShipObj *player)
     if (player->tractorShip != -1) {
         if (player->tractorShip != player->index) {
             if (!shipData[player->tractorShip].active
-                    || IsDisabled(&shipData[player->tractorShip])
-                    || IsDying(&shipData[player->tractorShip])) {
+                    || shipData[player->tractorShip].IsDisabled()
+                    || shipData[player->tractorShip].IsDying()) {
                 player->tractorShip = -1;
                 player->tractorTick = 0;
             }
         }
-        step = ShipAccelRate(shipData) * 0.25;
+        step = shipData->AccelRate() * 0.25;
         if (player->tractorShip == player->index) {
             pos.x = 0.0f;
             pos.y = 0.0f;
@@ -201,11 +198,11 @@ void HandlePlayer(ShipObj *player)
         WrapPlayerPosition();
     if (player->unk6e == 1 && player->targetShip != -1) {
         if (!shipData[player->targetShip].active
-                || IsDying(&shipData[player->targetShip])
+                || shipData[player->targetShip].IsDying()
                 || AIShipIsEmergingFromHypergate(&shipData[player->targetShip])
-                || (ShipIsCloaked(&shipData[player->targetShip])
+                || (shipData[player->targetShip].IsCloaked()
                     && shipData[player->targetShip].parentShip != 0
-                    && !ShipCanTargetCloakedShips(player))) {
+                    && !player->CanTargetCloakedShips())) {
             player->targetShip = -1;
             statusRedraw[kRedrawTarg] = 1;
         }
@@ -221,7 +218,7 @@ void HandlePlayer(ShipObj *player)
                 for (i = 0; i < kMaxOutfits; i++) {
                     if (shipSystems[i] > 0) {
                         for (j = 0; j < kOutfMods; j++) {
-                            if (outfitSystem[i].modType[j] == kOutfModType47
+                            if (outfitSystem[i].modType[j] == OutfMod::BombDestroys
                                     && outfitSystem[i].modVal[j] > 0) {
                                 HideCursorSprite();
                                 RefreshSAT();
@@ -247,7 +244,7 @@ void HandlePlayer(ShipObj *player)
         return;
     }
 
-    disabled = IsDisabled(player);
+    disabled = player->IsDisabled();
     if (disabled && player->jumpTimer > 0.0f) {
         span = (ReadTick() - player->jumpTick)
                * shipClass[player->type].mobilityFactor / (WarpSoundDuration() * 0.01);
@@ -255,8 +252,8 @@ void HandlePlayer(ShipObj *player)
         if (shipClass[player->type].mobilityFactor != 0)
             step = step - 35.0 / shipClass[player->type].mobilityFactor;
         if (step > 0.0) {
-            if (step > ShipMaxSpeed(player))
-                step = ShipMaxSpeed(player);
+            if (step > player->MaxSpeed())
+                step = player->MaxSpeed();
             player->vel.x = 0;
             player->vel.y = 0;
             Accel(player->heading, step, &player->vel);
@@ -275,7 +272,7 @@ void HandlePlayer(ShipObj *player)
         PlaySound(beepSnd[1], 0x32, gSoundVolume, gSoundVolume);
     }
 
-    dying = IsDying(player);
+    dying = player->IsDying();
     if (disabled) {
         player->vel.x *= 0.995;
         player->vel.y *= 0.995;
@@ -284,11 +281,11 @@ void HandlePlayer(ShipObj *player)
     }
     if (playerRepairInhibit >= 0.0)
         playerRepairInhibit = playerRepairInhibit - gSpeedMult;
-    if (disabled && playerRepairInhibit < 0.0 && ShipCanSelfRepair(player)) {
+    if (disabled && playerRepairInhibit < 0.0 && player->CanSelfRepair()) {
         if (shipClass[player->type].flags & kShipArmorDisableTenth)
-            player->armor = ShipArmorCapacity(player) * 0.1 + 1.0;
+            player->armor = player->ArmorCapacity() * 0.1 + 1.0;
         else
-            player->armor = ShipArmorCapacity(player) * 0.3333 + 1.0;
+            player->armor = player->ArmorCapacity() * 0.3333 + 1.0;
         GetIndString(msg, kGameStrList, 0x25);
         DisplayComm((PStrChar *)msg, 0xfa);
         PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
@@ -310,8 +307,8 @@ void HandlePlayer(ShipObj *player)
 
     if (player->escapePods > 0) {
         AdjustedAccel(player->heading,
-                      ShipAccelRate(player) * gSpeedMult,
-                      &player->vel, ShipMaxSpeed(player));
+                      player->AccelRate() * gSpeedMult,
+                      &player->vel, player->MaxSpeed());
         player->pos.x += player->vel.x * gSpeedMult;
         player->pos.y += player->vel.y * gSpeedMult;
         player->escapePods -= 1;
@@ -373,12 +370,12 @@ void HandlePlayer(ShipObj *player)
             }
             AutoSetExploration(player->curSystem, 0, 1);
             RandomizeStars();
-            player->fuel = ShipFuelCapacity(player);
-            player->shield = ShipShieldCapacity(player);
+            player->fuel = player->FuelCapacity();
+            player->shield = player->ShieldCapacity();
             // BUG: armour is refilled to the SHIELD capacity after the escape pod, so the new ship starts
             // with too much or too little armour; CE fixed the same slip in the debug restore (F21.04) but
             // not here
-            player->armor = ShipShieldCapacity(player);
+            player->armor = player->ShieldCapacity();
             SetupShipsInSystem(player->curSystem, 1);
             n = Rand(0x1e) + 15;
             for (i = 0; i < n; i++)
@@ -442,7 +439,7 @@ void HandlePlayer(ShipObj *player)
                     for (i = 0; i < kMaxOutfits; i++) {
                         if (shipSystems[i] > 0) {
                             for (j = 0; j < kOutfMods; j++) {
-                                if (outfitSystem[i].modType[j] == kOutfModType47) {
+                                if (outfitSystem[i].modType[j] == OutfMod::BombDestroys) {
                                     if (shipSystems[i] > 1
                                             && lcPluralOutfitName[i][0]) {
                                         strcpy((char *)msg, "");
@@ -493,7 +490,7 @@ void HandlePlayer(ShipObj *player)
                         count = shipSystems[i];
                         if (count > 0) {
                             for (j = 0; j < kOutfMods; j++) {
-                                if (outfitSystem[i].modType[j] == kOutfModType50) {
+                                if (outfitSystem[i].modType[j] == OutfMod::BombDisables) {
                                     if (count > 1) {
                                         strcpy((char *)msg, "");
                                         StrcatIndCString((char *)msg, kGameStrList, 0x27);
@@ -522,8 +519,8 @@ void HandlePlayer(ShipObj *player)
                                             outfitSystem[i].modVal[j] - 0x80, 0, 1);
                                     shipSystems[i] = 0;
                                     DamageShip(player, &player->pos, 0,
-                                               Rand((ShipArmorCapacity(player) * 0.5 + 1.0))
-                                               + ShipArmorCapacity(player),
+                                               Rand((player->ArmorCapacity() * 0.5 + 1.0))
+                                               + player->ArmorCapacity(),
                                                0, -1, 0, 0, 1, 1, 1, 0);
                                     break;
                                 }
@@ -757,8 +754,8 @@ void HandlePlayer(ShipObj *player)
                     }
                 }
             } else if (PtInRectPoint(pt, &box)) {
-                targetUncloaked = ShipCanTargetUntargetableShips(shipData);
-                targetCloaked = ShipCanTargetCloakedShips(shipData);
+                targetUncloaked = shipData->CanTargetUntargetableShips();
+                targetCloaked = shipData->CanTargetCloakedShips();
                 if (player->active && player->sprite != NULL) {
                     box = ((SpriteRec *)player->sprite)->destFrameRect;
                     if (box.right - box.left < 0x30)
@@ -768,8 +765,8 @@ void HandlePlayer(ShipObj *player)
                 }
                 for (i = 1; i < kMaxShips; i++) {
                     if (shipData[i].active
-                            && !IsDying(&shipData[i])
-                            && (!ShipIsCloaked(&shipData[i]) || targetCloaked
+                            && !shipData[i].IsDying()
+                            && (!shipData[i].IsCloaked() || targetCloaked
                                 || shipData[i].parentShip == 0)
                             && shipData[i].curSystem == player->curSystem
                             && (targetUncloaked
@@ -1003,7 +1000,7 @@ void HandlePlayer(ShipObj *player)
             else
                 player->weap[i].reloadTimer = 0;
             if ((weaponStats[i].seeker & kWeapSeekNoFireIonized)
-                    && ShipIonizationFactor(player) > 0.0f)
+                    && player->IonizationFactor() > 0.0f)
                 player->weap[i].reloadTimer = 1.0f;
         }
     }
@@ -1037,7 +1034,7 @@ void HandlePlayer(ShipObj *player)
         dockTarget = -1;
         dockPermission = -1;
         if (player->targetStellar != -1 && player->jumpTimer > 0.0f
-                && (ShipCanExpiditeJumps(player)
+                && (player->CanExpediteJumps()
                     || (abs((short)player->vel.x) < 2
                         && abs((short)player->vel.y) < 2))) {
             pos.x = systemData[player->curSystem].pos.h;
@@ -1051,7 +1048,7 @@ void HandlePlayer(ShipObj *player)
     }
 
     jumping = 0;
-    if ((QuickKeyCheck(keyPrefs.jump) && !IsDisabled(player))
+    if ((QuickKeyCheck(keyPrefs.jump) && !player->IsDisabled())
             || player->jumpTimer > 0.0f) {
         keyPressedThisFrame = 1;
         if (player->navTargetKind == kNavTargetLink
@@ -1064,7 +1061,7 @@ void HandlePlayer(ShipObj *player)
                         && !(stellarData[systemData[player->curSystem].navDefault[i]].flags2
                              & kSpobGateOrWormhole)) {
                     origin.x = origin.y = 0;
-                    turnLim = ShipHyperSafeDist(player);
+                    turnLim = player->HyperSafeDist();
                     if (FloatAbs(XYFloatSquaredDist(&origin,
                                 &player->pos)) <= turnLim)
                         canJump = 0;
@@ -1116,7 +1113,7 @@ void HandlePlayer(ShipObj *player)
                         PlaySound(beepSnd[4], 0x32, gSoundVolume, gSoundVolume);
                     }
                 }
-                if (ShipCanExpiditeJumps(player)
+                if (player->CanExpediteJumps()
                         || (abs((short)player->vel.x) < 2
                             && abs((short)player->vel.y) < 2)) {
                     jumping = 1;
@@ -1148,9 +1145,9 @@ void HandlePlayer(ShipObj *player)
                 } else {
                     player->jumpTick = ReadTick();
                     player->jumpTimer = 1.0f;
-                    if (ShipIsInertialess(player)) {
+                    if (player->IsInertialess()) {
                         player->accelMag = player->accelMag
-                            - ShipAccelRate(player) * gSpeedMult;
+                            - player->AccelRate() * gSpeedMult;
                         if (player->accelMag < 0.0f)
                             player->accelMag = 0;
                     } else {
@@ -1163,9 +1160,9 @@ void HandlePlayer(ShipObj *player)
                         if (abs(AngularDifference(
                                  player->desiredHeading,
                                  player->heading))
-                                  < (ShipTurnRate(player) + 1.0f > 20.0f
-                                     ? ShipTurnRate(player) + 1.0f : 20.0f)) {
-                            Accel(player->heading, ShipAccelRate(player),
+                                  < (player->TurnRate() + 1.0f > 20.0f
+                                     ? player->TurnRate() + 1.0f : 20.0f)) {
+                            Accel(player->heading, player->AccelRate(),
                                   &player->vel);
                             if (player->engineGlow < 0x18)
                                 player->engineGlow += 3;
@@ -1210,7 +1207,7 @@ void HandlePlayer(ShipObj *player)
     if ((jumping || player->jumpTimer > 1.0f) && !disabled) {
         MakeEscortsHyperWithParent(player);
         player->jumpTimer = player->jumpTimer + gSpeedMult;
-        if (!ShipCanExpiditeJumps(player)) {
+        if (!player->CanExpediteJumps()) {
             player->vel.x *= 0.98;
             player->vel.y *= 0.98;
         }
@@ -1233,10 +1230,10 @@ void HandlePlayer(ShipObj *player)
             Accel(((CalcInterceptAngle(&dest, &pos) + kHalfCircle) % kFullCircle),
                   1350.0f, &player->pos);
             player->vel.x = player->vel.y = 0;
-            if (ShipIsInertialess(player))
-                player->accelMag = ShipMaxSpeed(player);
+            if (player->IsInertialess())
+                player->accelMag = player->MaxSpeed();
             else
-                Accel(player->heading, ShipMaxSpeed(player),
+                Accel(player->heading, player->MaxSpeed(),
                       &player->vel);
             sys = systemData[player->curSystem].links[player->targetStellar];
             player->prevSystem = player->curSystem;
@@ -1244,7 +1241,7 @@ void HandlePlayer(ShipObj *player)
             if (hyperRoute[1] != -1
                     && FindActiveCoLocatedSystem(sys)
                        == FindActiveCoLocatedSystem(hyperRoute[1])
-                    && (count = k = ShipJumpsPerJump(player)) > 1) {
+                    && (count = k = player->JumpsPerJump()) > 1) {
                 for (i = 1; i < count; i++) {
                     sys = FindActiveCoLocatedSystem(hyperRoute[1]);
                     if (sys == -1)
@@ -1301,18 +1298,18 @@ void HandlePlayer(ShipObj *player)
                 missionRandom[i] = Rand(kDailyRollRange) + 1;
             mapScroll.h = systemData[player->curSystem].pos.h;
             mapScroll.v = systemData[player->curSystem].pos.v;
-            days = ShipHyperTransitTime(player);
+            days = player->HyperTransitTime();
             lost = 0;
             for (i = 1; i < kMaxShips; i++) {
                 if (shipData[i].active && shipData[i].parentShip == 0
-                        && !IsDisabled(&shipData[i])) {
+                        && !shipData[i].IsDisabled()) {
                     if (shipData[i].aiType == kShipTypeFighter
                             && !AIShipHasFuelForJump(&shipData[i])) {
                         shipData[i].active = 0;
                         lost++;
                     }
                     if (shipData[i].active) {
-                        rank = ShipHyperTransitTime(&shipData[i]);
+                        rank = shipData[i].HyperTransitTime();
                         if (rank > days)
                             days = rank;
                     }
@@ -1439,9 +1436,9 @@ void HandlePlayer(ShipObj *player)
 
     if (QuickKeyCheck(keyPrefs.reverse) && player->jumpTimer <= 0.0f && !disabled) {
         keyPressedThisFrame = 1;
-        if (ShipIsInertialess(player)) {
+        if (player->IsInertialess()) {
             player->accelMag = player->accelMag
-                               - ShipAccelRate(player) * gSpeedMult;
+                               - player->AccelRate() * gSpeedMult;
             if (player->accelMag < 0.0)
                 player->accelMag = 0;
         } else if (FloatAbs(player->vel.x) >= 0.05 || FloatAbs(player->vel.y) >= 0.05) {
@@ -1454,7 +1451,7 @@ void HandlePlayer(ShipObj *player)
         }
     }
 
-    turnStep = ShipTurnRate(player);
+    turnStep = player->TurnRate();
     dir = 0;
     if (turned && abs(AngularDifference(player->desiredHeading, player->heading)) > turnStep * gSpeedMult
             && !disabled) {
@@ -1490,28 +1487,28 @@ void HandlePlayer(ShipObj *player)
     abOn = 0;
     if (QuickKeyCheck(keyPrefs.afterburner) && !disabled) {
         keyPressedThisFrame = 1;
-        if (HasAfterburner(player) && player->jumpTimer <= 0.0f
+        if (player->HasAfterburner() && player->jumpTimer <= 0.0f
                 && player->fuel > 0.0f && player->aiTimer <= 0.0f
-                && player->fuel >= ShipAfterburnerFuelUsage(player))
+                && player->fuel >= player->AfterburnerFuelUsage())
             abOn = 1;
     }
 
     if (player->aiTimer <= 0.0f && QuickKeyCheck(keyPrefs.accelerate)
             && player->jumpTimer <= 0.0f && !disabled) {
         keyPressedThisFrame = 1;
-        if (ShipIsInertialess(player)) {
-            player->accelMag = player->accelMag + ShipAccelRate(player) * gSpeedMult;
-            if (player->accelMag > ShipMaxSpeed(player))
-                player->accelMag = ShipMaxSpeed(player);
+        if (player->IsInertialess()) {
+            player->accelMag = player->accelMag + player->AccelRate() * gSpeedMult;
+            if (player->accelMag > player->MaxSpeed())
+                player->accelMag = player->MaxSpeed();
         } else if (abOn && !gravitySourcesPresent) {
             AdjustedAccel(player->heading,
-                          ShipAccelRate(player) * gSpeedMult,
+                          player->AccelRate() * gSpeedMult,
                           &player->vel,
-                          ShipMaxSpeed(player) * 1.8);
+                          player->MaxSpeed() * 1.8);
         } else {
             AdjustedAccel(player->heading,
-                          ShipAccelRate(player) * gSpeedMult,
-                          &player->vel, ShipMaxSpeed(player));
+                          player->AccelRate() * gSpeedMult,
+                          &player->vel, player->MaxSpeed());
         }
         if (player->engineGlow < 0x18)
             player->engineGlow += 1;
@@ -1554,13 +1551,13 @@ void HandlePlayer(ShipObj *player)
             player->engineGlow -= 1;
     }
 
-    if (player->shield < ShipShieldCapacity(player) && !dying && !disabled) {
-        player->shield = player->shield + ShipShieldRechargeRate(player) * gSpeedMult;
+    if (player->shield < player->ShieldCapacity() && !dying && !disabled) {
+        player->shield = player->shield + player->ShieldRechargeRate() * gSpeedMult;
         statusRedraw[kRedrawShield] = 1;
     }
-    if (player->armor < ShipArmorCapacity(player) && !dying
-            && !IsDisabled(player) && playerRepairInhibit < 0.0) {
-        player->armor = player->armor + ShipArmorRechargeRate(player) * gSpeedMult;
+    if (player->armor < player->ArmorCapacity() && !dying
+            && !player->IsDisabled() && playerRepairInhibit < 0.0) {
+        player->armor = player->armor + player->ArmorRechargeRate() * gSpeedMult;
         statusRedraw[kRedrawShield] = 1;
     }
 
@@ -1572,7 +1569,7 @@ void HandlePlayer(ShipObj *player)
         dest.y = systemData[n].pos.v;
         n = CalcInterceptAngle(&pos, &dest);
         if (abs(AngularDifference(player->heading, n))
-                  <= (ShipTurnRate(player) > 30.0f ? ShipTurnRate(player) : 30.0f)) {
+                  <= (player->TurnRate() > 30.0f ? player->TurnRate() : 30.0f)) {
             span = (ReadTick() - player->jumpTick)
                    * shipClass[player->type].mobilityFactor / (WarpSoundDuration() * 0.01);
             step = span;
@@ -1596,7 +1593,7 @@ void HandlePlayer(ShipObj *player)
         }
     }
 
-    if (ShipIsInertialess(player)) {
+    if (player->IsInertialess()) {
         if (player->accelMag > playerMaxVel.x)
             player->accelMag = playerMaxVel.x;
         if (disabled) {
@@ -1605,7 +1602,7 @@ void HandlePlayer(ShipObj *player)
                 player->engineGlow -= 1;
         } else {
             n = (player->accelMag * 32.0f * 0.75
-                                  / ShipMaxSpeed(player));
+                                  / player->MaxSpeed());
             if (n > 0x18)
                 n = 0x18;
             if (player->engineGlow < n)
@@ -1635,7 +1632,7 @@ void HandlePlayer(ShipObj *player)
                     && !(stellarData[systemData[player->curSystem].navDefault[i]].flags2
                          & kSpobGateOrWormhole)) {
                 origin.x = origin.y = 0;
-                turnLim = ShipHyperSafeDist(player);
+                turnLim = player->HyperSafeDist();
                 if (FloatAbs(XYFloatSquaredDist(&origin,
                             &player->pos)) <= turnLim)
                     canJump = 0;
@@ -1673,11 +1670,11 @@ void HandlePlayer(ShipObj *player)
         player->deathTimer = player->deathTimer - 1.0f;
 
     if (player->ionization > 0.0f) {
-        player->ionization = player->ionization - ShipDeionizationRate(player) * gSpeedMult;
-        step = ShipIonizationFactor(player);
+        player->ionization = player->ionization - player->DeionizationRate() * gSpeedMult;
+        step = player->IonizationFactor();
         if (step > 0.7)
             step = 0.7f;
-        step = ShipMaxSpeed(player) * (1.0f - step);
+        step = player->MaxSpeed() * (1.0f - step);
         if (player->vel.x > step)
             player->vel.x -= gSpeedMult * 0.025;
         if (player->vel.x < -step)
@@ -1690,13 +1687,13 @@ void HandlePlayer(ShipObj *player)
         player->ionization = 0;
     }
 
-    if (ShipFuelGenRate(player, &step)) {
+    if (player->FuelGenRate(&step)) {
         n = player->fuel;
         player->fuel += step * gSpeedMult;
         if ((short)player->fuel != n)
             statusRedraw[kRedrawFuel] = 1;
     }
-    fuelCap = ShipFuelCapacity(player);
+    fuelCap = player->FuelCapacity();
     if (player->fuel > fuelCap)
         player->fuel = fuelCap;
     if (player->fuel < 0.0f)
@@ -1737,9 +1734,9 @@ void HandlePlayer(ShipObj *player)
         if (AltKeyQuick())
             player->fuel = 0;
         else
-            player->fuel = ShipFuelCapacity(player);
-        player->shield = ShipShieldCapacity(player);
-        player->armor = ShipArmorCapacity(player);
+            player->fuel = player->FuelCapacity();
+        player->shield = player->ShieldCapacity();
+        player->armor = player->ArmorCapacity();
         player->ionization = 0;
         player->ionColor = 0;
         player->deathTimer = -1.0f;
@@ -1816,7 +1813,7 @@ void HandlePlayer(ShipObj *player)
         count = 0;
         for (j = 1; j < kMaxShips; j++) {
             if (shipData[j].active && shipData[j].parentShip == 0
-                    && !IsDisabled(&shipData[j]) && !IsDying(&shipData[j]))
+                    && !shipData[j].IsDisabled() && !shipData[j].IsDying())
                 count++;
         }
         if (count != lastEscortCount) {
@@ -2032,7 +2029,7 @@ void HandlePlayer(ShipObj *player)
         if (QuickKeyCheck(keyPrefs.cheatArmor) || QuickKeyCheck(kScanArmorCheat)) {
             if (player->targetShip != -1) {
                 if (AltKeyQuick()) {
-                    if (IsDisabled(&shipData[player->targetShip])) {
+                    if (shipData[player->targetShip].IsDisabled()) {
                         shipData[player->targetShip].armor =
                             shipClass[shipData[player->targetShip].type].armor;
                         shipData[player->targetShip].shield = 0;
@@ -2052,7 +2049,7 @@ void HandlePlayer(ShipObj *player)
                     else
                         shipData[player->targetShip].hired = 0;
                     shipData[player->targetShip].armor =
-                        ShipArmorCapacity(&shipData[player->targetShip]);
+                        shipData[player->targetShip].ArmorCapacity();
                     AISetup(&shipData[player->targetShip]);
                     AIShipCapturedByPlayer(&shipData[player->targetShip]);
                 } else {
@@ -2077,7 +2074,7 @@ void HandlePlayer(ShipObj *player)
                 }
                 statusRedraw[kRedrawTarg] = 1;
             } else {
-                while (!IsDisabled(player) && !IsDying(player))
+                while (!player->IsDisabled() && !player->IsDying())
                     player->armor = player->armor - 1.0f;
                 player->armor = 1.0f;
                 playerRepairInhibit = 300.0f;
@@ -2130,8 +2127,8 @@ void HandlePlayer(ShipObj *player)
             while (KeyCheck(keyPrefs.cheatShipNext) || KeyCheck(keyPrefs.cheatShipPrev))
                 ;
             PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
-            player->shield = ShipShieldCapacity(player);
-            player->armor = ShipArmorCapacity(player);
+            player->shield = player->ShieldCapacity();
+            player->armor = player->ArmorCapacity();
             player->fuel = shipClass[player->type].fuel;
             player->foldSet =
                 shipClass[player->type].baseSets - 1;
@@ -2170,8 +2167,8 @@ void HandlePlayer(ShipObj *player)
             LoadIntfResource();
             player->selectedWeapon = -1;
             ResetPlayerPrecalcedValues();
-            player->armor = ShipArmorCapacity(player);
-            player->shield = ShipShieldCapacity(player);
+            player->armor = player->ArmorCapacity();
+            player->shield = player->ShieldCapacity();
         }
 
         if (ShiftKeyQuick()
@@ -2214,14 +2211,14 @@ void HandlePlayer(ShipObj *player)
         if (dying) {
             if (player->deathTimer <= shipClass[player->type].deathDelay * 0.5
                     || player->deathTimer <= 30.0f) {
-                if (HasAutoEject(player))
+                if (player->HasAutoEject())
                     ok = 1;
             }
         }
         if ((CmdKeyQuick()
                 && QuickKeyCheck(keyPrefs.eject)) || ok) {
             keyPressedThisFrame = 1;
-            if (HasEscapePod(player)) {
+            if (player->HasEscapePod()) {
                 n = GenericRandomShipSpawn(player->curSystem, 0);
                 if (n != -1) {
                 shipData[n].aiType = -1;
@@ -2255,8 +2252,8 @@ void HandlePlayer(ShipObj *player)
                     shipData->type + kFirstResourceID,
                     shipClass[shipData->type].onRetire);
                 EvalMissionBitSetString(shipClass[shipData->type].onRetire);
-                if (HasEscapeShip(player)) {
-                    player->type = EscapeShipType(player);
+                if (player->HasEscapeShip()) {
+                    player->type = player->EscapeShipType();
                     player->shield = shipClass[player->type].shield
                         * (Rand(0x1e) + 0x32) * 0.01;
                     player->armor = shipClass[player->type].armor
@@ -2300,7 +2297,7 @@ void HandlePlayer(ShipObj *player)
                                         masterShipSprite[player->type]);
                 SWSetCurrentFrameIndex(player->sprite, 0);
                 player->vel.x = player->vel.y;
-                Accel(player->heading, ShipMaxSpeed(player),
+                Accel(player->heading, player->MaxSpeed(),
                       &player->vel);
                 for (i = 0; i < kMaxOutfits; i++) {
                     if (!outfitSystem[i].persistent)
@@ -2347,18 +2344,18 @@ void HandlePlayer(ShipObj *player)
 
     if (abOn) {
         if (!gravitySourcesPresent) {
-            playerMaxVel.x = ShipMaxSpeed(player) * 1.8;
-            playerMaxVel.y = ShipMaxSpeed(player) * 1.8;
+            playerMaxVel.x = player->MaxSpeed() * 1.8;
+            playerMaxVel.y = player->MaxSpeed() * 1.8;
         }
-        if (ShipIsInertialess(player)) {
-            player->accelMag = player->accelMag + ShipAccelRate(player) * 2.75;
-            if (player->accelMag > ShipMaxSpeed(player) * 1.8)
-                player->accelMag = ShipMaxSpeed(player) * 1.8;
+        if (player->IsInertialess()) {
+            player->accelMag = player->accelMag + player->AccelRate() * 2.75;
+            if (player->accelMag > player->MaxSpeed() * 1.8)
+                player->accelMag = player->MaxSpeed() * 1.8;
         } else {
             pos.x = pos.y = 0;
             dest.x = dest.y = 0;
-            Accel(player->heading, ShipAccelRate(player) * 2.75, &pos);
-            Accel(player->heading, ShipMaxSpeed(player) * 1.8, &dest);
+            Accel(player->heading, player->AccelRate() * 2.75, &pos);
+            Accel(player->heading, player->MaxSpeed() * 1.8, &dest);
             if ((pos.y > 0.0f && player->vel.y < dest.y)
                     || (pos.y <= 0.0f && player->vel.y > dest.y))
                 player->vel.y = player->vel.y + pos.y;
@@ -2370,7 +2367,7 @@ void HandlePlayer(ShipObj *player)
             else
                 player->vel.x *= 0.99;
         }
-        player->fuel = player->fuel - ShipAfterburnerFuelUsage(player) * gSpeedMult;
+        player->fuel = player->fuel - player->AfterburnerFuelUsage() * gSpeedMult;
         if (player->fuel < 0.0)
             player->fuel = 0;
         if (frameCounter % 4 == 0)
@@ -2383,8 +2380,8 @@ void HandlePlayer(ShipObj *player)
         if (player->engineGlow > 0x20)
             player->engineGlow -= 1;
     } else {
-        step = ShipMaxSpeed(player);
-        turnLim = ShipAccelRate(player) * 0.4;
+        step = player->MaxSpeed();
+        turnLim = player->AccelRate() * 0.4;
         if (playerMaxVel.x > step)
             playerMaxVel.x = playerMaxVel.x - turnLim;
         if (playerMaxVel.y > step)
@@ -2543,11 +2540,11 @@ void HandlePlayer(ShipObj *player)
         keyPressedThisFrame = 1;
         if (!cloakFlag) {
             cloakFlag = 1;
-            if (ShipCanCloak(player)) {
+            if (player->CanCloak()) {
                 if (player->cloak > 0.0f || player->cloakDir > 0)
-                    DoShipUncloak(player);
+                    player->DoUncloak();
                 else
-                    DoShipCloak(player);
+                    player->DoCloak();
             } else {
                 PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
             }
@@ -2556,10 +2553,10 @@ void HandlePlayer(ShipObj *player)
         cloakFlag = 0;
     }
 
-    if (ShipIsCloaked(player)) {
-        if (!ShipCanCloak(player) || disabled)
-            DoShipUncloak(player);
-        n = CloakFuelUsage(player);
+    if (player->IsCloaked()) {
+        if (!player->CanCloak() || disabled)
+            player->DoUncloak();
+        n = player->CloakFuelUsage();
         if (n > 0) {
             player->fuel = player->fuel - n * 0.03333 * gSpeedMult;
             if (frameCounter % 10 == 0)
@@ -2567,12 +2564,12 @@ void HandlePlayer(ShipObj *player)
             if (player->fuel <= 0.0f)
                 player->fuel = 0;
         }
-        if (CloakZeroesShields(player)) {
+        if (player->CloakZeroesShields()) {
             player->shield = 0;
             if (frameCounter % 10 == 0)
                 statusRedraw[kRedrawShield] = 1;
         } else {
-            n = CloakShieldUsage(player);
+            n = player->CloakShieldUsage();
             if (n > 0 && player->shield >= n) {
                 player->shield -= n * 0.03333 * gSpeedMult;
                 if (frameCounter % 10 == 0)
@@ -2743,7 +2740,7 @@ void HandlePlayerCommunication(void)
 
     me = shipData;
 
-    if (ShipIsCloaked(me) == 0 && IsDying(me) == 0 &&
+    if (me->IsCloaked() == 0 && me->IsDying() == 0 &&
             me->jumpTimer <= 0.0f) {
         if (me->targetShip == -1 || QuickKeyCheck(kScanLAlt) != 0 ||
                 QuickKeyCheck(kScanRAlt) != 0) {
@@ -2783,7 +2780,7 @@ void HandlePlayerCommunication(void)
             }
             if (shipData[me->targetShip].type == kShipTypeEscapePod)
                 canHail = 0;
-            if (IsDisabled(&shipData[me->targetShip]) != 0)
+            if (shipData[me->targetShip].IsDisabled() != 0)
                 canHail = 0;
             pers = shipData[me->targetShip].persType;
             if (canHail) {
@@ -2882,7 +2879,7 @@ void HandlePlayerCommunication(void)
                 GetIndString(buf, kGameStrList, kCommRefused);
                 DisplayComm((PStrChar *)buf, kCommFrames);
             }
-        } else if (IsDisabled(&shipData[me->targetShip]) != 0) {
+        } else if (shipData[me->targetShip].IsDisabled() != 0) {
             PlaySound(beepSnd[3], 5, gSoundVolume, gSoundVolume);
             GetIndString(buf, kGameStrList, kCommRefused);
             DisplayComm((PStrChar *)buf, kCommFrames);
@@ -2915,7 +2912,7 @@ void FirePlayerWeapon(short w)
     short ammoType;
     short slot;
 
-    if (ShipIsCloaked(shipData)) {
+    if (shipData->IsCloaked()) {
         if ((weaponStats[w].flags2 & kWeapFireWhileCloaked) == 0)
             return;
     }

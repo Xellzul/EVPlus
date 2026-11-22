@@ -1166,8 +1166,8 @@ void MissionObjectivesCheck(short slot)
                         if (shipData[i].active != 0
                                 && slot == shipData[i].specialMission
                                 && shipData[i].sprite != 0
-                                && ShipVisibleToShip(&shipData[i], shipData) != 0) {
-                            if (ShipCanCloak(&shipData[i]) != 0) {
+                                && shipData[i].VisibleTo(shipData) != 0) {
+                            if (shipData[i].CanCloak() != 0) {
                                 vis = gSpriteWorld->windRect;
                                 shipRect = shipData[i].sprite->destFrameRect;
                                 InsetRect(&vis,

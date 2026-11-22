@@ -30,8 +30,8 @@ void AIDispatch(ShipObj *ship, Boolean noBrains)
     Boolean attackStellar;
 
     if (ship->type == kShipTypeEscapePod) {
-        ship->thrust = ShipAccelRate(ship);
-        ship->speedLimit = ShipMaxSpeed(ship);
+        ship->thrust = ship->AccelRate();
+        ship->speedLimit = ship->MaxSpeed();
         ship->desiredHeading = ship->heading;
         ship->aiTimer -= gSpeedMult;
         if (ship->aiTimer < 0.0F)
@@ -46,7 +46,7 @@ void AIDispatch(ShipObj *ship, Boolean noBrains)
     if (ship->specialMission != -1) {
         if (currentMissionObjectives[ship->specialMission].active != 0) {
             if (currentMissions[ship->specialMission].shipBehav == kMissionModeEscort) {
-                if (IsDisabled(ship) == 0) {
+                if (ship->IsDisabled() == 0) {
                     ship->aiType = kShipTypeEscort;
                     ship->parentShip = 0;
                 }
@@ -66,7 +66,7 @@ void AIDispatch(ShipObj *ship, Boolean noBrains)
         AIHandleCloaking(ship);
     if (ship->hasFormation != 0)
         AICalcFormationPositions(ship, 0);
-    if (IsDisabled(ship) != 0 && ship->jumpTimer > 0.0F)
+    if (ship->IsDisabled() != 0 && ship->jumpTimer > 0.0F)
         ship->jumpTimer = -1;
 
     if (ship->jumpTimer < -900.0F) {
@@ -114,7 +114,7 @@ void AIDispatch(ShipObj *ship, Boolean noBrains)
             }
         }
         if (skip == 0) {
-            if (IsDisabled(ship) != 0) {
+            if (ship->IsDisabled() != 0) {
                 ship->parentShip = -1;
                 ship->targetShip = -1;
                 ship->targetStellar = -1;
@@ -169,7 +169,7 @@ void AIDispatch(ShipObj *ship, Boolean noBrains)
         }
     } else {
         if (ship->aiState == kAIStateHypPr && ship->parentShip == 0 &&
-            IsDisabled(&shipData[ship->parentShip]) != 0) {
+            shipData[ship->parentShip].IsDisabled() != 0) {
             ship->aiState = kAIStateHiJack;
             ship->aiSubstate = kSubLoJack;
             ship->targetShip = -1;
@@ -178,7 +178,7 @@ void AIDispatch(ShipObj *ship, Boolean noBrains)
         }
         if (ship->aiState == kAIStateHypPr && ship->parentShip > 0 &&
             ship->jumpTimer <= 1.0F &&
-            IsDisabled(&shipData[ship->parentShip]) == 0 &&
+            shipData[ship->parentShip].IsDisabled() == 0 &&
             shipData[ship->parentShip].aiState == kAIStateFightSh) {
             ship->aiState = kAIStateHiJack;
             ship->aiSubstate = kSubLoJack;
@@ -222,12 +222,12 @@ void ScanPlayer(ShipObj *ship)
     if (FloatAbs(ship->pos.x - shipData->pos.x) > kScanRange ||
         FloatAbs(ship->pos.y - shipData->pos.y) > kScanRange)
         return;
-    if (ShipVisibleToShip(shipData, ship) == 0)
+    if (shipData->VisibleTo(ship) == 0)
         return;
     if (Rand(100) > kScanChance)
         return;
 
-    if (shipData->jumpTimer > 0.0F && IsDisabled(shipData) == 0) {
+    if (shipData->jumpTimer > 0.0F && shipData->IsDisabled() == 0) {
         speed = (ReadTick() - shipData->jumpTick) * shipClass[shipData->type].mobilityFactor
                 / (WarpSoundDuration() * 0.01);
         if (shipClass[shipData->type].mobilityFactor != 0.0f)
@@ -463,7 +463,7 @@ void AISetup(ShipObj *ship)
 // MAC: _WimpyTraderAI i386 0x0008b029 ppc 0x00096590
 void WimpyTraderAI(ShipObj *ship)
 {
-    if (IsDisabled(ship) != 0)
+    if (ship->IsDisabled() != 0)
         return;
     if ((int)ship->aiState == kAIStateRefuel || (int)ship->aiState == kAIStateRepair)
         return;
@@ -510,7 +510,7 @@ void MinerAI(ShipObj *ship)
     short flags3;
     short result;
 
-    if (IsDisabled(ship)) {
+    if (ship->IsDisabled()) {
         ship->aiState = kAIStateHiJack;
         ship->aiSubstate = kSubLoJack;
         ship->targetStellar = -1;
@@ -594,7 +594,7 @@ void BraveTraderAI(ShipObj *ship)
     short dx;
     short dy;
 
-    if (IsDisabled(ship))
+    if (ship->IsDisabled())
         return;
     if ((int)ship->aiState == kAIStateRefuel || (int)ship->aiState == kAIStateRepair)
         return;
@@ -654,7 +654,7 @@ void WarshipAI(ShipObj *ship)
     short f;
     int32_t thresh;
 
-    if (IsDisabled(ship) != 0)
+    if (ship->IsDisabled() != 0)
         return;
     if ((int32_t)ship->aiState == kAIStateRefuel ||
         (int32_t)ship->aiState == kAIStateRepair)
@@ -665,7 +665,7 @@ void WarshipAI(ShipObj *ship)
     if (ship->govt != -1 && ship->jumpTimer > -900.0F && ship->jumpTimer <= 0.0F) {
         if ((govtData[ship->govt].flags & kGovtAlwaysAttacksPlayer) != 0) {
             if (IsThreatToPlayer(ship) == 0 &&
-                ShipVisibleToShip(shipData, ship) != 0) {
+                shipData->VisibleTo(ship) != 0) {
                 AIMakeShipAttackPlayer(ship);
                 ship->targetShip = 0;
                 ship->grudge = 1;
@@ -763,7 +763,7 @@ void WarshipAI(ShipObj *ship)
                     shipData[i].active != 0 &&
                     shipData[i].aiType == kShipTypeFighter &&
                     shipData[i].defenseStellar == -1 &&
-                    IsDisabled(&shipData[i]) == 0)
+                    shipData[i].IsDisabled() == 0)
                     n++;
             }
             if (n == 0)
@@ -773,8 +773,8 @@ void WarshipAI(ShipObj *ship)
 
     if (ship->targetShip != -1 && ship->aiState == kAIStateFightSh) {
         if (shipData[ship->targetShip].active == 0 ||
-            IsDying(&shipData[ship->targetShip]) != 0 ||
-            (IsDisabled(&shipData[ship->targetShip]) != 0 &&
+            shipData[ship->targetShip].IsDying() != 0 ||
+            (shipData[ship->targetShip].IsDisabled() != 0 &&
              AIHasDestroyingWeapons(ship) == 0)) {
             ship->aiState = kAIStateHiJack;
             ship->targetShip = -1;
@@ -784,7 +784,7 @@ void WarshipAI(ShipObj *ship)
     if (ship->targetShip != -1 && ship->govt != -1 &&
         ship->aiState == kAIStateFightSh &&
         (govtData[ship->govt].flags & kGovtRetreatsWhenHurt) != 0 &&
-        ship->shield < ShipShieldCapacity(ship) * 0.5 &&
+        ship->shield < ship->ShieldCapacity() * 0.5 &&
         ship->odds >= 0.0F) {
         f = systemData[ship->curSystem].reinforceFleet;
         if (f != -1) {
@@ -815,13 +815,13 @@ void WarshipAI(ShipObj *ship)
         if (ship->persType == -1) {
             thresh = kNeverRetreat;
             if (ship->aggression == 1)
-                thresh = ShipShieldCapacity(ship) * 0.3;
+                thresh = ship->ShieldCapacity() * 0.3;
             if (ship->aggression == 2)
-                thresh = ShipShieldCapacity(ship) * 0.15;
+                thresh = ship->ShieldCapacity() * 0.15;
             if (ship->aggression == 4)
                 thresh = kNeverRetreat;
         } else
-            thresh = ShipShieldCapacity(ship) *
+            thresh = ship->ShieldCapacity() *
                      (personData[ship->persType].coward * 0.01);
 
         if (ship->shield < thresh && ship->parentShip == -1 &&
@@ -869,14 +869,14 @@ void PirateWarshipAI(ShipObj *ship)
 {
     short i;
 
-    if (IsDisabled(ship) != 0)
+    if (ship->IsDisabled() != 0)
         return;
     if (ship->aiState == kAIStateCountWait)
         return;
 
     if (ship->targetShip != -1) {
         if (shipData[ship->targetShip].active != 0) {
-            if (IsDying(&shipData[ship->targetShip]) != 0) {
+            if (shipData[ship->targetShip].IsDying() != 0) {
                 ship->targetShip = -1;
                 ship->aiState = kAIStateHiJack;
             }
@@ -940,7 +940,7 @@ void PirateWarshipAI(ShipObj *ship)
                         i != ship->index &&
                         i != ship->targetShip &&
                         shipData[i].parentShip != 0 &&
-                        IsDisabled(&shipData[i]) == 0 &&
+                        shipData[i].IsDisabled() == 0 &&
                         shipData[i].targetShip == ship->targetShip &&
                         (shipData[i].aiState == kAIStatePlunder ||
                          shipData[i].aiSubstate == kAIStateUnPlunder)) {
@@ -975,7 +975,7 @@ void PirateWarshipAI(ShipObj *ship)
     }
 
     if (ship->aiState == kAIStateFightSh && ship->targetShip != -1 &&
-        IsDisabled(&shipData[ship->targetShip]) != 0) {
+        shipData[ship->targetShip].IsDisabled() != 0) {
         if (shipClass[shipData[ship->targetShip].type].inherentAI >=
                 kShipTypeWarship &&
             ship->targetShip != 0 &&
@@ -1013,7 +1013,7 @@ void InterceptorAI(ShipObj *ship)
     short m;
     unsigned char buf2[256];
 
-    if (IsDisabled(ship) != 0)
+    if (ship->IsDisabled() != 0)
         return;
     if ((int32_t)ship->aiState == kAIStateCountWait)
         return;
@@ -1025,7 +1025,7 @@ void InterceptorAI(ShipObj *ship)
     if (ship->govt != -1 && ship->jumpTimer > -900.0F && ship->jumpTimer <= 0.0F) {
         if ((govtData[ship->govt].flags & kGovtAlwaysAttacksPlayer) != 0) {
             if (IsThreatToPlayer(ship) == 0 &&
-                ShipVisibleToShip(shipData, ship) != 0) {
+                shipData->VisibleTo(ship) != 0) {
                 AIMakeShipAttackPlayer(ship);
                 ship->targetShip = 0;
                 ship->grudge = 1;
@@ -1071,7 +1071,7 @@ void InterceptorAI(ShipObj *ship)
             for (i = 0; i < kMaxShips; i++) {
                 if (i != ship->index && shipData[i].active != 0 &&
                     i != ship->lastInspected && shipData[i].aiType != kShipTypeInterceptor &&
-                    ShipVisibleToShip(&shipData[i], ship) != 0 &&
+                    shipData[i].VisibleTo(ship) != 0 &&
                     shipData[i].curSystem == ship->curSystem)
                     n++;
             }
@@ -1080,7 +1080,7 @@ void InterceptorAI(ShipObj *ship)
                     t = Rand(kMaxShips);
                     if (t != ship->index && shipData[t].active != 0 &&
                         t != ship->lastInspected && shipData[t].aiType != kShipTypeInterceptor &&
-                        ShipVisibleToShip(&shipData[t], ship) != 0 &&
+                        shipData[t].VisibleTo(ship) != 0 &&
                         shipData[t].curSystem == ship->curSystem) {
                         ship->targetShip = t;
                         ship->lastInspected = t;
@@ -1145,7 +1145,7 @@ void InterceptorAI(ShipObj *ship)
     if (ship->targetShip != -1 && ship->govt != -1 &&
         ship->aiState == kAIStateFightSh &&
         (govtData[ship->govt].flags & kGovtPersNoEscapePod) != 0 &&
-        ship->shield < ShipShieldCapacity(ship) * 0.5 &&
+        ship->shield < ship->ShieldCapacity() * 0.5 &&
         ship->odds >= 0.0F) {
         f = systemData[ship->curSystem].reinforceFleet;
         if (f != -1) {
@@ -1168,7 +1168,7 @@ void InterceptorAI(ShipObj *ship)
     }
 
     if (ship->targetShip != -1 && ship->aiState == kAIStateFightSh &&
-        IsDisabled(&shipData[ship->targetShip]) != 0 &&
+        shipData[ship->targetShip].IsDisabled() != 0 &&
         AIHasDestroyingWeapons(ship) == 0) {
         ship->targetShip = -1;
         ship->aiState = kAIStateHiJack;
@@ -1182,7 +1182,7 @@ void InterceptorAI(ShipObj *ship)
     }
 
     if (ship->targetShip != -1 && ship->aiState == kAIStateInspect &&
-        ShipVisibleToShip(&shipData[ship->targetShip], ship) == 0) {
+        shipData[ship->targetShip].VisibleTo(ship) == 0) {
         ship->targetShip = -1;
         ship->targetStellar = -1;
         ship->aiState = kAIStateHiJack;
@@ -1225,7 +1225,7 @@ void EscortAI(ShipObj *ship)
         ship->jumpTimer = -1.0f;
         return;
     }
-    if (shipData[parent].active == 0 || IsDying(&shipData[parent]) != 0) {
+    if (shipData[parent].active == 0 || shipData[parent].IsDying() != 0) {
         ship->parentShip = -1;
         ship->aiType = shipClass[ship->type].inherentAI;
         ship->aiState = kAIStateHiJack;
@@ -1252,7 +1252,7 @@ void EscortAI(ShipObj *ship)
         shipData[ship->parentShip].jumpTimer > 0.0f) {
         ship->targetStellar = shipData[ship->parentShip].targetStellar;
         ship->targetShip = -1;
-        if (ship->parentShip != 0 && ShipIsInertialess(ship) != 0) {
+        if (ship->parentShip != 0 && ship->IsInertialess() != 0) {
             ship->parentShip = -1;
             ship->aiType = shipClass[ship->type].inherentAI;
             ship->aiState = kAIStateHypOut;
@@ -1265,7 +1265,7 @@ void EscortAI(ShipObj *ship)
 
     if (ship->targetShip != -1 &&
             (shipData[ship->targetShip].active == 0 ||
-             (IsDisabled(&shipData[ship->targetShip]) != 0 && ship->escortOrder != kOrderAttack)))
+             (shipData[ship->targetShip].IsDisabled() != 0 && ship->escortOrder != kOrderAttack)))
         ship->targetShip = -1;
 
     if (ship->parentShip == 0) {
@@ -1306,7 +1306,7 @@ void EscortAI(ShipObj *ship)
 
     if (ship->aiState == kAIStateHypPr) {
         ship->targetShip = -1;
-        if (ship->parentShip != 0 && ShipIsInertialess(ship) != 0) {
+        if (ship->parentShip != 0 && ship->IsInertialess() != 0) {
             ship->parentShip = -1;
             ship->aiType = shipClass[ship->type].inherentAI;
             ship->aiState = kAIStateHypOut;
@@ -1408,7 +1408,7 @@ void DefenseShipAI(ShipObj *ship)
     int32_t bestDist;
     short target;
 
-    if (IsDying(ship))
+    if (ship->IsDying())
         return;
     if (ship->aiState == kAIStateCountWait)
         return;
@@ -1421,7 +1421,7 @@ void DefenseShipAI(ShipObj *ship)
                 continue;
             if (i != 0 && shipData[i].parentShip != 0)
                 continue;
-            if (!ShipVisibleToShip(&shipData[i], ship))
+            if (!shipData[i].VisibleTo(ship))
                 continue;
             distAbs = FloatAbs(XYFloatSquaredDist(&ship->pos, &shipData[i].pos));
             if (distAbs <= kMaxTargetRangeSq || pass == 1) {
@@ -1440,7 +1440,7 @@ void DefenseShipAI(ShipObj *ship)
     ship->aiTimer = 0.0f;
     ship->targetStellar = -1;
     if (ship->targetShip != -1) {
-        if (!ShipVisibleToShip(&shipData[ship->targetShip], ship))
+        if (!shipData[ship->targetShip].VisibleTo(ship))
             ship->targetShip = -1;
     }
     if (ship->targetShip == -1) {
@@ -1475,7 +1475,7 @@ void DeathStarAI(ShipObj *ship)
     short guidance;
     short stellar;
 
-    if (IsDisabled(ship) || IsDying(ship))
+    if (ship->IsDisabled() || ship->IsDying())
         return;
     if (ship->aiState == kAIStateCountWait)
         return;
@@ -1587,8 +1587,8 @@ void HighLevelAIHandler(ShipObj *ship)
     if (ship->specialMission != -1 && (int)ship->aiState != kAIStateHypPr
             && !((int)ship->aiState == kAIStateJumpIn || (int)ship->aiState == kAIStateEmerge)
             && currentMissions[ship->specialMission].shipBehav == kMissionModeAttackPlayer) {
-        if (!IsDisabled(shipData) || AIHasDestroyingWeapons(ship)) {
-            if (ShipVisibleToShip(shipData, ship))
+        if (!shipData->IsDisabled() || AIHasDestroyingWeapons(ship)) {
+            if (shipData->VisibleTo(ship))
                 AIMakeShipAttackPlayer(ship);
         } else
             AIMakeShipLeave(ship);
@@ -1596,7 +1596,7 @@ void HighLevelAIHandler(ShipObj *ship)
 
     if (ship->targetShip != -1
             && ((int)ship->aiState == kAIStateFightSh || (int)ship->aiState == kAIStatePlunder)) {
-        if (!ShipVisibleToShip(&shipData[ship->targetShip], ship)) {
+        if (!shipData[ship->targetShip].VisibleTo(ship)) {
             if (ship->aiType <= kShipTypeBraveTrader) {
                 if (AIShipHasFuelForJump(ship))
                     AIMakeShipLeave(ship);
@@ -1631,7 +1631,7 @@ void HighLevelAIHandler(ShipObj *ship)
             ship->jumpTimer = 0.0f;
             pt.x = (short)(stellarData[ship->targetStellar].pos.h - ship->pos.x);
             pt.y = (short)(stellarData[ship->targetStellar].pos.v - ship->pos.y);
-            range = ((9.0 - (ShipTurnRate(ship) < 8.0 ? ShipTurnRate(ship) : 8.0)) * 8.0 + 32.0);
+            range = ((9.0 - (ship->TurnRate() < 8.0 ? ship->TurnRate() : 8.0)) * 8.0 + 32.0);
             if (FloatAbs(pt.x) > range || FloatAbs(pt.y) > range) {
                 ship->aiSubstate = kSubFlyStel;
             } else {
@@ -1707,7 +1707,7 @@ void HighLevelAIHandler(ShipObj *ship)
                 <= 1000000.0)
             farOut = 0;
         if (farOut) {
-            if (!ShipCanExpiditeJumps(ship)
+            if (!ship->CanExpediteJumps()
                     && (FloatAbs(ship->vel.x) >= 0.35 || FloatAbs(ship->vel.y) >= 0.35))
                 ship->aiSubstate = kSubKillSpd;
             else
@@ -1788,7 +1788,7 @@ void HighLevelAIHandler(ShipObj *ship)
                         <= 1000000.0)
                     farOut = 0;
                 if (farOut && AIShipHasFuelForJump(ship)) {
-                    if (!ShipCanExpiditeJumps(ship)
+                    if (!ship->CanExpediteJumps()
                             && (FloatAbs(ship->vel.x) >= 0.35 || FloatAbs(ship->vel.y) >= 0.35))
                         ship->aiSubstate = kSubKillSpd;
                     else
@@ -1852,12 +1852,12 @@ void HighLevelAIHandler(ShipObj *ship)
                 ship->aiState = kAIStateHiJack;
             }
             if (shipData[ship->targetShip].active != 0
-                    && !IsDying(&shipData[ship->targetShip])) {
+                    && !shipData[ship->targetShip].IsDying()) {
                 if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) > 165.0f
                         || FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) > 165.0f) {
                     if ((shipClass[ship->type].flags2 & kShipStandoff) != 0) {
-                        i = (ShipMaxWeaponRange(ship) * 0.85);
-                        if (IsDisabled(&shipData[ship->targetShip]))
+                        i = (ship->MaxWeaponRange() * 0.85);
+                        if (shipData[ship->targetShip].IsDisabled())
                             i *= 0.5;
                         {
                             float fx;
@@ -1888,7 +1888,7 @@ void HighLevelAIHandler(ShipObj *ship)
                 } else if (ship->aiSubstate != kSubVeerOff) {
                     ship->aiSubstate = kSubTF;
                 }
-                if (!IsDisabled(ship)) {
+                if (!ship->IsDisabled()) {
                     AILaunchFighter(ship);
                     AICallForReinforcements(ship, 0);
                 }
@@ -1943,7 +1943,7 @@ void HighLevelAIHandler(ShipObj *ship)
                 ship->aiState = kAIStateHiJack;
             }
             if (shipData[ship->targetShip].active != 0) {
-                if (IsDisabled(&shipData[ship->targetShip])) {
+                if (shipData[ship->targetShip].IsDisabled()) {
                     if (shipData[ship->targetShip].boarded != 0 && ship->aiTimer <= 0.0f) {
                         ship->aiState = kAIStateHiJack;
                         ship->aiSubstate = kSubLoJack;
@@ -1952,7 +1952,7 @@ void HighLevelAIHandler(ShipObj *ship)
                     } else {
                         ship->targetStellar = ship->targetShip;
                         reach = ((10.0f - shipClass[ship->type].turnRate) * 30.0f);
-                        if (ShipIsInertialess(ship))
+                        if (ship->IsInertialess())
                             reach *= 4;
                         if (FloatAbs((double)(ship->pos.x - shipData[ship->targetShip].pos.x)) <= reach
                                 && FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) <= reach) {
@@ -2014,13 +2014,13 @@ void HighLevelAIHandler(ShipObj *ship)
             ship->aiSubstate = kSubDock;
         else
             ship->aiSubstate = kSubChasSlw;
-        if (!ShipVisibleToShip(&shipData[ship->parentShip], ship))
+        if (!shipData[ship->parentShip].VisibleTo(ship))
             ship->aiSubstate = kSubKillSpd;
     }
 
     if (ship->aiState == kAIStateFlyPr && ship->parentShip != -1 && ship->defenseStellar == -1) {
         ship->targetStellar = ship->parentShip;
-        if (!ShipVisibleToShip(&shipData[ship->parentShip], ship)) {
+        if (!shipData[ship->parentShip].VisibleTo(ship)) {
             if (FloatAbs(ship->pos.x - shipData[ship->parentShip].pos.x) <= 300.0f
                     && FloatAbs(ship->pos.y - shipData[ship->parentShip].pos.y) <= 300.0f)
                 ship->aiSubstate = kSubKillSpd;
@@ -2051,7 +2051,7 @@ void HighLevelAIHandler(ShipObj *ship)
         reach = ((10.0f - shipClass[ship->type].turnRate) * 30.0f);
         if (shipData->jumpTimer > 0.0f) {
             ship->aiState = kAIStateHypPr;
-        } else if (!ShipVisibleToShip(shipData, ship)) {
+        } else if (!shipData->VisibleTo(ship)) {
             ship->aiSubstate = kSubKillSpd;
         } else {
             if (FloatAbs((double)(ship->pos.x - shipData->pos.x)) <= reach
@@ -2155,7 +2155,7 @@ void HighLevelAIHandler(ShipObj *ship)
     if (ship->aiState == kAIStateRepair) {
         if (ship->targetShip != -1) {
             if (shipData[ship->targetShip].active == 0
-                    || !IsDisabled(&shipData[ship->targetShip])) {
+                    || !shipData[ship->targetShip].IsDisabled()) {
                 ship->aiState = kAIStateHiJack;
                 ship->aiSubstate = kSubLoJack;
                 ship->targetShip = -1;
@@ -2164,7 +2164,7 @@ void HighLevelAIHandler(ShipObj *ship)
             }
             ship->targetStellar = ship->targetShip;
             reach = ((10.0f - shipClass[ship->type].turnRate) * 30.0f + 50.0f);
-            if (ShipIsInertialess(ship))
+            if (ship->IsInertialess())
                 reach *= 4;
             if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) <= reach
                     && FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) <= reach)
@@ -2260,8 +2260,8 @@ void LowLevelAIHandler(ShipObj *ship)
     ship->thrust = 0.0F;
     ship->fireQueued = 0;
     if (ship->speedLimit >= 0.0)
-        ship->speedLimit = ShipMaxSpeed(ship);
-    disabled = IsDisabled(ship);
+        ship->speedLimit = ship->MaxSpeed();
+    disabled = ship->IsDisabled();
     ship->desiredHeading = ship->heading;
 
     if (ship->aiSubstate == kSubLoJack)
@@ -2273,13 +2273,13 @@ void LowLevelAIHandler(ShipObj *ship)
             pt.x = shipData[leader].pos.x;
             pt.y = shipData[leader].pos.y;
             Accel(shipData[leader].heading,
-                  ShipMaxSpeed(ship) * 15.0F, &pt);
+                  ship->MaxSpeed() * 15.0F, &pt);
             ship->desiredHeading =
                 CalcInterceptAngle(&ship->pos, &pt);
             if (abs(AngularDifference(ship->desiredHeading,
                                       ship->heading)) <
-                    ShipTurnRate(ship) + 20.0F)
-                ship->thrust = ShipAccelRate(ship);
+                    ship->TurnRate() + 20.0F)
+                ship->thrust = ship->AccelRate();
             if (ship->aiState == kAIStateFightSh && ship->targetShip != -1)
                 AIFireMissile(ship);
         } else
@@ -2288,8 +2288,8 @@ void LowLevelAIHandler(ShipObj *ship)
 
     if (ship->aiSubstate == kSubKillSpd && disabled == 0) {
         if (FloatAbs(ship->vel.x) >= 0.35 || FloatAbs(ship->vel.y) >= 0.35) {
-            if (ShipIsInertialess(ship) != 0)
-                ship->thrust = (-ShipAccelRate(ship) * 0.5);
+            if (ship->IsInertialess() != 0)
+                ship->thrust = (-ship->AccelRate() * 0.5);
             else {
                 pt.x = pt.y = 0.0F;
                 scaled.x = (ship->vel.x * 100.0);
@@ -2298,11 +2298,11 @@ void LowLevelAIHandler(ShipObj *ship)
                     (CalcInterceptAngle(&pt, &scaled) + kHalfCircle) % kFullCircle;
                 if (abs(AngularDifference(ship->desiredHeading,
                                           ship->heading)) <
-                        ShipTurnRate(ship) + 1.0F) {
+                        ship->TurnRate() + 1.0F) {
                     if (FloatAbs(ship->vel.x) >= 1.75 || FloatAbs(ship->vel.y) >= 1.75)
-                        ship->thrust = ShipAccelRate(ship);
+                        ship->thrust = ship->AccelRate();
                     else {
-                        ship->thrust = (ShipAccelRate(ship) * 0.5);
+                        ship->thrust = (ship->AccelRate() * 0.5);
                         ship->vel.x *= 0.94;
                         ship->vel.y *= 0.94;
                         ship->accelMag *= 0.94;
@@ -2329,14 +2329,14 @@ void LowLevelAIHandler(ShipObj *ship)
             CalcInterceptAngle(&ship->pos, &pt);
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) + 5.0F) {
+                ship->TurnRate() + 5.0F) {
             pt.x = ship->pos.x - stellarData[ship->targetStellar].pos.h;
             pt.y = ship->pos.y - stellarData[ship->targetStellar].pos.v;
             if (FloatAbs(pt.x) < 500.0F && FloatAbs(pt.y) < 500.0F) {
-                ship->thrust = ShipAccelRate(ship);
-                ship->speedLimit = (ShipMaxSpeed(ship) * 0.25);
+                ship->thrust = ship->AccelRate();
+                ship->speedLimit = (ship->MaxSpeed() * 0.25);
             } else {
-                ship->thrust = ShipAccelRate(ship);
+                ship->thrust = ship->AccelRate();
                 ship->speedLimit = 0.0F;
             }
         }
@@ -2348,8 +2348,8 @@ void LowLevelAIHandler(ShipObj *ship)
             CalcInterceptAngle(&pt, &ship->pos);
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) + 3.0F) {
-            ship->thrust = ShipAccelRate(ship);
+                ship->TurnRate() + 3.0F) {
+            ship->thrust = ship->AccelRate();
             ship->speedLimit = 0.0F;
         }
     }
@@ -2403,7 +2403,7 @@ void LowLevelAIHandler(ShipObj *ship)
                 if (abs(AngularDifference(
                         shipData[ship->parentShip].heading,
                         shipData[ship->parentShip].desiredHeading)) >
-                        ShipTurnRate(ship)) {
+                        ship->TurnRate()) {
                     ship->desiredHeading =
                         shipData[ship->parentShip].desiredHeading;
                     ship->jumpTimer = -1.0F;
@@ -2436,8 +2436,8 @@ void LowLevelAIHandler(ShipObj *ship)
                                &ship->pos);
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) + 20.0F) {
-            ship->thrust = ShipAccelRate(ship);
+                ship->TurnRate() + 20.0F) {
+            ship->thrust = ship->AccelRate();
             ship->speedLimit = 0.0F;
         }
         if ((int)ship->aiState == kAIStateDefRet || (int)ship->aiState == kAIStateFightSh)
@@ -2473,15 +2473,15 @@ void LowLevelAIHandler(ShipObj *ship)
         AIFireTurret(ship);
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) + 15.0F) {
-            ship->thrust = ShipAccelRate(ship);
+                ship->TurnRate() + 15.0F) {
+            ship->thrust = ship->AccelRate();
             ship->speedLimit = 0.0F;
         }
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) * 3.0F) {
+                ship->TurnRate() * 3.0F) {
             AIFireGun(ship, 0);
-            if (ShipIsInertialess(ship) != 0 &&
+            if (ship->IsInertialess() != 0 &&
                     FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) < 100.0F &&
                     FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) < 100.0F &&
                     ship->accelMag > shipData[ship->targetShip].accelMag)
@@ -2489,7 +2489,7 @@ void LowLevelAIHandler(ShipObj *ship)
         }
         if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) < 165.0F ||
                 FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) < 165.0F ||
-                ShipIsInertialess(ship) == 0) {
+                ship->IsInertialess() == 0) {
             if ((ship->targetShip != 0 && Rand(2) == 0) || AIPerformsComplexManeuvers(ship) != 0) {
                 i = 123;
                 if (shipClass[ship->type].inherentAI >= kShipTypeWarship &&
@@ -2540,26 +2540,26 @@ void LowLevelAIHandler(ShipObj *ship)
     if (ship->aiSubstate == kSubVeerOff && ship->targetShip != -1 &&
             disabled == 0) {
         ship->desiredHeading = ship->veerHeading;
-        ship->thrust = (ShipAccelRate(ship) * 1.5);
+        ship->thrust = (ship->AccelRate() * 1.5);
         ship->speedLimit = 0.0F;
         if (abs(ship->pos.x - shipData[ship->targetShip].pos.x) < 165 &&
                 abs(ship->pos.y - shipData[ship->targetShip].pos.y) < 165)
             AIFireTurret(ship);
-        if (ShipIsInertialess(ship) != 0) {
+        if (ship->IsInertialess() != 0) {
             if (abs(ship->pos.x - shipData[ship->targetShip].pos.x) > 165 ||
                     abs(ship->pos.y - shipData[ship->targetShip].pos.y) > 165)
                 ship->aiSubstate = kSubTF;
         } else {
             if (AngularDifference(ship->heading, ship->veerHeading) <
-                    ShipTurnRate(ship) * 3.0F)
+                    ship->TurnRate() * 3.0F)
                 ship->aiSubstate = kSubTF;
         }
     }
 
     if (ship->aiSubstate == kSubAfterBurn && ship->targetShip != -1 &&
             disabled == 0) {
-        ship->thrust = (ShipAccelRate(ship) * 2.75);
-        ship->speedLimit = (ShipMaxSpeed(ship) * 1.8);
+        ship->thrust = (ship->AccelRate() * 2.75);
+        ship->speedLimit = (ship->MaxSpeed() * 1.8);
         ship->desiredHeading = CalcInterceptAngle(
             &ship->pos,
             &shipData[ship->targetShip].pos);
@@ -2573,12 +2573,12 @@ void LowLevelAIHandler(ShipObj *ship)
             AIFireTurret(ship);
             if (abs(AngularDifference(ship->desiredHeading,
                                       ship->heading)) <
-                    ShipTurnRate(ship) * 3.0F)
+                    ship->TurnRate() * 3.0F)
                 AIFireGun(ship, 0);
         } else {
             if (abs(AngularDifference(ship->desiredHeading,
                                       ship->heading)) <
-                    ShipTurnRate(ship) * 3.0F)
+                    ship->TurnRate() * 3.0F)
                 AIFireMissile(ship);
         }
         if ((abs(ship->pos.x - shipData[ship->targetShip].pos.x) <= 165 &&
@@ -2604,14 +2604,14 @@ void LowLevelAIHandler(ShipObj *ship)
                 &shipData[ship->targetShip].pos);
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) * 3.0F) {
+                ship->TurnRate() * 3.0F) {
             AIFireGun(ship, 0);
             AIFireTurret(ship);
         }
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) * 4.0F) {
-            ship->thrust = ShipAccelRate(ship);
+                ship->TurnRate() * 4.0F) {
+            ship->thrust = ship->AccelRate();
             ship->speedLimit = 0.0F;
             AIFireMissile(ship);
         }
@@ -2633,12 +2633,12 @@ void LowLevelAIHandler(ShipObj *ship)
         delta.x = ship->vel.x - shipData[ship->targetStellar].vel.x;
         delta.y = ship->vel.y - shipData[ship->targetStellar].vel.y;
         if (FloatAbs(delta.x) >= 0.35 * 1.5 || FloatAbs(delta.y) >= 0.35 * 1.5) {
-            if (ShipIsInertialess(ship)) {
+            if (ship->IsInertialess()) {
                 ship->thrust = 0.0F;
                 ship->speedLimit = 0.0F;
                 if (ship->accelMag > 0.0) {
                     ship->accelMag = (ship->accelMag -
-                        ShipAccelRate(ship) * gSpeedMult);
+                        ship->AccelRate() * gSpeedMult);
                     if (ship->accelMag < 0.0)
                         ship->accelMag = 0.0F;
                 }
@@ -2650,8 +2650,8 @@ void LowLevelAIHandler(ShipObj *ship)
                     (CalcInterceptAngle(&pt, &scaled) + kHalfCircle) % kFullCircle;
                 if (abs(AngularDifference(ship->desiredHeading,
                                           ship->heading)) <
-                        ShipTurnRate(ship) + 1.0F) {
-                    ship->thrust = ShipAccelRate(ship);
+                        ship->TurnRate() + 1.0F) {
+                    ship->thrust = ship->AccelRate();
                     ship->speedLimit = 0.0F;
                 }
                 if (FloatAbs(delta.x) <= 1.75 || FloatAbs(delta.y) <= 1.75) {
@@ -2674,7 +2674,7 @@ void LowLevelAIHandler(ShipObj *ship)
                 if (ship->aiTimer <= 100.0F && ship->aiTimer > 0.0F) {
                     if ((int)ship->aiState == kAIStateRepair) {
                         shipData[ship->targetStellar].boarded = 0;
-                        while (IsDisabled(&shipData[ship->targetStellar]) != 0)
+                        while (shipData[ship->targetStellar].IsDisabled() != 0)
                             shipData[ship->targetStellar].armor += 1.0F;
                         if (ship->targetStellar == 0) {
                             ST_PlaySound(beepSnd[1], 1, gSoundVolume);
@@ -2732,8 +2732,8 @@ void LowLevelAIHandler(ShipObj *ship)
     if (ship->aiSubstate == kSubWaitTarg && ship->targetShip != -1 &&
             disabled == 0) {
         if (FloatAbs(ship->vel.x) >= 0.35 || FloatAbs(ship->vel.y) >= 0.35) {
-            if (ShipIsInertialess(ship) != 0)
-                ship->thrust = -ShipAccelRate(ship);
+            if (ship->IsInertialess() != 0)
+                ship->thrust = -ship->AccelRate();
             else {
                 pt.x = pt.y = 0.0F;
                 scaled.x = (ship->vel.x * 100.0);
@@ -2747,8 +2747,8 @@ void LowLevelAIHandler(ShipObj *ship)
                         (CalcInterceptAngle(&pt, &scaled) + kHalfCircle) % kFullCircle;
                 if (abs(AngularDifference(ship->desiredHeading,
                                           ship->heading)) <
-                        ShipTurnRate(ship) + 1.0F)
-                    ship->thrust = ShipAccelRate(ship);
+                        ship->TurnRate() + 1.0F)
+                    ship->thrust = ship->AccelRate();
             }
         } else {
             ship->vel.x *= 0.95;
@@ -2758,7 +2758,7 @@ void LowLevelAIHandler(ShipObj *ship)
                 &shipData[ship->targetShip].pos);
             if (abs(AngularDifference(ship->desiredHeading,
                                       ship->heading)) <
-                    ShipTurnRate(ship) * 3.0F) {
+                    ship->TurnRate() * 3.0F) {
                 AIFireGun(ship, 0);
                 AIFireMissile(ship);
             }
@@ -2789,7 +2789,7 @@ void LowLevelAIHandler(ShipObj *ship)
             course = CalcInterceptAngle(&pt, &scaled);
             if (abs(course - angle) > 15) {
                 aim.x = aim.y = 0.0F;
-                Accel(angle, ShipMaxSpeed(ship), &aim);
+                Accel(angle, ship->MaxSpeed(), &aim);
                 delta.x = aim.x - ship->vel.x;
                 delta.y = aim.y - ship->vel.y;
                 if (FloatAbs(delta.x) > 0.35 || FloatAbs(delta.y) > 0.35)
@@ -2799,11 +2799,11 @@ void LowLevelAIHandler(ShipObj *ship)
             ship->desiredHeading = angle;
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) + 1.0F) {
-            ship->thrust = ShipAccelRate(ship);
+                ship->TurnRate() + 1.0F) {
+            ship->thrust = ship->AccelRate();
             if (FloatAbs(ship->pos.x - shipData[i].pos.x) <= 100.0F &&
                     FloatAbs(ship->pos.y - shipData[i].pos.y) <= 100.0F)
-                ship->speedLimit = (ShipMaxSpeed(ship) * 0.5);
+                ship->speedLimit = (ship->MaxSpeed() * 0.5);
             else
                 ship->speedLimit = 0.0F;
         }
@@ -2827,7 +2827,7 @@ void LowLevelAIHandler(ShipObj *ship)
                 course = CalcInterceptAngle(&pt, &scaled);
                 if (abs(course - angle) > 15) {
                     aim.x = aim.y = 0.0F;
-                    Accel(angle, ShipMaxSpeed(ship), &aim);
+                    Accel(angle, ship->MaxSpeed(), &aim);
                     delta.x = aim.x - ship->vel.x;
                     delta.y = aim.y - ship->vel.y;
                     if (FloatAbs(delta.x) > 0.35 || FloatAbs(delta.y) > 0.35)
@@ -2838,8 +2838,8 @@ void LowLevelAIHandler(ShipObj *ship)
                 ship->desiredHeading = angle;
             if (abs(AngularDifference(ship->desiredHeading,
                                       ship->heading)) <
-                    ShipTurnRate(ship) + 1.0F) {
-                ship->thrust = ShipAccelRate(ship);
+                    ship->TurnRate() + 1.0F) {
+                ship->thrust = ship->AccelRate();
                 ship->speedLimit = 0.0F;
             }
             AIEscortFireUnprovoked(ship);
@@ -2851,7 +2851,7 @@ void LowLevelAIHandler(ShipObj *ship)
         ship->aiSubstate = kSubLoJack;
         delta.x = ship->vel.x - shipData[ship->targetStellar].vel.x;
         delta.y = ship->vel.y - shipData[ship->targetStellar].vel.y;
-        if (ShipIsInertialess(ship) == 0 &&
+        if (ship->IsInertialess() == 0 &&
                 (FloatAbs(delta.x) >= 0.35 * 1.5 || FloatAbs(delta.y) >= 0.35 * 1.5)) {
             pt.x = pt.y = 0.0F;
             scaled.x = (delta.x * 100.0);
@@ -2860,8 +2860,8 @@ void LowLevelAIHandler(ShipObj *ship)
                 (CalcInterceptAngle(&pt, &scaled) + kHalfCircle) % kFullCircle;
             if (abs(AngularDifference(ship->desiredHeading,
                                       ship->heading)) <
-                    ShipTurnRate(ship) + 1.0F) {
-                ship->thrust = (ShipAccelRate(ship) * 0.66);
+                    ship->TurnRate() + 1.0F) {
+                ship->thrust = (ship->AccelRate() * 0.66);
                 ship->speedLimit = 0.0F;
             }
             if (FloatAbs(delta.x) <= 1.75 || FloatAbs(delta.y) <= 1.75) {
@@ -2899,7 +2899,7 @@ void LowLevelAIHandler(ShipObj *ship)
                 ship->desiredHeading =
                     shipData[ship->targetStellar].heading;
             if (ship->aiState == kAIStateInspect && ship->targetStellar != -1) {
-                step = (ShipAccelRate(ship) * 10.0 * gSpeedMult);
+                step = (ship->AccelRate() * 10.0 * gSpeedMult);
                 anchor = shipData[ship->targetStellar].pos;
                 Accel((short)(shipData[ship->targetStellar].heading +
                               135.0F) % kFullCircle,
@@ -2921,8 +2921,8 @@ void LowLevelAIHandler(ShipObj *ship)
     }
 
     if (ship->aiSubstate == kSubDock) {
-        if (ship->targetStellar != -1 && IsDying(ship) == 0 &&
-                IsDisabled(ship) == 0) {
+        if (ship->targetStellar != -1 && ship->IsDying() == 0 &&
+                ship->IsDisabled() == 0) {
             if (shipData[ship->targetStellar].active != 0 &&
                     shipData[ship->targetStellar].curSystem == ship->curSystem) {
                 if (disabled == 0) {
@@ -2931,8 +2931,8 @@ void LowLevelAIHandler(ShipObj *ship)
                         &shipData[ship->targetStellar].pos);
                     if (abs(AngularDifference(ship->desiredHeading,
                                               ship->heading)) <
-                            ShipTurnRate(ship) + 1.0F) {
-                        ship->thrust = ShipAccelRate(ship);
+                            ship->TurnRate() + 1.0F) {
+                        ship->thrust = ship->AccelRate();
                         ship->speedLimit = 0.0F;
                     }
                 }
@@ -2954,7 +2954,7 @@ void LowLevelAIHandler(ShipObj *ship)
                     } else
                         AIAddFighterToParent(ship);
                 } else {
-                    step = (ShipAccelRate(ship) * 10.0 * gSpeedMult);
+                    step = (ship->AccelRate() * 10.0 * gSpeedMult);
                     anchor = shipData[ship->parentShip].pos;
                     if (ship->pos.x <= anchor.x - step)
                         ship->pos.x += step;
@@ -2988,12 +2988,12 @@ doneFollow:
             &ship->pos, &asteroidData->pos);
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) + 15.0F)
-            ship->thrust = ShipAccelRate(ship);
+                ship->TurnRate() + 15.0F)
+            ship->thrust = ship->AccelRate();
     }
 
     if (ship->aiSubstate == kSubKillAst) {
-        step = (ShipAccelRate(ship) * 1.5 * gSpeedMult);
+        step = (ship->AccelRate() * 1.5 * gSpeedMult);
         if (ship->vel.x >= asteroidData->vel.x + step)
             ship->vel.x -= step;
         else if (ship->vel.x <= asteroidData->vel.x - step)
@@ -3032,7 +3032,7 @@ doneFollow:
             &ship->pos);
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) + 10.0F) {
+                ship->TurnRate() + 10.0F) {
             ship->targetShip = -1;
             AIFireGunUntargeted(ship);
         }
@@ -3057,10 +3057,10 @@ doneFollow:
                 &boxData[bestBox].pos);
             if (abs(AngularDifference(ship->desiredHeading,
                                       ship->heading)) <
-                    ShipTurnRate(ship) + 15.0F)
-                ship->thrust = ShipAccelRate(ship);
+                    ship->TurnRate() + 15.0F)
+                ship->thrust = ship->AccelRate();
             else {
-                step = (ShipAccelRate(ship) * 1.75 * gSpeedMult);
+                step = (ship->AccelRate() * 1.75 * gSpeedMult);
                 if (ship->vel.x >= step)
                     ship->vel.x -= step;
                 else if (ship->vel.x <= -step)
@@ -3085,7 +3085,7 @@ doneFollow:
             CalcInterceptAngle(&ship->pos, &pt);
         if (abs(AngularDifference(ship->desiredHeading,
                                   ship->heading)) <
-                ShipTurnRate(ship) + 15.0F)
+                ship->TurnRate() + 15.0F)
             AIFirePlanetGun(ship);
     }
     return;
@@ -3291,7 +3291,7 @@ void AIFireTurret(ShipObj *ship)
 
     cand[0] = cand[1] = -1;
     best[0] = best[1] = 0;
-    if (IsDisabled(ship))
+    if (ship->IsDisabled())
         return;
     HandleShipPointDefense(ship);
     if (ship->targetShip == -1)
@@ -3300,7 +3300,7 @@ void AIFireTurret(ShipObj *ship)
         return;
     if (shipClass[shipData[ship->targetShip].type].flags2 & kShipUntargetable)
         return;
-    if (!ShipVisibleToShip(&shipData[ship->targetShip], ship))
+    if (!shipData[ship->targetShip].VisibleTo(ship))
         return;
     for (k = 0; k < kMaxWeapTypes; k++) {
         if (ship->weap[k].count > 0 && ship->weap[k].reloadTimer <= 0.0f) {
@@ -3371,9 +3371,9 @@ void AIFireMissile(ShipObj *me)
         || shipData[me->targetShip].active == 0)
         return;
     if ((shipClass[shipData[me->targetShip].type].flags2 & kShipUntargetable) != 0
-        && !ShipCanTargetUntargetableShips(me))
+        && !me->CanTargetUntargetableShips())
         return;
-    if (ShipIsCloaked(&shipData[me->targetShip]) && !ShipCanTargetCloakedShips(me))
+    if (shipData[me->targetShip].IsCloaked() && !me->CanTargetCloakedShips())
         return;
     if (SufficentTargetedDamage(&shipData[me->targetShip]))
         return;
@@ -3422,7 +3422,7 @@ void AIFireGun(ShipObj *ship, Boolean allowUnguided)
     if (ship->curSystem != shipData[ship->targetShip].curSystem
             || shipData[ship->targetShip].active == 0)
         return;
-    if (ShipVisibleToShip(&shipData[ship->targetShip], ship) == 0)
+    if (shipData[ship->targetShip].VisibleTo(ship) == 0)
         return;
 
     sawGuided = 0;
@@ -3755,7 +3755,7 @@ void SelectWarshipTarget(ShipObj *ship)
         }
         if ((personData[ship->persType].flags & kPersHoldsGrudge) != 0 &&
             personData[ship->persType].grudge != 0 &&
-            ShipVisibleToShip(shipData, ship) != 0) {
+            shipData->VisibleTo(ship) != 0) {
             AIMakeShipAttackPlayer(ship);
             return;
         }
@@ -3763,7 +3763,7 @@ void SelectWarshipTarget(ShipObj *ship)
 
     if (ship->specialMission != -1 && currentMissionObjectives[ship->specialMission].active != 0) {
         if (currentMissions[ship->specialMission].shipBehav == kMissionModeAttackPlayer &&
-            ShipVisibleToShip(shipData, ship) != 0) {
+            shipData->VisibleTo(ship) != 0) {
             AIMakeShipAttackPlayer(ship);
             return;
         }
@@ -3794,18 +3794,18 @@ void SelectWarshipTarget(ShipObj *ship)
         if ((govtData[ship->govt].flags & kGovtXenophobic) != 0) {
             count = 0;
             for (i = 0; i < kMaxShips; i++) {
-                if (IsDying(&shipData[i]) != 0)
+                if (shipData[i].IsDying() != 0)
                     continue;
-                if (IsDisabled(&shipData[i]) != 0)
+                if (shipData[i].IsDisabled() != 0)
                     continue;
-                if (ShipVisibleToShip(&shipData[i], ship) == 0)
+                if (shipData[i].VisibleTo(ship) == 0)
                     continue;
                 if (shipData[i].type == kShipTypeEscapePod)
                     continue;
                 if (i == 0) {
                     hunts = (govtData[ship->govt].flags &
                                    kGovtNeverAttacksPlayer);
-                    if (ShipVisibleToShip(shipData, ship) == 0)
+                    if (shipData->VisibleTo(ship) == 0)
                         continue;
                     if (hunts != 0)
                         continue;
@@ -3825,7 +3825,7 @@ void SelectWarshipTarget(ShipObj *ship)
                 } else {
                     if (i == ship->index)
                         continue;
-                    if (IsDisabled(&shipData[i]) != 0)
+                    if (shipData[i].IsDisabled() != 0)
                         continue;
                     if (shipData[i].active == 0)
                         continue;
@@ -3898,7 +3898,7 @@ void SelectWarshipTarget(ShipObj *ship)
                         if (PlayerBlessedByGovt(ship->govt, 0) != 0)
                             continue;
                     }
-                    if (ShipVisibleToShip(&shipData[t], ship) == 0)
+                    if (shipData[t].VisibleTo(ship) == 0)
                         continue;
                     s = AIShipFriendStrength(&shipData[t]);
                     if (myStrength < 0)
@@ -3918,13 +3918,13 @@ void SelectWarshipTarget(ShipObj *ship)
             range = ship->aggression * kScanRangeStep;
             if (PlayerBlessedByGovt(ship->govt, 0) == 0) {
                 if (fdx <= range && fdy <= range &&
-                    ShipVisibleToShip(shipData, ship) != 0 &&
-                    IsDying(shipData) == 0)
+                    shipData->VisibleTo(ship) != 0 &&
+                    shipData->IsDying() == 0)
                     inRange = 1;
             }
             hunts = (govtData[ship->govt].flags & kGovtNeverAttacksPlayer);
             if (inRange != 0 && hunts == 0 &&
-                ShipVisibleToShip(shipData, ship) != 0) {
+                shipData->VisibleTo(ship) != 0) {
                 if (systemData[shipData->curSystem].govt == ship->govt) {
                     if (playerRecord[shipData->curSystem] < -govtData[ship->govt].crimeTol)
                         cand[0] = 1;
@@ -3956,8 +3956,8 @@ void SelectWarshipTarget(ShipObj *ship)
                 shipClass[shipData->type].inherentGovt != -1 &&
                 GovtEnemies(ship->govt,
                             shipClass[shipData->type].inherentGovt) != 0 &&
-                Rand(0x32) == 0 && IsDying(shipData) == 0 &&
-                ShipVisibleToShip(shipData, ship) != 0)
+                Rand(0x32) == 0 && shipData->IsDying() == 0 &&
+                shipData->VisibleTo(ship) != 0)
                 cand[0] = 1;
 
         }
@@ -3974,11 +3974,11 @@ void SelectWarshipTarget(ShipObj *ship)
         for (i = 1; i < kMaxShips; i++) {
             if (i == ship->index)
                 continue;
-            if (ShipVisibleToShip(&shipData[i], ship) == 0)
+            if (shipData[i].VisibleTo(ship) == 0)
                 continue;
             if (shipData[i].active == 0)
                 continue;
-            if (hasDestroying == 0 && IsDisabled(&shipData[i]) != 0)
+            if (hasDestroying == 0 && shipData[i].IsDisabled() != 0)
                 continue;
             if (IsShipMyEnemy(ship, &shipData[i]) == 0)
                 continue;
@@ -4034,7 +4034,7 @@ void SelectWarshipTarget(ShipObj *ship)
                     continue;
                 if (shipData[i].active == 0)
                     continue;
-                if (ShipVisibleToShip(&shipData[i], ship) == 0)
+                if (shipData[i].VisibleTo(ship) == 0)
                     continue;
                 if (ExtendedIsThreatToShip(ship, &shipData[i]) == 0)
                     continue;
@@ -4088,7 +4088,7 @@ void SelectWarshipTarget(ShipObj *ship)
 // MAC: _IsThreatToPlayer i386 0x0007f501 ppc 0x00088ff8
 Boolean IsThreatToPlayer(ShipObj *ship)
 {
-    if (ship->active != 0 && ship->aiTimer <= 0.0f && !IsDisabled(ship) && ship->targetShip >= 0
+    if (ship->active != 0 && ship->aiTimer <= 0.0f && !ship->IsDisabled() && ship->targetShip >= 0
             && (int)ship->aiState != kAIStateInspect && (int)ship->aiState != kAIStateRefuel
             && (int)ship->aiState != kAIStateRepair && (int)ship->aiState != kAIStateFlyPr
             && (int)ship->aiState != kAIStateHypPr && (int)ship->aiState != kAIStateGoHome
@@ -4108,8 +4108,8 @@ Boolean ExtendedIsThreatToPlayer(ShipObj *ship)
     short i;
     short w;
 
-    if (ship->active != 0 && !IsDisabled(ship) && ship->parentShip != 0
-            && ship->targetShip != -1 && ShipVisibleToShip(ship, shipData) != 0) {
+    if (ship->active != 0 && !ship->IsDisabled() && ship->parentShip != 0
+            && ship->targetShip != -1 && ship->VisibleTo(shipData) != 0) {
         if (ship->defenseStellar != -1)
             return 1;
         if (ship->targetShip == 0 && ship->aiTimer <= 0.0f
@@ -4133,7 +4133,7 @@ Boolean ExtendedIsThreatToPlayer(ShipObj *ship)
             return 1;
         for (i = 1; i < kMaxShips; i++) {
             if (shipData[i].parentShip == ship->index && shipData[i].aiTimer <= 0.0f
-                    && shipData[i].active != 0 && !IsDisabled(&shipData[i])) {
+                    && shipData[i].active != 0 && !shipData[i].IsDisabled()) {
                 w = shipData[i].targetShip;
                 if (w == 0
                         && (int)ship->aiState != kAIStateInspect && (int)ship->aiState != kAIStateRefuel
@@ -4160,7 +4160,7 @@ Boolean ExtendedIsThreatToShip(ShipObj *self, ShipObj *other)
 {
     short n;
 
-    if (other->active != 0 && IsDisabled(other) == 0 && other->parentShip != self->index) {
+    if (other->active != 0 && other->IsDisabled() == 0 && other->parentShip != self->index) {
         if (other->index == 0) {
             if (PlayerBlessedByGovt(self->govt, 0) != 0)
                 return 0;
@@ -4191,7 +4191,7 @@ Boolean IsShipThreatened(ShipObj *ship)
 {
     short i;
 
-    if (ship->active != 0 && !IsDisabled(ship)) {
+    if (ship->active != 0 && !ship->IsDisabled()) {
         for (i = 1; i < kMaxShips; i++) {
             /* BUG: tests whether the ship targets itself, not whether shipData[i] targets it */
             if (shipData[i].active != 0 && ship->targetShip == ship->index
@@ -4214,7 +4214,7 @@ Boolean IsShipThreatened(ShipObj *ship)
 Boolean IsRefuellingPlayer(ShipObj *ship)
 {
     if (ship->active != 0) {
-        if (!IsDisabled(ship) && ship->targetShip == 0 && ship->aiState == kAIStateRefuel)
+        if (!ship->IsDisabled() && ship->targetShip == 0 && ship->aiState == kAIStateRefuel)
             return 1;
     }
     return 0;
@@ -4225,7 +4225,7 @@ Boolean IsRefuellingPlayer(ShipObj *ship)
 Boolean IsRepairingPlayer(ShipObj *ship)
 {
     if (ship->active != 0) {
-        if (!IsDisabled(ship) && ship->targetShip == 0 && ship->aiState == kAIStateRepair)
+        if (!ship->IsDisabled() && ship->targetShip == 0 && ship->aiState == kAIStateRepair)
             return 1;
     }
     return 0;
@@ -4509,7 +4509,7 @@ void AIMakeShipAttackPlayer(ShipObj *ship)
     if (ExtendedIsThreatToPlayer(ship) == 0 && ship->persType != -1
         && ship->specialMission == -1
         && (personData[ship->persType].flags & kPersQuoteOnAttack) != 0
-        && IsDisabled(ship) == 0 && IsDying(shipData) == 0) {
+        && ship->IsDisabled() == 0 && shipData->IsDying() == 0) {
         offeringShipIndex = ship->index;
         commCount = -1;
         ShowPersonHailQuote(personData[ship->persType].hailQuote);
@@ -4533,7 +4533,7 @@ void AIFightThreatToPlayer(ShipObj *ship)
     count = 0;
     for (i = 1; i < kMaxShips; i++) {
         if (i != ship->index && i != 0
-                && !IsDisabled(&shipData[i]) && !IsDying(&shipData[i])
+                && !shipData[i].IsDisabled() && !shipData[i].IsDying()
                 && shipData[i].curSystem == ship->curSystem
                 && IsThreatToPlayer(&shipData[i]))
             count++;
@@ -4542,7 +4542,7 @@ void AIFightThreatToPlayer(ShipObj *ship)
         for (;;) {
             i = Rand(kMaxShips - 1) + 1;
             if (i != ship->index && i != 0
-                    && !IsDisabled(&shipData[i]) && !IsDying(&shipData[i])
+                    && !shipData[i].IsDisabled() && !shipData[i].IsDying()
                     && shipData[i].curSystem == ship->curSystem
                     && IsThreatToPlayer(&shipData[i]))
                 break;
@@ -4565,7 +4565,7 @@ void AIFightThreatToParent(ShipObj *ship)
     count = 0;
     for (i = 0; i < kMaxShips; i++) {
         if (i != ship->index && i != ship->parentShip
-                && !IsDisabled(&shipData[i])
+                && !shipData[i].IsDisabled()
                 && shipData[i].curSystem == ship->curSystem) {
             if (i != 0) {
                 if (ship->parentShip == 0) {
@@ -4586,7 +4586,7 @@ void AIFightThreatToParent(ShipObj *ship)
             if (i == ship->index || i == ship->parentShip
                     || !shipData[i].active
                     || shipData[i].curSystem != ship->curSystem
-                    || IsDisabled(&shipData[i]))
+                    || shipData[i].IsDisabled())
                 continue;
             if (i != 0) {
                 if (ship->parentShip == 0) {
@@ -4625,7 +4625,7 @@ void AIFightEnemyThreatToPlayer(ShipObj *ship)
     count = 0;
     for (i = 1; i < kMaxShips; i++) {
         if (i != ship->index && i != 0
-                && !IsDisabled(&shipData[i]) && !IsDying(&shipData[i])
+                && !shipData[i].IsDisabled() && !shipData[i].IsDying()
                 && shipData[i].targetShip == 0
                 && ((int)shipData[i].aiState == kAIStateFightSh
                     || (int)shipData[i].aiState == kAIStateDefRet)
@@ -4636,7 +4636,7 @@ void AIFightEnemyThreatToPlayer(ShipObj *ship)
         for (;;) {
             i = Rand(kMaxShips - 1) + 1;
             if (i != ship->index && i != 0
-                    && !IsDisabled(&shipData[i]) && !IsDying(&shipData[i])
+                    && !shipData[i].IsDisabled() && !shipData[i].IsDying()
                     && shipData[i].targetShip == 0
                     && ((int)shipData[i].aiState == kAIStateFightSh
                         || (int)shipData[i].aiState == kAIStateDefRet)
@@ -4885,7 +4885,7 @@ void AICallForHelp(ShipObj *ship)
         return;
     if (commCount <= 0 && AIDoesShipLikePlayer(ship)
             && !ExtendedIsThreatToShip(ship, shipData)
-            && !IsDying(shipData) && !ShipIsCloaked(ship)) {
+            && !shipData->IsDying() && !ship->IsCloaked()) {
         PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
     strncpy(name, (char *)shipClass[ship->type].name, 0x3f);
     if (ship->specialMission != -1) {
@@ -4917,7 +4917,7 @@ void AIEscortFireUnprovoked(ShipObj *ship)
         return;
     target = ship->targetShip;
     if (target != -1) {
-        if (shipData[target].active != 0 && !IsDisabled(&shipData[target]))
+        if (shipData[target].active != 0 && !shipData[target].IsDisabled())
             AIFireTurret(ship);
         else
             ship->targetShip = -1;
@@ -5001,7 +5001,7 @@ short AIShipFriendStrength(ShipObj *ship)
     float ratio;
     float cap;
 
-    cap = ShipShieldCapacity(ship);
+    cap = ship->ShieldCapacity();
     if (cap > 0.0f)
         ratio = ship->shield / cap;
     else
@@ -5015,7 +5015,7 @@ short AIShipFriendStrength(ShipObj *ship)
 
     for (i = 0; i < kMaxShips; i++) {
         if (i != ship->index && shipData[i].active != 0
-                && IsDying(&shipData[i]) == 0) {
+                && shipData[i].IsDying() == 0) {
             strength = 0;
             if (shipData[i].parentShip == ship->index) {
                 strength = shipClass[shipData[i].type].strength;
@@ -5029,7 +5029,7 @@ short AIShipFriendStrength(ShipObj *ship)
                 strength = shipClass[shipData[i].type].strength;
             }
 
-            cap = ShipShieldCapacity(&shipData[i]);
+            cap = shipData[i].ShieldCapacity();
             if (cap > 0.0f)
                 ratio = shipData[i].shield / cap;
             if (ratio > kMaxShieldWeight)
@@ -5124,17 +5124,17 @@ void AIHandleCloaking(ShipObj *ship)
     Boolean found;
     short i;
 
-    if (!HasCloak(ship) || IsDisabled(ship)) {
+    if (!ship->HasCloak() || ship->IsDisabled()) {
         if (ship->cloak > 0.0f)
-            DoShipUncloak(ship);
+            ship->DoUncloak();
         return;
     }
-    if (CloakFuelUsage(ship) > 0 && ship->fuel <= 0.0f) {
-        DoShipUncloak(ship);
+    if (ship->CloakFuelUsage() > 0 && ship->fuel <= 0.0f) {
+        ship->DoUncloak();
         return;
     }
-    if (CloakShieldUsage(ship) > 0 && ship->shield <= 0.0f) {
-        DoShipUncloak(ship);
+    if (ship->CloakShieldUsage() > 0 && ship->shield <= 0.0f) {
+        ship->DoUncloak();
         return;
     }
 
@@ -5169,11 +5169,11 @@ void AIHandleCloaking(ShipObj *ship)
             wantCloak = 1;
     }
     if (shipClass[ship->type].flags2 & kCloakUntilClose) {
-        if (ShipIsCloaked(ship) && ship->targetShip != -1 && ship->aiState == kAIStateFightSh
+        if (ship->IsCloaked() && ship->targetShip != -1 && ship->aiState == kAIStateFightSh
                 && (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) > kCloakDistance
                     || FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) > kCloakDistance))
             wantCloak = 1;
-        if (ShipIsCloaked(ship) && ship->aiState == kAIStateAtkAster
+        if (ship->IsCloaked() && ship->aiState == kAIStateAtkAster
                 && ship->aiSubstate != kSubKillAst)
             wantCloak = 1;
     }
@@ -5182,13 +5182,13 @@ void AIHandleCloaking(ShipObj *ship)
             wantCloak = 1;
     }
     if (ship->aiType >= kShipTypeFighter && ship->parentShip != -1 && ship->aiSubstate == kSubFormFly
-            && ShipIsCloaked(&shipData[ship->parentShip]))
+            && shipData[ship->parentShip].IsCloaked())
         wantCloak = 1;
 
     if (wantCloak)
-        DoShipCloak(ship);
+        ship->DoCloak();
     else
-        DoShipUncloak(ship);
+        ship->DoUncloak();
 }
 
 // FUNCTION: EVNOVA 0x00412030
@@ -5232,9 +5232,9 @@ int32_t IsShipANearbyThreatToParent(ShipObj *ship, ShipObj *me, short range)
         goto reject;
     if (!ship->active)
         goto reject;
-    if (!ShipVisibleToShip(ship, me))
+    if (!ship->VisibleTo(me))
         goto reject;
-    if (IsDisabled(ship)) {
+    if (ship->IsDisabled()) {
         if (ship->escortOrder != kOrderAttack)
             goto reject;
     }
@@ -5279,8 +5279,6 @@ reject:
     return 0;
 }
 
-#define kModPlunderOdds     0x19    /* outfit mod: shifts the capture odds by modVal */
-
 #define kStrCargoWord       0x175   /* follows "tons of" (text TBC) */
 #define kStrPlunderTail     0x176   /* ends both messages (text TBC) */
 #define kStrShipSeized      0xa9    /* formerEscort == 0 (text TBC) */
@@ -5301,7 +5299,7 @@ void AIFindShipToPlunder(ShipObj *ship)
     for (i = 0; i < kMaxShips; i++) {
         if (i != ship->index && shipData[i].parentShip != ship->index
                 && shipData[i].active != 0 && shipData[i].boarded == 0
-                && IsDisabled(&shipData[i]) != 0 && shipData[i].specialMission == -1
+                && shipData[i].IsDisabled() != 0 && shipData[i].specialMission == -1
                 && (i == 0 || shipData[i].formerEscort >= 0
                     || shipData[i].aiType <= kShipTypeBraveTrader
                     || shipClass[shipData[i].type].inherentAI <= kShipTypeBraveTrader || armed != 0)
@@ -5359,7 +5357,7 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
     int32_t credits;
     short oddsL;
 
-    if (IsDying(target) != 0 || target->active == 0)
+    if (target->IsDying() != 0 || target->active == 0)
         return;
     avail = 0;
     taken = 0;
@@ -5382,7 +5380,7 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
     for (i = 0; i < kDefaultOutfitSlots; i++) {
         if (shipClass[me->type].defOutfCount[i] > 0) {
             for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[shipClass[me->type].defOutfID[i]].modType[j] == kModPlunderOdds
+                if (outfitSystem[shipClass[me->type].defOutfID[i]].modType[j] == OutfMod::Marines
                         && outfitSystem[shipClass[me->type].defOutfID[i]].modVal[j] > 0)
                     myStr += outfitSystem[i].modVal[j] * shipClass[me->type].defOutfCount[i];
             }
@@ -5391,7 +5389,7 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
     if (target->index == 0) {
         for (i = 0; i < kMaxOutfits; i++) {
             for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == kModPlunderOdds && outfitSystem[i].modVal[j] > 0)
+                if (outfitSystem[i].modType[j] == OutfMod::Marines && outfitSystem[i].modVal[j] > 0)
                     targStr += outfitSystem[i].modVal[j] * shipSystems[i];
             }
         }
@@ -5399,7 +5397,7 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
         for (i = 0; i < kDefaultOutfitSlots; i++) {
             if (shipClass[target->type].defOutfCount[i] > 0) {
                 for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[target->type].defOutfID[i]].modType[j] == kModPlunderOdds
+                    if (outfitSystem[shipClass[target->type].defOutfID[i]].modType[j] == OutfMod::Marines
                             && outfitSystem[shipClass[target->type].defOutfID[i]].modVal[j] > 0)
                         targStr += outfitSystem[i].modVal[j] * shipClass[target->type].defOutfCount[i];
                 }
@@ -5412,7 +5410,7 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
     for (i = 0; i < kDefaultOutfitSlots; i++) {
         if (shipClass[me->type].defOutfCount[i] > 0) {
             for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[shipClass[me->type].defOutfID[i]].modType[j] == kModPlunderOdds
+                if (outfitSystem[shipClass[me->type].defOutfID[i]].modType[j] == OutfMod::Marines
                         && outfitSystem[shipClass[me->type].defOutfID[i]].modVal[j] < 0)
                     oddsL -= outfitSystem[i].modVal[j] * shipClass[me->type].defOutfCount[i];
             }
@@ -5421,7 +5419,7 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
     if (target->index == 0) {
         for (i = 0; i < kMaxOutfits; i++) {
             for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == kModPlunderOdds && outfitSystem[i].modVal[j] < 0)
+                if (outfitSystem[i].modType[j] == OutfMod::Marines && outfitSystem[i].modVal[j] < 0)
                     oddsL += outfitSystem[i].modVal[j] * shipSystems[i];
             }
         }
@@ -5429,7 +5427,7 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
         for (i = 0; i < kDefaultOutfitSlots; i++) {
             if (shipClass[target->type].defOutfCount[i] > 0) {
                 for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[target->type].defOutfID[i]].modType[j] == kModPlunderOdds
+                    if (outfitSystem[shipClass[target->type].defOutfID[i]].modType[j] == OutfMod::Marines
                             && outfitSystem[shipClass[target->type].defOutfID[i]].modVal[j] < 0)
                         oddsL += outfitSystem[i].modVal[j] * shipClass[target->type].defOutfCount[i];
                 }
@@ -5543,7 +5541,7 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
         target->aiSubstate = kSubLoJack;
         target->boarded = 0;
         target->aiTimer = 150.0f;
-        target->armor = ShipArmorCapacity(target) * 0.66;
+        target->armor = target->ArmorCapacity() * 0.66;
         target->shield = 0;
     }
     if (target->index == 0) {
@@ -5587,7 +5585,7 @@ void AICalculateOddsAgainst(ShipObj *ship)
 
     for (i = 1; i < kMaxShips; i++) {
         if (i != ship->index && shipData[i].active
-            && !IsDisabled(&shipData[i])) {
+            && !shipData[i].IsDisabled()) {
             if (GovtAllies(shipData[i].govt, ship->govt)) {
                 friendly += shipClass[shipData[i].type].strength;
             } else if (GovtEnemies(shipData[i].govt, ship->govt)
@@ -5924,9 +5922,9 @@ void AIMaintainFormation(ShipObj *ship, Boolean snap)
         return;
     if (ship->formLeader < 0 || ship->formLeader >= kMaxShips)
         return;
-    step = ShipAccelRate(ship) * kAccelScale;
+    step = ship->AccelRate() * kAccelScale;
     if (ship->ionization > 0.0f) {
-        damp = ShipIonizationFactor(ship);
+        damp = ship->IonizationFactor();
         if (damp > kDampCap)
             damp = kDampCap;
         step *= 1.0 - damp;
@@ -6207,7 +6205,7 @@ void AIIssueEscortOrders(ShipObj *ship)
     for (i = 0; i < kAITypes; i++)
         advice[i] = -1;
     if (ship->aiType <= kShipTypeBraveTrader) {
-        if (ship->shield < ShipShieldCapacity(ship) * 0.66) {
+        if (ship->shield < ship->ShieldCapacity() * 0.66) {
             advice[0] = kOrderDefend;
         }
         else {
@@ -6226,7 +6224,7 @@ void AIIssueEscortOrders(ShipObj *ship)
                 theyCanHurtMe = AIInGunRange(&shipData[ship->targetShip], ship, 1);
                 iCanHurtThem = AIInGunRange(ship, &shipData[ship->targetShip], 1);
             }
-            preyDisabled = IsDisabled(&shipData[ship->targetShip]);
+            preyDisabled = shipData[ship->targetShip].IsDisabled();
         }
 
         if (preyDisabled != 0 && ship->aiState == kAIStatePlunder) {
@@ -6234,7 +6232,7 @@ void AIIssueEscortOrders(ShipObj *ship)
             advice[1] = kOrderRegroup;
             advice[2] = kOrderRegroup;
         }
-        else if (ship->shield < ShipShieldCapacity(ship) * 0.33) {
+        else if (ship->shield < ship->ShieldCapacity() * 0.33) {
             if (preyDisabled != 0) {
                 advice[0] = kOrderAttack;
                 advice[1] = kOrderAttack;
@@ -6249,7 +6247,7 @@ void AIIssueEscortOrders(ShipObj *ship)
             }
             advice[2] = kOrderDefend;
         }
-        else if (ship->shield < ShipShieldCapacity(ship) * 0.66) {
+        else if (ship->shield < ship->ShieldCapacity() * 0.66) {
             if (preyDisabled != 0) {
                 advice[0] = kOrderAttack;
             }
@@ -6330,14 +6328,14 @@ void AICheckParentExists(ShipObj *ship)
     if (ship->parentShip < 0 || ship->parentShip >= kMaxShips)
         return;
     if (shipData[ship->parentShip].active == 0
-            || IsDisabled(&shipData[ship->parentShip])) {
+            || shipData[ship->parentShip].IsDisabled()) {
     chosen = -1;
     for (i = 1; i < kMaxShips; i++) {
         if (shipData[i].active == 0)
             continue;
         if (prevParent[i] != ship->parentShip)
             continue;
-        if (IsDisabled(&shipData[i]))
+        if (shipData[i].IsDisabled())
             continue;
         mass = shipClass[shipData[i].type].mass;
         if (mass > best || chosen == -1) {
@@ -6428,7 +6426,7 @@ void AIMakeShipEmergeFromHyperGate(ShipObj *ship, short stellar)
     ship->aiTimer = 60.0f;
     ship->jumpTimer = -1.0f;
     if (stellar >= 0 && stellar < kMaxStellars) {
-        if (ShipFuelCapacity(ship) > 0)
+        if (ship->FuelCapacity() > 0)
             ship->lastStellar = stellar;
         else
             ship->lastStellar = -2;

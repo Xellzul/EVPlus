@@ -23,7 +23,6 @@ extern void AdjustHandleSize(Handle h, int32_t newSize);
 extern void PutSpriteInLayer(struct SpriteRec *sprite,
                              struct SpriteLayerRec *layer);
 extern Boolean EVBugResourceFieldTest(short field);
-extern Boolean ShipCanSelfRepair(ShipObj *ship);
 struct RLEPixelData;
 extern void FixupRLEPixelData(unsigned char *tokens, struct RLEPixelData *header);
 extern void GetCharResourceIntroIDs(const unsigned char *name, short *a, short *b,

@@ -3,6 +3,7 @@
 #include "burgermath.h"
 #include "ai.h"
 #include "game.h"
+#include "outfitmods.h"
 #include "player.h"
 #include "ships.h"
 #include "gameutil.h"
@@ -77,8 +78,8 @@ short FindNearestShipToPlayer(void)
     float dist;
     Boolean hasDetect1;
 
-    hasDetect1 = ShipCanTargetUntargetableShips(shipData);
-    hasDetect2 = ShipCanTargetCloakedShips(shipData);
+    hasDetect1 = shipData->CanTargetUntargetableShips();
+    hasDetect2 = shipData->CanTargetCloakedShips();
     best = -1;
     bestDist = -1.0f;
     for (i = 0; i < kMaxShips; i++) {
@@ -88,9 +89,9 @@ short FindNearestShipToPlayer(void)
             continue;
         if (shipData[i].parentShip == 0)
             continue;
-        if (IsDying(&shipData[i]))
+        if (shipData[i].IsDying())
             continue;
-        if (ShipIsCloaked(&shipData[i]) && !hasDetect2)
+        if (shipData[i].IsCloaked() && !hasDetect2)
             continue;
         if (shipData[i].curSystem != shipData[0].curSystem)
             continue;
@@ -194,8 +195,8 @@ short FindNearestThreatToPlayer(void)
     float dy;
     float dist;
 
-    hasDetect1 = ShipCanTargetUntargetableShips(shipData);
-    hasDetect2 = ShipCanTargetCloakedShips(shipData);
+    hasDetect1 = shipData->CanTargetUntargetableShips();
+    hasDetect2 = shipData->CanTargetCloakedShips();
     best = -1;
     bestDist = -1.0f;
     for (i = 0; i < kMaxShips; i++) {
@@ -203,11 +204,11 @@ short FindNearestThreatToPlayer(void)
             continue;
         if (!shipData[i].active)
             continue;
-        if (IsDying(&shipData[i]))
+        if (shipData[i].IsDying())
             continue;
-        if (IsDisabled(&shipData[i]))
+        if (shipData[i].IsDisabled())
             continue;
-        if (ShipIsCloaked(&shipData[i]) && !hasDetect2)
+        if (shipData[i].IsCloaked() && !hasDetect2)
             continue;
         if (shipData[i].parentShip == 0)
             continue;
@@ -294,7 +295,7 @@ Boolean SuitableMissileType(short weap, ShipObj *ship)
 {
     short turns;
 
-    turns = ShipTurnRate(ship);
+    turns = ship->TurnRate();
     if ((weaponStats[weap].flags & kWeapNoFastTargets) != 0)
         if (turns > 3)
             return 0;
@@ -316,7 +317,7 @@ void ColorCodeShip(ShipObj *ship, RGBColor *color)
         color->blue = 0xffff;
         return;
     }
-    if (IsDisabled(ship)) {
+    if (ship->IsDisabled()) {
         *color = rgbDarkGrey;
     } else if (IsThreatToPlayer(ship)) {
         color->red = 0xffff;
@@ -351,29 +352,29 @@ void ColorCodeShip(ShipObj *ship, RGBColor *color)
 
 // FUNCTION: EVNOVA 0x004687b0
 // MAC: _IsDisabled i386 0x00002ce6 ppc 0x0000397c
-Boolean IsDisabled(ShipObj *ship)
+Boolean ShipObj::IsDisabled()
 {
-    short govt;
+    short govtIdx;
     short mission;
 
-    govt = ship->govt;
-    if (govt != -1 && (govtData[govt].flags & kGovtAlwaysDisabled) != 0)
+    govtIdx = govt;
+    if (govtIdx != -1 && (govtData[govtIdx].flags & kGovtAlwaysDisabled) != 0)
         return 1;
-    if (ship->index > 0) {
-        mission = ship->specialMission;
+    if (index > 0) {
+        mission = specialMission;
         if (mission != -1 && currentMissionObjectives[mission].active != '\0'
                 && currentMissions[mission].shipGoal == kMissionGoalRescue
                 && currentMissionObjectives[mission].objectivesDone == '\0'
-                && ship->boarded == '\0')
+                && boarded == '\0')
             return 1;
     }
-    if (ship->index > 0 && ship->defenseStellar != -1)
+    if (index > 0 && defenseStellar != -1)
         return 0;
-    if ((shipClass[ship->type].flags & kShipArmorDisableTenth) != 0) {
-        if (ship->armor * 100.0f < ShipArmorCapacity(ship) * 10.0)
+    if ((Class().flags & kShipArmorDisableTenth) != 0) {
+        if (armor * 100.0f < ArmorCapacity() * 10.0)
             return 1;
     } else {
-        if (ship->armor * 100.0f < ShipArmorCapacity(ship) * 33.333)
+        if (armor * 100.0f < ArmorCapacity() * 33.333)
             return 1;
     }
     return 0;
@@ -381,11 +382,11 @@ Boolean IsDisabled(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x004688e0
 // MAC: _IsDying i386 0x0000253d ppc 0x00002ef0
-unsigned char IsDying(ShipObj *ship)
+unsigned char ShipObj::IsDying()
 {
-    if (ship->deathTimer > 0.0f)
+    if (deathTimer > 0.0f)
         return 1;
-    if (ship->armor <= 0.0f)
+    if (armor <= 0.0f)
         return 1;
     return 0;
 }
@@ -399,9 +400,9 @@ Boolean WeaponHasAmmo(ShipObj *ship, short weaponIndex)
     if (ship->index != 0
             && (weaponStats[weaponIndex].flags2 & kWeapFlagAIRestricted) != 0)
         return 0;
-    if (ShipIsCloaked(ship) && (weaponStats[weaponIndex].flags2 & kWeapFireWhileCloaked) == 0)
+    if (ship->IsCloaked() && (weaponStats[weaponIndex].flags2 & kWeapFireWhileCloaked) == 0)
         return 0;
-    if ((weaponStats[weaponIndex].flags2 & kWeapNeedsKeyCarried) != 0 && !KeyCarriedShipTypeOnboard(ship))
+    if ((weaponStats[weaponIndex].flags2 & kWeapNeedsKeyCarried) != 0 && !ship->KeyCarriedShipTypeOnboard())
         return 0;
     if (weaponStats[weaponIndex].guidance == kGuidanceBay) {
         if (ship->weap[weaponIndex].ammo <= 0)

@@ -3,6 +3,7 @@
 #include "burgermath.h"
 #include "ai.h"
 #include "game.h"
+#include "outfitmods.h"
 #include "player.h"
 #include "render.h"
 #include "ships.h"
@@ -14,21 +15,21 @@ EXTERN_C_BEGIN
 
 // FUNCTION: EVNOVA 0x00464a90
 // MAC: _ShipVisibleToShip i386 0x0000971c ppc 0x0000ba14
-Boolean ShipVisibleToShip(ShipObj *ship, ShipObj *viewer)
+Boolean ShipObj::VisibleTo(ShipObj *viewer)
 {
-    if (AIShipIsEmergingFromHypergate(ship))
+    if (AIShipIsEmergingFromHypergate(this))
         return 0;
-    if (ShipIsCloaked(ship)) {
+    if (IsCloaked()) {
         float d;
 
-        if (viewer->parentShip == ship->index) {
-            if (HasCloak(viewer))
+        if (viewer->parentShip == index) {
+            if (viewer->HasCloak())
                 return 1;
         }
         if (viewer->seesCloaked[0] == 1) {
-            d = FloatAbs(viewer->pos.x - ship->pos.x);
+            d = FloatAbs(viewer->pos.x - pos.x);
             if (d <= kDetectRange) {
-                d = FloatAbs(viewer->pos.y - ship->pos.y);
+                d = FloatAbs(viewer->pos.y - pos.y);
                 if (d <= kDetectRange)
                     return 1;
             }
@@ -38,340 +39,185 @@ Boolean ShipVisibleToShip(ShipObj *ship, ShipObj *viewer)
     return 1;
 }
 
-#define kOutfModType13 0xd
-#define kOutfModType14 0xe
-#define kOutfModType30 0x1e
-#define kOutfModVal30Bit2 4
-#define kOutfModVal30Bit3 8
-#define kOutfModNibblePair 0x11
-
-/*
- * Every one of those four guards falls back to the default scan rather than to
- * a no, which is why they are written as a chain of `if (!x) goto the scan`
- * rather than a single `&&`.
- */
+/* Cloak value bits */
+#define kCloakRadarVisible 2
+#define kCloakZeroesShields 4
+#define kCloakDecloakOnHit 8
+#define kCloakArea 0x1000
+/* CloakScanner value bits */
+#define kScanSeeOnRadar 1
+#define kScanSeeOnScreen 2
+#define kScanTargetUntargetable 4
+#define kScanTargetCloaked 8
 
 // FUNCTION: EVNOVA 0x00464b50
 // MAC: _HasCloak i386 0x000095f2 ppc 0x0000b85c
-Boolean HasCloak(ShipObj *ship)
+Boolean ShipObj::HasCloak()
 {
-    short i;
-    short j;
-
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType17)
-                        return 1;
-                }
-            }
-        }
-    } else {
-        if (ship->parentShip != -1 && IsShipInCloseForm(ship) &&
-            ShipIsCloaked(&shipData[ship->parentShip]) &&
-            HasAreaCloak(&shipData[ship->parentShip]))
+    if (IsPlayer()) {
+        if (PlayerHasMod(OutfMod::Cloak))
             return 1;
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType17)
-                        return 1;
-                }
-            }
-        }
+    } else {
+        if (parentShip != -1 && IsShipInCloseForm(this) &&
+            shipData[parentShip].IsCloaked() &&
+            shipData[parentShip].HasAreaCloak())
+            return 1;
+        if (DefaultHasMod(Class(), OutfMod::Cloak))
+            return 1;
     }
     return 0;
 }
 
-/* the same question as HasCloak but only for values carrying bit 12 */
-#define kOutfModVal17Bit12 0x1000
-
+/* the same question as HasCloak but only for area cloaks */
 // FUNCTION: EVNOVA 0x00464c80
 // MAC: _HasAreaCloak i386 0x00003d49 ppc 0x00004e84
-Boolean HasAreaCloak(ShipObj *ship)
+Boolean ShipObj::HasAreaCloak()
 {
-    short i;
-    short j;
-
-    if (ship->index == 0) {
-        if (playerHasAreaCloak != -1) {
-            if (playerHasAreaCloak == 1)
+    if (IsPlayer()) {
+        if (playerStats.hasAreaCloak != -1) {
+            if (playerStats.hasAreaCloak == 1)
                 return 1;
         } else {
-            playerHasAreaCloak = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType17 &&
-                            (outfitSystem[i].modVal[j] & kOutfModVal17Bit12) != 0) {
-                            playerHasAreaCloak = 1;
-                            return 1;
-                        }
-                    }
-                }
+            playerStats.hasAreaCloak = 0;
+            if (ForEachPlayerMod(OutfMod::Cloak,
+                                 [](short val, short) { return (val & kCloakArea) != 0; })) {
+                playerStats.hasAreaCloak = 1;
+                return 1;
             }
         }
     } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                            kOutfModType17 &&
-                        (outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] &
-                            kOutfModVal17Bit12) != 0)
-                        return 1;
-                }
-            }
-        }
+        if (ForEachDefaultMod(Class(), OutfMod::Cloak,
+                              [](short val, short) { return (val & kCloakArea) != 0; }))
+            return 1;
     }
     return 0;
 }
 
-/*
- * The first owned mod-type-17 outfit's high nibble (win 0x00464db0). What
- * that mod type means is not established here — only that its modVal is read
- * as two nibbles and this returns the upper one, with 0 for anything but the
- * player's own ship.
- */
+/* the first owned cloak outfit's fuel nibble (bits 4-7); 0 for anything but the player's ship */
 // FUNCTION: EVNOVA 0x00464db0
 // MAC: _CloakFuelUsage i386 0x00003e25 ppc 0x00004fb8
-short CloakFuelUsage(ShipObj *ship)
+short ShipObj::CloakFuelUsage()
 {
-    short i;
-    short j;
+    short usage = 0;
 
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModNibblePair)
-                        return (outfitSystem[i].modVal[j] >> 4) & 0xf;
-                }
-            }
-        }
+    if (IsPlayer()) {
+        ForEachPlayerMod(OutfMod::Cloak, [&](short val, short) {
+            usage = (val >> 4) & 0xf;
+            return true;
+        });
     }
-    return 0;
+    return usage;
 }
 
 // FUNCTION: EVNOVA 0x00464e30
 // MAC: _CloakZeroesShields i386 0x00003e9d ppc 0x00005040
-Boolean CloakZeroesShields(ShipObj *ship)
+Boolean ShipObj::CloakZeroesShields()
 {
-    short i;
-    short j;
+    Boolean result = 0;
+    auto test = [&](short val, short) {
+        result = (val & kCloakZeroesShields) != 0;
+        return true;
+    };
 
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType17) {
-                        if ((outfitSystem[i].modVal[j] & kOutfModVal30Bit2) != 0)
-                            return 1;
-                        return 0;
-                    }
-                }
-            }
-        }
-    } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType17) {
-                        if ((outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] &
-                             kOutfModVal30Bit2) != 0)
-                            return 1;
-                        return 0;
-                    }
-                }
-            }
-        }
-    }
-    return 0;
+    if (IsPlayer())
+        ForEachPlayerMod(OutfMod::Cloak, test);
+    else
+        ForEachDefaultMod(Class(), OutfMod::Cloak, test);
+    return result;
 }
 
 // FUNCTION: EVNOVA 0x00464f60
 // MAC: _ShipDecloaksWhenHit i386 0x00003f68 ppc 0x00005180
-Boolean ShipDecloaksWhenHit(ShipObj *ship)
+Boolean ShipObj::DecloaksWhenHit()
 {
-    short i;
-    short j;
+    Boolean result = 0;
+    auto test = [&](short val, short) {
+        result = (val & kCloakDecloakOnHit) != 0;
+        return true;
+    };
 
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType17) {
-                        if ((outfitSystem[i].modVal[j] & kOutfModVal30Bit3) != 0)
-                            return 1;
-                        return 0;
-                    }
-                }
-            }
-        }
-    } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType17) {
-                        if ((outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] &
-                             kOutfModVal30Bit3) != 0)
-                            return 1;
-                        return 0;
-                    }
-                }
-            }
-        }
-    }
-    return 0;
+    if (IsPlayer())
+        ForEachPlayerMod(OutfMod::Cloak, test);
+    else
+        ForEachDefaultMod(Class(), OutfMod::Cloak, test);
+    return result;
 }
 
 // FUNCTION: EVNOVA 0x00465090
 // MAC: _CloakShieldUsage i386 0x00004033 ppc 0x000052c0
-short CloakShieldUsage(ShipObj *ship)
+short ShipObj::CloakShieldUsage()
 {
-    short i;
-    short j;
+    short usage = 0;
+    auto take = [&](short val, short) {
+        usage = (val >> 8) & 0xf;
+        return true;
+    };
 
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType17)
-                        return (outfitSystem[i].modVal[j] >> 8) & 0xf;
-                }
-            }
-        }
-    } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType17)
-                        return (outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] >>
-                                8) & 0xf;
-                }
-            }
-        }
-    }
-    return 0;
+    if (IsPlayer())
+        ForEachPlayerMod(OutfMod::Cloak, take);
+    else
+        ForEachDefaultMod(Class(), OutfMod::Cloak, take);
+    return usage;
 }
-
-/*
- * A non-matching bit does NOT stop the scan - the walk keeps going, so the
- * test is one `&&` condition rather than a nested pair with their own
- * epilogues.
- */
-#define kOutfModVal17Bit1 2
 
 // FUNCTION: EVNOVA 0x004651a0
 // MAC: _ShipCloakVisibleOnRadar i386 0x000040f8 ppc 0x000053f8
-Boolean ShipCloakVisibleOnRadar(ShipObj *ship)
+Boolean ShipObj::CloakVisibleOnRadar()
 {
-    short i;
-    short j;
+    auto visible = [](short val, short) { return (val & kCloakRadarVisible) != 0; };
 
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType17 &&
-                        (outfitSystem[i].modVal[j] & kOutfModVal17Bit1) != 0)
-                        return 1;
-                }
-            }
-        }
-    } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                            kOutfModType17 &&
-                        (outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] &
-                            kOutfModVal17Bit1) != 0)
-                        return 1;
-                }
-            }
-        }
-    }
-    return 0;
+    if (IsPlayer())
+        return ForEachPlayerMod(OutfMod::Cloak, visible);
+    return ForEachDefaultMod(Class(), OutfMod::Cloak, visible);
 }
 
 #define kPersTypeAlways 0x3ff
-#define kOutfModVal30Bit0 1
-#define kOutfModVal30Bit1 2
 
 // FUNCTION: EVNOVA 0x004652a0
 // MAC: _ShipCanSeeCloakedShips i386 0x000041a9 ppc 0x000054f4
-Boolean ShipCanSeeCloakedShips(ShipObj *ship, short which)
+Boolean ShipObj::CanSeeCloakedShips(short which)
 {
-    short i;
-    short j;
-
-    if (ship->persType == kPersTypeAlways)
+    if (persType == kPersTypeAlways)
         return 1;
-    if (ship->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType30) {
-                        if ((outfitSystem[i].modVal[j] & kOutfModVal30Bit1) != 0 &&
-                            which == 0)
-                            return 1;
-                        if ((outfitSystem[i].modVal[j] & kOutfModVal30Bit0) != 0 &&
-                            which == 1)
-                            return 1;
-                    }
-                }
-            }
-        }
+    if (IsPlayer()) {
+        if (ForEachPlayerMod(OutfMod::CloakScanner, [&](short val, short) {
+                if ((val & kScanSeeOnScreen) != 0 &&
+                    which == 0)
+                    return true;
+                if ((val & kScanSeeOnRadar) != 0 &&
+                    which == 1)
+                    return true;
+                return false;
+            }))
+            return 1;
     } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                        kOutfModType30) {
-                        if (which == 0 &&
-                            (outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] &
-                                kOutfModVal30Bit1) != 0)
-                            return 1;
-                        if (which == 1 &&
-                            (outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] &
-                                kOutfModVal30Bit0) != 0)
-                            return 1;
-                    }
-                }
-            }
-        }
+        if (ForEachDefaultMod(Class(), OutfMod::CloakScanner, [&](short val, short) {
+                if (which == 0 &&
+                    (val & kScanSeeOnScreen) != 0)
+                    return true;
+                if (which == 1 &&
+                    (val & kScanSeeOnRadar) != 0)
+                    return true;
+                return false;
+            }))
+            return 1;
     }
     return 0;
 }
 
 // FUNCTION: EVNOVA 0x00465410
 // MAC: _HasDensityScanner i386 0x000042c0 ppc 0x00005634
-Boolean HasDensityScanner(ShipObj *ship)
+Boolean ShipObj::HasDensityScanner()
 {
-    short i;
-    short j;
-
-    if (ship->index == 0) {
-        if (playerHasDensityScanner >= 0) {
-            if (playerHasDensityScanner != 0)
+    if (IsPlayer()) {
+        if (playerStats.hasDensityScanner >= 0) {
+            if (playerStats.hasDensityScanner != 0)
                 return 1;
         } else {
-            playerHasDensityScanner = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType13) {
-                            playerHasDensityScanner = 1;
-                            return 1;
-                        }
-                    }
-                }
+            playerStats.hasDensityScanner = 0;
+            if (PlayerHasMod(OutfMod::DensityScanner)) {
+                playerStats.hasDensityScanner = 1;
+                return 1;
             }
         }
     }
@@ -381,36 +227,26 @@ Boolean HasDensityScanner(ShipObj *ship)
 /* the literal twin of the above, one modifier type along and its own cache */
 // FUNCTION: EVNOVA 0x004654b0
 // MAC: _HasIFF i386 0x00004348 ppc 0x000056d4
-Boolean HasIFF(ShipObj *ship)
+Boolean ShipObj::HasIFF()
 {
-    short i;
-    short j;
-
-    if (ship->index == 0) {
-        if (playerHasIFF >= 0) {
-            if (playerHasIFF != 0)
+    if (IsPlayer()) {
+        if (playerStats.hasIFF >= 0) {
+            if (playerStats.hasIFF != 0)
                 return 1;
         } else {
-            playerHasIFF = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType14) {
-                            playerHasIFF = 1;
-                            return 1;
-                        }
-                    }
-                }
+            playerStats.hasIFF = 0;
+            if (PlayerHasMod(OutfMod::IFF)) {
+                playerStats.hasIFF = 1;
+                return 1;
             }
         }
     }
     return 0;
 }
 
-/* ShipCanCloak (no mac symbol). */
 // FUNCTION: EVNOVA 0x00467e80
 // MAC: _ShipCanCloak i386 0x0000553c ppc 0x00006b28
-Boolean ShipCanCloak(ShipObj *ship)
+Boolean ShipObj::CanCloak()
 {
     short idx;
     short i;
@@ -419,16 +255,16 @@ Boolean ShipCanCloak(ShipObj *ship)
     Boolean nibbleLo;
     Boolean nibbleHi;
 
-    if (IsDisabled(ship))
+    if (IsDisabled())
         return 0;
 
     found = 0;
-    idx = ship->index;
+    idx = index;
     if (idx == 0) {
         for (i = 0; i < kMaxOutfits; i++) {
             if (shipSystems[i] > 0) {
                 for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[i].modType[j] == kOutfModType17) {
+                    if (outfitSystem[i].modType[j] == OutfMod::Cloak) {
                         found = 1;
                         /* BUG: both branches read modType[j] for modVal[j], so the nibbles are always 1 and 0 */
                         nibbleLo = (outfitSystem[i].modType[j] >> 4) & 0xf;
@@ -440,13 +276,13 @@ Boolean ShipCanCloak(ShipObj *ship)
         }
     } else {
         for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
+            if (Class().defOutfCount[i] > 0) {
                 for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                            kOutfModType17) {
+                    if (outfitSystem[Class().defOutfID[i]].modType[j] ==
+                            OutfMod::Cloak) {
                         found = 1;
-                        nibbleLo = (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] >> 4) & 0xf;
-                        nibbleHi = (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] >> 8) & 0xf;
+                        nibbleLo = (outfitSystem[Class().defOutfID[i]].modType[j] >> 4) & 0xf;
+                        nibbleHi = (outfitSystem[Class().defOutfID[i]].modType[j] >> 8) & 0xf;
                         break;
                     }
                 }
@@ -456,16 +292,16 @@ Boolean ShipCanCloak(ShipObj *ship)
 
     if (found) {
         if (nibbleLo != 0) {
-            if (ship->fuel <= 0.0f)
+            if (fuel <= 0.0f)
                 return 0;
         }
         if (nibbleHi != 0) {
-            if (ship->shield <= 0.0f)
+            if (shield <= 0.0f)
                 return 0;
         }
 
-        if (idx == 0 && ship->jumpTimer > 0.0f
-            && (shipClass[ship->type].flags2 & kShipCloaksToJump) == 0)
+        if (idx == 0 && jumpTimer > 0.0f
+            && (Class().flags2 & kShipCloaksToJump) == 0)
             return 0;
         return 1;
     }
@@ -474,20 +310,20 @@ Boolean ShipCanCloak(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x004680d0
 // MAC: _DoShipCloak i386 0x0000de73 ppc 0x00011490
-void DoShipCloak(ShipObj *ship)
+void ShipObj::DoCloak()
 {
-    if (!ShipIsCloaked(ship)) {
-        if (ship->index == 0 && ship->cloakDir <= 0)
+    if (!IsCloaked()) {
+        if (IsPlayer() && cloakDir <= 0)
             PlaySound(cloakSnd[1], 8, gSoundVolume, gSoundVolume);
-        if (ship->cloak <= 0.0f) {
-            ship->cloakDir = 1;
+        if (cloak <= 0.0f) {
+            cloakDir = 1;
         } else {
-            if (ship->cloakDir < 0)
-                ship->cloakDir = 0;
+            if (cloakDir < 0)
+                cloakDir = 0;
         }
-        if (ship->shield > 0.0f && CloakZeroesShields(ship)) {
-            ship->shield = 0;
-            if (ship->index == 0)
+        if (shield > 0.0f && CloakZeroesShields()) {
+            shield = 0;
+            if (IsPlayer())
                 statusRedraw[kRedrawShield] = 1;
         }
     }
@@ -495,73 +331,56 @@ void DoShipCloak(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x00468190
 // MAC: _DoShipUncloak i386 0x0000df55 ppc 0x000115f0
-void DoShipUncloak(ShipObj *ship)
+void ShipObj::DoUncloak()
 {
-    if (ShipIsCloaked(ship)) {
-        if (ship->index == 0 && ship->cloakDir >= 0)
+    if (IsCloaked()) {
+        if (IsPlayer() && cloakDir >= 0)
             PlaySound(cloakSnd[0], 8, gSoundVolume, gSoundVolume);
-        if (ship->cloak > 0.0f) {
-            ship->cloakDir = -1;
+        if (cloak > 0.0f) {
+            cloakDir = -1;
         } else {
-            if (ship->cloakDir > 0)
-                ship->cloakDir = 0;
+            if (cloakDir > 0)
+                cloakDir = 0;
         }
     }
 }
 
 // FUNCTION: EVNOVA 0x0046c7a0
 // MAC: _ShipIsCloaked i386 0x0000255f ppc 0x00002f20
-Boolean ShipIsCloaked(ShipObj *ship)
+Boolean ShipObj::IsCloaked()
 {
-    float cloak;
+    float level;
 
-    cloak = ship->cloak;
-    if (cloak > 24.0f && ship->cloakDir >= 0)
+    level = cloak;
+    if (level > 24.0f && cloakDir >= 0)
         return 1;
-    if (cloak > 8.0f && ship->cloakDir < 0)
+    if (level > 8.0f && cloakDir < 0)
         return 1;
-    if (cloak > 16.0f)
+    if (level > 16.0f)
         return 1;
     return 0;
 }
 
 // FUNCTION: EVNOVA 0x0046c930
 // MAC: _ShipCanTargetUntargetableShips i386 0x0000238f ppc 0x00002c90
-Boolean ShipCanTargetUntargetableShips(ShipObj *ship)
+Boolean ShipObj::CanTargetUntargetableShips()
 {
-    short i;
-    short j;
+    auto scanner = [](short val, short) { return (val & kScanTargetUntargetable) != 0; };
 
-    if (ship->index == 0) {
-        if (playerCanTargetUntargetableShips >= 0) {
-            if (playerCanTargetUntargetableShips != 0)
+    if (IsPlayer()) {
+        if (playerStats.canTargetUntargetableShips >= 0) {
+            if (playerStats.canTargetUntargetableShips != 0)
                 return 1;
         } else {
-            playerCanTargetUntargetableShips = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType30 &&
-                            (outfitSystem[i].modVal[j] & kOutfModVal30Bit2) != 0) {
-                            playerCanTargetUntargetableShips = 1;
-                            return 1;
-                        }
-                    }
-                }
+            playerStats.canTargetUntargetableShips = 0;
+            if (ForEachPlayerMod(OutfMod::CloakScanner, scanner)) {
+                playerStats.canTargetUntargetableShips = 1;
+                return 1;
             }
         }
     } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                            kOutfModType30 &&
-                        (outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] &
-                            kOutfModVal30Bit2) != 0)
-                        return 1;
-                }
-            }
-        }
+        if (ForEachDefaultMod(Class(), OutfMod::CloakScanner, scanner))
+            return 1;
     }
     return 0;
 }
@@ -570,41 +389,24 @@ Boolean ShipCanTargetUntargetableShips(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x0046ca60
 // MAC: _ShipCanTargetCloakedShips i386 0x00002466 ppc 0x00002dc0
-Boolean ShipCanTargetCloakedShips(ShipObj *ship)
+Boolean ShipObj::CanTargetCloakedShips()
 {
-    short i;
-    short j;
+    auto scanner = [](short val, short) { return (val & kScanTargetCloaked) != 0; };
 
-    if (ship->index == 0) {
-        if (playerCanTargetCloakedShips >= 0) {
-            if (playerCanTargetCloakedShips != 0)
+    if (IsPlayer()) {
+        if (playerStats.canTargetCloakedShips >= 0) {
+            if (playerStats.canTargetCloakedShips != 0)
                 return 1;
         } else {
-            playerCanTargetCloakedShips = 0;
-            for (i = 0; i < kMaxOutfits; i++) {
-                if (shipSystems[i] > 0) {
-                    for (j = 0; j < kOutfMods; j++) {
-                        if (outfitSystem[i].modType[j] == kOutfModType30 &&
-                            (outfitSystem[i].modVal[j] & kOutfModVal30Bit3) != 0) {
-                            playerCanTargetCloakedShips = 1;
-                            return 1;
-                        }
-                    }
-                }
+            playerStats.canTargetCloakedShips = 0;
+            if (ForEachPlayerMod(OutfMod::CloakScanner, scanner)) {
+                playerStats.canTargetCloakedShips = 1;
+                return 1;
             }
         }
     } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[ship->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[ship->type].defOutfID[i]].modType[j] ==
-                            kOutfModType30 &&
-                        (outfitSystem[shipClass[ship->type].defOutfID[i]].modVal[j] &
-                            kOutfModVal30Bit3) != 0)
-                        return 1;
-                }
-            }
-        }
+        if (ForEachDefaultMod(Class(), OutfMod::CloakScanner, scanner))
+            return 1;
     }
     return 0;
 }

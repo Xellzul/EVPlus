@@ -69,8 +69,8 @@ void DrawStatusRadar(Boolean highlight)
         return;
     if (playerIsLanded)
         highlight = 1;
-    hasIFF = HasIFF(shipData);
-    hasDensity = HasDensityScanner(shipData);
+    hasIFF = shipData->HasIFF();
+    hasDensity = shipData->HasDensityScanner();
     SetGWorldContainer(&loadPort);
     srcRect = statusOffRect[kRadarRect];
     dstRect = srcRect;
@@ -139,8 +139,8 @@ void DrawStatusRadar(Boolean highlight)
             for (i = 1; i < kMaxShips; i++) {
                 if (shipData[i].active != 0 &&
                     shipData[i].curSystem == shipData[0].curSystem) {
-                    if (ShipIsCloaked(&shipData[i]) != 0) {
-                        if (ShipCloakVisibleOnRadar(&shipData[i]) != 0 ||
+                    if (shipData[i].IsCloaked() != 0) {
+                        if (shipData[i].CloakVisibleOnRadar() != 0 ||
                             shipData[0].seesCloaked[1] == 1)
                             visible = 1;
                         else

@@ -192,7 +192,7 @@ void PortDialog::Hit(short item)
     } else if (item == 4) {
         uninhabited = SpobUninhabited(dockedPort);
         if (uninhabited == 0) {
-            n = ShipFuelCapacity(shipData);
+            n = shipData->FuelCapacity();
             shipData->fuel = (short)shipData->fuel;
             n -= shipData->fuel;
             if (dockedPort->dominated == 0) {

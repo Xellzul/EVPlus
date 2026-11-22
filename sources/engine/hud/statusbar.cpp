@@ -34,7 +34,7 @@ void RedrawStatus(Boolean copyToScreen)
             GetCWindowPortRect(gWind)->bottom);
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
              &statusOffPort.bounds, &box, 0, 0);
-    if (HasIFF(shipData)) {
+    if (shipData->HasIFF()) {
         SetGWorldContainer(&loadPort);
         box2 = statusOffRect[0];
         // BUG (all versions): offsets box, but paints the unshifted box2 (status-bar coordinates);

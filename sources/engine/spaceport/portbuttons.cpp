@@ -20,7 +20,7 @@ void PlanetButtons::Update(short)
     Boolean noShips = (dockedPort->flags & kSpobUninhabited);
     bool live[kPortButtons] = {
         true,
-        shipData->credits > 0 && noShips == 0 && shipData->fuel < ShipFuelCapacity(shipData),
+        shipData->credits > 0 && noShips == 0 && shipData->fuel < shipData->FuelCapacity(),
         (dockedPort->flags & kSpobTradeCenter) != 0,
         (dockedPort->flags & kSpobHasOutfitter) != 0,
         (dockedPort->flags & kSpobHasShipyard) != 0,

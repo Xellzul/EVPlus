@@ -399,7 +399,7 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x101);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x2c));
-        NumToString(CE_TruncF32(ShipTurnRate(shipData) * 30.0f), (StringPtr)buf);
+        NumToString(CE_TruncF32(shipData->TurnRate() * 30.0f), (StringPtr)buf);
         DrawString((const unsigned char *)buf);
         DrawIndString(kGameStrList, 0x102);
 
@@ -408,7 +408,7 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x103);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x3c));
-        NumToString(CE_TruncF32(ShipAccelRate(shipData) * 2500.0), (StringPtr)buf);
+        NumToString(CE_TruncF32(shipData->AccelRate() * 2500.0), (StringPtr)buf);
         DrawString((const unsigned char *)buf);
 
         RGBForeColor(&rgbLightGrey);
@@ -417,9 +417,9 @@ void PlayerInfoDialogUpdate(void)
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x4c));
         if (strictPlay)
-            NumToString(CE_TruncF32(ShipMaxSpeed(shipData) * 100.0f), (StringPtr)buf);
+            NumToString(CE_TruncF32(shipData->MaxSpeed() * 100.0f), (StringPtr)buf);
         else
-            NumToString(CE_TruncF32(ShipMaxSpeed(shipData) * 100.0f *
+            NumToString(CE_TruncF32(shipData->MaxSpeed() * 100.0f *
                                     0.6666666666666666), (StringPtr)buf);
         DrawString((const unsigned char *)buf);
 
@@ -440,11 +440,11 @@ void PlayerInfoDialogUpdate(void)
         DrawString(shieldString[1]);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x50), (box.top + 0x5c));
-        if (ShipShieldCapacity(shipData) > 0.0) {
+        if (shipData->ShieldCapacity() > 0.0) {
             if (shipData->shield >= 0.0f) {
-                if (shipData->shield <= ShipShieldCapacity(shipData)) {
+                if (shipData->shield <= shipData->ShieldCapacity()) {
                     NumToString((shipData->shield /
-                                       ShipShieldCapacity(shipData) * 100.0), (StringPtr)buf);
+                                       shipData->ShieldCapacity() * 100.0), (StringPtr)buf);
                     DrawString((const unsigned char *)buf);
                     DrawString("\p%");
                 } else {
@@ -453,7 +453,7 @@ void PlayerInfoDialogUpdate(void)
             } else {
                 DrawString("\p0%");
             }
-            DrawRawValue(shipData->shield, ShipShieldCapacity(shipData));
+            DrawRawValue(shipData->shield, shipData->ShieldCapacity());
         } else {
             DrawIndString(kGameStrList, 0x18c);
         }
@@ -463,18 +463,18 @@ void PlayerInfoDialogUpdate(void)
         DrawString(armorString[1]);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x50), (box.top + 0x6c));
-        if (IsDying(shipData)) {
+        if (shipData->IsDying()) {
             DrawIndString(kGameStrList, 0x105);
-        } else if (ShipArmorCapacity(shipData) > 0.0) {
-            if (shipData->armor <= ShipArmorCapacity(shipData)) {
+        } else if (shipData->ArmorCapacity() > 0.0) {
+            if (shipData->armor <= shipData->ArmorCapacity()) {
                 NumToString((shipData->armor /
-                                   ShipArmorCapacity(shipData) * 100.0), (StringPtr)buf);
+                                   shipData->ArmorCapacity() * 100.0), (StringPtr)buf);
                 DrawString((const unsigned char *)buf);
                 DrawString("\p%");
             } else {
                 DrawString("\p100%");
             }
-            DrawRawValue(shipData->armor, ShipArmorCapacity(shipData));
+            DrawRawValue(shipData->armor, shipData->ArmorCapacity());
         } else {
             DrawIndString(kGameStrList, 0x18c);
         }
@@ -484,11 +484,11 @@ void PlayerInfoDialogUpdate(void)
         DrawString(fuelString[5]);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x50), (box.top + 0x7c));
-        if (ShipFuelCapacity(shipData) <= 0.0) {
+        if (shipData->FuelCapacity() <= 0.0) {
             DrawIndString(kGameStrList, 0x14f);
         } else {
             NumToString((shipData->fuel /
-                               ShipFuelCapacity(shipData) * 100.0), (StringPtr)buf);
+                               shipData->FuelCapacity() * 100.0), (StringPtr)buf);
             DrawString((const unsigned char *)buf);
             DrawString("\p%");
             jumps = (shipData->fuel / 100.0);

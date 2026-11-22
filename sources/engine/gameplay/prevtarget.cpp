@@ -24,8 +24,8 @@ short FindPrevShipInSystem(short cur, short system)
         wantHostile = 1;
     else
         wantHostile = 0;
-    canUntarget = ShipCanTargetUntargetableShips(shipData);
-    canCloaked = ShipCanTargetCloakedShips(shipData);
+    canUntarget = shipData->CanTargetUntargetableShips();
+    canCloaked = shipData->CanTargetCloakedShips();
 
     i = 1;
     while (i < kMaxShips) {
@@ -52,8 +52,8 @@ short FindPrevShipInSystem(short cur, short system)
     if (cur != -1) {
         i = (cur - 1);
         while (i > 0) {
-            if (shipData[i].active != 0 && !IsDying(&shipData[i])) {
-                if (!ShipIsCloaked(&shipData[i]) || canCloaked != 0
+            if (shipData[i].active != 0 && !shipData[i].IsDying()) {
+                if (!shipData[i].IsCloaked() || canCloaked != 0
                     || (eligible[i] != 0 && wantHostile != 0)) {
                     if (shipData[i].curSystem == system
                         && !AIShipIsEmergingFromHypergate(&shipData[i])
@@ -68,8 +68,8 @@ short FindPrevShipInSystem(short cur, short system)
     } else {
         i = kMaxShips - 1;
         while (i >= 1) {
-            if (shipData[i].active != 0 && !IsDying(&shipData[i])) {
-                if (!ShipIsCloaked(&shipData[i]) || canCloaked != 0
+            if (shipData[i].active != 0 && !shipData[i].IsDying()) {
+                if (!shipData[i].IsCloaked() || canCloaked != 0
                     || (eligible[i] != 0 && wantHostile != 0)) {
                     if (shipData[i].curSystem == system
                         && !AIShipIsEmergingFromHypergate(&shipData[i])

@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+struct ShipRec;
+
 typedef struct ShipObj {
     struct SpriteRec *sprite;
     struct SpriteRec *glowSprite;
@@ -112,6 +114,64 @@ typedef struct ShipObj {
     short fuelRegenState;
     short jamming[4];
     short formLeader;
+
+    bool IsPlayer() const { return index == 0; }
+    inline ShipRec &Class() const;
+
+    /* shipstats.cpp */
+    float ShieldCapacity();
+    float ShieldRechargeRate();
+    float ArmorCapacity();
+    float ArmorRechargeRate();
+    short FuelCapacity();
+    Boolean FuelGenRate(float *rate);
+    float TurnRate();
+    float AccelRate();
+    float MaxSpeed();
+    Boolean HasEscapePod();
+    Boolean HasEscapeShip();
+    short EscapeShipType();
+    short EscapeShipWeapType();
+    Boolean KeyCarriedShipTypeOnboard();
+    Boolean HasAutoEject();
+    Boolean HasAfterburner();
+    short ECM(short kind);
+    short HyperTransitTime();
+    int32_t HyperSafeDist();
+    float DeionizationRate();
+    float IonizationFactor();
+    Boolean CanScoop();
+    short JumpsPerJump();
+    short MaxWeaponRange();
+    Boolean CanExpediteJumps();
+    Boolean IsInertialess();
+    float AfterburnerFuelUsage();
+    short ResistsGravity();
+    short ResistsDeadlyStellars();
+    Boolean CanSelfRepair();
+
+    /* shipcloak.cpp */
+    Boolean VisibleTo(ShipObj *viewer);
+    Boolean HasCloak();
+    Boolean HasAreaCloak();
+    short CloakFuelUsage();
+    Boolean CloakZeroesShields();
+    Boolean DecloaksWhenHit();
+    short CloakShieldUsage();
+    Boolean CloakVisibleOnRadar();
+    Boolean CanSeeCloakedShips(short which);
+    Boolean HasDensityScanner();
+    Boolean HasIFF();
+    Boolean CanCloak();
+    void DoCloak();
+    void DoUncloak();
+    Boolean IsCloaked();
+    Boolean CanTargetUntargetableShips();
+    Boolean CanTargetCloakedShips();
+
+    /* combatutils.cpp */
+    Boolean IsDisabled();
+    unsigned char IsDying();
 } ShipObj;
 
 typedef struct ShotObj {

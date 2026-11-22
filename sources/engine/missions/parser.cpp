@@ -482,8 +482,8 @@ void EvalSetExp(void)
                         }
                     }
                     SystemInfoToShipStats();
-                    while (IsDisabled(shipData) != 0
-                            && shipData->armor < ShipArmorCapacity(shipData))
+                    while (shipData->IsDisabled() != 0
+                            && shipData->armor < shipData->ArmorCapacity())
                         shipData->armor += 1.0f;
                     LoadIntfResource();
                     RestoreBuffer(saved);

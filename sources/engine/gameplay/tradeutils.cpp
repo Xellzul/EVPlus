@@ -9,10 +9,6 @@
 
 EXTERN_C_BEGIN
 
-#define kModTypeMaxOwned   0x1b
-#define kModTypeGunLimit   0x2d
-#define kModTypeTurretLimit 0x2e
-
 // FUNCTION: EVNOVA 0x004656a0
 // MAC: _HasMaxOfItem i386 0x00004512 ppc 0x000058b4
 Boolean HasMaxOfItem(short index, short *outBound, short *outCap)
@@ -37,7 +33,7 @@ Boolean HasMaxOfItem(short index, short *outBound, short *outCap)
     if (outCap)
         *outCap = limit;
 
-    if (outfitSystem[index].modType[0] == kOutfModAmmo) {
+    if (outfitSystem[index].modType[0] == OutfMod::Ammo) {
         if (weaponStats[outfitSystem[index].modVal[0]].maxAmmo > 0) {
             ammo = weaponStats[outfitSystem[index].modVal[0]].maxAmmo * shipData->weap[outfitSystem[index].modVal[0]].count;
             if (outCap && ammo < *outCap)
@@ -54,7 +50,7 @@ Boolean HasMaxOfItem(short index, short *outBound, short *outCap)
     for (j = 0; j < kMaxOutfits; j++) {
         if (shipSystems[j] > 0) {
             for (k = 0; k < kOutfMods; k++) {
-                if (outfitSystem[j].modType[k] == kModTypeMaxOwned &&
+                if (outfitSystem[j].modType[k] == OutfMod::RaiseMax &&
                     outfitSystem[j].modVal[k] == index + 128)
                     sumOwned += shipSystems[j];
             }
@@ -86,7 +82,7 @@ Boolean HasMaxOfItem(short index, short *outBound, short *outCap)
         for (j = 0; j < kMaxOutfits; j++) {
             if (shipSystems[j] > 0) {
                 for (k = 0; k < kOutfMods; k++) {
-                    if (outfitSystem[j].modType[k] == kModTypeGunLimit) {
+                    if (outfitSystem[j].modType[k] == OutfMod::GunSlots) {
                         limit += outfitSystem[j].modVal[k];
                         break;
                     }
@@ -112,7 +108,7 @@ Boolean HasMaxOfItem(short index, short *outBound, short *outCap)
         for (j = 0; j < kMaxOutfits; j++) {
             if (shipSystems[j] > 0) {
                 for (k = 0; k < kOutfMods; k++) {
-                    if (outfitSystem[j].modType[k] == kModTypeTurretLimit) {
+                    if (outfitSystem[j].modType[k] == OutfMod::TurretSlots) {
                         limit += outfitSystem[j].modVal[k];
                         break;
                     }
@@ -263,7 +259,7 @@ Boolean CanBuyFighter(short shipType, short outfitIndex, short weapIndex)
         for (i = 0; i < kMaxOutfits; i++) {
             for (m = 0; m < kOutfMods; m++) {
                 if (outfitSystem[i].techLevel < kOutfTechAbsent &&
-                    outfitSystem[i].modType[m] == kOutfModAmmo &&
+                    outfitSystem[i].modType[m] == OutfMod::Ammo &&
                     weapIndex == outfitSystem[i].modVal[m]) {
                     outfitIndex = i;
                     break;
@@ -308,7 +304,7 @@ short TotalFleetHolds(void)
 
     total = ShipTotalHolds();
     for (i = 1; i < kMaxShips; i++) {
-        if (shipData[i].active != 0 && !IsDying(&shipData[i])
+        if (shipData[i].active != 0 && !shipData[i].IsDying()
                 && shipData[i].parentShip == 0 && shipData[i].aiType == kShipTypeEscort
                 && shipData[i].specialMission == -1
                 && shipClass[shipData[i].type].inherentAI <= 2)
@@ -337,7 +333,7 @@ void DestroyPartialFleetCargo(short shipIndex)
     }
     fleetHolds = ShipTotalHolds();
     for (i = 1; i < kMaxShips; i++) {
-        if (shipData[i].active != 0 && (!IsDying(&shipData[i]) || i == shipIndex)
+        if (shipData[i].active != 0 && (!shipData[i].IsDying() || i == shipIndex)
                 && shipData[i].curSystem == shipData->curSystem
                 && shipData[i].parentShip == 0 && shipData[i].aiType == kShipTypeEscort
                 && shipData[i].specialMission == -1
@@ -704,7 +700,7 @@ short ShipTotalHolds(void)
     for (i = 0; i < kMaxOutfits; i++) {
         if (shipSystems[i] > 0) {
             for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == kOutfModCargo)
+                if (outfitSystem[i].modType[j] == OutfMod::Cargo)
                     holds += outfitSystem[i].modVal[j] * shipSystems[i];
             }
         }
@@ -842,7 +838,7 @@ short PlayerHasFightersOfOutfitType(short outfitIndex)
     short count;
 
     for (i = 0; i < kOutfMods; i++) {
-        if (outfitSystem[outfitIndex].modType[i] == kOutfModAmmo) {
+        if (outfitSystem[outfitIndex].modType[i] == OutfMod::Ammo) {
             weapon = outfitSystem[outfitIndex].modVal[i];
             if (weapon >= 0 && weapon < kMaxWeapTypes) {
                 if (weaponStats[weapon].guidance == kGuidanceBay)
@@ -865,7 +861,7 @@ short PlayerHasFightersOfOutfitType(short outfitIndex)
             continue;
         if (bayType != shipData[k].type)
             continue;
-        if (IsDisabled(&shipData[k]))
+        if (shipData[k].IsDisabled())
             continue;
         count++;
     }

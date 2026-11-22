@@ -95,12 +95,12 @@ void DrawStatusNav(void)
         if (shipData[0].targetStellar != -1) {
             origin.x = origin.y = 0.0f;
             safe = 1;
-            range = ShipHyperSafeDist(shipData);
+            range = shipData->HyperSafeDist();
             for (j = 0; j < kNavSlots; j++) {
                 stellar = systemData[shipData[0].curSystem].navDefault[j];
                 if (stellar != -1 && (stellarData[stellar].flags2 & kSpobGateOrWormhole) == 0) {
                     origin.x = origin.y = 0.0f;
-                    range = ShipHyperSafeDist(shipData);
+                    range = shipData->HyperSafeDist();
                     if (FloatAbs(XYFloatSquaredDist(&origin,
                                                      &shipData[0].pos)) <= range) {
                         safe = 0;
@@ -164,7 +164,7 @@ void DrawStatusShield(void)
             float cap;
             float level;
             CopyRect(&barRect, &dstRect);
-            cap = ShipShieldCapacity(shipData);
+            cap = shipData->ShieldCapacity();
             level = shipData[0].shield;
             if (level <= cap) {
                 if (dstRect.right - dstRect.left > dstRect.bottom - dstRect.top) {
@@ -201,7 +201,7 @@ void DrawStatusShield(void)
                  &srcRect, &dstRect, 0, 0);
         if (shipData[0].armor > 0.0f) {
             CopyRect(&barRect, &dstRect);
-            cap = ShipArmorCapacity(shipData);
+            cap = shipData->ArmorCapacity();
             level = shipData[0].armor;
             if (level <= cap) {
                 if (dstRect.right - dstRect.left > dstRect.bottom - dstRect.top) {
@@ -249,17 +249,17 @@ void DrawStatusFuel(void)
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
     CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
              &srcRect, &dstRect, 0, 0);
-    if (shipData[0].fuel > 0.0f && IsDisabled(shipData) == 0) {
+    if (shipData[0].fuel > 0.0f && shipData->IsDisabled() == 0) {
         RGBForeColor(fuelStatusColor[0]);
         CopyRect(&barRect, &dstRect);
         if (srcRect.right - srcRect.left > srcRect.bottom - srcRect.top) {
             barRect.right = barRect.left + (dstRect.right - dstRect.left) *
-                                    (shipData[0].fuel / ShipFuelCapacity(shipData));
+                                    (shipData[0].fuel / shipData->FuelCapacity());
             if (barRect.right > dstRect.right)
                 barRect.right = dstRect.right;
         } else {
             barRect.top = barRect.bottom - (dstRect.bottom - dstRect.top) *
-                                  (shipData[0].fuel / ShipFuelCapacity(shipData));
+                                  (shipData[0].fuel / shipData->FuelCapacity());
             if (barRect.top < dstRect.top)
                 barRect.top = dstRect.top;
         }
@@ -270,10 +270,10 @@ void DrawStatusFuel(void)
             CopyRect(&jumpRect, &barRect);
             if (srcRect.right - srcRect.left > srcRect.bottom - srcRect.top) {
                 jumpRect.left += (dstRect.right - dstRect.left) *
-                                 (jumps * 100 / (float)ShipFuelCapacity(shipData));
+                                 (jumps * 100 / (float)shipData->FuelCapacity());
             } else {
                 jumpRect.bottom -= (dstRect.bottom - dstRect.top) *
-                                   (jumps * 100 / (float)ShipFuelCapacity(shipData));
+                                   (jumps * 100 / (float)shipData->FuelCapacity());
             }
             RGBForeColor(fuelStatusColor[1]);
             PaintRect(&jumpRect);
@@ -548,10 +548,10 @@ void DrawStatusTarg(void)
                 }
             } else {
             MoveTo(dstRect.left + 5, dstRect.bottom - 6);
-            if (shipData[shipData[0].targetShip].shield <= 0.0f || IsDisabled(&shipData[shipData[0].targetShip]) != 0) {
+            if (shipData[shipData[0].targetShip].shield <= 0.0f || shipData[shipData[0].targetShip].IsDisabled() != 0) {
                 RGBForeColor(statusBrightColor);
                 MoveTo(dstRect.left + 5, dstRect.bottom - 6);
-                if (IsDisabled(&shipData[shipData[0].targetShip]) != 0) {
+                if (shipData[shipData[0].targetShip].IsDisabled() != 0) {
                     vulnerable = 0;
                     mission = shipData[shipData[0].targetShip].specialMission;
                     if (mission != -1) {
@@ -561,11 +561,11 @@ void DrawStatusTarg(void)
                             shipData[shipData[0].targetShip].boarded == 0) {
                             if ((shipClass[shipData[shipData[0].targetShip].type].flags & kShipArmorDisableTenth) != 0) {
                                 if (shipData[shipData[0].targetShip].armor * 100.0f >=
-                                        ShipArmorCapacity(&shipData[shipData[0].targetShip]) * 10.0)
+                                        shipData[shipData[0].targetShip].ArmorCapacity() * 10.0)
                                     vulnerable = 1;
                             } else {
                                 if (shipData[shipData[0].targetShip].armor * 100.0f >=
-                                        ShipArmorCapacity(&shipData[shipData[0].targetShip]) * 33.333)
+                                        shipData[shipData[0].targetShip].ArmorCapacity() * 33.333)
                                     vulnerable = 1;
                             }
                         }
@@ -580,7 +580,7 @@ void DrawStatusTarg(void)
                         DrawString(armorString[0]);
                         DrawString("\p ");
                         RGBForeColor(statusBrightColor);
-                        capacity = ShipArmorCapacity(&shipData[shipData[0].targetShip]);
+                        capacity = shipData[shipData[0].targetShip].ArmorCapacity();
                         if (capacity > 0.0) {
                             if (shipData[shipData[0].targetShip].armor <= 0.0f) {
                                 DrawString("\p0%");
@@ -609,7 +609,7 @@ void DrawStatusTarg(void)
                 DrawString(shieldString[2]);
                 DrawString("\p ");
                 RGBForeColor(statusBrightColor);
-                capacity = ShipShieldCapacity(&shipData[shipData[0].targetShip]);
+                capacity = shipData[shipData[0].targetShip].ShieldCapacity();
                 if (shipData[shipData[0].targetShip].shield <= capacity) {
                     NumToString((shipData[shipData[0].targetShip].shield / capacity * 100.0), numBuf);
                     DrawString(numBuf);

@@ -277,7 +277,7 @@ void MainScreenChoice(short which)
 
     if (which == kMainScreenEnter) {
         if (gameInProgress) {
-            if (!IsDying(shipData)) {
+            if (!shipData->IsDying()) {
                 KeyboardFlush();
                 EnterGameFromMainScreen();
             } else {

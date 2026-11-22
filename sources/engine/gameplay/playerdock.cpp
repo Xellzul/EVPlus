@@ -78,8 +78,8 @@ void PlayerLandOnStellar(void)
     }
     ship->accelMag = 0;
     ship->vel.x = ship->vel.y = 0;
-    ship->shield = ShipShieldCapacity(ship);
-    ship->armor = ShipArmorCapacity(ship);
+    ship->shield = ship->ShieldCapacity();
+    ship->armor = ship->ArmorCapacity();
     IncrementGameTime();
     HandleGlobalPriceFlux();
     sys = FindFirstCoLocatedSystem(ship->curSystem);
@@ -204,7 +204,7 @@ short PlayerEnterHypergate(void)
             else
                 ship->heading = Rand(kFullCircle);
             ship->vel.x = ship->vel.y = 0;
-            ship->accelMag = (ShipMaxSpeed(ship) * 0.5);
+            ship->accelMag = (ship->MaxSpeed() * 0.5);
             Accel(ship->heading, ship->accelMag, &ship->vel);
             View::SetPortToView();
             CE_SetFlashColor(whiteColor);
@@ -396,7 +396,7 @@ short PlayerEnterWormhole(void)
     else
         ship->heading = Rand(kFullCircle);
     ship->vel.x = ship->vel.y = 0;
-    ship->accelMag = ShipMaxSpeed(ship) * 0.5;
+    ship->accelMag = ship->MaxSpeed() * 0.5;
     Accel(ship->heading, ship->accelMag, &ship->vel);
     View::SetPortToView();
     CE_SetFlashColor(whiteColor);
@@ -501,15 +501,15 @@ void HandlePlayerDockRequest(void)
         dockPermission = -1;
         goto done;
     }
-    if (ShipIsCloaked(ship)) {
+    if (ship->IsCloaked()) {
         GetIndString(msg, kGameStrList, 0x49);
         DisplayComm((PStrChar *)msg, 0xfa);
         PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
         goto done;
     }
-    if (IsDisabled(ship))
+    if (ship->IsDisabled())
         goto done;
-    if (IsDying(ship))
+    if (ship->IsDying())
         goto done;
     dockLand = stellarData[ship->targetStellar].flags & kSpobIsStation;
     if (stellarData[ship->targetStellar].flags & kSpobUninhabited) {
@@ -1156,7 +1156,7 @@ void HandlePlayerBoardAttempt(void)
         goto out;
     if (me->targetShip == -1)
         goto out;
-    if (ShipIsCloaked(me))
+    if (me->IsCloaked())
         goto out;
 
     boardTryFlag = 1;
@@ -1171,13 +1171,13 @@ reject:
         DisplayComm(msg, 360);
         goto out;
     }
-    if (!IsDisabled(&shipData[me->targetShip]))
+    if (!shipData[me->targetShip].IsDisabled())
         goto reject;
     if (shipData[me->targetShip].active == 0)
         goto reject;
     if (shipData[me->targetShip].curSystem != me->curSystem)
         goto reject;
-    if (IsDying(me))
+    if (me->IsDying())
         goto reject;
 
     if (FloatAbs(shipData[me->targetShip].vel.x - me->vel.x) <= 0.5) ; else
@@ -1327,7 +1327,7 @@ reject:
                             shipData[me->targetShip].aiType = kShipTypeFighter;
                             shipData[me->targetShip].parentShip = 0;
                             shipData[me->targetShip].shield = 0;
-                            shipData[me->targetShip].armor = ShipArmorCapacity(&shipData[me->targetShip]);
+                            shipData[me->targetShip].armor = shipData[me->targetShip].ArmorCapacity();
                             shipData[me->targetShip].targetStellar = -1;
                             AIAddFighterToParent(&shipData[me->targetShip]);
                         } else {
@@ -1349,7 +1349,7 @@ reject:
                         shipData[me->targetShip].parentShip = 0;
                         shipData[me->targetShip].shield = 0;
                         shipData[me->targetShip].targetStellar = -1;
-                        shipData[me->targetShip].armor = ShipArmorCapacity(&shipData[me->targetShip]);
+                        shipData[me->targetShip].armor = shipData[me->targetShip].ArmorCapacity();
                         AIAddFighterToParent(&shipData[me->targetShip]);
                     } else {
                         DoGoodSamaritan(&shipData[me->targetShip], me);
@@ -1372,10 +1372,10 @@ reject:
                     shipData[me->targetShip].formerEscort = -1;
                     if (shipClass[shipData[me->targetShip].type].flags & kShipArmorDisableTenth)
                         shipData[me->targetShip].armor =
-                            ShipArmorCapacity(&shipData[me->targetShip]) * 0.1 + 1.0;
+                            shipData[me->targetShip].ArmorCapacity() * 0.1 + 1.0;
                     else
                         shipData[me->targetShip].armor =
-                            ShipArmorCapacity(&shipData[me->targetShip]) * 0.3333 + 1.0;
+                            shipData[me->targetShip].ArmorCapacity() * 0.3333 + 1.0;
                     AISetup(&shipData[me->targetShip]);
                     for (k = 0; k < kCargoTypes; k++)
                         shipData[0].cargo[k] += shipData[me->targetShip].cargo[k];
@@ -1392,7 +1392,7 @@ reject:
                     shipData[me->targetShip].aiType = kShipTypeFighter;
                     shipData[me->targetShip].parentShip = 0;
                     shipData[me->targetShip].shield = 0;
-                    shipData[me->targetShip].armor = ShipArmorCapacity(&shipData[me->targetShip]);
+                    shipData[me->targetShip].armor = shipData[me->targetShip].ArmorCapacity();
                     shipData[me->targetShip].targetStellar = -1;
                     AIAddFighterToParent(&shipData[me->targetShip]);
                 } else if (CanBuyFighter(shipData[me->targetShip].type, -1, -1) &&
@@ -1404,7 +1404,7 @@ reject:
                     shipData[me->targetShip].aiType = kShipTypeFighter;
                     shipData[me->targetShip].parentShip = 0;
                     shipData[me->targetShip].shield = 0;
-                    shipData[me->targetShip].armor = ShipArmorCapacity(&shipData[me->targetShip]);
+                    shipData[me->targetShip].armor = shipData[me->targetShip].ArmorCapacity();
                     shipData[me->targetShip].targetStellar = -1;
                     AIAddFighterToParent(&shipData[me->targetShip]);
                 } else {

@@ -1266,15 +1266,62 @@ EXTERN_CPP_END
 #define kMissionModeAttackPlayer 0      /* mïsn ShipBehav: always attack the player */
 #define kMissionModeEscort     1
 #define kMissionModeDestroyStellar 2    /* mïsn ShipBehav: attack the system's stellars */
-#define kModTypeFakeID     21
-#define kModTypeMap        16
 #define kOrdinalsBase        28
 #define kOrdinalsSTR        137
-#define kOutfModAmmo     3
-#define kOutfModCargo      2
-#define kOutfModType17  0x11
-#define kOutfModWeapon 1
 #define kOutfMods           4
+/* oütf ModType values */
+namespace OutfMod {
+enum : short {
+    Weapon = 1,
+    Cargo = 2,
+    Ammo = 3,
+    ShieldBoost = 4,
+    ShieldRech = 5,
+    Armor = 6,
+    Accel = 7,
+    Speed = 8,
+    Turn = 9,
+    EscapePod = 11,
+    FuelCapacity = 12,
+    DensityScanner = 13,
+    IFF = 14,
+    Afterburner = 15,
+    Map = 16,
+    Cloak = 17,
+    FuelRegen = 18,
+    AutoRefuel = 19,
+    AutoEject = 20,
+    FakeID = 21,
+    DaysPerJump = 22,
+    HyperSafeDist = 23,
+    Interference = 24,
+    Marines = 25,
+    RaiseMax = 27,
+    Murk = 28,
+    ArmorRech = 29,
+    CloakScanner = 30,
+    Scoop = 31,
+    MultiJump = 32,
+    Jam1 = 33,
+    Jam2 = 34,
+    Jam3 = 35,
+    Jam4 = 36,
+    FastJump = 37,
+    Inertialess = 38,
+    Deionize = 39,
+    IonCapacity = 40,
+    ResistGravity = 41,
+    ResistDeadly = 42,
+    Paint = 43,
+    BlockReinforce = 44,
+    GunSlots = 45,
+    TurretSlots = 46,
+    BombDestroys = 47,
+    IFFScrambler = 48,
+    RepairDroids = 49,
+    BombDisables = 50
+};
+}
 #define kStrOf                 0x187   /* STR# 2002: "of" */
 #define kStrAnd                0x188   /* STR# 2002: "and" */
 #define kPrefsStrList   0x82

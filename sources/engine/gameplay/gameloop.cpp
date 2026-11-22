@@ -86,7 +86,7 @@ void HandleShipDisplay(ShipObj *ship)
 
     for (i = 0; i < kSpriteSizeSlots; i++)
         sizes[i] = 0;
-    disabled = IsDisabled(ship);
+    disabled = ship->IsDisabled();
     hasGlow = hasLight = hasAlt = hasWeap = hasShield = 0;
     hideAll = 0;
 
@@ -164,7 +164,7 @@ void HandleShipDisplay(ShipObj *ship)
                         ship->foldDir = 1;
                     w = ship->foldSet;
                 } else if ((shipClass[ship->type].shanFlags & kShanKeyCarriedFrames) != 0) {
-                    if (KeyCarriedShipTypeOnboard(ship) != 0)
+                    if (ship->KeyCarriedShipTypeOnboard() != 0)
                         w = 1;
                 } else if ((shipClass[ship->type].shanFlags & kShanAnimatedBase) != 0) {
                     altTimed = 1;
@@ -252,8 +252,8 @@ void HandleShipDisplay(ShipObj *ship)
 
             ship->sprite->translucency = shipClass[ship->type].transparency;
             if (ship->index == 0) {
-                if (playerEffectiveMurk < 0)
-                    playerEffectiveMurk = PlayerEffectiveMurk();
+                if (playerStats.effectiveMurk < 0)
+                    playerStats.effectiveMurk = PlayerEffectiveMurk();
                 ship->sprite->tintMode = 0;
                 ship->sprite->tintColor = systemData[ship->curSystem].mapPixel;
             } else {
@@ -269,7 +269,7 @@ void HandleShipDisplay(ShipObj *ship)
             ship->sprite->tintBlue += blue;
 
             if (ship->ionization > 0.0F) {
-                ion = ShipIonizationFactor(ship);
+                ion = ship->IonizationFactor();
                 if (ion >= 0.33) {
                     w = (ion * 24.0F * 0.01);
                     if (w > 0x18)
@@ -638,7 +638,7 @@ void HandleShipDisplay(ShipObj *ship)
         }
 
         if (ship->cloak > 0.0F) {
-            if (IsDying(ship) != 0)
+            if (ship->IsDying() != 0)
                 ship->cloakDir = -2;
             if (ship->cloak >= 32.0F) {
                 if (ship->index == 0)
@@ -741,7 +741,7 @@ void HandleShipDisplay(ShipObj *ship)
                 SWSetSpriteVisible(ship->shieldSprite, 0);
         }
 
-        if (IsDying(ship) != 0 && ship->type != kShipTypeEscapePod) {
+        if (ship->IsDying() != 0 && ship->type != kShipTypeEscapePod) {
             if (ship->deathTimer <= 0.0F) {
                 ship->deathTimer = shipClass[ship->type].deathDelay;
                 if (ship->index == 0)
@@ -854,14 +854,14 @@ void HandleShipDisplay(ShipObj *ship)
     if (ship->active != 0 && ship->curSystem == shipData[0].curSystem) {
         for (i = 0; i <= 1; i++) {
             if (ship->seesCloaked[i] < 0) {
-                if (ShipCanSeeCloakedShips(ship, i) != 0)
+                if (ship->CanSeeCloakedShips(i) != 0)
                     ship->seesCloaked[i] = 1;
                 else
                     ship->seesCloaked[i] = 0;
             }
         }
         if (ship->decloaksWhenHit < 0) {
-            if (ShipDecloaksWhenHit(ship) != 0)
+            if (ship->DecloaksWhenHit() != 0)
                 ship->decloaksWhenHit = 1;
             else
                 ship->decloaksWhenHit = 0;
@@ -1108,7 +1108,7 @@ void HandleStellarSprites(void)
                     } else {
                         for (j = 1; j < kMaxShips; j++) {
                             if (shipData[j].active != 0
-                                && IsDisabled(&shipData[j]) == 0) {
+                                && shipData[j].IsDisabled() == 0) {
                                 if (AIShipIsEmergingFromHypergate(&shipData[j]) != 0
                                     && k == shipData[j].targetStellar) {
                                     approach = 1;
@@ -1311,13 +1311,13 @@ void HandleStellarWeapons(void)
             for (k = 0; k < kShipSlots; k++) {
                 if (shipData[k].active == 0)
                     continue;
-                if (ShipIsCloaked(&shipData[k]))
+                if (shipData[k].IsCloaked())
                     continue;
                 if (!IsThreatToStellar(&shipData[k], &stellarData[stel]))
                     continue;
                 dist = XYFloatSquaredDist(&pos, &shipData[k].pos);
                 if (dist <= range) {
-                    if (disableOnly != 0 && IsDisabled(&shipData[k]))
+                    if (disableOnly != 0 && shipData[k].IsDisabled())
                         continue;
                     if (dist < best || target == -1) {
                         target = k;
@@ -1629,7 +1629,7 @@ void HandleWeapTargetSprites(void)
             weapTargetExpand = 0.0F;
         for (i = 0; i < kWeapTargetCorners; i++)
             SWSetSpriteVisible(weapTargetSprite[i], 1);
-        if (IsDisabled(&shipData[shipData[0].targetShip]) != 0) {
+        if (shipData[shipData[0].targetShip].IsDisabled() != 0) {
             frame = kFrameDisabled;
         } else {
             if (shipData[shipData[0].targetShip].parentShip == 0
@@ -2008,8 +2008,7 @@ void HandleBeams(unsigned char advance)
                                                     .type].maxSpeed);
                                             SpeedLimit(
                                                 &shipData[beamData[i].owner].vel,
-                                                ShipMaxSpeed(
-                                                    &shipData[beamData[i].owner]));
+                                                shipData[beamData[i].owner].MaxSpeed());
                                         }
                                     shipKnockDone:
                                         impact = 0;
@@ -2139,8 +2138,7 @@ void HandleBeams(unsigned char advance)
                                                     .type].maxSpeed);
                                             SpeedLimit(
                                                 &shipData[beamData[i].owner].vel,
-                                                ShipMaxSpeed(
-                                                    &shipData[beamData[i].owner]));
+                                                shipData[beamData[i].owner].MaxSpeed());
                                         }
                                     roidKnockDone:
                                         if (shipData[beamData[i].owner].tractorShip == -1)
@@ -2338,7 +2336,7 @@ void HandleShotGuidance(ShotObj *shot)
                     if (shot->target != -1) {
                         for (g = 0; g <= 3; g++) {
                             if (shot->glow[g] > 0) {
-                                if (ShipECM(&shipData[shot->target], g) >
+                                if (shipData[shot->target].ECM(g) >
                                     100 - shot->glow[g]) {
                                     if (turn > 0.0f) {
                                         if ((weaponStats[shot->weapType].seeker &
@@ -2361,8 +2359,7 @@ void HandleShotGuidance(ShotObj *shot)
                     if (shot->guidanceState == kShotStateNormal) {
                         if (shot->target != -1 && shot->owner >= 0 &&
                             shot->owner < kMaxShips &&
-                            ShipVisibleToShip(&shipData[shot->target],
-                                              &shipData[shot->owner]) == 0) {
+                            shipData[shot->target].VisibleTo(&shipData[shot->owner]) == 0) {
                             turn = 0.0f;
                             if ((weaponStats[shot->weapType].seeker &
                                  kWeapSeekAttacksParent) != 0 && Rand(1000) == 0 &&
@@ -2858,9 +2855,9 @@ void HandleShip(ShipObj *ship)
     if (ship->targetShip < -1 || ship->targetShip >= kMaxShips)
         ship->targetShip = -1;
 
-    ion = ShipIonizationFactor(ship);
-    disabled = IsDisabled(ship);
-    cloaked = ShipIsCloaked(ship);
+    ion = ship->IonizationFactor();
+    disabled = ship->IsDisabled();
+    cloaked = ship->IsCloaked();
 
     if (ship->targetShip != -1 && !shipData[ship->targetShip].active)
         ship->targetShip = -1;
@@ -2896,11 +2893,11 @@ void HandleShip(ShipObj *ship)
             ship->aiType = shipClass[ship->type].inherentAI;
             ShipStatsToSystemInfo();
             statusRedraw[kRedrawCargo] = 1;
-        } else if (ShipCanSelfRepair(ship)) {
+        } else if (ship->CanSelfRepair()) {
             if (shipClass[ship->type].flags & kShipArmorDisableTenth)
-                ship->armor = ShipArmorCapacity(ship) * 0.1 + 1.0;
+                ship->armor = ship->ArmorCapacity() * 0.1 + 1.0;
             else
-                ship->armor = ShipArmorCapacity(ship) * 0.3333 + 1.0;
+                ship->armor = ship->ArmorCapacity() * 0.3333 + 1.0;
             if (shipData->targetShip == ship->index)
                 statusRedraw[kRedrawTarg] = 1;
             if (ship->formerEscort >= 0) {
@@ -2931,18 +2928,18 @@ void HandleShip(ShipObj *ship)
 
     if (ship->persType != -1) {
         if (personData[ship->persType].shieldMod < 0.0f) {
-            ship->shield = ShipShieldCapacity(ship);
-            ship->armor = ShipArmorCapacity(ship);
+            ship->shield = ship->ShieldCapacity();
+            ship->armor = ship->ArmorCapacity();
         }
         if (personData[ship->persType].hailQuote != -1
                 && personData[ship->persType].loaded != 0
                 && shipData->jumpTimer <= 0.0f
-                && ShipVisibleToShip(shipData, ship)
-                && !IsDying(ship)
+                && shipData->VisibleTo(ship)
+                && !ship->IsDying()
                 && !AIIsShipJumping(ship)) {
             ok = 1;
             hailNow = 0;
-            if (IsDisabled(ship)) {
+            if (ship->IsDisabled()) {
                 if (!(personData[ship->persType].flags & kPersQuoteIfDisabled))
                     ok = 0;
             } else {
@@ -2950,7 +2947,7 @@ void HandleShip(ShipObj *ship)
                     ok = 0;
             }
             if (personData[ship->persType].flags & kPersQuoteOnAttack) {
-                if (!IsDisabled(ship)) {
+                if (!ship->IsDisabled()) {
                     if (ship->hailed == 0) {
                         if (IsThreatToPlayer(ship)) {
                             ok = 1;
@@ -3014,7 +3011,7 @@ void HandleShip(ShipObj *ship)
 
     /* three consecutive ifs, each with its arm parked far away */
     if (ship->tractorShip != -1) {
-        d = ShipAccelRate(shipData) * 0.25;
+        d = shipData->AccelRate() * 0.25;
         if (ship->tractorShip == ship->index) {
             vx = 0.0f;
             vy = 0.0f;
@@ -3042,15 +3039,15 @@ void HandleShip(ShipObj *ship)
         }
     }
     if (cloaked) {
-        if (!ShipCanCloak(ship))
-            DoShipUncloak(ship);
-        n = CloakFuelUsage(ship);
+        if (!ship->CanCloak())
+            ship->DoUncloak();
+        n = ship->CloakFuelUsage();
         if (n > 0) {
             ship->fuel -= n * 0.03333 * gSpeedMult;
             if (ship->fuel <= 0.0f)
                 ship->fuel = 0;
         }
-        n = CloakShieldUsage(ship);
+        n = ship->CloakShieldUsage();
         if (n > 0 && ship->shield >= n) {
             ship->shield -= n * 0.03333 * gSpeedMult;
             if (ship->shield <= 0.0f)
@@ -3063,8 +3060,8 @@ void HandleShip(ShipObj *ship)
         ship->vel.x = 0;
         ship->vel.y = 0;
     } else {
-        ShipMaxSpeed(ship);                 /* result DISCARDED; not dead */
-        if (ShipIsInertialess(ship))
+        ship->MaxSpeed();                 /* result DISCARDED; not dead */
+        if (ship->IsInertialess())
             AdjustInertialessShipVelocity(ship);
         if (gameFrozen == 0) {
             ship->pos.x += ship->vel.x * gSpeedMult;
@@ -3073,11 +3070,11 @@ void HandleShip(ShipObj *ship)
     }
 
     if (ship->ionization > 0.0f) {
-        ship->ionization -= ShipDeionizationRate(ship) * gSpeedMult;
-        d = ShipIonizationFactor(ship);
+        ship->ionization -= ship->DeionizationRate() * gSpeedMult;
+        d = ship->IonizationFactor();
         if (d > 0.7)
             d = 0.7f;
-        d = ShipMaxSpeed(ship) * (1.0f - d);
+        d = ship->MaxSpeed() * (1.0f - d);
         if (ship->vel.x > d)
             ship->vel.x -= gSpeedMult * 0.025;
         if (ship->vel.x < -d)
@@ -3098,22 +3095,22 @@ void HandleShip(ShipObj *ship)
             if (delta < 0.0f)
                 delta += 360.0f;
             v = abs(AngularDifference(ship->desiredHeading, ship->heading));
-            if (v > ShipTurnRate(ship) * gSpeedMult) {
+            if (v > ship->TurnRate() * gSpeedMult) {
                 if (delta > 180.0f) {
-                    ship->heading -= ShipTurnRate(ship) * gSpeedMult;
+                    ship->heading -= ship->TurnRate() * gSpeedMult;
                     dir = -1;
                 } else {
-                    ship->heading += ShipTurnRate(ship) * gSpeedMult;
+                    ship->heading += ship->TurnRate() * gSpeedMult;
                     dir = 1;
                 }
             } else {
                 ship->heading = ship->desiredHeading;
             }
         }
-        if (ship->shield < ShipShieldCapacity(ship))
-            ship->shield += ShipShieldRechargeRate(ship) * gSpeedMult;
-        if (ship->armor < ShipArmorCapacity(ship))
-            ship->armor += ShipArmorRechargeRate(ship) * gSpeedMult;
+        if (ship->shield < ship->ShieldCapacity())
+            ship->shield += ship->ShieldRechargeRate() * gSpeedMult;
+        if (ship->armor < ship->ArmorCapacity())
+            ship->armor += ship->ArmorRechargeRate() * gSpeedMult;
     }
     if (ship->heading >= 360.0f)
         ship->heading -= 360.0f;
@@ -3121,8 +3118,8 @@ void HandleShip(ShipObj *ship)
         ship->heading += 360.0f;
 
     if (ship->jumpTimer > 0.0f) {
-        if (!IsDisabled(ship) && gameFrozen == 0) {
-            turnRate = ShipTurnRate(ship);
+        if (!ship->IsDisabled() && gameFrozen == 0) {
+            turnRate = ship->TurnRate();
             inRange = abs(AngularDifference(ship->heading, ship->desiredHeading)) <= turnRate;
             if (inRange) {
                 if (AIIsShipJumping(ship)) {
@@ -3163,8 +3160,8 @@ void HandleShip(ShipObj *ship)
         if (ship->thrust != 0.0) {
             if (ship->speedLimit == 0.0) {
                 if (ship->jumpTimer <= 0.0f) {
-                    maxSpeed = ShipMaxSpeed(ship);
-                    if (ShipIsInertialess(ship)) {
+                    maxSpeed = ship->MaxSpeed();
+                    if (ship->IsInertialess()) {
                         ship->accelMag += ship->thrust * gSpeedMult;
                         if (ship->accelMag > maxSpeed)
                             ship->accelMag = maxSpeed;
@@ -3178,7 +3175,7 @@ void HandleShip(ShipObj *ship)
                 }
             } else if (ship->speedLimit > 0.0) {
                 maxSpeed = (float)ship->speedLimit;
-                if (ShipIsInertialess(ship)) {
+                if (ship->IsInertialess()) {
                     ship->accelMag += ship->thrust * gSpeedMult;
                     if (ship->accelMag > maxSpeed)
                         ship->accelMag = maxSpeed;
@@ -3190,7 +3187,7 @@ void HandleShip(ShipObj *ship)
                                  &ship->vel, maxSpeed);
                 }
             } else {
-                if (ShipIsInertialess(ship)) {
+                if (ship->IsInertialess()) {
                     ship->accelMag = FloatAbs(ship->speedLimit);
                 } else {
                     ship->vel.x = ship->vel.y = 0;
@@ -3198,17 +3195,17 @@ void HandleShip(ShipObj *ship)
                 }
                 ship->speedLimit = ship->speedLimit + FloatAbs(ship->thrust);
                 if (ship->parentShip != -1 && ship->parentShip < kMaxShips) {
-                    if (ShipMaxSpeed(ship) < ShipMaxSpeed(&shipData[ship->parentShip]))
-                        d = ShipMaxSpeed(ship);
+                    if (ship->MaxSpeed() < shipData[ship->parentShip].MaxSpeed())
+                        d = ship->MaxSpeed();
                     else
-                        d = ShipMaxSpeed(&shipData[ship->parentShip]);
+                        d = shipData[ship->parentShip].MaxSpeed();
                 } else
-                    d = ShipMaxSpeed(ship);
+                    d = ship->MaxSpeed();
                 if (d < -1.0)
                     d = -1.0f;
                 if (ship->speedLimit >= -d || ship->speedLimit >= 0.0f) {
                     AIMakeShipStopJumping(ship);
-                    if (ShipIsInertialess(ship)) {
+                    if (ship->IsInertialess()) {
                         ship->speedLimit = d;
                         ship->vel.x = 0;
                         ship->vel.y = 0;
@@ -3248,7 +3245,7 @@ void HandleShip(ShipObj *ship)
                 && (ship->aiTimer <= 0.0f || AIIsShipDoingCountWait(ship))) {
             if (shipClass[ship->type].shanFlags & kShanBanks)
                 ship->bankDir = dir;
-            if (ship->thrust >= ShipAccelRate(ship) * 2.0f) {
+            if (ship->thrust >= ship->AccelRate() * 2.0f) {
                 if (ship->engineGlow < 0x20)
                     ship->engineGlow += 1;
             } else if (ship->engineGlow < 0x18) {
@@ -3328,9 +3325,9 @@ void HandleShip(ShipObj *ship)
         }
     }
 
-    if (ShipFuelGenRate(ship, &d))
+    if (ship->FuelGenRate(&d))
         ship->fuel += d * gSpeedMult;
-    v = ShipFuelCapacity(ship);
+    v = ship->FuelCapacity();
     if (ship->fuel > v)
         ship->fuel = v;
     if (ship->fuel < 0.0f)
@@ -3343,8 +3340,8 @@ void HandleShip(ShipObj *ship)
     if (ship->tractorShip != -1) {
         if (ship->tractorShip != ship->index) {
             if (!shipData[ship->tractorShip].active
-                    || IsDisabled(&shipData[ship->tractorShip])
-                    || IsDying(&shipData[ship->tractorShip])) {
+                    || shipData[ship->tractorShip].IsDisabled()
+                    || shipData[ship->tractorShip].IsDying()) {
                 ship->tractorShip = -1;
                 ship->tractorTick = 0;
             }
@@ -3355,10 +3352,10 @@ void HandleShip(ShipObj *ship)
     if (ShipIsDerelict(ship))
         ship->engineGlow = 0;
 
-    if (IsDying(ship) && HasEscapeShip(ship)) {
+    if (ship->IsDying() && ship->HasEscapeShip()) {
         if (ship->deathTimer <= shipClass[ship->type].deathDelay * 0.5) {
             if (Rand(3) == 0) {
-                n = LaunchFighter(ship, EscapeShipWeapType(ship));
+                n = LaunchFighter(ship, ship->EscapeShipWeapType());
                 if (n != -1) {
                     if (shipData[n].shield > 1.0f)
                         shipData[n].shield =
@@ -3953,7 +3950,7 @@ void HandleShipHit(ShotObj *shot, ShipObj *ship, Boolean spawnSubs)
                     weaponStats[shot->weapType].blastRadius, 1);
     armorDmg = weaponStats[shot->weapType].damage[0];
     shieldDmg = weaponStats[shot->weapType].damage[1];
-    wasDying = IsDying(ship);
+    wasDying = ship->IsDying();
     if (shot->trailCount > 0) {
         armorDmg -= shot->trailCount;
         shieldDmg -= shot->trailCount;
@@ -3984,7 +3981,7 @@ void HandleShipHit(ShotObj *shot, ShipObj *ship, Boolean spawnSubs)
                    (weaponStats[shot->weapType].flags & kWeapPassesShields),
                    weaponStats[shot->weapType].reload);
 
-    if (IsDying(ship) && wasDying == 0) {
+    if (ship->IsDying() && wasDying == 0) {
         for (i = 1; i < kMaxShips; i++) {
             if (ship->index != i && shipData[i].active != 0
                     && shipData[i].parentShip == 0
@@ -4364,7 +4361,7 @@ void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite)
     f = fabs(shipData->pos.y - y);
     dy = f;
     dist = dx * dx + dy * dy;
-    sprite->tintMode = dist * playerEffectiveMurk * kSoundVolumeScale;
+    sprite->tintMode = dist * playerStats.effectiveMurk * kSoundVolumeScale;
     if (sprite->tintMode > 0x1f)
         sprite->tintMode = 0x1f;
     if (sprite->tintMode < 0)
@@ -4439,14 +4436,14 @@ void HandleMouse(void)
     if (inBackground == 0 && cursorHidden > 0 && cursorAlpha > 0) {
 
     hit = 0;
-    canUntarget = ShipCanTargetUntargetableShips(shipData);
-    canCloaked = ShipCanTargetCloakedShips(shipData);
+    canUntarget = shipData->CanTargetUntargetableShips();
+    canCloaked = shipData->CanTargetCloakedShips();
     for (i = 0; i < kMaxShips; i++) {
         if (shipData[i].active == 0)
             continue;
-        if (IsDying(&shipData[i]))
+        if (shipData[i].IsDying())
             continue;
-        if (!ShipIsCloaked(&shipData[i]) || canCloaked != 0
+        if (!shipData[i].IsCloaked() || canCloaked != 0
             || shipData[i].parentShip == 0 || i == 0) {
             if (shipData[i].curSystem != shipData->curSystem)
                 continue;
@@ -4850,7 +4847,7 @@ void HandleShipPointDefense(ShipObj *ship)
                 && ship->weap[i].count > 0
                 && ship->weap[i].reloadTimer <= 0.0f
                 && ((weaponStats[i].flags2 & kWeapFireWhileCloaked) != 0
-                    || !ShipIsCloaked(ship))
+                    || !ship->IsCloaked())
                 && WeaponHasAmmo(ship, i)) {
             weap = i;
             break;
@@ -4902,9 +4899,9 @@ void HandleShipPointDefense(ShipObj *ship)
                 continue;
             if (i == ship->parentShip)
                 continue;
-            if (IsDisabled(&shipData[i]))
+            if (shipData[i].IsDisabled())
                 continue;
-            if (!ShipVisibleToShip(&shipData[i], ship))
+            if (!shipData[i].VisibleTo(ship))
                 continue;
             dist = XYFloatSquaredDist(&shipData[i].pos,
                                             &ship->pos);
@@ -5054,7 +5051,7 @@ void HandleGravity(void)
         for (j = 0; j < 64; j++) {
             if (shipData[j].active == 0)
                 continue;
-            if (ShipResistsGravity(&shipData[j]))
+            if (shipData[j].ResistsGravity())
                 continue;
             ApplyGravity(&shipData[j].pos, &target,
                          stellarData[stellar].gravity * gSpeedMult,
@@ -5082,9 +5079,9 @@ void HandleDeadlyStellars(void)
         for (j = 0; j < 64; j++) {
             if (shipData[j].active == 0)
                 continue;
-            if (IsDying(&shipData[j]))
+            if (shipData[j].IsDying())
                 continue;
-            if (ShipResistsDeadlyStellars(&shipData[j]))
+            if (shipData[j].ResistsDeadlyStellars())
                 continue;
             if (!SWRLECollision(stellarData[stellar].sprite,
                                 shipData[j].sprite))
@@ -5123,7 +5120,7 @@ void AdjustInertialessShipVelocity(ShipObj *ship)
     velY = ship->vel.y;
     ship->vel.x = ship->vel.y = 0.0f;
     Accel(ship->heading, ship->accelMag, &ship->vel);
-    limit = ShipAccelRate(ship) * 4.0f * gSpeedMult;
+    limit = ship->AccelRate() * 4.0f * gSpeedMult;
     if (velX <= ship->vel.x - limit)
         velX = velX + limit;
     else if (velX >= ship->vel.x + limit)

@@ -69,7 +69,7 @@ void MainScreenUpdate(short which)
                            (mainMenuCenter.v + 0x136));
     } else {
         if (gameInProgress) {
-            if (IsDying(shipData) == 0) {
+            if (shipData->IsDying() == 0) {
                 MoveTo((mainMenuCenter.h - 0xbe), (mainMenuCenter.v + 0xfa));
                 RGBForeColor(labelColor);
                 DrawIndString(kGameStrList, 0xfb);
@@ -372,7 +372,7 @@ void EnterGameFromMainScreen(void)
         PlayGame();
     crashlog("paused");
     crashlog("resetting window attributes");
-    if (strictPlay && IsDying(shipData) && shipData->type != kShipTypeEscapePod) {
+    if (strictPlay && shipData->IsDying() && shipData->type != kShipTypeEscapePod) {
         crashlog("deleting pilot file due to strict play death");
         pstrcpy(pilotName, playerName);
         DeletePilotFile(PtoCstr(pilotName));
@@ -536,9 +536,9 @@ void DoNewPilot(void)
     mapScroll.v = systemData[shipData->curSystem].pos.v;
     systemData[shipData->curSystem].reinforceTimer = -1.0f;
     systemData[shipData->curSystem].reinforceDaysLeft = 0;
-    shipData->shield = ShipShieldCapacity(shipData);
-    shipData->armor = ShipArmorCapacity(shipData);
-    shipData->fuel = ShipFuelCapacity(shipData);
+    shipData->shield = shipData->ShieldCapacity();
+    shipData->armor = shipData->ArmorCapacity();
+    shipData->fuel = shipData->FuelCapacity();
     LoadObjectData();
     DeleteAllComputerShips(1, 1);
     ExploreNebulaeFromSystem(shipData->curSystem);

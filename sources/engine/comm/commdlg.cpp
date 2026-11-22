@@ -177,7 +177,7 @@ void CommDialog::Run(short shipIndex)
         hasMission = 1;
     LoadAdvice();
     LoadResponse(0);
-    if (commShip->specialMission != -1 && !IsDisabled(commShip) && !isMissionShip) {
+    if (commShip->specialMission != -1 && !commShip->IsDisabled() && !isMissionShip) {
         if (currentMissionObjectives[commShip->specialMission].active != 0) {
             n = currentMissions[commShip->specialMission].shipGoal;
             if (n == kMissionGoalDestroy)
@@ -196,7 +196,7 @@ void CommDialog::Run(short shipIndex)
             if (currentMissions[commShip->specialMission].shipBehav == kMissionModeEscort)
                 LoadResponse(4);
         }
-    } else if (!IsDisabled(commShip) && !isMissionShip) {
+    } else if (!commShip->IsDisabled() && !isMissionShip) {
         if (ExtendedIsThreatToPlayer(commShip))
             LoadResponse(2);
         else if (commShip->parentShip == 0) {
@@ -272,7 +272,7 @@ void CommDialog::Hit(short item)
     }
     if (item == 2) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-        if (!IsDisabled(commShip)) {
+        if (!commShip->IsDisabled()) {
             if (commShip->parentShip == 0 && commShip->aiType == kShipTypeEscort
                        && !hasMission) {
                 releaseCommEscort = 1;
@@ -381,8 +381,8 @@ void CommDialog::Hit(short item)
                         } else
                             LoadResponse(0x13);
                     } else {
-                        if ((shipData->fuel < 100 && ShipFuelCapacity(shipData) > 0)
-                            || IsDisabled(shipData)) {
+                        if ((shipData->fuel < 100 && shipData->FuelCapacity() > 0)
+                            || shipData->IsDisabled()) {
                             if (commShipXeno)
                                 LoadResponse(0x13);
                             else if (commShip->aiType <= kShipTypeInterceptor) {
@@ -402,7 +402,7 @@ void CommDialog::Hit(short item)
                                 }
                                 if (r == 1) {
                                     LoadResponse(0x1d);
-                                    if (IsDisabled(shipData))
+                                    if (shipData->IsDisabled())
                                         AIMakeShipRepairPlayer(commShip);
                                     else
                                         AIMakeShipRefuelPlayer(commShip);
@@ -426,7 +426,7 @@ void CommDialog::Hit(short item)
     if (item == 3) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         CommButtons().Draw(-1);
-        if (IsDisabled(commShip) || isMissionShip)
+        if (commShip->IsDisabled() || isMissionShip)
             LoadResponse(1);
         else if (ExtendedIsThreatToPlayer(commShip))
             LoadResponse(0xd);
@@ -1517,8 +1517,6 @@ void LoadStellarResponse(short which)
 
 
 
-#define kOutfitModPlunder    0x19    /* modType that shifts the capture odds */
-
 #define kMinShipCredits      1000
 #define kMaxCaptureOdds        75
 #define kOddsJitter            11
@@ -1745,7 +1743,7 @@ void PlunderDialog::Hit(short item)
         found = -1;
         if (salvageAmmoType != (SalvageAmmo)-1) {
             for (i = 0; i < kMaxOutfits; i++) {
-                if (outfitSystem[i].modType[0] == kOutfModAmmo
+                if (outfitSystem[i].modType[0] == OutfMod::Ammo
                     && salvageAmmoType == (SalvageAmmo)outfitSystem[i].modVal[0]) {
                     found = i;
                     break;
@@ -1800,13 +1798,13 @@ void PlunderDialog::Hit(short item)
         PlunderDialogUpdate();
         if (salvageFuelQty > 0) {
             PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
-            fuelSpace = (ShipFuelCapacity(shipData) - shipData->fuel);
+            fuelSpace = (shipData->FuelCapacity() - shipData->fuel);
             if (fuelSpace > salvageFuelQty)
                 fuelSpace = salvageFuelQty;
             SWSetPortToWindow(gSpriteWorld);
             if (fuelSpace > 0) {
                 shipData->fuel = shipData->fuel + fuelSpace;
-                if (shipData->fuel >= ShipFuelCapacity(shipData))
+                if (shipData->fuel >= shipData->FuelCapacity())
                     DisplayComm((PStrChar *)fuelString[1], kCommFrames);
                 else
                     DisplayComm((PStrChar *)fuelString[2], kCommFrames);
@@ -1880,7 +1878,7 @@ void PlunderDialog::Hit(short item)
                         shipData[shipData->targetShip].parentShip = 0;
                         shipData[shipData->targetShip].hired = 0;
                         shipData[shipData->targetShip].armor =
-                            ShipArmorCapacity(&shipData[shipData->targetShip]) * 0.5;
+                            shipData[shipData->targetShip].ArmorCapacity() * 0.5;
                         shipData[shipData->targetShip].govt = -1;
                         shipData[shipData->targetShip].persType = -1;
                         shipData[shipData->targetShip].targetShip = -1;
@@ -2073,7 +2071,7 @@ void SetPlunderValues(void)
 
     for (i = 0; i < kMaxOutfits; i++) {
         for (j = 0; j < kOutfMods; j++) {
-            if (outfitSystem[i].modType[j] == kOutfitModPlunder
+            if (outfitSystem[i].modType[j] == OutfMod::Marines
                 && outfitSystem[i].modVal[j] > 0)
                 mass += outfitSystem[i].modVal[j] * shipSystems[i];
         }
@@ -2084,7 +2082,7 @@ void SetPlunderValues(void)
                           * 100.0);
     for (i = 0; i < kMaxOutfits; i++) {
         for (j = 0; j < kOutfMods; j++) {
-            if (outfitSystem[i].modType[j] == kOutfitModPlunder
+            if (outfitSystem[i].modType[j] == OutfMod::Marines
                 && outfitSystem[i].modVal[j] < 0)
                 captureOdds += -1 * outfitSystem[i].modVal[j] * shipSystems[i];
         }
@@ -2176,7 +2174,7 @@ void PlunderDialogUpdate(void)
         found = 0;
         for (i = 0; i < kMaxOutfits; i++) {
             for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == kOutfModAmmo &&
+                if (outfitSystem[i].modType[j] == OutfMod::Ammo &&
                     salvageAmmoType == (SalvageAmmo)outfitSystem[i].modVal[j]) {
                     if (salvageAmmoQty == 1)
                         DrawString(lcOutfitName[i]);

@@ -636,8 +636,8 @@ void LoadObjectData(void)
                 outfitSystem[i].modType[3] = ResRec(OutfRes, outfitSystemFileHand)->modType4;
                 outfitSystem[i].modVal[3] = ResRec(OutfRes, outfitSystemFileHand)->modVal4;
                 for (j = 0; j < kOutfMods; j++) {
-                    if ((outfitSystem[i].modType[j] == kOutfModWeapon || outfitSystem[i].modType[j] == kOutfModAmmo ||
-                         outfitSystem[i].modType[j] == kModTypeFakeID) &&outfitSystem[i].modVal[j] >= kFirstResourceID)
+                    if ((outfitSystem[i].modType[j] == OutfMod::Weapon || outfitSystem[i].modType[j] == OutfMod::Ammo ||
+                         outfitSystem[i].modType[j] == OutfMod::FakeID) &&outfitSystem[i].modVal[j] >= kFirstResourceID)
                         outfitSystem[i].modVal[j] -= kFirstResourceID;
                 }
                 outfitSystem[i].contributes[0] = ResRec(OutfRes, outfitSystemFileHand)->contribute1;
@@ -887,7 +887,7 @@ void LoadObjectData(void)
             for (i = 0; i < kMaxOutfits; i++) {
                 if (outfitSystem[i].techLevel < kOutfTechAbsent) {
                     for (count = 0; count < kOutfMods; count++) {
-                        if (outfitSystem[i].modType[count] == kOutfModAmmo) {
+                        if (outfitSystem[i].modType[count] == OutfMod::Ammo) {
                             j = outfitSystem[i].modVal[count];
                             g = weaponStats[j].guidance;
                             if (g != kResAbsent) {
@@ -1139,7 +1139,7 @@ void LoadObjectData(void)
                         shipClass[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
                         if (mountCount[count] > 0) {
                             for (j = 0; j < kMaxOutfits; j++) {
-                                if (outfitSystem[j].modType[0] == kOutfModWeapon &&
+                                if (outfitSystem[j].modType[0] == OutfMod::Weapon &&
                                     outfitSystem[j].modVal[0] == mountID[count] - kFirstResourceID &&
                                     outfitSystem[j].techLevel < kOutfTechAbsent) {
                                     mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountCount[count];
@@ -1165,7 +1165,7 @@ void LoadObjectData(void)
                             }
                             if (n != -1) {
                                 for (j = 0; j < kMaxOutfits; j++) {
-                                    if (outfitSystem[j].modType[0] == kOutfModAmmo &&
+                                    if (outfitSystem[j].modType[0] == OutfMod::Ammo &&
                                         outfitSystem[j].modVal[0] == n &&
                                         outfitSystem[j].techLevel < kOutfTechAbsent) {
                                     mass = AdjustedItemMass(&outfitSystem[j], &shipClass[i]) * mountAmmo[count];
@@ -1196,9 +1196,9 @@ void LoadObjectData(void)
                                  shipClass[i].defOutfCount[k]) * 0.5;
                         if (crashlog_isactive()) {
                             for (j = 0; j < kOutfMods; j++) {
-                                if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == 45)
+                                if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == OutfMod::GunSlots)
                                     maxGuns += outfitSystem[shipClass[i].defOutfID[k]].modVal[j];
-                                if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == 46)
+                                if (outfitSystem[shipClass[i].defOutfID[k]].modType[j] == OutfMod::TurretSlots)
                                     maxTurrets += outfitSystem[shipClass[i].defOutfID[k]].modVal[j];
                             }
                         }
@@ -1310,7 +1310,7 @@ void LoadObjectData(void)
 
                                 for (j = 0; j < kMaxOutfits; j++) {
                                     for (k = 0; k < kOutfMods; k++) {
-                                        if (outfitSystem[j].modType[k] == 1 &&
+                                        if (outfitSystem[j].modType[k] == OutfMod::Weapon &&
                                             outfitSystem[j].modVal[k] == count) {
                                             granted++;
                                             break;
@@ -3147,8 +3147,8 @@ short LoadPilotData(char *path)
                 }
             }
 
-            shipData[0].shield = ShipShieldCapacity(shipData);
-            shipData[0].armor = ShipArmorCapacity(shipData);
+            shipData[0].shield = shipData->ShieldCapacity();
+            shipData[0].armor = shipData->ArmorCapacity();
             shipData[0].fuel = (*playerFileHand)->fuel;
             gameTime.month = (*playerFileHand)->month;
             gameTime.day = (*playerFileHand)->day;

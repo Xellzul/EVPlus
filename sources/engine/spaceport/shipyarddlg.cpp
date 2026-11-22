@@ -225,7 +225,7 @@ void ShipyardDialog::Hit(short item)
                         for (weap = 0; weap < kMaxWeapTypes; weap++) {
                             weapHasSlot = 0;
                             for (outf = 0; outf < kMaxOutfits; outf++) {
-                                if (outfitSystem[outf].modType[0] == kOutfModWeapon &&
+                                if (outfitSystem[outf].modType[0] == OutfMod::Weapon &&
                                     outfitSystem[outf].modVal[0] == weap &&
                                     outfitSystem[outf].persistent != 0) {
                                     weapHasSlot = 1;
@@ -278,9 +278,9 @@ void ShipyardDialog::Hit(short item)
                         statusRedraw[kRedrawNav] = 1;
                         statusRedraw[kRedrawTarg] = 1;
                         statusRedraw[kRedrawCargo] = 1;
-                        shipData->shield = ShipShieldCapacity(shipData);
-                        shipData->armor = ShipArmorCapacity(shipData);
-                        shipData->fuel = ShipFuelCapacity(shipData);
+                        shipData->shield = shipData->ShieldCapacity();
+                        shipData->armor = shipData->ArmorCapacity();
+                        shipData->fuel = shipData->FuelCapacity();
                         shipData->pos.x = dockedPort->pos.h;
                         shipData->pos.y = dockedPort->pos.v;
                         statusRedraw[kRedrawCargo] = 1;
@@ -984,7 +984,7 @@ static int32_t FreeMassAfterLoadout(short type)
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (shipClass[type].weapCount[i] > 0) {
             for (j = 0; j < kMaxOutfits; j++) {
-                if (outfitSystem[j].modType[0] == kOutfModWeapon
+                if (outfitSystem[j].modType[0] == OutfMod::Weapon
                     && i == outfitSystem[j].modVal[0]
                     && outfitSystem[j].techLevel < kOutfTechAbsent) {
                     mass = AdjustedItemMass(&outfitSystem[j], &shipClass[type]);
@@ -999,7 +999,7 @@ static int32_t FreeMassAfterLoadout(short type)
         }
         if (shipClass[type].weapAmmo[i] > 0) {
             for (j = 0; j < kMaxOutfits; j++) {
-                if (outfitSystem[j].modType[0] == kOutfModAmmo
+                if (outfitSystem[j].modType[0] == OutfMod::Ammo
                     && i == outfitSystem[j].modVal[0]
                     && outfitSystem[j].techLevel < kOutfTechAbsent) {
                     mass = AdjustedItemMass(&outfitSystem[j], &shipClass[type]);
@@ -1437,7 +1437,7 @@ void ShipDescDialogUpdate(void)
                             DrawString("\p ");
                         }
                         for (j = 0; j < kMaxOutfits; j++) {
-                            if (outfitSystem[j].modType[0] == kOutfModWeapon
+                            if (outfitSystem[j].modType[0] == OutfMod::Weapon
                                 && i == outfitSystem[j].modVal[0]) {
                                 if (hasPict) {
                                     pstrcpy(buf, outfitSystem[j].name);
@@ -1481,7 +1481,7 @@ void ShipDescDialogUpdate(void)
                             DrawString("\p ");
                         }
                         for (j = 0; j < kMaxOutfits; j++) {
-                            if (outfitSystem[j].modType[0] == kOutfModAmmo
+                            if (outfitSystem[j].modType[0] == OutfMod::Ammo
                                 && i == outfitSystem[j].modVal[0]) {
                                 if (hasPict) {
                                     pstrcpy(buf, outfitSystem[j].name);
