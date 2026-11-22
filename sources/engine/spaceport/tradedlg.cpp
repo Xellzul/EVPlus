@@ -36,6 +36,8 @@ PicHandle tradeBackgroundPic;
 #define kPortSurplus  2
 #define kPortEmbargo  4
 
+#define kTradeRows    8         /* the six commodities and the two junk rows */
+
 namespace {
 
 // FUNCTION: EVNOVA 0x0048c730
@@ -99,6 +101,11 @@ void TradeDialog::Run()
     junkType[1] = PortJunk(shipData->targetStellar, false);
     if (junkType[1] >= 0)
         tradePrice[7] = junkData[junkType[1]].basePrice / mult;
+    bool anyPrice = false;
+    for (i = 0; i < kTradeRows; i++)
+        anyPrice = anyPrice || tradePrice[i] != 0;
+    if (!anyPrice)
+        return;
     missionsOutside = kTradeVenue;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(0x1e) + 0x1e;
@@ -317,7 +324,6 @@ void DoTradeDialog(void)
     TradeDialog().Run();
 }
 
-#define kMapFilterCount 8
 
 
 // FUNCTION: EVNOVA 0x0048d5a0
@@ -333,19 +339,19 @@ void TradeDialogTabKey(Boolean back)
         selTradeItem -= 1;
     else
         selTradeItem += 1;
-    if (selTradeItem > kMapFilterCount - 1)
+    if (selTradeItem > kTradeRows - 1)
         selTradeItem = 0;
     if (selTradeItem < 0)
-        selTradeItem = kMapFilterCount - 1;
+        selTradeItem = kTradeRows - 1;
     while (tradePrice[selTradeItem] == 0) {
         if (back)
             selTradeItem -= 1;
         else
             selTradeItem += 1;
-        if (selTradeItem > kMapFilterCount - 1)
+        if (selTradeItem > kTradeRows - 1)
             selTradeItem = 0;
         if (selTradeItem < 0)
-            selTradeItem = kMapFilterCount - 1;
+            selTradeItem = kTradeRows - 1;
     }
     InvalDialogItem(tradeDialog, 13);
     InvalDialogItem(tradeDialog, 14);

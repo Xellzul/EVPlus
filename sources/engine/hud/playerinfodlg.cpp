@@ -19,6 +19,20 @@ char playerInfoText[3][4096];
 
 /* The player info dialog's background, stretched as one picture: the middle picture fills what the top
    and bottom ones leave (at least its own height). */
+/* "  (current / maximum)" after a percentage, current kept to 0 or more */
+static void DrawRawValue(double current, double maximum)
+{
+    Str255 num;
+
+    DrawString("\p  (");
+    NumToString((int32_t)(current > 0.0 ? current : 0.0), num);
+    DrawString(num);
+    DrawString("\p / ");
+    NumToString((int32_t)maximum, num);
+    DrawString(num);
+    DrawString("\p)");
+}
+
 static void DrawPlayerInfoBackground(const Rect &port)
 {
     UI::ArtComposition background(CurrentGrafPort, port);
@@ -439,6 +453,7 @@ void PlayerInfoDialogUpdate(void)
             } else {
                 DrawString("\p0%");
             }
+            DrawRawValue(shipData->shield, ShipShieldCapacity(shipData));
         } else {
             DrawIndString(kGameStrList, 0x18c);
         }
@@ -459,6 +474,7 @@ void PlayerInfoDialogUpdate(void)
             } else {
                 DrawString("\p100%");
             }
+            DrawRawValue(shipData->armor, ShipArmorCapacity(shipData));
         } else {
             DrawIndString(kGameStrList, 0x18c);
         }
