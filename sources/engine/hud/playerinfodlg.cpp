@@ -33,6 +33,30 @@ static void DrawRawValue(double current, double maximum)
     DrawString("\p)");
 }
 
+/* days a jump takes: the slowest of the player's ship and its active escorts */
+static short FleetJumpDays(void)
+{
+    short days = shipData->HyperTransitTime();
+
+    for (short i = 1; i < kMaxShips; i++) {
+        if (shipData[i].active && shipData[i].parentShip == 0 && !shipData[i].IsDisabled()) {
+            short d = shipData[i].HyperTransitTime();
+            if (d > days)
+                days = d;
+        }
+    }
+    return days;
+}
+
+static void DrawDays(short days)
+{
+    Str255 num;
+
+    NumToString(days, num);
+    DrawString(num);
+    DrawString(days == 1 ? "\p day" : "\p days");
+}
+
 static void DrawPlayerInfoBackground(const Rect &port)
 {
     UI::ArtComposition background(CurrentGrafPort, port);
@@ -433,6 +457,20 @@ void PlayerInfoDialogUpdate(void)
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x5c));
         DrawCommaNumber(shipData->credits);
+
+        RGBForeColor(&rgbLightGrey);
+        MoveTo((box.left + 0xcd), (box.top + 0x6c));
+        DrawString("\pJump Time:");
+        ForeColor(whiteColor);
+        MoveTo((box.left + 0x118), (box.top + 0x6c));
+        short ownDays = shipData->HyperTransitTime();
+        short fleetDays = FleetJumpDays();
+        DrawDays(ownDays);
+        if (fleetDays > ownDays) {
+            DrawString("\p (");
+            DrawDays(fleetDays);
+            DrawString("\p with escorts)");
+        }
 
         /* --- shields / armor / fuel, left column continued --- */
         RGBForeColor(&rgbLightGrey);
