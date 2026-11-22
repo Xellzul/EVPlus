@@ -65,6 +65,41 @@ Boolean escortCommandFlag[4];
 Boolean pauseKeyFlag;
 static Boolean speedUpFlag;
 static Boolean speedUpToggled;
+
+#define kScanNCBTest        kScan9
+#define kScanNCBSet         kScan0
+#define kNCBExpressionMax   0x40
+
+/* Alt+Home turns debug mode on. In debug mode Alt+9 evaluates a mission bit test
+   expression and Alt+0 executes a set expression. Then the key check it replaces. */
+static unsigned char CheckDebugKeys(ScanCode scanCode)
+{
+    unsigned char len;
+
+    if (!cheatsActive && (QuickKeyCheck(kScanLAlt) || QuickKeyCheck(kScanRAlt))
+            && QuickKeyCheck(kScanHome)) {
+        PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
+        cheatsActive = 1;
+    } else if (cheatsActive && (QuickKeyCheck(kScanLAlt) || QuickKeyCheck(kScanRAlt))) {
+        if (QuickKeyCheck(kScanNCBTest)) {
+            if (EVTextInputDialog((unsigned char *)"\pEvaluate NCB Test Expression:", (unsigned char *)"\p",
+                                  kNCBExpressionMax)
+                    && (len = textInputString[0]) != 0) {
+                textInputString[len + 1] = '\0';
+                EVNoteAlert(EvalMissionBitTestString((char *)textInputString + 1)
+                            ? "\pTrue" : "\pFalse");
+            }
+        } else if (QuickKeyCheck(kScanNCBSet)) {
+            if (EVTextInputDialog((unsigned char *)"\pExecute NCB Set Expression:", (unsigned char *)"\p",
+                                  kNCBExpressionMax)
+                    && (len = textInputString[0]) != 0) {
+                textInputString[len + 1] = '\0';
+                EvalMissionBitSetString((char *)textInputString + 1);
+            }
+        }
+    }
+    return QuickKeyCheck(scanCode);
+}
 short selEscortGroup;
 short lastEscortCount;
 
@@ -1261,7 +1296,7 @@ void HandlePlayer(ShipObj *player)
             player->targetShip = -1;
             player->fuel = player->fuel - 100.0f;
             View::SetPortToView();
-            CE_SetFlashColor(whiteColor);
+            SetFlashColor(whiteColor);
             PaintRect(&gSpriteWorld->workFrameP->frameRect);
             ForeColor(blackColor);
             Screen::ComposeView();
@@ -1699,7 +1734,7 @@ void HandlePlayer(ShipObj *player)
     if (player->fuel < 0.0f)
         player->fuel = 0;
 
-    if (CE_CheckDebugKeys(kScanF10) && cheatsActive) {
+    if (CheckDebugKeys(kScanF10) && cheatsActive) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         if (AltKeyQuick()) {
             for (i = 0; i < kMaxSystems; i++)

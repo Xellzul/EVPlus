@@ -260,6 +260,25 @@ void MainScreenIdle(void)
 /* mainMenuCenter is h-then-v, NOT QuickDraw's Point order */
 
 #define kInterfacePictID    0x1f40
+#define kVersionText        "EV (plus) Nova Community Edition r4 "
+#define kVersionGrey        0x8000
+#define kVersionLeft        5
+#define kVersionRaise       6           /* baseline above the backdrop's bottom edge */
+#define kVersionTextSize    9
+
+/* Grey, in the lower-left corner of the main menu's backdrop. */
+static void DrawVersion(void)
+{
+    static const char version[] = kVersionText;
+
+    CurrentGrafPort->foreColor.red = kVersionGrey;
+    CurrentGrafPort->foreColor.green = kVersionGrey;
+    CurrentGrafPort->foreColor.blue = kVersionGrey;
+    MoveTo(kVersionLeft, CurrentGrafPort->pix.bounds.bottom - kVersionRaise);
+    CurrentGrafPort->txFont = smallTextFont;
+    TextSize(kVersionTextSize);
+    DrawTextRun(version, sizeof(version) - 1, NULL, 0, 0);
+}
 #define kMenuHalfWidth      512
 #define kMenuHalfHeight     384
 
@@ -286,7 +305,7 @@ void SetupInterfaceBackground(void)
         DrawPicHandle((PicHandle)pic, &interfacePicRect);
         ShowMenuArt(MenuArt()->bounds);
         SetGWorldContainer(&loadPort);
-        CE_DrawVersion();
+        DrawVersion();
         QDReleaseResource((PicHandle)pic);
     }
     SWSetPortToWindow(gSpriteWorld);

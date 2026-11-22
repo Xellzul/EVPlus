@@ -213,7 +213,7 @@ static int32_t ReadLong(const void *data)
    table as RGB triplets: an IMAGE8_PAL image. Returns 0, or 1 with the image released.
    As CE's decoder has it: the offsets are taken as shorts, ctSize as the entry count, and
    each colour component's low byte. */
-static int CE_ImageParsePPat(Image_t *image, const void *ppat)
+static int ImageParsePPat(Image_t *image, const void *ppat)
 {
     const unsigned char *src;
     const unsigned char *map;
@@ -307,7 +307,7 @@ Image_t *GetPixPat(short id)
     if (h != NULL) {
         pat = (Image_t *)AllocAPointer(sizeof(Image_t));
         LockAHandle(h);
-        err = CE_ImageParsePPat(pat, *h);
+        err = ImageParsePPat(pat, *h);
         ReleaseResource(h);
         if (err != 0) {
             DeallocAPointer(pat);

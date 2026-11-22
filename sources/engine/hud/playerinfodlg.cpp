@@ -423,7 +423,7 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x101);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x2c));
-        NumToString(CE_TruncF32(shipData->TurnRate() * 30.0f), (StringPtr)buf);
+        NumToString(TruncF32(shipData->TurnRate() * 30.0f), (StringPtr)buf);
         DrawString((const unsigned char *)buf);
         DrawIndString(kGameStrList, 0x102);
 
@@ -432,7 +432,7 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x103);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x3c));
-        NumToString(CE_TruncF32(shipData->AccelRate() * 2500.0), (StringPtr)buf);
+        NumToString(TruncF32(shipData->AccelRate() * 2500.0), (StringPtr)buf);
         DrawString((const unsigned char *)buf);
 
         RGBForeColor(&rgbLightGrey);
@@ -441,9 +441,9 @@ void PlayerInfoDialogUpdate(void)
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x4c));
         if (strictPlay)
-            NumToString(CE_TruncF32(shipData->MaxSpeed() * 100.0f), (StringPtr)buf);
+            NumToString(TruncF32(shipData->MaxSpeed() * 100.0f), (StringPtr)buf);
         else
-            NumToString(CE_TruncF32(shipData->MaxSpeed() * 100.0f *
+            NumToString(TruncF32(shipData->MaxSpeed() * 100.0f *
                                     0.6666666666666666), (StringPtr)buf);
         DrawString((const unsigned char *)buf);
 

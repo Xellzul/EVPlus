@@ -2,11 +2,13 @@
 #ifndef STELLAR_H
 #define STELLAR_H
 #include "shipobj.h"
-#include "cefix.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define kBordersWidth       860         /* the border grid in 2 px cells: maps up to 1720x1024 */
+#define kBordersHeight      512
 
 /* the stellar the player is docked at, or landed on */
 EXTERN_CPP_BEGIN
@@ -82,9 +84,9 @@ extern double floatingMapZoom;
 extern Boolean partialMapDialogUpdate;
 extern short hypergateMapModeStellar;
 extern Boolean influenceCoordsCached;
-extern unsigned char influenceOwner[kCEBordersWidth][kCEBordersHeight][4];
+extern unsigned char influenceOwner[kBordersWidth][kBordersHeight][4];
 extern short influenceStepSize;
-extern unsigned char influenceValue[kCEBordersWidth][kCEBordersHeight][4];
+extern unsigned char influenceValue[kBordersWidth][kBordersHeight][4];
 extern PicHandle mapBackgroundPic;
 extern PicHandle nebulaPic[32][7];
 extern Boolean doneFlag[];

@@ -119,13 +119,13 @@ void MapDialog::Run()
     partialMapDialogUpdate = 0;
     y = 0;
     do {
-        for (sys = 0; sys < kCEBordersWidth; sys++) {
+        for (sys = 0; sys < kBordersWidth; sys++) {
             for (i = 0; i < 4; i++) {
                 influenceOwner[sys][y][i] = 0;
                 influenceValue[sys][y][i] = 0;
             }
         }
-    } while (++y < kCEBordersHeight);
+    } while (++y < kBordersHeight);
     RecalcMissionSystsForMap();
     if (shipData->navTargetKind == kNavTargetLink && shipData->targetStellar != -1 && onPlanet == 0)
         selSystem = FindActiveCoLocatedSystem(
@@ -690,8 +690,8 @@ Boolean MapDialog::Filter(DialogPtr dlg, const DialogEvent &event, short *itemHi
             nextInfluenceSyst = 0;
         } else if (nextInfluenceSyst <= kMaxSystems) {
             influenceStepSize = 1;
-            for (i = 0; i < kCEBordersWidth; i++) {
-                for (j = 0; j < kCEBordersHeight; j++) {
+            for (i = 0; i < kBordersWidth; i++) {
+                for (j = 0; j < kBordersHeight; j++) {
                     for (k = 0; k < 4; k++) {
                         influenceOwner[i][j][k] = 0;
                         influenceValue[i][j][k] = 0;
@@ -1798,6 +1798,26 @@ void ShowFloatingMap(void)
 #define kInfluenceCoarseStep 8
 #define kInfluenceGridMax 255
 
+static int bordersVisibleWidth = kBordersWidth;
+static int bordersVisibleHeight = kBordersHeight;
+
+/* RecalcMapInfluence with the border grid limited to the map item's size in grid cells. */
+// BUG (CE F15.12/F16): the limit only ever shrinks, so one rebuild with a smaller rect would keep every
+// later rebuild cut to it; every caller passes the map item's rect today, so it stays the dialog size
+static void RecalcVisibleMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom, Rect *r)
+{
+    short width;
+    short height;
+
+    width = (r->right - r->left) / 2;
+    if (width < bordersVisibleWidth)
+        bordersVisibleWidth = width;
+    height = (r->bottom - r->top) / 2;
+    if (height < bordersVisibleHeight)
+        bordersVisibleHeight = height;
+    RecalcMapInfluence(left, top, right, bottom, r);
+}
+
 // FUNCTION: EVNOVA 0x004a9bf0
 // MAC: _MapPosToInfluenceCoords i386 0x000114f7 ppc 0x00014e78
 void MapPosToInfluenceCoords(short x, short y, Rect *r, short *outX, short *outY)
@@ -1820,7 +1840,7 @@ void RecalcAllMapInfluence(Rect *r)
     influenceStepSize = kInfluenceCoarseStep;
     nextInfluenceSyst = -1;
     influenceCoordsCached = 0;
-    CE_RecalcMapInfluence(0, 0, kInfluenceGridMax, kInfluenceGridMax, r);
+    RecalcVisibleMapInfluence(0, 0, kInfluenceGridMax, kInfluenceGridMax, r);
 }
 
 // FUNCTION: EVNOVA 0x004a9d50
@@ -1838,8 +1858,8 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
     if (influenceStepSize < 1)
         influenceStepSize = 1;
 
-    for (x = 0; x < kCEBordersWidth; x += influenceStepSize) {
-        for (y = 0; y < kCEBordersHeight; y += influenceStepSize) {
+    for (x = 0; x < kBordersWidth; x += influenceStepSize) {
+        for (y = 0; y < kBordersHeight; y += influenceStepSize) {
             for (group = 0; group < kInfluenceLayers; group++) {
                 influenceOwner[x][y][group] = 0;
                 influenceValue[x][y][group] = 0;
@@ -1864,12 +1884,12 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
     }
 
     if (influenceStepSize > 1) {
-        for (x = 0; x < kCEBordersWidth; x += influenceStepSize) {
-            for (y = 0; y < kCEBordersHeight; y += influenceStepSize) {
+        for (x = 0; x < kBordersWidth; x += influenceStepSize) {
+            for (y = 0; y < kBordersHeight; y += influenceStepSize) {
                 for (i = 0; i < influenceStepSize; i++) {
                     for (dy = 0; dy < influenceStepSize; dy++) {
-                        if (x + i < ceMapBordersVisibleWidth
-                            && y + dy < ceMapBordersVisibleHeight) {
+                        if (x + i < bordersVisibleWidth
+                            && y + dy < bordersVisibleHeight) {
                             for (group = 0; group < kInfluenceLayers; group++) {
                                 influenceOwner[x + i][y + dy][group] =
                                     influenceOwner[x][y][group];
@@ -1932,20 +1952,20 @@ Boolean AddSystemInfluenceToMap(short sys, Rect *r)
 
         govt = systemData[sys].govt;
         if ((govtData[govt].flags2 & kGovtMinor) != 0)
-            radius = CE_RoundD(kTightInfluenceRadius / mapZoom) + kTightInfluenceMargin;
+            radius = RoundD(kTightInfluenceRadius / mapZoom) + kTightInfluenceMargin;
         else
-            radius = CE_RoundD(kInfluenceRadius / mapZoom) + kInfluenceMargin;
+            radius = RoundD(kInfluenceRadius / mapZoom) + kInfluenceMargin;
         if (influenceStepSize > 1)
             radius -= radius % influenceStepSize;
         r2 = radius * radius;
 
-        if (mapX >= -radius && mapX <= radius + ceMapBordersVisibleWidth
-            && mapY >= -radius && mapY <= radius + ceMapBordersVisibleHeight) {
+        if (mapX >= -radius && mapX <= radius + bordersVisibleWidth
+            && mapY >= -radius && mapY <= radius + bordersVisibleHeight) {
             for (gx = mapX - radius; gx <= mapX + radius; gx += influenceStepSize) {
                 for (gy = mapY - radius; gy <= mapY + radius;
                      gy += influenceStepSize) {
-                    if (gx >= 0 && gx < ceMapBordersVisibleWidth
-                        && gy >= 0 && gy < ceMapBordersVisibleHeight) {
+                    if (gx >= 0 && gx < bordersVisibleWidth
+                        && gy >= 0 && gy < bordersVisibleHeight) {
                         distX = gx - mapX;
                         distY = gy - mapY;
                         if (distX < 0)
@@ -2032,8 +2052,8 @@ void DrawMapInfluence(Rect bounds)
     if (influenceStepSize < 1)
         influenceStepSize = 1;
 
-    for (x = 0; x < kCEBordersWidth; x += influenceStepSize) {
-        for (y = 0; y < kCEBordersHeight; y += influenceStepSize) {
+    for (x = 0; x < kBordersWidth; x += influenceStepSize) {
+        for (y = 0; y < kBordersHeight; y += influenceStepSize) {
             if (influenceValue[x][y][0] == 0)
                 continue;
 

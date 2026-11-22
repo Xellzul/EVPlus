@@ -4,8 +4,8 @@
 #include "game.h"
 #include "render.h"
 #include "dialogs.h"
-#include "cefix.h"
 #include "dialog.h"
+#include "stellar.h"
 
 /* the map object's globals */
 Image_t *redMapArrow;
@@ -27,8 +27,8 @@ short selSystem;
 short influenceStepSize;
 short nextInfluenceSyst;
 DialogPtr mapDialog;
-unsigned char influenceValue[kCEBordersWidth][kCEBordersHeight][4];
-unsigned char influenceOwner[kCEBordersWidth][kCEBordersHeight][4];
+unsigned char influenceValue[kBordersWidth][kBordersHeight][4];
+unsigned char influenceOwner[kBordersWidth][kBordersHeight][4];
 
 #define kSearchDlogID 0xbbd
 #define kSearchTextItem 5

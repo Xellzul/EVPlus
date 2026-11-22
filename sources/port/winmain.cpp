@@ -2,10 +2,23 @@
    the platform layer's, which calls this. Notes: Research/notes/winmain.md */
 #include "burger.h"
 #include "game.h"
-#include "cefix.h"
 #include "platform.h"
 
 EXTERN_C_BEGIN
+
+#define kGameIconGroup      202
+#define kNplayIconGroup     203
+
+/* Registers the program and its .nplay files with the system (on Windows written on every start), then
+   makes the first argument the current folder. */
+static void Startup(void)
+{
+    PlatRegisterFileType("EV Nova.exe", ".nplay", "EVNova.Play.1", "Play EV Nova", kNplayIconGroup,
+                         kGameIconGroup);
+
+    if (PlatArgCount() > 1)
+        PlatSetCurrentFolder(PlatArg(1));
+}
 
 
 /* The exe also asked Windows how much memory the machine has (CE fixed the pool's size instead) and read
@@ -14,7 +27,7 @@ EXTERN_C_BEGIN
 // FUNCTION: EVNOVA 0x004d2a80
 int GameMain(void)
 {
-    CE_Startup();
+    Startup();
     CreateGameWindow();
     PlatSetCurrentFolder(PlatExeFolder());
     SetDefaultPrefixs();

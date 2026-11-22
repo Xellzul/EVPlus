@@ -1098,7 +1098,7 @@ static void StatOf(StatText *s, short stat, short type, short wordType)
     s->value = 0;
     switch (stat) {
     case kStatSpeed:
-        s->value = CE_RoundD(ship->maxSpeed * 100.0);
+        s->value = RoundD(ship->maxSpeed * 100.0);
         StrcatNumber(s->num, s->value);
         break;
     case kStatAccel:
@@ -1111,7 +1111,7 @@ static void StatOf(StatText *s, short stat, short type, short wordType)
             if (rate < 0.0f)
                 rate = 0.0f;
             rate *= 2.0;
-            s->value = CE_TruncF32(rate * 2500.0);
+            s->value = TruncF32(rate * 2500.0);
         } else {
             word = TurnWord(shipClass[wordType].turnRate);
             if (word == 396 || TurnWord(ship->turnRate) == 396)
@@ -1121,7 +1121,7 @@ static void StatOf(StatText *s, short stat, short type, short wordType)
                 rate = 1.0f;
             if (rate < 0.0f)
                 rate = 0.0f;
-            s->value = CE_TruncF32(rate * 30.0f);
+            s->value = TruncF32(rate * 30.0f);
         }
         if (word == 396) {
             s->value = 0;

@@ -4,7 +4,6 @@
 #include <time.h>
 
 #include "burger.h"
-#include "cefix.h"
 #include "endianswap.h"
 #include "platform.h"
 #include "player.h"
@@ -128,12 +127,22 @@ void GetTime(DateTimeRec *dtr)
     dtr->dayOfWeek = t->tm_wday + 1;
 }
 
+/* NumberToAscii with a minus sign for a negative value. */
+static char *SignedNumberToAscii(char *dst, int32_t value, uint32_t flags)
+{
+    if (value < 0) {
+        *dst++ = '-';
+        value = -value;
+    }
+    return NumberToAscii(dst, value, flags);
+}
+
 // FUNCTION: EVNOVA 0x004bbce0
 void NumToString(int32_t value, unsigned char *str)
 {
     char text[256];
 
-    CE_NumberToAscii(text, value, 0);
+    SignedNumberToAscii(text, value, 0);
     CStr2PStr((char *)str, text);
 }
 

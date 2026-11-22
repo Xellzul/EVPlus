@@ -6,7 +6,6 @@
  * passes its duration, a song when its sound has drained. */
 
 #include "macport.h"
-#include "cefix.h"
 #include "media.h"
 #include "movie.h"
 #include "platform.h"
@@ -53,9 +52,9 @@ int MovieFindFile(const char *const *names, int count, char *path, size_t size)
         for (i = 0; i < count; i++) {
             snprintf(game, sizeof game, folder == 0 ? "9:Nova Plug-ins:%s" : "9:Nova Files:%s", names[i]);
             if (folder == 0)
-                CE_ExpandPlugInsPath(path, game);
+                ExpandPlugInsPath(path, game);
             else
-                CE_ExpandFilesPath(path, game);
+                ExpandNovaFilesPath(path, game);
             path[size - 1] = '\0';
             if (FileExists(path))
                 return 1;

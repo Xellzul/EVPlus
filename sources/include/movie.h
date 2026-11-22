@@ -13,6 +13,10 @@ typedef struct MovieRecord *Movie;
 
 #define kMoviePathMax 2048
 
+/* the game's "9:Nova Files:<name>" / "9:Nova Plug-ins:<name>" as a native path in the folder found at start */
+extern void ExpandNovaFilesPath(char *dst, const char *path);
+extern void ExpandPlugInsPath(char *dst, const char *path);
+
 /* the first of `names' found in the plug-ins folder, else the first in Nova Files; 0 when none is there */
 extern int MovieFindFile(const char *const *names, int count, char *path, size_t size);
 

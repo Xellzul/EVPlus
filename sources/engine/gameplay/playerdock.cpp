@@ -19,6 +19,14 @@
 
 EXTERN_C_BEGIN
 
+/* The jump, hypergate and wormhole flash, drawn black when the Hyperspace Effects
+   preference is off. */
+void SetFlashColor(const RGBColor *color)
+{
+    // BUG (CE F22): CE stores the colour without RGBForeColor's NULL-port test; no caller hits it
+    CurrentGrafPort->foreColor = settings.noHyperGamma != 0 ? *blackColor : *color;
+}
+
 // FUNCTION: EVNOVA 0x00455e10
 // MAC: _PlayerLandOnStellar i386 0x000631c4 ppc 0x0006b244
 void PlayerLandOnStellar(void)
@@ -207,7 +215,7 @@ short PlayerEnterHypergate(void)
             ship->accelMag = (ship->MaxSpeed() * 0.5);
             Accel(ship->heading, ship->accelMag, &ship->vel);
             View::SetPortToView();
-            CE_SetFlashColor(whiteColor);
+            SetFlashColor(whiteColor);
             PaintRect(&gSpriteWorld->workFrameP->frameRect);
             ForeColor(blackColor);
             Screen::ComposeView();
@@ -399,7 +407,7 @@ short PlayerEnterWormhole(void)
     ship->accelMag = ship->MaxSpeed() * 0.5;
     Accel(ship->heading, ship->accelMag, &ship->vel);
     View::SetPortToView();
-    CE_SetFlashColor(whiteColor);
+    SetFlashColor(whiteColor);
     PaintRect(&gSpriteWorld->windRect);
     ForeColor(blackColor);
     Screen::ComposeView();

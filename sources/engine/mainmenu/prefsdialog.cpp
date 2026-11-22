@@ -6,11 +6,13 @@
 #include "player.h"
 #include "render.h"
 #include "sound.h"
-#include "cefix.h"
+#include "platform.h"
 #include "prefsdisplay.h"
 #include "dialog.h"
 
 namespace {
+
+unsigned char runInAWindow;
 
 constexpr short kWidth = 500;
 constexpr short kHeight = 335;
@@ -303,8 +305,8 @@ void PrefsDialog::show()
     ForeColor(blackColor);
     for (int i = 0; i < checkCount; i++)
         setCheck(checks[i].item, (*checks[i].setting != 0) != checks[i].inverted);
-    ceRunInAWindow = CE_IsWindowed();
-    setCheck(windowedItem, ceRunInAWindow);
+    runInAWindow = PlatVideoIsFullScreen() == 0;
+    setCheck(windowedItem, runInAWindow);
     for (int i = 0; i < stepperCount; i++) {
         extra[0] = 0;
         steppers[i].show(*this, value, extra);
@@ -337,8 +339,8 @@ bool PrefsDialog::handle(short item)
         return false;
     }
     if (item == windowedItem) {
-        ceRunInAWindow = (ceRunInAWindow == 0);
-        CE_ToggleFullscreen();
+        runInAWindow = (runInAWindow == 0);
+        PlatVideoSetFullScreen(runInAWindow == 0);
         return false;
     }
     for (int i = 0; i < checkCount; i++) {

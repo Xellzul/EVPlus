@@ -39,6 +39,62 @@
  * this is the first thing that runs after the resource file opens.
  */
 
+#define kExeFolder          "9:"        /* BurgerLib prefix 9: the exe's folder */
+#define kNovaPrefix         "Nova "     /* "Nova Plug-Ins" is "Plug-Ins" on the Mac */
+#define kNovaFilesFolder    "Nova Files"
+
+static unsigned char novaFilesBesideExe;   /* Nova Files was found beside the exe */
+static unsigned char plugInsMacName;       /* the plug-ins folder is "Plug-Ins" */
+
+/* A plain record starts with a stellar index, which is below kMaxStellars; anything else
+   is still encrypted. */
+static int32_t DecryptIfNecessary(void *buf, uint32_t len, uint32_t key)
+{
+    if (*(unsigned short *)buf >= kMaxStellars)
+        return DoEncryption(buf, len, key);
+    return 0;
+}
+
+/* No Nova Files in the current directory: the one beside the exe, instead of creating
+   an empty folder here. */
+static short OpenNovaFilesFallback(const char *path, const char *ext, FILE *log)
+{
+    novaFilesBesideExe = 1;
+    return OpenEVPlugins(kExeFolder kNovaFilesFolder, ext, log);
+}
+
+/* No Nova Plug-Ins in the current directory: try the Mac name before the game creates
+   an empty folder. */
+static short OpenPlugInsFallback(const char *path, const char *ext, FILE *log)
+{
+    short err;
+
+    err = OpenEVPlugins(path, ext, log);
+    if (err != 0) {
+        err = OpenEVPlugins(path + sizeof(kNovaPrefix) - 1, ext, log);
+        plugInsMacName = err == 0;
+    }
+    return err;
+}
+
+/* "9:Nova Files:<name>" where OpenDataFiles found Nova Files. */
+void ExpandNovaFilesPath(char *dst, const char *path)
+{
+    if (!novaFilesBesideExe)
+        path += sizeof(kExeFolder) - 1;
+    ExpandAPathToBufferNative(dst, path);
+}
+
+/* "9:Nova Plug-ins:<name>" where OpenDataFiles found the plug-ins. */
+void ExpandPlugInsPath(char *dst, const char *path)
+{
+    if (plugInsMacName)
+        path += sizeof(kExeFolder kNovaPrefix) - 1;
+    else
+        path += sizeof(kExeFolder) - 1;
+    ExpandAPathToBufferNative(dst, path);
+}
+
 // FUNCTION: EVNOVA 0x004bd0c0
 // MAC: _InitDataFiles i386 0x0007138b ppc 0x00079dc4
 void InitDataFiles(void)
@@ -90,7 +146,7 @@ void OpenDataFiles(void)
     crashlog_print(" folder:\n");
 
     if (OpenEVPlugins("Nova Files", ".rez", NULL) != 0) {
-        if (CE_OpenNovaFilesFallback("Nova Files", ".rez", NULL) != 0) {
+        if (OpenNovaFilesFallback("Nova Files", ".rez", NULL) != 0) {
             FadeScreenIn();
             GetIndString(str, kAlertStrList, 0x1e);
             EVNoteAlert(str);
@@ -104,7 +160,7 @@ void OpenDataFiles(void)
             crashlog_print("Nova Plug-Ins");
             crashlog_print(" folder:\n");
         }
-        if (CE_OpenPlugInsFallback("Nova Plug-Ins", ".rez", NULL) != 0) {
+        if (OpenPlugInsFallback("Nova Plug-Ins", ".rez", NULL) != 0) {
             CreateDirectoryPath("Nova Plug-Ins");
             if (OpenEVPlugins("Nova Plug-Ins", ".rez", NULL) != 0) {
                 FadeScreenIn();
@@ -3166,7 +3222,7 @@ short LoadPilotData(char *path)
     }
     if (playerFileHand != NULL) {
         LockAHandle((Handle)playerFileHand);
-        err = CE_DecryptIfNecessary(*playerFileHand, GetAHandleSize((Handle)playerFileHand),
+        err = DecryptIfNecessary(*playerFileHand, GetAHandleSize((Handle)playerFileHand),
                                     kPilotCryptKey);
 
         if (err == 0) {
@@ -3372,7 +3428,7 @@ short LoadPilotData(char *path)
     }
     if (altPlayerFileHand != NULL) {
         LockAHandle((Handle)altPlayerFileHand);
-        err = CE_DecryptIfNecessary(*altPlayerFileHand,
+        err = DecryptIfNecessary(*altPlayerFileHand,
                                     GetAHandleSize((Handle)altPlayerFileHand), kPilotCryptKey);
 
         if (err == 0) {

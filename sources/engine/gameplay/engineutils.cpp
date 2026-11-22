@@ -264,6 +264,28 @@ void FadeWhiteOut(void)
 }
 
 
+/* The value rounded to float precision, then truncated. The float parameter is the
+   rounding, so a caller passes the product unconverted. */
+int32_t TruncF32(float value)
+{
+    return value;
+}
+
+/* To nearest with ties to even (FIST's default mode), where a C cast truncates. */
+int32_t RoundD(double value)
+{
+    int32_t whole;
+    double rest;
+
+    whole = value;
+    rest = value - whole;
+    if (rest > 0.5 || (rest == 0.5 && (whole & 1) != 0))
+        whole++;
+    else if (rest < -0.5 || (rest == -0.5 && (whole & 1) != 0))
+        whole--;
+    return whole;
+}
+
 /* A random value in [0, range); 0 for an empty range (range <= 0). */
 // FUNCTION: EVNOVA 0x004683b0
 // MAC: _Rand i386 0x000a4c76 ppc 0x000b08b4
