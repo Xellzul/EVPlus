@@ -1,11 +1,15 @@
-/* burgerchan.h -- the sound channel table. Notes: Research/notes/burgerchan.md */
+/* burgerchan.h -- the Sound Toolkit's insides: the channel table (atsound.cpp), the mixer and its output
+   (atsnddrv.cpp) and the sample decoders (atadpcm.cpp). Notes: Research/notes/burgerchan.md */
 
 #ifndef BURGERCHAN_H
 #define BURGERCHAN_H
 
+#include "burger.h"
+#include "soundtool.h"
+
 #define kSoundChannels 16
-#define kChannelBytes  sizeof(SoundChannel)                /* 0x38 on 32-bit */
-#define kChannelTable  (kSoundChannels * kChannelBytes)   /* 0x380 on 32-bit */
+#define kChannelBytes  sizeof(SoundChannel)
+#define kChannelTable  (kSoundChannels * kChannelBytes)
 
 /* A playing channel's position in its samples. */
 typedef struct MixVoice {
@@ -16,29 +20,37 @@ typedef struct MixVoice {
 } MixVoice;
 
 typedef struct SoundChannel {
-    uint32_t id;                            /* +0x00 */
-    void *sound;                                 /* +0x04 */
-    uint32_t stream;                        /* +0x08, 16.16 step */
-    uint32_t device;                        /* +0x0c, 16.16 */
-    void (*done)(int32_t reason, void *sound, void *ref);   /* +0x10 */
-    void *data;                                  /* +0x14 */
-    MixVoice voice;                              /* +0x18 */
-    int32_t unk2C;                                /* +0x2c */
-    unsigned short leftLevel;                    /* +0x30 */
-    unsigned short rightLevel;                   /* +0x32 */
-    unsigned short priority;                     /* +0x34 */
-    unsigned char finished;                         /* +0x36 */
-    unsigned char pad37;                         /* +0x37 */
+    uint32_t id;
+    Sound *sound;
+    uint32_t stream;                             /* 16.16 step */
+    const short *data;                           /* the sound's samples */
+    MixVoice voice;
+    unsigned short leftLevel;
+    unsigned short rightLevel;
+    unsigned short priority;
+    unsigned char finished;
+    unsigned char pad37;
 } SoundChannel;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* the channel table: gNumVoices in use, the first gMaxVoices heard (atsound.cpp) */
+extern SoundChannel gTheVoices[kSoundChannels];
+extern int32_t gNumVoices;
+extern int32_t gMaxVoices;
+extern uint32_t gSampleRate;                     /* the output rate, 16.16 */
+extern unsigned char gSoundToolOpen;
+extern Mutex gCriticalSection;                   /* held while the table or the mix changes */
+extern void _ST_HaltASound(short index);
 
-extern SoundChannel gTheVoices[kSoundChannels];      /* atsound.cpp */
+/* the mixer and its output (atsnddrv.cpp) */
+extern int32_t _ST_CreateSoundPump(void);
+extern void _ST_DisposeSoundPump(void);
+extern void _ST_MixVoices(short *buffer, ULong frames);
+extern void _ST_MixerDispatch(short *buffer, ULong frames);
+extern unsigned char PCM_Mixer(const short *data, short **out, ULong frames, ULong step,
+                               MixVoice *voice, unsigned short left, unsigned short right);
 
-#ifdef __cplusplus
-}
-#endif
+/* IMA ADPCM to 16-bit PCM (atadpcm.cpp) */
+extern void ImaDecodePackets(const unsigned char *src, ULong packets, short *out);
+extern void ImaDecodeStream(const unsigned char *src, ULong samples, short *out);
 
 #endif

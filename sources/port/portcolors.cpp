@@ -1,5 +1,10 @@
-/* portcolors.cpp -- the four QuickDraw colour globals the port had to supply, 0x00575acc .. 0x00575af0. Notes: Research/notes/portcolors.md */
+/* portcolors.cpp -- the QuickDraw colour globals the port had to supply (0x00575acc .. 0x00575af0, blackRGB) and the gamma ramp. Notes: Research/notes/portcolors.md */
+#include <math.h>
+
 #include "macport.h"
+
+RGBColor blackRGB;
+unsigned char gGammaRamp[32];
 
 EXTERN_C_BEGIN
 
@@ -15,3 +20,20 @@ static RGBColor cyanRGB = { 0x0000, 0xffff, 0xffff };    /* 0x00575ae8 */
 RGBColor *cyanColor = &cyanRGB;                  /* 0x00575af0 */
 
 EXTERN_C_END
+
+#define kGammaSteps  32
+#define kGammaRampMax 31
+
+// FUNCTION: EVNOVA 0x004bc310
+void BuildGammaRamp(float gamma)
+{
+    int i;
+    double e;
+
+    e = 1.0 / (gamma / 100.0f);
+    for (i = 0; i < kGammaSteps; i++) {
+        gGammaRamp[i] = (pow(i / 31.0, e) * 31.0 + 0.5);
+        if (gGammaRamp[i] > kGammaRampMax)
+            gGammaRamp[i] = kGammaRampMax;
+    }
+}

@@ -27,7 +27,7 @@ Boolean regNoticeShown;
 Boolean showingIntroText;
 Str255 newPlayerName[2];
 Str255 newPilotPopupChoice[2];
-void *mainScreenSnd[4];
+Sound *mainScreenSnd[4];
 ShortPoint mainMenuCenter;
 ShortPoint menuButtonPos[6];
 GWorldContainer logoPort;

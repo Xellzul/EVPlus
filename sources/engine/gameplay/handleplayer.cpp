@@ -15,6 +15,7 @@
 #include "ships.h"
 #include "crashlog.h"
 #include "viewscale.h"
+#include "screen.h"
 
 /* the cheat keys HandlePlayer reads by code */
 #define kScanExploreCheat   kScanLang1
@@ -1127,14 +1128,14 @@ void HandlePlayer(ShipObj *player)
                         newbieFlag = 0x7fff;
                         if (doubleTime) {
                             if (!ST_IsSoundPlaying(warpUpSnd[1])) {
-                                warpUpSoundSpec.handle = (void **)warpUpSnd[1];
+                                warpUpSoundSpec.sound = warpUpSnd[1];
                                 AdjustWarpSoundSpeed(
                                     shipClass[player->type].mobilityFactor);
                                 ST_PlaySoundParam(&warpUpSoundSpec);
                                 warpSoundDone = 0;
                             }
                         } else if (!ST_IsSoundPlaying(warpUpSnd[0])) {
-                            warpUpSoundSpec.handle = (void **)warpUpSnd[0];
+                            warpUpSoundSpec.sound = warpUpSnd[0];
                             AdjustWarpSoundSpeed(
                                 shipClass[player->type].mobilityFactor);
                             ST_PlaySoundParam(&warpUpSoundSpec);
@@ -1263,7 +1264,7 @@ void HandlePlayer(ShipObj *player)
             CE_SetFlashColor(whiteColor);
             PaintRect(&gSpriteWorld->workFrameP->frameRect);
             ForeColor(blackColor);
-            View::Flush();
+            Screen::ComposeView();
             ScreenEndScene();
             SWSetPortToWorkArea(gSpriteWorld);
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, SWWindowFrame(gSpriteWorld),

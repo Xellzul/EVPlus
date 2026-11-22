@@ -10,9 +10,11 @@
 #include "uiscale.h"
 #include "space.h"
 #include "ai.h"
+#include "screen.h"
 #include "prototypes.h"
 #include "gameutil.h"
 #include "player.h"
+#include "pixel.h"
 #include "platform.h"
 #include "viewscale.h"
 #include "prefsdisplay.h"
@@ -337,7 +339,7 @@ void Bye(void)
 {
     short i;
     short j;
-    void *snd;
+    Sound *snd;
 
     ByeLog("doing cleanup");
     FlushEvents(everyEvent - diskMask, 0);
@@ -697,16 +699,14 @@ void LoadSounds(void)
     warpUpSnd[1] = ST_LoadSndResource(0x81);
     warpOutSnd = ST_LoadSndResource(0x82);
 
-    warpUpSoundSpec.handle = (void **)warpUpSnd[0];
+    warpUpSoundSpec.sound = warpUpSnd[0];
     warpUpSoundSpec.rate = kUnityRate;
-    warpUpSoundSpec.done = NULL;
     warpUpSoundSpec.priority = kHighPriority;
     vol = gSoundVolume;
     warpUpSoundSpec.leftLevel = vol;
     warpUpSoundSpec.rightLevel = vol;
-    planetSoundSpec.handle = NULL;
+    planetSoundSpec.sound = NULL;
     planetSoundSpec.rate = kUnityRate;
-    planetSoundSpec.done = NULL;
     planetSoundSpec.priority = kHighPriority;
     planetSoundSpec.leftLevel = vol;
     planetSoundSpec.rightLevel = vol;
@@ -758,11 +758,10 @@ bool SameAsShown(const Rect &r)
 {
     const PixMap &art = menuArtPort.world->pix;
     const PixMap &shown = menuShownPort.world->pix;
-    size_t bytes = (size_t)(r.right - r.left) * 2;
+    size_t bytes = (size_t)(r.right - r.left) * Pixel::kBytes;
 
     for (int y = r.top; y < r.bottom; y++) {
-        if (memcmp((char *)art.baseAddr + (size_t)y * art.rowBytes + r.left * 2,
-                   (char *)shown.baseAddr + (size_t)y * shown.rowBytes + r.left * 2, bytes) != 0)
+        if (memcmp(Pixel::Row(art, y) + r.left, Pixel::Row(shown, y) + r.left, bytes) != 0)
             return false;
     }
     return true;
@@ -772,11 +771,10 @@ void KeepAsShown(const Rect &r)
 {
     const PixMap &art = menuArtPort.world->pix;
     const PixMap &shown = menuShownPort.world->pix;
-    size_t bytes = (size_t)(r.right - r.left) * 2;
+    size_t bytes = (size_t)(r.right - r.left) * Pixel::kBytes;
 
     for (int y = r.top; y < r.bottom; y++)
-        memcpy((char *)shown.baseAddr + (size_t)y * shown.rowBytes + r.left * 2,
-               (char *)art.baseAddr + (size_t)y * art.rowBytes + r.left * 2, bytes);
+        memcpy(Pixel::Row(shown, y) + r.left, Pixel::Row(art, y) + r.left, bytes);
 }
 
 } // namespace
@@ -859,7 +857,7 @@ void ApplyUIScale(void)
 void ReapplyUIScale(void)
 {
     Resolution running = { startGameWidth, startGameHeight };
-    PixelSize draw = { (int)gVideoWidth, (int)gVideoHeight };
+    PixelSize draw = { Screen::Get().width, Screen::Get().height };
     Rect r;
 
     if (settings.uiScale == startUIScale || gSpriteWorld == NULL || UI::InMenuScale())

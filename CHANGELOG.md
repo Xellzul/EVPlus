@@ -19,3 +19,4 @@
 - Shipyard: Total Space shows the space with all standard equipment sold
 - Galaxy map: Goods Traded can show each commodity's price levels
 - Galaxy map: special cargo prices, and active disasters coloured
+- Player Info: shield and armor show their raw values

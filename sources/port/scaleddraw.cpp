@@ -1,18 +1,13 @@
 /* scaleddraw.cpp -- the drawing primitives on a scaled pixel map: logical coordinates mapped to device pixels
    (uiscale.h), then drawn as the original primitives draw. */
 #include <math.h>
+#include "pixel.h"
 #include "uiscale.h"
 #include "scaleddraw.h"
 
 namespace Scaled {
 
 namespace {
-
-unsigned short Pixel555(const RGBColor &color)
-{
-    return (unsigned short)(gGammaRamp[color.red >> 11] << 10 | gGammaRamp[color.green >> 11] << 5
-                            | gGammaRamp[color.blue >> 11]);
-}
 
 /* a device rect cut to the pixel map; false when nothing is left */
 bool ClipToPixels(const PixMap &pix, Rect &device)
@@ -28,17 +23,12 @@ bool ClipToPixels(const PixMap &pix, Rect &device)
     return device.left < device.right && device.top < device.bottom;
 }
 
-unsigned short *Row(const PixMap &pix, int y)
-{
-    return (unsigned short *)((char *)pix.baseAddr + (size_t)y * pix.rowBytes);
-}
-
 void FillDevice(const PixMap &pix, Rect device, unsigned short pixel)
 {
     if (pix.pixelSize != 16 || !ClipToPixels(pix, device))
         return;
     for (int y = device.top; y < device.bottom; y++) {
-        unsigned short *row = Row(pix, y);
+        unsigned short *row = Pixel::Row(pix, y);
         for (int x = device.left; x < device.right; x++)
             row[x] = pixel;
     }
@@ -47,7 +37,7 @@ void FillDevice(const PixMap &pix, Rect device, unsigned short pixel)
 void PlotDevice(const PixMap &pix, int x, int y, unsigned short pixel)
 {
     if (x >= 0 && y >= 0 && x < pix.width && y < pix.height)
-        Row(pix, y)[x] = pixel;
+        Pixel::Row(pix, y)[x] = pixel;
 }
 
 /* the pen's size in device pixels, at least one */
@@ -64,12 +54,12 @@ void FillRect(const Rect &r, const RGBColor &color)
 {
     const PixMap &pix = CurrentGrafPort->pix;
 
-    FillDevice(pix, UI::Mapping(pix).DeviceRect(r), Pixel555(color));
+    FillDevice(pix, UI::Mapping(pix).DeviceRect(r), Pixel::FromColorGamma(color));
 }
 
 void FillDeviceRect(const Rect &device, const RGBColor &color)
 {
-    FillDevice(CurrentGrafPort->pix, device, Pixel555(color));
+    FillDevice(CurrentGrafPort->pix, device, Pixel::FromColorGamma(color));
 }
 
 void InvertRect(const Rect &r)
@@ -84,7 +74,7 @@ void InvertDeviceRect(Rect device)
     if (pix.pixelSize != 16 || !ClipToPixels(pix, device))
         return;
     for (int y = device.top; y < device.bottom; y++) {
-        unsigned short *row = Row(pix, y);
+        unsigned short *row = Pixel::Row(pix, y);
         for (int x = device.left; x < device.right; x++)
             row[x] = (unsigned short)(~row[x] & 0x7fff);
     }
@@ -139,7 +129,7 @@ void LineTo(short h, short v)
         return;
     }
 
-    unsigned short pixel = Pixel555(port.foreColor);
+    unsigned short pixel = Pixel::FromColorGamma(port.foreColor);
     int blockW = DevicePen(penW, map.ScaleX());
     int blockH = DevicePen(penH, map.ScaleY());
     int dx0 = map.X(x0);
@@ -178,7 +168,7 @@ Circle DeviceCircle(const Rect &r)
 void DrawCircle(const Circle &c, double inner)
 {
     const PixMap &pix = CurrentGrafPort->pix;
-    unsigned short pixel = Pixel555(CurrentGrafPort->foreColor);
+    unsigned short pixel = Pixel::FromColorGamma(CurrentGrafPort->foreColor);
 
     for (int y = (int)floor(c.cy - c.radius); y <= (int)ceil(c.cy + c.radius); y++) {
         for (int x = (int)floor(c.cx - c.radius); x <= (int)ceil(c.cx + c.radius); x++) {
@@ -234,13 +224,13 @@ void StretchOr8(const PixMap &src, const PixMap &dst, const Rect &s, Rect d)
     for (int y = d.top; y < d.bottom; y++) {
         int sy = s.top + (y - full.top) * Height(s) / Height(full);
         const unsigned char *in = (const unsigned char *)src.baseAddr + (size_t)sy * src.rowBytes;
-        unsigned short *out = Row(dst, y);
+        unsigned short *out = Pixel::Row(dst, y);
         for (int x = d.left; x < d.right; x++) {
             unsigned idx = in[s.left + (x - full.left) * Width(s) / Width(full)];
             if (idx == 0)
                 continue;
             const unsigned char *rgb = src.ctab + idx * 3;
-            out[x] = (unsigned short)((rgb[0] >> 3) << 10 | (rgb[1] >> 3) << 5 | rgb[2] >> 3);
+            out[x] = Pixel::From8(rgb[0], rgb[1], rgb[2]);
         }
     }
 }
@@ -355,8 +345,8 @@ void AddToMask(const PixMap &mask, const Rect &maskRect, const Rect &local)
     const PixMap &all = gComposition.mask->pix;
     if (SectRect(&local, &all.bounds, &clipped)) {
         for (int y = clipped.top; y < clipped.bottom; y++) {
-            const unsigned short *from = Scaled::Row(piece->pix, y - local.top);
-            unsigned short *to = Scaled::Row(all, y);
+            const unsigned short *from = Pixel::Row(piece->pix, y - local.top);
+            unsigned short *to = Pixel::Row(all, y);
             for (int x = clipped.left; x < clipped.right; x++)
                 to[x] &= from[x - local.left];
         }

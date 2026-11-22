@@ -3,6 +3,7 @@
 #ifndef SPRITEWORLD_H
 #define SPRITEWORLD_H
 #include "macport.h"
+#include "pixel.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,6 +153,19 @@ extern unsigned short SWMaskedRGBValue;                  /* 0x007d0500 */
 extern short gSWStickyError;                             /* 0x007d0504 */
 EXTERN_CPP_END
 
+/* --- how BlitPixieRLETranslucentDrawProc draws a sprite, from its translucency and tint --- */
+struct SpriteBlend {
+    enum class Kind { Plain, AddOver, Translucent, Hidden };
+    Kind kind;
+    uint32_t alpha;                     /* dst scale, of 32 */
+    uint32_t alphaR, alphaG, alphaB;    /* src scale per channel, of 32 */
+    uint32_t overR, overG, overB;       /* ORed in per channel, a pixel pair */
+    uint32_t overBias;                  /* src scale against biasColor, of 32; 32 and up: no tint */
+    uint32_t biasColor;                 /* the tint colour, a pixel pair */
+
+    static SpriteBlend Of(const SpriteRec &sprite);
+};
+
 /* --- the rect blitters: whole-rect copies, src first --- */
 extern void BlitPixieRect(unsigned char *srcPixels, unsigned char *dstPixels,
         int32_t srcRowBytes, int32_t dstRowBytes, unsigned short byteWidth,
@@ -174,12 +188,17 @@ extern short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *ma
         unsigned short depth, void ***frameData);        /* 0x00472510 */
 
 /* --- the RLE blitters: token stream in, one sprite each --- */
+extern void BlitPixieRLE(unsigned char *rleTokens, unsigned char *dstPixel,
+                         int32_t dstRowBytes);              /* 0x00471e10 */
+extern void BlitPixieRLEClipped(unsigned char *rleTokens, unsigned char *dstPixel,
+                                int32_t dstRowBytes, Rect *srcBlitRect); /* 0x00471e90 */
 extern void BlitPixieRLETranslucent(unsigned char *rleTokens, unsigned char *dstPixel,
-                            int32_t dstRowBytes);           /* 0x00472900 */
+                            int32_t dstRowBytes, const SpriteBlend &blend);  /* 0x00472900 */
 extern void BlitPixieRLEAddOver(unsigned char *rleTokens, unsigned char *dstPixel,
                             int32_t dstRowBytes);           /* 0x00472b30 */
 extern void BlitPixieRLETranslucentClipped(unsigned char *rleTokens, unsigned char *dstPixel,
-                            int32_t dstRowBytes, Rect *srcBlitRect);    /* 0x00472d70 */
+                            int32_t dstRowBytes, Rect *srcBlitRect,
+                            const SpriteBlend &blend);      /* 0x00472d70 */
 extern void BlitPixieRLEAddOverClipped(unsigned char *rleTokens, unsigned char *dstPixel,
                             int32_t dstRowBytes, Rect *srcBlitRect);    /* 0x004730d0 */
 
@@ -191,38 +210,13 @@ extern void BlitPixieMemSet(unsigned char *dstPixels, uint32_t value,
 extern void BlitPixieAddOverCopy(unsigned char *dstPixels, unsigned char *srcPixels,
                                  int32_t byteWidth);        /* 0x00473b60 */
 extern void BlitPixieTranslucentCopy(unsigned char *dstPixels, unsigned char *srcPixels,
-                                     int32_t byteWidth);    /* 0x004736c0 */
-extern void BlitPixieRLE(unsigned char *rleTokens, unsigned char *dstPixel,
-                         int32_t dstRowBytes);              /* 0x00471e10 */
-extern void BlitPixieRLEClipped(unsigned char *rleTokens, unsigned char *dstPixel,
-                                int32_t dstRowBytes, Rect *srcBlitRect); /* 0x00471e90 */
+                                     int32_t byteWidth, const SpriteBlend &blend); /* 0x004736c0 */
 extern int32_t GetMainDevice(void);                         /* 0x004f2a50 */
-
-/* --- the blitters' shared state --- */
-EXTERN_CPP_BEGIN
-extern uint32_t alpha;                              /* 0x007ceac8 */
-extern uint32_t alphaR;                             /* 0x007ceacc */
-extern uint32_t alphaG;                             /* 0x007cead0 */
-extern uint32_t alphaB;                             /* 0x007cead4 */
-extern uint32_t overR;                              /* 0x007cead8 */
-extern uint32_t overG;                              /* 0x007ceadc */
-extern uint32_t overB;                              /* 0x007ceae0 */
-extern uint32_t overBias;                           /* 0x007ceae4 */
-extern short scaleR;                                     /* 0x007ceae8 */
-extern short scaleG;                                     /* 0x007ceaea */
-extern short scaleB;                                     /* 0x007ceaec */
-extern uint32_t biasColor;                          /* 0x007ceaf0 */
-EXTERN_CPP_END
 
 /* --- translucent blend (mac _Trans16Bit, inlined in the win build) --- */
 static inline unsigned short Trans16Bit(uint32_t src, uint32_t dst, uint32_t alpha)
 {
-    uint32_t srcSplit, dstSplit, blended;
-
-    srcSplit = SW_SPLIT15(src);
-    dstSplit = SW_SPLIT15(dst);
-    blended = srcSplit * alpha + dstSplit * (32 - alpha);
-    return ((blended >> 5) & 0x7c1f) | ((blended >> 20) & 0x3e0);
+    return Pixel::Blend(src, dst, alpha);
 }
 EXTERN_CPP_BEGIN
 extern unsigned short SWTransparentRGBValue;             /* 0x007d0502 */

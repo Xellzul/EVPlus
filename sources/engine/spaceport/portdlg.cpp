@@ -15,7 +15,7 @@
 DialogPtr portDialog;
 short planetPicId;
 PicHandle portBackgroundPic;
-void *planetSnd;
+Sound *planetSnd;
 Boolean canDoMissions;
 Boolean didOutfit;
 Boolean didBuyShip;
@@ -111,7 +111,7 @@ void PortDialog::Run(SpobRecord *spob, short stellar)
         return;
     if (spob->customSound >= kFirstResourceID && settings.ambientSounds != 0) {
         planetSnd = ST_LoadSndResource(spob->customSound);
-        planetSoundSpec.handle = (void **)planetSnd;
+        planetSoundSpec.sound = planetSnd;
         vol = gSoundVolume;
         planetSoundSpec.leftLevel = vol;
         planetSoundSpec.rightLevel = vol;

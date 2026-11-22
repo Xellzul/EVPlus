@@ -1,5 +1,6 @@
 /* loaddata.cpp -- pilot-folder setup, OpenDataFiles, LoadObjectData, LoadStrings, LoadPrefs/SavePrefs, the pilot file, the resource utilities, the chär record readers. Notes: Research/notes/loaddata.md */
 
+#include "pixel.h"
 #include "render.h"
 #include "crashlog.h"
 #include "player.h"
@@ -352,9 +353,8 @@ void LoadObjectData(void)
                 systemData[i].rgb.red &= 0xfc00;
                 systemData[i].rgb.green &= 0xfc00;
                 systemData[i].rgb.blue &= 0xfc00;
-                systemData[i].mapPixel = ((((systemData[i].rgb.red + 0x801) >> 11) << 10) & 0x7c00) |
-                                ((((systemData[i].rgb.green + 0x801) >> 11) << 5) & 0x3e0) |
-                                (((systemData[i].rgb.blue + 0x801) >> 11) & 0x1f);
+                /* BUG: a bright channel (0xF8 or more) wraps to 0, so the ship tint loses it */
+                systemData[i].mapPixel = Pixel::FromColorRounded(systemData[i].rgb);
                 systemData[i].murk = ResRec(SystRes, systemFileHand)->murk;
                 if (systemData[i].murk > 100)
                     systemData[i].murk = 100;
@@ -817,12 +817,8 @@ void LoadObjectData(void)
                     weaponStats[i].rgbScratch.red = ((weaponStats[i].beamColor >> 16) & 0xff) * 256;
                     weaponStats[i].rgbScratch.green = ((weaponStats[i].beamColor >> 8) & 0xff) * 256;
                     weaponStats[i].rgbScratch.blue = (weaponStats[i].beamColor & 0xff) * 256;
-                    weaponStats[i].beamColor = (weaponStats[i].beamColor >> 9) & 0x7c00 |
-                                      (weaponStats[i].beamColor >> 6) & 0x3e0 |
-                                      (weaponStats[i].beamColor >> 3) & 0x1f;
-                    weaponStats[i].coronaColor = (weaponStats[i].coronaColor >> 9) & 0x7c00 |
-                                        (weaponStats[i].coronaColor >> 6) & 0x3e0 |
-                                        (weaponStats[i].coronaColor >> 3) & 0x1f;
+                    weaponStats[i].beamColor = Pixel::FromRGB24(weaponStats[i].beamColor);
+                    weaponStats[i].coronaColor = Pixel::FromRGB24(weaponStats[i].coronaColor);
                 }
                 weaponStats[i].hitParticles = ResRec(WeapRes, weaponFileHand)->hitParticles;
                 rgb.red = ((ResRec(WeapRes, weaponFileHand)->hitPartColor >> 16) & 0xff) * 256;
@@ -2030,9 +2026,7 @@ void LoadObjectData(void)
                 rgb.red = ((asteroidType[i].color >> 16) & 0xff) * 256;
                 rgb.green = ((asteroidType[i].color >> 8) & 0xff) * 256;
                 rgb.blue = (asteroidType[i].color & 0xff) * 256;
-                asteroidType[i].color = (((rgb.red >> 11) << 10) & 0x7c00) |
-                              (((rgb.green >> 11) << 5) & 0x3e0) |
-                              ((rgb.blue >> 11) & 0x1f);
+                asteroidType[i].color = Pixel::FromColor(rgb);
                 asteroidType[i].fragCount = ResRec(RoidRes, asteroidFileHand)->fragCount;
                 if (asteroidType[i].fragCount < 0)
                     asteroidType[i].fragCount = 0;

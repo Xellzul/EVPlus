@@ -48,11 +48,6 @@ unsigned char CE_CheckDebugKeys(ScanCode scanCode);
 char *CE_NumberToAscii(char *dst, int32_t value, uint32_t flags);
 void CE_SetFlashColor(const struct RGBColor *color);
 
-/* ceppat.cpp */
-struct Image_t;
-
-int CE_ImageParsePPat(struct Image_t *image, const void *ppat);
-
 /* cemap.cpp */
 #define kCEBordersWidth     860         /* the border grid in 2 px cells: maps up to 1720x1024 */
 #define kCEBordersHeight    512

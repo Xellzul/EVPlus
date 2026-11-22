@@ -389,9 +389,6 @@ void SWCloseSprite(SpritePtr deadSpriteP)
 
 typedef uint32_t TokenDataType;
 
-#define kTokenShift             24
-#define kCountMask              0x00ffffff
-
 // FUNCTION: EVNOVA 0x00475550
 // MAC: _SWLockSprite i386 0x000aa965 ppc 0x000b5710
 void SWLockSprite(SpritePtr srcSpriteP)

@@ -10,6 +10,7 @@
 # -DSDL3_ROOT=/path). Linux also needs fontconfig (the system's); macOS the Xcode command line tools.
 cmake_minimum_required(VERSION 3.24)
 project(EVNova C CXX)
+set(CMAKE_CXX_STANDARD 17)
 if(WIN32)
   enable_language(RC)
 endif()

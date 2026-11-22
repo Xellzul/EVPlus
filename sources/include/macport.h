@@ -86,6 +86,8 @@ extern void GetFNum(const unsigned char *name, short *familyID);
 /* the font test page (port/fonttest.cpp) and what it asks the font cache */
 extern void DebugFontScreen(void);
 extern void DebugScaleTest(void);
+extern void DebugSpriteTest(void);
+extern void DebugSoundTest(void);
 extern short FontFamilyCount(void);
 extern const char *FontFamilyName(short familyID);
 extern void FontRealName(short familyID, short size, short style, char *out, int outSize);
@@ -302,7 +304,6 @@ typedef struct RLEPixelData {
 #define SW_ROWBYTES(frame, rows) \
         ((frame)->scanLinePtrArray[(rows) - (frame)->frameRect.top])
 #define SW_PIXELBYTES(frame, pixels)    ((pixels) << (frame)->pixelShift)
-#define SW_SPLIT15(c) ( (((c) & 0x3e0) << 15) | ((c) & 0x7c1f) )
 
 #define ABS(x) (((x)<0) ? (-(x)) : (x))
 #define SIGN(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
@@ -329,32 +330,6 @@ typedef struct RLEPixelData {
     { if(DEPTH==16) *SW_PIXELPTR16(frame,x,y)=c; else   \
                     *SW_PIXELPTR32(frame,x,y)=c; }
 
-#define BP_CLIP_RECT(frameRectP, srcRect, dstRect) \
-    if (dstRect.top < frameRectP->top) \
-    { \
-        srcRect.top += frameRectP->top - dstRect.top; \
-        dstRect.top =  frameRectP->top; \
-    } \
-    if (dstRect.bottom > frameRectP->bottom) \
-    { \
-        srcRect.bottom -= dstRect.bottom - frameRectP->bottom; \
-        dstRect.bottom = frameRectP->bottom; \
-    } \
-    if (dstRect.bottom <= dstRect.top) \
-        return; \
-    if (dstRect.left < frameRectP->left) \
-    { \
-        srcRect.left += frameRectP->left - dstRect.left; \
-        dstRect.left = frameRectP->left; \
-    } \
-    if (dstRect.right > frameRectP->right) \
-    { \
-        srcRect.right -= dstRect.right - frameRectP->right; \
-        dstRect.right = frameRectP->right; \
-    } \
-    if (dstRect.right <= dstRect.left) \
-        return;
-
 #define SW_MIN(a, b)            ((a) < (b) ? (a) : (b))
 #define SW_MAX(a, b)            ((a) > (b) ? (a) : (b))
 
@@ -363,6 +338,9 @@ typedef struct RLEPixelData {
 #define kLineStartToken         1
 #define kDrawPixelsToken        2
 #define kSkipPixelsToken        3
+#define kSingleColorToken       4
+#define kTokenShift             24
+#define kCountMask              0x00ffffff
 
 typedef struct SpriteRec SpriteRec, *SpritePtr;
 
@@ -645,7 +623,6 @@ extern unsigned int KeyIsDown(ScanCode scanCode);
 extern bool KeyboardGet2(int *ch);
 extern void Line(short dh, short dv);
 extern void LineTo(short h, short v);
-extern void *ST_LoadSndResource(short id);
 extern short MeasureCString(const char *text);
 extern short CapsCenteredPenV(short top, short bottom);
 extern void MoveTo(short h, short v);
@@ -672,6 +649,8 @@ extern int SectRect(const Rect *a, const Rect *b, Rect *dst);
 extern uint32_t Color2Index(RGBColor *color);
 extern void SetDialogDefaultItem(DialogPtr dlg, int32_t value);
 extern short Random(void);
+extern int32_t GetQDGlobalsRandomSeed(void);
+extern void SetQDGlobalsRandomSeed(int32_t seed);
 extern short SWSetSpriteWorldScreenDrawProc(SpriteWorldRec *spriteWorld,
                                             DrawProcPtr proc);
 extern void Microseconds(UnsignedWide *now);
@@ -680,7 +659,6 @@ extern void SetPort(CGrafPtr port);
 extern void SetPortWindowPort(CWindowPtr window);
 extern void SetRect(Rect *r, int left, int top, int right, int bottom);
 extern void FatalStartupError(short index);
-extern void *ST_LoadSndResourceIndirect(void **handle, int32_t flags);
 extern Boolean StillDown(void);
 extern void StrcatOrdinalNumber(short n, char *dst, Boolean capitalize);
 extern short StringWidth(const unsigned char *str);

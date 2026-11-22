@@ -79,8 +79,6 @@ extern int stricmp(const char *s1, const char *s2);   /* MSL Extras */
 #endif
 
 /* runtime-block globals */
-extern uint32_t gSaveLeftVolume;
-extern uint32_t gSaveMaxVolume;
 extern int32_t MouseClicked;
 /* a lock (atthreadtbl.cpp: CriticalCreate .. CriticalLeave take its address) */
 typedef struct Mutex {
@@ -88,8 +86,6 @@ typedef struct Mutex {
     ULong magic;
     unsigned char live;
 } Mutex;
-extern Mutex gCriticalSection;                   /* the sound mixer's lock (atsound.cpp) */
-extern unsigned char gSoundToolOpen;
 extern Word8 ResourceJustLoaded;                 /* 0x00870e11, set by ResourceLoadHandle */
 /* handles */
 extern void **AllocAHandle2(Word32 MemSize, Word Flag);
@@ -100,8 +96,6 @@ extern char * LockAHandle(Handle h);
 
 extern void KeyboardInit(void);
 extern void SetDefaultPrefixs(void);
-extern void ST_DisposeSound(void *snd);
-extern unsigned short ST_IsSoundPlaying(void *snd);
 
 
 /* the resource manager (engine/resmgr.cpp) */
@@ -113,9 +107,6 @@ extern void GetResInfo(Handle h, short *id, uint32_t *type,
                        unsigned char *name);
 
 extern unsigned long long TimerGetMicroseconds(void);
-extern void LockVideoPage(void);
-extern void ST_HaltSound(void *sound);
-extern void ST_Close(void);
 extern ULong UFix32_Divide(ULong device, ULong rate);
 extern ULong UFix32_Multiply(ULong ratio, ULong rate);
 extern unsigned int DoesFileExist(const char *path);
@@ -155,7 +146,6 @@ extern void WaitTicks(Word tickCount);
 #define kNoTerminator       0x4000               /* NumberToAscii flag */
 #define kExtractStrDelimitLF 1                   /* ExtractAString2: stop at the end of a line */
 #define kFixedShift         16                   /* Fixed32 is 16.16 */
-#define kUnityRate          0x10000              /* a sound rate of 1.0 */
 
 /* QuickDraw's Style bits, as the port's font code spells them */
 #define kFontBold           0x01
@@ -176,32 +166,10 @@ extern void WaitTicks(Word tickCount);
 #define true  ((unsigned char)1)
 #endif
 
-/* video globals */
-extern Word VideoColorDepth;
-extern uint32_t VideoWidth;
-extern char *VideoPointer;
-extern uint32_t ScreenWidth;
-extern uint32_t ScreenHeight;
+/* video globals; the screen page is screen.h's */
 extern int32_t ScreenFlags;                         /* burgergraphics.cpp */
 extern Word Win95ApplsActive;                    /* burgeronce.cpp */
-extern char *VideoOffscreen;
 
-/* the engine's names for BurgerLib's display globals, as the mac build spells them */
-#define videoBase VideoPointer
-#define gVideoWidth ScreenWidth
-#define gVideoHeight ScreenHeight
-
-/* the hyperspace white-out (port addition, burgervideomode.cpp): blend from..to of 256 over 60 Hz ticks */
-#define kWhiteNone          0
-#define kWhiteSolid         256
-#define kWhiteFadeTicks     90                      /* 1.1.1's CGDisplayFade duration, 1.5 s */
-extern void VideoFadeWhite(Word from, Word to, uint32_t ticks);
-
-/* sound globals (burgersndwin.cpp) */
-
-struct MixVoice;
-
-extern int32_t ST_Open(unsigned short channels, ULong device);
 extern int32_t fgetstr(char *buf, int32_t size, FILE *stream);
 extern void fwritelong(int32_t value, FILE *stream);
 extern void fwritestr(const char *s, FILE *stream);
@@ -211,15 +179,6 @@ extern ULong fgetfilesize(FILE *fp);     /* BurgerLib fgetfilesize */
 extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib CreateDirectoryPathNative */
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
 
-extern void ImaDecodePackets(const unsigned char *src, ULong packets, short *out);   /* atadpcm.cpp */
-extern void ImaDecodeStream(const unsigned char *src, ULong samples, short *out);
-extern unsigned char PCM_Mixer(const short *data, short **out, ULong frames, ULong step,
-                               struct MixVoice *voice, unsigned short left, unsigned short right);
-
-extern int32_t gNumVoices;
-extern ULong gSaveRightVolume;
-extern ULong gSampleRate;
-
 extern ULong UFix32_To_UInt32(ULong rate);
 extern void CriticalEnter(void *lock);
 extern void CriticalLeave(void *lock);
@@ -227,7 +186,6 @@ extern void CriticalLeave(void *lock);
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);
 extern char *ConvertNativePathToPath(const char *path);
-extern void DrawARect16(int x, int y, Word Width, Word Height, Word Color);
 extern void KeyboardFlush(void);
 extern int32_t CreateDirectoryPath(const char *path);
 extern void Fatal(const char *fmt, ...);
@@ -249,9 +207,6 @@ extern unsigned int KeyboardGetch(void);
 extern void ProcessSystemEvents(void);
 extern unsigned int OSCursorIsVisible(void);
 extern void CStr2PStr(char *dst, const char *src);
-extern int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level);
-extern int32_t ST_PlaySoundStereo(void *snd, unsigned short priority, unsigned short left, unsigned short right);
-extern ULong ST_PlaySoundParam(SoundRequest *req);
 
 #ifdef __cplusplus
 }

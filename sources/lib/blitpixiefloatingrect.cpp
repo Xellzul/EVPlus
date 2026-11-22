@@ -8,13 +8,13 @@ void BlitPixieFloatingRect(unsigned char *srcPixels, unsigned char *dstPixels,
         int32_t srcRowBytes, int32_t dstRowBytes, unsigned short byteWidth,
         unsigned short numRows, unsigned short level)
 {
-    overBias = 32;
-    alpha = 32;
-    alphaR = alphaG = alphaB = level;
-    overR = overG = overB = 0;
+    SpriteBlend blend = {};
+    blend.overBias = 32;
+    blend.alpha = 32;
+    blend.alphaR = blend.alphaG = blend.alphaB = level;
 
     while (numRows--) {
-        BlitPixieTranslucentCopy(dstPixels, srcPixels, byteWidth);
+        BlitPixieTranslucentCopy(dstPixels, srcPixels, byteWidth, blend);
 
         srcPixels += srcRowBytes;
         dstPixels += dstRowBytes;

@@ -15,6 +15,7 @@
 #include "space.h"
 #include "stellar.h"
 #include "viewscale.h"
+#include "screen.h"
 #include "prototypes.h"
 
 #define kMaxGamma     6
@@ -22,7 +23,6 @@
 
 #define kEventLoopTicks     10
 
-short oldVolume;
 short pluginCount;
 Rect backUpdateRect;
 uint32_t lastSmokeUpdateTime;
@@ -59,19 +59,19 @@ StarSlot *starData;
 Boolean *missionBit;
 Settings settings;
 KeyPrefs keyPrefs;
-void *warpUpSnd[2];
-void *warpOutSnd;
-void *redAlertSnd;
-void *beepSnd[5];
-void *shotSnd[256];
-void *explodSnd[64];
-void *hardDockSnd;
-void *klaxxonSnd;
-void *escapePodSnd;
-void *cloakSnd[2];
-void *voiceSnd;
-void *clickSnd;
-void *missionSnd;
+Sound *warpUpSnd[2];
+Sound *warpOutSnd;
+Sound *redAlertSnd;
+Sound *beepSnd[5];
+Sound *shotSnd[256];
+Sound *explodSnd[64];
+Sound *hardDockSnd;
+Sound *klaxxonSnd;
+Sound *escapePodSnd;
+Sound *cloakSnd[2];
+Sound *voiceSnd;
+Sound *clickSnd;
+Sound *missionSnd;
 SoundRequest warpUpSoundSpec;
 SoundRequest planetSoundSpec;
 SpriteRec *navTargetSprite[4];
@@ -394,7 +394,6 @@ void InitEVNova(void)
     if (settings.windowed == 0)
         HideTheCursor();
     ST_Open(8, 0);
-    oldVolume = ST_GetSysVolume();
 
     crashlog("loading sounds");
     LoadSounds();
@@ -546,7 +545,7 @@ void PlayGame(void)
     PrepareAllSprites();
     RefreshWindowBuffer();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
-    View::Flush();
+    Screen::ComposeView();
     RefreshSAT();
     FadeScreenIn();
     lastSmokeUpdateTime = ReadTick();
@@ -638,7 +637,7 @@ void PlayGame(void)
                 MyProfileExit(kProfAnimateSW);
                 MyProfileEnter(kProfPostAnimate);
                 PostAnimateHandler();
-                View::Flush();
+                Screen::ComposeView();
                 MyProfileExit(kProfPostAnimate);
                 ScreenEndScene();
                 MyProfileExit(kProfDrawing);
@@ -710,7 +709,7 @@ void PlayGame(void)
                 MyProfileExit(kProfPostDraw);
             } else {
                 SWUpdateSpriteWorld(gSpriteWorld, 0);
-                View::Flush();
+                Screen::ComposeView();
                 IterateInGameEventLoop(3);
                 if (gSpriteWorld->fastBlit != 0) {
                     RefreshSAT();

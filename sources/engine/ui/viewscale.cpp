@@ -2,10 +2,12 @@
 #include <math.h>
 #include <vector>
 #include "burger.h"
+#include "pixel.h"
 #include "player.h"
 #include "spriteworld.h"
 #include "uiscale.h"
 #include "viewscale.h"
+#include "screen.h"
 
 namespace View {
 
@@ -33,7 +35,6 @@ struct Tap {
 };
 
 constexpr unsigned kWeightOne = 32;
-constexpr unsigned kSpread = 0x03e07c1f;    /* 5-5-5 with green moved up: room to multiply each channel by 32 */
 
 /* the taps along one axis for the filter; Pixel art blends only within a screen pixel of a texel edge */
 std::vector<Tap> Taps(int src, int dst, int filter)
@@ -59,29 +60,24 @@ std::vector<Tap> Taps(int src, int dst, int filter)
     return taps;
 }
 
-inline uint32_t Spread(unsigned short p)
-{
-    return (p | (uint32_t)p << 16) & kSpread;
-}
-
-inline unsigned short Pack(uint32_t e)
-{
-    return (unsigned short)((e | e >> 16) & 0x7fff);
-}
-
-/* two spread pixels mixed, w/32 of the second */
-inline uint32_t Mix(uint32_t a, uint32_t b, unsigned w)
-{
-    return ((a * (kWeightOne - w) + b * w) >> 5) & kSpread;
-}
-
-} // namespace
-
 /* where the status bar begins on the screen, in device pixels */
-static int BarDeviceLeft()
+int BarDeviceLeft()
 {
     return UI::Mapping(gGamePort.pix).X(UI::ScreenWidth() - kStatusBarWidth);
 }
+
+/* the size on a page the whole view is enlarged to, from its top left corner */
+struct Enlargement {
+    int width;
+    int height;
+};
+
+Enlargement EnlargedOnto(const Screen::Page &page)
+{
+    return { BarDeviceLeft(), page.height };
+}
+
+} // namespace
 
 void SetSizes(short gameW, short gameH, short drawW, short drawH, double ui)
 {
@@ -111,7 +107,7 @@ CWindowPtr Open()
     return &viewPort;
 }
 
-void Flush()
+bool Enlarge(const Screen::Page &page)
 {
     static std::vector<Tap> across;
     static std::vector<Tap> down;
@@ -119,49 +115,54 @@ void Flush()
     static int cachedFilter = -1;
     static int cachedWidth;
     static int cachedHeight;
-    int dstWidth = BarDeviceLeft();
-    int dstHeight = gVideoHeight;
+    static int cachedSrcWidth;
+    static int cachedSrcHeight;
+    Enlargement to = EnlargedOnto(page);
+    int dstWidth = to.width;
+    int dstHeight = to.height;
     int filter = settings.scaleFilter;
 
-    if (pixels.empty() || dstWidth <= 0 || VideoOffscreen == NULL)
-        return;
+    if (pixels.empty() || dstWidth <= 0 || page.pixels == NULL)
+        return false;
     if (dstWidth == width && dstHeight == height) {
         for (int y = 0; y < height; y++)
-            memcpy(VideoOffscreen + (size_t)y * VideoWidth, &pixels[(size_t)y * width], (size_t)width * 2);
-        DrawOverlays();
-        return;
+            memcpy(page.pixels + (size_t)y * page.pitch, &pixels[(size_t)y * width], (size_t)width * 2);
+        return true;
     }
-    if (filter != cachedFilter || dstWidth != cachedWidth || dstHeight != cachedHeight) {
+    if (filter != cachedFilter || dstWidth != cachedWidth || dstHeight != cachedHeight || width != cachedSrcWidth
+            || height != cachedSrcHeight) {
         across = Taps(width, dstWidth, filter);
         down = Taps(height, dstHeight, filter);
         rows.assign((size_t)height * dstWidth, 0);
         cachedFilter = filter;
         cachedWidth = dstWidth;
         cachedHeight = dstHeight;
+        cachedSrcWidth = width;
+        cachedSrcHeight = height;
     }
     for (int y = 0; y < height; y++) {
         const unsigned short *src = &pixels[(size_t)y * width];
         uint32_t *row = &rows[(size_t)y * dstWidth];
         for (int x = 0; x < dstWidth; x++) {
             const Tap &t = across[x];
-            uint32_t a = Spread(src[t.first]);
-            row[x] = t.weight == 0 ? a : Mix(a, Spread(src[t.second]), t.weight);
+            uint32_t a = Pixel::Spread(src[t.first]);
+            row[x] = t.weight == 0 ? a : Pixel::Mix(a, Pixel::Spread(src[t.second]), t.weight);
         }
     }
     for (int y = 0; y < dstHeight; y++) {
         const Tap &t = down[y];
         const uint32_t *row0 = &rows[(size_t)t.first * dstWidth];
         const uint32_t *row1 = &rows[(size_t)t.second * dstWidth];
-        unsigned short *out = (unsigned short *)(VideoOffscreen + (size_t)y * VideoWidth);
+        unsigned short *out = (unsigned short *)(page.pixels + (size_t)y * page.pitch);
         if (t.weight == 0) {
             for (int x = 0; x < dstWidth; x++)
-                out[x] = Pack(row0[x]);
+                out[x] = Pixel::Unspread(row0[x]);
         } else {
             for (int x = 0; x < dstWidth; x++)
-                out[x] = Pack(Mix(row0[x], row1[x], t.weight));
+                out[x] = Pixel::Unspread(Pixel::Mix(row0[x], row1[x], t.weight));
         }
     }
-    DrawOverlays();
+    return true;
 }
 
 Rect OverlayFrameRect(const Rect &viewRect)
@@ -200,8 +201,9 @@ void ScaleOverlayFrame(SWFrameRec *frame)
 
 Rect ScreenRectOfView(const Rect &viewRect)
 {
-    double across = (double)BarDeviceLeft() / width;
-    double down = (double)gVideoHeight / height;
+    Enlargement to = EnlargedOnto(Screen::Get());
+    double across = (double)to.width / width;
+    double down = (double)to.height / height;
     Rect r;
 
     r.left = (short)floor(viewRect.left * across + 0.5);
@@ -219,12 +221,12 @@ void SetPortToView()
 void ToView(Point *pt)
 {
     UI::Mapping screen(gGamePort.pix);
-    int dstWidth = BarDeviceLeft();
+    Enlargement to = EnlargedOnto(Screen::Get());
 
-    if (dstWidth <= 0)
+    if (to.width <= 0)
         return;
-    pt->h = (short)floor(screen.X(pt->h) * (double)width / dstWidth);
-    pt->v = (short)floor(screen.Y(pt->v) * (double)height / gVideoHeight);
+    pt->h = (short)floor(screen.X(pt->h) * (double)width / to.width);
+    pt->v = (short)floor(screen.Y(pt->v) * (double)height / to.height);
 }
 
 static void CreateFramePair(Rect bounds, SWFrameRec **work, SWFrameRec **back)

@@ -1,6 +1,7 @@
 /* uisprite.cpp -- sprites drawn into the interface, on scaled frames stretched smoothly. */
 #include <math.h>
 #include <vector>
+#include "pixel.h"
 #include "spriteworld.h"
 #include "uiscale.h"
 
@@ -28,7 +29,7 @@ SWFrameRec *Backdrop(SWFrameRec *&frame, int width, int height, unsigned short c
         SWLockFrame(frame);
     }
     for (int y = 0; y < height; y++) {
-        unsigned short *row = (unsigned short *)(frame->frameBaseAddr + (size_t)y * frame->frameRowBytes);
+        unsigned short *row = Pixel::Row(*frame, y);
         for (int x = 0; x < width; x++)
             row[x] = colour;
     }
@@ -37,7 +38,7 @@ SWFrameRec *Backdrop(SWFrameRec *&frame, int width, int height, unsigned short c
 
 unsigned short PixelAt(const SWFrameRec *frame, int x, int y)
 {
-    return ((const unsigned short *)(frame->frameBaseAddr + (size_t)y * frame->frameRowBytes))[x];
+    return Pixel::Row(*frame, y)[x];
 }
 
 /* Where a device row or column samples the sprite: the first of the two pixels blended and the weight of the
@@ -101,7 +102,7 @@ void DrawSprite(DrawProcPtr draw, SWFrameRec *sprite, SWFrameRec *dst, Rect *src
     /* Over black a sprite pixel shows its colour, over white its colour plus 31 times how much of the frame
        under it shows through; both blended from the four pixels around each device pixel, in 1/65536. */
     for (int y = area.top < 0 ? 0 : area.top; y < area.bottom && y < pix.height; y++) {
-        unsigned short *row = (unsigned short *)((char *)pix.baseAddr + (size_t)y * pix.rowBytes);
+        unsigned short *row = Pixel::Row(pix, y);
         Tap tapY = TapAt(y - area.top, areaHeight, height);
         for (int x = left; x < right; x++) {
             const Tap &tapX = columns[x - left];

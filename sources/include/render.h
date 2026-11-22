@@ -4,6 +4,7 @@
 #include "burger.h"
 #include "spriteworld.h"
 #include "movie.h"
+#include "soundtool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,7 +166,7 @@ extern uint32_t tix;
 
 extern Movie loopingMovie;
 
-extern void *mainScreenSnd[4];
+extern Sound *mainScreenSnd[4];
 extern Rect slideDestRect[3];
 extern void *staticPat[10];
 extern void *targetInfoPic[768];

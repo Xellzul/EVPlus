@@ -8,6 +8,7 @@
 #include "scaleddraw.h"
 #include "platform.h"
 #include "endianswap.h"
+#include "screen.h"
 
 /* A control points back at the dialog that owns it so that changing a value
    can mark the dialog dirty. */
@@ -2288,11 +2289,13 @@ void WinGameInputSeen(void)
 // FUNCTION: EVNOVA 0x004d28b0
 void ShutdownWinGame(void)
 {
-    if (VideoWidth != 0) {
-        LockVideoPage();
-        DrawARect16(0, 0, gVideoWidth, gVideoHeight, 0);
+    const Screen::Page &page = Screen::Get();
+
+    if (page.pixels != NULL) {
+        memset(page.pixels, 0, (size_t)page.pitch * page.height);
         UpdateAndPageFlip();
         ReleaseVideo();
+        gGamePort.pix.baseAddr = NULL;
     }
 }
 

@@ -26,21 +26,6 @@ typedef uint32_t Word32;
 typedef uint32_t ULong;
 typedef unsigned long long ULongLong;
 
-/* ST_PlaySoundParam's request, 0x1c bytes: the engine keeps two of these
-   (warpUpSoundSpec, planetSoundSpec) and atsndplay.c clamps one in place.
-   rate is signed: AdjustWarpSoundSpeed converts a double into it. */
-typedef struct SoundRequest {
-    void **handle;                               /* +0x00 */
-    uint32_t id;                            /* +0x04, 0 = assign one */
-    int32_t rate;                                   /* +0x08, 0x10000 = unity */
-    void (*done)(int32_t reason, void *sound, void *ref);   /* +0x0c */
-    int32_t unk10;                                  /* +0x10 */
-    unsigned short priority;                     /* +0x14 */
-    unsigned short leftLevel;                    /* +0x16 */
-    unsigned short rightLevel;                   /* +0x18 */
-    unsigned short totalSamples;                 /* +0x1a, the mixer's notice */
-} SoundRequest;
-
 /* the decoded picture: BurgerLib's image record, and the Windows port's PicHandle */
 typedef struct Image_t {
     Word8 *ImagePtr;                             /* +0x00 */

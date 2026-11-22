@@ -3,9 +3,6 @@
 #include "stellar.h"
 
 int gDisableUpdatesMode;
-uint32_t ScreenWidth;
-uint32_t ScreenHeight;
-uint32_t VideoWidth;
 SpriteRec *gSWCurrentSpriteBeingDrawn;
 char gNeedUpdateFlag;
 Word8 ResourceJustLoaded;

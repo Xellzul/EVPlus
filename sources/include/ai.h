@@ -3,6 +3,7 @@
 #define AI_H
 #include "resources.h"
 #include "shipobj.h"
+#include "soundtool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +48,7 @@ extern void BraveTraderAI(ShipObj *ship);
 extern Boolean CanHireEscorts(void);
 extern void AIShipBoardedByPlayer(ShipObj *ship);
 EXTERN_CPP_BEGIN
-extern void *hardDockSnd;
+extern Sound *hardDockSnd;
 EXTERN_CPP_END
 extern void DeathStarAI(ShipObj *ship);
 extern void DefenseShipAI(ShipObj *ship);

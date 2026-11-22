@@ -12,7 +12,8 @@
 #define kMainScreenEnter    3
 #define kMainScreenPrefs    4
 #define kDebugFonts         0       /* 1: the font test page (fonttest.cpp) before the main screen */
-#define kScaleTest          0       /* 1: the drawing test page (scaletest.cpp) before the main screen */
+#define kScaleTest          0       /* 1: the drawing test pages (scaletest.cpp, spritetest.cpp) before the main screen */
+#define kSoundTest          0       /* 1: the mixer capture (soundtest.cpp) before the main screen */
 #define kMainScreenAbout    5
 
 #define kCreditsTextID      0x7ffe
@@ -107,8 +108,12 @@ void DoMainScreen(void)
     ShowTheCursor();
     if (kDebugFonts)
         DebugFontScreen();
-    if (kScaleTest)
+    if (kScaleTest) {
         DebugScaleTest();
+        DebugSpriteTest();
+    }
+    if (kSoundTest)
+        DebugSoundTest();
     crashlog("doing main screen");
     LoadMainScreenAnim();
     MainScreenAnimDraw();

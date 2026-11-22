@@ -3,6 +3,7 @@
 #define DIALOGS_H
 #include "macport.h"
 #include "shipobj.h"
+#include "soundtool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,7 +152,7 @@ extern Boolean didOutfit;
 extern short dockedPortItems[];
 extern short dockedPortShipTypes[];
 extern uint32_t ambientNoiseDelay;
-extern void *planetSnd;
+extern Sound *planetSnd;
 extern int32_t initialHaggleVal;
 extern Rect listScreenRect[];
 extern unsigned char stellarTypeStr[];

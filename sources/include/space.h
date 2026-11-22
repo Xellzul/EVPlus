@@ -7,6 +7,7 @@
 #ifndef SPACE_H
 #define SPACE_H
 #include "shipobj.h"
+#include "soundtool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +53,7 @@ extern void WrapPlayerPosition(void);                       /* 0x0045baa0 */
 EXTERN_CPP_BEGIN
 extern short tableArcTan[0x400];    /* 0x007cbc8c */
 extern Boolean killShots;               /* the five kill flags, order within the five */
-extern void *shotSnd[];                             /* 0x00591574 (mac name) */
+extern Sound *shotSnd[];                             /* 0x00591574 (mac name) */
 extern Boolean updateSmokeThisFrame;                /* 0x00596d3d (mac name) */
 extern FloatPoint wrapDelta;                    /* 0x007cab2c (mac name) */
 EXTERN_CPP_END

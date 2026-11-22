@@ -5,6 +5,7 @@
 #include "gameconst.h"
 #include "spriteworld.h"
 #include "movie.h"
+#include "soundtool.h"
 
 /* the registered name <REG> shows (mission text, the loading bar): EV Nova CE's unlicensed default */
 #define kRegisteredName "EV Nova Community"
@@ -23,7 +24,6 @@ extern void TableCos(short angle);
 EXTERN_CPP_BEGIN
 extern short commCount;
 extern uint32_t floatingMapStartTime;
-extern short oldVolume;
 extern SpriteRec *masterStellarSprite[kMasterStellarSprites];
 extern SpriteRec *masterShotSprite[256];
 EXTERN_CPP_END
@@ -44,10 +44,10 @@ extern SpriteRec *menuButtonSprite[6];
 extern SpriteRec *alertSprite;
 extern SpriteRec *cursorSprite;
 extern SpriteRec *doubleTimeSprite;
-extern void *redAlertSnd;
-extern void *explodSnd[];
-extern void *klaxxonSnd;
-extern void *clickSnd;
+extern Sound *redAlertSnd;
+extern Sound *explodSnd[];
+extern Sound *klaxxonSnd;
+extern Sound *clickSnd;
 extern short lastShipAIDispatched;
 EXTERN_CPP_END
 extern unsigned int DeleteAFile(const char *path);
@@ -87,7 +87,6 @@ extern short InitParticles(int numElements, int gravity);
 extern void DisposeParticles(void);
 extern void DoAboutBox(void);
 extern void InitMainScreen(void);
-extern uint32_t ST_GetSysVolume(void);
 extern ScanCode FirstKeyDown(void);
 extern Boolean GovtSharedClass(short a, short b);
 extern void HandleAlertSprite(void);
@@ -155,10 +154,10 @@ extern Boolean forceRandom;
 extern short fpsCounter;
 extern short frameCounter;
 extern int32_t fullScreenRestore;
-extern void *escapePodSnd;
-extern void *cloakSnd[2];
+extern Sound *escapePodSnd;
+extern Sound *cloakSnd[2];
 extern Boolean redrawEscortMenu;
-extern void *warpUpSnd[2];
+extern Sound *warpUpSnd[2];
 extern short playerEffectiveMurk;
 extern Boolean warpSoundDone;
 extern Boolean gPause;
@@ -194,7 +193,7 @@ extern void ApplyDisplayScaling(void);
 extern void ApplyBrightness(void);
 extern short menuFontID;
 extern RGBColor menuTextColor[2];
-extern void *missionSnd;
+extern Sound *missionSnd;
 extern short missionSoundID;
 extern Str255 newPilotPopupChoice[2];
 extern Str255 newPlayerName[2];
@@ -211,8 +210,8 @@ extern SpriteLayerRec *stellarLayer;
 extern Boolean suppressMissionOffer[];
 extern SpriteLayerRec *targetLayer;
 extern float trigResult;
-extern void *voiceSnd;
-extern void *warpOutSnd;
+extern Sound *voiceSnd;
+extern Sound *warpOutSnd;
 
 extern Movie introMusicMovie;
 
@@ -248,7 +247,7 @@ EXTERN_CPP_END
 extern short TotalFleetHolds(void);
 extern void DeleteAllComputerShips(Boolean force, Boolean keepPlayer);
 EXTERN_CPP_BEGIN
-extern void *beepSnd[5];
+extern Sound *beepSnd[5];
 
 extern SpriteRec *stellarSprite[kStellarSprites];
 EXTERN_CPP_END

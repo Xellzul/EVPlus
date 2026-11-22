@@ -10,6 +10,7 @@
 #include "stellar.h"
 #include "viewscale.h"
 #include "platform.h"
+#include "screen.h"
 
 EXTERN_C_BEGIN
 
@@ -197,7 +198,7 @@ void FadeGammaTo(uint32_t percent, uint32_t duration)
     int32_t delta;
 
     /* 1.1.1 */
-    VideoFadeWhite(kWhiteNone, kWhiteNone, 0);
+    Screen::FadeWhite(kWhiteNone, kWhiteNone, 0);
     target = (percent << 16) / 100;
     delta = target - screenGamma;
     if (duration != 0) {
@@ -243,13 +244,13 @@ void FadeWhiteIn(void)
 {
     screenFaded = true;
     whiteReserved = true;
-    VideoFadeWhite(kWhiteNone, kWhiteSolid, kWhiteFadeTicks);
+    Screen::FadeWhite(kWhiteNone, kWhiteSolid, kWhiteFadeTicks);
 }
 
 void FadeWhiteOut(void)
 {
     if (whiteReserved)
-        VideoFadeWhite(kWhiteSolid, kWhiteNone, kWhiteFadeTicks);
+        Screen::FadeWhite(kWhiteSolid, kWhiteNone, kWhiteFadeTicks);
     whiteReserved = false;
     screenFaded = false;
 }
@@ -280,7 +281,7 @@ void RandSeedFromClock(void)
 
 // FUNCTION: EVNOVA 0x004692e0
 // MAC: _PlaySoundDistance i386 0x0000e007 ppc 0x000116f4
-Boolean PlaySoundDistance(int32_t unused, void *sound, short flags, FloatPoint *pos,
+Boolean PlaySoundDistance(int32_t unused, Sound *sound, short flags, FloatPoint *pos,
                      FloatPoint *listener)
 {
     int dy;
@@ -411,7 +412,7 @@ void RefreshSAT(void)
              &gSpriteWorld->workFrameP->frameRect,
              &gSpriteWorld->windowFrameP->frameRect,
              0, 0);
-    View::Flush();
+    Screen::ComposeView();
 
     r = GetCWindowPortRect((WindowRef)gWind);
     box = *r;
@@ -435,7 +436,7 @@ void RefreshSAT(void)
 
 // FUNCTION: EVNOVA 0x0046aad0
 // MAC: _PlaySound i386 0x00005e9a ppc 0x0000768c
-void PlaySound(void *a, short b, short lo, short hi)
+void PlaySound(Sound *a, short b, short lo, short hi)
 {
     if (settings.stereoPan != 0) {
         ST_PlaySoundStereo(a, b, lo, hi);

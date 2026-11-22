@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include "burger.h"
 #include "platform.h"
+#include "screen.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -233,16 +234,16 @@ void MouseReadPosition(int32_t *h, int32_t *v)
         p = Win95MouseX;
         if (p < 0)
             p = 0;
-        if (p >= (int32_t)ScreenWidth)
-            p = ScreenWidth - 1;
+        if (p >= Screen::Get().width)
+            p = Screen::Get().width - 1;
         *h = p;
     }
     if (v != 0) {
         p = Win95MouseY;
         if (p < 0)
             p = 0;
-        if (p >= (int32_t)ScreenHeight)
-            p = ScreenHeight - 1;
+        if (p >= Screen::Get().height)
+            p = Screen::Get().height - 1;
         *v = p;
     }
 }

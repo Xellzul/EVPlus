@@ -7,6 +7,7 @@
 #include "render.h"
 #include "sound.h"
 #include "viewscale.h"
+#include "screen.h"
 
 EXTERN_C_BEGIN
 
@@ -28,7 +29,7 @@ void IterateInGameEventLoop(short tickCount)
         i++;
         if (gNeedUpdateFlag) {
             depthMismatch = 0;
-            if (((VideoColorDepth + 7) & ~7) != gSpriteWorld->pixelDepth)
+            if (((Screen::Get().depth + 7) & ~7) != gSpriteWorld->pixelDepth)
                 depthMismatch = 1;
             if (!depthMismatch) {
                 SWSetPortToWindow(gSpriteWorld);
@@ -83,7 +84,7 @@ void SwitchedIn(void)
 // MAC: _SwitchedOut i386 0x0004f381 ppc 0x00057ff8
 void SwitchedOut(void)
 {
-    void *snd;
+    Sound *snd;
     CGrafPtr savedPort;
 
     inBackground = 1;
@@ -127,7 +128,7 @@ void RefreshWindowBuffer(void)
              &gSpriteWorld->workFrameP->frameRect,
              &gSpriteWorld->windowFrameP->frameRect,
              0, 0);
-    View::Flush();
+    Screen::ComposeView();
     ScreenEndScene();
 }
 

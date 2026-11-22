@@ -1,5 +1,6 @@
 /* qdshims.cpp -- small QuickDraw and Event Manager calls: page flip, mouse and buttons, text and colour state */
 
+#include "pixel.h"
 #include "render.h"
 #include "uiscale.h"
 
@@ -7,15 +8,8 @@
 // FUNCTION: EVNOVA 0x004b6850
 void ScreenEndScene(void)
 {
-    if (gDisableUpdatesMode == 0) {
+    if (gDisableUpdatesMode == 0)
         UpdateAndPageFlip();
-        LockVideoPage();
-        if (gGamePort.pix.baseAddr != videoBase) {
-            gGamePort.pix.baseAddr = videoBase;
-            if (gSpriteWorld != NULL)
-                SWWindowMoved(gSpriteWorld);
-        }
-    }
 }
 
 // FUNCTION: EVNOVA 0x004b68a0
@@ -76,8 +70,7 @@ void TextFace(short face)
 // FUNCTION: EVNOVA 0x004b6960
 uint32_t Color2Index(RGBColor *color)
 {
-    return ((color->red & 0xf800) >> 1) | ((color->green & 0xf800) >> 6) |
-           ((color->blue & 0xf800) >> 11);
+    return Pixel::FromColor(*color);
 }
 
 // FUNCTION: EVNOVA 0x004b6990

@@ -15,6 +15,7 @@
 #include "ships.h"
 #include "crashlog.h"
 #include "viewscale.h"
+#include "screen.h"
 
 EXTERN_C_BEGIN
 
@@ -36,7 +37,7 @@ void PlayerLandOnStellar(void)
     EraseParticlesOffscreen(gSpriteWorld);
     SWUpdateSpriteWorld(gSpriteWorld, 1);
     UpdateParticlesInWindow(gSpriteWorld);
-    View::Flush();
+    Screen::ComposeView();
     HideCursorSprite();
     RefreshSAT();
     RedrawStatus(1);
@@ -209,7 +210,7 @@ short PlayerEnterHypergate(void)
             CE_SetFlashColor(whiteColor);
             PaintRect(&gSpriteWorld->workFrameP->frameRect);
             ForeColor(blackColor);
-            View::Flush();
+            Screen::ComposeView();
             ScreenEndScene();
             SWSetPortToWorkArea(gSpriteWorld);
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
@@ -401,7 +402,7 @@ short PlayerEnterWormhole(void)
     CE_SetFlashColor(whiteColor);
     PaintRect(&gSpriteWorld->windRect);
     ForeColor(blackColor);
-    View::Flush();
+    Screen::ComposeView();
     ScreenEndScene();
     PlaySound(warpOutSnd, 0x32, gSoundVolume, gSoundVolume);
     strcpy((char *)msg, "");

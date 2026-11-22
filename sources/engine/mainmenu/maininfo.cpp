@@ -11,6 +11,7 @@
 #include "prototypes.h"
 #include "ships.h"
 #include "viewscale.h"
+#include "screen.h"
 #include "uisprite.h"
 #include "uiscale.h"
 #include "space.h"
@@ -347,7 +348,7 @@ void EnterGameFromMainScreen(void)
     RedrawStatus(1);
     RefreshSAT();
     SWUpdateSpriteWorld(gSpriteWorld, 1);
-    View::Flush();
+    Screen::ComposeView();
     statusRedraw[kRedrawCargo] = 1;
     escortMenuOnscreen = 0;
     mBarHidden = 1;

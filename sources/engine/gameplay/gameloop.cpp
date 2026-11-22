@@ -5,6 +5,7 @@
 #include "space.h"
 #include "prototypes.h"
 #include "player.h"
+#include "pixel.h"
 #include "render.h"
 #include "ships.h"
 #include "ai.h"
@@ -4684,8 +4685,8 @@ static void BlendOnScreen(SWFrameRec *frame, const Rect &viewRect, short level)
         || width <= 0 || height <= 0)
         return;
     BlitPixieFloatingRect((unsigned char *)from.baseAddr,
-                          (unsigned char *)to.baseAddr + device.top * to.rowBytes + device.left * 2,
-                          from.rowBytes, to.rowBytes, (unsigned short)(width * 2), (unsigned short)height,
+                          (unsigned char *)(Pixel::Row(to, device.top) + device.left),
+                          from.rowBytes, to.rowBytes, (unsigned short)(width * Pixel::kBytes), (unsigned short)height,
                           (unsigned short)(32 - level));
 }
 

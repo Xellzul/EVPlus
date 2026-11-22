@@ -3,6 +3,10 @@
 
 #include "macport.h"
 
+namespace Screen {
+struct Page;
+}
+
 /* engine/gameloop.cpp: the comm line, floating map and escort menu laid over the screen after the view */
 void DrawOverlays();
 
@@ -16,12 +20,12 @@ extern short height;
 /* uiScale: the UI's device pixels per logical one */
 void SetSizes(short gameW, short gameH, short drawW, short drawH, double uiScale);
 CWindowPtr Open();                  /* the view's buffer and port, for the sprite world */
-void Flush();                       /* the view (enlarged) into its place on the screen, the overlays over it */
+bool Enlarge(const Screen::Page &page);     /* the view (enlarged) into its place on a page; false: no view */
 void ToView(Point *pt);             /* a screen point in view coordinates */
 void SetPortToView();               /* the port of the space view itself */
 
 /* The comm line, floating map and escort menu are drawn on the screen over the view, not inside it. Their
-   frames get device pixels; Flush lays them over the screen. */
+   frames get device pixels; Screen::ComposeView lays them over the screen. */
 Rect OverlayFrameRect(const Rect &viewRect);    /* an overlay frame's logical rect for a rect in the view */
 Rect OverlayLocalRect(const Rect &viewRect);    /* the same, from 0, 0: the frame's own coordinates */
 Point ToOverlay(Point pt, const Rect &viewRect); /* a view point in the coordinates of the overlay at viewRect */

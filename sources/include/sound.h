@@ -8,6 +8,7 @@
 #define SOUND_H
 #include "macport.h"
 #include "gameconst.h"
+#include "soundtool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,13 +16,13 @@ extern "C" {
 
 
 /* --- one declaration per name --- */
-extern Boolean PlaySoundDistance(int32_t unused, void *sound, short flags,
+extern Boolean PlaySoundDistance(int32_t unused, Sound *sound, short flags,
                               FloatPoint *pos, FloatPoint *listener);
                                                       /* 0x004692e0 (engineutils.cpp) */
 extern void AdjustSoundVolume(void);                  /* 0x0046ab60 (mac _AdjustSoundVolume) */
 extern void HandleVoiceSound(void);              /* 0x004311f0 */
 extern void LoadSounds(void);                            /* 0x004b0740 */
-extern void PlaySound(void *snd, short id, short leftVol, short rightVol);      /* 0x0046aad0 */
+extern void PlaySound(Sound *snd, short id, short leftVol, short rightVol);      /* 0x0046aad0 */
 EXTERN_CPP_BEGIN
 extern uint32_t lastMoviesTaskTime;
 extern short pendingVoiceGovt;          /* 0x00735400 (globaldefs.cpp) */

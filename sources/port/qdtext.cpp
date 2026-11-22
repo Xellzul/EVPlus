@@ -12,6 +12,7 @@
 
 #include "burger.h"
 #include "fontraster.h"
+#include "pixel.h"
 #include "uiscale.h"
 
 #define kSpace          ' '
@@ -282,11 +283,11 @@ static void DrawGlyph(PixMap *pix, const RasterGlyph *glyph, int x, int baseline
                 b = color->b >> 3;
                 if (a != kFull) {
                     old = *(unsigned short *)p;
-                    r = Blend((old >> 10) & 31, r, a);
-                    g = Blend((old >> 5) & 31, g, a);
-                    b = Blend(old & 31, b, a);
+                    r = Blend(Pixel::Red(old), r, a);
+                    g = Blend(Pixel::Green(old), g, a);
+                    b = Blend(Pixel::Blue(old), b, a);
                 }
-                *(unsigned short *)p = (r << 10) | (g << 5) | b;
+                *(unsigned short *)p = Pixel::Pack(r, g, b);
             } else {
                 p[0] = Blend(p[0], color->b, a);
                 p[1] = Blend(p[1], color->g, a);

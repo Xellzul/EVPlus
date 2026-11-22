@@ -24,7 +24,7 @@ void ShowIntroScreen(void)
     Boolean pictSkipped;
     Boolean hit;
     PicHandle picHandle;
-    void *snd;
+    Sound *snd;
     Rect rect;
     Point pt;
 

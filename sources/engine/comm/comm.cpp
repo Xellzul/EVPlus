@@ -70,7 +70,7 @@ void ResetCommRect(void)
         SWDisposeFrame(&gCommFrame);
 }
 
-/* Shows `msg' in the comm strip for `count' frames; Flush lays it over the view (CommOverlay). */
+/* Shows `msg' in the comm strip for `count' frames; Screen::ComposeView lays it over the view (CommOverlay). */
 // FUNCTION: EVNOVA 0x0047e2d0
 // MAC: _DisplayComm i386 0x00090201 ppc 0x0009be7c
 void DisplayComm(PStrChar *msg, short count)
@@ -89,8 +89,9 @@ void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const
     SWSetPortToWindow(gSpriteWorld);                /* callers draw on the window next */
 }
 
-/* The comm message drawn in its own frame, at the screen's resolution, for Flush to lay over the view; NULL
-   when there is none. The frame is drawn again only when the message or the system's colour changes. */
+/* The comm message drawn in its own frame, at the screen's resolution, for Screen::ComposeView to lay over
+   the view; NULL when there is none. The frame is drawn again only when the message or the system's colour
+   changes. */
 SWFrameRec *CommOverlay(void)
 {
     SWFrameRec *&frame = gCommFrame;

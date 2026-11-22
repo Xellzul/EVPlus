@@ -1,22 +1,16 @@
-/* atsound.cpp -- the Sound Toolkit: bringing the sound layer up and down, starting and halting sounds over the channel table, and parsing a Mac `snd ' resource out of memory. Notes: Research/notes/atsound.md */
-
-#include "burger.h"
+/* atsound.cpp -- the Sound Toolkit's channel table: bringing the sound layer up and down, and starting and
+   halting sounds over the channels, a new sound taking the place of a quieter or lower-priority one.
+   Loading is in atsndload.cpp, the mix in atsnddrv.cpp. Notes: Research/notes/atsound.md */
 
 #include "burgerchan.h"
-#include "game.h"
-
-extern int32_t _ST_CreateSoundPump(void);
-extern void _ST_DisposeSoundPump(void);                  /* 0x005076a0 */
-
-/* A zeroed block; a zero size still gets one byte. */
-static void *AllocClear(ULong size)
-{
-    return calloc(1, size != 0 ? size : 1);
-}
-
 
 int32_t gMaxVoices;                               /* 0x00870958 channels */
 int32_t gCookieCounter;                               /* 0x00870df4 */
+unsigned char gSoundToolOpen;                      /* 0x00870e12, live flag */
+int32_t gNumVoices;                               /* 0x00870db0, in use */
+SoundChannel gTheVoices[kSoundChannels];       /* 0x0086f718 */
+Mutex gCriticalSection;                             /* 0x0086dc88, the lock (16 bytes of storage in the exe) */
+ULong gSampleRate;                                   /* 0x0086ff90 */
 
 #define kMaxChannels    kSoundChannels
 /* the mix is 16-bit stereo at this rate (16.16): what the exe chose on a machine with DirectSound */
@@ -24,7 +18,7 @@ int32_t gCookieCounter;                               /* 0x00870df4 */
 
 
 // FUNCTION: EVNOVA 0x004d6290
-int32_t ST_Open(unsigned short channels, ULong device)
+int32_t ST_Open(unsigned short channels, uint32_t device)
 {
     int32_t err, e;
 
@@ -63,77 +57,33 @@ done:
     return err;
 }
 
-/* pooled doubles of a function the linker stripped; nothing reads them */
-static double DAT_00576b10[7] = {
-    440.0, 16384.0, 6.2831852 * 440.0, 6.2831852, 64.0, 128.0, 65536.0
-};
-
-/* the device's volume as the exe found it when the Sound Tool opened (to put back at close): not read
-   any more, there is no device volume on the platform layer. ST_GetSysVolume still computes from these,
-   which stay 0, so its answer means nothing; no caller uses it. */
-ULong gSaveLeftVolume;                              /* 0x008700a4, 4 B */
-ULong gSaveRightVolume;                              /* 0x00870100, 4 B */
-ULong gSaveMaxVolume;                              /* 0x00870dcc, 4 B */
-
-#define kDefaultRate 0x10000
-
 // FUNCTION: EVNOVA 0x004d6440
 void ST_Close(void)
 {
-    int32_t err, e;
-
-    err = 0;
     if (gSoundToolOpen != 0) {
         ST_HaltSound(0);
         _ST_DisposeSoundPump();
-        e = CriticalDispose(&gCriticalSection);
-        if (e != 0)
-            err = e;
+        CriticalDispose(&gCriticalSection);
         gSoundToolOpen = 0;
     }
 }
 
-// FUNCTION: EVNOVA 0x004d64b0
-ULong ST_GetSysVolume(void)
-{
-    int32_t err;
-    ULong level;
-
-    err = 0;
-    level = 0;
-    level = ((((gSaveLeftVolume + gSaveRightVolume) >> 1) << 8)
-             + gSaveMaxVolume - 1) >> 8;
-    return level;
-}
-
-// FUNCTION: EVNOVA 0x004d64d0
-void ST_DisposeSound(void *sound)
-{
-    int32_t err;
-
-    err = 0;
-    if (sound != 0 && ((intptr_t)sound & 1) == 0)
-        free(sound);
-}
-
 // FUNCTION: EVNOVA 0x004d64f0
-int32_t ST_PlaySound(void *snd, unsigned short priority, unsigned short level)
+int32_t ST_PlaySound(Sound *snd, unsigned short priority, unsigned short level)
 {
     return ST_PlaySoundStereo(snd, priority, level, level);
 }
 
 /* ST_PlaySound with its own level for each channel */
-int32_t ST_PlaySoundStereo(void *snd, unsigned short priority, unsigned short left, unsigned short right)
+int32_t ST_PlaySoundStereo(Sound *snd, unsigned short priority, unsigned short left, unsigned short right)
 {
     SoundRequest req;
 
-    req.handle = (void **)snd;
+    req.sound = snd;
     req.priority = priority;
     req.leftLevel = left;
     req.rightLevel = right;
-    req.rate = kDefaultRate;
-    req.done = 0;
-    req.unk10 = 0;
+    req.rate = kUnityRate;
     req.id = 0;
     return ST_PlaySoundParam(&req);
 }
@@ -145,7 +95,6 @@ int32_t ST_PlaySoundStereo(void *snd, unsigned short priority, unsigned short le
 // FUNCTION: EVNOVA 0x004d6550
 ULong ST_PlaySoundParam(SoundRequest *req)
 {
-    ULong *raw;
     ULong id;
     ULong i;
     char preempt;
@@ -156,8 +105,7 @@ ULong ST_PlaySoundParam(SoundRequest *req)
     tail = 0;
     id = 0;
     preempt = 0;
-    raw = (ULong *)req->handle;
-    if (req->handle != 0 && gSoundToolOpen != 0) {
+    if (req->sound != 0 && gSoundToolOpen != 0) {
         if (req->priority < kMinPriority)
             req->priority = kMinPriority;
         if (req->rightLevel > kMaxLevel)
@@ -190,20 +138,17 @@ ULong ST_PlaySoundParam(SoundRequest *req)
         if (tail != 0)
             memmove(dst, src, tail);
 
-        gTheVoices[i].sound = req->handle;
-        gTheVoices[i].data = (char *)req->handle + 0x10;
+        gTheVoices[i].sound = req->sound;
+        gTheVoices[i].data = ST_SoundData(req->sound);
         gTheVoices[i].voice.pos = 0;
-        gTheVoices[i].voice.total = raw[1];
+        gTheVoices[i].voice.total = ST_SoundSamples(req->sound);
         gTheVoices[i].voice.lastLeft = 0;
         gTheVoices[i].voice.lastRight = 0;
 
-        gTheVoices[i].device = UFix32_Divide(gSampleRate, raw[2]);
-        gTheVoices[i].stream = UFix32_Multiply(gTheVoices[i].device, req->rate);
-        gTheVoices[i].done = req->done;
+        gTheVoices[i].stream = UFix32_Multiply(UFix32_Divide(gSampleRate, ST_SoundRate(req->sound)), req->rate);
         gTheVoices[i].priority = req->priority;
         gTheVoices[i].leftLevel = req->leftLevel;
         gTheVoices[i].rightLevel = req->rightLevel;
-        gTheVoices[i].unk2C = req->unk10;
         gTheVoices[i].finished = 0;
 
         if (req->id != 0) {
@@ -220,31 +165,23 @@ ULong ST_PlaySoundParam(SoundRequest *req)
     return id;
 }
 
-#define kHaltReason    2
+/* a channel is picked by its id or by its sound; 0 picks them all */
+static bool ChannelMatches(const SoundChannel *chan, uintptr_t key)
+{
+    return (uintptr_t)chan->id == key || (uintptr_t)chan->sound == key || key == 0;
+}
 
-unsigned char gSoundToolOpen;                      /* 0x00870e12, live flag */
-int32_t gNumVoices;                               /* 0x00870db0, in use */
-SoundChannel gTheVoices[kSoundChannels];       /* 0x0086f718, 0x380 B */
-Mutex gCriticalSection;                             /* 0x0086dc88, the lock (16 bytes of storage in the exe) */
-SoundRequest gSoundVoiceStatus;                       /* 0x008707dc, callback ref */
-
-/* Counts the channels this sound occupies; a null sound counts them all. */
-// FUNCTION: EVNOVA 0x004d6770
-unsigned short ST_IsSoundPlaying(void *sound)
+static unsigned short CountPlaying(uintptr_t key)
 {
     int32_t found;
     ULong i;
-    int32_t err;
 
-    err = 0;
     found = 0;
     if (gSoundToolOpen != 0) {
         i = 0;
         CriticalEnter(&gCriticalSection);
         while (i < gNumVoices) {
-            if ((void *)(uintptr_t)gTheVoices[i].id == sound
-                || gTheVoices[i].sound == sound
-                || sound == 0)
+            if (ChannelMatches(&gTheVoices[i], key))
                 found = found + 1;
             i = i + 1;
         }
@@ -253,26 +190,30 @@ unsigned short ST_IsSoundPlaying(void *sound)
     return found;
 }
 
-// FUNCTION: EVNOVA 0x004d67d0
-void ST_HaltSound(void *sound)
+/* Counts the channels this sound occupies; a null sound counts them all. */
+// FUNCTION: EVNOVA 0x004d6770
+unsigned short ST_IsSoundPlaying(const Sound *sound)
+{
+    return CountPlaying((uintptr_t)sound);
+}
+
+unsigned short ST_IsSoundIdPlaying(uint32_t id)
+{
+    return id != 0 ? CountPlaying(id) : 0;
+}
+
+static void HaltMatching(uintptr_t key)
 {
     ULong i;
     SoundChannel *src;
-    void *snd;
     SoundChannel *dst;
     int32_t tail;
-    void (*done)(int32_t, void *, void *);
 
-    snd = 0;
     if (gSoundToolOpen != 0) {
         i = 0;
         CriticalEnter(&gCriticalSection);
         while (i < gNumVoices) {
-            if ((void *)(uintptr_t)gTheVoices[i].id == sound
-                || gTheVoices[i].sound == sound
-                || sound == 0) {
-                done = gTheVoices[i].done;
-                snd = gTheVoices[i].sound;
+            if (ChannelMatches(&gTheVoices[i], key)) {
                 gNumVoices--;
                 dst = &gTheVoices[i];
                 src = dst + 1;
@@ -281,8 +222,6 @@ void ST_HaltSound(void *sound)
                     memmove(dst, src, tail);
                 dst = &gTheVoices[gNumVoices];
                 memset(dst, 0, kChannelBytes);
-                if (done != 0)
-                    done(kHaltReason, sound, &gSoundVoiceStatus);
             } else {
                 i++;
             }
@@ -291,16 +230,26 @@ void ST_HaltSound(void *sound)
     }
 }
 
+// FUNCTION: EVNOVA 0x004d67d0
+void ST_HaltSound(const Sound *sound)
+{
+    HaltMatching((uintptr_t)sound);
+}
+
+void ST_HaltSoundId(uint32_t id)
+{
+    if (id != 0)
+        HaltMatching(id);
+}
+
 /* Drop one channel and close the table up behind it. */
 // FUNCTION: EVNOVA 0x004d6890
 void _ST_HaltASound(short index)
 {
-    unsigned char ok;
     SoundChannel *src;
     SoundChannel *dst;
     int32_t tail;
 
-    ok = 0;
     if (gSoundToolOpen != 0) {
         gNumVoices--;
         src = &gTheVoices[index + 1];
@@ -311,352 +260,4 @@ void _ST_HaltASound(short index)
         dst = &gTheVoices[gNumVoices];
         memset(dst, 0, kChannelBytes);
     }
-}
-
-ULong gSampleRate;                                   /* 0x0086ff90 */
-
-/* Placement only: no reader in the exe. */
-static unsigned char sSoundMemPad[8];                 /* 0x00865898 */
-
-#define kStandardHeader   0x00
-#define kCompressedHeader 0xfe
-#define kExtendedHeader   0xff
-#define kStandardSkip     0x16
-#define kExtendedSkip     0x40
-#define kCompressionNone  0x4e4f4e45UL                /* 'NONE' */
-#define kCompressionIma4  0x696d6134UL                /* 'ima4' */
-#define kSixteenBit       16
-
-typedef struct SoundDesc {
-    void *data;                                       /* +0x00 */
-    ULong rate;                                       /* +0x04 */
-    unsigned short bits;                              /* +0x08 */
-    short channels;                                   /* +0x0a */
-    ULong compression;                                /* +0x0c */
-    ULong size;                                       /* +0x10 */
-    unsigned char flags;                              /* +0x14 */
-} SoundDesc;
-
-
-#define kSndFormat1       1
-#define kSndFormat2       2
-#define kDataPointerFlag  0x8000
-#define kSoundCmd         (kDataPointerFlag | 80)
-#define kBufferCmd        (kDataPointerFlag | 81)
-#define kDataFormatShorts 3                           /* short type, long init */
-#define kSndCommandShorts 4                           /* short cmd, param1; long param2 */
-
-/* A sound ready for the mixer: this header, then 16-bit PCM in the machine's byte order. */
-typedef struct MemSound {
-    ULong tag;
-    ULong samples;
-    ULong rate;
-    ULong format;
-} MemSound;
-
-#define kMemSoundTag      0x646e7361UL                /* "asnd" in memory */
-#define kMemSoundPcm      0x204d4350UL                /* "PCM " in memory */
-#define kImaPacketBytes   34
-#define kImaPacketSamples 64
-
-/* A parsed sound as 16-bit PCM behind a MemSound header: `ima4' decoded, 8-bit samples widened by
-   repeating the byte, 16-bit ones as they are. Lengths are rounded up to 8 samples of silence. */
-// FUNCTION: EVNOVA 0x004d6900
-void *_ST_SoundRefCreate(SoundDesc *desc)
-{
-    MemSound *block;
-    short *pcm;
-    unsigned char *raw;
-    unsigned short v;
-    ULong count;
-    ULong samples;
-    ULong packets;
-    ULong i;
-    unsigned char ima;
-
-    packets = 0;
-    ima = desc->compression == kCompressionIma4 && desc->bits == kSixteenBit;
-    if (ima) {
-        if (desc->flags != 0) {
-            count = desc->size * 2;                   /* bare nibbles, no packet headers */
-        } else {
-            packets = desc->size / kImaPacketBytes;
-            count = packets * kImaPacketSamples;
-        }
-    } else if (desc->bits == 8) {
-        count = desc->size;
-    } else {
-        count = desc->size / 2;
-    }
-    samples = (count + 7) & ~7;
-
-    block = (MemSound *)AllocClear(sizeof(MemSound) + samples * sizeof(short));
-    if (block == 0)
-        return 0;
-    pcm = (short *)(block + 1);
-    if (ima) {
-        if (desc->flags != 0)
-            ImaDecodeStream((const unsigned char *)desc->data, count, pcm);
-        else
-            ImaDecodePackets((const unsigned char *)desc->data, packets, pcm);
-    } else if (desc->bits == 8) {
-        raw = (unsigned char *)desc->data;
-        for (i = 0; i < count; i++) {
-            v = raw[i];
-            if (desc->flags == 0)
-                v ^= 0x80;
-            v |= v << 8;
-            pcm[i] = (short)v;
-        }
-    } else {
-        memcpy(pcm, desc->data, count * sizeof(short));
-    }
-
-    block->tag = kMemSoundTag;
-    block->samples = samples;
-    block->rate = desc->rate;
-    block->format = kMemSoundPcm;
-    return block;
-}
-
-#define kVoiceStepShift   4                           /* 16.16 rate to the mixer's 20.12 */
-#define kSoundTick        3
-#define kSoundFinished    1
-
-/* Mix every playing channel into a zeroed stereo 16-bit buffer, then tell
-   each owner it ticked and retire the channels that ran out. Channels past
-   the voice limit are advanced without being heard. */
-typedef void (*MixerNotifyProc)(int32_t reason, ULong id, SoundRequest *request);
-
-// FUNCTION: EVNOVA 0x004d6b90
-void _ST_MixVoices(short *buffer, ULong frames)
-{
-    int32_t err = 0;
-    int32_t i;
-    SoundChannel *chan;
-    short *out;
-    short *p;
-    void *mix;
-    MixerNotifyProc done;
-    ULong id;
-
-    out = buffer;
-    p = buffer;
-    memset(mix = buffer, 0, frames * 4);
-    for (i = 0; i < gNumVoices; i++) {
-        chan = &gTheVoices[i];
-        out = buffer;
-        if (i < gMaxVoices)
-            chan->finished = PCM_Mixer((const short *)chan->data, &out, frames, chan->stream >> kVoiceStepShift,
-                                       &chan->voice, chan->leftLevel, chan->rightLevel);
-        else
-            chan->finished = PCM_Mixer((const short *)chan->data, 0, frames, chan->stream >> kVoiceStepShift,
-                                       &chan->voice, chan->leftLevel, chan->rightLevel);
-    }
-
-    for (i = 0; i < gNumVoices; i++) {
-        done = (MixerNotifyProc)gTheVoices[i].done;
-        id = gTheVoices[i].id;
-        if (done != 0) {
-            gSoundVoiceStatus.handle = (void **)gTheVoices[i].sound;
-            gSoundVoiceStatus.priority = gTheVoices[i].priority;
-            gSoundVoiceStatus.leftLevel = gTheVoices[i].leftLevel;
-            gSoundVoiceStatus.rightLevel = gTheVoices[i].rightLevel;
-            gSoundVoiceStatus.rate = kUnityRate;
-            gSoundVoiceStatus.done = gTheVoices[i].done;
-            gSoundVoiceStatus.unk10 = gTheVoices[i].unk2C;
-            gSoundVoiceStatus.id = id;
-            gSoundVoiceStatus.totalSamples = gTheVoices[i].voice.total;
-            done(kSoundTick, id, &gSoundVoiceStatus);
-        }
-        if (gTheVoices[i].finished != 0) {
-            _ST_HaltASound(i);
-            i--;
-            if (done != 0)
-                done(kSoundFinished, id, &gSoundVoiceStatus);
-        }
-    }
-}
-
-// FUNCTION: EVNOVA 0x004d6d00
-void _ST_MixerDispatch(short *buffer, ULong frames)
-{
-    CriticalEnter(&gCriticalSection);
-    _ST_MixVoices(buffer, frames);
-    CriticalLeave(&gCriticalSection);
-}
-
-/* Where the sound header sits in a `snd ' resource: the data offset its
-   first soundCmd or bufferCmd carries. 0 if there is none. */
-// FUNCTION: EVNOVA 0x004d6d30
-int32_t _ST_SndDataOffset(void **handle)
-{
-    short *p;
-    int32_t offset;
-    short count;
-    unsigned char found;
-    short bufferCmd;
-    short soundCmd;
-    short cmd;
-
-    offset = 0;
-    found = 0;
-    bufferCmd = kBufferCmd;
-    soundCmd = kSoundCmd;
-    p = (short *)*handle;
-    switch ((long long)Swap16(p[0])) {
-    case kSndFormat1:
-        count = Swap16(p[1]);
-        p = p + 2;
-        p = p + count * kDataFormatShorts;
-        break;
-    case kSndFormat2:
-        p = p + 2;
-        break;
-    default:
-        found = 1;
-        break;
-    }
-
-    count = Swap16(p[0]);
-    p = p + 1;
-    while (count > 0 && found == 0) {
-        cmd = Swap16(p[0]);
-        if (cmd == bufferCmd || cmd == soundCmd) {
-            offset = Swap32(((int32_t *)p)[1]);
-            found = 1;
-        } else {
-            p = p + kSndCommandShorts;
-            count--;
-        }
-    }
-    return offset;
-}
-
-/* The Sound Manager's three sample headers (big-endian), as far as they are read. */
-typedef struct SoundHeader {
-    ULong samplePtr;                                  /* +0x00 */
-    ULong length;                                     /* +0x04 */
-    ULong sampleRate;                                 /* +0x08, 16.16 */
-    ULong loopStart;                                  /* +0x0c */
-    ULong loopEnd;                                    /* +0x10 */
-    unsigned char encode;                             /* +0x14 */
-    unsigned char baseFrequency;                      /* +0x15 */
-} SoundHeader;
-
-typedef struct ExtSoundHeader {
-    ULong samplePtr;                                  /* +0x00 */
-    ULong numChannels;                                /* +0x04 */
-    ULong sampleRate;                                 /* +0x08 */
-    ULong loopStart;                                  /* +0x0c */
-    ULong loopEnd;                                    /* +0x10 */
-    unsigned char encode;                             /* +0x14 */
-    unsigned char baseFrequency;                      /* +0x15 */
-    unsigned char numFrames[4];                       /* +0x16 */
-    unsigned char AIFFSampleRate[10];                 /* +0x1a */
-    ULong markerChunk;                                /* +0x24 */
-    ULong instrumentChunks;                           /* +0x28 */
-    ULong AESRecording;                               /* +0x2c */
-    unsigned short sampleSize;                        /* +0x30 */
-} ExtSoundHeader;
-
-typedef struct CmpSoundHeader {
-    ULong samplePtr;                                  /* +0x00 */
-    ULong numChannels;                                /* +0x04 */
-    ULong sampleRate;                                 /* +0x08 */
-    ULong loopStart;                                  /* +0x0c */
-    ULong loopEnd;                                    /* +0x10 */
-    unsigned char encode;                             /* +0x14 */
-    unsigned char baseFrequency;                      /* +0x15 */
-    unsigned char numFrames[4];                       /* +0x16 */
-    unsigned char AIFFSampleRate[10];                 /* +0x1a */
-    ULong markerChunk;                                /* +0x24 */
-    ULong format;                                     /* +0x28 */
-    ULong futureUse2;                                 /* +0x2c */
-    ULong stateVars;                                  /* +0x30 */
-    ULong leftOverSamples;                            /* +0x34 */
-    short compressionID;                              /* +0x38 */
-    short packetSize;                                 /* +0x3a */
-    short snthID;                                     /* +0x3c */
-    unsigned short sampleSize;                        /* +0x3e */
-} CmpSoundHeader;
-
-// FUNCTION: EVNOVA 0x004d6e60
-void *ST_LoadSndResourceIndirect(void **handle, int32_t flags)
-{
-    int32_t err = 0;
-    void *result = 0;
-    SoundDesc desc;
-    SoundHeader *header;
-    ExtSoundHeader *ext;
-    CmpSoundHeader *cmp;
-    ULong compression;
-    int32_t offset;
-    int32_t count;
-    int32_t i;
-    int32_t handleSize;
-    int32_t size;
-    ULong rateStatus;
-    unsigned char stereo;
-
-    if ((unsigned char)flags != 0)
-        offset = 0;
-    else
-        offset = _ST_SndDataOffset(handle);
-
-    if (offset >= 0) {
-        stereo = 0;
-        header = (SoundHeader *)((unsigned char *)*handle + offset);
-
-        switch (header->encode) {
-        case kStandardHeader:
-            offset += kStandardSkip;
-            desc.rate = Swap32(header->sampleRate);
-            desc.bits = 8;
-            desc.channels = 1;
-            desc.compression = kCompressionNone;
-            break;
-        case kExtendedHeader:
-            ext = (ExtSoundHeader *)header;
-            if ((long long)Swap32(ext->numChannels) > 1)
-                return 0;
-            offset += kExtendedSkip;
-            desc.rate = Swap32(ext->sampleRate);
-            desc.bits = Swap16(ext->sampleSize);
-            desc.channels = Swap32(ext->numChannels);
-            desc.compression = kCompressionNone;
-            break;
-        case kCompressedHeader:
-            cmp = (CmpSoundHeader *)header;
-            if ((long long)Swap32(cmp->numChannels) > 1)
-                return 0;
-            offset += kExtendedSkip;
-            compression = Swap32(cmp->format);
-            if (compression != kCompressionNone && compression != kCompressionIma4)
-                return 0;
-            desc.rate = Swap32(cmp->sampleRate);
-            desc.bits = Swap16(cmp->sampleSize);
-            desc.channels = Swap32(cmp->numChannels);
-            desc.compression = Swap32(cmp->format);
-            break;
-        }
-
-        rateStatus = UFix32_Divide(gSampleRate, (long long)Swap32(header->sampleRate));
-
-        handleSize = GetAHandleSize((Handle)handle);
-        size = handleSize - offset;
-        desc.data = (unsigned char *)*handle + offset;
-        desc.size = size;
-        desc.flags = flags;
-
-        if (desc.bits == kSixteenBit && desc.compression == kCompressionNone) {
-            count = desc.size / (desc.bits / 8);
-            for (i = 0; i < count; i++)
-                ((unsigned short *)desc.data)[i] = Swap16(((unsigned short *)desc.data)[i]);
-        }
-
-        result = _ST_SoundRefCreate(&desc);
-    }
-
-    return result;
 }

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <vector>
 #include "macport.h"
+#include "pixel.h"
 
 #define kAlpha1555          0x8000      /* bit 15 of a 1555 pixel */
 #define kAlpha1555High      0x80        /* the same bit, in the pixel's high byte */
@@ -62,7 +63,7 @@ static inline void ReadPixel(const unsigned char *p, int pixelSize, int alpha, C
 static inline void WritePixel(unsigned char *p, int pixelSize, int r, int g, int b)
 {
     if (pixelSize == 16) {
-        *(unsigned short *)p = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+        *(unsigned short *)p = Pixel::From8(r, g, b);
     } else {
         p[0] = b;
         p[1] = g;
@@ -143,13 +144,13 @@ static void CopySameSize(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, cons
             }
         } else if (src->pixelSize == 24 && dst->pixelSize == 16) {
             for (x = 0; x < width; x++) {
-                *(unsigned short *)out = ((in[0] >> 3) << 10) | ((in[1] >> 3) << 5) | (in[2] >> 3);
+                *(unsigned short *)out = Pixel::From8(in[0], in[1], in[2]);
                 in += 3;
                 out += 2;
             }
         } else if (src->pixelSize == 32 && dst->pixelSize == 16) {
             for (x = 0; x < width; x++) {
-                *(unsigned short *)out = ((in[2] >> 3) << 10) | ((in[1] >> 3) << 5) | (in[0] >> 3);
+                *(unsigned short *)out = Pixel::From8(in[2], in[1], in[0]);
                 in += 4;
                 out += 2;
             }
@@ -287,7 +288,7 @@ static void Pack16(const int *sum, int count, unsigned short *out)
         int r = std::min(std::max((sum[0] + kHalf) >> kShift, 0), kOpaque);
         int g = std::min(std::max((sum[1] + kHalf) >> kShift, 0), kOpaque);
         int b = std::min(std::max((sum[2] + kHalf) >> kShift, 0), kOpaque);
-        out[x] = (unsigned short)(((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3));
+        out[x] = Pixel::From8(r, g, b);
     }
 }
 
