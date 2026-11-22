@@ -535,8 +535,11 @@ void PutSpriteInLayer(SpriteRec *sprite, SpriteLayerRec *layer)
 
 // FUNCTION: EVNOVA 0x0046e840
 // MAC: _BusyIdle i386 0x00005981 ppc 0x0000707c
+/* one turn of a wait loop: handle pending events, then sleep until the next event or a millisecond */
 void BusyIdle(void)
 {
+    ProcessSystemEvents();
+    PlatWaitEvent(1);
 }
 
 // FUNCTION: EVNOVA 0x0046e8e0
