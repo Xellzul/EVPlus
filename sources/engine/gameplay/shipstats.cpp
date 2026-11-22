@@ -8,8 +8,6 @@
 #include "gameutil.h"
 #include "stellar.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00462ec0
 // MAC: _ShipStatsToSystemInfo i386 0x0000caee ppc 0x0000fc04
 void ShipStatsToSystemInfo(void)
@@ -1121,5 +1119,3 @@ Boolean ShipObj::CanSelfRepair()
     }
     return 0;
 }
-
-EXTERN_C_END

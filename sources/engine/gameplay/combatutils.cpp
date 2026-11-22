@@ -14,8 +14,6 @@
 #define kRoidYieldBase   0x32
 #define kRoidYieldSpread 0x65
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00462550
 // MAC: _DestroyAsteroid i386 0x0000adc9 ppc 0x0000d688
 void DestroyAsteroid(AsteroidObj *roid)
@@ -997,5 +995,3 @@ void IonizeShip(ShipObj *ship, WeapRecord *weap, FloatPoint *pos)
         ship->ionColor |= weap->ionizeColor;
     }
 }
-
-EXTERN_C_END

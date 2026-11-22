@@ -15,8 +15,6 @@ Rect listPicOffRect[kPictCacheSlots];
 GWorldContainer iconsPort;
 short nagCount;
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00497b70
 // MAC: _RetrieveMenuIcon i386 0x0004f425 ppc 0x000580cc
 Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
@@ -152,5 +150,3 @@ void DisposeDialogs(void)
     if (iconsPort.world != NULL)
         DisposeGWorldContainer(&iconsPort);
 }
-
-EXTERN_C_END

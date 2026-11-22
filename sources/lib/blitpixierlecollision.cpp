@@ -1,8 +1,6 @@
 /* blitpixierlecollision.cpp -- BlitPixieRLECollision (win 0x00472190), the two-stream RLE overlap test. Notes: Research/notes/blitpixierlecollision.md */
 #include "macport.h"
 
-EXTERN_C_BEGIN
-
 #define ALIGN_PTR(p) ( -((intptr_t)(p)) & 3)
 
 // FUNCTION: EVNOVA 0x00472190
@@ -154,5 +152,3 @@ Boolean BlitPixieRLECollision(
 
 	return 0;
 }
-
-EXTERN_C_END

@@ -211,8 +211,7 @@ static int32_t ReadLong(const void *data)
 
 /* The PixPat header, its PixMap, the pixels expanded to one byte each and the colour
    table as RGB triplets: an IMAGE8_PAL image. Returns 0, or 1 with the image released.
-   As CE's decoder has it: the offsets are taken as shorts, ctSize as the entry count, and
-   each colour component's low byte. */
+   Offsets are read as shorts, ctSize as the entry count, each colour component as its low byte. */
 static int ImageParsePPat(Image_t *image, const void *ppat)
 {
     const unsigned char *src;

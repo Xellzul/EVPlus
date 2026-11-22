@@ -3,10 +3,6 @@
 #include "burger.h"
 #include "platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 static uint64_t TickStart;                       /* the clock at the first ReadTick */
 static Word8 Started;                            /* 0x00865864 */
 
@@ -52,7 +48,3 @@ ULong ReadTickMilliseconds(void)
 {
     return (ULong)(PlatMicroseconds() / kMicrosPerMs);
 }
-
-#ifdef __cplusplus
-}
-#endif

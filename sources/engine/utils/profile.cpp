@@ -13,8 +13,6 @@ short dependency[kProfileSlots];          /* -1 = none */
 short lastEntered;
 Boolean done[kProfileSlots];          /* dump bookkeeping */
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x0046fa30
 // MAC: _print_dependents i386 0x000a4e86 ppc 0x000b0b80
 void print_dependents(FILE *f, short slot, short depth)
@@ -132,5 +130,3 @@ void MyProfileDump(const char *path)
         fclose(f);
     }
 }
-
-EXTERN_C_END

@@ -257,9 +257,6 @@ void MainScreenIdle(void)
     }
 }
 
-/* mainMenuCenter is h-then-v, NOT QuickDraw's Point order */
-
-#define kInterfacePictID    0x1f40
 #define kVersionText        "EV (plus) Nova Community Edition r4 "
 #define kVersionGrey        0x8000
 #define kVersionLeft        5
@@ -279,6 +276,10 @@ static void DrawVersion(void)
     TextSize(kVersionTextSize);
     DrawTextRun(version, sizeof(version) - 1, NULL, 0, 0);
 }
+
+/* mainMenuCenter is h-then-v, NOT QuickDraw's Point order */
+
+#define kInterfacePictID    0x1f40
 #define kMenuHalfWidth      512
 #define kMenuHalfHeight     384
 

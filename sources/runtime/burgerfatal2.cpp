@@ -5,10 +5,6 @@
 #include "macport.h"
 #include "platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define kFatalExitCode 0x37
 
 Word IAmExiting;                                 /* 0x00870d98 */
@@ -49,7 +45,3 @@ void NonFatal(const char *fmt, ...)
             Fatal(ErrorMsg);
     }
 }
-
-#ifdef __cplusplus
-}
-#endif

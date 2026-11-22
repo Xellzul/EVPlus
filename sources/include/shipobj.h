@@ -5,10 +5,6 @@
 #ifndef SHIPOBJ_H
 #define SHIPOBJ_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct ShipRec;
 
 /* a ship's state for one weapon type: owned count, ammo, reload countdown, shots in the current burst */
@@ -206,14 +202,7 @@ typedef struct ShotObj {
     unsigned char          disableOnly;
     char pad45[3];
 } ShotObj;
-EXTERN_CPP_BEGIN
 extern ShipObj *shipData;
 extern short shipSystems[512];
-EXTERN_CPP_END
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

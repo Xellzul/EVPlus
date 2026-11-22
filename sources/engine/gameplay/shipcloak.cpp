@@ -9,8 +9,6 @@
 #include "ships.h"
 #include "sound.h"
 
-EXTERN_C_BEGIN
-
 #define kDetectRange    200.0f
 
 // FUNCTION: EVNOVA 0x00464a90
@@ -405,5 +403,3 @@ Boolean ShipObj::CanTargetCloakedShips()
     }
     return 0;
 }
-
-EXTERN_C_END

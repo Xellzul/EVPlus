@@ -444,7 +444,7 @@ void PlayerInfoDialogUpdate(void)
             NumToString(TruncF32(shipData->MaxSpeed() * 100.0f), (StringPtr)buf);
         else
             NumToString(TruncF32(shipData->MaxSpeed() * 100.0f *
-                                    0.6666666666666666), (StringPtr)buf);
+                                 0.6666666666666666), (StringPtr)buf);
         DrawString((const unsigned char *)buf);
 
         RGBForeColor(&rgbLightGrey);

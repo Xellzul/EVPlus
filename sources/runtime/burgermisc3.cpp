@@ -3,10 +3,6 @@
 #include "burger.h"
 #include "burgerplat.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // FUNCTION: EVNOVA 0x004ff830
 void LinkedListInit(ListRec *list)
 {
@@ -36,10 +32,6 @@ void *LinkedListGetEntryData(ListRec *list, ULong index)
     }
     return p;
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 #define kListNodeSize   sizeof(ListNode)   /* 0x10 on 32-bit */
 

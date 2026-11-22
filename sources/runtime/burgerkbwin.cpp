@@ -6,10 +6,6 @@
 #include "platform.h"
 #include "screen.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* port/dialogmgr.cpp: the window's own events */
 extern void WinGameActivate(int on);
 extern void WinGameMinimized(void);
@@ -356,7 +352,3 @@ void KeyboardInit(void)
     BurgerKeyEnd = 0;
     MouseClicked = 0;
 }
-
-#ifdef __cplusplus
-}
-#endif

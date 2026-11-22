@@ -5,10 +5,6 @@
 #include "shipobj.h"
 #include "soundtool.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* desc-resource display flags */
 #define kDescMovieAfter     0x0001
 #define kDescMovieDoubled   0x0002
@@ -28,7 +24,6 @@ extern "C" {
 void CommDialogUpdate(void);
 extern void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, Point *lCell,
                          short lDataOffset, short lDataLen, ScrollRec **lHandle);
-EXTERN_CPP_BEGIN
 extern Boolean reenterMissionDialog;
 extern short adviceDisasterRandom;
 extern Boolean willTakeBribe;
@@ -36,7 +31,6 @@ extern Boolean hasDemandedTribute;
 extern Boolean commShipXeno;
 extern short commDialogMode;
 extern Boolean shipyardEgg;
-EXTERN_CPP_END
 extern void DisposeButtons(void);
 extern void DoBarDialog(void);
 /* what the player makes of a captured ship; None when the game quits during the choice */
@@ -117,7 +111,6 @@ Boolean OfferDue(short offerItem, short *itemHit);
 Boolean QuickKeyHit(short mapItem, short infoItem, short missionsItem, short *itemHit);
 extern void TextDialogUpdate(void);
 void TradeDialogUpdate(void);
-EXTERN_CPP_BEGIN
 extern unsigned char adviceString[];
 extern PicHandle barBackgroundPic;
 extern char barDescText[];
@@ -214,12 +207,10 @@ extern short raceCount;
 extern PicHandle raceBackgroundPic;
 extern short racePick;
 extern short raceWinner;
-EXTERN_CPP_END
 extern RGBColor *redColor;
 extern RGBColor redRGB;
 extern const RGBColor betterRGB;    /* green: a better or raised value */
 extern const RGBColor worseRGB;     /* red: a worse or lowered value */
-EXTERN_CPP_BEGIN
 extern Boolean releaseCommEscort;
 extern short responseRandom;
 extern short salvageAmmoQty;
@@ -229,8 +220,6 @@ extern short salvageFuelQty;
 extern short salvageQty;
 extern short salvageType;
 extern short selMissionListItem;
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern short selTradeItem;
 extern short shipBuyMode;
 extern unsigned char shipClassStr[];
@@ -240,8 +229,6 @@ extern RGBColor shopGridColor[2];
 extern Boolean showAbortMissionButton;
 extern PicHandle textDialogBackgroundPic[3];
 extern PicHandle tradeBackgroundPic;
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern DialogPtr barDialog;
 extern DialogPtr captureDialog;
 extern DialogPtr commDialog;
@@ -258,49 +245,30 @@ extern DialogPtr qtyDialog;
 extern DialogPtr depthDialog;
 extern DialogPtr loadingDialog;
 extern DialogPtr outfitDescDialog;
-EXTERN_CPP_END
 
 extern void EVNoteAlert(const unsigned char *text);
-EXTERN_CPP_BEGIN
 extern PicHandle raceButtonPic[4][4];
-EXTERN_CPP_END
 
 extern Boolean EVYesNoDialog(unsigned char *prompt);
-EXTERN_CPP_BEGIN
 extern Boolean gQuit;
 extern uint32_t lastClickTime;
 extern Boolean screenFaded;
-EXTERN_CPP_END
 
-EXTERN_CPP_BEGIN
 extern ShortPoint menuTopCorner;
-EXTERN_CPP_END
 
 extern Boolean TextDialogFilter(DialogPtr unused, const DialogEvent &ev, short *itemHit);
-EXTERN_CPP_BEGIN
 extern TEHandle offerTextHandle;
-EXTERN_CPP_END
 #define kMissionButtonLabelCount 2
-EXTERN_CPP_BEGIN
 extern unsigned char missionButtonLabel[kMissionButtonLabelCount][256];
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern TEHandle textDialogTextHandle;
-EXTERN_CPP_END
 extern short DoHaggleDialog(Boolean raise, short chance);
 extern void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE,
                              short dv, Boolean force);
 extern void PlayQTMovie(unsigned char *name, unsigned char doubled,
                         unsigned char fade);
 extern int32_t DoQuantityDialog(int32_t maxCount, short mode);
-EXTERN_CPP_BEGIN
 extern ScrollRec **missionList;
-EXTERN_CPP_END
 
 extern void DrawDialogBackground(PicHandle pics[3], const Rect &box, bool onePicture);  /* tradedlg.cpp */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

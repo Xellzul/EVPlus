@@ -2,8 +2,6 @@
 #include "macport.h"
 #include "burger.h"
 
-EXTERN_C_BEGIN
-
 #define kParamErr       -50
 #define kMemFullErr     -108
 
@@ -228,5 +226,3 @@ short BlitPixieRLEParsePixels(unsigned char *srcPixels, unsigned char *maskPixel
 
     return err;
 }
-
-EXTERN_C_END

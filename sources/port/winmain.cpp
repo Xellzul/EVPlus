@@ -4,8 +4,6 @@
 #include "game.h"
 #include "platform.h"
 
-EXTERN_C_BEGIN
-
 #define kGameIconGroup      202
 #define kNplayIconGroup     203
 
@@ -21,9 +19,6 @@ static void Startup(void)
 }
 
 
-/* The exe also asked Windows how much memory the machine has (CE fixed the pool's size instead) and read
-   three strings out of itself (LoadString 0x3b6..0x3b8, which its string table does not have), using
-   none of it; and it did all of this only when no other copy of the game was running (burgeronce.cpp). */
 // FUNCTION: EVNOVA 0x004d2a80
 int GameMain(void)
 {
@@ -47,5 +42,3 @@ int GameMain(void)
     InitEVNova();
     return 0;
 }
-
-EXTERN_C_END

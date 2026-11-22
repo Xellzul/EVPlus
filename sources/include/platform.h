@@ -8,10 +8,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* -- start-up ------------------------------------------------------------------------------------- */
 extern int PlatInit(void);                                 /* 0 when the layer is up */
 extern void PlatQuit(void);
@@ -170,7 +166,4 @@ extern uint32_t PlatLocalSeconds1904(void);               /* Mac clock: seconds 
 extern int32_t PlatRand(uint64_t *state, int32_t n);
 extern void PlatDebugLog(const char *msg);
 
-#ifdef __cplusplus
-}
-#endif
 #endif

@@ -3,25 +3,8 @@
 #define GAMETYPES_H
 #include "keycodes.h"
 
-/* the C++-linkage declarations of the win build's C++ TUs (a C file cannot say extern "C++"); the mac build is C only */
-#if defined(__cplusplus)
-#define EXTERN_CPP_BEGIN extern "C++" {
-#define EXTERN_CPP_END }
-#define EXTERN_C_BEGIN extern "C" {
-#define EXTERN_C_END }
-#else
-#define EXTERN_CPP_BEGIN
-#define EXTERN_CPP_END
-#define EXTERN_C_BEGIN
-#define EXTERN_C_END
-#endif
-
 /* the Toolbox flag type: the port's is signed, Carbon's unsigned char */
 typedef char Boolean;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct FloatPoint {
     float                  x;
@@ -35,9 +18,7 @@ typedef struct MapScroll {
 #define SalvageAmmo unsigned short
 #define ShipClassID unsigned short
 #define PStrChar unsigned char
-EXTERN_CPP_BEGIN
 extern MapScroll mapScroll;
-EXTERN_CPP_END
 
 typedef struct StringListRec {
     unsigned short         count;
@@ -138,9 +119,7 @@ typedef struct DebrisSlot {
     float                  timer;
     float                  angle;
 } DebrisSlot;
-EXTERN_CPP_BEGIN
 extern DebrisSlot *smokeData;
-EXTERN_CPP_END
 
 /* one escape pod, stride 0x18, 32 entries */
 typedef struct PodObj {
@@ -149,9 +128,7 @@ typedef struct PodObj {
     FloatPoint             vel;
     float                  life;
 } PodObj;
-EXTERN_CPP_BEGIN
 extern PodObj *podData;
-EXTERN_CPP_END
 
 typedef struct UnsignedWide {
     uint32_t          lo;
@@ -187,9 +164,7 @@ typedef struct ShortPoint {
     short                  h;
     short                  v;
 } ShortPoint;
-EXTERN_CPP_BEGIN
 extern ShortPoint menuButtonPos[];
-EXTERN_CPP_END
 
 /* one beam in beamData, stride 0x22, 64 entries */
 typedef struct BeamRecord {
@@ -505,9 +480,7 @@ typedef struct MissionState {
     unsigned short         flags;
     DateTimeRec            dueDate;
 } MissionState;
-EXTERN_CPP_BEGIN
 extern MissionState *currentMissionObjectives;
-EXTERN_CPP_END
 
 /* a weaponStats[] entry */
 typedef struct WeapRecord {
@@ -583,7 +556,6 @@ typedef struct RoidRecord {
 } RoidRecord;
 
 /* the four shot sprite layers, in address order */
-EXTERN_CPP_BEGIN
 extern struct SpriteLayerRec *shotLayer;
 extern struct SpriteLayerRec *guidedShotLayer;
 extern struct SpriteLayerRec *pointDefenseLayer;
@@ -687,7 +659,6 @@ extern short prevParent[64];
 typedef struct Image_t *PicHandle;
 extern PicHandle missionBackgroundPic[3];
 extern DialogPtr alertDialog;
-EXTERN_CPP_END
 
 typedef struct KeyPrefs {
     ScanCode               selectSecondary;
@@ -735,9 +706,5 @@ typedef struct KeyPrefs {
     ScanCode               toggleFPS;
     ScanCode               speedUp;
 } KeyPrefs;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

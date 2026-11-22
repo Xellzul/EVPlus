@@ -30,11 +30,6 @@
 #define kPayClearClass  30000
 #define kPctOfCashBase  40000   /* pay -40001..-40099 is N% of the player's cash */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 /* --- one declaration per name --- */
 extern Boolean CronDateInRange(CronRecord *cron);           /* 0x0046c800 */
 extern void CronEventHandler(void);                         /* 0x00439500 */
@@ -65,7 +60,6 @@ extern void RestoreBuffer(void *saved);                 /* 0x0044a9d0 */
 extern short SelectMissionStellar(short sel, short loc, short avoid, short mission); /* 0x0043d510 */
 extern short SelectMissionSystem(short which, short curSystem);  /* 0x0043e6f0 */
 extern void SetupMissionList(void);                            /* 0x0043cc20 */
-EXTERN_CPP_BEGIN
 extern char commMsg[2048];                      /* 0x0073130c */
 extern short currentMissionIndexForSetParser; /* 0x00776b00 (mac name, 2 uses both sides) */
 extern short lastInteger;               /* 0x007caa10 mac _lastInteger */
@@ -73,20 +67,12 @@ extern Handle missionFileHand;                  /* 0x0077efb8 (mac _missionFileH
 extern unsigned char missionName[][256];        /* 0x007356e8 (mac _missionName) */
 extern Boolean offeringFromShip;                    /* 0x00773eea (mac name) */
 extern short offeringShipIndex;                    /* 0x0077430e (mac _offeringShipIndex) */
-EXTERN_CPP_END
-
 
 /* --- one declaration per name --- */
 extern Boolean IsMissionAvailable(short mission, Boolean offer); /* 0x00441b40 */
-EXTERN_CPP_BEGIN
 extern MissionAvailRec missionAvailData[];              /* 0x0077f62c (corroborated, matched-globals.csv) */
 extern short activeMissions[16];
 extern ScrollRec **missionInfoList;
 extern short tempMissions[];
-EXTERN_CPP_END
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* MISSIONS_H */

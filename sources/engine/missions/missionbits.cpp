@@ -2,8 +2,6 @@
 #include "missions.h"
 #include "player.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00448020
 // MAC: _EvalMissionBitSetString i386 0x00099dc5 ppc 0x000a5b94
 void EvalMissionBitSetString(char *expr)
@@ -27,5 +25,3 @@ void EvalCurrentMissionBitSetString(char *expr, short mission)
     currentMissionIndexForSetParser = -1;
     ResetPlayerPrecalcedValues();
 }
-
-EXTERN_C_END

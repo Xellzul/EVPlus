@@ -773,8 +773,6 @@ Boolean GetSpriteInfo(short id, short *spriteID, short *maskID, short *xSize,
     return 0;
 }
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x004b6620
 // MAC: _ReportSpriteLoadError i386 0x0001ea6c ppc 0x0002337c
 void ReportSpriteLoadError(short label, short value, short special)
@@ -810,8 +808,6 @@ void SpriteLoadFailed(const char *prefix, int logNum, short label, short value, 
     crashlog_print("\n");
     ReportSpriteLoadError(label, value, err);
 }
-
-EXTERN_C_END
 
 // FUNCTION: EVNOVA 0x004b6810
 // MAC: _DisposeClonedSprite i386 0x0001b3d0 ppc 0x0001f450

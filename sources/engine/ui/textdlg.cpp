@@ -23,8 +23,6 @@ static ScrollingText DialogText()
     return ScrollingText(textDialog, textDialogTextHandle, kTextLayout);
 }
 
-EXTERN_C_BEGIN
-
 /*
  * The port's TE record. textedit.cpp calls +0x08 one `long unk8`; this driver
  * writes the two halves separately from smallTextFont/smallTextSize, which names
@@ -378,5 +376,3 @@ void TextDialogUpdate(void)
     BackColor(whiteColor);
     CopyLoadPortToDialog(textDialog);
 }
-
-EXTERN_C_END

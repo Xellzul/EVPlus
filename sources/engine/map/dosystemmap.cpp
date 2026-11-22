@@ -13,18 +13,11 @@
 #include "space.h"
 #include "buttons.h"
 
-EXTERN_C_BEGIN
-
-
-
 /* the mac plots the map arrows as colour icons */
 
 /* mapZoom and floatingMapZoom: one .data run, in address order. */
 double mapZoom = 0.5625;                         /* 0x005759d8 (mac name) */
-EXTERN_C_END   /* stellar.h declares it with C++ linkage */
 double floatingMapZoom = 0.5625;                 /* 0x005759e0 (see mapZoom above) */
-EXTERN_C_BEGIN
-
 
 #define kMapDlogID     2000
 #define kMapPictID     0x213d
@@ -119,13 +112,13 @@ void MapDialog::Run()
     partialMapDialogUpdate = 0;
     y = 0;
     do {
-        for (sys = 0; sys < kBordersWidth; sys++) {
+        for (sys = 0; sys < kMapBordersWidth; sys++) {
             for (i = 0; i < 4; i++) {
                 influenceOwner[sys][y][i] = 0;
                 influenceValue[sys][y][i] = 0;
             }
         }
-    } while (++y < kBordersHeight);
+    } while (++y < kMapBordersHeight);
     RecalcMissionSystsForMap();
     if (shipData->navTargetKind == kNavTargetLink && shipData->targetStellar != -1 && onPlanet == 0)
         selSystem = FindActiveCoLocatedSystem(
@@ -690,8 +683,8 @@ Boolean MapDialog::Filter(DialogPtr dlg, const DialogEvent &event, short *itemHi
             nextInfluenceSyst = 0;
         } else if (nextInfluenceSyst <= kMaxSystems) {
             influenceStepSize = 1;
-            for (i = 0; i < kBordersWidth; i++) {
-                for (j = 0; j < kBordersHeight; j++) {
+            for (i = 0; i < kMapBordersWidth; i++) {
+                for (j = 0; j < kMapBordersHeight; j++) {
                     for (k = 0; k < 4; k++) {
                         influenceOwner[i][j][k] = 0;
                         influenceValue[i][j][k] = 0;
@@ -1798,8 +1791,8 @@ void ShowFloatingMap(void)
 #define kInfluenceCoarseStep 8
 #define kInfluenceGridMax 255
 
-static int bordersVisibleWidth = kBordersWidth;
-static int bordersVisibleHeight = kBordersHeight;
+static int bordersVisibleWidth = kMapBordersWidth;
+static int bordersVisibleHeight = kMapBordersHeight;
 
 /* RecalcMapInfluence with the border grid limited to the map item's size in grid cells. */
 // BUG (CE F15.12/F16): the limit only ever shrinks, so one rebuild with a smaller rect would keep every
@@ -1858,8 +1851,8 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
     if (influenceStepSize < 1)
         influenceStepSize = 1;
 
-    for (x = 0; x < kBordersWidth; x += influenceStepSize) {
-        for (y = 0; y < kBordersHeight; y += influenceStepSize) {
+    for (x = 0; x < kMapBordersWidth; x += influenceStepSize) {
+        for (y = 0; y < kMapBordersHeight; y += influenceStepSize) {
             for (group = 0; group < kInfluenceLayers; group++) {
                 influenceOwner[x][y][group] = 0;
                 influenceValue[x][y][group] = 0;
@@ -1884,8 +1877,8 @@ void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom
     }
 
     if (influenceStepSize > 1) {
-        for (x = 0; x < kBordersWidth; x += influenceStepSize) {
-            for (y = 0; y < kBordersHeight; y += influenceStepSize) {
+        for (x = 0; x < kMapBordersWidth; x += influenceStepSize) {
+            for (y = 0; y < kMapBordersHeight; y += influenceStepSize) {
                 for (i = 0; i < influenceStepSize; i++) {
                     for (dy = 0; dy < influenceStepSize; dy++) {
                         if (x + i < bordersVisibleWidth
@@ -2052,8 +2045,8 @@ void DrawMapInfluence(Rect bounds)
     if (influenceStepSize < 1)
         influenceStepSize = 1;
 
-    for (x = 0; x < kBordersWidth; x += influenceStepSize) {
-        for (y = 0; y < kBordersHeight; y += influenceStepSize) {
+    for (x = 0; x < kMapBordersWidth; x += influenceStepSize) {
+        for (y = 0; y < kMapBordersHeight; y += influenceStepSize) {
             if (influenceValue[x][y][0] == 0)
                 continue;
 
@@ -2099,5 +2092,3 @@ void DrawMapInfluence(Rect bounds)
     }
     ForeColor(blackColor);
 }
-
-EXTERN_C_END

@@ -5,10 +5,6 @@
 #ifndef MACPORT_H
 #define MACPORT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef unsigned char *StringPtr;
 typedef uint32_t OSType;
 
@@ -77,9 +73,7 @@ typedef struct GWorldContainer {
 
 extern void GetIndString(unsigned char *str, int strListID, int index);
 extern void nv_UpdateDialogWindow(int all);
-EXTERN_CPP_BEGIN
 extern GWorldContainer iconsPort;
-EXTERN_CPP_END
 extern void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t end);
 extern void FrameRect(const Rect *r);
 extern void GetFNum(const unsigned char *name, short *familyID);
@@ -693,12 +687,10 @@ extern void GetListCellRect(Rect *box, Point cell, ScrollRec **h);
 extern Boolean LClick(Point where, short modifiers, ScrollRec **h);
 extern void ParamText(const unsigned char *p0, const unsigned char *p1,
                       const unsigned char *p2, const unsigned char *p3);
-EXTERN_CPP_BEGIN
 extern char gParamText0[];
 extern char gParamText1[];
 extern char gParamText2[];
 extern char gParamText3[];
-EXTERN_CPP_END
 extern void FadeGammaTo(uint32_t percent, uint32_t duration);
 extern unsigned char SplitTwoLineString(const unsigned char *src, unsigned char *line1,
                                         unsigned char *line2);
@@ -716,7 +708,6 @@ extern void Utf8ToText(char *out, const char *name, int outSize);
 extern void UpdateAndPageFlip(void);
 extern RGBColor *blackColor;
 extern int32_t gCaretPhase;
-EXTERN_CPP_BEGIN
 extern int32_t gBlinkTick;
 extern SWFrameRec *floatingEscortMenuFrame;
 extern SWFrameRec *floatingMapFrame;
@@ -738,11 +729,9 @@ extern SpriteRec *masterShipAltSprite[768];
 extern CGrafPort gGamePort;
 extern RGBColor blackRGB;
 extern int32_t gRezOpenPending;
-EXTERN_CPP_END
 extern void nv_BlitImageOr(Rect *dstRect, Image_t *icon);
 extern int gDisableUpdatesMode;
 extern RGBColor *whiteColor;
-EXTERN_CPP_BEGIN
 extern RGBColor bkgndGreen;
 extern RGBColor brightGreen;
 extern RGBColor dimGreen;
@@ -756,7 +745,6 @@ extern RGBColor rgbLessDarkGrey;
 extern RGBColor rgbRealDarkGrey;
 extern RGBColor rgbRealDarkBlue;
 extern RGBColor rgbBlack;
-EXTERN_CPP_END
 
 extern short GetSpriteXSize(SpriteRec *spr);
 extern short GetSpriteYSize(SpriteRec *spr);
@@ -766,8 +754,6 @@ extern void SWSetSpriteLocation(SpritePtr srcSpriteP, short horizLoc,
 extern void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible);
 extern void SWSetPortToWorkArea(SpriteWorldPtr sw);
 extern void SWSetSpriteWorldMaxFPS(SpriteWorldPtr world, short fps);
-EXTERN_CPP_BEGIN
-EXTERN_CPP_END
 
 extern void SetDialogItemText(Handle item, const unsigned char *pstr);
 extern void GetDialogItemText(Handle item, unsigned char *pstr);
@@ -795,14 +781,12 @@ extern void SetDialogItem(DialogPtr dlg, int32_t item, short type, void *handle,
 extern void SetControlTitle(ControlPtr ctl, const unsigned char *text);
 
 extern void PaintRect(Rect *r);
-EXTERN_CPP_BEGIN
 extern Boolean gameLoaded;
 extern Boolean gameInProgress;
 extern Boolean inBackground;
 extern Boolean creatingPilotFile;
 extern Boolean onPlanet;
 extern Boolean closeRequested;
-EXTERN_CPP_END
 /* invalidate the whole game window: the port only raises its redraw flag */
 #define InvalWindowPortRect(window) (GetCWindowPortRect(window), gNeedUpdateFlag = 1)
 extern Boolean gNeedUpdateFlag;
@@ -825,10 +809,8 @@ extern void TECalText(TEHandle hTE);
 extern void TEPinScroll(int dh, int dv, TEHandle hTE);
 extern void TEUpdate(Rect *rUpdate, TEHandle hTE);
 extern void TEDispose(TEHandle hTE);
-EXTERN_CPP_BEGIN
 extern CWindowPtr gWind;
 extern GWorldContainer loadPort;
-EXTERN_CPP_END
 
 extern char *GetPixBaseAddr(PixMapPtr pm);
 extern short GetPixRowBytes(PixMapPtr pm);
@@ -839,9 +821,5 @@ extern short GetPixDepth(PixMapPtr pm);
 #define ForeColor(c) RGBForeColor(c)
 #define RGBBackColor(c) BackColor(c)
 #define GetWindowVisRgn(window) GetCWindowVisRgn(window)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -10,10 +10,6 @@
 #include <strings.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* memory manager (MMMemoryManager) */
 extern void * AllocAPointer(Word32 MemSize);
 extern void DeallocAPointer(void *MemPtr);
@@ -158,14 +154,6 @@ extern void WaitTicks(Word tickCount);
 #define kPixMapFlagMask     0xc000
 #define kRowBytesMask       0x3fff
 
-/* MacTypes.h's booleans, which no -bool off TU has built in: byte-wide for C (an enum under
-   -enum min; spelled as macros here so that no TU's internal numbering moves); the win port's
-   C++ has its plain ints from burgertypes.h */
-#ifndef __cplusplus
-#define false ((unsigned char)0)
-#define true  ((unsigned char)1)
-#endif
-
 /* video globals; the screen page is screen.h's */
 extern int32_t ScreenFlags;                         /* burgergraphics.cpp */
 extern Word Win95ApplsActive;                    /* burgeronce.cpp */
@@ -207,9 +195,5 @@ extern unsigned int KeyboardGetch(void);
 extern void ProcessSystemEvents(void);
 extern unsigned int OSCursorIsVisible(void);
 extern void CStr2PStr(char *dst, const char *src);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

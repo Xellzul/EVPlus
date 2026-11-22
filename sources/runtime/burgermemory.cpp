@@ -9,10 +9,6 @@
 
 #include "burger.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* A Handle is the address of one of these, so its first field is the master pointer. The record stays where
    it is for the handle's life; only the memory it points to moves (ResizeAHandle). */
 typedef struct MyHandle {
@@ -170,7 +166,3 @@ char *LockAHandle(Handle h)
         return *h;
     return 0;
 }
-
-#ifdef __cplusplus
-}
-#endif

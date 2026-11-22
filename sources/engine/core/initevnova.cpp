@@ -297,9 +297,6 @@ Boolean allReinforcementsInhibited;
 Boolean playerHasTribbles;
 Boolean playerHasPerishableJunk;
 
-EXTERN_C_BEGIN
-
-
                                                          /* 0x004d9e10 BurgerLib */
                                                          /* 0x0046f690 */
 
@@ -4766,5 +4763,3 @@ void SpawnEscapePod(ShipObj *ship)
         }
     }
 }
-
-EXTERN_C_END

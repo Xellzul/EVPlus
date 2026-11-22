@@ -1,8 +1,6 @@
 /* endianswap.cpp -- byte-swap a resource body from a descriptor (win 0x004ce660). Notes: Research/notes/endianswap.md */
 #include "gametypes.h"
 
-EXTERN_C_BEGIN
-
 /* resource bodies are big-endian: they come off a Mac-authored rez file.
    Same shape as loaddata.cpp's helper - `static __inline` is the only spelling
    that inlines an asm block in C. */
@@ -86,5 +84,3 @@ void SwapEndianByDescriptor(unsigned char *data, unsigned short *desc)
         desc++;
     }
 }
-
-EXTERN_C_END

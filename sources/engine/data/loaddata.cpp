@@ -32,13 +32,6 @@
 #define kPersResName "p\x91" "rs"
 
 
-/*
- * Set up the pilot-file directory at startup (win 0x004bd0c0): "9:" plus
- * string 3 of list 130 plus ":", which is the port's volume notation for a
- * folder beside the application. The two debug switches are read here because
- * this is the first thing that runs after the resource file opens.
- */
-
 #define kExeFolder          "9:"        /* BurgerLib prefix 9: the exe's folder */
 #define kNovaPrefix         "Nova "     /* "Nova Plug-Ins" is "Plug-Ins" on the Mac */
 #define kNovaFilesFolder    "Nova Files"
@@ -94,6 +87,13 @@ void ExpandPlugInsPath(char *dst, const char *path)
         path += sizeof(kExeFolder) - 1;
     ExpandAPathToBufferNative(dst, path);
 }
+
+/*
+ * Set up the pilot-file directory at startup (win 0x004bd0c0): "9:" plus
+ * string 3 of list 130 plus ":", which is the port's volume notation for a
+ * folder beside the application. The two debug switches are read here because
+ * this is the first thing that runs after the resource file opens.
+ */
 
 // FUNCTION: EVNOVA 0x004bd0c0
 // MAC: _InitDataFiles i386 0x0007138b ppc 0x00079dc4
@@ -3223,7 +3223,7 @@ short LoadPilotData(char *path)
     if (playerFileHand != NULL) {
         LockAHandle((Handle)playerFileHand);
         err = DecryptIfNecessary(*playerFileHand, GetAHandleSize((Handle)playerFileHand),
-                                    kPilotCryptKey);
+                                 kPilotCryptKey);
 
         if (err == 0) {
             crashlog("load pilot data 2");
@@ -3429,7 +3429,7 @@ short LoadPilotData(char *path)
     if (altPlayerFileHand != NULL) {
         LockAHandle((Handle)altPlayerFileHand);
         err = DecryptIfNecessary(*altPlayerFileHand,
-                                    GetAHandleSize((Handle)altPlayerFileHand), kPilotCryptKey);
+                                 GetAHandleSize((Handle)altPlayerFileHand), kPilotCryptKey);
 
         if (err == 0) {
             crashlog("load pilot data 6");

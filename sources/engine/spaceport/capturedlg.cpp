@@ -89,8 +89,6 @@ Boolean CapturedAssignmentDialog::Filter(DialogPtr unused, const DialogEvent &ev
 
 } // namespace
 
-EXTERN_C_BEGIN
-
 CaptureUse DoCapturedShipAssignmentDialog(void)
 {
     return CapturedAssignmentDialog().Run();
@@ -123,5 +121,3 @@ void CapturedAssignmentDialogUpdate(void)
     CapAssignButtons().Draw(-1);
     CopyLoadPortToDialog(captureDialog);
 }
-
-EXTERN_C_END

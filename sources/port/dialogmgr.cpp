@@ -139,8 +139,6 @@ static const RGBColor bevelGray2 = { 35000, 35000, 35000 };
 static const RGBColor bevelGray3 = { 25000, 25000, 25000 };
 static const RGBColor bevelGray4 = { 15000, 15000, 15000 };
 
-EXTERN_C_BEGIN
-
 /* A CNTL resource, big-endian as it comes off the rez file. Only min, procID
    and the title survive; bounds/value/max are swapped and dropped. */
 #pragma pack(push, 1)
@@ -2309,5 +2307,3 @@ void CreateGameWindow(void)
     if (PlatVideoCreateWindow("EV Nova") != 0)
         Fatal("Can't allocate my window");
 }
-
-EXTERN_C_END

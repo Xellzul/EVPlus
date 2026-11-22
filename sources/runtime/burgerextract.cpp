@@ -2,10 +2,6 @@
 
 #include "burger.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define kExtractStrNoTranslate  2                /* keep CR, and CR LF, as they are */
 
 /* ExtractAString2 (BurgerLib ClStdlib): copy text up to a NUL (or a line end) into dst,
@@ -47,7 +43,3 @@ void ExtractAString2(const char *src, ULong *size, Word flags, char *dst, ULong 
         *size = p - src;
     }
 }
-
-#ifdef __cplusplus
-}
-#endif

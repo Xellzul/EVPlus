@@ -2,10 +2,6 @@
 
 #include "burger.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define kFixedMax       0x7fffffff
 #define kFixedMin       0x80000000
 
@@ -27,7 +23,3 @@ int32_t FixedMultiply(int32_t a, int32_t b)
         return (int32_t)kFixedMin;
     return (int32_t)(uint32_t)((uint64_t)product >> kFixedShift);
 }
-
-#ifdef __cplusplus
-}
-#endif

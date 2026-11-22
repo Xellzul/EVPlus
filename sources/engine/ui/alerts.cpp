@@ -9,8 +9,6 @@
 DialogPtr alertDialog;
 DialogPtr qtyDialog;
 
-EXTERN_C_BEGIN
-
 /* the port's body takes no arguments and answers the single window; every
    caller still passes the dialog, so it is declared that way here */
 
@@ -244,5 +242,3 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
     dialog.Close();
     return result;
 }
-
-EXTERN_C_END

@@ -3,17 +3,11 @@
 #define STELLAR_H
 #include "shipobj.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define kBordersWidth       860         /* the border grid in 2 px cells: maps up to 1720x1024 */
-#define kBordersHeight      512
+#define kMapBordersWidth    860         /* the border grid in 2 px cells: maps up to 1720x1024 */
+#define kMapBordersHeight   512
 
 /* the stellar the player is docked at, or landed on */
-EXTERN_CPP_BEGIN
 extern SpobRecord *dockedPort;
-EXTERN_CPP_END
 
 extern Boolean AddSystemInfluenceToMap(short sys, Rect *r);
 extern void CompactHyperRoute(void);
@@ -25,10 +19,8 @@ extern void DrawMapInFloatingFrame(void);
 extern void ColorCodeShip(ShipObj *ship, RGBColor *color);
 extern void ColorCodeStellar(SpobRecord *spob, RGBColor *color);
 extern void ColorCodeSystem(short sys, RGBColor *color);
-EXTERN_CPP_BEGIN
 extern short nagCount;
 extern void *mapCursorSwitchRgn;
-EXTERN_CPP_END
 extern void DisplayMessage(short id);
 extern void DisposeDialogs(void);
 extern void DoSystemMap(void);
@@ -71,12 +63,9 @@ extern void SystemDisasterLevels(short sysID, short commodity, short *raised, sh
 extern short PortJunk(short stellar, bool buys);
 extern void SystemJunkLevels(short sysID, short *levels);  /* levels: kMaxJunks entries */
 extern Boolean ValidAuxShipSystem(short sys, short mission);
-EXTERN_CPP_BEGIN
 extern Boolean canZoomIn;
 extern Boolean canZoomOut;
-EXTERN_CPP_END
 extern RGBColor *cyanColor;
-EXTERN_CPP_BEGIN
 extern Boolean didUpdateMap;
 extern short maxAutoExploreJumps;
 extern RGBColor floatingBorderColor;
@@ -84,32 +73,23 @@ extern double floatingMapZoom;
 extern Boolean partialMapDialogUpdate;
 extern short hypergateMapModeStellar;
 extern Boolean influenceCoordsCached;
-extern unsigned char influenceOwner[kBordersWidth][kBordersHeight][4];
+extern unsigned char influenceOwner[kMapBordersWidth][kMapBordersHeight][4];
 extern short influenceStepSize;
-extern unsigned char influenceValue[kBordersWidth][kBordersHeight][4];
+extern unsigned char influenceValue[kMapBordersWidth][kMapBordersHeight][4];
 extern PicHandle mapBackgroundPic;
 extern PicHandle nebulaPic[32][7];
 extern Boolean doneFlag[];
-EXTERN_CPP_END
 extern double mapZoom;
-EXTERN_CPP_BEGIN
 extern short missionSyst[];
 extern short nextInfluenceSyst;
 extern PictCacheSlot iconCache[128];
 extern short selSystem;
 extern Boolean showClearRouteButton;
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern DialogPtr shipDescDialog;
 extern DialogPtr newsDialog;
-EXTERN_CPP_END
 
 extern Boolean GovtAllies(short a, short b);
 extern Boolean GovtEnemies(short a, short b);
 extern short SpawnStellarDefenseShip(short stellar);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

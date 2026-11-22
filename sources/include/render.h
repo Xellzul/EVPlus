@@ -6,10 +6,6 @@
 #include "movie.h"
 #include "soundtool.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 static __inline void CopyRect(Rect *d, const Rect *s)
 {
     d->top = s->top;
@@ -22,7 +18,6 @@ extern void DeltaIntroProgressBar(double amount);
 extern void CenterRect(Rect *r, Rect *bounds);
 extern void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
                           short depth, short picID);
-EXTERN_CPP_BEGIN
 extern SpriteRec *weapTargetSprite[4];
 extern SpriteRec *navTargetSprite[4];
 extern SpriteRec *masterExplodSprite[64];
@@ -34,7 +29,6 @@ extern ShipClassID lastTargetedShipClass;
 extern unsigned char lastDebugTargInfoState;
 extern Boolean gUpdateFlag;
 extern Boolean regNoticeShown;
-EXTERN_CPP_END
 extern void DisposeMainScreenAnim(void);
 extern void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
                                   Rect *bounds);
@@ -103,7 +97,6 @@ extern void MainScreenAnimIdle(void);
 extern void MainScreenRolloverIdle(void);
 extern void TradeDialogTabKey(Boolean up);
 extern void UnsetGWorldContainer(GWorldContainer *gwc);
-EXTERN_CPP_BEGIN
 extern RGBColor *armorStatusColor;
 extern Rect commRect;
 extern Rect escortMenuRect;
@@ -118,8 +111,6 @@ extern uint32_t lastRolloverAnimTime;
 extern short rolloverAlpha;
 extern short rolloverIndex;
 extern Handle intfFileHand;
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern uint32_t lastLogoAnimTime;
 extern uint32_t lastSlideAnimTime;
 extern Rect gLoadBarBase;
@@ -170,17 +161,14 @@ extern Sound *mainScreenSnd[4];
 extern Rect slideDestRect[3];
 extern void *staticPat[10];
 extern void *targetInfoPic[768];
-EXTERN_CPP_END
 
 extern void RefreshSAT(void);
 extern void RedrawStatus(Boolean legacyPipeline);
 extern void ShowTheCursor(void);
 extern short GetMasterShipSpriteXSize(short id);
-EXTERN_CPP_BEGIN
 extern short gSoundVolume;
 
 extern short statusFontSize[2];
-EXTERN_CPP_END
 extern void DoPlayGameWork(unsigned char advance);
 extern void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite);
 extern void FloaterDrawCallback(SpriteWorldPtr world);
@@ -188,9 +176,5 @@ extern void BeamEraseCallback(SpriteWorldPtr world);
 extern void StartLoopingMovie(const unsigned char *name, void *window,
                               Rect *box);
 extern void PreloadPortDialog(SpobRecord *spob, short stellar);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

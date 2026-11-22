@@ -3,8 +3,6 @@
 #include "burger.h"
 #include "stellar.h"
 
-EXTERN_C_BEGIN
-
 #define kAssertAlertID 128
 
 typedef unsigned char Str15[16];
@@ -46,5 +44,3 @@ void SWAssertFail(char *filename, int lineNum)
 
     ExitToShell();
 }
-
-EXTERN_C_END

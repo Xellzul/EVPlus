@@ -4,16 +4,10 @@
 #include "burger.h"
 #include "shipobj.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void AICalculateOddsAgainst(ShipObj *ship);
 extern void CalcShipCanBuy(void);
 extern void CalculateTargetedDamage(void);
-EXTERN_CPP_BEGIN
 extern Boolean abOn;
-EXTERN_CPP_END
 extern void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
                        short shieldDmg, short attacker, Boolean fromAttack, Boolean deliberate,
                        unsigned char disableOnly, Boolean clampArmor,
@@ -48,7 +42,6 @@ extern void SystemInfoToShipStats(void);
 extern short TotalMissionCargoSpace(void);
 extern Boolean WeaponHasAmmo(ShipObj *ship, short weaponIndex);
 extern short WeaponMaxSimultShots(ShipObj *ship, short w);
-EXTERN_CPP_BEGIN
 extern Boolean allReinforcementsInhibited;
 extern Handle charFileHand;
 extern unsigned char govtMediumNames[256][256];
@@ -56,10 +49,7 @@ extern Boolean gravitySourcesPresent;
 extern DateTimeRec scenarioStartDate;
 extern short tradePrice[];
 extern short portDemand[6];
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern short junkType[2];
-EXTERN_CPP_END
 
 extern FloatPoint XYShortToFloat(ShortPoint pt);
 extern Boolean CanBuyFighter(short shipType, short outfitIndex, short weapIndex);
@@ -77,12 +67,6 @@ extern unsigned char TurretBlindSpot(ShipObj *ship, short heading, short weap);
 #define kRedrawRadar        5
 #define kRedrawTarg         6
 #define kStatusRedrawCount  7
-EXTERN_CPP_BEGIN
 extern Boolean statusRedraw[kStatusRedrawCount];
-EXTERN_CPP_END
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

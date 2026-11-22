@@ -4,20 +4,14 @@
 #include "burger.h"
 #include "shipobj.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void CenterPict(void *pict, Rect *bounds);
 extern void DateToLongString(DateTimeRec date, char *out);
 extern void DateToMedString(DateTimeRec date, char *out);
 extern void DrawCommaNumber(int32_t value);
 extern void StrcatCommaNumber(int32_t value, char *dst);
-EXTERN_CPP_BEGIN
 extern unsigned char shieldString[6][0x100];
 extern unsigned char armorString[3][0x100];
 extern unsigned char newbieString[10][0x100];
-EXTERN_CPP_END
 extern Boolean LoadPluginString(short id, void *dst);
 extern void AdjustHandleSize(Handle h, int32_t newSize);
 extern void PutSpriteInLayer(struct SpriteRec *sprite,
@@ -44,17 +38,15 @@ extern void ParseTextDescription(void);
 extern void PlayQTMovieFromDesc(short id);
 extern short PlayerHasFightersOfOutfitType(short outfitIndex);
 extern short Rand(short range);
-extern int32_t RoundD(double value);
-extern void SetFlashColor(const struct RGBColor *color);
-extern int32_t TruncF32(float value);
 extern void RandSeedFromClock(void);
+extern int32_t RoundD(double value);
 extern Boolean ResourceExists(uint32_t type, short id);
 extern Boolean nv_ResourceExists(uint32_t type, short id);
 extern ResRecord *nv_FindResourceRecord(uint32_t type, short id);
 extern Boolean ShipIsDerelict(ShipObj *ship);
 extern short StellarNumHyperLinks(SpobRecord *spob);
 extern void TrimResourceName(unsigned char *name);
-EXTERN_CPP_BEGIN
+extern int32_t TruncF32(float value);
 extern Handle colorFileHand;
 extern RGBColor escortMenuColor;
 extern Handle boomFileHand;
@@ -84,7 +76,6 @@ extern Handle stellarFileHand;
 extern Handle systemFileHand;
 extern Handle weaponFileHand;
 extern short jumpSoundLength[2];
-EXTERN_CPP_END
 extern short pstrcmp(const unsigned char *a, const unsigned char *b);
 
 extern void pstrcpy(unsigned char *dst, const unsigned char *src);
@@ -108,9 +99,5 @@ extern short GenericRandomShipSpawn(short sys, short reserve);
 extern short SpecificDudeSpawn(short dude, short sys, short reserve,
                                unsigned char allowAll);
 extern void ShowPersonHailQuote(short persID);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

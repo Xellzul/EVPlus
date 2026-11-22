@@ -4,8 +4,6 @@
    the caller, which is why an OR suffices; both counters are unsigned. */
 #include "shipobj.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00471a70
 // MAC: _BlitPixieMask i386 0x000c0f75 ppc 0x000cce04
 void BlitPixieMask(unsigned char *srcPixels, unsigned char *dstPixels,
@@ -29,5 +27,3 @@ void BlitPixieMask(unsigned char *srcPixels, unsigned char *dstPixels,
         maskPixels += srcRowBytes;
     }
 }
-
-EXTERN_C_END

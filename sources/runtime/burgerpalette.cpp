@@ -2,10 +2,6 @@
 
 #include "burger.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* (i - 255) squared for i = 0..510: the square of a channel difference, indexed by the
    difference plus 255. */
 const Word32 ByteSquareTable[511] = {            /* 0x00570b74 */
@@ -114,7 +110,3 @@ Word PaletteFindColorIndex(const Word8 *PalettePtr, Word Red, Word Green, Word B
     }
     return Result;
 }
-
-#ifdef __cplusplus
-}
-#endif

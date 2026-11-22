@@ -3,8 +3,6 @@
 #include "crashlog.h"
 #include "platform.h"
 
-EXTERN_C_BEGIN
-
 // GLOBAL: EVNOVA 0x007cdab0
 static FILE *logfile;
 
@@ -142,5 +140,3 @@ Boolean crashlog_isactive(void)
 {
     return logfile ? 1 : 0;
 }
-
-EXTERN_C_END

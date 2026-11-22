@@ -5,9 +5,6 @@
 #include "render.h"
 #include "gameutil.h"
 
-EXTERN_C_BEGIN
-
-
 // FUNCTION: EVNOVA 0x0045cfc0
 // MAC: _InitStatus i386 0x00049470 ppc 0x00051e08
 void InitStatus(void)
@@ -40,6 +37,3 @@ void HandleStatus(void)
     else
         interferenceThisFrame = 0;
 }
-
-
-EXTERN_C_END

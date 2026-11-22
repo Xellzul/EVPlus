@@ -4,10 +4,6 @@
 #ifndef RESOURCES_H
 #define RESOURCES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* oütf Flags bits (Nova Bible) */
 #define kOutfFixedGun    0x001
 #define kOutfTurret      0x002
@@ -854,9 +850,7 @@ typedef struct NebuRecord {
     char activeOn[255];
     char onExplore[255];
 } NebuRecord;
-EXTERN_CPP_BEGIN
 extern NebuRecord *nebulaData;
-EXTERN_CPP_END
 
 typedef struct DudeRecord {
     short aiType;
@@ -868,9 +862,7 @@ typedef struct DudeRecord {
     Boolean loaded;
     Boolean pad49;
 } DudeRecord;
-EXTERN_CPP_BEGIN
 extern DudeRecord *dudeData;
-EXTERN_CPP_END
 
 typedef struct JunkRecord {
     short soldAt[8];
@@ -885,10 +877,8 @@ typedef struct JunkRecord {
     char buyOn[255];
     char sellOn[255];
 } JunkRecord;
-EXTERN_CPP_BEGIN
 extern JunkRecord *junkData;
 extern BoomRecord *explodType;
-EXTERN_CPP_END
 
 /* rank runtime record, stride 0x120 in the rankData array. */
 typedef struct RankRecord {
@@ -907,9 +897,7 @@ typedef struct RankRecord {
     char convName[64];
     char shortName[66];
 } RankRecord;
-EXTERN_CPP_BEGIN
 extern RankRecord *rankData;
-EXTERN_CPP_END
 
 typedef struct OopsRecord {
     short stellar;
@@ -925,9 +913,7 @@ typedef struct OopsRecord {
     Boolean loaded;
     Boolean pad20F;
 } OopsRecord;
-EXTERN_CPP_BEGIN
 extern OopsRecord *disasterData;
-EXTERN_CPP_END
 
 typedef struct FletRecord {
     short leadShipType;
@@ -943,9 +929,7 @@ typedef struct FletRecord {
     Boolean usable;
     Boolean pad123;
 } FletRecord;
-EXTERN_CPP_BEGIN
 extern FletRecord *fleetData;
-EXTERN_CPP_END
 
 /* chär resource, 0x16a bytes, read in place through charFileHand. */
 #pragma pack(push, 2)
@@ -1229,7 +1213,6 @@ extern Boolean StellarIsDestroyed(SpobRecord *spob);
 extern Boolean StellarIsLandable(SpobRecord *spob);
 extern Boolean StellarIsNormalLandable(SpobRecord *spob);
 extern unsigned char PlayerBlessedByGovt(short govt, short which);
-EXTERN_CPP_BEGIN
 extern SpobRecord *stellarData;
 extern SystRecord *systemData;
 extern GovtRecord *govtData;
@@ -1238,7 +1221,6 @@ extern OutfRecord *outfitSystem;
 extern PersRecord *personData;
 extern WeapRecord *weaponStats;
 extern CronRecord *cronEvent;
-EXTERN_CPP_END
 
 #define SpobHasShipyard(s)  ((s)->flags & kSpobHasShipyard)
 #define kGameStrList        2002
@@ -1347,9 +1329,5 @@ enum : short {
 #define kDemandHigh         4
 #define kDemandMedium       2
 #define kDemandLow          1
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

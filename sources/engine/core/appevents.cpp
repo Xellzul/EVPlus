@@ -9,8 +9,6 @@
 #include "viewscale.h"
 #include "screen.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00497500
 // MAC: _IterateInGameEventLoop i386 0x00056859 ppc 0x0005ebe0
 void IterateInGameEventLoop(short tickCount)
@@ -131,5 +129,3 @@ void RefreshWindowBuffer(void)
     Screen::ComposeView();
     ScreenEndScene();
 }
-
-EXTERN_C_END

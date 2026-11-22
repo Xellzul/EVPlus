@@ -2,8 +2,6 @@
 #include <stddef.h>
 #include "gametypes.h"
 
-EXTERN_C_BEGIN
-
 #define kCryptStep 0xdeadbeefUL
 
 // FUNCTION: EVNOVA 0x0046f960
@@ -42,5 +40,3 @@ int32_t DoEncryption(void *buf, uint32_t len, uint32_t key)
     }
     return 0;
 }
-
-EXTERN_C_END

@@ -20,8 +20,6 @@ Boolean scanActive;
 short prevParent[kMaxShips];
 short aiComplexity;
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00401000
 // MAC: _AIDispatch i386 0x0008fb52 ppc 0x0009b654
 void AIDispatch(ShipObj *ship, Boolean noBrains)
@@ -6639,6 +6637,3 @@ Boolean AIIsShipDoingCountWait(ShipObj *ship)
         return 1;
     return 0;
 }
-
-
-EXTERN_C_END

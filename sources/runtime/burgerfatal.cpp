@@ -3,10 +3,6 @@
 
 #include "burger.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 char ErrorMsg[512];                              /* 0x0086e420 */
 Word BombFlag;                                   /* 0x008701bc */
 
@@ -159,7 +155,3 @@ void KeyboardScanCodeToString(char *out, ULong size, ScanCode code)
         out[0] = 0;
     }
 }
-
-#ifdef __cplusplus
-}
-#endif

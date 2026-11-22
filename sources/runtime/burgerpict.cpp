@@ -5,10 +5,6 @@
 #include "macport.h"
 #include "media.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* the ImageDescription in a QuickTime-compressed PICT opcode */
 #pragma pack(push, 2)
 typedef struct ImageDescription {
@@ -668,7 +664,3 @@ Abort:
     ImageDestroy(ImagePtr);
     return 1;
 }
-
-#ifdef __cplusplus
-}
-#endif

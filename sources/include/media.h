@@ -5,10 +5,6 @@
 #define MEDIA_H
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct MediaFile MediaFile;
 typedef struct MediaAudio MediaAudio;
 
@@ -36,7 +32,4 @@ extern void MediaAudioClose(MediaAudio *a);
 extern int MediaDecodeImage(uint32_t cType, int width, int height, int depth, const void *data, int32_t size,
                          void *dst, int32_t rowBytes, int dstBits);
 
-#ifdef __cplusplus
-}
-#endif
 #endif

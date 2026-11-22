@@ -3,10 +3,6 @@
 #include "burger.h"
 #include "platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* OSCursorShow (BurgerLib OCWin95Code). */
 // FUNCTION: EVNOVA 0x004f1a20
 void OSCursorShow(void)
@@ -35,7 +31,3 @@ void OSCursorReset(void)
     OSCursorVisibleFlag = 1;
     PlatCursorShow(1);
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -9,8 +9,6 @@
 
 Movie loopingMovie = NULL;
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x0049d7c0
 // MAC: _StartLoopingMovie i386 0x00060266 ppc 0x00067fb8
 void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
@@ -180,5 +178,3 @@ void PlayQTMovieFromDesc(short id)
         PlayQTMovie(descMovieName, (descFlags & kDescMovieDoubled),
                     (descFlags & kDescMovieFade));
 }
-
-EXTERN_C_END

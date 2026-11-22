@@ -6,8 +6,6 @@
 #include "player.h"
 #include "render.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x0049e430
 // MAC: _DrawEscortMenuInFrame i386 0x00056268 ppc 0x0005e590
 void DrawEscortMenuInFrame()
@@ -116,5 +114,3 @@ void ShowEscortMenu(void)
     escortMenuOnscreen = kDefaultMapZoom;
     DrawEscortMenuInFrame();
 }
-
-EXTERN_C_END

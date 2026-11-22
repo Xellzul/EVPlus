@@ -7,10 +7,6 @@
 #include "burgerplat.h"
 #include "platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define kSearchOpen         1
 #define kVolumeColon        ':'
 #ifdef _WIN32
@@ -514,7 +510,3 @@ char *ConvertNativePathToPath(const char *path)
     }
     return result;
 }
-
-#ifdef __cplusplus
-}
-#endif

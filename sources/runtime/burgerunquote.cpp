@@ -12,10 +12,6 @@ public:
 
 const char Burger::Str::Empty[1] = "";
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* StripLeadingAndTrailingWhiteSpace (BurgerLib StStringManager): spaces and tabs off both
    ends, in place. */
 // FUNCTION: EVNOVA 0x004fbec0
@@ -236,7 +232,3 @@ Handle StrCopyHandle(const char *text)
     }
     return 0;
 }
-
-#ifdef __cplusplus
-}
-#endif

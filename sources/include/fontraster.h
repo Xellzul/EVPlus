@@ -3,10 +3,6 @@
 #ifndef FONTRASTER_H
 #define FONTRASTER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct RasterFont RasterFont;       /* one font file, opened */
 
 /* a style the font file does not have, made up as GDI makes it up; and whether edges are smoothed */
@@ -50,7 +46,4 @@ extern void RasterMetrics(RasterFont *font, int pixelSize, int *ascent, int *des
 extern const RasterGlyph *RasterGetGlyph(RasterFont *font, int pixelSize, int flags, unsigned unicode,
                                          unsigned macRoman);
 
-#ifdef __cplusplus
-}
-#endif
 #endif

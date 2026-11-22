@@ -17,8 +17,6 @@
 #include "viewscale.h"
 #include "screen.h"
 
-EXTERN_C_BEGIN
-
 /* The jump, hypergate and wormhole flash, drawn black when the Hyperspace Effects
    preference is off. */
 void SetFlashColor(const RGBColor *color)
@@ -1453,5 +1451,3 @@ tooFast:
     goto out;
 out:;
 }
-
-EXTERN_C_END

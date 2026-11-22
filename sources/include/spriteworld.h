@@ -5,10 +5,6 @@
 #include "macport.h"
 #include "pixel.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* a frame's mask kinds: an enum (an int) on mac, a byte on the win port */
 typedef unsigned char MaskType;
 #define kPixelMask              1
@@ -148,10 +144,8 @@ extern void ComputePixelValues(short pixelSize);                       /* 0x0047
 extern void MoveParticles(void);                                       /* 0x0047c800 */
 extern SpriteRec *gSWCurrentSpriteBeingDrawn;            /* 0x00870da8 */
 extern SpriteWorldRec *gSWCurrentSpriteWorld;            /* 0x008706f0 */
-EXTERN_CPP_BEGIN
 extern unsigned short SWMaskedRGBValue;                  /* 0x007d0500 */
 extern short gSWStickyError;                             /* 0x007d0504 */
-EXTERN_CPP_END
 
 /* --- how BlitPixieRLETranslucentDrawProc draws a sprite, from its translucency and tint --- */
 struct SpriteBlend {
@@ -218,9 +212,7 @@ static inline unsigned short Trans16Bit(uint32_t src, uint32_t dst, uint32_t alp
 {
     return Pixel::Blend(src, dst, alpha);
 }
-EXTERN_CPP_BEGIN
 extern unsigned short SWTransparentRGBValue;             /* 0x007d0502 */
-EXTERN_CPP_END
 
 /* --- lines --- */
 extern void DrawTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
@@ -302,10 +294,5 @@ extern void SWCheckIdleSpriteOverlap(SpriteWorldRec *spriteWorldP,
    used by SWCreatePixelMaskFromGWorld */
 extern RGBColor gSWTransparentColor;
 #define kAlphaMask16    0x7FFF
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* SPRITEWORLD_H */

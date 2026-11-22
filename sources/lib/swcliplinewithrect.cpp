@@ -1,9 +1,6 @@
 /* swcliplinewithrect.cpp -- SWClipLineWithRect (win 0x0047b3c0, donor SWFastLine.c line 659). Notes: Research/notes/swcliplinewithrect.md */
 #include "macport.h"
 
-EXTERN_C_BEGIN
-
-
 // FUNCTION: EVNOVA 0x0047b3c0
 // MAC: _SWClipLineWithRect i386 0x000c65ea ppc 0x000d28d0
 #define SIGN(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
@@ -147,5 +144,3 @@ Boolean SWClipLineWithRect(
 		// Tell caller if we ever found any point of the line inside clipRect
 	return foundStartPt;
 }
-
-EXTERN_C_END

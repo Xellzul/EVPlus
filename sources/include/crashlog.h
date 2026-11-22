@@ -10,10 +10,6 @@
 
 #include "macport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void crashlog_open(char *name);                                    /* 0x00470000 */
 extern void crashlog_close(void);                                         /* 0x00470100 */
 extern void crashlog_print(const char *str);                              /* 0x00470120 */
@@ -23,9 +19,5 @@ extern void crashlog_print_num(int num);                                  /* 0x0
 extern void crashlog_mission_bit_set(char *str, char *pstr, short num, short num2, char *setString); /* 0x00470220 */
 extern void crashlog(char *str);                                          /* 0x00470390 */
 extern Boolean crashlog_isactive(void);                                      /* 0x004703c0 */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* CRASHLOG_H */

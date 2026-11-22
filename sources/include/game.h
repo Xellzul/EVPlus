@@ -10,10 +10,6 @@
 /* the registered name <REG> shows (mission text, the loading bar): EV Nova CE's unlicensed default */
 #define kRegisteredName "EV Nova Community"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern Boolean AIHasAfterburner(ShipObj *ship);
 extern void AbortMission(short mission, Boolean evalBits);
 void ActivateCron(short index);
@@ -21,19 +17,14 @@ extern void AutoAbortMission(short mission);
 extern void Bye(void);
 extern void ClearParticles(Boolean on);
 extern void TableCos(short angle);
-EXTERN_CPP_BEGIN
 extern short commCount;
 extern uint32_t floatingMapStartTime;
 extern SpriteRec *masterStellarSprite[kMasterStellarSprites];
 extern SpriteRec *masterShotSprite[256];
-EXTERN_CPP_END
 extern void CreateExplosion(FloatPoint pt, short type, short size, Boolean sound);
 extern void SpawnExplod(FloatPoint pos, short unused, short type, short delay);
-EXTERN_CPP_BEGIN
 extern Handle stringHandle;
-EXTERN_CPP_END
 extern short ConvertSpriteToRLE(SpriteRec *set);
-EXTERN_CPP_BEGIN
 extern SpriteRec *masterNavTargetSprite;
 extern SpriteRec *masterWeapTargetSprite;
 extern SalvageAmmo salvageAmmoType;
@@ -49,7 +40,6 @@ extern Sound *explodSnd[];
 extern Sound *klaxxonSnd;
 extern Sound *clickSnd;
 extern short lastShipAIDispatched;
-EXTERN_CPP_END
 extern unsigned int DeleteAFile(const char *path);
 extern void DisplayComm(PStrChar *msg, short count);
 extern void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const RGBColor *color);
@@ -133,7 +123,6 @@ extern short TrackMainScreenButtons(Point where);
 extern void UpdateAllPortDialogs(); /* unprototyped: the 1.1.1 DoShipyardDialog passes it the port dialog */
 extern short WeaponBurstInterval(short weap, short count);
 extern Boolean WeaponDisableOnly(short weap);
-EXTERN_CPP_BEGIN
 extern char absquatulateStr[];
 extern SpriteLayerRec *asteroidLayer;
 extern SpriteLayerRec *boxLayer;
@@ -215,7 +204,6 @@ extern Sound *warpOutSnd;
 extern Movie introMusicMovie;
 
 extern unsigned char lastPlayerName[256];
-EXTERN_CPP_END
 
 extern void IterateInGameEventLoop(short tickCount);
 extern short CalcInterceptAngle(FloatPoint *from, FloatPoint *to);
@@ -232,27 +220,18 @@ extern Boolean CanSellGoods(short item);
 extern void PropagateMissionBitEffects(void);
 extern void FadeWhiteIn(void);
 extern void FadeWhiteOut(void);
+extern void SetFlashColor(const RGBColor *color);
 extern void ExploreNebulaeFromSystem(short sys);
-EXTERN_CPP_BEGIN
 extern short introTextID;
 extern short introPictID[4];
 extern short introPictDelay[4];
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern short menuTextSize;
 extern uint32_t lastCursorAnimTime;
 extern uint32_t lastFrameTime;
-EXTERN_CPP_END
 extern short TotalFleetHolds(void);
 extern void DeleteAllComputerShips(Boolean force, Boolean keepPlayer);
-EXTERN_CPP_BEGIN
 extern Sound *beepSnd[5];
 
 extern SpriteRec *stellarSprite[kStellarSprites];
-EXTERN_CPP_END
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

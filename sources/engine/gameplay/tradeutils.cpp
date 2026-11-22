@@ -7,8 +7,6 @@
 #include "dialogs.h"
 #include "missions.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x004656a0
 // MAC: _HasMaxOfItem i386 0x00004512 ppc 0x000058b4
 Boolean HasMaxOfItem(short index, short *outBound, short *outCap)
@@ -903,5 +901,3 @@ Boolean PlayerHasJettisonableCargo(void)
     }
     return 0;
 }
-
-EXTERN_C_END

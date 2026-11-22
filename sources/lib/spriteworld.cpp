@@ -3,8 +3,6 @@
 #include "render.h"
 #include "game.h"
 
-EXTERN_C_BEGIN
-
 /* The window, back and work frames of a world over `srcWindowP': the window frame over `worldRectP' (NULL =
    the whole port), back and work frames of `offscreenRectP''s size (NULL = the window frame's). */
 static short CreateWorldFrames(CWindowPtr srcWindowP, Rect *worldRectP, Rect *offscreenRectP,
@@ -1044,5 +1042,3 @@ void SWHideAllSprites(SpriteWorldPtr spriteWorldP)
         curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
     }
 }
-
-EXTERN_C_END

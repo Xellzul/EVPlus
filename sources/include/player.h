@@ -6,10 +6,6 @@
 #include "shipobj.h"
 #include "pilotfile.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* the player's cached ship values; Reset() marks them not computed */
 struct PlayerStats {
     float shieldCapacity;
@@ -38,7 +34,6 @@ struct PlayerStats {
     void Reset();
 };
 
-EXTERN_CPP_BEGIN
 extern PlayerStats playerStats;
 extern Settings settings;
 extern short recentActivatedRank;
@@ -75,7 +70,6 @@ extern Boolean framerateFlag;
 extern Boolean escortMenuFlag;
 extern Boolean escortCommandFlag[];
 extern short lastEscortCount;
-EXTERN_CPP_END
 extern void DrawCombatRatingString(void);
 extern void DrawLegalStatusString(short curSystem);
 extern void DumpPilotLog(void);
@@ -113,7 +107,6 @@ extern void ShowAlert(const char *title, const char *message);
 extern void SlapWithPenalty(short sys, short govt, short kind,
                             short mission);
 extern short WritePilotData(short stellar);
-EXTERN_CPP_BEGIN
 extern short adviceRandom;
 extern short alertSpritePending;
 extern short antiEscortDelay;
@@ -158,14 +151,11 @@ extern float weapTargetExpand;
 extern Boolean escortGroupFlag[5];
 extern ScanCode newKeyPrefs[40];
 #define kBindingCount 35            /* the key bindings: Key Settings rows, prefs file slots */
-EXTERN_CPP_END
 
-EXTERN_CPP_BEGIN
 extern double gSpeedMult;
 extern unsigned char shipName[256];
 extern PilotRec2 **altPlayerFileHand;
 extern PilotRec **playerFileHand;
-EXTERN_CPP_END
 
 extern short SavePilotFile(short stellar);
 extern void HandlePlayerCommunication(void);
@@ -173,14 +163,8 @@ extern void ActivateCharResource(const unsigned char *name, Boolean applyStats);
 extern void DeletePilotFile(const char *name);
 extern void ActivateRank(char *rank);
 extern void DeactivateRank(char *rank);
-EXTERN_CPP_BEGIN
 extern short playerRecord[0x800];
-EXTERN_CPP_END
 extern void ResetPlayer(Boolean newPilot);
 extern void ResetPlayerRecord(Boolean newPilot);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

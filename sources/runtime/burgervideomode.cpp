@@ -4,10 +4,6 @@
 #include "platform.h"
 #include "screen.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define kFullscreen      1                      /* SETDISPLAYFULLSCREEN */
 #define kDoubleOk        4                      /* SETDISPLAYDOUBLEOK */
 #define kDepth555        15
@@ -47,7 +43,3 @@ int32_t SetDisplayToSize(ULong width, ULong height, ULong depth, ULong flags)
     }
     return 0;
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -4,8 +4,6 @@
 #include "burgerplat.h"
 #include "crashlog.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x0046f500
 short OpenEVPlugins(const char *path, const char *ext, FILE *log)
 {
@@ -67,5 +65,3 @@ short CountEVPlugins(const char *path, const char *ext, FILE *log)
     CloseADirectory(&dir);
     return count;
 }
-
-EXTERN_C_END

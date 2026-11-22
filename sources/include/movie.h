@@ -5,10 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct MovieRecord *Movie;
 
 #define kMoviePathMax 2048
@@ -39,7 +35,4 @@ extern int MovieDraw(Movie m);                      /* 1 when it drew a new fram
 /* quitting: silence every movie */
 extern void MovieStopAll(void);
 
-#ifdef __cplusplus
-}
-#endif
 #endif

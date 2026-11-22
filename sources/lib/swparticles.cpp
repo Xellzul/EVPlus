@@ -3,8 +3,6 @@
 #include "game.h"
 #include "burger.h"
 
-EXTERN_C_BEGIN
-
 static ParticlePtr gParticleArray = NULL;
 static int gLowestUnusedElement;
 static int32_t gLastElementInUse;
@@ -338,5 +336,3 @@ void MoveParticles(void)
             gLastElementInUse--;
     }
 }
-
-EXTERN_C_END

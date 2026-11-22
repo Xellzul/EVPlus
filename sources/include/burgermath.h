@@ -8,11 +8,10 @@ static inline float FloatAbs(float x)
 {
     return fabs((double)x);
 }
-#ifdef __cplusplus
+
 static inline double FloatAbs(double x)
 {
     return fabs(x);
 }
-#endif
 
 #endif /* BURGERMATH_H */

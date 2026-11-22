@@ -2,10 +2,6 @@
 
 #include "burger.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* ImageDelete (BurgerLib ImImageManager). */
 // FUNCTION: EVNOVA 0x004fdb60
 void ImageDelete(struct Image_t *ImagePtr)
@@ -57,7 +53,3 @@ void ImageRemapIndexed(struct Image_t *ImagePtr, const Word8 *RemapPtr)
         }
     }
 }
-
-#ifdef __cplusplus
-}
-#endif

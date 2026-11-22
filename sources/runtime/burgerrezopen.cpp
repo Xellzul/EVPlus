@@ -7,10 +7,6 @@
 #include "gametypes.h"
 #include "burgerrez.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 static Word8 OnceHit;
 
 #define kRezHeaderSize  0x18
@@ -902,7 +898,3 @@ Word ResourceGetIDFromHandle(RezFile *rez, Handle h, int32_t *idFound, char *nam
     }
     return 1;
 }
-
-#ifdef __cplusplus
-}
-#endif

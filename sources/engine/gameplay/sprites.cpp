@@ -4,8 +4,6 @@
 #include "game.h"
 #include "crashlog.h"
 
-EXTERN_C_BEGIN
-
 /*
  * Two rects: the frame the current cel occupies and the sprite's own bounds.
  * unk50 is the validity word every accessor checks first.
@@ -103,5 +101,3 @@ short GetMasterShipSpriteXSize(short id)
     }
     return 75;
 }
-
-EXTERN_C_END

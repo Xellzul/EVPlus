@@ -5,10 +5,6 @@
 #include "shipobj.h"
 #include "soundtool.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void AICalcShipFormPos(ShipObj *escort, ShipObj *leader, short escortIndex,
                           short escortCount, short spacing);
 extern void AICalcFormationPositions(ShipObj *ship, Boolean recalc);
@@ -47,9 +43,7 @@ extern Boolean AIVerifySwarmLeader(ShipObj *ship);
 extern void BraveTraderAI(ShipObj *ship);
 extern Boolean CanHireEscorts(void);
 extern void AIShipBoardedByPlayer(ShipObj *ship);
-EXTERN_CPP_BEGIN
 extern Sound *hardDockSnd;
-EXTERN_CPP_END
 extern void DeathStarAI(ShipObj *ship);
 extern void DefenseShipAI(ShipObj *ship);
 extern void DoEscortLand(void);
@@ -101,18 +95,14 @@ extern short SelectFleetFromSystem(SystRecord *syst);
 extern void SelectWarshipTarget(ShipObj *ship);
 extern void WarshipAI(ShipObj *ship);
 extern void WimpyTraderAI(ShipObj *ship);
-EXTERN_CPP_BEGIN
 extern Boolean boardTryFlag;
 extern char creditCString[0x20];
 extern Boolean dockTryFlag;
 extern float hyperGamma;
 extern Boolean miningBoxesActive;
 extern Boolean miningShipsActive;
-EXTERN_CPP_END
-EXTERN_CPP_BEGIN
 extern Boolean scanActive;
 extern short aiComplexity;
-EXTERN_CPP_END
 
 extern void AIMakeShipAttackPlayer(ShipObj *ship);
 extern void AIFightThreatToPlayer(ShipObj *ship);
@@ -138,9 +128,5 @@ extern void SpawnBountyHunter(void);
 extern Boolean IssueNewEscortCommand(short aiTypeFilter, short cmd, Boolean quiet);
 extern short SelectRandomStellarDest(ShipObj *ship, unsigned char allowSpecial,
                                      Boolean plainOnly);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -10,8 +10,6 @@ Boolean canScrollTextUp;
 Boolean canScrollTextDown;
 uint32_t lastTextScrollTime;
 
-EXTERN_C_BEGIN
-
 #define kScrollTicksToLines 0.01667     /* ~1/60: ticks to scroll units */
 
 
@@ -56,8 +54,6 @@ void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean
     GetDialogItem(dlg, item, &type, (Handle *)&handle, &box);
     CopyLoadPortToDialog(dlg, box);
 }
-
-EXTERN_C_END
 
 /* TEPinScroll draws nothing here: the TE has no port until the first scroll */
 void ScrollingText::ProbeRange() const

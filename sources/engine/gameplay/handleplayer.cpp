@@ -66,12 +66,15 @@ Boolean pauseKeyFlag;
 static Boolean speedUpFlag;
 static Boolean speedUpToggled;
 
+short selEscortGroup;
+short lastEscortCount;
+
 #define kScanNCBTest        kScan9
 #define kScanNCBSet         kScan0
 #define kNCBExpressionMax   0x40
 
 /* Alt+Home turns debug mode on. In debug mode Alt+9 evaluates a mission bit test
-   expression and Alt+0 executes a set expression. Then the key check it replaces. */
+   expression and Alt+0 executes a set expression. Returns QuickKeyCheck(scanCode). */
 static unsigned char CheckDebugKeys(ScanCode scanCode)
 {
     unsigned char len;
@@ -100,10 +103,6 @@ static unsigned char CheckDebugKeys(ScanCode scanCode)
     }
     return QuickKeyCheck(scanCode);
 }
-short selEscortGroup;
-short lastEscortCount;
-
-EXTERN_C_BEGIN
 
 /* the sprite record the engine hangs off ShipObj.unk0 and stellarSprite[];
    gameloop.cpp's CursorSpriteRec is the same object -- only the three fields
@@ -3464,5 +3463,3 @@ Boolean IssueNewEscortCommand(short aiTypeFilter, short cmd, Boolean quiet)
 
     return changed;
 }
-
-EXTERN_C_END

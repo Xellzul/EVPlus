@@ -11,8 +11,6 @@
 #include "render.h"
 #include "stellar.h"
 
-EXTERN_C_BEGIN
-
 #define kCommMsgMax     0xff
 #define kCommTextMax    0xfe
 
@@ -129,5 +127,3 @@ SWFrameRec *CommOverlay(void)
     }
     return frame;
 }
-
-EXTERN_C_END

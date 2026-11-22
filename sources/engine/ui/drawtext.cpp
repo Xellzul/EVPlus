@@ -5,8 +5,6 @@
  */
 #include "macport.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x004622f0
 void DrawStringCentered(const unsigned char *str, short left, short right,
                         short v)
@@ -17,5 +15,3 @@ void DrawStringCentered(const unsigned char *str, short left, short right,
     MoveTo(((left + right) / 2 - width / 2), v);
     DrawString(str);
 }
-
-EXTERN_C_END

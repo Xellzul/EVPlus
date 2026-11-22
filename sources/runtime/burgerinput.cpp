@@ -4,11 +4,6 @@
 #include "macport.h"
 #include "platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 #define kAlertTitleMax      0x300
 #define kAlertTextMax       0x1000               /* Alert's 1024 bytes, each up to three in UTF-8 */
 
@@ -71,7 +66,3 @@ void DebugXString(const char *string)
     if (Inited == kDebugLockLive)
         PlatMutexUnlock(Semi);
 }
-
-#ifdef __cplusplus
-}
-#endif

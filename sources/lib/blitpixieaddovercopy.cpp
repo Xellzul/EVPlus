@@ -1,8 +1,6 @@
 /* blitpixieaddovercopy.cpp -- BlitPixieAddOverCopy (win 0x00473b60), inside the un-anchored BlitPixie block. Notes: Research/notes/blitpixieaddovercopy.md */
 #include "shipobj.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00473b60
 // MAC: _BlitPixieAddOverCopy i386 0x000c177d ppc 0x000cd7d4
 void BlitPixieAddOverCopy(unsigned char *dstPixels, unsigned char *srcPixels,
@@ -31,5 +29,3 @@ void BlitPixieAddOverCopy(unsigned char *dstPixels, unsigned char *srcPixels,
     if (byteWidth & 1)
         *dstPixels = *dstPixels | *srcPixels;
 }
-
-EXTERN_C_END

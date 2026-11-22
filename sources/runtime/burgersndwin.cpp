@@ -4,10 +4,6 @@
 #include "burgerplat.h"
 #include "gameutil.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 static Word8 ExitProc;
 
 #define kExtendedSign   0x8000                   /* sign bit of the 80-bit exponent word */
@@ -309,7 +305,3 @@ int32_t ParseSoundFileImage(AudioDesc *desc, Word8 *data, ULong size)
     }
     return failed;
 }
-
-#ifdef __cplusplus
-}
-#endif

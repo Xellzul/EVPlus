@@ -27,8 +27,8 @@ short selSystem;
 short influenceStepSize;
 short nextInfluenceSyst;
 DialogPtr mapDialog;
-unsigned char influenceValue[kBordersWidth][kBordersHeight][4];
-unsigned char influenceOwner[kBordersWidth][kBordersHeight][4];
+unsigned char influenceValue[kMapBordersWidth][kMapBordersHeight][4];
+unsigned char influenceOwner[kMapBordersWidth][kMapBordersHeight][4];
 
 #define kSearchDlogID 0xbbd
 #define kSearchTextItem 5

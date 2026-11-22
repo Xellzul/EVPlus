@@ -12,12 +12,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-/* MacTypes.h's booleans for the win port's C++ (-bool off), plain ints; C has burger.h's */
-#ifdef __cplusplus
-#define false 0
-#define true 1
-#endif
-
 typedef char **Handle;
 typedef unsigned char Word8;
 typedef unsigned short Word16;

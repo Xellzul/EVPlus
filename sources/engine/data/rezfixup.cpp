@@ -3,8 +3,6 @@
 #include "resources.h"
 #include "gameutil.h"
 
-EXTERN_C_BEGIN
-
 /* The 25 endian-swap descriptor streams endianswap.cpp's SwapEndianByDescriptor walks --
    see Research/data-global-initializers.md rows 13-37. */
 unsigned short addr_00575eb0[18] = {   /* misn: covers 0x7b2 == minSize */
@@ -271,5 +269,3 @@ void FixupResourceByType(Handle h, uint32_t type)
     if (type == 0x726c9138 || type == 0x726c9144)
         FixupRLEPixelData((unsigned char *)*h + 0x10, (RLEPixelData *)*h);
 }
-
-EXTERN_C_END

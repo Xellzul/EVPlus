@@ -5,10 +5,6 @@
 #include "burgerplat.h"
 #include "platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length);
 
 Handle PrefixHandles[PREFIXMAX];                /* 0x0087071c */
@@ -336,7 +332,3 @@ void *LoadAFileFP(FILE *fp, uint32_t *length)
         *length = size;
     return data;
 }
-
-#ifdef __cplusplus
-}
-#endif

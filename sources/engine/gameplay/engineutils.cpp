@@ -12,8 +12,6 @@
 #include "platform.h"
 #include "screen.h"
 
-EXTERN_C_BEGIN
-
 /* fills `frame` with the picture's bounds (name invented) */
 
 // FUNCTION: EVNOVA 0x00466540
@@ -167,12 +165,8 @@ Boolean DupKeyCheck(ScanCode value, short skip)
 #define kFadeMillis 500
 #define kMessageStrings 1000    /* STR# holding the numbered player messages */
 
-EXTERN_C_END
-
 Boolean speechMgrPresent;
 uint64_t randomSeed;
-
-EXTERN_C_BEGIN
 
 /* screen fade state (names invented; the mac fades via CGDisplayFade instead) */
 int32_t screenGamma = 0x00010000;           /* 0x00575878 — 16.16, 1.0 = full brightness */
@@ -271,7 +265,7 @@ int32_t TruncF32(float value)
     return value;
 }
 
-/* To nearest with ties to even (FIST's default mode), where a C cast truncates. */
+/* To nearest, ties to even; a C cast truncates. */
 int32_t RoundD(double value)
 {
     int32_t whole;
@@ -660,5 +654,3 @@ short WarpSoundDuration(void)
         return jumpSoundLength[1];
     return jumpSoundLength[0];
 }
-
-EXTERN_C_END

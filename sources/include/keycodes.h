@@ -1,6 +1,6 @@
 /* keycodes.h -- the keys, by their place on the keyboard: USB HID usage numbers, the scan codes SDL reports
    (SDL_scancode.h), the same on every system. KeyIsDown and the key bindings use them.
-   In C++ a key is a ScanCode, a type of its own: a plain number is not taken where a key is asked for, so a
+   A key is a ScanCode, a type of its own: a plain number is not taken where a key is asked for, so a
    key can only be named by its kScan* constant (or made from a number on purpose, with ScanCode(n)). */
 #ifndef KEYCODES_H
 #define KEYCODES_H
@@ -140,17 +140,10 @@
     X(kScanRAlt,           230) \
     X(kScanRGui,           231)
 
-#ifdef __cplusplus
 enum class ScanCode : int16_t {};
 #define KEYCODE_CONSTANT(name, value) constexpr ScanCode name = ScanCode(value);
 KEYCODES(KEYCODE_CONSTANT)
 #undef KEYCODE_CONSTANT
-#else
-typedef int16_t ScanCode;
-#define KEYCODE_CONSTANT(name, value) name = value,
-enum { KEYCODES(KEYCODE_CONSTANT) };
-#undef KEYCODE_CONSTANT
-#endif
 
 /* The key characters the key queue gives: ASCII control characters, and codes of their own for the keys
    that type nothing (they share 0x80..0x97 with code page 1252's typed characters). */

@@ -1,8 +1,6 @@
 /* blitpixiememcopy.cpp -- BlitPixieMemCopy (win 0x00474350). Notes: Research/notes/blitpixiememcopy.md */
 #include "shipobj.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00474350
 // MAC: _BlitPixieMemCopy i386 0x000c03d0 ppc 0x000cc0cc
 void BlitPixieMemCopy( unsigned char *dst, unsigned char *src, int32_t bytes)
@@ -19,5 +17,3 @@ void BlitPixieMemCopy( unsigned char *dst, unsigned char *src, int32_t bytes)
 	if ( bytes & 1 )
 		*dst = *src;
 }
-
-EXTERN_C_END

@@ -1,8 +1,6 @@
 /* blitpixiememset.cpp -- BlitPixieMemSet (win 0x00474410). Notes: Research/notes/blitpixiememset.md */
 #include "shipobj.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00474410
 // MAC: _BlitPixieMemSet i386 0x000c0452 ppc 0x000cc158
 void BlitPixieMemSet( unsigned char *dst, uint32_t value, int32_t bytes )
@@ -18,5 +16,3 @@ void BlitPixieMemSet( unsigned char *dst, uint32_t value, int32_t bytes )
 	if ( bytes & 1 )
 		*dst = (unsigned char)value;
 }
-
-EXTERN_C_END

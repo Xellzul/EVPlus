@@ -8,8 +8,6 @@
 #include "missions.h"
 #include "crashlog.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00466030
 // MAC: _ColorCodeStellar i386 0x0000aa26 ppc 0x0000d1ac
 void ColorCodeStellar(SpobRecord *spob, RGBColor *color)
@@ -387,13 +385,9 @@ void RecursivePenaltySlap(short sys, short govt, short type, double amount)
     }
 }
 
-EXTERN_C_END
-
 /* scratch recursion marks, one per system (name invented) */
 Boolean systemFlag[kMaxSystems];
 short maxAutoExploreJumps;
-
-EXTERN_C_BEGIN
 
 // FUNCTION: EVNOVA 0x00467710
 // MAC: _EscapeStellarSearch i386 0x0000d28f ppc 0x00010648
@@ -1060,5 +1054,3 @@ Boolean StellarsAreIdentical(short a, short b)
     }
     return 0;
 }
-
-EXTERN_C_END

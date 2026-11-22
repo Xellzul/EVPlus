@@ -6,8 +6,6 @@
 RGBColor blackRGB;
 unsigned char gGammaRamp[32];
 
-EXTERN_C_BEGIN
-
 RGBColor *blackColor = &blackRGB;                /* 0x00575acc */
 
 static RGBColor whiteRGB = { 0xffff, 0xffff, 0xffff };   /* 0x00575ad0 */
@@ -21,8 +19,6 @@ RGBColor *cyanColor = &cyanRGB;                  /* 0x00575af0 */
 
 extern const RGBColor betterRGB = { 0x4000, 0xffff, 0x4000 };
 extern const RGBColor worseRGB = { 0xffff, 0x4000, 0x4000 };
-
-EXTERN_C_END
 
 #define kGammaSteps  32
 #define kGammaRampMax 31

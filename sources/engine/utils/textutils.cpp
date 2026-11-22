@@ -6,8 +6,6 @@
 #include "prototypes.h"
 #include "missions.h"
 
-EXTERN_C_BEGIN
-
 // FUNCTION: EVNOVA 0x00465af0
 // MAC: _DrawCommaNumber i386 0x00004895 ppc 0x00005cb0
 void DrawCommaNumber(int32_t value)
@@ -411,5 +409,3 @@ short pstrcmp(const unsigned char *a, const unsigned char *b)
     }
     return 0;
 }
-
-EXTERN_C_END

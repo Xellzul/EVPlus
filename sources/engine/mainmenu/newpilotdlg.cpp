@@ -5,8 +5,6 @@
 #include "gameutil.h"
 #include "dialog.h"
 
-EXTERN_C_BEGIN
-
 #define kNewPilotDlogID          0xc1d
 #define kNewPilotOneCharDlogID   0xc1e
 #define kItemOK                      1
@@ -172,5 +170,3 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
     SWSetPortToWindow(gSpriteWorld);
     return result;
 }
-
-EXTERN_C_END
