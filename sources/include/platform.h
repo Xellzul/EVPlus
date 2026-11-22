@@ -72,13 +72,15 @@ extern void PlatWaitEvent(int ms);                         /* returns once an ev
 extern int PlatKeyIsDown(int scan);
 /* a lock key's (Caps, Num, Scroll Lock) lock state, 1 or 0; -1 for any other key */
 extern int PlatKeyLockState(int scan);
+/* 1 once after a Caps Lock key-down event (some systems report it pressed and released at once), then 0 */
+extern int PlatCapsLockPressed(void);
 
 /* -- cursor --------------------------------------------------------------------------------------- */
 extern void PlatCursorShow(int show);
 extern void PlatCursorArrow(void);                         /* back to the system arrow */
 
-/* -- audio: outputs of 16-bit stereo, each fed on the audio thread by a pull function. The Sound Tool's
-   mix is one (runtime/atsnddrv.cpp), every playing movie's sound another (media/movie.cpp) ------------------- */
+/* -- audio: outputs of 16-bit stereo, each fed on the audio thread by a pull function: every playing movie's
+   sound (media/movie.cpp) --------------------------------------------------------------------------------- */
 typedef struct PlatAudio PlatAudio;
 /* called on the audio thread with the output locked; fills `frames' stereo frames or fewer and returns how
    many, 0 at the end (it is not called again after that) */
@@ -101,10 +103,10 @@ typedef struct PlatVoices PlatVoices;
 extern PlatVoices *PlatVoicesOpen(int count, float gain, int offline);
 extern void PlatVoicesClose(PlatVoices *v);
 /* voice `index' drops what it played and plays `count' frames recorded at `rate' Hz, `speed' times as fast
-   (0.01..100); 0 = started */
+   (0.01..100); 0 = started, else it is silent */
 extern int PlatVoicesStart(PlatVoices *v, int index, const int16_t *frames, int count, int rate, double speed);
 extern void PlatVoicesStop(PlatVoices *v, int index);
-extern int PlatVoicesEnded(PlatVoices *v, int index);      /* it has nothing left to play */
+extern int PlatVoicesEnded(PlatVoices *v, int index);      /* nothing left to play, or a second past its length */
 /* offline: the next `frames' frames of the mix, float stereo at kPlatVoicesRenderRate, summed as the device
    sums them (voice count-1 first, a clamp to -1..1 after each); `unclamped' (may be NULL) gets the plain sum */
 #define kPlatVoicesRenderRate 48000

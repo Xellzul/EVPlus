@@ -40,8 +40,10 @@ ScanCode FirstKeyDown(bool capsLock)
     ScanCode code;
     char name[16];
     int32_t i;
+    bool capsPressed;
 
     KeyboardKbhit();
+    capsPressed = PlatCapsLockPressed() != 0;
     i = 0;
     do {
         code = ScanCode(i);
@@ -51,7 +53,7 @@ ScanCode FirstKeyDown(bool capsLock)
         case kScanLGui: case kScanRGui:
             break;
         case kScanCapsLock:
-            if (capsLock && KeyIsDown(code) != 0)
+            if (capsLock && (capsPressed || KeyIsDown(code) != 0))
                 return code;
             break;
         default:

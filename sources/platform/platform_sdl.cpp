@@ -43,6 +43,7 @@ static bool gWholePixel;                /* PlatVideoSetScaling's wholePixel */
 
 static int gButtons;                    /* mouse buttons held, a bit each */
 static SDL_Scancode gSwallowedKey;      /* the Enter of Alt+Enter: the game sees neither its press nor its release */
+static bool gCapsLockPressed;           /* a Caps Lock key-down not yet asked for */
 static bool gActive;                    /* the game was last told the window has the keyboard */
 
 #define kPullFrames     1024            /* asked of a pull function at a time */
@@ -62,6 +63,7 @@ struct PlatVoices {
     int count;
     float gain;
     SDL_AudioStream **streams;          /* NULL entries once the layer has shut down */
+    Uint64 *deadlines;                  /* device: when each voice counts as ended even if SDL still holds frames */
     float *work;                        /* offline: one voice's frames */
     int workFrames;
     PlatVoices *next;
@@ -496,6 +498,8 @@ static bool OwnPart(SDL_Event *e)
         code = OneKey(e->key.scancode);
         e->key.scancode = code;
         mod = e->key.mod;
+        if (code == SDL_SCANCODE_CAPSLOCK && !e->key.repeat)
+            gCapsLockPressed = true;
         if ((code == SDL_SCANCODE_RETURN || code == SDL_SCANCODE_KP_ENTER) && (mod & SDL_KMOD_ALT) != 0
             && (mod & (SDL_KMOD_CTRL | SDL_KMOD_GUI)) == 0) {
             if (!e->key.repeat)
@@ -595,6 +599,14 @@ int PlatKeyIsDown(int scan)
     if (scan == SDL_SCANCODE_BACKSLASH && state[SDL_SCANCODE_NONUSHASH])
         return 1;
     return scan < count && state[scan];
+}
+
+int PlatCapsLockPressed(void)
+{
+    bool pressed = gCapsLockPressed;
+
+    gCapsLockPressed = false;
+    return pressed;
 }
 
 int PlatKeyLockState(int scan)
@@ -730,6 +742,7 @@ void PlatAudioClose(PlatAudio *s)
 #define kVoiceChannels      2
 #define kVoiceMinSpeed      0.01                /* SDL's frequency ratio range */
 #define kVoiceMaxSpeed      100.0
+#define kVoiceLateNS        SDL_NS_PER_SECOND   /* how long past its length a voice may still be playing */
 
 void PlatVoicesClose(PlatVoices *v)
 {
@@ -745,6 +758,7 @@ void PlatVoicesClose(PlatVoices *v)
     }
     DropVoices(v);
     SDL_free(v->streams);
+    SDL_free(v->deadlines);
     SDL_free(v->work);
     SDL_free(v);
 }
@@ -763,7 +777,10 @@ PlatVoices *PlatVoicesOpen(int count, float gain, int offline)
         return NULL;
     v->gain = gain;
     v->streams = (SDL_AudioStream **)SDL_calloc(count, sizeof *v->streams);
-    if (v->streams == NULL) {
+    v->deadlines = (Uint64 *)SDL_calloc(count, sizeof *v->deadlines);
+    if (v->streams == NULL || v->deadlines == NULL) {
+        SDL_free(v->streams);
+        SDL_free(v->deadlines);
         SDL_free(v);
         return NULL;
     }
@@ -809,8 +826,12 @@ int PlatVoicesStart(PlatVoices *v, int index, const int16_t *frames, int count, 
     SDL_AudioSpec spec;
     bool ok;
 
-    if (stream == NULL || rate <= 0 || count < 0 || count > SDL_MAX_SINT32 / (int)(kVoiceChannels * sizeof *frames))
+    if (stream == NULL)
         return -1;
+    if (rate <= 0 || count < 0 || count > SDL_MAX_SINT32 / (int)(kVoiceChannels * sizeof *frames)) {
+        SDL_ClearAudioStream(stream);
+        return -1;
+    }
     if (speed < kVoiceMinSpeed)
         speed = kVoiceMinSpeed;
     if (speed > kVoiceMaxSpeed)
@@ -828,6 +849,8 @@ int PlatVoicesStart(PlatVoices *v, int index, const int16_t *frames, int count, 
     if (!ok)
         SDL_ClearAudioStream(stream);
     SDL_UnlockAudioStream(stream);
+    v->deadlines[index] = SDL_GetTicksNS() + (Uint64)((double)count / (rate * speed) * SDL_NS_PER_SECOND)
+                          + kVoiceLateNS;
     return ok ? 0 : -1;
 }
 
@@ -843,7 +866,10 @@ int PlatVoicesEnded(PlatVoices *v, int index)
 {
     SDL_AudioStream *stream = VoiceStream(v, index);
 
-    return stream == NULL || SDL_GetAudioStreamAvailable(stream) <= 0;
+    if (stream == NULL || SDL_GetAudioStreamAvailable(stream) <= 0)
+        return 1;
+    /* a device that stopped pulling must not hold a voice forever */
+    return v->device != 0 && SDL_GetTicksNS() >= v->deadlines[index];
 }
 
 void PlatVoicesRender(PlatVoices *v, float *out, float *unclamped, int frames)

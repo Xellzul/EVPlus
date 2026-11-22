@@ -2364,7 +2364,6 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->asteroidScaling = settings.asteroidScaling != 0;
     rec->mapPrices = settings.mapPrices != 0;
     rec->mapDisasters = settings.mapDisasters != 0;
-    rec->originalSound = settings.originalSound != 0;
     rec->uiScale = settings.uiScale;
     KeyPrefsToSlotTable();
     for (i = 0; i <= 35; i++)
@@ -2405,7 +2404,6 @@ static void RecordToPrefs(const PrefsRecord *rec)
     settings.asteroidScaling = rec->asteroidScaling != 0;
     settings.mapPrices = rec->mapPrices != 0;
     settings.mapDisasters = rec->mapDisasters != 0;
-    settings.originalSound = rec->originalSound != 0;
     settings.uiScale = rec->uiScale > 0 ? rec->uiScale : 1.0;
     settings.windowedPending = settings.windowed;
     SetDefaultKeys();

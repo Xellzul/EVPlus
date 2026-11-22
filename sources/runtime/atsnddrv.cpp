@@ -1,9 +1,8 @@
-/* atsnddrv.cpp -- the Sound Toolkit's mixer and output: every playing channel resampled and added into
-   16-bit stereo, pulled by the platform layer's audio (platform.h) as the device needs it.
+/* atsnddrv.cpp -- the Sound Toolkit's resampler: one channel stretched and levelled into 16-bit stereo
+   (atsndvoice.cpp renders each sound with it when it starts).
    Notes: Research/notes/atsnddrv.md */
 
 #include "burgerchan.h"
-#include "platform.h"
 
 #define kRateShift        12
 #define kFracOne          0x100
@@ -76,68 +75,4 @@ finished:
     if (out != 0)
         *out = dst;
     return done;
-}
-
-#define kVoiceStepShift   4                           /* 16.16 rate to the mixer's 20.12 */
-
-/* Mix every playing channel into a zeroed stereo 16-bit buffer, then retire the channels that ran out.
-   Channels past the voice limit are advanced without being heard. */
-// FUNCTION: EVNOVA 0x004d6b90
-void _ST_MixVoices(short *buffer, ULong frames)
-{
-    int32_t i;
-    SoundChannel *chan;
-    short *out;
-
-    memset(buffer, 0, frames * 4);
-    for (i = 0; i < gNumVoices; i++) {
-        chan = &gTheVoices[i];
-        out = buffer;
-        if (i < gMaxVoices)
-            chan->finished = PCM_Mixer(chan->data, &out, frames, chan->stream >> kVoiceStepShift,
-                                       &chan->voice, chan->leftLevel, chan->rightLevel);
-        else
-            chan->finished = PCM_Mixer(chan->data, 0, frames, chan->stream >> kVoiceStepShift,
-                                       &chan->voice, chan->leftLevel, chan->rightLevel);
-    }
-
-    for (i = 0; i < gNumVoices; i++) {
-        if (gTheVoices[i].finished != 0) {
-            _ST_HaltASound(i);
-            i--;
-        }
-    }
-}
-
-// FUNCTION: EVNOVA 0x004d6d00
-void _ST_MixerDispatch(short *buffer, ULong frames)
-{
-    CriticalEnter(&gCriticalSection);
-    _ST_MixVoices(buffer, frames);
-    CriticalLeave(&gCriticalSection);
-}
-
-static PlatAudio *gMixerOutput;
-
-/* called on the platform's audio thread; the mix never ends */
-static int MixerPull(void *ctx, int16_t *out, int frames)
-{
-    _ST_MixerDispatch(out, frames);
-    return frames;
-}
-
-// FUNCTION: EVNOVA 0x00507300
-int32_t _ST_CreateSoundPump(void)
-{
-    gMixerOutput = PlatAudioOpen(UFix32_To_UInt32(gSampleRate), MixerPull, 0);
-    if (gMixerOutput == 0)
-        return kNoDevice;
-    return 0;
-}
-
-// FUNCTION: EVNOVA 0x005076a0
-void _ST_DisposeSoundPump(void)
-{
-    PlatAudioClose(gMixerOutput);
-    gMixerOutput = 0;
 }

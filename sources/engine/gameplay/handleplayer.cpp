@@ -1964,7 +1964,8 @@ void HandlePlayer(ShipObj *player)
     if (QuickKeyCheck(keyPrefs.speedUp)) {
         if (!speedUpFlag) {
             speedUpFlag = 1;
-            speedUpToggled = !speedUpToggled;
+            if (PlatKeyLockState((int)keyPrefs.speedUp) < 0)
+                speedUpToggled = !speedUpToggled;
         }
     } else {
         speedUpFlag = 0;

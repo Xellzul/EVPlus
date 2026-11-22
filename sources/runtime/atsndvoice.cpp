@@ -1,6 +1,6 @@
 /* atsndvoice.cpp -- the Sound Toolkit's channels played on SDL's voices (platform.h): each row's sound is
-   stretched to the render rate once, when it starts, by the original mixer's resampler (PCM_Mixer) at the
-   row's pitch and levels, and handed to the row's voice; SDL only mixes. */
+   stretched to the render rate once, when it starts, by the toolkit's resampler (PCM_Mixer) at the row's
+   pitch and levels, and handed to the row's voice; SDL only mixes. */
 
 #include <vector>
 #include "burgerchan.h"
@@ -17,7 +17,7 @@ static std::vector<short> gRendered;
 
 int32_t _ST_OpenVoices(bool offline)
 {
-    gVoices = PlatVoicesOpen(gVoiceSlots, kVoiceHeadroom, offline);
+    gVoices = PlatVoicesOpen(kSoundChannels, kVoiceHeadroom, offline);
     return gVoices != NULL ? 0 : kNoDevice;
 }
 
@@ -49,7 +49,7 @@ static uint64_t RenderedFrames(uint32_t count, uint32_t step)
     return frames;
 }
 
-/* rate as in SoundRequest: 16.16, kUnityRate = as recorded, more = slower */
+/* rate as in SoundRequest: 16.16, kUnityRate = as recorded, more = slower; a row not started ends at once */
 void _ST_StartVoice(const SoundChannel *chan, int32_t rate)
 {
     ULong step;
@@ -80,7 +80,9 @@ void _ST_StartVoice(const SoundChannel *chan, int32_t rate)
         ended = PCM_Mixer(chan->data, &out, frames, step, &voice, chan->leftLevel, chan->rightLevel);
         gRendered.resize((size_t)(out - gRendered.data()));
     } while (ended == 0 && total > kPassFrames);
-    PlatVoicesStart(gVoices, chan->out, gRendered.data(), (int)(gRendered.size() / 2), kPlatVoicesRenderRate, 1.0);
+    if (PlatVoicesStart(gVoices, chan->out, gRendered.data(), (int)(gRendered.size() / 2), kPlatVoicesRenderRate,
+                        1.0) != 0)
+        PlatVoicesStop(gVoices, chan->out);
 }
 
 void _ST_StopVoice(unsigned char out)

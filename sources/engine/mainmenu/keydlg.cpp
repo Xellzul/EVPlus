@@ -26,7 +26,8 @@ constexpr short kRowTextInset = 5;
 constexpr short kRowBaseline = 15;
 constexpr short kLabelBaseline = 14;        /* below the row's top; a two-line label 8 above and 4 below it */
 constexpr short kHeadingInset = 11;         /* from the frame's left; the frame's dots leave 4 before, 7 after it */
-constexpr short kAltGap = 4;                /* "Alt" ends this far left of the row */
+constexpr short kAltGap = 3;                /* "Alt" ends this far left of the row */
+constexpr short kLabelGap = 4;              /* a label too long for its place moves left to end this far from the row */
 
 /* a binding row's label, two lines when `more` is set; alt: "Alt" before the key */
 struct Row {
@@ -86,10 +87,10 @@ struct Group {
 };
 
 constexpr Group kGroups[] = {
-    { "Navigation Controls:", { 9, 6, 312, 190 }, 15, 102, 19, 0, 12 },
-    { "Battle Controls:", { 9, 205, 167, 389 }, 211, 301, 19, 12, 6 },
-    { "Escort Controls:", { 178, 205, 312, 389 }, 211, 301, 188, 18, 5 },
-    { "Miscellaneous Controls:", { 9, 404, 312, 588 }, 412, 500, 19, 23, 12 },
+    { "Navigation Controls:", { 9, 6, 312, 190 }, 11, 102, 19, 0, 12 },
+    { "Battle Controls:", { 9, 205, 167, 389 }, 210, 301, 19, 12, 6 },
+    { "Escort Controls:", { 178, 205, 312, 389 }, 210, 301, 188, 18, 5 },
+    { "Miscellaneous Controls:", { 9, 404, 312, 588 }, 408, 500, 19, 23, 12 },
 };
 
 Rect RowBox(const Group &group, short row)
@@ -138,9 +139,16 @@ void DrawGroups()
         for (short i = group.firstRow; i < group.firstRow + group.rowCount; i++) {
             const Row &row = kRows[i];
             Rect box = RowBox(group, i);
+            short altLeft = box.left - kAltGap - MeasureCString("Alt");
+            short right = (row.alt ? altLeft : box.left) - kLabelGap;
+            short left = right - MeasureCString(row.label);
 
+            if (left > group.labelLeft)
+                left = group.labelLeft;
+            if (left < group.frame.left + 2)
+                left = group.frame.left + 2;
             if (row.more == nullptr) {
-                MoveTo(group.labelLeft, box.top + kLabelBaseline);
+                MoveTo(left, box.top + kLabelBaseline);
                 DrawCString(row.label);
             } else {
                 MoveTo(group.labelLeft, box.top + kLabelBaseline - 8);
@@ -149,7 +157,7 @@ void DrawGroups()
                 DrawCString(row.more);
             }
             if (row.alt) {
-                MoveTo(box.left - kAltGap - MeasureCString("Alt"), box.top + kLabelBaseline);
+                MoveTo(altLeft, box.top + kLabelBaseline);
                 DrawCString("Alt");
             }
         }

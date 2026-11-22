@@ -1,17 +1,15 @@
 /* soundtest.cpp -- a mixer capture, run before the main screen when kSoundTest (mainscreen.cpp) is 1.
    soundtest_load.txt: every snd resource as ST_LoadSndResource decodes it (length, rate, a hash of the
    samples) and what ParseSoundFileImage makes of it.
-   soundtest.raw: a scripted run of sounds (levels, pan, rates, priorities, more voices than are heard, halts by
-   id and by sound, one sound started again each time it ends) mixed by the original mixer through
-   _ST_MixerDispatch in pulls of 512 frames: 16-bit stereo at the mixer's rate, no header. The device is kept
-   out for the run by holding the mixer's lock. soundtest.txt: what each call returned and the voices in use
-   after each pull; soundtest_voices.txt: the ids playing after each pull.
-   soundtest_sdl.raw / .txt / _voices.txt: the same script on SDL's voices rendered offline, float stereo at
-   kPlatVoicesRenderRate, each pull as long as the original's.
-   soundtest_fight_{orig,sdl}.wav: a busy fight (panned shots, explosions, a looping sound started again, the
-   alert), soundtest_warp_{orig,sdl}.wav: the warp-up at mobility 1.0, 0.7 and 1.5, both at the top volume;
+   soundtest_sdl.raw: a scripted run of sounds (levels, pan, rates, priorities, many voices at once,
+   halts by id and by sound, one sound started again each time it ends) on SDL's voices rendered
+   offline, float stereo at kPlatVoicesRenderRate, no header, in pulls as long as 512 frames at 44100 Hz.
+   soundtest_sdl.txt: what each call returned and the voices in use after each pull; soundtest_sdl_voices.txt:
+   the ids playing after each pull.
+   soundtest_fight_sdl.wav: a busy fight (panned shots, explosions, a looping sound started again, the alert),
+   soundtest_warp_sdl.wav: the warp-up at mobility 1.0, 0.7 and 1.5, both at the top volume;
    soundtest_wav.txt: their peak voices, peak before clamping and clipped samples, also at the default volume.
-   The original's files must stay the same before and after a change; build/devtools/scaletest.sh runs it. */
+   build/devtools/scaletest.sh runs it. */
 
 #include <math.h>
 #include <algorithm>
@@ -29,8 +27,7 @@ namespace {
 
 constexpr ULong kPullFrames = 512;
 constexpr int kPulls = 320;
-constexpr int kOriginalRate = 44100;
-constexpr int kVoiceStepShift = 4;      /* the channel's 16.16 step to PCM_Mixer's 20.12 */
+constexpr int kPullRate = 44100;
 constexpr short kTopVolume = 8;          /* the preferences' volume: its top and its default */
 constexpr short kDefaultVolume = 5;
 
@@ -264,70 +261,26 @@ struct MixStats {
     long samples;
 };
 
-/* frames of the SDL render before pull n: as long as n pulls of the original */
+/* frames of the render before pull n: as long as n pulls of 512 frames at 44100 Hz */
 long SdlFramesBefore(int n)
 {
-    return (long)((int64_t)n * kPullFrames * kPlatVoicesRenderRate / kOriginalRate);
+    return (long)((int64_t)n * kPullFrames * kPlatVoicesRenderRate / kPullRate);
 }
 
-/* one pull of the open mixer, under its lock */
+/* one pull of the offline voices */
 class Mixer {
 public:
-    explicit Mixer(bool sdl) : sdl_(sdl), stats_() {}
+    Mixer() : stats_() {}
 
-    /* mixes pull `pull' into Data(); stats kept when asked */
+    /* renders pull `pull' into Data(); stats kept when asked */
     void Pull(int pull, bool stats)
     {
+        int frames = (int)(SdlFramesBefore(pull + 1) - SdlFramesBefore(pull));
+
         if (gNumVoices > stats_.peakVoices)
             stats_.peakVoices = gNumVoices;
         stats_.voicePulls += gNumVoices;
         stats_.pulls++;
-        if (sdl_)
-            PullSdl(pull, stats);
-        else
-            PullOriginal(stats);
-    }
-
-    const void *Data() const { return sdl_ ? (const void *)float_.data() : (const void *)short_.data(); }
-    size_t Bytes() const { return sdl_ ? float_.size() * sizeof(float) : short_.size() * sizeof(short); }
-    const MixStats &Stats() const { return stats_; }
-
-private:
-    void PullOriginal(bool stats)
-    {
-        short_.assign(kPullFrames * 2, 0);
-        if (stats) {
-            /* each heard voice alone, from a copy of where it is: what the mix adds before saturating */
-            sum_.assign(kPullFrames * 2, 0);
-            voice_.resize(kPullFrames * 2);
-            for (int i = 0; i < gNumVoices && i < gMaxVoices; i++) {
-                SoundChannel *chan = &gTheVoices[i];
-                MixVoice copy = chan->voice;
-                short *out = voice_.data();
-
-                memset(voice_.data(), 0, voice_.size() * sizeof(short));
-                PCM_Mixer(chan->data, &out, kPullFrames, chan->stream >> kVoiceStepShift, &copy, chan->leftLevel,
-                          chan->rightLevel);
-                for (size_t j = 0; j < sum_.size(); j++)
-                    sum_[j] += voice_[j];
-            }
-        }
-        _ST_MixerDispatch(short_.data(), kPullFrames);
-        if (stats) {
-            for (size_t j = 0; j < sum_.size(); j++) {
-                if (fabs(sum_[j] / 32768.0) > stats_.peak)
-                    stats_.peak = fabs(sum_[j] / 32768.0);
-                if (sum_[j] != short_[j])
-                    stats_.clipped++;
-            }
-            stats_.samples += (long)sum_.size();
-        }
-    }
-
-    void PullSdl(int pull, bool stats)
-    {
-        int frames = (int)(SdlFramesBefore(pull + 1) - SdlFramesBefore(pull));
-
         float_.resize((size_t)frames * 2);
         unclamped_.resize((size_t)frames * 2);
         _ST_RenderVoices(float_.data(), stats ? unclamped_.data() : NULL, frames);
@@ -343,11 +296,12 @@ private:
         }
     }
 
-    bool sdl_;
+    const void *Data() const { return float_.data(); }
+    size_t Bytes() const { return float_.size() * sizeof(float); }
+    const MixStats &Stats() const { return stats_; }
+
+private:
     MixStats stats_;
-    std::vector<short> short_;
-    std::vector<short> voice_;
-    std::vector<int32_t> sum_;
     std::vector<float> float_;
     std::vector<float> unclamped_;
 };
@@ -364,18 +318,18 @@ void Put32(unsigned char *p, uint32_t v)
     Put16(p + 2, v >> 16);
 }
 
-/* a stereo WAV header: 16-bit PCM, or 32-bit float */
-void WavHeader(FILE *f, bool isFloat, int rate, uint32_t dataBytes)
+/* a stereo 32-bit float WAV header */
+void WavHeader(FILE *f, int rate, uint32_t dataBytes)
 {
     unsigned char h[44];
-    uint32_t bits = isFloat ? 32 : 16;
+    uint32_t bits = 32;
     uint32_t block = 2 * bits / 8;
 
     memcpy(h, "RIFF", 4);
     Put32(h + 4, 36 + dataBytes);
     memcpy(h + 8, "WAVEfmt ", 8);
     Put32(h + 16, 16);
-    Put16(h + 20, isFloat ? 3 : 1);
+    Put16(h + 20, 3);
     Put16(h + 22, 2);
     Put32(h + 24, (uint32_t)rate);
     Put32(h + 28, (uint32_t)rate * block);
@@ -400,21 +354,19 @@ void LogVoices(FILE *log, int pull)
     fprintf(log, "\n");
 }
 
-/* the script through the open mixer */
-void Capture(bool sdl, const char *rawName, const char *logName, const char *voicesName, Sound *const *clips)
+/* the script through the offline voices */
+void Capture(Sound *const *clips)
 {
-    FILE *log = PlatFileOpen(logName, "wb");
-    FILE *out = PlatFileOpen(rawName, "wb");
-    FILE *voices = PlatFileOpen(voicesName, "wb");
-    Mixer mixer(sdl);
+    FILE *log = PlatFileOpen("soundtest_sdl.txt", "wb");
+    FILE *out = PlatFileOpen("soundtest_sdl.raw", "wb");
+    FILE *voices = PlatFileOpen("soundtest_sdl_voices.txt", "wb");
+    Mixer mixer;
 
     if (log != NULL && out != NULL && voices != NULL) {
-        fprintf(log, "sound tool open %d, rate %08x, %d heard of %d\n", (int)gSoundToolOpen, (unsigned)gSampleRate,
-                (int)gMaxVoices, (int)gVoiceSlots);
+        fprintf(log, "sound tool open %d, %d channels\n", (int)gSoundToolOpen, kSoundChannels);
         for (int i = 0; i < kClipCount; i++)
             fprintf(log, "snd %d: %s\n", kClipIds[i], clips[i] != NULL ? "loaded" : "missing");
         gFirstId = 0;
-        CriticalEnter(&gCriticalSection);
         ST_HaltSound(0);
         for (int pull = 0; pull < kPulls; pull++) {
             Script(pull, clips, log);
@@ -424,7 +376,6 @@ void Capture(bool sdl, const char *rawName, const char *logName, const char *voi
             LogVoices(voices, pull);
         }
         ST_HaltSound(0);
-        CriticalLeave(&gCriticalSection);
     }
     if (voices != NULL)
         fclose(voices);
@@ -434,12 +385,12 @@ void Capture(bool sdl, const char *rawName, const char *logName, const char *voi
         fclose(log);
 }
 
-/* a scenario through the open mixer at a preferences volume, into a WAV file unless name is NULL, its numbers
-   into `stats' under `title' */
-void Render(bool sdl, const char *name, const char *title, Sound *const *clips, FILE *stats, bool warp, short volume)
+/* a scenario through the offline voices at a preferences volume, into a WAV file unless name is NULL, its
+   numbers into `stats' under `title' */
+void Render(const char *name, const char *title, Sound *const *clips, FILE *stats, bool warp, short volume)
 {
     FILE *out = name != NULL ? PlatFileOpen(name, "wb") : NULL;
-    Mixer mixer(sdl);
+    Mixer mixer;
     uint64_t seed = kFightSeed;
     WarpRun run = { 0, 0, false };
     uint32_t bytes = 0;
@@ -450,8 +401,7 @@ void Render(bool sdl, const char *name, const char *title, Sound *const *clips, 
     settings.volume = volume;
     AdjustSoundVolume();
     if (out != NULL)
-        WavHeader(out, sdl, sdl ? kPlatVoicesRenderRate : kOriginalRate, 0);
-    CriticalEnter(&gCriticalSection);
+        WavHeader(out, kPlatVoicesRenderRate, 0);
     ST_HaltSound(0);
     for (pulls = 0; warp ? pulls < kWarpMaxPulls : pulls < kFightPulls; pulls++) {
         if (warp) {
@@ -466,33 +416,28 @@ void Render(bool sdl, const char *name, const char *title, Sound *const *clips, 
         bytes += (uint32_t)mixer.Bytes();
     }
     ST_HaltSound(0);
-    CriticalLeave(&gCriticalSection);
     if (out != NULL) {
-        WavHeader(out, sdl, sdl ? kPlatVoicesRenderRate : kOriginalRate, bytes);
+        WavHeader(out, kPlatVoicesRenderRate, bytes);
         fclose(out);
     }
 
     const MixStats &m = mixer.Stats();
     if (stats != NULL)
-        fprintf(stats, "%s, volume %d: %d pulls, voices at most %d (%d heard), %.1f on average, peak before "
+        fprintf(stats, "%s, volume %d: %d pulls, voices at most %d, %.1f on average, peak before "
                 "clamping %.3f, clipped %ld of %ld samples\n", title, volume, pulls, m.peakVoices,
-                m.peakVoices < gMaxVoices ? m.peakVoices : (int)gMaxVoices,
                 m.pulls != 0 ? (double)m.voicePulls / m.pulls : 0.0, m.peak, m.clipped, m.samples);
 }
 
-void RunAll(bool sdl, Sound *const *clips, FILE *stats)
+void RunAll(Sound *const *clips, FILE *stats)
 {
-    if (sdl)
-        Capture(true, "soundtest_sdl.raw", "soundtest_sdl.txt", "soundtest_sdl_voices.txt", clips);
-    else
-        Capture(false, "soundtest.raw", "soundtest.txt", "soundtest_voices.txt", clips);
-    const char *fight = sdl ? "soundtest_fight_sdl.wav" : "soundtest_fight_orig.wav";
-    const char *warp = sdl ? "soundtest_warp_sdl.wav" : "soundtest_warp_orig.wav";
+    const char *fight = "soundtest_fight_sdl.wav";
+    const char *warp = "soundtest_warp_sdl.wav";
 
-    Render(sdl, fight, fight, clips, stats, false, kTopVolume);
-    Render(sdl, NULL, fight, clips, stats, false, kDefaultVolume);
-    Render(sdl, warp, warp, clips, stats, true, kTopVolume);
-    Render(sdl, NULL, warp, clips, stats, true, kDefaultVolume);
+    Capture(clips);
+    Render(fight, fight, clips, stats, false, kTopVolume);
+    Render(NULL, fight, clips, stats, false, kDefaultVolume);
+    Render(warp, warp, clips, stats, true, kTopVolume);
+    Render(NULL, warp, clips, stats, true, kDefaultVolume);
 }
 
 } // namespace
@@ -500,7 +445,6 @@ void RunAll(bool sdl, Sound *const *clips, FILE *stats)
 void DebugSoundTest(void)
 {
     Sound *clips[kClipCount];
-    bool original = gOriginalMixer;
     short volume = settings.volume;
     Boolean stereoPan = settings.stereoPan;
     SoundRequest warpSpec = warpUpSoundSpec;
@@ -513,15 +457,10 @@ void DebugSoundTest(void)
     settings.stereoPan = 1;
 
     ST_Close();
-    ST_UseOriginalMixer(true);
-    ST_Open(8, 0);
-    RunAll(false, clips, stats);
-    ST_Close();
     _ST_OpenOffline();
-    RunAll(true, clips, stats);
+    RunAll(clips, stats);
     ST_Close();
-    ST_UseOriginalMixer(original);
-    ST_Open(8, 0);
+    ST_Open();
 
     settings.volume = volume;
     AdjustSoundVolume();
