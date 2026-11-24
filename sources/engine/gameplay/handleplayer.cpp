@@ -1100,7 +1100,7 @@ void HandlePlayer(ShipObj *player)
                     for (i = 1; i < kMaxShips; i++) {
                         if (shipData[i].active
                                 && shipData[i].parentShip == 0
-                                && shipData[i].aiType == kShipTypeFighter
+                                && shipData[i].aiType == kAIFighter
                                 && !AIShipHasFuelForJump(&shipData[i])
                                 && !(shipClass[shipData[i].type].flags2
                                      & kShipNoFighterVoice)) {
@@ -1313,7 +1313,7 @@ void HandlePlayer(ShipObj *player)
             for (i = 1; i < kMaxShips; i++) {
                 if (shipData[i].active && shipData[i].parentShip == 0
                         && !shipData[i].IsDisabled()) {
-                    if (shipData[i].aiType == kShipTypeFighter
+                    if (shipData[i].aiType == kAIFighter
                             && !AIShipHasFuelForJump(&shipData[i])) {
                         shipData[i].active = 0;
                         lost++;
@@ -1920,7 +1920,7 @@ void HandlePlayer(ShipObj *player)
             for (j = 1; j < kMaxShips; j++) {
                 if (shipData[j].active && shipData[j].parentShip == 0
                         && shipClass[shipData[j].type].escortType == i
-                        && shipData[j].aiType == kShipTypeFighter
+                        && shipData[j].aiType == kAIFighter
                         && shipData[j].escortMayAttack) {
                     found = 1;
                     break;
@@ -2012,11 +2012,11 @@ void HandlePlayer(ShipObj *player)
                 spawnShipFlag = 1;
                 if (AltKeyQuick()) {
                     if (CtrlKeyQuick()) {
-                        HyperSpawnFleet(player->curSystem, 6, -1, 1);
+                        HyperSpawnFleet(player->curSystem, 6, kAINone, 1);
                     } else if (QuickKeyCheck(kScanLShift)) {
-                        HyperSpawnFleet(player->curSystem, 0x15, -1, 1);
+                        HyperSpawnFleet(player->curSystem, 0x15, kAINone, 1);
                     } else {
-                        HyperSpawnFleet(player->curSystem, 1, -1, 1);
+                        HyperSpawnFleet(player->curSystem, 1, kAINone, 1);
                     }
                 } else if (CtrlKeyQuick()) {
                     player->targetShip = SpawnPerson(player->curSystem, 1, 0x201);
@@ -2050,7 +2050,7 @@ void HandlePlayer(ShipObj *player)
                     shipData[player->targetShip].targetStellar = -1;
                     shipData[player->targetShip].govt = -1;
                     shipData[player->targetShip].parentShip = 0;
-                    shipData[player->targetShip].aiType = kShipTypeEscort;
+                    shipData[player->targetShip].aiType = kAIEscort;
                     shipData[player->targetShip].sellOnLanding = 0;
                     shipData[player->targetShip].upgradeOnLanding = 0;
                     shipData[player->targetShip].fuelRegenState = -1;
@@ -2064,13 +2064,12 @@ void HandlePlayer(ShipObj *player)
                     AIShipCapturedByPlayer(&shipData[player->targetShip]);
                 } else {
                     if (shipData[player->targetShip].parentShip == 0) {
-                        if (shipData[player->targetShip].aiType == kShipTypeEscort
-                                && shipClass[shipData[player->targetShip].type]
-                                   .inherentAI <= 2) {
+                        if (shipData[player->targetShip].aiType == kAIEscort
+                                && AIIsTrader(shipClass[shipData[player->targetShip].type].inherentAI)) {
                             DestroyPartialFleetCargo(player->targetShip);
                             statusRedraw[kRedrawCargo] = 1;
                         }
-                        if (shipData[player->targetShip].aiType == kShipTypeFighter)
+                        if (shipData[player->targetShip].aiType == kAIFighter)
                             shipData[player->targetShip].formerEscort = 0;
                         else if (shipData[player->targetShip].specialMission == -1)
                             shipData[player->targetShip].formerEscort = 1;
@@ -2107,9 +2106,8 @@ void HandlePlayer(ShipObj *player)
                     AddToPlayerKills(
                         shipClass[shipData[player->targetShip].type].strength);
                 }
-                if (shipData[player->targetShip].aiType == kShipTypeEscort
-                        && shipClass[shipData[player->targetShip].type]
-                           .inherentAI <= 2) {
+                if (shipData[player->targetShip].aiType == kAIEscort
+                        && AIIsTrader(shipClass[shipData[player->targetShip].type].inherentAI)) {
                     DestroyPartialFleetCargo(player->targetShip);
                     statusRedraw[kRedrawCargo] = 1;
                     DrawStatusCargo();
@@ -2124,14 +2122,14 @@ void HandlePlayer(ShipObj *player)
             if (QuickKeyCheck(keyPrefs.cheatShipNext)) {
                 do {
                     player->type += 1;
-                    if (player->type >= kShipTypeSpecial)
+                    if (player->type >= kShipTypeEscapePod)
                         player->type = 0;
                 } while (shipClass[player->type].mass < 0);
             } else {
                 do {
                     player->type -= 1;
                     if (player->type < 0)
-                        player->type = kShipTypeSpecial - 1;
+                        player->type = kShipTypeEscapePod - 1;
                 } while (shipClass[player->type].mass < 0);
             }
             while (KeyCheck(keyPrefs.cheatShipNext) || KeyCheck(keyPrefs.cheatShipPrev))
@@ -2231,7 +2229,7 @@ void HandlePlayer(ShipObj *player)
             if (player->HasEscapePod()) {
                 n = GenericRandomShipSpawn(player->curSystem, 0);
                 if (n != -1) {
-                shipData[n].aiType = -1;
+                shipData[n].aiType = kAINone;
                 shipData[n].pos = player->pos;
                 shipData[n].vel = player->vel;
                 shipData[n].heading = player->heading;
@@ -2281,7 +2279,7 @@ void HandlePlayer(ShipObj *player)
                     CtoPstr((char *)msg);
                     DisplayComm((PStrChar *)msg, 0x200);
                 } else {
-                    player->type = kShipTypeSpecial;
+                    player->type = kShipTypeEscapePod;
                     player->shield = shipClass[player->type].shield;
                     player->armor = shipClass[player->type].armor;
                     player->escapePods = 0x15e;
@@ -2298,7 +2296,7 @@ void HandlePlayer(ShipObj *player)
                             if (shipData[i].targetStellar == 0)
                                 shipData[i].targetStellar = n;
                         } else if (shipData[i].parentShip == 0
-                                && player->type == kShipTypeSpecial) {
+                                && player->type == kShipTypeEscapePod) {
                             shipData[i].parentShip = -1;
                         }
                     }
@@ -3326,7 +3324,7 @@ Boolean IssueNewEscortCommand(short aiTypeFilter, short cmd, Boolean quiet)
             aiTypeFilter == -1) {
             if (cmd != shipData[i].escortOrder) {
                 shipData[i].escortMayAttack = 1;
-                if (shipData[i].aiType != kShipTypeFighter) {
+                if (shipData[i].aiType != kAIFighter) {
                     if ((int32_t)cmd == kOrderRegroup) {
                         if ((int32_t)shipData[i].escortOrder != kOrderFormation) {
                             shipData[i].escortOrder = kOrderFormation;

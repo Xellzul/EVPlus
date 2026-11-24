@@ -163,7 +163,7 @@ float ShipObj::ShieldCapacity()
                 cap = cap * personData[persType].shieldMod;
         }
     }
-    if (!IsPlayer() && aiType == kShipTypeFighter)
+    if (!IsPlayer() && aiType == kAIFighter)
         cap *= 1.333;
     return cap;
 }
@@ -191,7 +191,7 @@ float ShipObj::ShieldRechargeRate()
     }
     if (cap < 0.0f)
         cap = 0.0f;
-    if (!IsPlayer() && aiType == kShipTypeFighter)
+    if (!IsPlayer() && aiType == kAIFighter)
         cap *= 1.333;
     return cap;
 }
@@ -225,7 +225,7 @@ float ShipObj::ArmorCapacity()
                 cap = cap * personData[pers].shieldMod;
         }
     }
-    if (!IsPlayer() && aiType == kShipTypeFighter)
+    if (!IsPlayer() && aiType == kAIFighter)
         cap *= 1.333;
     return cap;
 }

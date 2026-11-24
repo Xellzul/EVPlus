@@ -174,7 +174,7 @@ Boolean CanHireEscorts(void)
     escorts = 0;
     for (i = 1; i < kMaxShips; i++) {
         if (shipData[i].active != 0 && shipData[i].parentShip == 0 &&
-            shipData[i].aiType == kShipTypeEscort && shipData[i].specialMission == -1)
+            shipData[i].aiType == kAIEscort && shipData[i].specialMission == -1)
             escorts++;
     }
     if (escorts < kMaxHiredEscorts)
@@ -283,7 +283,7 @@ Boolean CanBuyFighter(short shipType, short outfitIndex, short weapIndex)
         if (shipData[m].active != 0 &&
             shipType == shipData[m].type &&
             shipData[m].parentShip == 0 &&
-            shipData[m].aiType == kShipTypeFighter &&
+            shipData[m].aiType == kAIFighter &&
             shipData[m].specialMission == -1)
             count++;
     }
@@ -304,9 +304,9 @@ short TotalFleetHolds(void)
     total = ShipTotalHolds();
     for (i = 1; i < kMaxShips; i++) {
         if (shipData[i].active != 0 && !shipData[i].IsDying()
-                && shipData[i].parentShip == 0 && shipData[i].aiType == kShipTypeEscort
+                && shipData[i].parentShip == 0 && shipData[i].aiType == kAIEscort
                 && shipData[i].specialMission == -1
-                && shipClass[shipData[i].type].inherentAI <= 2)
+                && AIIsTrader(shipClass[shipData[i].type].inherentAI))
             total += shipClass[shipData[i].type].cargo;
     }
     if (total > kMaxHolds)
@@ -334,9 +334,9 @@ void DestroyPartialFleetCargo(short shipIndex)
     for (i = 1; i < kMaxShips; i++) {
         if (shipData[i].active != 0 && (!shipData[i].IsDying() || i == shipIndex)
                 && shipData[i].curSystem == shipData->curSystem
-                && shipData[i].parentShip == 0 && shipData[i].aiType == kShipTypeEscort
+                && shipData[i].parentShip == 0 && shipData[i].aiType == kAIEscort
                 && shipData[i].specialMission == -1
-                && shipClass[shipData[i].type].inherentAI <= 2)
+                && AIIsTrader(shipClass[shipData[i].type].inherentAI))
             fleetHolds = shipClass[shipData[i].type].cargo + fleetHolds;
     }
     totalCargo = 0.0;
@@ -850,7 +850,7 @@ short PlayerHasFightersOfOutfitType(short outfitIndex)
             continue;
         if (shipData[k].parentShip != 0)
             continue;
-        if (shipData[k].aiType != kShipTypeFighter)
+        if (shipData[k].aiType != kAIFighter)
             continue;
         if (bayType != shipData[k].type)
             continue;

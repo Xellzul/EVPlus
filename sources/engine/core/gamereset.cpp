@@ -42,7 +42,7 @@ void InitObjects(void)
         shipData[i].selectedWeapon = -1;
         shipData[i].shield = 0.0f;
         shipData[i].armor = 0.0f;
-        shipData[i].aiType = 0;
+        shipData[i].aiType = kAIDefault;
         shipData[i].aiTimer = 0.0f;
         shipData[i].navTargetKind = -1;
         shipData[i].targetStellar = -1;
@@ -446,7 +446,7 @@ void ResetPlayer(Boolean newPilot)
     shipData->cloak = 0.0f;
     shipData->navTargetKind = -1;
     shipData->govt = -1;
-    shipData->aiType = -1;
+    shipData->aiType = kAINone;
     shipData->curSystem = 0;
     shipData->shield = shipData->ShieldCapacity();
     shipData->armor = shipData->ArmorCapacity();
@@ -730,7 +730,7 @@ void ResetGameData(void)
     short i;
 
     for (i = 0; i < kMaxPersons; i++) {
-        if (personData[i].aiType >= 1) {
+        if (AIIsSet(personData[i].aiType)) {
             personData[i].loaded = 1;
             personData[i].grudge = 0;
         }

@@ -380,7 +380,7 @@ void DrawStatusTarg(void)
             if ((shipClass[shipData[shipData[0].targetShip].type].flags3 & kShipMiner) != 0 &&
                 shipData[shipData[0].targetShip].parentShip == -1) {
                 DrawString("\pm");
-            } else if (shipData[shipData[0].targetShip].aiType == 3 && shipData[shipData[0].targetShip].govt != -1 &&
+            } else if (shipData[shipData[0].targetShip].aiType == kAIWarship && shipData[shipData[0].targetShip].govt != -1 &&
                        (govtData[shipData[shipData[0].targetShip].govt].flags & kGovtPlunders) != 0) {
                 DrawString("\pp");
             }
@@ -599,7 +599,7 @@ void DrawStatusTarg(void)
                 DrawString(govtTargStrings[shipData[shipData[0].targetShip].govt]);
             } else {
                 if (shipData[shipData[0].targetShip].parentShip == 0 || shipData[shipData[0].targetShip].formerEscort >= 0) {
-                    if (shipData[shipData[0].targetShip].aiType == 5 || shipData[shipData[0].targetShip].formerEscort == 0) {
+                    if (shipData[shipData[0].targetShip].aiType == kAIFighter || shipData[shipData[0].targetShip].formerEscort == 0) {
                         if (shipClass[shipData[shipData[0].targetShip].type].mass >= 100)
                             GetIndString(numBuf, kGameStrList, kStatusNeutral);
                         else

@@ -129,4 +129,31 @@ extern Boolean IssueNewEscortCommand(short aiTypeFilter, short cmd, Boolean quie
 extern short SelectRandomStellarDest(ShipObj *ship, unsigned char allowSpecial,
                                      Boolean plainOnly);
 
+/* AI tuning numbers; a constexpr object for now, a settings file may fill it later. */
+struct AITuning {
+    int respawnDelayTicks = 45;           /* AIDispatch: ticks after fireTick before a ship acts again */
+    float scanRange = 100.0F;             /* ScanPlayer: scan distance on each axis */
+    int scanChance = 75;                  /* ScanPlayer: Rand(100) above this skips the scan */
+    int escortRange = 0x4e2;              /* BraveTraderAI: axis distance to defend a ship */
+    float boardCashInDelay = 100.0f;      /* PirateWarshipAI: aiTimer after boarding */
+    float backOffDelay = 120.0f;          /* PirateWarshipAI: aiTimer when backing off */
+    double escortRangeSq = 408375.0;      /* EscortAI: squared; past it the target is dropped */
+    float maxTargetRangeSq = 36000000.0f; /* DefenseShipAI: 6000^2, hand-verified at 0x00575060 */
+    int playFieldLimit = 0x3e8;           /* SelectRandomStellarDest: stellar pos limit */
+    double rangeMargin = 0.95;            /* AIFireMissile: share of range squared */
+    double rangeScale = 2.5;              /* AIFireGun: proxRadius multiplier */
+    int rangeSlack = 32;                  /* AIInGunRange: added to weapon range */
+    double minShieldWeight = 0.25;        /* AIShipFriendStrength: ratio clamp */
+    double maxShieldWeight = 1.0;
+    float cloakDistance = 165.0f;         /* AIHandleCloaking: axis distance to stay cloaked */
+    int killsPerStrength = 0x1900;        /* AICalculateOddsAgainst */
+    float formDeadband = 8.0f;            /* AIMaintainFormation */
+    double formAccelScale = 10.0;
+    double formDampCap = 0.8;
+    float rangePad = 32.0f;               /* FireAIShipWeapon: added to weapon range */
+    float dockRange = 16.0f;              /* AIShipIsEnteringHypergate: axis distance */
+    int jumpFuel = 100;                   /* AIShipIsEnteringHypergate: min shïp fuel */
+};
+inline constexpr AITuning aiTune{};
+
 #endif

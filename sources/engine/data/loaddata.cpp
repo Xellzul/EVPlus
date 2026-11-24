@@ -1077,7 +1077,7 @@ static void LoadShipClasses(unsigned char *name)
                 shipClass[i].tradeIn = shipClass[i].cost * 0.1;
             shipClass[i].escortType = res->escortType;
             if (shipClass[i].escortType < 0 || shipClass[i].escortType > 3) {
-                if (shipClass[i].inherentAI >= 3) {
+                if (AIIsCombat(shipClass[i].inherentAI)) {
                     if (shipClass[i].mass < 50)
                         shipClass[i].escortType = 0;
                     else if (shipClass[i].mass < 200)
@@ -1601,7 +1601,7 @@ static void LoadPersons(unsigned char *name)
     n = count = CountResources(kPersType);
     for (i = 0; i < kMaxPersons;i++) {
         personData[i].loaded = 0;
-        personData[i].aiType = -1;
+        personData[i].aiType = kAINone;
         personFileHand = GetResource(kPersType, i + kFirstResourceID);
         if (personFileHand != NULL) {
             found++;
@@ -2675,14 +2675,14 @@ short WritePilotData(short stellar)
         }
         for (i = 0; i < kMaxShips; i++) {
             if (shipData[i].active != 0 && shipData[i].parentShip == 0
-                && shipData[i].aiType == 5)
+                && shipData[i].aiType == kAIFighter)
                 (*playerFileHand)->fighterType[i] = shipData[i].type;
             else
                 (*playerFileHand)->fighterType[i] = -1;
         }
         for (i = 0; i < kMaxShips; i++) {
             if (shipData[i].active != 0 && shipData[i].parentShip == 0
-                && shipData[i].aiType == kShipTypeEscort && shipData[i].specialMission == -1) {
+                && shipData[i].aiType == kAIEscort && shipData[i].specialMission == -1) {
                 (*playerFileHand)->escortType[i] = shipData[i].type;
                 if (shipData[i].hired != 0)
                     (*playerFileHand)->escortType[i] += 1000;
@@ -2696,7 +2696,7 @@ short WritePilotData(short stellar)
         }
         for (i = 0; i < kMaxShips; i++) {
             if (shipData[i].active != 0 && shipData[i].parentShip == 0
-                && shipData[i].aiType >= 5 && shipData[i].specialMission == -1)
+                && AIHasLeader(shipData[i].aiType) && shipData[i].specialMission == -1)
                 (*playerFileHand)->fighterVoice[i] = shipData[i].voiceClass;
         }
         (*playerFileHand)->kills = playerKills;
@@ -2719,7 +2719,7 @@ short WritePilotData(short stellar)
             }
         }
         for (i = 0; i < kMaxPersons; i++) {
-            if (personData[i].loaded != 0 && personData[i].aiType >= 1) {
+            if (personData[i].loaded != 0 && AIIsSet(personData[i].aiType)) {
                 (*altPlayerFileHand)->persActive[i] = 1;
                 if (personData[i].grudge != 0)
                     (*altPlayerFileHand)->persB[i] = 1;
@@ -3082,7 +3082,7 @@ void DumpPilotLog(void)
             pstrcpy((StringPtr)name, shipClass[shipData[i].type].name);
             PtoCstr((StringPtr)name);
             fprintf(log, "  %s (%i) - ", name, shipData[i].type + 0x80);
-            if (shipData[i].aiType == 5)
+            if (shipData[i].aiType == kAIFighter)
                 fprintf(log, "fighter");
             else if (shipData[i].specialMission != -1)
                 fprintf(log, "mission escort");
@@ -3401,7 +3401,7 @@ short LoadPilotData(char *path)
                     } else {
                         j = SpawnEscort(n, -1);
                         if (j != -1) {
-                            shipData[j].aiType = 5;
+                            shipData[j].aiType = kAIFighter;
                             shipData[j].hired = 0;
                             AISetup(&shipData[j]);
                             if ((*playerFileHand)->fighterVoice[i] != -1)
@@ -3467,7 +3467,7 @@ short LoadPilotData(char *path)
             }
 
             for (i = 0; i < kMaxPersons; i++) {
-                if (personData[i].aiType >= 1) {
+                if (AIIsSet(personData[i].aiType)) {
                     if (personData[i].prepared != 0 &&
                         (*altPlayerFileHand)->persActive[i] != 0) {
                         personData[i].loaded = 1;

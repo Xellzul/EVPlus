@@ -735,7 +735,6 @@ void QuickMissionFailure(short mission)
 #define kAvailNotClassBase   31000
 
 #define kMinFuelForMission 100.0f
-#define kLargeShipClass          3
 
 /* mïsn ship-type requirement classes (ResClassBase) */
 #define kReqNotShipType     1
@@ -936,10 +935,10 @@ Boolean IsMissionAvailable(short mission, Boolean offer)
 
     cond[8] = 1;
     if ((missionAvailData[mission].flags & kMissionNotForFreighters) != 0
-        && shipClass[shipData->type].inherentAI <= kLargeShipClass - 1)
+        && AIIsTrader(shipClass[shipData->type].inherentAI))
         cond[8] = 0;
     if ((missionAvailData[mission].flags & kMissionNotForWarships) != 0
-        && shipClass[shipData->type].inherentAI >= kLargeShipClass)
+        && AIIsCombat(shipClass[shipData->type].inherentAI))
         cond[8] = 0;
 
     if (missionAvailData[mission].payment < kCostFloor) {

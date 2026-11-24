@@ -74,7 +74,7 @@ void CommButtons::Update(short)
     if (!quiet && commShip != 0) {
         if (ExtendedIsThreatToPlayer(commShip) != 0)
             middle = kBegMercyButtonLabel;
-        else if (commShip->parentShip == 0 && commShip->aiType == kShipTypeEscort && !hasMission)
+        else if (commShip->parentShip == 0 && commShip->aiType == kAIEscort && !hasMission)
             middle = kReleaseButtonLabel;
     }
     Set(0, 1, buttonLabel[kCloseChannelButtonLabel]);

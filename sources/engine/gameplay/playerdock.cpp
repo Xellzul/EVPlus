@@ -1330,7 +1330,7 @@ reject:
                             DisplayComm((PStrChar *)msg, 250);
                             PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                             shipData[me->targetShip].formerEscort = -1;
-                            shipData[me->targetShip].aiType = kShipTypeFighter;
+                            shipData[me->targetShip].aiType = kAIFighter;
                             shipData[me->targetShip].parentShip = 0;
                             shipData[me->targetShip].shield = 0;
                             shipData[me->targetShip].armor = shipData[me->targetShip].ArmorCapacity();
@@ -1351,7 +1351,7 @@ reject:
                         DisplayComm((PStrChar *)msg, 250);
                         PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                         shipData[me->targetShip].formerEscort = -1;
-                        shipData[me->targetShip].aiType = kShipTypeFighter;
+                        shipData[me->targetShip].aiType = kAIFighter;
                         shipData[me->targetShip].parentShip = 0;
                         shipData[me->targetShip].shield = 0;
                         shipData[me->targetShip].targetStellar = -1;
@@ -1368,7 +1368,7 @@ reject:
                 }
             } else {
                 if (shipData[me->targetShip].formerEscort >= 1 && CanHireEscorts()) {
-                    shipData[me->targetShip].aiType = kShipTypeEscort;
+                    shipData[me->targetShip].aiType = kAIEscort;
                     shipData[me->targetShip].parentShip = 0;
                     shipData[me->targetShip].boarded = 0;
                     if (shipData[me->targetShip].formerEscort == 1)
@@ -1395,7 +1395,7 @@ reject:
                     DisplayComm((PStrChar *)msg, 250);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                     shipData[me->targetShip].formerEscort = -1;
-                    shipData[me->targetShip].aiType = kShipTypeFighter;
+                    shipData[me->targetShip].aiType = kAIFighter;
                     shipData[me->targetShip].parentShip = 0;
                     shipData[me->targetShip].shield = 0;
                     shipData[me->targetShip].armor = shipData[me->targetShip].ArmorCapacity();
@@ -1407,7 +1407,7 @@ reject:
                     DisplayComm((PStrChar *)msg, 250);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                     shipData[me->targetShip].formerEscort = -1;
-                    shipData[me->targetShip].aiType = kShipTypeFighter;
+                    shipData[me->targetShip].aiType = kAIFighter;
                     shipData[me->targetShip].parentShip = 0;
                     shipData[me->targetShip].shield = 0;
                     shipData[me->targetShip].armor = shipData[me->targetShip].ArmorCapacity();

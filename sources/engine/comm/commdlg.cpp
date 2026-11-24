@@ -98,7 +98,7 @@ void CommDialog::Run(short shipIndex)
     if (!shipData[shipIndex].active)
         return;
     commShip = &shipData[shipIndex];
-    if (commShip->aiType == kShipTypeEscort && commShip->parentShip == 0
+    if (commShip->aiType == kAIEscort && commShip->parentShip == 0
         && commShip->specialMission == -1) {
         DoEscortDialog(commShip);
         return;
@@ -112,10 +112,10 @@ void CommDialog::Run(short shipIndex)
     if (commShip->govt == -1)
         willTakeBribe = 1;
     else {
-        if (commShip->aiType <= kShipTypeBraveTrader
+        if (AIIsTrader(commShip->aiType)
             && (govtData[commShip->govt].flags & kGovtFreightersBribable) != 0)
             willTakeBribe = 1;
-        if (commShip->aiType >= kShipTypeWarship
+        if (AIIsCombat(commShip->aiType)
             && (govtData[commShip->govt].flags & kGovtWarshipsBribable) != 0)
             willTakeBribe = 1;
         if ((govtData[commShip->govt].flags2 & kGovtNotTalkative) != 0)
@@ -125,7 +125,7 @@ void CommDialog::Run(short shipIndex)
         if (shipClass[commShip->type].inherentGovtB != -1
             && (govtData[shipClass[commShip->type].inherentGovtB].flags2 & kGovtSilent) != 0)
             cantTalk = 1;
-        if (commShip->aiType >= kShipTypeWarship
+        if (AIIsCombat(commShip->aiType)
             && (govtData[commShip->govt].flags & kGovtPlunders) != 0)
             noBribe = 1;
     }
@@ -201,9 +201,9 @@ void CommDialog::Run(short shipIndex)
         if (ExtendedIsThreatToPlayer(commShip))
             LoadResponse(2);
         else if (commShip->parentShip == 0) {
-            if (commShip->aiType == kShipTypeFighter)
+            if (commShip->aiType == kAIFighter)
                 LoadResponse(5);
-            if (commShip->aiType == kShipTypeEscort)
+            if (commShip->aiType == kAIEscort)
                 LoadResponse(4);
         } else if (AIDoesShipLikePlayer(commShip))
             LoadResponse(0);
@@ -274,7 +274,7 @@ void CommDialog::Hit(short item)
     if (item == 2) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         if (!commShip->IsDisabled()) {
-            if (commShip->parentShip == 0 && commShip->aiType == kShipTypeEscort
+            if (commShip->parentShip == 0 && commShip->aiType == kAIEscort
                        && !hasMission) {
                 releaseCommEscort = 1;
                 LoadResponse(0x26);
@@ -306,7 +306,7 @@ void CommDialog::Hit(short item)
                             if (r == 1) {
                                 LoadResponse(0x14);
                                 AIMakeShipLeave(commShip);
-                                commShip->aiType = kShipTypeWimpyTrader;
+                                commShip->aiType = kAIWimpyTrader;
                             } else if (r == 0) {
                                 LoadResponse(0x1e);
                                 AIMakeShipAttackPlayer(commShip);
@@ -322,7 +322,7 @@ void CommDialog::Hit(short item)
                     if (IsShipThreatened(commShip) || AIIsShipBusy(commShip)) {
                         if (IsRefuellingPlayer(commShip) || IsRepairingPlayer(commShip))
                             LoadResponse(0x1d);
-                        else if (commShip->aiType <= kShipTypeInterceptor)
+                        else if (AIIsOwnAI(commShip->aiType))
                             LoadResponse(0x10);
                         else
                             LoadResponse(0x16);
@@ -334,9 +334,9 @@ void CommDialog::Hit(short item)
                                 AICallForReinforcements(commShip, 1);
                             } else if (commShipXeno)
                                 LoadResponse(0x13);
-                            else if (commShip->aiType == kShipTypeWimpyTrader)
+                            else if (commShip->aiType == kAIWimpyTrader)
                                 LoadResponse(0x11);
-                            else if (commShip->aiType == kShipTypeBraveTrader) {
+                            else if (commShip->aiType == kAIBraveTrader) {
                                 if (commShip->index % 3 == 0
                                     && commShip->govt == -1) {
                                     if (bribeFlux < 0.8)
@@ -357,8 +357,8 @@ void CommDialog::Hit(short item)
                                         LoadResponse(0xc);
                                 } else
                                     LoadResponse(0x11);
-                            } else if (commShip->aiType == kShipTypeWarship
-                                       || commShip->aiType == kShipTypeInterceptor) {
+                            } else if (commShip->aiType == kAIWarship
+                                       || commShip->aiType == kAIInterceptor) {
                                 if (bribeFlux < 0.8)
                                     LoadResponse(0x17);
                                 else if (bribeFlux > 1.2)
@@ -386,7 +386,7 @@ void CommDialog::Hit(short item)
                             || shipData->IsDisabled()) {
                             if (commShipXeno)
                                 LoadResponse(0x13);
-                            else if (commShip->aiType <= kShipTypeInterceptor) {
+                            else if (AIIsOwnAI(commShip->aiType)) {
                                 if (bribeFlux < 0.8)
                                     LoadResponse(0x17);
                                 else if (bribeFlux > 1.2)
@@ -1280,7 +1280,7 @@ void LoadAdvice(void)
     }
 
     if (which == 3) {
-        if (commShip->aiType <= kShipTypeBraveTrader) {
+        if (AIIsTrader(commShip->aiType)) {
             if (!LoadPluginString((commShip->govt * kGovtStride
                                           + kGovtPluginLow + responseRandom),
                                   (char *)adviceString))
@@ -1875,7 +1875,7 @@ void PlunderDialog::Hit(short item)
                                                  (char *)shipClass[type].name, 1,
                                                  type + kFirstResourceID, shipClass[type].onCapture);
                         EvalMissionBitSetString(shipClass[shipData[shipData->targetShip].type].onCapture);
-                        shipData[shipData->targetShip].aiType = kShipTypeEscort;
+                        shipData[shipData->targetShip].aiType = kAIEscort;
                         shipData[shipData->targetShip].parentShip = 0;
                         shipData[shipData->targetShip].hired = 0;
                         shipData[shipData->targetShip].armor =
@@ -2062,8 +2062,8 @@ void SetPlunderValues(void)
     myCrew = shipClass[shipData->type].crew;
     for (i = 1; i < kMaxShips; i++) {
         if (shipData[i].active != 0 && shipData[i].parentShip == 0
-            && shipData[i].aiType == kShipTypeEscort && shipData[i].specialMission == -1
-            && shipClass[shipData[i].type].inherentAI >= kShipTypeWarship) {
+            && shipData[i].aiType == kAIEscort && shipData[i].specialMission == -1
+            && AIIsCombat(shipClass[shipData[i].type].inherentAI)) {
             myStrength += shipClass[shipData[i].type].strength * 0.1;
             myCrew += shipClass[shipData[i].type].crew * 0.1;
         }

@@ -24,7 +24,7 @@ extern void HandleShipDisplay(ShipObj *ship);
 extern Boolean HasMaxOfItem(short outfit, short *countOut,
                          short *maxOut);
 extern short HyperShipSpawn(short sys);
-extern void HyperSpawnFleet(short sys, short fleet, short escortOf,
+extern void HyperSpawnFleet(short sys, short fleet, short aiType,
                             unsigned char arriving);
 extern void IonizeShip(ShipObj *ship, WeapRecord *weap, FloatPoint *pos);
 extern void SpawnEscapePod(ShipObj *ship);

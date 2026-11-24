@@ -765,7 +765,7 @@ void DoPlayGameWork(unsigned char advance)
         for (i = 1; i < kMaxShips; i++)
             prevParent[i] = shipData[i].parentShip;
         for (i = 1; i < kMaxShips; i++) {
-            if (shipData[i].active != 0 && shipData[i].aiType >= kShipTypeFighter &&
+            if (shipData[i].active != 0 && AIHasLeader(shipData[i].aiType) &&
                     shipData[i].curSystem == shipData[0].curSystem) {
                 if (shipData[i].parentShip > 0) {
                     AICheckParentExists(&shipData[i]);
@@ -776,7 +776,7 @@ void DoPlayGameWork(unsigned char advance)
                 }
                 if (shipData[i].swarmLeader > i && shipData[i].swarmLeader < kMaxShips)
                     shipData[shipData[i].swarmLeader].hasSwarm = 1;
-                if (shipData[i].aiType >= kShipTypeFighter) {
+                if (AIHasLeader(shipData[i].aiType)) {
                     shipData[i].formLeader = -1;
                     if (shipData[i].targetShip != -1 && IsShipAttacking(&shipData[i]) != 0)
                         shipData[i].formLeader = shipData[i].swarmLeader;
@@ -804,7 +804,7 @@ void DoPlayGameWork(unsigned char advance)
 
         MyProfileEnter(kProfAI);
         for (i = 1; i < kMaxShips; i++) {
-            if (shipData[i].active != 0 && shipData[i].aiType >= 1 &&
+            if (shipData[i].active != 0 && AIIsSet(shipData[i].aiType) &&
                     shipData[i].curSystem == shipData[0].curSystem)
                 AIDispatch(&shipData[i], 0);
         }
@@ -815,7 +815,7 @@ void DoPlayGameWork(unsigned char advance)
                     shipData[i + 1].odds = -1.0f;
                 else
                     shipData[1].odds = -1.0f;
-                if (shipData[i].active != 0 && shipData[i].aiType >= 1 &&
+                if (shipData[i].active != 0 && AIIsSet(shipData[i].aiType) &&
                         shipData[i].curSystem == shipData[0].curSystem) {
                     AICalculateOddsAgainst(&shipData[i]);
                     break;
@@ -1053,15 +1053,15 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
             }
         }
         if (ship->parentShip == 0 && ship->specialMission == -1) {
-            if (ship->aiType == kShipTypeFighter)
+            if (ship->aiType == kAIFighter)
                 ship->formerEscort = 0;
             else if (ship->hired != 0)
                 ship->formerEscort = 1;
             else
                 ship->formerEscort = 2;
             ship->parentShip = -1;
-            if (ship->aiType == kShipTypeEscort
-                    && shipClass[ship->type].inherentAI <= kShipTypeBraveTrader) {
+            if (ship->aiType == kAIEscort
+                    && AIIsTrader(shipClass[ship->type].inherentAI)) {
                 DestroyPartialFleetCargo(ship->index);
                 statusRedraw[kRedrawCargo] = 1;
                 DrawStatusCargo();
@@ -1117,7 +1117,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
         selfHit = 1;
     }
 
-    if (enemy && fromAttack != 0 && ship->aiType > 0 && ship->jumpTimer <= 0.0f) {
+    if (enemy && fromAttack != 0 && AIIsSet(ship->aiType) && ship->jumpTimer <= 0.0f) {
         hostile = 0;
         if (selfHit != 0) {
             if (attacker >= 0 && attacker < kMaxShips) {
@@ -1193,7 +1193,7 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
                 ship->annoyance += provocation * kProvocationScale;
             if (attacker >= 0 && attacker < kMaxShips) {
                 if (shipData[attacker].parentShip == 0
-                        && shipData[attacker].aiType == kShipTypeFighter
+                        && shipData[attacker].aiType == kAIFighter
                         && ship->targetShip == 0) {
                     if (FloatAbs(ship->pos.x - shipData->pos.x) <= kEscortDefendRange) {
                         if (FloatAbs(ship->pos.y - shipData->pos.y) <= kEscortDefendRange)
@@ -1339,7 +1339,7 @@ void DeleteAllComputerShips(Boolean force, Boolean keepPlayer)
 
     for (i = 1; i < kMaxShips; i++) {
         remove = 1;
-        if (shipData[i].aiType >= kShipTypeFighter && shipData[i].parentShip == 0
+        if (AIHasLeader(shipData[i].aiType) && shipData[i].parentShip == 0
                 && shipData[i].defenseStellar == -1 && shipData[i].specialMission == -1) {
             if (shipData[i].IsDisabled())
                 remove = 1;
@@ -1407,9 +1407,9 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
             if (shipData[i].IsDisabled() != 0) {
                 shipData[i].active = 0;
                 if (shipData[i].parentShip == 0
-                        && shipData[i].aiType == kShipTypeEscort
+                        && shipData[i].aiType == kAIEscort
                         && shipData[i].specialMission == -1
-                        && shipClass[shipData[i].type].inherentAI <= kShipTypeBraveTrader)
+                        && AIIsTrader(shipClass[shipData[i].type].inherentAI))
                     DestroyPartialFleetCargo(i);
             } else {
                 if (shipData[i].specialMission == -1) {
@@ -1500,7 +1500,7 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
                                 }
                             }
                             if (currentMissions[m].shipBehav == kMissionModeEscort) {
-                                shipData[slot].aiType = kShipTypeEscort;
+                                shipData[slot].aiType = kAIEscort;
                                 shipData[slot].parentShip = 0;
                                 shipData[slot].formLeader = 0;
                                 shipData[slot].swarmLeader = 0;
@@ -1575,7 +1575,6 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
 #define kSpawnOrigin     750
 #define kSpawnSpeed      100.0f
 #define kStartCredits    10000
-#define kAITypeLinked    3       /* this aiType seeds from the linked system */
 
 // FUNCTION: EVNOVA 0x0041ba80
 // MAC: _RandomShipSpawn i386 0x0003c0f3 ppc 0x00042798
@@ -1603,11 +1602,12 @@ short RandomShipSpawn(short sys, short reserve)
         shipData[slot].dude = dude;
         shipData[slot].type = dudeData[dude].shipTypes[pick];
         shipData[slot].govt = dudeData[dude].govt;
-        if (dudeData[dude].aiType >= 1)
+        if (AIIsSet(dudeData[dude].aiType))
             shipData[slot].aiType = dudeData[dude].aiType;
         else
             shipData[slot].aiType = shipClass[shipData[slot].type].inherentAI;
-        if (shipData[slot].aiType == kAITypeLinked &&
+        /* a stationary warship starts beside the system's first stellar */
+        if (shipData[slot].aiType == kAIWarship &&
             systemData[shipData[slot].curSystem].navDefault[0] != -1 &&
             shipClass[shipData[slot].type].maxSpeed == 0.0) {
             link = systemData[shipData[slot].curSystem].navDefault[0];
@@ -1793,7 +1793,7 @@ short SpecificDudeSpawn(short dude, short sys, short reserve,
     shipData[slot].dude = dude;
     shipData[slot].type = dudeData[dude].shipTypes[pick];
     shipData[slot].govt = dudeData[dude].govt;
-    if (dudeData[dude].aiType >= 1)
+    if (AIIsSet(dudeData[dude].aiType))
         shipData[slot].aiType = dudeData[dude].aiType;
     else
         shipData[slot].aiType = shipClass[shipData[slot].type].inherentAI;
@@ -1853,7 +1853,7 @@ short MissionDudeSpawn(short dude, short wantType, short sys, short mission)
     shipData[slot].cloakDir = 0;
     shipData[slot].cloak = 0;
     shipData[slot].aiTimer = 0;
-    if (dudeData[dude].aiType >= 1)
+    if (AIIsSet(dudeData[dude].aiType))
         shipData[slot].aiType = dudeData[dude].aiType;
     else
         shipData[slot].aiType = shipClass[shipData[slot].type].inherentAI;
@@ -1893,7 +1893,6 @@ none:
 #define kFleetProbRange     100
 #define kEscortFleetHeavy   0xff
 #define kEscortFleetLight   0xfe
-#define kEscortEscortOf     4
 #define kEscortCargoHeavy   200
 #define kEscortCargoLight   50
 #define kDefWaveModulus     10
@@ -2067,7 +2066,7 @@ void EnterMoreShips(short sys)
                 && Rand(kFleetProbRange) + 1 <= systemData[sys].fleetProbTotal) {
                 pick = SelectFleetFromSystem(&systemData[sys]);
                 if (pick != -1)
-                    HyperSpawnFleet(sys, pick, -1, 1);
+                    HyperSpawnFleet(sys, pick, kAINone, 1);
                 else
                     roll = 0;
             } else {
@@ -2104,15 +2103,15 @@ void EnterMoreShips(short sys)
         cargo = 0;
         for (n = 1; n < kMaxShips; n++)
             if (shipData[n].active && shipData[n].parentShip == 0
-                && shipData[n].aiType == kShipTypeEscort && shipData[n].specialMission == -1
-                && shipClass[shipData[n].type].inherentAI <= kShipTypeBraveTrader)
+                && shipData[n].aiType == kAIEscort && shipData[n].specialMission == -1
+                && AIIsTrader(shipClass[shipData[n].type].inherentAI))
                 cargo += shipClass[shipData[n].type].cargo;
         if (cargo >= kEscortCargoHeavy)
             HyperSpawnFleet(shipData[0].curSystem, kEscortFleetHeavy,
-                            kEscortEscortOf, 1);
+                            kAIInterceptor, 1);
         else if (cargo >= kEscortCargoLight)
             HyperSpawnFleet(shipData[0].curSystem, kEscortFleetLight,
-                            kEscortEscortOf, 1);
+                            kAIInterceptor, 1);
     } else {
         antiEscortDelay -= 1;
     }
@@ -2202,7 +2201,7 @@ unsigned char LaunchFighter(ShipObj *parent, short fighterType)
     shipData[slot].canScoop = shipData[slot].CanScoop();
     shipData[slot].hired = 0;
     shipData[slot].auxMission = -1;
-    shipData[slot].aiType = kShipTypeFighter;
+    shipData[slot].aiType = kAIFighter;
     shipData[slot].govt = parent->govt;
     shipData[slot].navTargetKind = -1;
     shipData[slot].jumpTimer = 0;
@@ -2385,8 +2384,8 @@ void JettisonCargo(unsigned char withMissions)
     fleetHolds = TotalFleetHolds();
     for (i = 0; i < kMaxShips; i++) {
         if ((shipData[i].active != 0 && shipData[i].parentShip == 0
-             && shipData[i].aiType == kShipTypeEscort && shipData[i].specialMission == -1
-             && shipClass[shipData[i].type].inherentAI <= kShipTypeBraveTrader)
+             && shipData[i].aiType == kAIEscort && shipData[i].specialMission == -1
+             && AIIsTrader(shipClass[shipData[i].type].inherentAI))
             || i == 0) {
             if (i == 0)
                 holds = ShipTotalHolds();
@@ -3176,7 +3175,7 @@ short SpawnStellarDefenseShip(short stellar)
             shipData[ship].cloakDir = 0;
             shipData[ship].cloak = 0;
             shipData[ship].aiTimer = 0;
-            shipData[ship].aiType = 3;
+            shipData[ship].aiType = kAIWarship;
             shipData[ship].specialMission = -1;
             shipData[ship].parentShip = -1;
             shipData[ship].govt = stellarData[stellar].govt;
@@ -3256,7 +3255,7 @@ short SpawnEscort(short shipType, short fromSpob)
     if (slot != -1 && shipType > -1) {
 
         shipData[slot].type = shipType;
-        shipData[slot].aiType = kShipTypeEscort;
+        shipData[slot].aiType = kAIEscort;
         shipData[slot].parentShip = 0;
         shipData[slot].govt = -1;
         shipData[slot].aggression = 2;
@@ -3329,7 +3328,7 @@ void DoEscortLand(void)
             if (shipData[i].active
                 && shipData[i].parentShip == 0
                 && !shipData[i].IsDisabled()
-                && shipData[i].aiType == kShipTypeEscort
+                && shipData[i].aiType == kAIEscort
                 && shipData[i].sellOnLanding
                 && shipData[i].specialMission == -1) {
                 shipData[0].credits += shipClass[shipData[i].type].tradeIn;
@@ -3344,7 +3343,7 @@ void DoEscortLand(void)
         for (i = 1; i < kMaxShips; i++) {
             if (shipData[i].active
                 && shipData[i].parentShip == 0
-                && shipData[i].aiType == kShipTypeEscort
+                && shipData[i].aiType == kAIEscort
                 && shipData[i].upgradeOnLanding) {
                 if (shipClass[shipData[i].type].upgradeTo != -1
                     && shipData[i].specialMission == -1
@@ -3446,7 +3445,7 @@ void DoEscortPayment(short days)
         for (i = 1; i < kMaxShips; i++) {
             if (shipData[i].active == 0) continue;
             if (shipData[i].parentShip != 0) continue;
-            if (shipData[i].aiType != kShipTypeEscort) continue;
+            if (shipData[i].aiType != kAIEscort) continue;
             if (shipData[i].IsDisabled()) continue;
 
             skip = 0;
@@ -3465,13 +3464,13 @@ void DoEscortPayment(short days)
                 statusRedraw[kRedrawCargo] = 1;
             } else {
                 numDismissed++;
-                if (shipData[i].aiType == kShipTypeEscort && shipData[i].specialMission == -1 && shipClass[shipData[i].type].inherentAI <= kShipTypeBraveTrader) {
+                if (shipData[i].aiType == kAIEscort && shipData[i].specialMission == -1 && AIIsTrader(shipClass[shipData[i].type].inherentAI)) {
                     DestroyPartialFleetCargo(i);
                 }
                 statusRedraw[kRedrawCargo] = 1;
                 shipData[i].active = 0;
                 shipData[i].parentShip = -1;
-                shipData[i].aiType = 1;
+                shipData[i].aiType = kAIWimpyTrader;
             }
             }
             checked++;
@@ -3532,7 +3531,7 @@ short SpawnPerson(short sys, unsigned char noDisabled, short person)
     } else {
         for (i = 0; i < 0x3ff; i++) {
             eligible[i] = 0;
-            if (personData[i].loaded != 0 && personData[i].aiType >= 1
+            if (personData[i].loaded != 0 && AIIsSet(personData[i].aiType)
                 && personData[i].canAppear != 0 && personData[i].prepared != 0) {
                 if (personData[i].linkSyst == -1)
                     eligible[i] = 1;
@@ -3732,14 +3731,14 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
             shipData[slotR].hired = 0;
             shipData[slotR].hailed = 0;
             shipData[slotR].parentShip = 0;
-            shipData[slotR].aiType = kShipTypeEscort;
+            shipData[slotR].aiType = kAIEscort;
             DestroyPartialFleetCargo(slot);
             shipData[slotR].parentShip = -1;
-            shipData[slotR].aiType = -1;
+            shipData[slotR].aiType = kAINone;
         } else {
             shipData[slotR].deathTimer = 0;
             shipData[slotR].parentShip = 0;
-            shipData[slotR].aiType = kShipTypeEscort;
+            shipData[slotR].aiType = kAIEscort;
             shipData[slotR].defenseStellar = -1;
             shipData[slotR].grudge = 0;
             shipData[slotR].fuel = shipData[slotR].FuelCapacity();
@@ -3796,7 +3795,7 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
             shipData[0].fuel = Rand(shipData->FuelCapacity());
         else
             shipData[0].fuel = 0;
-        shipData[0].aiType = -1;
+        shipData[0].aiType = kAINone;
         shipData[0].parentShip = -1;
         shipData[0].govt = -1;
         shipData[0].shield = 0;
@@ -3983,7 +3982,7 @@ void SpawnFleet(short sys, unsigned char arriving)
     if (count > 0) {
         pick = Rand(kFletCount);
         if (ok[pick]) {
-            HyperSpawnFleet(sys, pick, -1, arriving);
+            HyperSpawnFleet(sys, pick, kAINone, arriving);
             return;
         }
     }
@@ -4010,7 +4009,7 @@ short GenericRandomShipSpawn(short sys, short reserve)
         shipData[slot].curSystem = sys;
         shipData[slot].dude = -1;
         shipData[slot].type = 0;
-        shipData[slot].aiType = 1;
+        shipData[slot].aiType = kAIWimpyTrader;
         shipData[slot].govt = -1;
         shipData[slot].vel.x = shipData[slot].vel.y = 0;
         shipData[slot].accelMag = 0;
@@ -4093,7 +4092,7 @@ short GenericRandomShipSpawn(short sys, short reserve)
 
 // FUNCTION: EVNOVA 0x004259b0
 // MAC: _HyperSpawnFleet i386 0x00041c8d ppc 0x0004960c
-void HyperSpawnFleet(short sys, short fleet, short escortOf,
+void HyperSpawnFleet(short sys, short fleet, short aiType,
                      unsigned char arriving)
 {
     short i;
@@ -4123,8 +4122,8 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
     if (slot != -1) {
         shipData[slot].type = fleetData[idx].leadShipType;
         shipData[slot].govt = fleetData[idx].govt;
-        if (escortOf != -1)
-            shipData[slot].aiType = escortOf;
+        if (aiType != kAINone)
+            shipData[slot].aiType = aiType;
         else
             shipData[slot].aiType = shipClass[shipData[slot].type].inherentAI;
         shipData[slot].shield = shipClass[shipData[slot].type].shield;
@@ -4135,7 +4134,7 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
         shipData[slot].canScoop = shipData[slot].CanScoop();
         AISetup(&shipData[slot]);
         if ((fleetData[f].flags & kFleetFlagRandomCargo) &&
-            shipClass[shipData[slot].type].inherentAI <= kShipTypeBraveTrader &&
+            AIIsTrader(shipClass[shipData[slot].type].inherentAI) &&
             shipClass[shipData[slot].type].cargo > 0)
             shipData[slot].cargo[Rand(kCargoTypes)] =
                 Rand(shipClass[shipData[slot].type].cargo) + 1;
@@ -4187,7 +4186,7 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
                 for (k = 0; k < count; k++) {
                     esc = GenericRandomShipSpawn(sys, kSpawnReserve);
                     if (esc != -1) {
-                        shipData[esc].aiType = kShipTypeEscort;
+                        shipData[esc].aiType = kAIEscort;
                         shipData[esc].parentShip = slot;
                         shipData[esc].type = fleetData[idx].escortTypes[j];
                         shipData[esc].dude = -1;
@@ -4218,7 +4217,7 @@ void HyperSpawnFleet(short sys, short fleet, short escortOf,
                         shipData[esc].formLeader = slot;
                         shipData[slot].hasFormation = 1;
                         if ((fleetData[f].flags & kFleetFlagRandomCargo) &&
-                            shipClass[shipData[esc].type].inherentAI <= kShipTypeBraveTrader &&
+                            AIIsTrader(shipClass[shipData[esc].type].inherentAI) &&
                             shipClass[shipData[esc].type].cargo > 0)
                             shipData[esc].cargo[Rand(kCargoTypes)] =
                                 Rand(shipClass[shipData[esc].type].cargo) + 1;

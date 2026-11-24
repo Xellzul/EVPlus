@@ -1,5 +1,6 @@
 /* resources.h -- decrypted in-memory forms of the Classic-Mac resource records. Notes: Research/notes/resources.md */
 #include "gametypes.h"
+#include "aitype.h"
 
 #ifndef RESOURCES_H
 #define RESOURCES_H
@@ -1313,16 +1314,9 @@ enum : short {
 #define kStrOf                 0x187   /* STR# 2002: "of" */
 #define kStrAnd                0x188   /* STR# 2002: "and" */
 #define kPrefsStrList   0x82
-#define kShipTypeWimpyTrader    1       /* aiType: shïp inherentAI 1..4 */
-#define kShipTypeBraveTrader    2
-#define kShipTypeWarship        3
-#define kShipTypeInterceptor    4
-#define kShipTypeFighter        5       /* aiType: launched from a bay */
-#define kShipTypeEscort         6       /* aiType: a hired escort */
 #define kNavTargetStellar       2       /* navTargetKind: targetStellar is a stellar */
 #define kNavTargetLink          3       /* navTargetKind: targetStellar is the destination system */
 #define kNavTargetGate          4       /* navTargetKind: targetStellar is a hypergate's destination system */
-#define kShipTypeSpecial    0x2ff
 #define kWeapAmmoFuelBase   1000
 #define kWeapTypeTop            0x100
 

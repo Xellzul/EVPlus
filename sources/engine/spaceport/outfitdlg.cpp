@@ -937,7 +937,7 @@ void OutfitDialog::Hit(short item)
                         for (m = 1; m < kMaxShips; m++) {
                             if (shipData[m].active != 0
                                 && shipData[m].parentShip == 0
-                                && shipData[m].aiType == kShipTypeFighter
+                                && shipData[m].aiType == kAIFighter
                                 && shipData[m].type
                                    == weaponStats[weapID].ammoType - kFirstResourceID
                                 && !shipData[m].IsDisabled())

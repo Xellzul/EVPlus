@@ -801,8 +801,8 @@ void HandleShipDisplay(ShipObj *ship)
                     if (currentMissions[ship->specialMission].shipCount > 0)
                         currentMissions[ship->specialMission].shipCount--;
                 }
-                if (ship->parentShip == 0 && ship->aiType == kShipTypeEscort && ship->specialMission == -1
-                        && shipClass[ship->type].inherentAI <= kShipTypeBraveTrader) {
+                if (ship->parentShip == 0 && ship->aiType == kAIEscort && ship->specialMission == -1
+                        && AIIsTrader(shipClass[ship->type].inherentAI)) {
                     DestroyPartialFleetCargo(ship->index);
                     ShipStatsToSystemInfo();
                     statusRedraw[kRedrawCargo] = 1;
@@ -2885,7 +2885,7 @@ void HandleShip(ShipObj *ship)
         ship->vel.y *= 0.995;
         ship->accelMag *= 0.995;
         if (ship->specialMission == -1 && ship->defenseStellar == -1 && ship->parentShip == 0) {
-            if (shipClass[ship->type].inherentAI <= kShipTypeBraveTrader)
+            if (AIIsTrader(shipClass[ship->type].inherentAI))
                 DestroyPartialFleetCargo(ship->index);
             ship->parentShip = -1;
             ship->hired = 0;
@@ -2906,7 +2906,7 @@ void HandleShip(ShipObj *ship)
                 ship->targetStellar = -1;
                 ship->targetShip = -1;
                 if (ship->formerEscort == 0) {
-                    ship->aiType = kShipTypeFighter;
+                    ship->aiType = kAIFighter;
                     GetIndString(msg, kGameStrList, 0x80);
                     DisplayComm((PStrChar *)msg, 0xfa);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
@@ -2915,7 +2915,7 @@ void HandleShip(ShipObj *ship)
                         ship->hired = 1;
                     else
                         ship->hired = 0;
-                    ship->aiType = kShipTypeEscort;
+                    ship->aiType = kAIEscort;
                     GetIndString(msg, kGameStrList, 0x7f);
                     DisplayComm((PStrChar *)msg, 0xfa);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
@@ -2980,15 +2980,15 @@ void HandleShip(ShipObj *ship)
                     ok = 0;
             }
             if (personData[ship->persType].flags & kPersNotForWimpyFreighter) {
-                if (shipClass[shipData->type].inherentAI == kShipTypeWimpyTrader)
+                if (shipClass[shipData->type].inherentAI == kAIWimpyTrader)
                     ok = 0;
             }
             if (personData[ship->persType].flags & kPersNotForBeefyFreighter) {
-                if (shipClass[shipData->type].inherentAI == kShipTypeBraveTrader)
+                if (shipClass[shipData->type].inherentAI == kAIBraveTrader)
                     ok = 0;
             }
             if (personData[ship->persType].flags & kPersNotForWarship) {
-                if (shipClass[shipData->type].inherentAI >= kShipTypeWarship)
+                if (AIIsCombat(shipClass[shipData->type].inherentAI))
                     ok = 0;
             }
             if (personData[ship->persType].flags & kPersQuoteOnce) {
@@ -3156,7 +3156,7 @@ void HandleShip(ShipObj *ship)
     }
 
     if (ship->aiTimer <= 0.0f || AIIsShipDoingCountWait(ship)
-            || ship->type == kShipTypeSpecial) {
+            || ship->type == kShipTypeEscapePod) {
         if (ship->thrust != 0.0) {
             if (ship->speedLimit == 0.0) {
                 if (ship->jumpTimer <= 0.0f) {
@@ -3266,7 +3266,7 @@ void HandleShip(ShipObj *ship)
             }
         }
     }
-    if (ship->aiTimer > 0.0f && ship->type != kShipTypeSpecial) {
+    if (ship->aiTimer > 0.0f && ship->type != kShipTypeEscapePod) {
         ship->aiTimer -= gSpeedMult;
         if (!AIIsShipDoingCountWait(ship) && ship->engineGlow > 0)
             ship->engineGlow -= 1;
@@ -3276,8 +3276,8 @@ void HandleShip(ShipObj *ship)
         if (gameFrozen == 0)
             ship->deathTimer -= 1.0f;
         if (ship->parentShip == 0) {
-            if (ship->aiType == kShipTypeEscort) {
-                if (shipClass[ship->type].inherentAI <= kShipTypeBraveTrader) {
+            if (ship->aiType == kAIEscort) {
+                if (AIIsTrader(shipClass[ship->type].inherentAI)) {
                     DestroyPartialFleetCargo(ship->index);
                     statusRedraw[kRedrawCargo] = 1;
                     DrawStatusCargo();
@@ -3986,7 +3986,7 @@ void HandleShipHit(ShotObj *shot, ShipObj *ship, Boolean spawnSubs)
             if (ship->index != i && shipData[i].active != 0
                     && shipData[i].parentShip == 0
                     && ship->index == shipData[i].targetShip
-                    && shipData[i].aiType >= kShipTypeWarship
+                    && AIIsCombat(shipData[i].aiType)
                     && IsShipAttacking(&shipData[i])
                     && shipData[i].type >= 0 && shipData[i].type < kMaxShipTypes
                     && (shipClass[shipData[i].type].flags2 & kShipNoFighterVoice) == 0)
@@ -4766,7 +4766,6 @@ void PostAnimateHandler(void)
 #define kReinforceIndexB    0x133
 
 #define kAnnounceFraction   0.25     /* of reinforceTime, a pooled double */
-#define kReinforceReserve       4
 
 // FUNCTION: EVNOVA 0x0043a020
 // MAC: _HandleReinforcements i386 0x00039048 ppc 0x0003f228
@@ -4780,7 +4779,7 @@ void HandleReinforcements(void)
     if (systemData[sys].reinforceFleet != -1 && systemData[sys].reinforceTimer > 0.0F) {
         systemData[sys].reinforceTimer -= gSpeedMult;
         if (systemData[sys].reinforceTimer <= 0.0F) {
-            HyperSpawnFleet(sys, systemData[sys].reinforceFleet, kReinforceReserve, 1);
+            HyperSpawnFleet(sys, systemData[sys].reinforceFleet, kAIInterceptor, 1);
             systemData[sys].reinforceTimer = -1.0;
             systemData[sys].reinforceDaysLeft = systemData[sys].reinforceInterval;
             if (systemData[sys].reinforceDaysLeft < 1)

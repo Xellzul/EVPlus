@@ -219,7 +219,7 @@ void ShipyardDialog::Hit(short item)
                         for (weap = 1; weap < kMaxShips; weap++) {
                             if (shipData[weap].active != 0 &&
                                 shipData[weap].parentShip == 0 &&
-                                shipData[weap].aiType == kShipTypeFighter)
+                                shipData[weap].aiType == kAIFighter)
                                 shipData[weap].active = 0;
                         }
                         for (weap = 0; weap < kMaxWeapTypes; weap++) {
