@@ -5317,7 +5317,6 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
 {
     unsigned char msg[256];
     unsigned char buf2[256];
-    short j;
     short i;
     short avail;
     short room;
@@ -5327,6 +5326,8 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
     short targStr;
     int32_t credits;
     short oddsL;
+    MarineTotals meMarines;
+    MarineTotals targMarines;
 
     if (target->IsDying() != 0 || target->active == 0)
         return;
@@ -5347,62 +5348,15 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
         avail = maxTake;
     myStr = shipClass[me->type].strength;
     targStr = shipClass[target->type].strength;
-    /* BUG: all four defOutfID loops weigh outfitSystem[i].modVal[j], not the tested outfit's */
-    for (i = 0; i < kDefaultOutfitSlots; i++) {
-        if (shipClass[me->type].defOutfCount[i] > 0) {
-            for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[shipClass[me->type].defOutfID[i]].modType[j] == OutfMod::Marines
-                        && outfitSystem[shipClass[me->type].defOutfID[i]].modVal[j] > 0)
-                    myStr += outfitSystem[i].modVal[j] * shipClass[me->type].defOutfCount[i];
-            }
-        }
-    }
-    if (target->index == 0) {
-        ForEachPlayerMod(OutfMod::Marines, [&](short val, short owned) {
-            if (val > 0)
-                targStr += val * owned;
-            return false;
-        });
-    } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[target->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[target->type].defOutfID[i]].modType[j] == OutfMod::Marines
-                            && outfitSystem[shipClass[target->type].defOutfID[i]].modVal[j] > 0)
-                        targStr += outfitSystem[i].modVal[j] * shipClass[target->type].defOutfCount[i];
-                }
-            }
-        }
-    }
+    meMarines = ShipClassMarines(shipClass[me->type]);
+    targMarines = target->index == 0 ? PlayerMarines() : ShipClassMarines(shipClass[target->type]);
+    myStr += meMarines.crew;
+    targStr += targMarines.crew;
     if (targStr <= 0)
         targStr = 1;
     oddsL = (myStr * 100.0) / (float)(targStr * 2.0);
-    for (i = 0; i < kDefaultOutfitSlots; i++) {
-        if (shipClass[me->type].defOutfCount[i] > 0) {
-            for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[shipClass[me->type].defOutfID[i]].modType[j] == OutfMod::Marines
-                        && outfitSystem[shipClass[me->type].defOutfID[i]].modVal[j] < 0)
-                    oddsL -= outfitSystem[i].modVal[j] * shipClass[me->type].defOutfCount[i];
-            }
-        }
-    }
-    if (target->index == 0) {
-        ForEachPlayerMod(OutfMod::Marines, [&](short val, short owned) {
-            if (val < 0)
-                oddsL += val * owned;
-            return false;
-        });
-    } else {
-        for (i = 0; i < kDefaultOutfitSlots; i++) {
-            if (shipClass[target->type].defOutfCount[i] > 0) {
-                for (j = 0; j < kOutfMods; j++) {
-                    if (outfitSystem[shipClass[target->type].defOutfID[i]].modType[j] == OutfMod::Marines
-                            && outfitSystem[shipClass[target->type].defOutfID[i]].modVal[j] < 0)
-                        oddsL += outfitSystem[i].modVal[j] * shipClass[target->type].defOutfCount[i];
-                }
-            }
-        }
-    }
+    oddsL += meMarines.captureBonus;
+    oddsL -= targMarines.captureBonus;
     oddsL += 10 - Rand(21);
     if (oddsL < 10)
         oddsL = 10;

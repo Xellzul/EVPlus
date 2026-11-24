@@ -51,7 +51,7 @@ bool ForEachPlayerMod(short type, Fn fn)
     });
 }
 
-/* The same over a ship class's default outfits: fn(modVal, default count). */
+/* ForEachPlayerMod over a ship class's default outfits: fn(modVal, default count). */
 template <class Fn>
 bool ForEachDefaultMod(const ShipRec &cls, short type, Fn fn)
 {
@@ -78,4 +78,59 @@ inline bool PlayerHasMod(short type)
 inline bool DefaultHasMod(const ShipRec &cls, short type)
 {
     return ForEachDefaultMod(cls, type, [](short, short) { return true; });
+}
+
+/*
+ * Marines mod totals: positive values add boarding crew, negative ones add
+ * -value percent to capture odds; each times the outfit count.
+ */
+struct MarineTotals {
+    int32_t crew = 0;
+    int32_t captureBonus = 0;
+};
+
+/* The player's owned outfits; owned counts are not tested (unlike ForEachPlayerMod). */
+inline MarineTotals PlayerMarines()
+{
+    MarineTotals m;
+    short i;
+    short j;
+    short val;
+
+    for (i = 0; i < kMaxOutfits; i++) {
+        for (j = 0; j < kOutfMods; j++) {
+            if (outfitSystem[i].modType[j] != OutfMod::Marines)
+                continue;
+            val = outfitSystem[i].modVal[j];
+            if (val > 0)
+                m.crew += val * shipSystems[i];
+            else if (val < 0)
+                m.captureBonus += -val * shipSystems[i];
+        }
+    }
+    return m;
+}
+
+/* A ship class's default outfits. */
+inline MarineTotals ShipClassMarines(const ShipRec &cls)
+{
+    MarineTotals m;
+    short i;
+    short j;
+    short val;
+
+    for (i = 0; i < kDefaultOutfitSlots; i++) {
+        if (cls.defOutfCount[i] <= 0)
+            continue;
+        for (j = 0; j < kOutfMods; j++) {
+            if (outfitSystem[cls.defOutfID[i]].modType[j] != OutfMod::Marines)
+                continue;
+            val = outfitSystem[cls.defOutfID[i]].modVal[j];
+            if (val > 0)
+                m.crew += val * cls.defOutfCount[i];
+            else if (val < 0)
+                m.captureBonus += -val * cls.defOutfCount[i];
+        }
+    }
+    return m;
 }

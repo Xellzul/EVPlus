@@ -465,7 +465,8 @@ void HandlePlayer(ShipObj *player)
                     player->shield = -1.0f;
                     player->jumpTimer = -1.0f;
                     msg[0] = 0;
-                    ForEachPlayerOutfitMod(OutfMod::BombDestroys, [&](short outf, short, short owned) {
+                    ForEachPlayerOutfitMod(OutfMod::BombDestroys,
+                                           [&](short outf, short, short owned) {
                         if (owned > 1 && lcPluralOutfitName[outf][0]) {
                             strcpy((char *)msg, "");
                             StrcatIndCString((char *)msg, kGameStrList, 0x27);
@@ -505,7 +506,8 @@ void HandlePlayer(ShipObj *player)
                     }
                     DisplayComm((PStrChar *)msg, 0x168);
                 } else {
-                    ForEachPlayerOutfitMod(OutfMod::BombDisables, [&](short outf, short val, short owned) {
+                    ForEachPlayerOutfitMod(OutfMod::BombDisables,
+                                           [&](short outf, short val, short owned) {
                         if (owned > 1) {
                             strcpy((char *)msg, "");
                             StrcatIndCString((char *)msg, kGameStrList, 0x27);

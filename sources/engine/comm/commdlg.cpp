@@ -1969,6 +1969,7 @@ void SetPlunderValues(void)
     short fuel;
     int32_t myStrength;
     int32_t myCrew;
+    MarineTotals marines;
     Boolean ok;
 
     dude = shipData[shipData->targetShip].dude;
@@ -2069,20 +2070,13 @@ void SetPlunderValues(void)
         }
     }
 
-    ForEachPlayerMod(OutfMod::Marines, [&](short val, short owned) {
-        if (val > 0)
-            myCrew += val * owned;
-        return false;
-    });
+    marines = PlayerMarines();
+    myCrew += marines.crew;
 
     captureOdds = (myCrew
                           / (shipClass[shipData[shipData->targetShip].type].crew * 10.0)
                           * 100.0);
-    ForEachPlayerMod(OutfMod::Marines, [&](short val, short owned) {
-        if (val < 0)
-            captureOdds += -1 * val * owned;
-        return false;
-    });
+    captureOdds += marines.captureBonus;
     if (myStrength > shipClass[shipData[shipData->targetShip].type].strength * 5)
         captureOdds += 10;
     captureOdds += kOddsJitterMid - Rand(kOddsJitter);
