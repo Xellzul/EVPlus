@@ -2888,13 +2888,7 @@ void FirePlayerWeapon(short w)
                     angle = CalcInterceptAngle(
                         &shipData->pos,
                         &shipData[shipData->targetShip].pos);
-                    if (weaponStats[w].guidance == kGuidanceFrontQuad)
-                        diff = abs(AngularDifference(
-                            angle, shipData->heading));
-                    if (weaponStats[w].guidance == kGuidanceRearQuad)
-                        diff = abs(AngularDifference(
-                            angle,
-                            ((short)(shipData->heading + kHalfTurn) % kFullCircle)));
+                    diff = QuadConeGap(shipData, angle, w);
                     if (diff <= 45) {
                         SpawnShot(0, shipData->targetShip, w, 0);
                         fired++;

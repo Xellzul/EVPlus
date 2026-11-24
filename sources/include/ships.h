@@ -59,6 +59,7 @@ extern int32_t ApplyPriceAndTechnologyFlux(int32_t cost, float multiplier, short
 extern void JettisonCargo(unsigned char withMissions);
 extern Boolean CanBuyOutfitItem(short outfit);
 extern unsigned char TurretBlindSpot(ShipObj *ship, short heading, short weap);
+extern short QuadConeGap(ShipObj *ship, short bearing, short weap);
 /* statusRedraw[] indices: the status bar panel DrawStatus redraws */
 #define kRedrawNav          0
 #define kRedrawShield       1

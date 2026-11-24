@@ -3161,14 +3161,12 @@ void AIFireTurret(ShipObj *ship)
 {
     short k;
     short bearing;
-    short angle;
     Boolean ok;
     short cand[2];
     short best[2];
     short weap;
     short j;
     short strength;
-    float d;
 
     cand[0] = cand[1] = -1;
     best[0] = best[1] = 0;
@@ -3194,17 +3192,7 @@ void AIFireTurret(ShipObj *ship)
                         bearing = CalcInterceptAngle(&ship->pos,
                                                &shipData[ship->targetShip].pos);
                         ok = 0;
-                        // BUG (all versions): the cone test does not wrap at 0/360, so a quadrant turret is not
-                        // picked when its cone crosses 0 deg (heading near 0, or near 180 for rear quad)
-                        if (weaponStats[k].guidance == kGuidanceFrontQuad) {
-                            d = fabs(bearing - ship->heading);
-                            angle = (short)d % kFullCircle;
-                        }
-                        if (weaponStats[k].guidance == kGuidanceRearQuad) {
-                            angle = (short)abs(bearing
-                                                  - ((short)ship->heading + kHalfCircle) % kFullCircle) % kFullCircle;
-                        }
-                        if (angle <= 0x2d)
+                        if (QuadConeGap(ship, bearing, k) <= 0x2d)
                             ok = 1;
                     } else
                         ok = 1;
@@ -5829,14 +5817,7 @@ void FireAIShipWeapon(ShipObj *ship)
                             angle = CalcInterceptAngle(
                                         &ship->pos,
                                         &shipData[ship->targetShip].pos);
-                            // BUG (all versions): no wrap at 0/360, same as AIFireTurret's cone test
-                            if (weaponStats[ship->selectedWeapon].guidance == kGuidanceFrontQuad)
-                                cone = (short)FloatAbs(angle
-                                           - ship->heading) % kFullCircle;
-                            if (weaponStats[ship->selectedWeapon].guidance == kGuidanceRearQuad)
-                                cone = (short)abs(angle
-                                           - ((short)ship->heading + kHalfTurnDeg)
-                                             % kFullCircle) % kFullCircle;
+                            cone = QuadConeGap(ship, angle, ship->selectedWeapon);
                             if (cone <= 45) {
                                 SpawnShot(ship->index, ship->targetShip, ship->selectedWeapon, 0);
                                 shotsFired++;

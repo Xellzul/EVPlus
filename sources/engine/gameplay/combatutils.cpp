@@ -502,6 +502,18 @@ unsigned char TurretBlindSpot(ShipObj *ship, short heading, short weap)
     return blocked;
 }
 
+/* how far a bearing lies from a quadrant weapon's cone centre: the nose, or the tail for a rear-quadrant gun */
+short QuadConeGap(ShipObj *ship, short bearing, short weap)
+{
+    short centre;
+
+    if (weaponStats[weap].guidance == kGuidanceRearQuad)
+        centre = (short)(ship->heading + kHalfTurn) % kFullCircle;
+    else
+        centre = ship->heading;
+    return abs(AngularDifference(bearing, centre));
+}
+
 #define kDudeSlots 16
 
 // FUNCTION: EVNOVA 0x0046b4b0
