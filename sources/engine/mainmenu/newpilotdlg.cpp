@@ -18,6 +18,13 @@
 #define kMaxPilotNameLen          0x18
 #define kSelectAllNameText        0xfe
 
+/* The pilot's name names its file: the name field takes no ':', '/' or '\'. */
+static Boolean NameFieldFilter(DialogPtr dlg, const DialogEvent &ev, short *itemHit)
+{
+    return ev.what == DialogInput::Key && dlg->editItem == kItemFirstNameField
+           && (ev.ch == ':' || ev.ch == '/' || ev.ch == '\\');
+}
+
 
 // FUNCTION: EVNOVA 0x0048a7e0
 // MAC: _DoNewPilotNameDialog i386 0x000165cc ppc 0x0001a3ec
@@ -62,7 +69,7 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
     } else {
         count = 0;
     }
-    dlg = dialog.Open(count > 1 ? kNewPilotDlogID : kNewPilotOneCharDlogID);
+    dlg = dialog.Open(count > 1 ? kNewPilotDlogID : kNewPilotOneCharDlogID, nullptr, NameFieldFilter);
     if (!dialog.IsOpen())
         return 0;
 
@@ -125,7 +132,8 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
                 GetDialogItem(dlg, n + kItemFirstNameField, &type, (Handle *)&h, &box);
                 GetDialogItemText((Handle)h, savedName);
                 PtoCstr(savedName);
-                if (strlen((char *)savedName) > kMaxPilotNameLen) {
+                if (strlen((char *)savedName) > kMaxPilotNameLen
+                        || (n == 0 && strpbrk((char *)savedName, ":/\\") != NULL)) {
                     SysBeep(0);
                     result = 0;
                     done = 0;

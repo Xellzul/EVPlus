@@ -16,6 +16,7 @@
 #include "stellar.h"
 #include "viewscale.h"
 #include "screen.h"
+#include "gamepaths.h"
 #include "prototypes.h"
 #include "outfitmods.h"
 
@@ -321,7 +322,6 @@ void InitEVNova(void)
 
     RandSeedFromClock();
     KeyboardInit();
-    SetDefaultPrefixs();
 
     crashlog_open("debuglog.txt");
     crashlog_print("game engine was compiled ");
@@ -359,9 +359,9 @@ void InitEVNova(void)
     SetupDialogs();
 
 
-    pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
+    pluginCount = CountEVPlugins(paths.plugins.c_str(), ".rez", 0);
     OpenDataFiles();
-    pluginCount = CountEVPlugins("Nova Plug-Ins", ".rez", 0);
+    pluginCount = CountEVPlugins(paths.plugins.c_str(), ".rez", 0);
     ApplyUIScale();
     ResetScreenRect();
     FadeScreenOut();

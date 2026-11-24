@@ -3,6 +3,7 @@
 #include "burger.h"
 #include "macport.h"
 #include "platform.h"
+#include "gamepaths.h"
 
 #define kAlertTitleMax      0x300
 #define kAlertTextMax       0x1000               /* Alert's 1024 bytes, each up to three in UTF-8 */
@@ -56,7 +57,7 @@ void DebugXString(const char *string)
         PlatMutexLock(Semi);
     length = strlen(string);
     if (length != 0) {
-        log = FOpenExpandedPath("LogFile.Txt", "a");
+        log = PlatFileOpen(JoinPath(paths.exe, "LogFile.Txt").c_str(), "a");
         if (log != 0) {
             fwrite(string, 1, length, log);
             fclose(log);

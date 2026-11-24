@@ -40,7 +40,6 @@ extern Sound *explodSnd[];
 extern Sound *klaxxonSnd;
 extern Sound *clickSnd;
 extern short lastShipAIDispatched;
-extern unsigned int DeleteAFile(const char *path);
 extern void DisplayComm(PStrChar *msg, short count);
 extern void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const RGBColor *color);
 extern void DoNewPilot(void);

@@ -47,5 +47,3 @@ char noSavePilotFiles;
 char noUpdatePilotData;
 PilotRec **playerFileHand;
 PilotRec2 **altPlayerFileHand;
-char pilotsFolder[2048];
-char gPrefsDirectory[2054];

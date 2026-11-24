@@ -3,6 +3,7 @@
 #include "burger.h"
 #include "game.h"
 #include "platform.h"
+#include "gamepaths.h"
 
 /* Registers the program with the system (on Windows written on every start), then makes the first
    argument the current folder. */
@@ -21,11 +22,11 @@ int GameMain(void)
     Startup();
     CreateGameWindow();
     PlatSetCurrentFolder(PlatExeFolder());
-    SetDefaultPrefixs();
+    InitPaths();
     atexit(ShutdownWinGame);
     OSCursorReset();
     gRezOpenPending = 1;
-    if (EVOpenResourceFile("9:Nova.rez") != 0) {
+    if (EVOpenResourceFile(JoinPath(paths.exe, "Nova.rez").c_str()) != 0) {
         char message[kPlatPathMax + 256];
 
         snprintf(message, sizeof message, "Nova.rez was not found in %s\n\nEV Nova Plus needs the files of the "

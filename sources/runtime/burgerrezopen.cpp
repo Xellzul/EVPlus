@@ -6,6 +6,8 @@
 
 #include "gametypes.h"
 #include "burgerrez.h"
+#include "gamepaths.h"
+#include "platform.h"
 
 static Word8 OnceHit;
 
@@ -318,7 +320,7 @@ int32_t ResourceInit(RezFile *rez, const char *path, ULong start)
     if (rez != 0) {
         memset(rez, 0, kRezStateSize);
         if (path != 0) {
-            file = FOpenExpandedPath(path, "rb");
+            file = PlatFileOpen(path, "rb");
             if (file != 0) {
                 if (start != 0)
                     fseek(file, start, SEEK_SET);
@@ -716,7 +718,7 @@ Handle ResourceLoadHandle(RezFile *Input, int32_t RezNum)
     if (FileNameOffset != 0 && (Input->flags & kFlagExternalOk) &&
         (!(flags & kRezTriedExternal) || (flags & kRezIsExternal))) {
         FileName = LockAHandle((Handle)Input->groups) + FileNameOffset;
-        fp = FOpenExpandedPath(FileName, "rb");
+        fp = strchr(FileName, ':') != NULL ? NULL : PlatFileOpen(JoinPath(paths.exe, FileName).c_str(), "rb");
         if (fp != 0) {
             size = fgetfilesize(fp);
             if (size != 0) {

@@ -62,7 +62,7 @@ void PrefsJsonLoad(const char *path, PrefsRecord *rec)
     yyjson_val *keys;
     size_t i;
 
-    text = (char *)LoadAFile(path, &length);
+    text = (char *)LoadWholeFile(path, &length);
     if (text == NULL)
         return;
     doc = yyjson_read_opts(text, length, YYJSON_READ_ALLOW_BOM, NULL, NULL);
@@ -103,7 +103,7 @@ void PrefsJsonSave(const char *path, PrefsRecord *rec)
     yyjson_mut_obj_add_val(doc, root, "keys", keys);
     text = yyjson_mut_write(doc, YYJSON_WRITE_PRETTY_TWO_SPACES | YYJSON_WRITE_NEWLINE_AT_END, &length);
     if (text != NULL) {
-        SaveAFile(path, text, (uint32_t)length);
+        SaveWholeFile(path, text, (uint32_t)length);
         free(text);
     }
     yyjson_mut_doc_free(doc);

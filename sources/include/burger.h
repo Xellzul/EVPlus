@@ -13,7 +13,6 @@
 /* memory manager (MMMemoryManager) */
 extern void * AllocAPointer(Word32 MemSize);
 extern void DeallocAPointer(void *MemPtr);
-extern FILE *FOpenExpandedPath(const char *path, const char *mode);
 extern void * AllocAPointerClear(uint32_t size);
 extern void * ResizeAPointer(void *mem, uint32_t size);
 
@@ -26,9 +25,8 @@ extern void DebugXString(const char *string);
 extern int32_t CriticalDispose(void *lock);
 extern int32_t CriticalCreate(void *lock);
 
-/* lists, images, directories, paths and the prefs file */
+/* lists, images, resources, whole files */
 struct AudioDesc;
-struct DirectorySearch_t;
 struct Image_t;
 struct ListNode;
 struct ListRec;
@@ -41,27 +39,17 @@ extern void *LinkedListGetEntryData(struct ListRec *list, ULong index);
 extern void LinkedListAddNewEntryBegin(struct ListRec *list, void *data);   /* prepend */
 extern int ImageParseCicn(struct Image_t *out, const Word8 *in);
 extern Word ImageParsePict(struct Image_t *ImagePtr, const Word8 *InputPtr);
-extern Word OpenADirectory(struct DirectorySearch_t *dir, const char *name);
-extern Word GetADirectoryEntryExtension(struct DirectorySearch_t *dir,
-                                        const char *ext);
-extern void CloseADirectory(struct DirectorySearch_t *dir);
 extern void ImageRemapIndexed(struct Image_t *img, const Word8 *remap);
 extern Word PaletteFindColorIndex(const Word8 *pal, Word red, Word green,
                                   Word blue, Word count);
 extern int32_t ParseSoundFileImage(struct AudioDesc *info, Word8 *data,
                                 ULong size);
-extern void ExpandAPathToBuffer(char *dst, const char *path);   /* BurgerLib form */
-extern void ExpandAPathToBufferNative(char *dst, const char *path);   /* a Windows path, UTF-8 */
-extern Word DoesFileExistNative(const char *name);
-extern Word GetADirectoryEntry(struct DirectorySearch_t *dir);
-extern Word DeleteAFileNative(const char *name);
 extern Word ResourceGetRezNum(struct RezFile *rez, const char *name);
 extern Handle ResourceLoadHandle(struct RezFile *rez, int32_t index);
 extern Handle ResourceLoadHandleByName(struct RezFile *rez, const char *name);
-extern unsigned int SetAPrefix(unsigned int prefix, const char *path);
-extern void *LoadAFile(const char *fileName, uint32_t *length);
+extern void *LoadWholeFile(const char *path, uint32_t *length);
+extern int32_t SaveWholeFile(const char *path, const void *data, uint32_t length);
 extern char *GetFileExtension(const char *name);
-extern Handle StrCopyHandle(const char *text);
 extern char *StrCopy(const char *text);
 extern void StripLeadingAndTrailingWhiteSpace(char *text);
 extern void ExtractAString2(const char *src, ULong *size, Word flags, char *dst, ULong dstSize);
@@ -91,7 +79,6 @@ extern Handle ResizeAHandle(Handle h, uint32_t size);
 extern char * LockAHandle(Handle h);
 
 extern void KeyboardInit(void);
-extern void SetDefaultPrefixs(void);
 
 
 /* the resource manager (engine/resmgr.cpp) */
@@ -105,7 +92,6 @@ extern void GetResInfo(Handle h, short *id, uint32_t *type,
 extern unsigned long long TimerGetMicroseconds(void);
 extern ULong UFix32_Divide(ULong device, ULong rate);
 extern ULong UFix32_Multiply(ULong ratio, ULong rate);
-extern unsigned int DoesFileExist(const char *path);
 extern char *NumberToAscii(char *dst, ULong value, ULong flags);
 extern void OSCursorShow(void);
 extern void OSCursorHide(void);
@@ -121,21 +107,11 @@ extern void WaitTicks(Word tickCount);
 #define kOutOfMemory    -7004
 #define kNoDevice       -7401      /* sound: no output device */
 #define kMillisPerSecond 1000
-#define kPathBufferSize 0x800
 
 
 #define Swap32(v)  ((((v) >> 24) & 0xffUL) | (((v) >> 8) & 0xff00UL) \
                     | (((v) & 0xff00UL) << 8) | (((v) & 0xffUL) << 24))
 #define Swap16(v)  ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
-
-/* BurgerLib's file manager: the prefix table, the drive letters */
-#define PREFIXMAX           35
-#define PREFIXBOOT          32                   /* "*:" */
-#define PREFIXPREFS         33                   /* "@:" */
-#define PREFIXSYSTEM        34                   /* "$:" */
-#define kPrefixCurrent      8
-#define kPrefixApp          9
-#define kNoVolume           ((Word)-1)
 
 /* BurgerLib's memory manager, number and string helpers, fixed-point maths */
 #define kHandleFixed        0x40                 /* fixed memory flag */
@@ -163,8 +139,8 @@ extern void fwritelong(int32_t value, FILE *stream);
 extern void fwritestr(const char *s, FILE *stream);
 extern int32_t fgetlong(FILE *stream);
 extern void *LoadAFileFP(FILE *fp, uint32_t *length);
+extern int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length);
 extern ULong fgetfilesize(FILE *fp);     /* BurgerLib fgetfilesize */
-extern int32_t CreateDirectoryPathNative(char *path);            /* BurgerLib CreateDirectoryPathNative */
 extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
 
 extern ULong UFix32_To_UInt32(ULong rate);
@@ -173,9 +149,7 @@ extern void CriticalLeave(void *lock);
 
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);
-extern char *ConvertNativePathToPath(const char *path);
 extern void KeyboardFlush(void);
-extern int32_t CreateDirectoryPath(const char *path);
 extern void Fatal(const char *fmt, ...);
 extern void NonFatal(const char *fmt, ...);
 

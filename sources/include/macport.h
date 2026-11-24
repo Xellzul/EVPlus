@@ -547,7 +547,7 @@ extern void EraseRect(Rect *r);
 extern void ExitToShell(void);
 extern void DisposePixPat(Image_t *pat);
 extern void InitDataFiles(void);
-extern void MakeAlias(char *name);
+extern void MakeAlias(const char *path);
 extern short EVOpenResourceFile(const char *path);
 extern void SwapEndianByDescriptor(unsigned char *data, unsigned short *desc);
 extern void LoadMenuListItem(ControlRecord *rec, int32_t menuID, unsigned char *promptTitle,

@@ -15,6 +15,7 @@
 #include "uisprite.h"
 #include "uiscale.h"
 #include "space.h"
+#include "gamepaths.h"
 
 // FUNCTION: EVNOVA 0x004873b0
 // MAC: _MainScreenUpdate i386 0x00017c0d ppc 0x0001b8e8
@@ -320,7 +321,6 @@ void SetupInterfaceBackground(void)
 void EnterGameFromMainScreen(void)
 {
     Rect box;
-    Str255 pilotName;
 
     crashlog("---");
     crashlog("entering game");
@@ -394,8 +394,7 @@ void EnterGameFromMainScreen(void)
     crashlog("resetting window attributes");
     if (strictPlay && shipData->IsDying() && shipData->type != kShipTypeEscapePod) {
         crashlog("deleting pilot file due to strict play death");
-        pstrcpy(pilotName, playerName);
-        DeletePilotFile(PtoCstr(pilotName));
+        DeletePilotFile(playerName);
     }
     crashlog("restoring stuff");
     KillVoiceSound();
@@ -444,7 +443,6 @@ void DoNewPilot(void)
     uint32_t resType;
     Boolean wantStrictPlay;
     Str255 newShipName;
-    char path[2048];
     Str255 charName;
     Str255 prompt;
     char **h;
@@ -470,11 +468,7 @@ void DoNewPilot(void)
     CullNameString(shipNameP);
     TrimResourceName(newPlayerName[0]);
     TrimResourceName(shipNameP);
-    strcpy(path, pilotsFolder);
-    PStr2CStr((char *)prompt, newPlayerName[0]);
-    TextToUtf8(path + strlen(path), (char *)prompt, sizeof(path) - strlen(path));
-    strcat(path, ".plt");
-    if (DoesPilotExist(path)) {
+    if (DoesPilotExist(PilotFilePath(newPlayerName[0]).c_str())) {
         SWSetPortToWindow(gSpriteWorld);
         MainScreenAnimDraw();
         MainScreenUpdate(1);

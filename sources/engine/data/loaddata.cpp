@@ -21,6 +21,7 @@
 #include "ai.h"
 #include "prototypes.h"
 #include "endianswap.h"
+#include "gamepaths.h"
 
 #define kPrefStringMax 0x100
 
@@ -31,13 +32,7 @@
 #define kDudeResName "d\x9f" "de"
 #define kPersResName "p\x91" "rs"
 
-
-#define kExeFolder          "9:"        /* BurgerLib prefix 9: the exe's folder */
-#define kNovaPrefix         "Nova "     /* "Nova Plug-Ins" is "Plug-Ins" on the Mac */
-#define kNovaFilesFolder    "Nova Files"
-
-static unsigned char novaFilesBesideExe;   /* Nova Files was found beside the exe */
-static unsigned char plugInsMacName;       /* the plug-ins folder is "Plug-Ins" */
+#define kMacPlugInsFolder   "Plug-Ins"  /* the other name of the plug-ins folder */
 
 /* A plain record starts with a stellar index, which is below kMaxStellars; anything else
    is still encrypted. */
@@ -48,51 +43,23 @@ static int32_t DecryptIfNecessary(void *buf, uint32_t len, uint32_t key)
     return 0;
 }
 
-/* No Nova Files in the current directory: the one beside the exe, instead of creating
-   an empty folder here. */
-static short OpenNovaFilesFallback(const char *path, const char *ext, FILE *log)
+/* No Nova Plug-Ins: try "Plug-Ins"; paths.plugins is the one found. */
+static short OpenPlugInsFallback(const char *ext)
 {
-    novaFilesBesideExe = 1;
-    return OpenEVPlugins(kExeFolder kNovaFilesFolder, ext, log);
-}
+    std::string mac;
 
-/* No Nova Plug-Ins in the current directory: try the Mac name before the game creates
-   an empty folder. */
-static short OpenPlugInsFallback(const char *path, const char *ext, FILE *log)
-{
-    short err;
-
-    err = OpenEVPlugins(path, ext, log);
-    if (err != 0) {
-        err = OpenEVPlugins(path + sizeof(kNovaPrefix) - 1, ext, log);
-        plugInsMacName = err == 0;
-    }
-    return err;
-}
-
-/* "9:Nova Files:<name>" where OpenDataFiles found Nova Files. */
-void ExpandNovaFilesPath(char *dst, const char *path)
-{
-    if (!novaFilesBesideExe)
-        path += sizeof(kExeFolder) - 1;
-    ExpandAPathToBufferNative(dst, path);
-}
-
-/* "9:Nova Plug-ins:<name>" where OpenDataFiles found the plug-ins. */
-void ExpandPlugInsPath(char *dst, const char *path)
-{
-    if (plugInsMacName)
-        path += sizeof(kExeFolder kNovaPrefix) - 1;
-    else
-        path += sizeof(kExeFolder) - 1;
-    ExpandAPathToBufferNative(dst, path);
+    if (OpenEVPlugins(paths.plugins.c_str(), ext, NULL) == 0)
+        return 0;
+    mac = JoinPath(paths.root, kMacPlugInsFolder);
+    if (OpenEVPlugins(mac.c_str(), ext, NULL) != 0)
+        return -1;
+    paths.plugins = mac;
+    return 0;
 }
 
 /*
- * Set up the pilot-file directory at startup (win 0x004bd0c0): "9:" plus
- * string 3 of list 130 plus ":", which is the port's volume notation for a
- * folder beside the application. The two debug switches are read here because
- * this is the first thing that runs after the resource file opens.
+ * The pilots folder (STR# 130, 3) in the game's folder (win 0x004bd0c0); the two debug switches are read
+ * here, the first thing after the resource file opens.
  */
 
 // FUNCTION: EVNOVA 0x004bd0c0
@@ -105,10 +72,7 @@ void InitDataFiles(void)
     noUpdatePilotData = EVBugResourceFieldTest(13);
     name[0] = 0;
     StrcatIndCString(name, kPilotDirList, 3);
-    strcpy(pilotsFolder, "");
-    strcat(pilotsFolder, name);
-    strcat(pilotsFolder, ":");
-    strcpy(gPrefsDirectory, "@:");
+    paths.pilots = JoinPath(paths.root, name);
     lastIntfResourceID = -1;
 }
 
@@ -116,25 +80,17 @@ void InitDataFiles(void)
    address as crashlog_print_pstr (0x00470150) despite the similar role */
 /* called with a constant 0 at every site here; tail-calls through a lazy
    singleton getter (0x52ce50) into 0x4fdf10 */
-/* CreateDirectoryPath is BurgerLib's CreateDirectoryPath: ExpandAPathToBufferNative
-   (0x004d9680) then CreateDirectoryPathNative (0x004d9530); nonzero on failure */
 
 
 // FUNCTION: EVNOVA 0x004bd160
 // MAC: _OpenDataFiles i386 0x00076a76 ppc 0x0007f85c
 void OpenDataFiles(void)
 {
-    char name[kPrefStringMax];
-    char path[0x800];
     unsigned char str[kPrefStringMax];
     Handle h;
     short count;
 
-    name[0] = 0;
-    StrcatIndCString(name, kPilotDirList, 3);
-    strcpy(path, "");
-    strcat(path, name);
-    if (CreateDirectoryPath(path) != 0) {
+    if (!PlatMakeFolder(paths.pilots.c_str())) {
         FadeScreenIn();
         GetIndString(str, kAlertStrList, 0x1d);
         EVNoteAlert(str);
@@ -145,13 +101,11 @@ void OpenDataFiles(void)
     crashlog_print("Nova Files");
     crashlog_print(" folder:\n");
 
-    if (OpenEVPlugins("Nova Files", ".rez", NULL) != 0) {
-        if (OpenNovaFilesFallback("Nova Files", ".rez", NULL) != 0) {
-            FadeScreenIn();
-            GetIndString(str, kAlertStrList, 0x1e);
-            EVNoteAlert(str);
-            ExitToShell();
-        }
+    if (OpenEVPlugins(paths.data.c_str(), ".rez", NULL) != 0) {
+        FadeScreenIn();
+        GetIndString(str, kAlertStrList, 0x1e);
+        EVNoteAlert(str);
+        ExitToShell();
     }
 
     {
@@ -160,9 +114,9 @@ void OpenDataFiles(void)
             crashlog_print("Nova Plug-Ins");
             crashlog_print(" folder:\n");
         }
-        if (OpenPlugInsFallback("Nova Plug-Ins", ".rez", NULL) != 0) {
-            CreateDirectoryPath("Nova Plug-Ins");
-            if (OpenEVPlugins("Nova Plug-Ins", ".rez", NULL) != 0) {
+        if (OpenPlugInsFallback(".rez") != 0) {
+            PlatMakeFolder(paths.plugins.c_str());
+            if (OpenEVPlugins(paths.plugins.c_str(), ".rez", NULL) != 0) {
                 FadeScreenIn();
                 GetIndString(str, kAlertStrList, 0x1f);
                 EVNoteAlert(str);
@@ -2463,16 +2417,15 @@ Boolean LoadPluginString(short id, void *dst)
     return 0;
 }
 
-/* The preferences file: the name from STR# 130, in the preferences folder, as JSON. */
-static void PrefsPath(char *path)
+/* The preferences file: the name from STR# 130, in the preferences folder (else beside the program), as JSON. */
+static std::string PrefsPath(void)
 {
-    char name[256];
+    char name[256 + sizeof(".json")];
 
     name[0] = 0;
     StrcatIndCString(name, kPrefsStrList, 1);
-    strcpy(path, gPrefsDirectory);
-    strcat(path, name);
-    strcat(path, ".json");
+    strcat(name, ".json");
+    return JoinPath(paths.prefs.empty() ? paths.exe : paths.prefs, name);
 }
 
 /* The settings and key bindings into a PrefsRecord. */
@@ -2556,13 +2509,11 @@ static void RecordToPrefs(const PrefsRecord *rec)
 void LoadPrefs(void)
 {
     PrefsRecord rec;
-    char path[2048];
 
     SetDefaultPrefs();
     SetDefaultKeys();
     PrefsToRecord(&rec);
-    PrefsPath(path);
-    PrefsJsonLoad(path, &rec);
+    PrefsJsonLoad(PrefsPath().c_str(), &rec);
     RecordToPrefs(&rec);
 }
 
@@ -2570,30 +2521,30 @@ void LoadPrefs(void)
 void SavePrefs(void)
 {
     PrefsRecord rec;
-    char path[2048];
 
     PrefsToRecord(&rec);
-    PrefsPath(path);
-    PrefsJsonSave(path, &rec);
+    PrefsJsonSave(PrefsPath().c_str(), &rec);
 }
 
+/* The pilot file into "Last Pilot": its name when it lies in the pilots folder, else its whole path. */
 // FUNCTION: EVNOVA 0x004c7d40
 // MAC: _MakeAlias i386 0x00071e36 ppc 0x0007a9bc
-void MakeAlias(char *name)
+void MakeAlias(const char *path)
 {
     char base[0x100];
-    char path[0x800];
+    const char *tail;
+    const char *text;
+    size_t folder;
 
     base[0] = 0;
     StrcatIndCString(base, kPilotDirList, 4);
-    strcpy(path, pilotsFolder);
-    strcat(path, base);
-    SaveAFile(path, name, strlen(name) + 1);
+    tail = PathTail(path);
+    folder = tail > path ? (size_t)(tail - path - 1) : 0;
+    text = path;
+    if (tail > path && paths.pilots.compare(0, std::string::npos, path, folder) == 0)
+        text = tail;
+    SaveWholeFile(JoinPath(paths.pilots, base).c_str(), text, strlen(text) + 1);
 }
-
-/* mac twin _SavePilotFile. 0x004c7dd0 demonstrably WRITES the .plt (see
-   WritePilotData), so the older `LoadPilot' / `LoadPilotFile' names were
-   both wrong. */
 
 // FUNCTION: EVNOVA 0x004c7db0
 // MAC: _SavePilotFile i386 0x00076876 ppc 0x0007f6b4
@@ -2610,7 +2561,7 @@ short SavePilotFile(short stellar)
 short WritePilotData(short stellar)
 {
     char name[0x100];
-    char path[0x800];
+    std::string path;
     FILE *f;
     short j;
     short i;
@@ -2620,13 +2571,10 @@ short WritePilotData(short stellar)
 
     playerFileHand = NULL;
     altPlayerFileHand = NULL;
-    strcpy(path, pilotsFolder);
-    PStr2CStr(name, playerName);
-    TextToUtf8(path + strlen(path), name, sizeof(path) - strlen(path));
-    strcat(path, ".plt");
+    path = PilotFilePath(playerName);
     playerFileHand = (PilotRec **)AllocAHandle2(sizeof(PilotRec), 0);
     altPlayerFileHand = (PilotRec2 **)AllocAHandle2(sizeof(PilotRec2), 0);
-    f = FOpenExpandedPath(path, "wb");
+    f = PlatFileOpen(path.c_str(), "wb");
     if (f != NULL && playerFileHand != NULL && altPlayerFileHand != NULL) {
         LockAHandle((Handle)playerFileHand);
         LockAHandle((Handle)altPlayerFileHand);
@@ -2798,7 +2746,7 @@ short WritePilotData(short stellar)
     }
     playerFileHand = NULL;
     altPlayerFileHand = NULL;
-    MakeAlias(path);
+    MakeAlias(path.c_str());
     return 0;
 }
 
@@ -2807,19 +2755,16 @@ short WritePilotData(short stellar)
 // MAC: _OpenPilotFile i386 0x00076644 ppc 0x0007f498
 Boolean OpenPilotFile(char *missingResource)
 {
-    char initDir[0x800];
-    char path[0x800];
+    char path[kPlatPathMax];
     unsigned char text[256];
     int32_t result;
-    char *data;
     int gotFile;
 
     *missingResource = 0;
 
-    /* the exe: GetOpenFileName, for a file that exists, "PLT" added to a name typed without one */
+    /* open dialog: an existing file; "plt" added to a name typed without one */
     path[0] = 0;
-    ExpandAPathToBufferNative(initDir, pilotsFolder);
-    gotFile = PlatOpenFileDialog("EV Nova Pilot", "plt", initDir, path, sizeof(path));
+    gotFile = PlatOpenFileDialog("EV Nova Pilot", "plt", paths.pilots.c_str(), path, sizeof(path));
 
     while (Win95ApplsActive == 0) {
         PlatSleep(0);
@@ -2835,10 +2780,7 @@ Boolean OpenPilotFile(char *missingResource)
         ResetPlayerRecord(1);
         DeleteAllComputerShips(1, 1);
         crashlog("loading pilot data");
-        data = ConvertNativePathToPath(path);
-        result = data != NULL ? LoadPilotData(data) : kPilotUnreadable;
-        if (data != NULL)
-            DeallocAPointer(data);
+        result = LoadPilotData(path);
         OSCursorReset();
         ShowTheCursor();
         crashlog("open file setup 2");
@@ -2863,12 +2805,39 @@ Boolean OpenPilotFile(char *missingResource)
     }
 }
 
+/* a whole native path: "/..." on Unix; "X:\...", "X:/..." or "\\..." on Windows */
+static bool IsWholePath(const char *text)
+{
+#ifdef _WIN32
+    if (((text[0] >= 'A' && text[0] <= 'Z') || (text[0] >= 'a' && text[0] <= 'z')) && text[1] == ':'
+        && (text[2] == '\\' || text[2] == '/'))
+        return true;
+    return text[0] == '\\' && text[1] == '\\';
+#else
+    return text[0] == '/';
+#endif
+}
+
+/* The pilot file "Last Pilot" names: a whole path or a file name in the pilots folder; "" for anything else. */
+static std::string LastPilotPath(const char *text)
+{
+    if (IsWholePath(text))
+        return text;
+#ifdef _WIN32
+    if (strpbrk(text, ":/\\") != NULL)
+#else
+    if (strchr(text, '/') != NULL)
+#endif
+        return "";
+    return JoinPath(paths.pilots, text);
+}
+
 // FUNCTION: EVNOVA 0x004ca120
 // MAC: _OpenLastPilotFile i386 0x000764ad ppc 0x0007f2fc
 void OpenLastPilotFile(void)
 {
     char name[256];
-    char path[0x800];
+    std::string path;
     uint32_t len;
     char *data;
     short i;
@@ -2876,18 +2845,18 @@ void OpenLastPilotFile(void)
 
     name[0] = 0;
     StrcatIndCString(name, kPilotDirList, 4);
-    strcpy(path, pilotsFolder);
-    strcat(path, name);
-    data = (char *)LoadAFile(path, &len);
+    data = (char *)LoadWholeFile(JoinPath(paths.pilots, name).c_str(), &len);
     if (data != NULL && (len == 0 || data[len - 1] != 0)) {
         data = (char *)ResizeAPointer(data, len + 1);
         data[len] = 0;
     }
-    if (data != NULL && DoesPilotExist(data) != 0) {
+    if (data != NULL)
+        path = LastPilotPath(data);
+    if (data != NULL && !path.empty() && DoesPilotExist(path.c_str()) != 0) {
         DeleteAllComputerShips(1, 1);
         ResetPlayer(1);
         ResetPlayerRecord(1);
-        if (LoadPilotData(data) == 0) {
+        if (LoadPilotData(path.c_str()) == 0) {
             gameInProgress = 1;
             for (i = 0; i < kMaxSystems; i++) {
                 if (systemData[i].loaded != 0 && systemData[i].exploreLevel > 0)
@@ -2943,7 +2912,7 @@ void DumpPilotLog(void)
     fprintf(log, "\n\n");
 
     fprintf(log, "Plugins loaded:\n");
-    if (CountEVPlugins("Nova Plug-Ins", ".rez", log) == 0)
+    if (CountEVPlugins(paths.plugins.c_str(), ".rez", log) == 0)
         fprintf(log, "  none\n");
     fprintf(log, "\n");
 
@@ -3189,13 +3158,13 @@ void DumpPilotLog(void)
 
 // FUNCTION: EVNOVA 0x004cb260
 // MAC: _LoadPilotData i386 0x000750b5 ppc 0x0007dd04
-short LoadPilotData(char *path)
+short LoadPilotData(const char *path)
 {
     char buf[0x40];
     char fileText[0x100];
     Str255 text;
     FILE *f;
-    char *tail;
+    const char *tail;
     short i;
     short j;
     short k;
@@ -3209,7 +3178,7 @@ short LoadPilotData(char *path)
     altPlayerFileHand = NULL;
     junk = 0;
 
-    f = FOpenExpandedPath(path, "rb");
+    f = PlatFileOpen(path, "rb");
     if (f == NULL)
         goto badFile;
 
@@ -3582,10 +3551,8 @@ short LoadPilotData(char *path)
     fgetstr(buf, 0x40, f);
     CStr2PStr((char *)shipName, buf);
 
-    if (path[strlen(path) - 1] == ':')
-        path[strlen(path) - 1] = 0;
-    tail = strrchr(path, ':');
-    Utf8ToText(fileText, tail + 1, sizeof(fileText));
+    tail = PathTail(path);
+    Utf8ToText(fileText, tail, sizeof(fileText));
     strncpy((char *)playerName, fileText, 0x1f);
     if (strrchr((char *)playerName, '.'))
         *strrchr((char *)playerName, '.') = 0;
@@ -3632,21 +3599,18 @@ badFile:
 // MAC: _DoesPilotExist i386 0x00072def ppc 0x0007bc7c
 Boolean DoesPilotExist(const char *path)
 {
-    return DoesFileExist(path);
+    return PlatPathKind(path, NULL) == kPlatFile;
 }
 
 // FUNCTION: EVNOVA 0x004cd040
 // MAC: _DeletePilotFile i386 0x00072e6b ppc 0x0007bcec
-void DeletePilotFile(const char *name)
+void DeletePilotFile(const unsigned char *pname)
 {
-    char path[2048];
+    std::string path = PilotFilePath(pname);
 
-    strcpy(path, pilotsFolder);
-    TextToUtf8(path + strlen(path), name, sizeof(path) - strlen(path));
-    strcat(path, ".plt");
-    if (!DoesPilotExist(path))
+    if (!DoesPilotExist(path.c_str()))
         return;
-    DeleteAFile(path);
+    PlatRemove(path.c_str());
 }
 
 #define kEBugLastField 0x1f

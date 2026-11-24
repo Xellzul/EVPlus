@@ -115,8 +115,6 @@ extern void PlatMutexDestroy(PlatMutex *m);
    Every path is UTF-8, in the system's own form otherwise ("C:\dir\file" on Windows). Names are matched
    upper and lower case alike, as on Windows and the Mac, also where the file system tells them apart. */
 extern const char *PlatExeFolder(void);                    /* where the program lies, ending in a separator */
-/* the folder relative paths start from, ending in a separator; 0 = not known or too long for `out' */
-extern int PlatCurrentFolder(char *out, int outSize);
 extern int PlatSetCurrentFolder(const char *path);         /* 0 = it is no folder: nothing changed */
 #define kPlatPathMax     4096                              /* bytes of a path, with its end */
 extern FILE *PlatFileOpen(const char *path, const char *mode);    /* C's fopen */

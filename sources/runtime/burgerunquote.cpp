@@ -214,21 +214,3 @@ void PStr2CStr(char *dst, const unsigned char *src)
     }
     *dst = 0;
 }
-
-/* StrCopyHandle (BurgerLib StStringManager): a C string copied into a new handle. */
-// FUNCTION: EVNOVA 0x004fc1f0
-Handle StrCopyHandle(const char *text)
-{
-    Word length;
-    Handle handle;
-
-    if (text != 0) {
-        length = strlen(text) + 1;
-        handle = (Handle)AllocAHandle2(length, 0);
-        if (handle != 0) {
-            memcpy(*handle, text, length);
-            return handle;
-        }
-    }
-    return 0;
-}

@@ -984,24 +984,6 @@ int PlatListFiles(const char *where, const char *pattern, void (*found)(const ch
     return count;
 }
 
-int PlatCurrentFolder(char *out, int outSize)
-{
-    char *folder;
-    size_t length;
-    int fits;
-
-    out[0] = 0;
-    folder = SDL_GetCurrentDirectory();
-    if (folder == NULL)
-        return 0;
-    length = SDL_strlen(folder);
-    fits = length < (size_t)outSize;
-    if (fits)
-        SDL_memcpy(out, folder, length + 1);
-    SDL_free(folder);
-    return fits;
-}
-
 int PlatPathKind(const char *name, uint64_t *size)
 {
     char path[kPlatPathMax];
