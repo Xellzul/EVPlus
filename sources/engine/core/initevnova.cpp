@@ -17,6 +17,7 @@
 #include "viewscale.h"
 #include "screen.h"
 #include "prototypes.h"
+#include "outfitmods.h"
 
 #define kMaxGamma     6
 #define kDefaultGamma 3
@@ -3916,20 +3917,8 @@ void DoAutoRefuel(void)
 {
     Boolean found;
     short amount;
-    short i;
-    short j;
 
-    found = 0;
-    for (i = 0; i < kMaxOutfits; i++) {
-        if (shipSystems[i] > 0) {
-            for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == OutfMod::AutoRefuel) {
-                    found = 1;
-                    break;
-                }
-            }
-        }
-    }
+    found = PlayerHasMod(OutfMod::AutoRefuel);
 
     amount = shipData->FuelCapacity();
     if (found) {

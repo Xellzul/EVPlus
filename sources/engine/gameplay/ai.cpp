@@ -13,6 +13,7 @@
 #include "space.h"
 #include "prototypes.h"
 #include "burgermath.h"
+#include "outfitmods.h"
 
 #define kRespawnDelayTicks  45
 
@@ -3323,6 +3324,8 @@ void AIFireTurret(ShipObj *ship)
                             ok = 1;
                     } else
                         ok = 1;
+                    // BUG (all versions): `bearing' is set only for quadrant weapons, so plain turrets pass an
+                    // uninitialised value (or the last quadrant weapon's bearing) -- UB, needs a guard
                     if (TurretBlindSpot(ship, bearing, k))
                         ok = 0;
                     if (ok)
@@ -5385,12 +5388,11 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
         }
     }
     if (target->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == OutfMod::Marines && outfitSystem[i].modVal[j] > 0)
-                    targStr += outfitSystem[i].modVal[j] * shipSystems[i];
-            }
-        }
+        ForEachPlayerMod(OutfMod::Marines, [&](short val, short owned) {
+            if (val > 0)
+                targStr += val * owned;
+            return false;
+        });
     } else {
         for (i = 0; i < kDefaultOutfitSlots; i++) {
             if (shipClass[target->type].defOutfCount[i] > 0) {
@@ -5415,12 +5417,11 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
         }
     }
     if (target->index == 0) {
-        for (i = 0; i < kMaxOutfits; i++) {
-            for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == OutfMod::Marines && outfitSystem[i].modVal[j] < 0)
-                    oddsL += outfitSystem[i].modVal[j] * shipSystems[i];
-            }
-        }
+        ForEachPlayerMod(OutfMod::Marines, [&](short val, short owned) {
+            if (val < 0)
+                oddsL += val * owned;
+            return false;
+        });
     } else {
         for (i = 0; i < kDefaultOutfitSlots; i++) {
             if (shipClass[target->type].defOutfCount[i] > 0) {

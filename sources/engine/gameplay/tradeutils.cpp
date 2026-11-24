@@ -6,6 +6,7 @@
 #include "prototypes.h"
 #include "dialogs.h"
 #include "missions.h"
+#include "outfitmods.h"
 
 // FUNCTION: EVNOVA 0x004656a0
 // MAC: _HasMaxOfItem i386 0x00004512 ppc 0x000058b4
@@ -691,18 +692,12 @@ Boolean PlayerHasAnyCargo(void)
 short ShipTotalHolds(void)
 {
     short holds;
-    short i;
-    short j;
 
     holds = shipClass[shipData->type].cargo;
-    for (i = 0; i < kMaxOutfits; i++) {
-        if (shipSystems[i] > 0) {
-            for (j = 0; j < kOutfMods; j++) {
-                if (outfitSystem[i].modType[j] == OutfMod::Cargo)
-                    holds += outfitSystem[i].modVal[j] * shipSystems[i];
-            }
-        }
-    }
+    ForEachPlayerMod(OutfMod::Cargo, [&](short val, short owned) {
+        holds += val * owned;
+        return false;
+    });
     return holds;
 }
 

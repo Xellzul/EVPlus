@@ -17,6 +17,7 @@
 #include "endianswap.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "outfitmods.h"
 
 DialogPtr commDialog;
 DialogPtr haggleDialog;
@@ -1958,16 +1959,16 @@ void DoPlunderDialog(void)
 // MAC: _SetPlunderValues i386 0x00092219 ppc 0x0009debc
 void SetPlunderValues(void)
 {
-    short count;
+    short creditsK;
+    short ammoTypes;
     short flags;
     short dude;
     short pers;
     short n;
     short i;
-    short j;
     short fuel;
-    int32_t crew;
-    int32_t mass;
+    int32_t myStrength;
+    int32_t myCrew;
     Boolean ok;
 
     dude = shipData[shipData->targetShip].dude;
@@ -1977,21 +1978,21 @@ void SetPlunderValues(void)
         flags = 0;
 
     if ((flags & kDudeCarriesMoney) != 0) {
-        count = shipClass[shipData[shipData->targetShip].type].cost / 1000;
-        if (count * 0.025 > 2.0)
-            salvageCredits = ((Rand(count * 0.025) + count * 0.025) * 1000.0);
+        creditsK = shipClass[shipData[shipData->targetShip].type].cost / 1000;
+        if (creditsK * 0.025 > 2.0)
+            salvageCredits = ((Rand(creditsK * 0.025) + creditsK * 0.025) * 1000.0);
         else
-            salvageCredits = (count * 0.025 * 1000.0);
+            salvageCredits = (creditsK * 0.025 * 1000.0);
         if (salvageCredits < kMinShipCredits)
             salvageCredits = kMinShipCredits;
     } else {
         pers = shipData[shipData->targetShip].persType;
         if (pers != -1) {
-            count = personData[pers].credits / 1000;
-            if (count * 0.5 > 2.0)
-                salvageCredits = ((Rand(count * 0.5) + count * 0.5) * 1000.0);
+            creditsK = personData[pers].credits / 1000;
+            if (creditsK * 0.5 > 2.0)
+                salvageCredits = ((Rand(creditsK * 0.5) + creditsK * 0.5) * 1000.0);
             else
-                salvageCredits = (count * 0.5 * 1000.0);
+                salvageCredits = (creditsK * 0.5 * 1000.0);
         } else {
             salvageCredits = -1;
         }
@@ -2032,14 +2033,14 @@ void SetPlunderValues(void)
     if (salvageType == -1)
         salvageQty = 0;
 
-    count = 0;
+    ammoTypes = 0;
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (shipData[shipData->targetShip].weap[i].ammo > 0
             && weaponStats[i].guidance != kGuidanceBay
             && PlayerCanUseAmmoType(i) != 0)
-            count++;
+            ammoTypes++;
     }
-    if (count > 0) {
+    if (ammoTypes > 0) {
         do {
             n = Rand(kMaxWeapTypes);
         } while (shipData[shipData->targetShip].weap[n].ammo <= 0
@@ -2047,7 +2048,6 @@ void SetPlunderValues(void)
                  || PlayerCanUseAmmoType(n) == 0);
         salvageAmmoType = n;
         salvageAmmoQty = shipData[shipData->targetShip].weap[n].ammo;
-        count = salvageAmmoQty;
     } else {
         salvageAmmoType = -1;
     }
@@ -2058,36 +2058,32 @@ void SetPlunderValues(void)
     else
         salvageFuelQty = 0;
 
-    crew = shipClass[shipData->type].strength;
-    mass = shipClass[shipData->type].crew;
+    myStrength = shipClass[shipData->type].strength;
+    myCrew = shipClass[shipData->type].crew;
     for (i = 1; i < kMaxShips; i++) {
         if (shipData[i].active != 0 && shipData[i].parentShip == 0
             && shipData[i].aiType == kShipTypeEscort && shipData[i].specialMission == -1
             && shipClass[shipData[i].type].inherentAI >= kShipTypeWarship) {
-            crew += shipClass[shipData[i].type].strength * 0.1;
-            mass += shipClass[shipData[i].type].crew * 0.1;
+            myStrength += shipClass[shipData[i].type].strength * 0.1;
+            myCrew += shipClass[shipData[i].type].crew * 0.1;
         }
     }
 
-    for (i = 0; i < kMaxOutfits; i++) {
-        for (j = 0; j < kOutfMods; j++) {
-            if (outfitSystem[i].modType[j] == OutfMod::Marines
-                && outfitSystem[i].modVal[j] > 0)
-                mass += outfitSystem[i].modVal[j] * shipSystems[i];
-        }
-    }
+    ForEachPlayerMod(OutfMod::Marines, [&](short val, short owned) {
+        if (val > 0)
+            myCrew += val * owned;
+        return false;
+    });
 
-    captureOdds = (mass
+    captureOdds = (myCrew
                           / (shipClass[shipData[shipData->targetShip].type].crew * 10.0)
                           * 100.0);
-    for (i = 0; i < kMaxOutfits; i++) {
-        for (j = 0; j < kOutfMods; j++) {
-            if (outfitSystem[i].modType[j] == OutfMod::Marines
-                && outfitSystem[i].modVal[j] < 0)
-                captureOdds += -1 * outfitSystem[i].modVal[j] * shipSystems[i];
-        }
-    }
-    if (crew > shipClass[shipData[shipData->targetShip].type].strength * 5)
+    ForEachPlayerMod(OutfMod::Marines, [&](short val, short owned) {
+        if (val < 0)
+            captureOdds += -1 * val * owned;
+        return false;
+    });
+    if (myStrength > shipClass[shipData[shipData->targetShip].type].strength * 5)
         captureOdds += 10;
     captureOdds += kOddsJitterMid - Rand(kOddsJitter);
     if (captureOdds < 1)

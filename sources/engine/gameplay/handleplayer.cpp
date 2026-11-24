@@ -17,6 +17,7 @@
 #include "viewscale.h"
 #include "screen.h"
 #include "platform.h"
+#include "outfitmods.h"
 
 /* the cheat keys HandlePlayer reads by code */
 #define kScanExploreCheat   kScanLang1
@@ -249,23 +250,17 @@ void HandlePlayer(ShipObj *player)
             player->deathTimer = player->deathTimer - 1.0f;
         } else {
             if (playerSabotaged != 0) {
-                for (i = 0; i < kMaxOutfits; i++) {
-                    if (shipSystems[i] > 0) {
-                        for (j = 0; j < kOutfMods; j++) {
-                            if (outfitSystem[i].modType[j] == OutfMod::BombDestroys
-                                    && outfitSystem[i].modVal[j] > 0) {
-                                HideCursorSprite();
-                                RefreshSAT();
-                                ShowTheCursor();
-                                LoadDescription(textShowString,
-                                                outfitSystem[i].modVal[j]);
-                                ShowTextDialog(0, 1);
-                                SetAllKeyCmdFlags();
-                                break;
-                            }
-                        }
-                    }
-                }
+                ForEachPlayerOutfitMod(OutfMod::BombDestroys, [&](short, short val, short) {
+                    if (val <= 0)
+                        return ModWalk::Next;
+                    HideCursorSprite();
+                    RefreshSAT();
+                    ShowTheCursor();
+                    LoadDescription(textShowString, val);
+                    ShowTextDialog(0, 1);
+                    SetAllKeyCmdFlags();
+                    return ModWalk::NextOutfit;
+                });
             }
             gPause = 1;
         }
@@ -470,40 +465,30 @@ void HandlePlayer(ShipObj *player)
                     player->shield = -1.0f;
                     player->jumpTimer = -1.0f;
                     msg[0] = 0;
-                    for (i = 0; i < kMaxOutfits; i++) {
-                        if (shipSystems[i] > 0) {
-                            for (j = 0; j < kOutfMods; j++) {
-                                if (outfitSystem[i].modType[j] == OutfMod::BombDestroys) {
-                                    if (shipSystems[i] > 1
-                                            && lcPluralOutfitName[i][0]) {
-                                        strcpy((char *)msg, "");
-                                        StrcatIndCString((char *)msg, kGameStrList, 0x27);
-                                        strcat((char *)msg, " ");
-                                        pstrcpy(name, lcPluralOutfitName[i]);
-                                        PtoCstr(name);
-                                        strcat((char *)msg, (char *)name);
-                                        strcat((char *)msg, " ");
-                                        StrcatIndCString((char *)msg, kGameStrList, 0x29);
-                                        CtoPstr((char *)msg);
-                                    } else if (shipSystems[i] == 1
-                                            && lcOutfitName[i][0]) {
-                                        strcpy((char *)msg, "");
-                                        StrcatIndCString((char *)msg, kGameStrList, 0x27);
-                                        strcat((char *)msg, " ");
-                                        pstrcpy(name, lcOutfitName[i]);
-                                        PtoCstr(name);
-                                        strcat((char *)msg, (char *)name);
-                                        strcat((char *)msg, " ");
-                                        StrcatIndCString((char *)msg, kGameStrList, 0x28);
-                                        CtoPstr((char *)msg);
-                                    }
-                                    break;
-                                }
-                            }
+                    ForEachPlayerOutfitMod(OutfMod::BombDestroys, [&](short outf, short, short owned) {
+                        if (owned > 1 && lcPluralOutfitName[outf][0]) {
+                            strcpy((char *)msg, "");
+                            StrcatIndCString((char *)msg, kGameStrList, 0x27);
+                            strcat((char *)msg, " ");
+                            pstrcpy(name, lcPluralOutfitName[outf]);
+                            PtoCstr(name);
+                            strcat((char *)msg, (char *)name);
+                            strcat((char *)msg, " ");
+                            StrcatIndCString((char *)msg, kGameStrList, 0x29);
+                            CtoPstr((char *)msg);
+                        } else if (owned == 1 && lcOutfitName[outf][0]) {
+                            strcpy((char *)msg, "");
+                            StrcatIndCString((char *)msg, kGameStrList, 0x27);
+                            strcat((char *)msg, " ");
+                            pstrcpy(name, lcOutfitName[outf]);
+                            PtoCstr(name);
+                            strcat((char *)msg, (char *)name);
+                            strcat((char *)msg, " ");
+                            StrcatIndCString((char *)msg, kGameStrList, 0x28);
+                            CtoPstr((char *)msg);
                         }
-                        if (msg[0])
-                            break;
-                    }
+                        return msg[0] ? ModWalk::Stop : ModWalk::NextOutfit;
+                    });
                     if (ST_IsSoundPlaying(warpUpSnd[0])) {
                         ST_HaltSound(warpUpSnd[0]);
                         warpSoundDone = 0;
@@ -520,47 +505,38 @@ void HandlePlayer(ShipObj *player)
                     }
                     DisplayComm((PStrChar *)msg, 0x168);
                 } else {
-                    for (i = 0; i < kMaxOutfits; i++) {
-                        count = shipSystems[i];
-                        if (count > 0) {
-                            for (j = 0; j < kOutfMods; j++) {
-                                if (outfitSystem[i].modType[j] == OutfMod::BombDisables) {
-                                    if (count > 1) {
-                                        strcpy((char *)msg, "");
-                                        StrcatIndCString((char *)msg, kGameStrList, 0x27);
-                                        strcat((char *)msg, " ");
-                                        pstrcpy(name, lcPluralOutfitName[i]);
-                                        PtoCstr(name);
-                                        strcat((char *)msg, (char *)name);
-                                        strcat((char *)msg, " ");
-                                        StrcatIndCString((char *)msg, kGameStrList, 0x29);
-                                        CtoPstr((char *)msg);
-                                    } else {
-                                        strcpy((char *)msg, "");
-                                        StrcatIndCString((char *)msg, kGameStrList, 0x27);
-                                        strcat((char *)msg, " ");
-                                        pstrcpy(name, lcOutfitName[i]);
-                                        PtoCstr(name);
-                                        strcat((char *)msg, (char *)name);
-                                        strcat((char *)msg, " ");
-                                        StrcatIndCString((char *)msg, kGameStrList, 0x28);
-                                        CtoPstr((char *)msg);
-                                    }
-                                    DisplayComm((PStrChar *)msg, 0x190);
-                                    if (outfitSystem[i].modVal[j] >= 0x80 && outfitSystem[i].modVal[j] < 0xc0)
-                                        CreateExplosion(
-                                            player->pos,
-                                            outfitSystem[i].modVal[j] - 0x80, 0, 1);
-                                    shipSystems[i] = 0;
-                                    DamageShip(player, &player->pos, 0,
-                                               Rand((player->ArmorCapacity() * 0.5 + 1.0))
-                                               + player->ArmorCapacity(),
-                                               0, -1, 0, 0, 1, 1, 1, 0);
-                                    break;
-                                }
-                            }
+                    ForEachPlayerOutfitMod(OutfMod::BombDisables, [&](short outf, short val, short owned) {
+                        if (owned > 1) {
+                            strcpy((char *)msg, "");
+                            StrcatIndCString((char *)msg, kGameStrList, 0x27);
+                            strcat((char *)msg, " ");
+                            pstrcpy(name, lcPluralOutfitName[outf]);
+                            PtoCstr(name);
+                            strcat((char *)msg, (char *)name);
+                            strcat((char *)msg, " ");
+                            StrcatIndCString((char *)msg, kGameStrList, 0x29);
+                            CtoPstr((char *)msg);
+                        } else {
+                            strcpy((char *)msg, "");
+                            StrcatIndCString((char *)msg, kGameStrList, 0x27);
+                            strcat((char *)msg, " ");
+                            pstrcpy(name, lcOutfitName[outf]);
+                            PtoCstr(name);
+                            strcat((char *)msg, (char *)name);
+                            strcat((char *)msg, " ");
+                            StrcatIndCString((char *)msg, kGameStrList, 0x28);
+                            CtoPstr((char *)msg);
                         }
-                    }
+                        DisplayComm((PStrChar *)msg, 0x190);
+                        if (val >= 0x80 && val < 0xc0)
+                            CreateExplosion(player->pos, val - 0x80, 0, 1);
+                        shipSystems[outf] = 0;
+                        DamageShip(player, &player->pos, 0,
+                                   Rand((player->ArmorCapacity() * 0.5 + 1.0))
+                                   + player->ArmorCapacity(),
+                                   0, -1, 0, 0, 1, 1, 1, 0);
+                        return ModWalk::NextOutfit;
+                    });
                     statusRedraw[kRedrawShield] = 1;
                     ResetPlayerPrecalcedValues();
                 }
