@@ -3202,6 +3202,9 @@ void WrapPlayerPosition(void)
         WrapObject(&smokeData[i].pos);
     for (i = 0; i < kMaxPods; i++)
         WrapObject(&podData[i].pos);
+    for (i = 0; i < kMaxAsteroids; i++)
+        WrapObject(&asteroidData[i].pos);
+    ShiftParticles((int32_t)wrapDelta.x * 256, (int32_t)wrapDelta.y * 256);
 
     for (i = 0; i < kMaxBeams; i++) {
         beamData[i].head.h += wrapDelta.x;

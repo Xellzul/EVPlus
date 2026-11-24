@@ -236,6 +236,7 @@ extern void EraseParticlesOffscreen(SpriteWorldPtr spriteWorldP); /* 0x0047bb30 
 extern void UpdateParticlesInWindow(SpriteWorldRec *spriteWorldP); /* 0x0047c3a0 */
 extern int SWEnterSpriteWorld(void);                           /* 0x00477630 */
 extern void SetParticleScrollOffset(int h, int v);                  /* 0x0047b940 */
+extern void ShiftParticles(int32_t h, int32_t v);
 
 extern void ShipCollisionHandler(SpriteRec *shipSpr, SpriteRec *otherSpr,
                                  Rect *sectRect);        /* 0x004374f0 */

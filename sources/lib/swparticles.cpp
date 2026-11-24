@@ -80,6 +80,25 @@ void SetParticleScrollOffset(int h, int v)
     scrollOffsetVert = v;
 }
 
+/* Moves every live particle and the scroll offset by (h, v) in 24.8 fixed point (the system wrap). */
+void ShiftParticles(int32_t h, int32_t v)
+{
+    int32_t i;
+
+    if (!gParticlesInitialized)
+        return;
+    scrollOffsetHoriz += h / 256;
+    scrollOffsetVert += v / 256;
+    for (i = 0; i <= gLastElementInUse; i++) {
+        if (gParticleArray[i].lifeRemaining > 0) {
+            gParticleArray[i].horizLoc += h;
+            gParticleArray[i].vertLoc += v;
+            gParticleArray[i].oldHorizLoc += h;
+            gParticleArray[i].oldVertLoc += v;
+        }
+    }
+}
+
 // FUNCTION: EVNOVA 0x0047b960
 // MAC: _NewParticle i386 0x000c501d ppc 0x000d12b0
 void NewParticle(int32_t color, int32_t horizLoc, int32_t vertLoc, int32_t horizSpeed,
