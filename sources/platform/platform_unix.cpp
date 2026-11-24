@@ -30,17 +30,11 @@ int PlatSetCurrentFolder(const char *name)
     return chdir(path) == 0;
 }
 
-/* A desktop learns of programs and file types from .desktop and MIME files that an installer puts in place;
-   the program does not write them itself. */
-void PlatRegisterFileType(const char *programName, const char *extension, const char *typeId,
-                          const char *description, int icon, int fallbackIcon)
+/* A desktop learns of programs from the .desktop files an installer puts in place; the program does not
+   write them itself. */
+void PlatRegisterProgram(const char *programName)
 {
     (void)programName;
-    (void)extension;
-    (void)typeId;
-    (void)description;
-    (void)icon;
-    (void)fallbackIcon;
 }
 
 /* -- installed fonts ------------------------------------------------------------------------------- */

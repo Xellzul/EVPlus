@@ -43,13 +43,9 @@ extern int GameMain(void);
 extern int PlatArgCount(void);
 extern const char *PlatArg(int index);                     /* "" past the last */
 
-/* Makes the program and a kind of file it opens known to the system: where the program lies, under the
-   name it is asked for by (`programName'), and that a file with this extension is opened by starting the
-   program with the file as its argument. `typeId' names the kind to the system, `description' to the
-   user; the kind's icon is the program's icon resource `icon', or `fallbackIcon' when it has no such one.
-   Windows: written to the user's registry. */
-extern void PlatRegisterFileType(const char *programName, const char *extension, const char *typeId,
-                                 const char *description, int icon, int fallbackIcon);
+/* Makes the program known to the system under the name it is asked for by (`programName'): where it
+   lies. Windows: written to the user's registry (App Paths). */
+extern void PlatRegisterProgram(const char *programName);
 
 /* a message with an OK button, in front of the window; returns when the user has closed it. UTF-8 */
 extern void PlatAlert(const char *title, const char *message);

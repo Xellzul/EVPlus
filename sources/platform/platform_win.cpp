@@ -1,11 +1,10 @@
 /* platform_win.cpp -- what of platform.h is still Windows only: opening a file and changing the current
-   folder by a UTF-8 path, the program's file type in the registry, and the installed fonts. Everything else is platform_sdl.cpp. */
+   folder by a UTF-8 path, the program in the registry, and the installed fonts. Everything else is platform_sdl.cpp. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <direct.h>
 #include <wchar.h>
 #include <windows.h>
-#include <shlobj.h>
 #include "platform.h"
 
 #define kWidePath   0x800               /* the game's longest path, in characters */
@@ -34,7 +33,7 @@ int PlatSetCurrentFolder(const char *path)
     return _wchdir(widePath) == 0;
 }
 
-/* -- the program and its file type in the registry, as CE wrote them at every start -------------------- */
+/* -- the program in the registry, as CE wrote it at every start -------------------------------------- */
 
 #define kKeyMax     512
 #define kNameMax    128
@@ -63,41 +62,16 @@ static void MakeKey(wchar_t *key, const wchar_t *prefix, const char *name, const
     wcscat(key, suffix);
 }
 
-void PlatRegisterFileType(const char *programName, const char *extension, const char *typeId,
-                          const char *description, int icon, int fallbackIcon)
+void PlatRegisterProgram(const char *programName)
 {
     wchar_t exePath[kWidePath];
     wchar_t key[kKeyMax];
-    wchar_t value[kWidePath + 32];
-    wchar_t wide[kNameMax];
 
     if (GetModuleFileNameW(NULL, exePath, kWidePath) == 0)
         return;
     exePath[kWidePath - 1] = 0;
     MakeKey(key, L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\", programName, L"");
     SetRegValue(key, exePath);
-
-    MakeKey(key, L"Software\\Classes\\", extension, L"");
-    MakeKey(wide, L"", typeId, L"");
-    SetRegValue(key, wide);
-
-    MakeKey(key, L"Software\\Classes\\", typeId, L"");
-    MakeKey(wide, L"", description, L"");
-    SetRegValue(key, wide);
-
-    MakeKey(key, L"Software\\Classes\\", typeId, L"\\shell\\open\\command");
-    _snwprintf(value, kWidePath + 32, L"\"%ls\" \"%%1\"", exePath);
-    value[kWidePath + 31] = 0;
-    SetRegValue(key, value);
-
-    if (FindResourceW(NULL, MAKEINTRESOURCEW(icon), (LPCWSTR)RT_GROUP_ICON) == NULL)
-        icon = fallbackIcon;
-    MakeKey(key, L"Software\\Classes\\", typeId, L"\\DefaultIcon");
-    _snwprintf(value, kWidePath + 32, L"\"%ls\",-%d", exePath, icon);
-    value[kWidePath + 31] = 0;
-    SetRegValue(key, value);
-
-    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
 }
 
 /* -- installed fonts ------------------------------------------------------------------------------- */

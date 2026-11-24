@@ -4,15 +4,11 @@
 #include "game.h"
 #include "platform.h"
 
-#define kGameIconGroup      202
-#define kNplayIconGroup     203
-
-/* Registers the program and its .nplay files with the system (on Windows written on every start), then
-   makes the first argument the current folder. */
+/* Registers the program with the system (on Windows written on every start), then makes the first
+   argument the current folder. */
 static void Startup(void)
 {
-    PlatRegisterFileType("EV Nova.exe", ".nplay", "EVNova.Play.1", "Play EV Nova", kNplayIconGroup,
-                         kGameIconGroup);
+    PlatRegisterProgram("EV Nova.exe");
 
     if (PlatArgCount() > 1)
         PlatSetCurrentFolder(PlatArg(1));
