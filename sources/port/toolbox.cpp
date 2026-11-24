@@ -1,5 +1,5 @@
 /* toolbox.cpp -- small Mac Toolbox calls the game makes: the clocks, QuickDraw's Random, StringToNum and NumToString,
-   BlockMove, DebugStr, the main device, GetIndString, ParamText and Alert, Delay, ReplaceInHandle, ExitToShell */
+   BlockMove, DebugStr, the main device, GetIndString, ParamText and Alert, Delay, ExitToShell */
 
 #include <time.h>
 
@@ -207,57 +207,6 @@ void Delay(uint32_t ticks, uint32_t *finalTicks)
 {
     LastTick = ReadTick();
     WaitTicks(ticks);
-}
-
-// FUNCTION: EVNOVA 0x004bc100
-int32_t ReplaceInHandle(char **h, int32_t offset, const char *find, int32_t findLen,
-                      const char *repl, int32_t replLen)
-{
-    char *start;
-    int32_t count;
-    char c;
-    char *p;
-    int32_t oldSize;
-    int32_t newSize;
-    int32_t n;
-    int handleSize;
-
-    LockAHandle(h);
-    start = *h + offset;
-    count = GetAHandleSize(h) - offset - findLen + 1;
-    if (count <= 0) {
-        return -1;
-    }
-    c = find[0];
-    p = (char *)memchr(start, c, count);
-    while (p != NULL) {
-        if (memcmp(p, find, findLen) == 0) {
-            oldSize = GetAHandleSize(h);
-            handleSize = oldSize;
-            newSize = oldSize + replLen - findLen;
-            offset += p - start;
-            if (newSize > oldSize) {
-                ResizeAHandle(h, newSize);
-                LockAHandle(h);
-                p = *h + offset;
-            }
-            if (replLen != findLen) {
-                n = handleSize - offset - findLen;
-                if (n != 0)
-                    memmove(p + replLen, p + findLen, n);
-            }
-            memcpy(p, repl, replLen);
-            if (newSize < oldSize)
-                ResizeAHandle(h, newSize);
-            return offset + replLen;
-        }
-        p++;
-        count -= p - start;
-        offset += p - start;
-        start = p;
-        p = (char *)memchr(start, c, count);
-    }
-    return -1;
 }
 
 // FUNCTION: EVNOVA 0x004bc300

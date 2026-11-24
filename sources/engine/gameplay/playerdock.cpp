@@ -16,6 +16,7 @@
 #include "crashlog.h"
 #include "viewscale.h"
 #include "screen.h"
+#include "text.h"
 
 /* The jump, hypergate and wormhole flash, drawn black when the Hyperspace Effects
    preference is off. */
@@ -60,7 +61,7 @@ void PlayerLandOnStellar(void)
     ShowTheCursor();
     SWSetPortToWindow(gSpriteWorld);
     ship->targetShip = -1;
-    absquatulateStr[0] = 0;
+    absquatulateStr.clear();
     statusRedraw[kRedrawTarg] = 1;
     statusRedraw[kRedrawCargo] = 1;
     DrawStatus();
@@ -107,29 +108,17 @@ void PlayerLandOnStellar(void)
     ship->heading = Rand(kFullCircle);
     SetAllKeyCmdFlags();
     playerIsLanded = 0;
-    if (absquatulateStr[0] != 0) {
-        DisplayComm((PStrChar *)absquatulateStr, 500);
-        absquatulateStr[0] = 0;
+    if (!absquatulateStr.empty()) {
+        DisplayComm(absquatulateStr, 500);
+        absquatulateStr.clear();
     } else if (newbieFlag > 2) {
-        unsigned char msg[256];
-        unsigned char name[256];
+        std::string msg;
         short n;
 
         n = Rand(5);
-        strcpy((char *)msg, "");
-        StrcatIndCString((char *)msg, kGameStrList, n + 0x37);
-        strcat((char *)msg, " ");
-        strncpy((char *)name, (char *)stellarData[dockTarget].name, 0x3f);
-        PtoCstr(name);
-        strcat((char *)msg, (char *)name);
-        strcat((char *)msg, " ");
-        StrcatIndCString((char *)msg, kGameStrList, 0x3c);
-        strcat((char *)msg, " ");
-        DateToLongString(gameTime, (char *)name);
-        strcat((char *)msg, (char *)name);
-        strcat((char *)msg, ".");
-        CtoPstr((char *)msg);
-        DisplayComm((PStrChar *)msg, kCommFrames);
+        msg = TextF("%s %s %s %s.", IndString(kGameStrList, n + 0x37).c_str(), SpobName(dockTarget).c_str(),
+                    IndString(kGameStrList, 0x3c).c_str(), DateLongText(gameTime).c_str());
+        DisplayComm(msg, kCommFrames);
     } else {
         newbieFlag = -1;
     }
@@ -154,8 +143,7 @@ short PlayerEnterHypergate(void)
     short link;
     short n;
     ShipObj *ship;
-    unsigned char msg[256];
-    unsigned char name[256];
+    std::string msg;
 
     ship = shipData;
     shipData->navTargetKind = -1;
@@ -222,28 +210,17 @@ short PlayerEnterHypergate(void)
             BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
                          &gSpriteWorld->workFrameP->frameRect,
                          &gSpriteWorld->windowFrameP->frameRect);
-            strcpy((char *)msg, "");
-            StrcatIndCString((char *)msg, kGameStrList, 0x2e);
-            strcat((char *)msg, " ");
-            pstrcpy(name, systemData[destSyst].name);
-            PtoCstr(name);
-            strcat((char *)msg, (char *)name);
-            strcat((char *)msg, " ");
-            StrcatIndCString((char *)msg, kGameStrList, 0x30);
-            strcat((char *)msg, " ");
-            DateToLongString(gameTime, (char *)name);
-            strcat((char *)msg, (char *)name);
-            strcat((char *)msg, ".");
+            msg = TextF("%s %s %s %s.", IndString(kGameStrList, 0x2e).c_str(), SystName(destSyst).c_str(),
+                        IndString(kGameStrList, 0x30).c_str(), DateLongText(gameTime).c_str());
             n = 0;
             for (i = 0; i < kNavSlots; i++) {
                 if (systemData[ship->curSystem].navDefault[i] != -1)
                     n++;
             }
             if (n == 0) {
-                strcat((char *)msg, " ");
-                StrcatIndCString((char *)msg, kGameStrList, 0x31);
+                msg += " ";
+                msg += IndString(kGameStrList, 0x31);
             }
-            CtoPstr((char *)msg);
             if (systemData[ship->curSystem].murk < 0)
                 ClearStarfield();
             else
@@ -266,7 +243,7 @@ short PlayerEnterHypergate(void)
             PaintRect(&gSpriteWorld->workFrameP->frameRect);
             SWSetPortToWindow(gSpriteWorld);
             RefreshSAT();
-            DisplayComm((PStrChar *)msg, 0x168);
+            DisplayComm(msg, 0x168);
             killShots = 1;
             killBoxes = 1;
             killExplods = 1;
@@ -289,8 +266,7 @@ short PlayerEnterHypergate(void)
             return destStellar;
         }
     }
-    GetIndString(msg, kGameStrList, 0x32);
-    DisplayComm((PStrChar *)msg, 250);
+    DisplayComm(IndString(kGameStrList, 0x32), 250);
     return -1;
 }
 
@@ -306,8 +282,7 @@ short PlayerEnterWormhole(void)
     short pick;
     short n;
     ShipObj *ship;
-    unsigned char msg[256];
-    unsigned char name[256];
+    std::string msg;
 
     ship = shipData;
     dest = -1;
@@ -323,12 +298,10 @@ short PlayerEnterWormhole(void)
             }
             if (n == 0) {
 
-                strcpy((char *)msg, "");
-                StrcatIndCString((char *)msg, kGameStrList, 0x54);
-                strcat((char *)msg, " ");
-                StrcatIndCString((char *)msg, kGameStrList, 0x56);
-                CtoPstr((char *)msg);
-                DisplayComm((PStrChar *)msg, 250);
+                msg = IndString(kGameStrList, 0x54);
+                msg += " ";
+                msg += IndString(kGameStrList, 0x56);
+                DisplayComm(msg, 250);
                 PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
                 return -1;
             }
@@ -368,12 +341,10 @@ short PlayerEnterWormhole(void)
             }
         } else {
 
-            strcpy((char *)msg, "");
-            StrcatIndCString((char *)msg, kGameStrList, 0x54);
-            strcat((char *)msg, " ");
-            StrcatIndCString((char *)msg, kGameStrList, 0x56);
-            CtoPstr((char *)msg);
-            DisplayComm((PStrChar *)msg, 250);
+            msg = IndString(kGameStrList, 0x54);
+            msg += " ";
+            msg += IndString(kGameStrList, 0x56);
+            DisplayComm(msg, 250);
             PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
             return -1;
         }
@@ -411,29 +382,18 @@ short PlayerEnterWormhole(void)
     Screen::ComposeView();
     ScreenEndScene();
     PlaySound(warpOutSnd, 0x32, gSoundVolume, gSoundVolume);
-    strcpy((char *)msg, "");
-    StrcatIndCString((char *)msg, kGameStrList, 0x2f);
-    strcat((char *)msg, " ");
-    pstrcpy(name, systemData[dest].name);
-    PtoCstr(name);
-    strcat((char *)msg, (char *)name);
-    strcat((char *)msg, " ");
-    StrcatIndCString((char *)msg, kGameStrList, 0x30);
-    strcat((char *)msg, " ");
-    DateToLongString(gameTime, (char *)name);
-    strcat((char *)msg, (char *)name);
-    strcat((char *)msg, ".");
+    msg = TextF("%s %s %s %s.", IndString(kGameStrList, 0x2f).c_str(), SystName(dest).c_str(),
+                IndString(kGameStrList, 0x30).c_str(), DateLongText(gameTime).c_str());
     count = 0;
     for (i = 0; i < kNavSlots; i++) {
         if (systemData[ship->curSystem].navDefault[i] != -1)
             count++;
     }
     if (count == 0) {
-        strcat((char *)msg, " ");
-        StrcatIndCString((char *)msg, kGameStrList, 0x31);
+        msg += " ";
+        msg += IndString(kGameStrList, 0x31);
     }
-    CtoPstr((char *)msg);
-    DisplayComm((PStrChar *)msg, kCommFrames);
+    DisplayComm(msg, kCommFrames);
     killShots = 1;
     killBoxes = 1;
     killExplods = 1;
@@ -468,7 +428,7 @@ short PlayerEnterWormhole(void)
 void HandlePlayerDockRequest(void)
 {
     ShipObj *ship = shipData;
-    unsigned char msg[256];
+    std::string msg;
     Boolean granted;
     short i;
     int iVal2;
@@ -476,7 +436,6 @@ void HandlePlayerDockRequest(void)
     short sVal2;
     short spawnStellar;
     short commResult;
-    unsigned char pbuf[256];
     unsigned int distX;
     unsigned int distY;
     short sVal;
@@ -489,27 +448,25 @@ void HandlePlayerDockRequest(void)
     iVal2 = stellarData[ship->targetStellar].landingFee;
     if (iVal2 > 0 && stellarData[ship->targetStellar].dominated == 0 &&
         iVal2 > shipData->credits) {
-        strcpy((char *)msg, "");
-        StrcatIndCString((char *)msg, kGameStrList, 0x3d);
-        strcat((char *)msg, " ");
-        strcat((char *)msg, creditsCString);
-        strcat((char *)msg, " ");
+        msg = IndString(kGameStrList, 0x3d);
+        msg += " ";
+        msg += FromField(creditsCString, sizeof creditsCString);
+        msg += " ";
         if (stellarData[ship->targetStellar].flags2 & kSpobHypergate) {
-            StrcatIndCString((char *)msg, kGameStrList, 0x3e);
+            msg += IndString(kGameStrList, 0x3e);
         } else if (stellarData[ship->targetStellar].flags & kSpobIsStation) {
-            StrcatIndCString((char *)msg, kGameStrList, 0x3f);
+            msg += IndString(kGameStrList, 0x3f);
         } else {
-            StrcatIndCString((char *)msg, kGameStrList, 0x40);
+            msg += IndString(kGameStrList, 0x40);
         }
-        CtoPstr((char *)msg);
-        DisplayComm((PStrChar *)msg, 0xfa);
+        DisplayComm(msg, 0xfa);
         dockTarget = -1;
         dockPermission = -1;
         goto done;
     }
     if (ship->IsCloaked()) {
-        GetIndString(msg, kGameStrList, 0x49);
-        DisplayComm((PStrChar *)msg, 0xfa);
+        msg = IndString(kGameStrList, 0x49);
+        DisplayComm(msg, 0xfa);
         PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
         goto done;
     }
@@ -522,8 +479,8 @@ void HandlePlayerDockRequest(void)
         dockPermission = 0x2ee;
         ship->aiTimer = 0;
         dockTarget = ship->targetStellar;
-        GetIndString(msg, kGameStrList, 0x35);
-        DisplayComm((PStrChar *)msg, 0xfa);
+        msg = IndString(kGameStrList, 0x35);
+        DisplayComm(msg, 0xfa);
     }
     if (dockTarget == ship->targetStellar) {
         float fdy;
@@ -754,15 +711,15 @@ void HandlePlayerDockRequest(void)
                 if (ship->targetStellar < 0)
                     goto done;
                 if (stellarData[ship->targetStellar].flags2 & kSpobHypergate) {
-                    GetIndString(msg, kGameStrList, 0x41);
+                    msg = IndString(kGameStrList, 0x41);
                 } else if (stellarData[ship->targetStellar].flags2 & kSpobWormhole) {
-                    GetIndString(msg, kGameStrList, 0x42);
+                    msg = IndString(kGameStrList, 0x42);
                 } else if (dockLand != 0) {
-                    GetIndString(msg, kGameStrList, 0x43);
+                    msg = IndString(kGameStrList, 0x43);
                 } else {
-                    GetIndString(msg, kGameStrList, 0x44);
+                    msg = IndString(kGameStrList, 0x44);
                 }
-                DisplayComm((PStrChar *)msg, 0x168);
+                DisplayComm(msg, 0x168);
                 goto done;
             }
         } else {
@@ -781,26 +738,26 @@ void HandlePlayerDockRequest(void)
             if ((short)distX < sVal && (short)distY < sVal &&
                 dockPermission >= 0x2ee) {
                 if (stellarData[ship->targetStellar].flags2 & kSpobHypergate) {
-                    GetIndString(msg, kGameStrList, 0x45);
+                    msg = IndString(kGameStrList, 0x45);
                 } else if (stellarData[ship->targetStellar].flags2 & kSpobWormhole) {
-                    GetIndString(msg, kGameStrList, 0x46);
+                    msg = IndString(kGameStrList, 0x46);
                 } else if (dockLand != 0) {
-                    GetIndString(msg, kGameStrList, 0x47);
+                    msg = IndString(kGameStrList, 0x47);
                 } else {
-                    GetIndString(msg, kGameStrList, 0x48);
+                    msg = IndString(kGameStrList, 0x48);
                 }
-                DisplayComm((PStrChar *)msg, 0x168);
+                DisplayComm(msg, 0x168);
             } else {
                 if (stellarData[ship->targetStellar].flags2 & kSpobHypergate) {
-                    GetIndString(msg, kGameStrList, 0x41);
+                    msg = IndString(kGameStrList, 0x41);
                 } else if (stellarData[ship->targetStellar].flags2 & kSpobWormhole) {
-                    GetIndString(msg, kGameStrList, 0x42);
+                    msg = IndString(kGameStrList, 0x42);
                 } else if (dockLand != 0) {
-                    GetIndString(msg, kGameStrList, 0x43);
+                    msg = IndString(kGameStrList, 0x43);
                 } else {
-                    GetIndString(msg, kGameStrList, 0x44);
+                    msg = IndString(kGameStrList, 0x44);
                 }
-                DisplayComm((PStrChar *)msg, 0x168);
+                DisplayComm(msg, 0x168);
             }
             goto done;
         }
@@ -844,83 +801,71 @@ void HandlePlayerDockRequest(void)
         }
         dockPermission = 0;
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-        strcpy((char *)msg, "");
+        msg.clear();
         if (stellarData[dockTarget].flags2 & kSpobHypergate) {
-            StrcatIndCString((char *)msg, kGameStrList, Rand(2) + 0x4a);
+            msg += IndString(kGameStrList, Rand(2) + 0x4a);
         } else if (stellarData[dockTarget].flags & kSpobIsStation) {
             if (Rand(3) == 0) {
-                strncpy((char *)msg, (char *)stellarData[shipData->targetStellar].name, 0x1f);
-                PtoCstr(msg);
-                strcat((char *)msg, " ");
-                StrcatIndCString((char *)msg, kGameStrList, 0x4c);
+                msg = SpobName(shipData->targetStellar);
+                msg += " ";
+                msg += IndString(kGameStrList, 0x4c);
             } else {
-                StrcatIndCString((char *)msg, kGameStrList, 0x4d);
+                msg += IndString(kGameStrList, 0x4d);
             }
         } else {
             if (Rand(3) == 0) {
-                strncpy((char *)msg, (char *)stellarData[shipData->targetStellar].name, 0x1f);
-                PtoCstr(msg);
-                strcat((char *)msg, " ");
-                StrcatIndCString((char *)msg, kGameStrList, 0x4e);
+                msg = SpobName(shipData->targetStellar);
+                msg += " ";
+                msg += IndString(kGameStrList, 0x4e);
             } else {
-                StrcatIndCString((char *)msg, kGameStrList, 0x4f);
+                msg += IndString(kGameStrList, 0x4f);
             }
         }
         if (Rand(2) == 0) {
-            strncpy((char *)pbuf, (char *)shipName, 0x40);
-            PtoCstr(pbuf);
-            strcat((char *)msg, ", ");
-            strcat((char *)msg, (char *)pbuf);
+            msg += ", ";
+            msg += FromNameField(shipName, 0x40);
         }
-        strcat((char *)msg, ". ");
-        StrcatIndCString((char *)msg, kGameStrList, 0x50);
-        CtoPstr((char *)msg);
-        DisplayComm((PStrChar *)msg, 0xfa);
+        msg += ". ";
+        msg += IndString(kGameStrList, 0x50);
+        DisplayComm(msg, 0xfa);
         goto done;
     } else {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         if (stellarData[dockTarget].flags2 & kSpobHypergate) {
-            GetIndString(msg, kGameStrList, 0x51);
+            msg = IndString(kGameStrList, 0x51);
         } else if (stellarData[dockTarget].flags & kSpobIsStation) {
-            GetIndString(msg, kGameStrList, 0x52);
+            msg = IndString(kGameStrList, 0x52);
         } else {
-            GetIndString(msg, kGameStrList, 0x53);
+            msg = IndString(kGameStrList, 0x53);
         }
-        DisplayComm((PStrChar *)msg, 0xfa);
+        DisplayComm(msg, 0xfa);
         dockTarget = -1;
         dockPermission = -1;
         goto done;
     }
 
 cantDock:
-    {
-
-        strcpy((char *)msg, "");
-    }
-    StrcatIndCString((char *)msg, kGameStrList, 0x54);
-    strcat((char *)msg, " ");
+    msg = IndString(kGameStrList, 0x54);
+    msg += " ";
     if (stellarData[ship->targetStellar].flags2 & kSpobHypergate) {
-        StrcatIndCString((char *)msg, kGameStrList, 0x55);
+        msg += IndString(kGameStrList, 0x55);
     } else if (stellarData[ship->targetStellar].flags2 & kSpobWormhole) {
-        StrcatIndCString((char *)msg, kGameStrList, 0x56);
+        msg += IndString(kGameStrList, 0x56);
     } else if (stellarData[ship->targetStellar].flags & kSpobIsStation) {
-        StrcatIndCString((char *)msg, kGameStrList, 0x57);
+        msg += IndString(kGameStrList, 0x57);
     } else {
-        StrcatIndCString((char *)msg, kGameStrList, 0x58);
+        msg += IndString(kGameStrList, 0x58);
     }
     if ((stellarData[ship->targetStellar].flags2 & (kSpobHypergate | kSpobWormhole)) == 0) {
-        strcat((char *)msg, " ");
-        pstrcpy(pbuf, stellarData[ship->targetStellar].name);
-        PtoCstr(pbuf);
-        strcat((char *)msg, (char *)pbuf);
-        strcat((char *)msg, ". ");
+        msg += " ";
+        msg += SpobName(ship->targetStellar);
+        msg += ". ";
         if (stellarData[ship->targetStellar].flags & kSpobIsStation)
-            StrcatIndCString((char *)msg, kGameStrList, 0x59);
+            msg += IndString(kGameStrList, 0x59);
         else
-            StrcatIndCString((char *)msg, kGameStrList, 0x5a);
+            msg += IndString(kGameStrList, 0x5a);
     }
-    CtoPstr((char *)msg);
-    DisplayComm((PStrChar *)msg, 0xfa);
+    DisplayComm(msg, 0xfa);
     PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
 
 done:
@@ -958,8 +903,7 @@ void HandlePlayerDockApproach(void)
     short dx;
     short dy;
     short r;
-    unsigned char msg[256];
-    unsigned char tmp[256];
+    std::string msg;
 
     me = shipData;
     targ = dockTarget;
@@ -1006,92 +950,64 @@ void HandlePlayerDockApproach(void)
             if (dockPermission != 750) ;
             else {
                 PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-                strcpy((char *)msg, "");
+                msg.clear();
                 if (stellarData[shipData[0].targetStellar].flags2 & kSpobHypergate) {
                     r = Rand(3);
                     if (r == 0) {
-                        StrcatIndCString((char *)msg, kGameStrList, kStrGreetSpecialA);
-                        strcat((char *)msg, ", ");
-                        strncpy((char *)tmp, (char *)shipName, 0x40);
-                        PtoCstr(tmp);
-                        strcat((char *)msg, (char *)tmp);
-                        strcat((char *)msg, ". ");
+                        msg = TextF("%s, %s. ", IndString(kGameStrList, kStrGreetSpecialA).c_str(),
+                                    FromNameField(shipName, 0x40).c_str());
                     } else if (r == 1) {
-                        strncpy((char *)msg, (char *)shipName, 0x40);
-                        PtoCstr(msg);
-                        strcat((char *)msg, ", ");
-                        StrcatIndCString((char *)msg, kGameStrList, kStrGreetSpecialB);
+                        msg = TextF("%s, %s", FromNameField(shipName, 0x40).c_str(),
+                                    IndString(kGameStrList, kStrGreetSpecialB).c_str());
                     } else
-                        StrcatIndCString((char *)msg, kGameStrList, kStrGreetSpecialC);
-                    CtoPstr((char *)msg);
+                        msg += IndString(kGameStrList, kStrGreetSpecialC);
                 } else {
                     if (stellarData[shipData[0].targetStellar].flags & kSpobIsStation) {
                         r = Rand(3);
                         if (r == 0) {
-                            StrcatIndCString((char *)msg, kGameStrList, kStrGreetBigA);
-                            strcat((char *)msg, ", ");
-                            strncpy((char *)tmp, (char *)shipName, 0x40);
-                            PtoCstr(tmp);
-                            strcat((char *)msg, (char *)tmp);
-                            strcat((char *)msg, ". ");
+                            msg = TextF("%s, %s. ", IndString(kGameStrList, kStrGreetBigA).c_str(),
+                                        FromNameField(shipName, 0x40).c_str());
                         } else if (r == 1) {
-                            strncpy((char *)msg, (char *)shipName, 0x40);
-                            PtoCstr(msg);
-                            strcat((char *)msg, ", ");
-                            StrcatIndCString((char *)msg, kGameStrList, kStrGreetBigB);
-                            strcat((char *)msg, " ");
+                            msg = TextF("%s, %s ", FromNameField(shipName, 0x40).c_str(),
+                                        IndString(kGameStrList, kStrGreetBigB).c_str());
                         } else {
-                            StrcatIndCString((char *)msg, kGameStrList, kStrGreetBigC);
-                            strcat((char *)msg, " ");
+                            msg += IndString(kGameStrList, kStrGreetBigC);
+                            msg += " ";
                         }
                     } else {
                         r = Rand(3);
                         if (r == 0) {
-                            StrcatIndCString((char *)msg, kGameStrList, kStrGreetSmallA);
-                            strcat((char *)msg, ", ");
-                            strncpy((char *)tmp, (char *)shipName, 0x40);
-                            PtoCstr(tmp);
-                            strcat((char *)msg, (char *)tmp);
-                            strcat((char *)msg, ". ");
+                            msg = TextF("%s, %s. ", IndString(kGameStrList, kStrGreetSmallA).c_str(),
+                                        FromNameField(shipName, 0x40).c_str());
                         } else if (r == 1) {
-                            strncpy((char *)msg, (char *)shipName, 0x40);
-                            PtoCstr(msg);
-                            strcat((char *)msg, ", ");
-                            StrcatIndCString((char *)msg, kGameStrList, kStrGreetSmallB);
-                            strcat((char *)msg, " ");
+                            msg = TextF("%s, %s ", FromNameField(shipName, 0x40).c_str(),
+                                        IndString(kGameStrList, kStrGreetSmallB).c_str());
                         } else {
-                            StrcatIndCString((char *)msg, kGameStrList, kStrGreetSmallC);
-                            strcat((char *)msg, " ");
+                            msg += IndString(kGameStrList, kStrGreetSmallC);
+                            msg += " ";
                         }
                     }
                     if (Rand(2) == 0) {
-                        StrcatIndCString((char *)msg, kGameStrList, kStrWelcomeShort);
+                        msg += IndString(kGameStrList, kStrWelcomeShort);
                     } else {
-                        StrcatIndCString((char *)msg, kGameStrList, kStrWelcomeTo);
-                        strcat((char *)msg, " ");
-                        strncpy((char *)tmp, (char *)stellarData[shipData[0].targetStellar].name, 0x1f);
-                        PtoCstr(tmp);
-                        strcat((char *)msg, (char *)tmp);
-                        strcat((char *)msg, ". ");
+                        msg += TextF("%s %s. ", IndString(kGameStrList, kStrWelcomeTo).c_str(),
+                                     SpobName(shipData[0].targetStellar).c_str());
                     }
                     if (stellarData[dockTarget].landingFee > 0 &&
                         stellarData[dockTarget].dominated == 0) {
-                        strcat((char *)msg, "  ");
+                        msg += "  ";
                         if (stellarData[dockTarget].flags2 & kSpobHypergate)
-                            StrcatIndCString((char *)msg, kGameStrList, kStrFeeSpecial);
+                            msg += IndString(kGameStrList, kStrFeeSpecial);
                         else if (stellarData[dockTarget].flags & kSpobIsStation)
-                            StrcatIndCString((char *)msg, kGameStrList, kStrFeeBig);
+                            msg += IndString(kGameStrList, kStrFeeBig);
                         else
-                            StrcatIndCString((char *)msg, kGameStrList, kStrFeeSmall);
-                        strcat((char *)msg, " ");
-                        StrcatCommaNumber(stellarData[dockTarget].landingFee, (char *)msg);
-                        strcat((char *)msg, " ");
-                        strcat((char *)msg, creditsCString);
-                        StrcatIndCString((char *)msg, kGameStrList, kStrFeeTail);
+                            msg += IndString(kGameStrList, kStrFeeSmall);
+                        msg += TextF(" %s %s%s", CommaNumber(stellarData[dockTarget].landingFee).c_str(),
+                                     FromField(creditsCString, sizeof creditsCString).c_str(),
+                                     IndString(kGameStrList, kStrFeeTail).c_str());
                     }
-                    CtoPstr((char *)msg);
                 }
-                DisplayComm((PStrChar *)msg, 250);
+                DisplayComm(msg, 250);
             }
             if (dockPermission >= 0x800) {
                 dockPermission = -1;
@@ -1107,8 +1023,7 @@ void HandlePlayerDockApproach(void)
                 dockPermission = 750;
             if (dockPermission == 750 && dockTryFlag) {
                 PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
-                GetIndString(msg, kGameStrList, kStrAutoClearance);
-                DisplayComm((PStrChar *)msg, kCommFrames);
+                DisplayComm(IndString(kGameStrList, kStrAutoClearance), kCommFrames);
             }
             if (dockPermission >= 0x800) {
                 dockPermission = -1;
@@ -1144,8 +1059,7 @@ out: ;
 void HandlePlayerBoardAttempt(void)
 {
 
-    unsigned char msg[256];
-    unsigned char pbuf[256];
+    std::string msg;
     float limit;
     float dist;
     float limit2;
@@ -1173,8 +1087,7 @@ void HandlePlayerBoardAttempt(void)
     {
 reject:
         PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-        GetIndString(msg, kGameStrList, kStrCannotBoard);
-        DisplayComm(msg, 360);
+        DisplayComm(IndString(kGameStrList, kStrCannotBoard), 360);
         goto out;
     }
     if (!shipData[me->targetShip].IsDisabled())
@@ -1220,23 +1133,21 @@ reject:
                     shipData[me->targetShip].boarded = 1;
                     currentMissions[m].hasCargo = 1;
                     statusRedraw[kRedrawCargo] = 1;
-                    strcpy((char *)msg, "");
-                    StrcatIndCString((char *)msg, kGameStrList, kStrTookCargo);
-                    strcat((char *)msg, " ");
-                    if (lcCargoName[currentMissions[m].cargoType][1] != '*') {
-                        StrcatIndCString((char *)msg, kGameStrList, kStrCargoSome);
-                        strcat((char *)msg, " ");
+                    const std::string &lcName = TableEntry(lcCargoName, currentMissions[m].cargoType);
+                    std::string cargo = UpToNul(lcName);
+
+                    msg = IndString(kGameStrList, kStrTookCargo);
+                    msg += " ";
+                    if (lcName[0] != '*') {
+                        msg += IndString(kGameStrList, kStrCargoSome);
+                        msg += " ";
                     }
-                    pstrcpy(pbuf, lcCargoName[currentMissions[m].cargoType]);
-                    PtoCstr(pbuf);
-                    if (lcCargoName[currentMissions[m].cargoType][1] == '*')
-                        strcat((char *)msg, (char *)pbuf + 1);
-                    else
-                        strcat((char *)msg, (char *)pbuf);
-                    strcat((char *)msg, " ");
-                    StrcatIndCString((char *)msg, kGameStrList, kStrCargoTail);
-                    CtoPstr((char *)msg);
-                    DisplayComm((PStrChar *)msg, 250);
+                    if (lcName[0] == '*' && !cargo.empty())
+                        cargo.erase(0, 1);
+                    msg += cargo;
+                    msg += " ";
+                    msg += IndString(kGameStrList, kStrCargoTail);
+                    DisplayComm(msg, 250);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                 } else {
                     skip = 1;
@@ -1245,23 +1156,12 @@ reject:
                        (currentMissions[m].flags & kMissionAutoAbort) &&
                        currentMissions[m].shipCount == 1) {
                 if (currentMissions[m].flags & kMissionTakesFuel) {
-                    pstrcpy(msg, shipClass[shipData[me->targetShip].type].name);
-                    PtoCstr(msg);
-                    strcat((char *)msg, ":  ");
-                    pstrcpy(pbuf, fuelString[0]);
-                    PtoCstr(pbuf);
-                    strcat((char *)msg, (char *)pbuf);
-                    strcat((char *)msg, ", ");
-                    pstrcpy(pbuf, shipName);
-                    PtoCstr(pbuf);
-                    strcat((char *)msg, (char *)pbuf);
-                    strcat((char *)msg, ".");
+                    msg = TextF("%s:  %s, %s.", ShipClassName(shipData[me->targetShip].type).c_str(),
+                                UpToNul(fuelString[0]).c_str(), FromNameField(shipName).c_str());
                 } else {
-                    strcpy((char *)msg, "");
-                    StrcatIndCString((char *)msg, kGameStrList, kStrDropoffDone);
+                    msg = IndString(kGameStrList, kStrDropoffDone);
                 }
-                CtoPstr((char *)msg);
-                DisplayComm((PStrChar *)msg, 250);
+                DisplayComm(msg, 250);
                 PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                 if (currentMissionObjectives[shipData[me->targetShip].specialMission].active)
                     currentMissions[shipData[me->targetShip].specialMission].specialShipsBoarded++;
@@ -1326,8 +1226,7 @@ reject:
                     } else {
                         if (CanBuyFighter(shipData[me->targetShip].type, -1, -1) &&
                             shipData[me->targetShip].formerEscort == 0) {
-                            GetIndString(msg, kGameStrList, kStrRefuseYield);
-                            DisplayComm((PStrChar *)msg, 250);
+                            DisplayComm(IndString(kGameStrList, kStrRefuseYield), 250);
                             PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                             shipData[me->targetShip].formerEscort = -1;
                             shipData[me->targetShip].aiType = kAIFighter;
@@ -1347,8 +1246,7 @@ reject:
                 } else {
                     if (CanBuyFighter(shipData[me->targetShip].type, -1, -1) &&
                         shipData[me->targetShip].formerEscort == 0) {
-                        GetIndString(msg, kGameStrList, kStrRefuseYield);
-                        DisplayComm((PStrChar *)msg, 250);
+                        DisplayComm(IndString(kGameStrList, kStrRefuseYield), 250);
                         PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                         shipData[me->targetShip].formerEscort = -1;
                         shipData[me->targetShip].aiType = kAIFighter;
@@ -1386,13 +1284,11 @@ reject:
                     for (k = 0; k < kCargoTypes; k++)
                         shipData[0].cargo[k] += shipData[me->targetShip].cargo[k];
                     statusRedraw[kRedrawCargo] = 1;
-                    GetIndString(msg, kGameStrList, kStrEscortJoins);
-                    DisplayComm((PStrChar *)msg, 250);
+                    DisplayComm(IndString(kGameStrList, kStrEscortJoins), 250);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                 } else if (CanBuyFighter(shipData[me->targetShip].type, -1, -1) &&
                            shipData[me->targetShip].formerEscort == 0) {
-                    GetIndString(msg, kGameStrList, kStrRefuseYield);
-                    DisplayComm((PStrChar *)msg, 250);
+                    DisplayComm(IndString(kGameStrList, kStrRefuseYield), 250);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                     shipData[me->targetShip].formerEscort = -1;
                     shipData[me->targetShip].aiType = kAIFighter;
@@ -1403,8 +1299,7 @@ reject:
                     AIAddFighterToParent(&shipData[me->targetShip]);
                 } else if (CanBuyFighter(shipData[me->targetShip].type, -1, -1) &&
                            shipData[me->targetShip].formerEscort == -1) {
-                    GetIndString(msg, kGameStrList, kStrRefuseYieldAlt);
-                    DisplayComm((PStrChar *)msg, 250);
+                    DisplayComm(IndString(kGameStrList, kStrRefuseYieldAlt), 250);
                     PlaySound(beepSnd[4], 8, gSoundVolume, gSoundVolume);
                     shipData[me->targetShip].formerEscort = -1;
                     shipData[me->targetShip].aiType = kAIFighter;
@@ -1441,13 +1336,11 @@ reject:
 
 notClose:
     PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-    GetIndString(msg, kGameStrList, kStrNotAligned);
-    DisplayComm((PStrChar *)msg, 360);
+    DisplayComm(IndString(kGameStrList, kStrNotAligned), 360);
     goto out;
 tooFast:
     PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-    GetIndString(msg, kGameStrList, kStrTooFast);
-    DisplayComm((PStrChar *)msg, 360);
+    DisplayComm(IndString(kGameStrList, kStrTooFast), 360);
     goto out;
 out:;
 }

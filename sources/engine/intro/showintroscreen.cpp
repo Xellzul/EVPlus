@@ -9,6 +9,7 @@
 #include "player.h"
 #include "render.h"
 #include "game.h"
+#include "missions.h"
 #include "uiscale.h"
 
 #define kIntroPictSlots 4
@@ -136,7 +137,7 @@ void ShowIntroScreen(void)
             showingIntroText = 1;
             LoadDescription(briefingTextPtr, introTextID);
             MungeBriefing(0, -1);
-            strcpy(textShowString, briefingTextPtr);
+            CopyBriefingText(textShowString, briefingTextPtr);
             ShowTextDialog(0, 1);
             showingIntroText = 0;
         }

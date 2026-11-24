@@ -681,8 +681,6 @@ extern void SWSetPostEraseCallBack(SpriteWorldPtr world, WorldProcPtr proc);
 extern void SWSetPostDrawCallBack(SpriteWorldPtr world, WorldProcPtr proc);
 extern void *GetGDevice(void);
 extern void BuildGammaRamp(float gamma);
-extern int32_t ReplaceInHandle(char **h, int32_t offset, const char *find, int32_t findLen,
-                         const char *repl, int32_t replLen);
 extern void GetListCellRect(Rect *box, Point cell, ScrollRec **h);
 extern Boolean LClick(Point where, short modifiers, ScrollRec **h);
 extern void ParamText(const unsigned char *p0, const unsigned char *p1,
@@ -692,8 +690,7 @@ extern char gParamText1[];
 extern char gParamText2[];
 extern char gParamText3[];
 extern void FadeGammaTo(uint32_t percent, uint32_t duration);
-extern unsigned char SplitTwoLineString(const unsigned char *src, unsigned char *line1,
-                                        unsigned char *line2);
+extern bool SplitTwoLineString(const std::string &src, std::string &line1, std::string &line2);
 extern void TextFace(short face);
 extern void TextFont(short font);
 extern void TextSize(short size);

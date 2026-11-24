@@ -10,6 +10,7 @@
 #include "ships.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "text.h"
 
 #define kFirstRowItem  4
 #define kLastRowItem   11
@@ -366,8 +367,6 @@ void TradeDialogTabKey(Boolean back)
 // MAC: _TradeDialogUpdate i386 0x0004ceea ppc 0x00055e5c
 void TradeDialogUpdate(void)
 {
-
-    unsigned char message[256];
     void *item;
     short itemType;
     short missionTons;
@@ -377,9 +376,8 @@ void TradeDialogUpdate(void)
     short junkSlots;
     short k;
     Rect insetBox;
-    unsigned char num[256];
     Rect box;
-    unsigned char text[2048];
+    std::string text;
     Boolean found;
     short i;
     short j;
@@ -447,23 +445,23 @@ void TradeDialogUpdate(void)
                 RGBForeColor((RGBColor *)&ldefColors[0]);
                 if (i <= kLastCommodity) {
                     MoveTo(box.left + 7, box.top + 10);
-                    DrawString(cargoName[i]);
+                    DrawCString(cargoName[i]);
                     qty = shipData->cargo[i];
                     if (qty > 0) {
-                        NumToString(qty, (StringPtr)text);
-                        MoveTo(box.right - (StringWidth((StringPtr)text) + 0x6e),
+                        text = NumText(qty);
+                        MoveTo(box.right - (MeasureCString(text) + 0x6e),
                                   box.top + 10);
-                        DrawString((StringPtr)text);
+                        DrawCString(text);
                     }
                 } else if (junkType[i - kFirstJunkItem] != -1) {
                     MoveTo(box.left + 6, box.top + 10);
                     DrawString(junkData[junkType[i - kFirstJunkItem]].name);
                     qty = junkData[junkType[i - kFirstJunkItem]].held;
                     if (qty > 0) {
-                        NumToString(qty, (StringPtr)text);
-                        MoveTo(box.right - (StringWidth((StringPtr)text) + 0x6e),
+                        text = NumText(qty);
+                        MoveTo(box.right - (MeasureCString(text) + 0x6e),
                                   box.top + 10);
-                        DrawString((StringPtr)text);
+                        DrawCString(text);
                     }
                 }
 
@@ -502,10 +500,10 @@ void TradeDialogUpdate(void)
                     }
                 }
 
-                NumToString(tradePrice[i], (StringPtr)text);
-                MoveTo(box.right - (StringWidth((StringPtr)text) + 10),
+                text = NumText(tradePrice[i]);
+                MoveTo(box.right - (MeasureCString(text) + 10),
                           box.top + 10);
-                DrawString((StringPtr)text);
+                DrawCString(text);
             }
             ForeColor(blackColor);
         }
@@ -516,7 +514,7 @@ void TradeDialogUpdate(void)
         ForeColor(blackColor);
         insetBox = box;
         InsetRect(&insetBox, 5, 3);
-        strcpy((char *)text, "");
+        text.clear();
 
         available = 0;
         k = 0;
@@ -549,46 +547,35 @@ void TradeDialogUpdate(void)
         }
         if (available > 0) {
             if (missionSlots + junkSlots > 0) {
-                StrcatIndCString((char *)text, kGameStrList, 0x16b);
-                strcat((char *)text, " ");
-                if (missionTons + junkTons > 0) {
-                    NumToString(missionTons + junkTons, num);
-                    PtoCstr(num);
-                    strcat((char *)text, (char *)num);
-                    strcat((char *)text, " ");
-                    if (missionTons + junkTons == 1)
-                        pstrcpy(num, tonString);
-                    else
-                        pstrcpy(num, tonsString);
-                    PtoCstr(num);
-                    strcat((char *)text, (char *)num);
-                    strcat((char *)text, " ");
-                    StrcatIndCString((char *)text, kGameStrList, 0x187);
-                    strcat((char *)text, " ");
-                }
+                text += IndString(kGameStrList, 0x16b);
+                text += " ";
+                if (missionTons + junkTons > 0)
+                    text += TextF("%d %s %s ", missionTons + junkTons,
+                                  UpToNul(missionTons + junkTons == 1 ? tonString : tonsString).c_str(),
+                                  IndString(kGameStrList, 0x187).c_str());
                 if (missionSlots > 0) {
-                    StrcatIndCString((char *)text, kGameStrList, 0x16f);
+                    text += IndString(kGameStrList, 0x16f);
                     if (junkSlots > 0) {
-                        strcat((char *)text, " ");
-                        StrcatIndCString((char *)text, kGameStrList, 0x188);
-                        strcat((char *)text, " ");
+                        text += " ";
+                        text += IndString(kGameStrList, 0x188);
+                        text += " ";
                     }
                 }
                 if (junkSlots > 0)
-                    StrcatIndCString((char *)text, kGameStrList, 0x170);
-                strcat((char *)text, "\r\r");
+                    text += IndString(kGameStrList, 0x170);
+                text += "\r\r";
             }
         }
 
         holds = ShipTotalHolds();
         fleetHolds = TotalFleetHolds();
         totalCargo = TotalCargo(shipData);
-        StrcatIndCString((char *)text, kGameStrList, 0x16c);
+        text += IndString(kGameStrList, 0x16c);
         if (fleetHolds > holds) {
-            strcat((char *)text, " ");
-            StrcatIndCString((char *)text, kGameStrList, 0x16d);
+            text += " ";
+            text += IndString(kGameStrList, 0x16d);
         }
-        strcat((char *)text, ": ");
+        text += ": ";
         if (fleetHolds > holds) {
             over = totalCargo - missionTons;
             over -= fleetHolds - holds;
@@ -602,38 +589,17 @@ void TradeDialogUpdate(void)
             if (available < 0)
                 available = 0;
         }
-        NumToString(available, num);
-        PtoCstr(num);
-        strcat((char *)text, (char *)num);
-        strcat((char *)text, " ");
-        if (available == 1)
-            pstrcpy(num, tonString);
-        else
-            pstrcpy(num, tonsString);
-        PtoCstr(num);
-        strcat((char *)text, (char *)num);
+        text += TextF("%d %s", available, UpToNul(available == 1 ? tonString : tonsString).c_str());
         if (fleetHolds > holds) {
             available = fleetHolds - totalCargo;
             if (available < 0)
                 available = 0;
-            strcat((char *)text, "\r");
-            StrcatIndCString((char *)text, kGameStrList, 0x16c);
-            strcat((char *)text, " ");
-            StrcatIndCString((char *)text, kGameStrList, 0x16e);
-            strcat((char *)text, ": ");
-            NumToString(available, num);
-            PtoCstr(num);
-            strcat((char *)text, (char *)num);
-            strcat((char *)text, " ");
-            if (available == 1)
-                pstrcpy(num, tonString);
-            else
-                pstrcpy(num, tonsString);
-            PtoCstr(num);
-            strcat((char *)text, (char *)num);
+            text += TextF("\r%s %s: %d %s", IndString(kGameStrList, 0x16c).c_str(),
+                          IndString(kGameStrList, 0x16e).c_str(), available,
+                          UpToNul(available == 1 ? tonString : tonsString).c_str());
         }
 
-        TETextBox(text, strlen((char *)text), &insetBox, 0);
+        TETextBox(text.data(), text.size(), &insetBox, 0);
         InvertRect(&insetBox);
         RGBForeColor(&rgbDarkGrey);
         FrameRect(&box);
@@ -646,35 +612,18 @@ void TradeDialogUpdate(void)
         for (p = 0; p < kMaxDisasters; p++) {
             if (disasterData[p].loaded != 0 && disasterData[p].countdown > 0 &&
                 disasterData[p].stellarID == shipData->targetStellar) {
-                if (cheatsActive) {
-                    strcpy((char *)text, "Disaster ID ");
-                    NumToString(p + 0x80, num);
-                    PtoCstr(num);
-                    strcat((char *)text, (char *)num);
-                } else {
-                    strncpy((char *)text, (char *)disasterData[p].name, 0x3f);
-                    PtoCstr((StringPtr)text);
-                }
-                strcat((char *)text, " ");
-                StrcatIndCString((char *)text, kGameStrList, 0xc0);
-                strcat((char *)text, " ");
-                if (disasterData[p].amount > 0)
-                    StrcatIndCString((char *)text, kGameStrList, 0xc1);
+                if (cheatsActive)
+                    text = "Disaster ID " + NumText(p + 0x80);
                 else
-                    StrcatIndCString((char *)text, kGameStrList, 0xc2);
-                strcat((char *)text, " ");
-                StrcatIndCString((char *)text, kGameStrList, 0xb5);
-                strcat((char *)text, " ");
-                strncpy((char *)num, (char *)lcCargoName[disasterData[p].commodity], 0x40);
-                PtoCstr(num);
-                strcat((char *)text, (char *)num);
-                strcat((char *)text, ".");
-
-                strcpy((char *)message, (char *)text);
+                    text = FromNameField(disasterData[p].name, 0x3f);
+                text += TextF(" %s %s %s %s.", IndString(kGameStrList, 0xc0).c_str(),
+                              IndString(kGameStrList, disasterData[p].amount > 0 ? 0xc1 : 0xc2).c_str(),
+                              IndString(kGameStrList, 0xb5).c_str(),
+                              UpToNul(TableEntry(lcCargoName, disasterData[p].commodity), 0x3f).c_str());
                 ForeColor(blackColor);
                 TextFont(smallTextFont);
                 TextSize(smallTextSize);
-                TETextBox(message, strlen((char *)message), &box, 0);
+                TETextBox(text.data(), text.size(), &box, 0);
                 InvertRect(&box);
                 break;
             }

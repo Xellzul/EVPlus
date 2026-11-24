@@ -10,6 +10,7 @@
 #include "gamedialog.h"
 #include "buttons.h"
 #include "scrolltext.h"
+#include "text.h"
 
 #define kWideDlogID               0x03fc
 #define kNarrowDlogID             0x03f8
@@ -120,7 +121,8 @@ short SingleMissionDialog::Run(short offered)
         return -1;
     }
 
-    strcat(briefingTextPtr, "\r");
+    if (strlen(briefingTextPtr) < sizeof briefingTextPtr - 1)
+        strcat(briefingTextPtr, "\r");
 
     dialog.Open(descResourcePictId >= 128 ? kWideDlogID : kNarrowDlogID, SingleMissionDialogUpdate,
                 Filter, &missionDialog, DialogClose::NoFlash);
@@ -208,8 +210,8 @@ short SingleMissionDialog::Run(short offered)
     missionFileHand = NULL;
     missionFileHand = GetResource(kMisnType, mission + kFirstResourceID);
     if (missionFileHand != NULL) {
-        strcpy((char *)missionButtonLabel[0], ((MisnRes *)*missionFileHand)->acceptButton);
-        strcpy((char *)missionButtonLabel[1], ((MisnRes *)*missionFileHand)->refuseButton);
+        CopyCField(missionButtonLabel[0], ((MisnRes *)*missionFileHand)->acceptButton);
+        CopyCField(missionButtonLabel[1], ((MisnRes *)*missionFileHand)->refuseButton);
         for (i = 0; i <= kMissionButtonLabelCount - 1; i++) {
             labelChar = missionButtonLabel[i][0];
             if (tolower(HeldChar(labelChar, missionButtonLabel[i][0])) < 'a'
@@ -217,7 +219,7 @@ short SingleMissionDialog::Run(short offered)
                 strcpy((char *)missionButtonLabel[i], "");
         }
         refuseDescID = ((MisnRes *)*missionFileHand)->refuseText;
-        strcpy(setString, ((MisnRes *)*missionFileHand)->onRefuse);
+        CopyCField(setString, ((MisnRes *)*missionFileHand)->onRefuse);
         ReleaseResource(missionFileHand);
     } else {
         refuseDescID = -1;
@@ -338,7 +340,7 @@ void SingleMissionDialog::Hit(short item)
                 strncpy(briefingTextPtr, "", 3);
                 LoadDescription(briefingTextPtr, refuseDescID);
                 MungeBriefing(0, -1);
-                strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+                CopyBriefingText(textShowString, briefingTextPtr);
                 ShowTextDialog(0, 1);
             }
             crashlog_mission_bit_set("refusing mission", NULL, 0,

@@ -11,26 +11,23 @@
 #include "ai.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "text.h"
 
 DialogPtr infoDialog;
 short selPlayerInfoMode;
 PicHandle playerInfoBackgroundPic[3];
-char playerInfoText[3][4096];
+std::string playerInfoText[3];
 
 /* The player info dialog's background, stretched as one picture: the middle picture fills what the top
    and bottom ones leave (at least its own height). */
 /* "  (current / maximum)" after a percentage, current kept to 0 or more */
 static void DrawRawValue(double current, double maximum)
 {
-    Str255 num;
-
-    DrawString("\p  (");
-    NumToString((int32_t)(current > 0.0 ? current : 0.0), num);
-    DrawString(num);
-    DrawString("\p / ");
-    NumToString((int32_t)maximum, num);
-    DrawString(num);
-    DrawString("\p)");
+    DrawCString("  (");
+    DrawCString(NumText((int32_t)(current > 0.0 ? current : 0.0)));
+    DrawCString(" / ");
+    DrawCString(NumText((int32_t)maximum));
+    DrawCString(")");
 }
 
 /* days a jump takes: the slowest of the player's ship and its active escorts */
@@ -50,11 +47,8 @@ static short FleetJumpDays(void)
 
 static void DrawDays(short days)
 {
-    Str255 num;
-
-    NumToString(days, num);
-    DrawString(num);
-    DrawString(days == 1 ? "\p day" : "\p days");
+    DrawCString(NumText(days));
+    DrawCString(days == 1 ? " day" : " days");
 }
 
 static void DrawPlayerInfoBackground(const Rect &port)
@@ -159,7 +153,6 @@ void PlayerInfoDialog::Run()
     short height;
     short boxHeight;
     short dv;
-    char *p;
 
     if (screenFaded != 0)
         return;
@@ -193,8 +186,7 @@ void PlayerInfoDialog::Run()
     TESetLineMetrics(textDialogTextHandle);
     tallest = -1;
     for (i = 0; i < 3; i++) {
-        p = playerInfoText[i];
-        TESetText(p, strlen(p), textDialogTextHandle);
+        TESetText(playerInfoText[i].data(), playerInfoText[i].size(), textDialogTextHandle);
         TECalText(textDialogTextHandle);
         height = TEWrappedHeight(textDialogTextHandle);
         if (height > tallest || tallest <= 0)
@@ -314,8 +306,7 @@ void PlayerInfoDialogUpdate(void)
     Rect box2;
     short itemType;
     void *itemHandle;
-    unsigned char cheatBuf[256];
-    PStrChar buf[2048];
+    std::string text;
     short i;
     int32_t stellarWorth;
     int32_t escortWorth;
@@ -350,21 +341,18 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0xfc);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x50), (box.top + 0x1c));
-        DateToMedString(gameTime, (char *)buf);
-        CtoPstr((char *)buf);
-        DrawString((const unsigned char *)buf);
+        DrawCString(DateMedText(gameTime));
 
         RGBForeColor(&rgbLightGrey);
         MoveTo((box.left + 5), (box.top + 0x2c));
         DrawIndString(kGameStrList, 0xfd);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x50), (box.top + 0x2c));
-        DrawString(systemData[shipData->curSystem].name);
+        DrawCString(SystName(shipData->curSystem));
         if (cheatsActive) {
-            DrawString("\p (");
-            NumToString(shipData->curSystem + 128, cheatBuf);
-            DrawString(cheatBuf);
-            DrawString("\p)");
+            DrawCString(" (");
+            DrawCString(NumText(shipData->curSystem + 128));
+            DrawCString(")");
         }
 
         RGBForeColor(&rgbLightGrey);
@@ -375,10 +363,9 @@ void PlayerInfoDialogUpdate(void)
         if (SystemIsInhabited(shipData->curSystem)) {
             DrawLegalStatusString(shipData->curSystem);
             if (cheatsActive) {
-                DrawString("\p (");
-                NumToString(playerRecord[shipData->curSystem], cheatBuf);
-                DrawString(cheatBuf);
-                DrawString("\p)");
+                DrawCString(" (");
+                DrawCString(NumText(playerRecord[shipData->curSystem]));
+                DrawCString(")");
             }
         } else {
             DrawIndString(kGameStrList, 0x18c);
@@ -391,10 +378,9 @@ void PlayerInfoDialogUpdate(void)
         MoveTo((box.left + 0x50), (box.top + 0x4c));
         DrawCombatRatingString();
         if (cheatsActive) {
-            DrawString("\p (");
-            NumToString(playerKills, cheatBuf);
-            DrawString(cheatBuf);
-            DrawString("\p)");
+            DrawCString(" (");
+            DrawCString(NumText(playerKills));
+            DrawCString(")");
         }
 
         /* --- right column --- */
@@ -410,12 +396,11 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x100);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x1c));
-        DrawString(shipClass[shipData->type].name);
+        DrawCString(ShipClassName(shipData->type));
         if (cheatsActive) {
-            DrawString("\p (");
-            NumToString(shipData->type + 128, cheatBuf);
-            DrawString(cheatBuf);
-            DrawString("\p)");
+            DrawCString(" (");
+            DrawCString(NumText(shipData->type + 128));
+            DrawCString(")");
         }
 
         RGBForeColor(&rgbLightGrey);
@@ -423,8 +408,7 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x101);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x2c));
-        NumToString(TruncF32(shipData->TurnRate() * 30.0f), (StringPtr)buf);
-        DrawString((const unsigned char *)buf);
+        DrawCString(NumText(TruncF32(shipData->TurnRate() * 30.0f)));
         DrawIndString(kGameStrList, 0x102);
 
         RGBForeColor(&rgbLightGrey);
@@ -432,8 +416,7 @@ void PlayerInfoDialogUpdate(void)
         DrawIndString(kGameStrList, 0x103);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x3c));
-        NumToString(TruncF32(shipData->AccelRate() * 2500.0), (StringPtr)buf);
-        DrawString((const unsigned char *)buf);
+        DrawCString(NumText(TruncF32(shipData->AccelRate() * 2500.0)));
 
         RGBForeColor(&rgbLightGrey);
         MoveTo((box.left + 0xcd), (box.top + 0x4c));
@@ -441,55 +424,52 @@ void PlayerInfoDialogUpdate(void)
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x4c));
         if (strictPlay)
-            NumToString(TruncF32(shipData->MaxSpeed() * 100.0f), (StringPtr)buf);
+            DrawCString(NumText(TruncF32(shipData->MaxSpeed() * 100.0f)));
         else
-            NumToString(TruncF32(shipData->MaxSpeed() * 100.0f *
-                                 0.6666666666666666), (StringPtr)buf);
-        DrawString((const unsigned char *)buf);
+            DrawCString(NumText(TruncF32(shipData->MaxSpeed() * 100.0f * 0.6666666666666666)));
 
         RGBForeColor(&rgbLightGrey);
         MoveTo((box.left + 0xcd), (box.top + 0x5c));
-        pstrcpy((StringPtr)buf, creditsString);
-        if ((char)buf[0] > 0)
-            buf[1] = toupper((char)buf[1]);
-        DrawString((const unsigned char *)buf);
-        DrawString("\p:");
+        text = creditsString;
+        /* 128..255 bytes stay as they are (a signed length test) */
+        if (!text.empty() && text.size() < 128)
+            text[0] = (char)toupper((unsigned char)text[0]);
+        DrawCString(text);
+        DrawCString(":");
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x5c));
         DrawCommaNumber(shipData->credits);
 
         RGBForeColor(&rgbLightGrey);
         MoveTo((box.left + 0xcd), (box.top + 0x6c));
-        DrawString("\pJump Time:");
+        DrawCString("Jump Time:");
         ForeColor(whiteColor);
         MoveTo((box.left + 0x118), (box.top + 0x6c));
         short ownDays = shipData->HyperTransitTime();
         short fleetDays = FleetJumpDays();
         DrawDays(ownDays);
         if (fleetDays > ownDays) {
-            DrawString("\p (");
+            DrawCString(" (");
             DrawDays(fleetDays);
-            DrawString("\p with escorts)");
+            DrawCString(" with escorts)");
         }
 
         /* --- shields / armor / fuel, left column continued --- */
         RGBForeColor(&rgbLightGrey);
         MoveTo((box.left + 5), (box.top + 0x5c));
-        DrawString(shieldString[1]);
+        DrawCString(shieldString[1]);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x50), (box.top + 0x5c));
         if (shipData->ShieldCapacity() > 0.0) {
             if (shipData->shield >= 0.0f) {
                 if (shipData->shield <= shipData->ShieldCapacity()) {
-                    NumToString((shipData->shield /
-                                       shipData->ShieldCapacity() * 100.0), (StringPtr)buf);
-                    DrawString((const unsigned char *)buf);
-                    DrawString("\p%");
+                    DrawCString(NumText(shipData->shield / shipData->ShieldCapacity() * 100.0));
+                    DrawCString("%");
                 } else {
-                    DrawString("\p100%");
+                    DrawCString("100%");
                 }
             } else {
-                DrawString("\p0%");
+                DrawCString("0%");
             }
             DrawRawValue(shipData->shield, shipData->ShieldCapacity());
         } else {
@@ -498,19 +478,17 @@ void PlayerInfoDialogUpdate(void)
 
         RGBForeColor(&rgbLightGrey);
         MoveTo((box.left + 5), (box.top + 0x6c));
-        DrawString(armorString[1]);
+        DrawCString(armorString[1]);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x50), (box.top + 0x6c));
         if (shipData->IsDying()) {
             DrawIndString(kGameStrList, 0x105);
         } else if (shipData->ArmorCapacity() > 0.0) {
             if (shipData->armor <= shipData->ArmorCapacity()) {
-                NumToString((shipData->armor /
-                                   shipData->ArmorCapacity() * 100.0), (StringPtr)buf);
-                DrawString((const unsigned char *)buf);
-                DrawString("\p%");
+                DrawCString(NumText(shipData->armor / shipData->ArmorCapacity() * 100.0));
+                DrawCString("%");
             } else {
-                DrawString("\p100%");
+                DrawCString("100%");
             }
             DrawRawValue(shipData->armor, shipData->ArmorCapacity());
         } else {
@@ -519,39 +497,36 @@ void PlayerInfoDialogUpdate(void)
 
         RGBForeColor(&rgbLightGrey);
         MoveTo((box.left + 5), (box.top + 0x7c));
-        DrawString(fuelString[5]);
+        DrawCString(fuelString[5]);
         ForeColor(whiteColor);
         MoveTo((box.left + 0x50), (box.top + 0x7c));
         if (shipData->FuelCapacity() <= 0.0) {
             DrawIndString(kGameStrList, 0x14f);
         } else {
-            NumToString((shipData->fuel /
-                               shipData->FuelCapacity() * 100.0), (StringPtr)buf);
-            DrawString((const unsigned char *)buf);
-            DrawString("\p%");
+            DrawCString(NumText(shipData->fuel / shipData->FuelCapacity() * 100.0));
+            DrawCString("%");
             jumps = (shipData->fuel / 100.0);
             if (jumps > 0) {
-                DrawString("\p  (");
-                NumToString(jumps, (StringPtr)buf);
-                DrawString((const unsigned char *)buf);
-                DrawString("\p ");
+                DrawCString("  (");
+                DrawCString(NumText(jumps));
+                DrawCString(" ");
                 if (jumps > 1)
                     DrawIndString(kGameStrList, 0xf0);
                 else
                     DrawIndString(kGameStrList, 0xef);
                 if ((short)shipData->fuel % 100 > 0) {
-                    DrawString("\p ");
+                    DrawCString(" ");
                     DrawIndString(kGameStrList, 0x106);
-                    DrawString("\p ");
-                    DrawString(fuelString[6]);
+                    DrawCString(" ");
+                    DrawCString(fuelString[6]);
                 }
-                DrawString("\p)");
+                DrawCString(")");
             } else if (shipData->fuel > 0.0f) {
-                DrawString("\p  (");
-                DrawString(fuelString[6]);
-                DrawString("\p ");
+                DrawCString("  (");
+                DrawCString(fuelString[6]);
+                DrawCString(" ");
                 DrawIndString(kGameStrList, 0x107);
-                DrawString("\p)");
+                DrawCString(")");
             }
         }
 
@@ -604,26 +579,26 @@ void PlayerInfoDialogUpdate(void)
             MoveTo((box.left + 5), (box.top + 0x8c));
             if (escortWorth > stellarWorth) {
                 DrawIndString(kGameStrList, 0x108);
-                DrawString("\p  ");
+                DrawCString("  ");
                 ForeColor(whiteColor);
                 DrawCommaNumber(escortWorth - stellarWorth);
             } else if (escortWorth != 0) {
                 DrawIndString(kGameStrList, 0x10a);
-                DrawString("\p ");
+                DrawCString(" ");
                 DrawIndString(kGameStrList, 0x109);
-                DrawString("\p  ");
+                DrawCString("  ");
                 ForeColor(whiteColor);
                 DrawCommaNumber(stellarWorth - escortWorth);
             } else {
                 DrawIndString(kGameStrList, 0x109);
-                DrawString("\p  ");
+                DrawCString("  ");
                 ForeColor(whiteColor);
                 DrawCommaNumber(stellarWorth);
             }
-            DrawString("\p ");
-            DrawString(creditsString);
+            DrawCString(" ");
+            DrawCString(creditsString);
             RGBForeColor(&rgbLightGrey);
-            DrawString("\p ");
+            DrawCString(" ");
             DrawIndString(kGameStrList, 0x10b);
         }
     } else if (selPlayerInfoMode == 2) {
@@ -634,20 +609,17 @@ void PlayerInfoDialogUpdate(void)
             box2.right -= 5;
             box2.left += 5;
             box2.top += 5;
-            TETextBox(playerInfoText[0], strlen(playerInfoText[0]), &box2, 0);
+            TETextBox(playerInfoText[0].data(), playerInfoText[0].size(), &box2, 0);
             InvertRect(&box2);
         } else {
             RGBForeColor(&rgbLightGrey);
-            if (TotalFleetHolds() > ShipTotalHolds())
-                GetIndString((StringPtr)buf, kGameStrList, 0x10c);
-            else
-                GetIndString((StringPtr)buf, kGameStrList, 0x10d);
-            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + 0x37);
+            DrawStringCentered(IndString(kGameStrList, TotalFleetHolds() > ShipTotalHolds() ? 0x10c : 0x10d),
+                               box.left, box.right, box.top + 0x37);
         }
     } else if (selPlayerInfoMode == 3) {
         count = 0;
         for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0 && lcOutfitName[i][0] != 0 &&
+            if (shipSystems[i] > 0 && !lcOutfitName[i].empty() &&
                     (outfitSystem[i].flags & kOutfShowInRanks) == 0) {
                 count++;
                 break;
@@ -660,12 +632,11 @@ void PlayerInfoDialogUpdate(void)
             box2.right -= 5;
             box2.left += 5;
             box2.top += 5;
-            TETextBox(playerInfoText[1], strlen(playerInfoText[1]), &box2, 0);
+            TETextBox(playerInfoText[1].data(), playerInfoText[1].size(), &box2, 0);
             InvertRect(&box2);
         } else {
             RGBForeColor(&rgbLightGrey);
-            GetIndString((StringPtr)buf, kGameStrList, 0x10e);
-            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + 0x37);
+            DrawStringCentered(IndString(kGameStrList, 0x10e), box.left, box.right, box.top + 0x37);
         }
     } else if (selPlayerInfoMode == 4) {
         count = 0;
@@ -676,7 +647,7 @@ void PlayerInfoDialogUpdate(void)
             }
         }
         for (i = 0; i < kMaxOutfits; i++) {
-            if (shipSystems[i] > 0 && lcOutfitName[i][0] != 0 &&
+            if (shipSystems[i] > 0 && !lcOutfitName[i].empty() &&
                     (outfitSystem[i].flags & kOutfShowInRanks) != 0)
                 count++;
         }
@@ -687,12 +658,11 @@ void PlayerInfoDialogUpdate(void)
             box2.right -= 5;
             box2.left += 5;
             box2.top += 5;
-            TETextBox(playerInfoText[2], strlen(playerInfoText[2]), &box2, 0);
+            TETextBox(playerInfoText[2].data(), playerInfoText[2].size(), &box2, 0);
             InvertRect(&box2);
         } else {
             RGBForeColor(&rgbLightGrey);
-            GetIndString((StringPtr)buf, kGameStrList, 0x10f);
-            DrawStringCentered((StringPtr)buf, box.left, box.right, box.top + 0x37);
+            DrawStringCentered(IndString(kGameStrList, 0x10f), box.left, box.right, box.top + 0x37);
         }
     }
 
@@ -713,13 +683,45 @@ blit_back:
 #define kStrTradeInValue   0x111
 #define kStrAwardsHeader   0x112
 
+/* "ton" or "tons" for qty */
+static std::string TonsWord(int32_t qty)
+{
+    return UpToNul(qty == 1 ? tonString : tonsString);
+}
+
+/* the count word before qty of outfit i: "a"/"an", "two", "three" or the digits */
+static std::string OutfitCountWord(short i, short qty)
+{
+    char c;
+
+    if (qty == 1) {
+        c = tolower((unsigned char)lcOutfitName[i][0]);
+        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
+            return IndString(kGameStrList, kStrAn);
+        return IndString(kGameStrList, kStrA);
+    }
+    if (qty == 2)
+        return IndString(kOrdinalsSTR, kOrdinalsBase + 2);
+    if (qty == 3)
+        return IndString(kOrdinalsSTR, kOrdinalsBase + 3);
+    if (qty > 3)
+        return NumText(qty);
+    return std::string();
+}
+
+/* upper-cases the letter at pos, if there is one */
+static void CapitalizeAt(std::string &text, short pos)
+{
+    if (pos >= 0 && (size_t)pos < text.size())
+        text[pos] = (char)toupper((unsigned char)text[pos]);
+}
+
 // FUNCTION: EVNOVA 0x0049c050
 // MAC: _SetupPlayerInfoText i386 0x00053cb8 ppc 0x0005c3e4
 void SetupPlayerInfoText(void)
 {
     Boolean rankShown[kMaxRanks];
     int32_t credits;
-    char c;
     Boolean starred;
     short found;
     short nextWeight;
@@ -738,10 +740,13 @@ void SetupPlayerInfoText(void)
     short i;
     short cargoQty[kMaxCargo];
     short outfitQty[kMaxOutfits];
-    unsigned char str[256];
+    std::string name;
+    std::string &cargo = playerInfoText[0];
+    std::string &outfits = playerInfoText[1];
+    std::string &awards = playerInfoText[2];
 
     for (qty = 0; qty < 3; qty++)
-        playerInfoText[qty][0] = 0;
+        playerInfoText[qty].clear();
     numJunk = 0;
     numTypes = 0;
     for (qty = 0; qty < kMaxCargo; qty++)
@@ -777,55 +782,37 @@ void SetupPlayerInfoText(void)
         }
     }
 
-    StrcatIndCString(playerInfoText[0], kGameStrList, kStrCargoHeader);
-    strcat(playerInfoText[0], " ");
-    if (TotalFleetHolds() > ShipTotalHolds())
-        StrcatIndCString(playerInfoText[0], kGameStrList, kStrHolds);
-    else
-        StrcatIndCString(playerInfoText[0], kGameStrList, kStrHold);
-    strcat(playerInfoText[0], ":\r\r");
-    len = strlen(playerInfoText[0]);
+    cargo = TextF("%s %s:\r\r", IndString(kGameStrList, kStrCargoHeader).c_str(),
+                  IndString(kGameStrList, TotalFleetHolds() > ShipTotalHolds() ? kStrHolds : kStrHold).c_str());
+    len = cargo.size();
 
     if (numTypes > 0) {
         shown = 0;
         for (i = 0; i < kMaxCargo; i++) {
             qty = cargoQty[i];
             if (qty >= 0) {
-                starred = (lcCargoName[i][1] == '*') ? (Boolean)1 : (Boolean)0;
-                if (qty > 0 && starred == 0) {
-                    if (shown == 0)
-                        StrcatOrdinalNumber(qty, playerInfoText[0], 1);
-                    else
-                        StrcatOrdinalNumber(qty, playerInfoText[0], 0);
-                    strcat(playerInfoText[0], " ");
-                    if (qty == 1)
-                        pstrcpy(str, tonString);
-                    else
-                        pstrcpy(str, tonsString);
-                    PtoCstr(str);
-                    strcat(playerInfoText[0], (char *)str);
-                    strcat(playerInfoText[0], " ");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrOf);
-                    strcat(playerInfoText[0], " ");
+                starred = (lcCargoName[i][0] == '*') ? (Boolean)1 : (Boolean)0;
+                if (qty > 0 && starred == 0)
+                    cargo += TextF("%s %s %s ", OrdinalText(qty, shown == 0).c_str(), TonsWord(qty).c_str(),
+                                   IndString(kGameStrList, kStrOf).c_str());
+                name = UpToNul(lcCargoName[i], 63);
+                if (lcCargoName[i][0] == '*') {
+                    if (!name.empty())
+                        cargo.append(name, 1, std::string::npos);
+                } else {
+                    cargo += name;
                 }
-                /* BUG: copies 64 bytes of a Pascal name, so a name over 63 characters keeps stale bytes */
-                strncpy((char *)str, (char *)lcCargoName[i], 64);
-                PtoCstr(str);
-                if (lcCargoName[i][1] == '*')
-                    strcat(playerInfoText[0], (char *)&str[1]);
-                else
-                    strcat(playerInfoText[0], (char *)str);
                 if (shown < numTypes - 2) {
-                    strcat(playerInfoText[0], ", ");
+                    cargo += ", ";
                 } else if (shown == numTypes - 2) {
                     if (starred != 0) {
-                        strcat(playerInfoText[0], ", ");
+                        cargo += ", ";
                     } else {
                         if (numTypes >= 3)
-                            strcat(playerInfoText[0], ",");
-                        strcat(playerInfoText[0], " ");
-                        StrcatIndCString(playerInfoText[0], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[0], " ");
+                            cargo += ",";
+                        cargo += " ";
+                        cargo += IndString(kGameStrList, kStrAnd);
+                        cargo += " ";
                     }
                 }
                 shown++;
@@ -835,104 +822,49 @@ void SetupPlayerInfoText(void)
         if (numJunk > 0) {
             for (type = 0; type < kMaxJunks; type++) {
                 if (junkData[type].held > 0) {
-                    if (shown == 0)
-                        StrcatOrdinalNumber(junkData[type].held, playerInfoText[0], 1);
-                    else
-                        StrcatOrdinalNumber(junkData[type].held, playerInfoText[0], 0);
-                    strcat(playerInfoText[0], " ");
-                    if (junkData[type].held == 1)
-                        pstrcpy(str, tonString);
-                    else
-                        pstrcpy(str, tonsString);
-                    PtoCstr(str);
-                    strcat(playerInfoText[0], (char *)str);
-                    strcat(playerInfoText[0], " ");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrOf);
-                    strcat(playerInfoText[0], " ");
-                    /* BUG: a junk name of 64+ characters is left unterminated for the strcat below */
-                    strncpy((char *)str, junkData[type].lcName, 64);
-                    strcat(playerInfoText[0], (char *)str);
+                    cargo += TextF("%s %s %s %s", OrdinalText(junkData[type].held, shown == 0).c_str(),
+                                   TonsWord(junkData[type].held).c_str(), IndString(kGameStrList, kStrOf).c_str(),
+                                   FromField(junkData[type].lcName, 64).c_str());
                     if (shown < numTypes - 2)
-                        strcat(playerInfoText[0], ", ");
+                        cargo += ", ";
                     if (shown == numTypes - 2) {
                         if (numTypes >= 3)
-                            strcat(playerInfoText[0], ",");
-                        strcat(playerInfoText[0], " ");
-                        StrcatIndCString(playerInfoText[0], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[0], " ");
+                            cargo += ",";
+                        cargo += " ";
+                        cargo += IndString(kGameStrList, kStrAnd);
+                        cargo += " ";
                     }
                     shown++;
                 }
             }
         }
 
-        if (len != -1)
-            playerInfoText[0][len] = toupper(playerInfoText[0][len]);
-        strcat(playerInfoText[0], ".");
-        strcat(playerInfoText[0], "\r\r");
+        CapitalizeAt(cargo, len);
+        cargo += ".\r\r";
 
         freeSpace = TotalFleetHolds() - TotalCargo(shipData);
         if (freeSpace > 0) {
-            if (freeSpace < 0)
-                freeSpace = 0;
-            NumToString(freeSpace, str);
             if (TotalFleetHolds() > ShipTotalHolds()) {
-                StrcatIndCString(playerInfoText[0], kGameStrList, kStrFreeSpace);
-                strcat(playerInfoText[0], " ");
-                StrcatIndCString(playerInfoText[0], kGameStrList, kStrHolds);
-                strcat(playerInfoText[0], ":  ");
-                PtoCstr(str);
-                strcat(playerInfoText[0], (char *)str);
-                strcat(playerInfoText[0], " ");
-                if (freeSpace == 1)
-                    pstrcpy(str, tonString);
-                else
-                    pstrcpy(str, tonsString);
-                PtoCstr(str);
-                strcat(playerInfoText[0], (char *)str);
+                cargo += TextF("%s %s:  %d %s", IndString(kGameStrList, kStrFreeSpace).c_str(),
+                               IndString(kGameStrList, kStrHolds).c_str(), freeSpace, TonsWord(freeSpace).c_str());
                 space = TotalMissionCargoSpace();
                 if (space < 0)
                     space = 0;
-                if (space != freeSpace && space > 0) {
-                    strcat(playerInfoText[0], "  (");
-                    NumToString(space, str);
-                    PtoCstr(str);
-                    strcat(playerInfoText[0], (char *)str);
-                    strcat(playerInfoText[0], " ");
-                    if (space == 1)
-                        pstrcpy(str, tonString);
-                    else
-                        pstrcpy(str, tonsString);
-                    PtoCstr(str);
-                    strcat(playerInfoText[0], (char *)str);
-                    strcat(playerInfoText[0], " ");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrFree);
-                    strcat(playerInfoText[0], ")");
-                } else if (space == 0 && freeSpace > 0) {
-                    strcat(playerInfoText[0], "(");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrNo);
-                    strcat(playerInfoText[0], " ");
-                    StrcatIndCString(playerInfoText[0], kGameStrList, kStrFree);
-                    strcat(playerInfoText[0], ")");
-                }
+                if (space != freeSpace && space > 0)
+                    cargo += TextF("  (%d %s %s)", space, TonsWord(space).c_str(),
+                                   IndString(kGameStrList, kStrFree).c_str());
+                else if (space == 0 && freeSpace > 0)
+                    cargo += TextF("(%s %s)", IndString(kGameStrList, kStrNo).c_str(),
+                                   IndString(kGameStrList, kStrFree).c_str());
             } else {
-                StrcatIndCString(playerInfoText[0], kGameStrList, kStrFreeSpace);
-                strcat(playerInfoText[0], ": ");
-                PtoCstr(str);
-                strcat(playerInfoText[0], (char *)str);
-                strcat(playerInfoText[0], " ");
-                if (freeSpace == 1)
-                    pstrcpy(str, tonString);
-                else
-                    pstrcpy(str, tonsString);
-                PtoCstr(str);
-                strcat(playerInfoText[0], (char *)str);
+                cargo += TextF("%s: %d %s", IndString(kGameStrList, kStrFreeSpace).c_str(), freeSpace,
+                               TonsWord(freeSpace).c_str());
             }
         }
     }
 
-    StrcatIndCString(playerInfoText[1], kGameStrList, kStrOutfitHeader);
-    strcat(playerInfoText[1], "\r\r");
+    outfits = IndString(kGameStrList, kStrOutfitHeader);
+    outfits += "\r\r";
 
     for (i = 0; i < kMaxOutfits; i++)
         outfitQty[i] = 0;
@@ -940,7 +872,7 @@ void SetupPlayerInfoText(void)
     count = 0;
     for (i = 0; i < kMaxOutfits; i++) {
         qty = shipSystems[i];
-        if (qty > 0 && lcOutfitName[i][0] != 0 &&
+        if (qty > 0 && !lcOutfitName[i].empty() &&
             (outfitSystem[i].flags & kOutfShowInRanks) == 0) {
             if (outfitSystem[i].sameNameIndex < 0 || outfitSystem[i].sameNameIndex >= i)
                 type = i;
@@ -956,52 +888,36 @@ void SetupPlayerInfoText(void)
     }
 
     numTypes = 0;
-    len = strlen(playerInfoText[1]);
+    len = outfits.size();
     do {
         found = 0;
         type = 0;
         nextWeight = 0;
         for (i = 0; i < kMaxOutfits; i++) {
             qty = outfitQty[i];
-            if (qty > 0 && lcOutfitName[i][0] != 0 &&
+            if (qty > 0 && !lcOutfitName[i].empty() &&
                 (outfitSystem[i].flags & kOutfShowInRanks) == 0) {
                 weight = outfitSystem[i].dispWeight;
                 if (maxWeight == weight) {
                     found++;
-                    if (qty == 1) {
-                        c = tolower(lcOutfitName[i][1]);
-                        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
-                            StrcatIndCString(playerInfoText[1], kGameStrList, kStrAn);
-                        else
-                            StrcatIndCString(playerInfoText[1], kGameStrList, kStrA);
-                    } else if (qty == 2) {
-                        StrcatIndCString(playerInfoText[1], kOrdinalsSTR, kOrdinalsBase + 2);
-                    } else if (qty == 3) {
-                        StrcatIndCString(playerInfoText[1], kOrdinalsSTR, kOrdinalsBase + 3);
-                    } else if (qty > 3) {
-                        NumToString(qty, str);
-                        PtoCstr(str);
-                        strcat(playerInfoText[1], (char *)str);
-                    }
-                    strcat(playerInfoText[1], " ");
+                    outfits += OutfitCountWord(i, qty);
+                    outfits += " ";
                     if (qty <= 3 && len > 0)
-                        playerInfoText[1][len] = toupper(playerInfoText[1][len]);
+                        CapitalizeAt(outfits, len);
                     len = -1;
                     if (qty > 1)
-                        pstrcpy(str, lcPluralOutfitName[i]);
+                        outfits += lcPluralOutfitName[i];
                     else
-                        pstrcpy(str, lcOutfitName[i]);
-                    PtoCstr(str);
-                    strcat(playerInfoText[1], (char *)str);
+                        outfits += lcOutfitName[i];
                     numTypes++;
                     if (numTypes <= count - 1 && count > 2)
-                        strcat(playerInfoText[1], ",");
+                        outfits += ",";
                     if (numTypes < count - 1) {
-                        strcat(playerInfoText[1], " ");
+                        outfits += " ";
                     } else if (numTypes == count - 1) {
-                        strcat(playerInfoText[1], " ");
-                        StrcatIndCString(playerInfoText[1], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[1], " ");
+                        outfits += " ";
+                        outfits += IndString(kGameStrList, kStrAnd);
+                        outfits += " ";
                     }
                     outfitQty[i] = 0;
                 } else if (weight < maxWeight) {
@@ -1014,19 +930,12 @@ void SetupPlayerInfoText(void)
         maxWeight = nextWeight;
     } while (found > 0);
 
-    strcat(playerInfoText[1], ".\r\r");
+    outfits += ".\r\r";
 
     credits = PlayerShipTradeInPrice();
     if (credits > 0) {
-        StrcatIndCString(playerInfoText[1], kGameStrList, kStrTradeInValue);
-        strcat(playerInfoText[1], " ");
-        StrcatCommaNumber(credits, playerInfoText[1]);
-        strcat(playerInfoText[1], " ");
-        if (credits == 1)
-            strcat(playerInfoText[1], creditCString);
-        else
-            strcat(playerInfoText[1], creditsCString);
-        strcat(playerInfoText[1], "\r");
+        outfits += TextF("%s %s %s\r", IndString(kGameStrList, kStrTradeInValue).c_str(), CommaNumber(credits).c_str(),
+                         FromField(credits == 1 ? creditCString : creditsCString, sizeof creditsCString).c_str());
     }
 
     count = 0;
@@ -1045,7 +954,7 @@ void SetupPlayerInfoText(void)
 
     for (i = 0; i < kMaxOutfits; i++) {
         qty = shipSystems[i];
-        if (qty > 0 && lcOutfitName[i][0] != 0 &&
+        if (qty > 0 && !lcOutfitName[i].empty() &&
             (outfitSystem[i].flags & kOutfShowInRanks) != 0) {
             slot = outfitSystem[i].sameNameIndex;
             if (slot < 0 || slot >= i)
@@ -1055,32 +964,31 @@ void SetupPlayerInfoText(void)
     }
 
     for (i = 0; i < kMaxOutfits; i++) {
-        if (outfitQty[i] > 0 && lcOutfitName[i][0] != 0 &&
+        if (outfitQty[i] > 0 && !lcOutfitName[i].empty() &&
             (outfitSystem[i].flags & kOutfShowInRanks) != 0)
             count++;
     }
 
     if (count > 0) {
-        strcpy(playerInfoText[2], "");
-        StrcatIndCString(playerInfoText[2], kGameStrList, kStrAwardsHeader);
-        strcat(playerInfoText[2], "\r\r");
+        awards = IndString(kGameStrList, kStrAwardsHeader);
+        awards += "\r\r";
         shown = 0;
         do {
             for (i = 0; i < kMaxRanks; i++) {
                 if (rankData[i].active != 0 && rankData[i].loaded != 0 &&
                     strlen(rankData[i].name) != 0 &&
                     rankData[i].priority >= maxWeight && rankShown[i] == 0) {
-                    strcat(playerInfoText[2], rankData[i].name);
+                    awards += RankName(i);
                     shown++;
                     rankShown[i] = 1;
                     if (shown <= count - 1)
-                        strcat(playerInfoText[2], ",");
+                        awards += ",";
                     if (shown < count - 1) {
-                        strcat(playerInfoText[2], " ");
+                        awards += " ";
                     } else if (shown == count - 1) {
-                        strcat(playerInfoText[2], " ");
-                        StrcatIndCString(playerInfoText[2], kGameStrList, kStrAnd);
-                        strcat(playerInfoText[2], " ");
+                        awards += " ";
+                        awards += IndString(kGameStrList, kStrAnd);
+                        awards += " ";
                     }
                 }
             }
@@ -1098,42 +1006,26 @@ void SetupPlayerInfoText(void)
         if (shown != 0)
             len = -1;
         else
-            len = strlen(playerInfoText[2]);
+            len = awards.size();
 
         for (i = 0; i < kMaxOutfits; i++) {
             qty = outfitQty[i];
-            if (qty > 0 && lcOutfitName[i][0] != 0 &&
+            if (qty > 0 && !lcOutfitName[i].empty() &&
                 (outfitSystem[i].flags & kOutfShowInRanks) != 0) {
-                if (qty == 1) {
-                    c = tolower(lcOutfitName[i][1]);
-                    if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
-                        StrcatIndCString(playerInfoText[2], kGameStrList, kStrAn);
-                    else
-                        StrcatIndCString(playerInfoText[2], kGameStrList, kStrA);
-                } else if (qty == 2) {
-                    StrcatIndCString(playerInfoText[2], kOrdinalsSTR, kOrdinalsBase + 2);
-                } else if (qty == 3) {
-                    StrcatIndCString(playerInfoText[2], kOrdinalsSTR, kOrdinalsBase + 3);
-                } else if (qty > 3) {
-                    NumToString(qty, str);
-                    PtoCstr(str);
-                    strcat(playerInfoText[2], (char *)str);
-                }
-                strcat(playerInfoText[2], " ");
+                awards += OutfitCountWord(i, qty);
+                awards += " ";
                 if (qty <= 3 && len > 0)
-                    playerInfoText[2][len] = toupper(playerInfoText[2][len]);
+                    CapitalizeAt(awards, len);
                 len = -1;
                 if (qty > 1)
-                    pstrcpy(str, lcPluralOutfitName[i]);
+                    awards += lcPluralOutfitName[i];
                 else
-                    pstrcpy(str, lcOutfitName[i]);
-                PtoCstr(str);
-                strcat(playerInfoText[2], (char *)str);
+                    awards += lcOutfitName[i];
                 shown++;
                 if (shown <= count - 1)
-                    strcat(playerInfoText[2], ", ");
+                    awards += ", ";
             }
         }
-        strcat(playerInfoText[2], "\r");
+        awards += "\r";
     }
 }

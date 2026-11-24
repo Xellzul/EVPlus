@@ -506,7 +506,7 @@ void OfferFromDialog(short venue, DialogPtr self)
 
 Boolean LeaveRequested(short leaveItem, short *itemHit)
 {
-    if (absquatulateStr[0] == 0)
+    if (absquatulateStr.empty())
         return 0;
     *itemHit = leaveItem;
     return 1;

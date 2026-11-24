@@ -5,6 +5,7 @@
 #include "gameutil.h"
 #include "prototypes.h"
 #include "missions.h"
+#include "text.h"
 
 // FUNCTION: EVNOVA 0x00465af0
 // MAC: _DrawCommaNumber i386 0x00004895 ppc 0x00005cb0
@@ -19,23 +20,23 @@ void DrawCommaNumber(int32_t value)
     } else if (value < 1000000) {
         NumToString(value / 1000, str);
         DrawString(str);
-        DrawString("\p,");
+        DrawCString(",");
         if (value % 1000 < 100)
-            DrawString("\p0");
+            DrawCString("0");
         if (value % 1000 < 10)
-            DrawString("\p0");
+            DrawCString("0");
         NumToString(value % 1000, str);
         DrawString(str);
     } else {
         NumToString(value / 1000000, str);
         DrawString(str);
-        DrawString("\p.");
+        DrawCString(".");
         group = value % 1000000;
         NumToString(group / 10000, str);
         if (group / 10000 < 10)
-            DrawString("\p0");
+            DrawCString("0");
         DrawString(str);
-        DrawString("\pM");
+        DrawCString("M");
     }
 }
 
@@ -43,64 +44,16 @@ void DrawCommaNumber(int32_t value)
 // MAC: _StrcatCommaNumber i386 0x00008820 ppc 0x0000a8e0
 void StrcatCommaNumber(int32_t value, char *dst)
 {
-    int32_t group;
-    unsigned char str[256];
-
-    if (value < 1000) {
-        NumToString(value, str);
-        PtoCstr(str);
-        strcat(dst, (char *)str);
-    } else if (value < 1000000) {
-        NumToString(value / 1000, str);
-        PtoCstr(str);
-        strcat(dst, (char *)str);
-        strcat(dst, ",");
-        if (value % 1000 < 100)
-            strcat(dst, "0");
-        if (value % 1000 < 10)
-            strcat(dst, "0");
-        NumToString(value % 1000, str);
-        PtoCstr(str);
-        strcat(dst, (char *)str);
-    } else {
-        NumToString(value / 1000000, str);
-        PtoCstr(str);
-        strcat(dst, (char *)str);
-        strcat(dst, ".");
-        group = value % 1000000;
-        NumToString(group / 10000, str);
-        if (group / 10000 < 10)
-            strcat(dst, "0");
-        PtoCstr(str);
-        strcat(dst, (char *)str);
-        strcat(dst, "M");
-    }
+    strcat(dst, CommaNumber(value).c_str());
 }
 
-/*
- * Append an ordinal to a C string: first through tenth come out of STR# 137
- * (its entries 29..38), anything else is spelled in digits. The word is built
- * in its own buffer so the leading letter can be capitalised before it is
- * appended.
- */
+/* Append an ordinal to a C string: first through tenth out of STR# 137 (its entries 29..38), anything else in
+   digits. */
 // FUNCTION: EVNOVA 0x00465d90
 // MAC: _StrcatOrdinalNumber i386 0x00008ab4 ppc 0x0000ab98
 void StrcatOrdinalNumber(short n, char *dst, Boolean capitalize)
 {
-    unsigned char numStr[256];
-    unsigned char word[256];
-
-    if (n >= 1 && n <= 10) {
-        strcpy((char *)word, "");
-        StrcatIndCString((char *)word, kOrdinalsSTR, n + kOrdinalsBase);
-    } else {
-        NumToString(n, numStr);
-        PtoCstr(numStr);
-        strcpy((char *)word, (char *)numStr);
-    }
-    if (capitalize != 0)
-        word[0] = toupper(word[0]);
-    strcat(dst, (char *)word);
+    strcat(dst, OrdinalText(n, capitalize != 0).c_str());
 }
 
 
@@ -137,75 +90,18 @@ void CullNameString(unsigned char *name)
     pstrcpy(name, culled);
 }
 
-#define kDateStrings   137  /* STR# holding the month names and ordinals */
-#define kFirstMonthStr  12  /* month 1 is index 13 */
-#define kOrdinalSt      25
-#define kOrdinalNd      26
-#define kOrdinalRd      27
-#define kOrdinalTh      28
-
 // FUNCTION: EVNOVA 0x00468450
 // MAC: _DateToMedString i386 0x00008cb6 ppc 0x0000adcc
 void DateToMedString(DateTimeRec date, char *out)
 {
-    Str255 str;
-
-    strcpy(out, datePrefix);
-    GetIndString(str, kDateStrings, date.month + kFirstMonthStr);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, " ");
-    NumToString(date.day, str);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    GetIndString(str, kDateStrings, kOrdinalTh);
-    if (date.day % 10 == 1)
-        GetIndString(str, kDateStrings, kOrdinalSt);
-    if (date.day % 10 == 2)
-        GetIndString(str, kDateStrings, kOrdinalNd);
-    if (date.day % 10 == 3)
-        GetIndString(str, kDateStrings, kOrdinalRd);
-    if (date.day >= 11 && date.day <= 13)
-        GetIndString(str, kDateStrings, kOrdinalTh);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, ", ");
-    NumToString(date.year, str);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, dateSuffix);
+    strcpy(out, DateMedText(date).c_str());
 }
 
 // FUNCTION: EVNOVA 0x00468600
 // MAC: _DateToLongString i386 0x00008ef8 ppc 0x0000b014
 void DateToLongString(DateTimeRec date, char *out)
 {
-    Str255 str;
-
-    strcpy(out, datePrefix);
-    GetIndString(str, kDateStrings, date.month);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, " ");
-    NumToString(date.day, str);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    GetIndString(str, kDateStrings, kOrdinalTh);
-    if (date.day % 10 == 1)
-        GetIndString(str, kDateStrings, kOrdinalSt);
-    if (date.day % 10 == 2)
-        GetIndString(str, kDateStrings, kOrdinalNd);
-    if (date.day % 10 == 3)
-        GetIndString(str, kDateStrings, kOrdinalRd);
-    if (date.day >= 11 && date.day <= 13)
-        GetIndString(str, kDateStrings, kOrdinalTh);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, ", ");
-    NumToString(date.year, str);
-    PtoCstr(str);
-    strcat(out, (char *)str);
-    strcat(out, dateSuffix);
+    strcpy(out, DateLongText(date).c_str());
 }
 
 // FUNCTION: EVNOVA 0x00468d90
@@ -281,7 +177,7 @@ void DrawLegalStatusString(short sys)
     if (rating == 0)
         DrawIndString(kGameStrList, 0x18c);
     else
-        DrawString(legalStatusStrings[rating]);
+        DrawCString(legalStatusStrings[rating]);
 }
 
 // FUNCTION: EVNOVA 0x00469030
@@ -311,7 +207,7 @@ void DrawCombatRatingString(void)
         rating = 9;
     if (playerKills >= 25600)
         rating = 10;
-    DrawString(ratingStrings[rating]);
+    DrawCString(ratingStrings[rating]);
 }
 
 // FUNCTION: EVNOVA 0x0046d250
@@ -340,38 +236,25 @@ unsigned char *CtoPstr(char *str)
     return (unsigned char *)str;
 }
 
+/* src split at its \n marks (a backslash, then n or N): the text before the first into first, the rest into
+   second; true when there was one */
 // FUNCTION: EVNOVA 0x0046e6d0
 // MAC: _SplitTwoLineString i386 0x00007dc1 ppc 0x00009b98
-unsigned char SplitTwoLineString(const unsigned char *src, unsigned char *first,
-                  unsigned char *second)
+bool SplitTwoLineString(const std::string &src, std::string &first, std::string &second)
 {
-    Boolean afterBreak;
-    Boolean skipped;
-    short i;
-    short out;
-    short len;
+    bool afterBreak = false;
+    size_t i;
 
-    afterBreak = 0;
-    len = src[0];
-    out = 1;
-    first[0] = 0;
-    *second = 0;
-    for (i = 1; i <= len; i++) {
-        skipped = 0;
-        if (i < len && src[i] == '\\' && (src[i + 1] == 'n' || src[i + 1] == 'N')) {
+    first.clear();
+    second.clear();
+    for (i = 0; i < src.size(); i++) {
+        if (i + 1 < src.size() && src[i] == '\\' && (src[i + 1] == 'n' || src[i + 1] == 'N')) {
             i++;
-            skipped = 1;
-            afterBreak = 1;
-        }
-        if (!skipped) {
-            if (afterBreak) {
-                second[out] = src[i];
-                second[0]++;
-                out++;
-            } else {
-                first[i] = src[i];
-                first[0]++;
-            }
+            afterBreak = true;
+        } else if (afterBreak) {
+            second += src[i];
+        } else {
+            first += src[i];
         }
     }
     return afterBreak;
@@ -386,7 +269,8 @@ void pstrcpy(unsigned char *dst, const unsigned char *src)
     dst[0] = src[0];
     for (i = 1; i <= src[0]; i++)
         dst[i] = src[i];
-    dst[i] = 0;
+    if (i < (short)sizeof(Str255))
+        dst[i] = 0;
 }
 
 /*

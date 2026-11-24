@@ -64,7 +64,7 @@ void DoSystemSearch(void)
     SetDialogGWorld(dlg);
 
     GetDialogItem(dlg, kSearchTextItem, &itemType, &item, &box);
-    SetDialogItemText((Handle)item, (const unsigned char *)"\p");
+    SetControlText((ControlPtr)item, "");
     SelectDialogItemText(dlg, kSearchTextItem, 0, 1);
     FlushEvents(everyEvent - diskMask, 0);
     ShowTheCursor();

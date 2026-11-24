@@ -14,6 +14,7 @@
 #include "fontraster.h"
 #include "pixel.h"
 #include "uiscale.h"
+#include "text.h"
 
 #define kSpace          ' '
 #define kReturn         '\r'
@@ -493,6 +494,11 @@ void DrawCString(const char *text)
     DrawTextRun(text, strlen(text), NULL, 0, 0);
 }
 
+void DrawCString(const std::string &text)
+{
+    DrawTextRun(text.data(), text.size(), NULL, 0, 0);
+}
+
 /* -- measuring ----------------------------------------------------------------------------------------------- */
 
 /* the device advances of the glyphs DrawTextRun draws for these characters on the current port */
@@ -558,6 +564,18 @@ short TextWidth(const char *text, int byteCount)
     if (text == NULL || text[0] == 0)
         return 0;
     return MeasureAnsi(text, byteCount);
+}
+
+short MeasureCString(const std::string &text)
+{
+    if (CurrentGrafPort == NULL || text.empty())
+        return 0;
+    return MeasureAnsi(text.data(), (int)text.size());
+}
+
+short TextWidth(const std::string &text)
+{
+    return MeasureCString(text);
 }
 
 /* TextWidth in the current port's device pixels, before rounding to logical ones: where the glyphs of the

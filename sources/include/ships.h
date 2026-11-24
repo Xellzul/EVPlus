@@ -1,6 +1,7 @@
 /* ships.h -- the ship object: its rates, damage, outfits, cargo and spawning. Notes: Research/notes/ships.md */
 #ifndef SHIPS_H
 #define SHIPS_H
+#include <string>
 #include "burger.h"
 #include "shipobj.h"
 
@@ -44,7 +45,7 @@ extern Boolean WeaponHasAmmo(ShipObj *ship, short weaponIndex);
 extern short WeaponMaxSimultShots(ShipObj *ship, short w);
 extern Boolean allReinforcementsInhibited;
 extern Handle charFileHand;
-extern unsigned char govtMediumNames[256][256];
+extern std::string govtMediumNames[256];
 extern Boolean gravitySourcesPresent;
 extern DateTimeRec scenarioStartDate;
 extern short tradePrice[];

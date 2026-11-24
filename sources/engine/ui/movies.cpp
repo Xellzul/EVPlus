@@ -11,10 +11,9 @@ Movie loopingMovie = NULL;
 
 // FUNCTION: EVNOVA 0x0049d7c0
 // MAC: _StartLoopingMovie i386 0x00060266 ppc 0x00067fb8
-void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
+void StartLoopingMovie(const std::string &name, void *window, Rect *box)
 {
     CGrafPtr port;
-    char cname[0x100];
     char path[kMoviePathMax];
     const char *names[1];
     CGrafPtr *windowPort = (CGrafPtr *)window;
@@ -26,8 +25,7 @@ void StartLoopingMovie(const unsigned char *name, void *window, Rect *box)
         EndLoopingMovie();
 
     port = *windowPort;
-    PStr2CStr(cname, name);
-    names[0] = cname;
+    names[0] = name.c_str();
     if (!MovieFindFile(names, 1, path, sizeof path))
         return;
     loopingMovie = MovieOpen(path);

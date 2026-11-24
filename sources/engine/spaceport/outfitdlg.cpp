@@ -12,13 +12,14 @@
 #include "sound.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "text.h"
 
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 
 DialogPtr outfitDialog;
-char dialogDescTextPtr[8192];
+char dialogDescTextPtr[kLongTextSize];
 short selOutfitItem;
 short selOutfitListItem;
 short outfitScroll;
@@ -651,8 +652,7 @@ void OutfitDialog::Run()
     }
     if (count == 0) {
 
-        strcpy(textShowString, "");
-        StrcatIndCString(textShowString, kGameStrList, 0xce);
+        SetShowText(IndString(kGameStrList, 0xce));
         ShowTextDialog(0, 0);
         return;
     }
@@ -725,8 +725,7 @@ void OutfitDialog::Hit(short item)
     short shortfall;
     short n;
     short maxAfford;
-    unsigned char nameBuf[256];
-    char msg[256];
+    std::string msg;
     short i;
     short j;
     short k;
@@ -865,9 +864,8 @@ void OutfitDialog::Hit(short item)
                                         &shipClass[shipData->type]);
                 if (have < 0 && ShipFreeMass() + have < 0) {
                     if (!shown) {
-                        GetIndString((unsigned char *)msg, kGameStrList, 0xcf);
-                        PtoCstr((unsigned char *)msg);
-                        strcpy(textShowString, (char *)msg);
+                        msg = IndString(kGameStrList, 0xcf);
+                        SetShowText(msg);
                         ShowTextDialog(0, 0);
                         shown = 1;
                     }
@@ -884,34 +882,26 @@ void OutfitDialog::Hit(short item)
                                       * outfitSystem[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID].maxCount);
                         if (shortfall > 0) {
                             if (!shown) {
-                                strcpy((char *)msg,"");
-
-                                StrcatIndCString((char *)msg,kGameStrList, 0xd0);
-                                strcat((char *)msg," ");
+                                msg = IndString(kGameStrList, 0xd0);
+                                msg += " ";
                                 if (shortfall > 3)
-                                    StrcatCommaNumber(shortfall, (char *)msg);
+                                    msg += CommaNumber(shortfall);
                                 else
-                                    StrcatOrdinalNumber(shortfall, (char *)msg,0);
-                                strcat((char *)msg," ");
+                                    msg += OrdinalText(shortfall, false);
+                                msg += " ";
                                 if (shortfall > 1)
-                                    pstrcpy(nameBuf,
-                                        lcPluralOutfitName[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]);
+                                    msg += lcPluralOutfitName[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID];
                                 else
-                                    pstrcpy(nameBuf,
-                                        lcOutfitName[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID]);
-                                PtoCstr(nameBuf);
-                                strcat((char *)msg,(char *)nameBuf);
-                                strcat((char *)msg," ");
-                                StrcatIndCString((char *)msg,kGameStrList, 0xd4);
-                                strcat((char *)msg," ");
+                                    msg += lcOutfitName[outfitSystem[selOutfitItem].modVal[i] - kFirstResourceID];
+                                msg += " ";
+                                msg += IndString(kGameStrList, 0xd4);
+                                msg += " ";
                                 if (count < n - 1)
-                                    pstrcpy(nameBuf, lcPluralOutfitName[selOutfitItem]);
+                                    msg += lcPluralOutfitName[selOutfitItem];
                                 else
-                                    pstrcpy(nameBuf, lcOutfitName[selOutfitItem]);
-                                PtoCstr(nameBuf);
-                                strcat((char *)msg,(char *)nameBuf);
-                                strcat((char *)msg,".");
-                                strcpy(textShowString, (char *)msg);
+                                    msg += lcOutfitName[selOutfitItem];
+                                msg += ".";
+                                SetShowText(msg);
                                 ShowTextDialog(0, 0);
                                 shown = 1;
                             }
@@ -949,15 +939,13 @@ void OutfitDialog::Hit(short item)
                                   * weaponStats[weapID].maxAmmo);
                     if (shortfall > 0 && ammo > 0) {
                         if (!shown) {
-                            strcpy((char *)msg,"");
-
-                            StrcatIndCString((char *)msg,kGameStrList, 0xd0);
-                            strcat((char *)msg," ");
+                            msg = IndString(kGameStrList, 0xd0);
+                            msg += " ";
                             if (shortfall > 3)
-                                StrcatCommaNumber(shortfall, (char *)msg);
+                                msg += CommaNumber(shortfall);
                             else
-                                StrcatOrdinalNumber(shortfall, (char *)msg,0);
-                            strcat((char *)msg," ");
+                                msg += OrdinalText(shortfall, false);
+                            msg += " ";
                             k = -1;
                             for (m = 0; m < kMaxOutfits; m++) {
                                 for (j = 0; j < kOutfMods; j++) {
@@ -972,30 +960,26 @@ void OutfitDialog::Hit(short item)
                             }
                             if (k != -1) {
                                 if (shortfall > 1)
-                                    pstrcpy(nameBuf, lcPluralOutfitName[k]);
+                                    msg += lcPluralOutfitName[k];
                                 else
-                                    pstrcpy(nameBuf, lcOutfitName[k]);
-                                PtoCstr(nameBuf);
-                                strcat((char *)msg,(char *)nameBuf);
+                                    msg += lcOutfitName[k];
                             } else {
                                 if (shortfall > 1)
-                                    StrcatIndCString((char *)msg,kGameStrList, 0xd2);
+                                    msg += IndString(kGameStrList, 0xd2);
                                 else
-                                    StrcatIndCString((char *)msg,kGameStrList, 0xd1);
-                                strcat((char *)msg," ");
-                                StrcatIndCString((char *)msg,kGameStrList, 0xd3);
+                                    msg += IndString(kGameStrList, 0xd1);
+                                msg += " ";
+                                msg += IndString(kGameStrList, 0xd3);
                             }
-                            strcat((char *)msg," ");
-                            StrcatIndCString((char *)msg,kGameStrList, 0xd4);
-                            strcat((char *)msg," ");
+                            msg += " ";
+                            msg += IndString(kGameStrList, 0xd4);
+                            msg += " ";
                             if (count < n - 1)
-                                pstrcpy(nameBuf, lcPluralOutfitName[selOutfitItem]);
+                                msg += lcPluralOutfitName[selOutfitItem];
                             else
-                                pstrcpy(nameBuf, lcOutfitName[selOutfitItem]);
-                            PtoCstr(nameBuf);
-                            strcat((char *)msg,(char *)nameBuf);
-                            strcat((char *)msg,".");
-                            strcpy(textShowString, (char *)msg);
+                                msg += lcOutfitName[selOutfitItem];
+                            msg += ".";
+                            SetShowText(msg);
                             ShowTextDialog(0, 0);
                             shown = 1;
                         }
@@ -1353,9 +1337,10 @@ void OutfitDialogUpdate(void)
     short skipped;
     Handle item;
     short itemType;
-    unsigned char line1[256];
+    std::string line1;
     Rect box;
-    unsigned char line2[256];
+    std::string line2;
+    std::string num;
     short i;
     short drawn;
     int32_t mass;
@@ -1391,54 +1376,54 @@ void OutfitDialogUpdate(void)
                     break;
                 }
                 if (shipSystems[dockedPortItems[i]] > 0) {
-                    NumToString(shipSystems[dockedPortItems[i]], line1);
+                    num = NumText(shipSystems[dockedPortItems[i]]);
                     ForeColor(whiteColor);
                     MoveTo(listScreenRect[i - outfitScroll].right
-                                  - (StringWidth(line1) + 3),
+                                  - (MeasureCString(num) + 3),
                               listScreenRect[i - outfitScroll].top + 12);
-                    DrawString(line1);
+                    DrawCString(num);
                     ForeColor(blackColor);
                 }
                 if (cheatsActive) {
-                    NumToString(dockedPortItems[i] + kFirstResourceID, line1);
+                    num = NumText(dockedPortItems[i] + kFirstResourceID);
                     ForeColor(whiteColor);
                     MoveTo(((listScreenRect[i - outfitScroll].left
                                     + listScreenRect[i - outfitScroll].right
-                                    - StringWidth(line1)) / 2),
+                                    - MeasureCString(num)) / 2),
                            (listScreenRect[i - outfitScroll].top + 24));
-                    DrawString(line1);
+                    DrawCString(num);
                     ForeColor(blackColor);
                 }
                 if (SplitTwoLineString(outfitShortNames[dockedPortItems[i]],
                                        line1, line2)) {
-                    c = line1[1];
-                    if (isalpha(HeldChar(c, line1[1])) || isdigit(HeldChar(c, line1[1])))
+                    c = (unsigned char)line1[0];
+                    if (isalpha(HeldChar(c, line1[0])) || isdigit(HeldChar(c, line1[0])))
                         ForeColor(whiteColor);
                     else
                         RGBForeColor(&rgbLessDarkGrey);
                     MoveTo((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
-                                  - StringWidth(line1) / 2,
+                                  - MeasureCString(line1) / 2,
                               listScreenRect[i - outfitScroll].bottom - 14);
-                    DrawString(line1);
-                    c = line2[1];
-                    if (isalpha(HeldChar(c, line2[1])) || isdigit(HeldChar(c, line2[1])))
+                    DrawCString(line1);
+                    c = (unsigned char)line2[0];
+                    if (isalpha(HeldChar(c, line2[0])) || isdigit(HeldChar(c, line2[0])))
                         ForeColor(whiteColor);
                     else
                         RGBForeColor(&rgbLessDarkGrey);
                     MoveTo((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
-                                  - StringWidth(line2) / 2,
+                                  - MeasureCString(line2) / 2,
                               listScreenRect[i - outfitScroll].bottom - 3);
-                    DrawString(line2);
+                    DrawCString(line2);
                     ForeColor(blackColor);
                 } else {
                     MoveTo((listScreenRect[i - outfitScroll].left
                                    + listScreenRect[i - outfitScroll].right) / 2
-                                  - StringWidth(line1) / 2,
+                                  - MeasureCString(line1) / 2,
                               listScreenRect[i - outfitScroll].bottom - 6);
                     ForeColor(whiteColor);
-                    DrawString(line1);
+                    DrawCString(line1);
                     ForeColor(blackColor);
                 }
                 RGBForeColor(&shopGridColor[1]);
@@ -1472,11 +1457,9 @@ void OutfitDialogUpdate(void)
                 ForeColor(whiteColor);
                 TextFont(smallTextFont);
                 TextSize(smallTextSize);
-                GetIndString(line1, kGameStrList, 0xd5);
-                DrawStringCentered(line1, box.left, box.right,
+                DrawStringCentered(IndString(kGameStrList, 0xd5), box.left, box.right,
                                    ((box.bottom + box.top) / 2 - 6));
-                GetIndString(line1, kGameStrList, 0xd6);
-                DrawStringCentered(line1, box.left, box.right,
+                DrawStringCentered(IndString(kGameStrList, 0xd6), box.left, box.right,
                                    ((box.bottom + box.top) / 2 + 6));
                 ForeColor(blackColor);
             }
@@ -1494,13 +1477,13 @@ void OutfitDialogUpdate(void)
                             stellarData[shipData->targetStellar].techLevel);
             DrawCommaNumber(AdjustedItemCost(&outfitSystem[selOutfitItem],
                                              &shipClass[shipData->type]));
-            DrawString("\p ");
+            DrawCString(" ");
             DrawIndString(kGameStrList, 0x22);
             MoveTo(box.left, (box.top + 0x18));
             DrawIndString(kGameStrList, 0xd9);
             MoveTo((box.left + 0x46), (box.top + 0x18));
             DrawCommaNumber(shipData->credits);
-            DrawString("\p ");
+            DrawCString(" ");
             DrawIndString(kGameStrList, 0x22);
             if (outfitSystem[selOutfitItem].mass > 0) {
                 MoveTo(box.left, (box.top + 0x30));
@@ -1509,11 +1492,11 @@ void OutfitDialogUpdate(void)
                 mass = AdjustedItemMass(&outfitSystem[selOutfitItem],
                                         &shipClass[shipData->type]);
                 DrawCommaNumber(mass);
-                DrawString("\p ");
+                DrawCString(" ");
                 if (mass == 1)
-                    DrawString(tonString);
+                    DrawCString(tonString);
                 else
-                    DrawString(tonsString);
+                    DrawCString(tonsString);
                 MoveTo(box.left, (box.top + 0x3c));
                 DrawIndString(kGameStrList, 0xda);
                 MoveTo((box.left + 0x46), (box.top + 0x3c));
@@ -1521,11 +1504,11 @@ void OutfitDialogUpdate(void)
                 if (freeMass < 0)
                     freeMass = 0;
                 DrawCommaNumber(freeMass);
-                DrawString("\p ");
+                DrawCString(" ");
                 if (freeMass == 1)
-                    DrawString(tonString);
+                    DrawCString(tonString);
                 else
-                    DrawString(tonsString);
+                    DrawCString(tonsString);
             }
             MoveTo(box.left, (box.top + 0x5d));
             if (HasMaxOfItem(selOutfitItem, NULL, NULL)) {

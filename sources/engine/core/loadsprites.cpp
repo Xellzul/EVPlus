@@ -796,7 +796,7 @@ void ReportSpriteLoadError(short label, short value, short special)
         GetIndString(specialText, kSpecialValueStrList, 4);
     else
         NumToString(special, specialText);
-    ParamText(labelText, valueText, specialText, "\p");
+    ParamText(labelText, valueText, specialText, NULL);
     StopAlert(0x83, 0);
 }
 

@@ -11,6 +11,7 @@
 #include "ships.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "text.h"
 
 #define kBarDlogID          0x3fd   /* DLOG 1021, with portrait */
 #define kPlainBarDlogID     0x3f5   /* DLOG 1013 */
@@ -38,8 +39,8 @@ DialogPtr barDialog;
 DialogPtr newsDialog;
 DialogPtr raceDialog;
 char barDescText[2048];
-char newsString[2048];
-char sponsorString[256];
+std::string newsString;
+std::string sponsorString;
 short racePick;
 short raceWinner;
 short lastRaceWinner;
@@ -108,9 +109,7 @@ void BarDialog::Hit(short item)
         if (shipData->credits > 0) {
             DoRaceDialog();
         } else {
-            strcpy(textShowString, "");
-            StrcatIndCString(textShowString, kGameStrList,
-                            kBrokeStrIndex);
+            SetShowText(IndString(kGameStrList, kBrokeStrIndex));
             ShowTextDialog(0, 0);
         }
         PortDialogUpdate();
@@ -355,13 +354,13 @@ void NewsDialogUpdate(void)
             GetDialogPortRect(newsDialog)->top + kTitleTop,
             GetDialogPortRect(newsDialog)->right - kTextInset,
             GetDialogPortRect(newsDialog)->top + kTitleBottom);
-    TETextBox(sponsorString, strlen(sponsorString), &box, 0);
+    TETextBox(sponsorString.data(), sponsorString.size(), &box, 0);
     InvertRect(&box);
     SetRect(&box, GetDialogPortRect(newsDialog)->left + kTextInset,
             GetDialogPortRect(newsDialog)->top + kBodyTop,
             GetDialogPortRect(newsDialog)->right - kTextInset,
             GetDialogPortRect(newsDialog)->bottom - kBodyMargin);
-    TETextBox(newsString, strlen(newsString), &box, 0);
+    TETextBox(newsString.data(), newsString.size(), &box, 0);
     InvertRect(&box);
     CopyLoadPortToDialog(newsDialog);
 }
@@ -375,22 +374,19 @@ void RandomizeNewsDialog(void)
     Boolean anyActiveCron;
     short i;
     short cronNewsID[kMaxCrons];
-    Str255 line;
-    Str255 tmp;
+    Str255 str;
     short eligible;
     short matching;
     short j;
     short pick;
 
-    GetRandomIndString((unsigned char *)sponsorString, kSponsorStrList);
-    if ((unsigned char)sponsorString[0] != 0) {
-        PtoCstr((unsigned char *)sponsorString);
-    } else {
-        strcpy(sponsorString, "");
-        StrcatIndCString(sponsorString, kGameStrList, kStrSponsor);
-    }
+    GetRandomIndString(str, kSponsorStrList);
+    if (str[0] != 0)
+        sponsorString = FromNameField(str);
+    else
+        sponsorString = IndString(kGameStrList, kStrSponsor);
 
-    strcpy(newsString, "");
+    newsString.clear();
     i = 0;
     eligible = 0;
     matching = 0;
@@ -414,35 +410,16 @@ void RandomizeNewsDialog(void)
                 pick = Rand(kMaxDisasters);
             } while (disasterData[pick].loaded == 0 || disasterData[pick].countdown <= 1);
         }
-        pstrcpy(line, "\p");
         if (disasterData[pick].stellarID != -1 && disasterData[pick].name[0] != 0) {
-            strcpy((char *)line, "");
-            StrcatIndCString((char *)line, kGameStrList, kStrSponsor);
-            strcat((char *)line, " ");
-            pstrcpy(tmp, disasterData[pick].name);
-            PtoCstr(tmp);
-            strcat((char *)line, (char *)tmp);
-            strcat((char *)line, " ");
-            StrcatIndCString((char *)line, kGameStrList, kStrDisasterVerb);
-            strcat((char *)line, " ");
-            if (disasterData[pick].amount > 0)
-                StrcatIndCString((char *)line, kGameStrList, kStrDisasterOn);
-            else
-                StrcatIndCString((char *)line, kGameStrList, kStrDisasterIn);
-            strcat((char *)line, " ");
-            StrcatIndCString((char *)line, kGameStrList, kStrDisasterAffects);
-            strcat((char *)line, " ");
-            pstrcpy(tmp, lcCargoName[disasterData[pick].commodity]);
-            PtoCstr(tmp);
-            strcat((char *)line, (char *)tmp);
-            strcat((char *)line, " ");
-            StrcatIndCString((char *)line, kGameStrList, kStrDisasterAt);
-            strcat((char *)line, " ");
-            pstrcpy(tmp, stellarData[disasterData[pick].stellarID].name);
-            PtoCstr(tmp);
-            strcat((char *)line, (char *)tmp);
-            strcat((char *)line, ".");
-            strcpy(newsString, (char *)line);
+            newsString = TextF("%s %s %s %s %s %s %s %s.", IndString(kGameStrList, kStrSponsor).c_str(),
+                               FromNameField(disasterData[pick].name).c_str(),
+                               IndString(kGameStrList, kStrDisasterVerb).c_str(),
+                               IndString(kGameStrList, disasterData[pick].amount > 0 ? kStrDisasterOn
+                                                                                     : kStrDisasterIn).c_str(),
+                               IndString(kGameStrList, kStrDisasterAffects).c_str(),
+                               UpToNul(TableEntry(lcCargoName, disasterData[pick].commodity)).c_str(),
+                               IndString(kGameStrList, kStrDisasterAt).c_str(),
+                               SpobName(disasterData[pick].stellarID).c_str());
         }
     }
 
@@ -475,24 +452,21 @@ void RandomizeNewsDialog(void)
             do {
                 pick = Rand(kMaxCrons);
             } while (cronNewsID[pick] <= 0);
-            GetRandomIndString((unsigned char *)newsString, cronNewsID[pick]);
+            GetRandomIndString(str, cronNewsID[pick]);
         } else {
             do {
                 pick = Rand(kMaxCrons);
             } while (cronActive[pick] == 0);
-            GetRandomIndString((unsigned char *)newsString, cronEvent[pick].indNewsStr);
+            GetRandomIndString(str, cronEvent[pick].indNewsStr);
         }
-        PtoCstr((unsigned char *)newsString);
+        newsString = FromNameField(str);
     }
-    if (strlen(newsString) == 0) {
-        GetRandomIndString((unsigned char *)newsString, kFillerNewsStrList);
-        if ((unsigned char)newsString[0] != 0) {
-            PtoCstr((unsigned char *)newsString);
-        } else {
-
-            strcpy(newsString, "");
-            StrcatIndCString(newsString, kGameStrList, kStrNoNews);
-        }
+    if (newsString.empty()) {
+        GetRandomIndString(str, kFillerNewsStrList);
+        if (str[0] != 0)
+            newsString = FromNameField(str);
+        else
+            newsString = IndString(kGameStrList, kStrNoNews);
     }
 }
 
@@ -546,6 +520,8 @@ void RaceDialog::Hit(short item)
 {
     int32_t payout;
     int32_t credits;
+    std::string winText;
+    size_t len;
 
     if (item == kRaceDoneItem)
         done = 1;
@@ -588,17 +564,12 @@ void RaceDialog::Hit(short item)
                             (raceWinner + kRaceResultDesc));
             if (raceWinner == racePick) {
                 payout = raceBetAmount * kRacePayoutOdds;
-                strcat(textShowString, "\r\r");
-                StrcatIndCString(textShowString, kGameStrList,
-                                kRaceWinStrIndex);
-                strcat(textShowString, ":  ");
-                StrcatCommaNumber(payout, textShowString);
-                strcat(textShowString, " ");
-                if (payout == 1)
-                    strcat(textShowString, creditCString);
-                else
-                    strcat(textShowString, creditsCString);
-                strcat(textShowString, ".");
+                winText = TextF("\r\r%s:  %s %s.", IndString(kGameStrList, kRaceWinStrIndex).c_str(),
+                                CommaNumber(payout).c_str(),
+                                FromField(payout == 1 ? creditCString : creditsCString, sizeof creditsCString).c_str());
+                /* appended up to the buffer's end */
+                len = strlen(textShowString);
+                CopyCField(textShowString + len, sizeof textShowString - len, winText.c_str(), winText.size());
             }
             ShowTextDialog(0, 1);
             if (raceWinner == racePick) {

@@ -1,6 +1,8 @@
 /* dialogs.h -- the game's own dialogs and the widgets they share. Notes: Research/notes/dialogs.md */
 #ifndef DIALOGS_H
 #define DIALOGS_H
+#include <string>
+#include "gameconst.h"
 #include "macport.h"
 #include "shipobj.h"
 #include "soundtool.h"
@@ -53,8 +55,7 @@ extern void DoSystemSearch(void);
 extern void DoTradeDialog(void);
 extern void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
                        short state, short selected, PicHandle pic);
-extern Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial,
-                              short maxLen);
+extern Boolean EVTextInputDialog(const unsigned char *prompt, const unsigned char *initial, short maxLen);
 extern Boolean DoNewPilotNameDialog(Boolean *wantStrictPlay);
 void HaggleDialogUpdate(void);
 extern void InitButtons(void);
@@ -113,7 +114,7 @@ extern void TextDialogUpdate(void);
 void TradeDialogUpdate(void);
 extern unsigned char adviceString[];
 extern PicHandle barBackgroundPic;
-extern char barDescText[];
+extern char barDescText[2048];
 extern PicHandle barPic;
 extern short basePrice[];
 extern Boolean boughtID;
@@ -150,10 +151,10 @@ extern int32_t initialHaggleVal;
 extern Rect listScreenRect[];
 extern unsigned char stellarTypeStr[];
 extern float bribeFlux;
-extern char descTextPtr[];
+extern char descTextPtr[kLongTextSize];
 extern PicHandle newsPic;
 extern Rect listPicScreenRect[];
-extern char dialogDescTextPtr[];
+extern char dialogDescTextPtr[kLongTextSize];
 extern short lastClickItem;
 extern short selMissionInfoListItem;
 extern PicHandle missionInfoBackgroundPic;
@@ -162,21 +163,21 @@ extern short selOutfitListItem;
 extern short keyDialogSel;
 extern short selOutfitItem;
 extern short selShipyardItem;
-extern unsigned char shipCommNames[768][256];
+extern std::string shipCommNames[768];
 extern PicHandle shipDescBackgroundPic;
 extern PicHandle bigShipPic;
 extern short selShipListItem;
 extern short shipyardScroll;
-extern unsigned char shipyardLongNames[768][256];
+extern std::string shipyardLongNames[768];
 extern PicHandle shipyardBackgroundPic;
 extern Boolean canDoMissions;
 extern DialogPtr portDialog;
 extern PicHandle portBackgroundPic;
 extern GWorldContainer planetPicContainer;
 extern unsigned char textInputString[];
-extern char textShowString[];
+extern char textShowString[kLongTextSize];
 extern short gTimesFont;
-extern unsigned char govtShortNames[256][256];
+extern std::string govtShortNames[256];
 extern short greenMissionSyst;
 extern PicHandle haggleBackgroundPic;
 extern short haggleMode;
@@ -184,8 +185,8 @@ extern int32_t haggleVal;
 extern Boolean hatesPlayer;
 extern short lastRaceWinner;
 extern uint32_t lastTextScrollTime;
-extern unsigned char lcOutfitName[512][256];
-extern unsigned char lcPluralOutfitName[512][256];
+extern std::string lcOutfitName[512];
+extern std::string lcPluralOutfitName[512];
 extern Boolean mainScreenBackgroundDirty;
 extern DialogPtr missionDialog;
 extern short missionsOutside;
@@ -196,7 +197,7 @@ extern DialogPtr outfitDialog;
 extern short outfitScroll;
 extern PicHandle playerInfoBackgroundPic[3];
 extern short selPlayerInfoMode;
-extern char playerInfoText[3][4096];
+extern std::string playerInfoText[3];
 extern PicHandle plunderBackgroundPic;
 extern Boolean portBuysNoOutfits;
 extern PicHandle previewPic;
@@ -222,8 +223,8 @@ extern short salvageType;
 extern short selMissionListItem;
 extern short selTradeItem;
 extern short shipBuyMode;
-extern unsigned char shipClassStr[];
-extern unsigned char shipGovtStr[];
+extern std::string shipClassStr;
+extern std::string shipGovtStr;
 extern DialogPtr shipyardDialog;
 extern RGBColor shopGridColor[2];
 extern Boolean showAbortMissionButton;

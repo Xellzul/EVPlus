@@ -22,6 +22,7 @@
 #include "prototypes.h"
 #include "endianswap.h"
 #include "gamepaths.h"
+#include "text.h"
 
 #define kPrefStringMax 0x100
 
@@ -176,7 +177,7 @@ static void LoadStellars(unsigned char *name)
             const SpobRes &res = *ResRec(SpobRes, stellarFileHand);
             GetResInfo(stellarFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            strncpy((char *)stellarData[i].name, (char *)name, 31);
+            CopyPascalName(stellarData[i].name, name, 31);
             stellarData[i].pos.h = res.xPos;
             stellarData[i].pos.v = res.yPos;
             stellarData[i].type = res.type;
@@ -201,8 +202,8 @@ static void LoadStellars(unsigned char *name)
                 stellarData[i].explodType = -1;
             if (stellarData[i].deadType < 0 || stellarData[i].deadType >= kMasterStellarSprites)
                 stellarData[i].deadType = stellarData[i].type;
-            strcpy(stellarData[i].onDestroy, res.onDestroy);
-            strcpy(stellarData[i].onRegen, res.onRegen);
+            CopyCField(stellarData[i].onDestroy, res.onDestroy);
+            CopyCField(stellarData[i].onRegen, res.onRegen);
             for (j = 0; j < 3; j++)
                 stellarData[i].specialTech[j] = res.specialTech[j];
             for (j = 0; j < 5; j++)
@@ -231,8 +232,8 @@ static void LoadStellars(unsigned char *name)
             stellarData[i].defenseDude = ResIndex(stellarData[i].defenseDude);
             if (stellarData[i].techLevel < 0)
                 stellarData[i].techLevel = 0;
-            strcpy(stellarData[i].onDominate, res.onDominate);
-            strcpy(stellarData[i].onRelease, res.onRelease);
+            CopyCField(stellarData[i].onDominate, res.onDominate);
+            CopyCField(stellarData[i].onRelease, res.onRelease);
             stellarData[i].weapon = ResIndex(stellarData[i].weapon);
             AdjustHandleSize(stellarFileHand, 0x45e);
             ResourcePurge(stellarFileHand);
@@ -315,7 +316,7 @@ static void LoadSystems(unsigned char *name)
             const SystRes &res = *ResRec(SystRes, systemFileHand);
             GetResInfo(systemFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            strncpy((char *)systemData[i].name, (char *)name, 31);
+            CopyPascalName(systemData[i].name, name, 31);
             systemData[i].loaded = 1;
             systemData[i].prepared = 1;
             for (j = 0; j < 8; j++) {
@@ -424,7 +425,7 @@ static void LoadSystems(unsigned char *name)
             }
             systemData[i].reinforceTimer = 0;
             systemData[i].reinforceDaysLeft = 0;
-            strcpy(systemData[i].visibility, res.visibility);
+            CopyCField(systemData[i].visibility, res.visibility);
             AdjustHandleSize(systemFileHand, 0x1ac);
             ResourcePurge(systemFileHand);
             ReleaseResource(systemFileHand);
@@ -574,7 +575,6 @@ static void LoadSystems(unsigned char *name)
 
 static void LoadOutfits(unsigned char *name)
 {
-    short n;
     short j;
     short i;
     short found;
@@ -615,9 +615,9 @@ static void LoadOutfits(unsigned char *name)
                 (outfitSystem[i].govtRestrict < ResClassBase(3)
                     || outfitSystem[i].govtRestrict >= ResClassBase(3) + kMaxGovts))
                 outfitSystem[i].govtRestrict = -1;
-            strcpy(outfitSystem[i].availability, res->availability);
-            strcpy(outfitSystem[i].onPurchase, res->onPurchase);
-            strcpy(outfitSystem[i].onSell, res->onSell);
+            CopyCField(outfitSystem[i].availability, res->availability);
+            CopyCField(outfitSystem[i].onPurchase, res->onPurchase);
+            CopyCField(outfitSystem[i].onSell, res->onSell);
             AdjustHandleSize(outfitSystemFileHand, 0x404);
             res = ResRec(OutfRes, outfitSystemFileHand);   /* AdjustHandleSize may move the record */
             outfitSystem[i].persistent = 0;
@@ -626,7 +626,7 @@ static void LoadOutfits(unsigned char *name)
                 outfitSystem[i].persistent = 1;
             GetResInfo(outfitSystemFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            strncpy((char *)outfitSystem[i].name, (char *)name, 63);
+            CopyPascalName(outfitSystem[i].name, name, 63);
             outfitSystem[i].modType[1] = res->modType2;
             outfitSystem[i].modVal[1] = res->modVal2;
             outfitSystem[i].modType[2] = res->modType3;
@@ -642,12 +642,9 @@ static void LoadOutfits(unsigned char *name)
             outfitSystem[i].contributes[1] = res->contribute2;
             outfitSystem[i].requires[0] = res->require1;
             outfitSystem[i].requires[1] = res->require2;
-            strcpy((char *)outfitShortNames[i], res->shortName);
-            strcpy((char *)lcOutfitName[i], res->lcName);
-            strcpy((char *)lcPluralOutfitName[i], res->lcPlural);
-            CtoPstr((char *)outfitShortNames[i]);
-            CtoPstr((char *)lcOutfitName[i]);
-            CtoPstr((char *)lcPluralOutfitName[i]);
+            outfitShortNames[i] = FromField(res->shortName, sizeof res->shortName);
+            lcOutfitName[i] = FromField(res->lcName, sizeof res->lcName);
+            lcPluralOutfitName[i] = FromField(res->lcPlural, sizeof res->lcPlural);
             ResourcePurge(outfitSystemFileHand);
             ReleaseResource(outfitSystemFileHand);
             if (outfitSystem[i].buyRandom > 0 && crashlog_isactive()) {
@@ -686,20 +683,12 @@ static void LoadOutfits(unsigned char *name)
     for (i = 0; i < kMaxOutfits; i++) {
         outfitSystem[i].sameNameIndex = i;
         if (outfitSystem[i].techLevel < kOutfTechAbsent) {
-            /* no `i > 0` guard in the original: the for-entry test covers it
-             * (the exe has a single i-compare here, ours had two) */
-            if (lcOutfitName[i][0] != 0) {
+            /* no `i > 0` guard: the inner loop's entry test covers i == 0 */
+            if (!lcOutfitName[i].empty()) {
                 for (j = 0; j < i; j++) {
-                    if (outfitSystem[j].techLevel < kOutfTechAbsent &&
-                        lcOutfitName[j][0] != 0 && lcOutfitName[i][0] == lcOutfitName[j][0]) {
-                        n = 0;
-                        while (n < lcOutfitName[i][0] &&
-                               lcOutfitName[i][1 + n] == lcOutfitName[j][1 + n])
-                            n++;
-                        if (n == lcOutfitName[i][0]) {
-                            outfitSystem[i].sameNameIndex = j;
-                            break;
-                        }
+                    if (outfitSystem[j].techLevel < kOutfTechAbsent && lcOutfitName[i] == lcOutfitName[j]) {
+                        outfitSystem[i].sameNameIndex = j;
+                        break;
                     }
                 }
             }
@@ -838,7 +827,7 @@ static void LoadWeapons(unsigned char *name)
             weaponStats[i].hitPartVel = res.hitPartVel * 0.01;
             GetResInfo(weaponFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            pstrcpy(weapName[i], name);
+            weapName[i] = FromPascal(name);
             weaponStats[i].smokeSet = res.smokeSet;
             weaponStats[i].decay = res.decay;
             weaponStats[i].particles = res.particles;
@@ -1223,25 +1212,21 @@ static void LoadShipClasses(unsigned char *name)
             shipClass[i].mobilityFactor *= 1.3;
             if (shipClass[i].mobilityFactor < 0.0f)
                 shipClass[i].mobilityFactor = 0.5f;
-            strcpy(shipClass[i].availability, res->availability);
-            strcpy(shipClass[i].appearOn, res->appearOn);
-            strcpy(shipClass[i].onPurchase, res->onPurchase);
-            strcpy(shipClass[i].onCapture, res->onCapture);
-            strcpy(shipClass[i].onRetire, res->onRetire);
+            CopyCField(shipClass[i].availability, res->availability);
+            CopyCField(shipClass[i].appearOn, res->appearOn);
+            CopyCField(shipClass[i].onPurchase, res->onPurchase);
+            CopyCField(shipClass[i].onCapture, res->onCapture);
+            CopyCField(shipClass[i].onRetire, res->onRetire);
             AdjustHandleSize(shipClassFileHand, 0x744);
             res = ResRec(ShipRes, shipClassFileHand);   /* AdjustHandleSize may move the record */
             GetResInfo(shipClassFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            strncpy((char *)shipClass[i].name, (char *)name, 63);
-            strcpy((char *)shipyardShortNames[i], res->shortName);
-            strcpy((char *)shipyardLongNames[i], res->longName);
-            strcpy((char *)shipCommNames[i], res->commName);
-            strcpy((char *)shipMovieFilenames[i], res->movieName);
-            strcpy((char *)shipClass[i].subtitle, res->subtitle);
-            CtoPstr((char *)shipyardShortNames[i]);
-            CtoPstr((char *)shipyardLongNames[i]);
-            CtoPstr((char *)shipCommNames[i]);
-            CtoPstr((char *)shipMovieFilenames[i]);
+            CopyPascalName(shipClass[i].name, name, 63);
+            shipyardShortNames[i] = FromField(res->shortName, sizeof res->shortName);
+            shipyardLongNames[i] = FromField(res->longName, sizeof res->longName);
+            shipCommNames[i] = FromField(res->commName, sizeof res->commName);
+            shipMovieFilenames[i] = FromField(res->movieName, sizeof res->movieName);
+            CopyCField(shipClass[i].subtitle, res->subtitle);
             CtoPstr((char *)shipClass[i].subtitle);
             if (crashlog_isactive()) {
                 if (maxGuns < 0) {
@@ -1499,13 +1484,10 @@ static void LoadGovernments(unsigned char *name)
                 govtData[i].newsPict = -1;
             GetResInfo(govtFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            strncpy((char *)govtData[i].name, (char *)name, 31);
-            strcpy((char *)govtTargStrings[i], res.targetCode);
-            strcpy((char *)govtShortNames[i], res.commName);
-            strcpy((char *)govtMediumNames[i], res.mediumName);
-            CtoPstr((char *)govtTargStrings[i]);
-            CtoPstr((char *)govtShortNames[i]);
-            CtoPstr((char *)govtMediumNames[i]);
+            CopyPascalName(govtData[i].name, name, 31);
+            govtTargStrings[i] = FromField(res.targetCode, sizeof res.targetCode);
+            govtShortNames[i] = FromField(res.commName, sizeof res.commName);
+            govtMediumNames[i] = FromField(res.mediumName, sizeof res.mediumName);
             AdjustHandleSize(govtFileHand, 0xc0);
             ResourcePurge(govtFileHand);
             ReleaseResource(govtFileHand);
@@ -1637,14 +1619,14 @@ static void LoadPersons(unsigned char *name)
                     personData[i].weapAmmo[mountID[count] - kFirstResourceID] = mountAmmo[count];
                 }
             }
-            strcpy(personData[i].subtitle, res.subtitle);
-            strcpy(personData[i].activeOn, res.activateOn);
+            CopyCField(personData[i].subtitle, res.subtitle);
+            CopyCField(personData[i].activeOn, res.activateOn);
             CtoPstr(personData[i].subtitle);
             AdjustHandleSize(personFileHand, 400);
             personData[i].loaded = 1;
             GetResInfo(personFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            strncpy(personData[i].name, (char *)name, 30);
+            CopyPascalNameSigned(personData[i].name, name, 30);
             ResourcePurge(personFileHand);
             ReleaseResource(personFileHand);
             personData[i].prepared = 1;
@@ -1745,7 +1727,7 @@ static void LoadDisasters(unsigned char *name)
                 disasterData[i].commodity = 5;
             if (disasterData[i].commodity < 0)
                 disasterData[i].commodity = -1;
-            strcpy(disasterData[i].text, res.activateOn);
+            CopyCField(disasterData[i].text, res.activateOn);
             disasterData[i].loaded = 1;
             AdjustHandleSize(disasterFileHand, 0x11a);
             GetResInfo(disasterFileHand, &resID, &resType, name);
@@ -1778,8 +1760,8 @@ static void LoadNebulae(void)
             nebulaData[i].yPos = res.yPos;
             nebulaData[i].width = res.xSize;
             nebulaData[i].height = res.ySize;
-            strcpy(nebulaData[i].activeOn, res.activeOn);
-            strcpy(nebulaData[i].onExplore, res.onExplore);
+            CopyCField(nebulaData[i].activeOn, res.activeOn);
+            CopyCField(nebulaData[i].onExplore, res.onExplore);
             ResourcePurge(nebulaFileHand);
             ReleaseResource(nebulaFileHand);
             LoadingIntroMusic();
@@ -1849,7 +1831,7 @@ static void LoadFleets(void)
                     fleetData[i].escortMax[j] = 0;
                 }
             }
-            strcpy(fleetData[i].activateOn, res.activateOn);
+            CopyCField(fleetData[i].activateOn, res.activateOn);
             AdjustHandleSize(fleetFileHand, 0x132);
             ResourcePurge(fleetFileHand);
             ReleaseResource(fleetFileHand);
@@ -1908,11 +1890,11 @@ static void LoadJunks(unsigned char *name)
             }
             GetResInfo(junkFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            strncpy((char *)junkData[i].name, (char *)name, 63);
-            strcpy(junkData[i].lcName, res.lcName);
-            strcpy(junkData[i].abbrev, res.abbrev);
-            strcpy(junkData[i].buyOn, res.buyOn);
-            strcpy(junkData[i].sellOn, res.sellOn);
+            CopyPascalName(junkData[i].name, name, 63);
+            CopyCField(junkData[i].lcName, res.lcName);
+            CopyCField(junkData[i].abbrev, res.abbrev);
+            CopyCField(junkData[i].buyOn, res.buyOn);
+            CopyCField(junkData[i].sellOn, res.sellOn);
             ResourcePurge(junkFileHand);
             ReleaseResource(junkFileHand);
             LoadingIntroMusic();
@@ -1994,9 +1976,9 @@ static void LoadCrons(void)
                 cronEvent[i].contributes[j] = res.contribute[j];
                 cronEvent[i].requires[j] = res.require[j];
             }
-            strcpy(cronEvent[i].enableOn, res.enableOn);
-            strcpy(cronEvent[i].onStart, res.onStart);
-            strcpy(cronEvent[i].onEnd, res.onEnd);
+            CopyCField(cronEvent[i].enableOn, res.enableOn);
+            CopyCField(cronEvent[i].onStart, res.onStart);
+            CopyCField(cronEvent[i].onEnd, res.onEnd);
             cronEvent[i].loaded = 1;
             AdjustHandleSize(cronFileHand, 0x336);
             ResourcePurge(cronFileHand);
@@ -2035,8 +2017,9 @@ static void LoadRanks(unsigned char *name)
             TrimResourceName(name);
             PtoCstr(name);
             strncpy(rankData[i].name, (char *)name, 127);
-            strcpy(rankData[i].convName, res.name);
-            strcpy(rankData[i].shortName, res.shortName);
+            rankData[i].name[127] = 0;
+            CopyCField(rankData[i].convName, res.name);
+            CopyCField(rankData[i].shortName, res.shortName);
             AdjustHandleSize(rankFileHand, 0x98);
             ResourcePurge(rankFileHand);
             ReleaseResource(rankFileHand);
@@ -2161,11 +2144,11 @@ static void LoadInterfaceColors(unsigned char *name)
         progressDefRect.left = res.progressBar.left;
         progressDefRect.bottom = res.progressBar.bottom;
         progressDefRect.right = res.progressBar.right;
-        strcpy((char *)name, res.menuFont);
+        CopyCField(name, sizeof(Str255), res.menuFont, sizeof res.menuFont);
         CtoPstr((char *)name);
         GetFNum(name, &menuFontID);
         menuTextSize = res.menuFontSize;
-        strcpy((char *)name, res.buttonFont);
+        CopyCField(name, sizeof(Str255), res.buttonFont, sizeof res.buttonFont);
         CtoPstr((char *)name);
         GetFNum(name, &buttonFontID);
         buttonFontSize = res.buttonFontSize;
@@ -2190,8 +2173,8 @@ static void LoadInterfaceColors(unsigned char *name)
 void LoadObjectData(void)
 {
     /* BUG: strncpy of a Pascal name (no NUL) also copies what follows it in this buffer into the name tables
-       (the tail of an earlier, longer name), and a name as long as its field keeps its full length byte.
-       Readers stop at the length byte. One buffer for all loaders keeps those bytes. */
+       (the tail of an earlier, longer name). Readers stop at the length byte. One buffer for all loaders keeps
+       those bytes. */
     unsigned char name[256] = {};
 
     if (EVBugResourceFieldTest(0))
@@ -2224,29 +2207,37 @@ void LoadObjectData(void)
 
 // FUNCTION: EVNOVA 0x004c6d50
 // MAC: _LoadDescription i386 0x000717fe ppc 0x0007a284
-void LoadDescription(char *dst, short id)
+void LoadDescription(char *dst, size_t dstSize, short id)
 {
     short size;
     short count;
+    size_t handleSize;
+    size_t len;
 
     textFileHand = GetResource(kDescType, id);
     if (textFileHand != NULL) {
-        strcpy(parseBuffer, *textFileHand);
-        size = strlen(*textFileHand);
-        if (GetAHandleSize(textFileHand) > size) {
-            descResourcePictId = ResRec(DescRes, textFileHand)->text[size + 1] << 8;
-            descResourcePictId += ResRec(DescRes, textFileHand)->text[size + 2];
+        handleSize = GetAHandleSize(textFileHand);
+        len = strnlen(*textFileHand, handleSize);
+        CopyCField(parseBuffer, sizeof parseBuffer, *textFileHand, len);
+        size = (short)len;
+        if (handleSize > len) {
+            /* the fields after the text's NUL; bytes past the resource read as 0 */
+            const unsigned char *text = ResRec(DescRes, textFileHand)->text;
+            auto at = [&](size_t k) -> unsigned char { return len + k < handleSize ? text[len + k] : 0; };
+
+            descResourcePictId = at(1) << 8;
+            descResourcePictId += at(2);
 
             descMovieName[0] = 0;
             for (count = 0; count < 0x20; count++) {
-                if ((char)ResRec(DescRes, textFileHand)->text[size + 3 + count] == 0)
+                if ((char)at(3 + count) == 0)
                     break;
                 descMovieName[0]++;
-                descMovieName[count + 1] = ResRec(DescRes, textFileHand)->text[size + 3 + count];
+                descMovieName[count + 1] = at(3 + count);
             }
 
-            descFlags = ResRec(DescRes, textFileHand)->text[size + 0x23] << 8;
-            descFlags += ResRec(DescRes, textFileHand)->text[size + 0x24];
+            descFlags = at(0x23) << 8;
+            descFlags += at(0x24);
         } else {
             pstrcpy(descMovieName, (unsigned char *)"");
             descResourcePictId = 0;
@@ -2258,10 +2249,10 @@ void LoadDescription(char *dst, short id)
         descRankGovt[1] = -1;
 
         ParseTextDescription();
-        strcpy(dst, parseBuffer);
+        CopyCField(dst, dstSize, parseBuffer, sizeof parseBuffer);
 
         if (leetMode) {
-            for (count = 0; count < size; count++) {
+            for (count = 0; count < size && (size_t)count < dstSize; count++) {
                 if (dst[count] == 'a' || dst[count] == 'A') {
                     if (Rand(3) < 2)
                         dst[count] = '4';
@@ -2278,7 +2269,7 @@ void LoadDescription(char *dst, short id)
                     if (Rand(3) < 2)
                         dst[count] = '0';
                 }
-                if (count < size - 4 && (dst[count] == 'y' || dst[count] == 'Y')
+                if (count < size - 4 && (size_t)count + 2 < dstSize && (dst[count] == 'y' || dst[count] == 'Y')
                         && dst[count + 1] == 'o' && dst[count + 2] == 'u') {
                     dst[count] = 'j';
                     dst[count + 1] = '0';
@@ -2287,17 +2278,14 @@ void LoadDescription(char *dst, short id)
             }
         }
     } else {
-        strcpy(dst, "");
+        if (dstSize > 0)
+            dst[0] = 0;
         pstrcpy(descMovieName, (unsigned char *)"");
         descResourcePictId = 0;
     }
 }
 
-/*
- * Every table is 256-byte Pascal string slots. The `<` and `<=` loop bounds are
- * transcribed as the exe spells them (`jl` against `jle`); they are not
- * interchangeable to mwcc and the difference is per-site.
- */
+/* the `<` and `<=` loop bounds differ per site and are not interchangeable */
 #define kCargoPluginBase  0x2328
 #define kCargoFallback     0xfa0
 #define kCargoCount       0x100
@@ -2334,72 +2322,64 @@ void LoadDescription(char *dst, short id)
 #define kFourthFirst        0x16
 #define kFourthCount         0xa
 
+/* STR# entry `index' of `list', every byte of it (IndString stops at a NUL) */
+static std::string PascalIndString(short list, short index)
+{
+    Str255 str;
+
+    GetIndString(str, list, index);
+    return FromPascal(str);
+}
+
 // FUNCTION: EVNOVA 0x004c7040
 // MAC: _LoadStrings i386 0x00071af5 ppc 0x0007a634
 void LoadStrings(void)
 {
-    Str255 buf;
     short i;
 
     for (i = 0; i < kCargoCount; i++)
-        if (LoadPluginString((i + kCargoPluginBase), cargoName[i]) == 0) {
-            GetIndString(buf, kCargoFallback, i + 1);
-            pstrcpy(cargoName[i], buf);
-        }
+        if (LoadPluginString((i + kCargoPluginBase), cargoName[i]) == 0)
+            cargoName[i] = PascalIndString(kCargoFallback, i + 1);
 
     for (i = 0; i <= kGovtLast; i++)
-        if (LoadPluginString((i + kGovtPluginBase), statusCargoName[i]) == 0) {
-            GetIndString(buf, kGovtFallback, i + 1);
-            pstrcpy(statusCargoName[i], buf);
-        }
+        if (LoadPluginString((i + kGovtPluginBase), statusCargoName[i]) == 0)
+            statusCargoName[i] = PascalIndString(kGovtFallback, i + 1);
 
     for (i = 0; i < kLcCargoCount; i++)
-        if (LoadPluginString((i + kLcCargoPluginBase), lcCargoName[i]) == 0) {
-            GetIndString(buf, kLcCargoFallback, i + 1);
-            pstrcpy(lcCargoName[i], buf);
-        }
+        if (LoadPluginString((i + kLcCargoPluginBase), lcCargoName[i]) == 0)
+            lcCargoName[i] = PascalIndString(kLcCargoFallback, i + 1);
 
-    for (i = 0; i < kHelpCount; i++) {
-        GetIndString(buf, kHelpList, i + 1);
-        pstrcpy(shipHelpRequests[i], buf);
-    }
+    for (i = 0; i < kHelpCount; i++)
+        shipHelpRequests[i] = PascalIndString(kHelpList, i + 1);
 
-    for (i = 0; i <= kLegalLast; i++) {
-        GetIndString(buf, kLegalList, i + 1);
-        pstrcpy(legalStatusStrings[i], buf);
-    }
+    for (i = 0; i <= kLegalLast; i++)
+        legalStatusStrings[i] = PascalIndString(kLegalList, i + 1);
 
-    for (i = 0; i <= kRatingLast; i++) {
-        GetIndString(buf, kRatingList, i + 1);
-        pstrcpy(ratingStrings[i], buf);
-    }
+    for (i = 0; i <= kRatingLast; i++)
+        ratingStrings[i] = PascalIndString(kRatingList, i + 1);
 
     for (i = 0; i < kMiscCount; i++)
-        if (LoadPluginString((i + kMiscPluginBase), cargoAbbrev[i]) == 0) {
-            GetIndString(buf, kMiscFallback, i + 1);
-            pstrcpy(cargoAbbrev[i], buf);
-        }
+        if (LoadPluginString((i + kMiscPluginBase), cargoAbbrev[i]) == 0)
+            cargoAbbrev[i] = PascalIndString(kMiscFallback, i + 1);
 
-    GetIndString(tonString, kGameStrList, kStrTon);
-    GetIndString(tonsString, kGameStrList, kStrTons);
-    GetIndString(creditString, kGameStrList, kStrCredit);
-    GetIndString(creditsString, kGameStrList, kStrCredits);
-    strcpy(creditCString, (char *)creditString);
-    strcpy(creditsCString, (char *)creditsString);
-    PtoCstr((unsigned char *)creditCString);
-    PtoCstr((unsigned char *)creditsCString);
+    tonString = PascalIndString(kGameStrList, kStrTon);
+    tonsString = PascalIndString(kGameStrList, kStrTons);
+    creditString = PascalIndString(kGameStrList, kStrCredit);
+    creditsString = PascalIndString(kGameStrList, kStrCredits);
+    CopyCField(creditCString, sizeof creditCString, creditString.c_str(), creditString.size());
+    CopyCField(creditsCString, sizeof creditsCString, creditsString.c_str(), creditsString.size());
 
     for (i = 0; i < kFuelCount; i++)
-        GetIndString(fuelString[i], kGameStrList, i + kFuelFirst);
+        fuelString[i] = PascalIndString(kGameStrList, i + kFuelFirst);
 
     for (i = 0; i < kSecondCount; i++)
-        GetIndString(shieldString[i], kGameStrList, i + kSecondFirst);
+        shieldString[i] = PascalIndString(kGameStrList, i + kSecondFirst);
 
     for (i = 0; i < kThirdCount; i++)
-        GetIndString(armorString[i], kGameStrList, i + kThirdFirst);
+        armorString[i] = PascalIndString(kGameStrList, i + kThirdFirst);
 
     for (i = 0; i < kFourthCount; i++)
-        GetIndString(newbieString[i], kGameStrList, i + kFourthFirst);
+        newbieString[i] = PascalIndString(kGameStrList, i + kFourthFirst);
 }
 
 // FUNCTION: EVNOVA 0x004c73b0
@@ -2407,14 +2387,29 @@ void LoadStrings(void)
 Boolean LoadPluginString(short id, void *dst)
 {
     Handle h;
+    uint32_t size;
 
     h = GetResource(kStringType, id);
     if (h != NULL) {
-        memcpy(dst, *h, GetAHandleSize(h));
+        /* a Pascal string: at most its 256 bytes */
+        size = GetAHandleSize(h);
+        memcpy(dst, *h, size < sizeof(Str255) ? size : sizeof(Str255));
         ReleaseResource(h);
         return 1;
     }
     return 0;
+}
+
+/* the same into a string: a length byte past the resource's end reads 0s */
+Boolean LoadPluginString(short id, std::string &dst)
+{
+    Str255 str;
+
+    memset(str, 0, sizeof str);
+    if (LoadPluginString(id, (void *)str) == 0)
+        return 0;
+    dst = FromPascal(str);
+    return 1;
 }
 
 /* The preferences file: the name from STR# 130, in the preferences folder (else beside the program), as JSON. */
@@ -3311,13 +3306,13 @@ short LoadPilotData(const char *path)
                         currentMissions[i].destStrIndex >= 1) {
                         GetIndString(text, currentMissions[i].destStrList,
                                      currentMissions[i].destStrIndex);
-                        strncpy(currentMissions[i].shipName, (char *)text, 0x3f);
+                        CopyPascalNameSigned(currentMissions[i].shipName, text, 0x3f);
                     }
                     if (currentMissions[i].shipStrList >= kFirstResourceID &&
                         currentMissions[i].shipStrIndex >= 1) {
                         GetIndString(text, currentMissions[i].shipStrList,
                                      currentMissions[i].shipStrIndex);
-                        strncpy(currentMissions[i].shipSubtitle, (char *)text, 0x3f);
+                        CopyPascalNameSigned(currentMissions[i].shipSubtitle, text, 0x3f);
                     }
                     if ((currentMissions[i].flags & kMissionInfiniteAuxShips) != 0)
                         currentMissions[i].auxShipsLeft = currentMissions[i].auxShipCount;
@@ -3681,11 +3676,7 @@ void GetRandomIndString(unsigned char *str, short strListID)
 // MAC: _StrcatIndCString i386 0x00072f90 ppc 0x0007be0c
 void StrcatIndCString(char *dst, short strListID, short index)
 {
-    unsigned char str[256];
-
-    GetIndString(str, strListID, index);
-    PtoCstr(str);
-    strcat(dst, (char *)str);
+    strcat(dst, IndString(strListID, index).c_str());
 }
 
 // FUNCTION: EVNOVA 0x004cd1f0
@@ -3886,8 +3877,8 @@ void ActivateCharResource(const unsigned char *name, Boolean applyStats)
         scenarioStartDate.day = (*startInfo)->startDay;
         scenarioStartDate.month = (*startInfo)->startMonth;
         scenarioStartDate.year = (*startInfo)->startYear;
-        strcpy(datePrefix, (*startInfo)->prefix);
-        strcpy(dateSuffix, ResRec(CharRecord, charFileHand)->suffix);
+        CopyCField(datePrefix, (*startInfo)->prefix);
+        CopyCField(dateSuffix, ResRec(CharRecord, charFileHand)->suffix);
     } else {
         crashlog_mission_bit_set("starting character", (char *)name, 1, -1,
                                  ResRec(CharRecord, charFileHand)->onStart);

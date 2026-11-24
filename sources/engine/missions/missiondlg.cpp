@@ -9,6 +9,7 @@
 #include "gamedialog.h"
 #include "buttons.h"
 #include "missionlist.h"
+#include "text.h"
 
 #define kStrTooManyA            351
 #define kStrTooManyB            352
@@ -42,8 +43,7 @@ private:
 
 void MissionDialog::Run()
 {
-    Str255 msg;
-    Str255 numBuf;
+    std::string msg;
     short i;
     short j;
     short count;
@@ -58,15 +58,11 @@ void MissionDialog::Run()
         if (reenterMissionDialog != 0) {
             reenterMissionDialog = 0;
         } else {
-            strcpy((char *)msg, "");
-            StrcatIndCString((char *)msg, kGameStrList, kStrTooManyA);
-            strcat((char *)msg, " ");
-            NumToString(kMaxActiveMissions, numBuf);
-            PtoCstr(numBuf);
-            strcat((char *)msg, (char *)numBuf);
-            strcat((char *)msg, " ");
-            StrcatIndCString((char *)msg, kGameStrList, kStrTooManyB);
-            strncpy(textShowString, (char *)msg, kShowStringMax);
+            msg = TextF("%s %d %s", IndString(kGameStrList, kStrTooManyA).c_str(), (int)kMaxActiveMissions,
+                        IndString(kGameStrList, kStrTooManyB).c_str());
+            strncpy(textShowString, msg.c_str(), kShowStringMax);
+            if (msg.size() >= kShowStringMax)
+                textShowString[kShowStringMax] = 0;
             ShowTextDialog(0, 0);
             SetDialogGWorld(portDialog);
         }
@@ -85,8 +81,7 @@ void MissionDialog::Run()
         if (reenterMissionDialog != 0) {
             reenterMissionDialog = 0;
         } else {
-            strcpy(textShowString, "");
-            StrcatIndCString(textShowString, kGameStrList, kStrNoMissions);
+            SetShowText(IndString(kGameStrList, kStrNoMissions));
             ShowTextDialog(0, 0);
         }
         SetDialogGWorld(portDialog);
@@ -371,6 +366,7 @@ void SetupMissionList(void)
             strncpy(briefingTextPtr, (char *)buf, 0xfa);
             MungeBriefing(1, dockedPortMissions[0][rowPt.v]);
             strncpy((char *)buf, briefingTextPtr, 0xfa);
+            buf[0xfa] = 0;
         } else {
             strncpy((char *)buf, "", 3);
         }
@@ -403,7 +399,7 @@ static void TruncateTextToWidth(char *text, short width)
 // MAC: _MissionDialogUpdate i386 0x0009f156 ppc 0x000aaf3c
 void MissionDialogUpdate(void)
 {
-    char savedBriefing[0x2000];
+    char savedBriefing[kLongTextSize];
     void *item;
     short itemType;
     char text[256];
@@ -432,11 +428,12 @@ void MissionDialogUpdate(void)
             strncpy((char *)text, (char *)missionName[dockedPortMissions[missionsOutside]
                                                                [selMissionListItem]], 0xfa);
             PtoCstr((unsigned char *)text);
-            strncpy(savedBriefing, briefingTextPtr, kBriefingTextMax);
+            CopyBriefingText(savedBriefing, briefingTextPtr);
             strncpy(briefingTextPtr, (char *)text, 0xfa);
             MungeBriefing(1, dockedPortMissions[missionsOutside][selMissionListItem]);
             strncpy((char *)text, briefingTextPtr, 0xfa);
-            strncpy(briefingTextPtr, savedBriefing, kBriefingTextMax);
+            text[0xfa] = 0;
+            CopyBriefingText(briefingTextPtr, savedBriefing);
             TruncateTextToWidth(text, box.right - box.left - 1);
             MoveTo(box.left, box.top + CurrentGrafPort->txSize);
             DrawTextRun(text, strlen(text), NULL, 0, 0);
@@ -448,10 +445,8 @@ void MissionDialogUpdate(void)
     DrawMissionBriefing(missionDialog, selMissionListItem != -1);
     GetDialogItem(missionDialog, 11, &itemType, (Handle *)&item, &box);
     RGBForeColor(&rgbDarkGrey);
-    DateToMedString(gameTime, (char *)text);
-    CtoPstr((char *)text);
     MoveTo(box.left, box.bottom);
-    DrawString((unsigned char *)text);
+    DrawCString(DateMedText(gameTime));
     ForeColor(blackColor);
     MissionButtons().Draw(-1);
     MissionList(missionList).Present(missionDialog);

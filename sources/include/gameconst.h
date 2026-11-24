@@ -118,6 +118,7 @@ enum {
 #define kMaxFleets      0x100
 #define kMaxHyperRoute        32
 #define kMaxMissionBits    10000
+#define kLongTextSize      0x2000  /* the shared description / briefing / text-dialog buffers */
 #define kNavSlots               16      /* systemData[].navDefault entries */
 #define kMaxSystemLinks         16      /* systemData[].links entries */
 #define kSpobHyperLinks         8       /* stellarData[].hyperLinks: a gate's destinations */

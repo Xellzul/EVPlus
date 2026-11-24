@@ -10,6 +10,7 @@
 #include "missions.h"
 #include "render.h"
 #include "stellar.h"
+#include "text.h"
 
 #define kCommMsgMax     0xff
 #define kCommTextMax    0xfe
@@ -85,6 +86,22 @@ void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const
     strncpy(commMsg, (char *)msg, kCommMsgMax);
     gCommDrawn = false;
     SWSetPortToWindow(gSpriteWorld);                /* callers draw on the window next */
+}
+
+void DisplayComm(const std::string &msg, short count)
+{
+    Str255 text;
+
+    ToPascal(msg, text);
+    DisplayComm(text, count);
+}
+
+void DisplayCommStyled(const std::string &msg, short count, short font, short size, const RGBColor *color)
+{
+    Str255 text;
+
+    ToPascal(msg, text);
+    DisplayCommStyled(text, count, font, size, color);
 }
 
 /* The comm message drawn in its own frame, at the screen's resolution, for Screen::ComposeView to lay over

@@ -9,6 +9,7 @@
 #include "platform.h"
 #include "endianswap.h"
 #include "screen.h"
+#include "text.h"
 
 /* A control points back at the dialog that owns it so that changing a value
    can mark the dialog dirty. */
@@ -879,6 +880,11 @@ void SetControlText(ControlPtr ctl, const char *text)
     }
     if (changed)
         ctl->owner->needsUpdate = 1;
+}
+
+void SetControlText(ControlPtr ctl, const std::string &text)
+{
+    SetControlText(ctl, text.c_str());
 }
 
 // FUNCTION: EVNOVA 0x004cfb90

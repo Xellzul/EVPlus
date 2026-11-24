@@ -16,13 +16,13 @@
 #include "uiscale.h"
 #include "space.h"
 #include "gamepaths.h"
+#include "text.h"
 
 // FUNCTION: EVNOVA 0x004873b0
 // MAC: _MainScreenUpdate i386 0x00017c0d ppc 0x0001b8e8
 void MainScreenUpdate(short which)
 {
     UI::MenuScale menu;
-    unsigned char text[256];
     Rect box;
     Rect dst;
     Boolean shown[6];
@@ -64,8 +64,7 @@ void MainScreenUpdate(short which)
     TextSize(menuTextSize);
     if (creatingPilotFile != 0) {
         RGBForeColor(labelColor);
-        GetIndString(text, kGameStrList, 0x113);
-        DrawStringCentered(text, (mainMenuCenter.h - 0x96),
+        DrawStringCentered(IndString(kGameStrList, 0x113), (mainMenuCenter.h - 0x96),
                            (mainMenuCenter.h + 0x96),
                            (mainMenuCenter.v + 0x136));
     } else {
@@ -88,10 +87,10 @@ void MainScreenUpdate(short which)
                 DrawIndString(kGameStrList, 0x100);
                 MoveTo((mainMenuCenter.h - 0xb9), (mainMenuCenter.v + 0x14e));
                 RGBForeColor(valueColor);
-                DrawString(shipClass[shipData->type].name);
+                DrawCString(ShipClassName(shipData->type));
                 MoveTo((mainMenuCenter.h - 0xb9), (mainMenuCenter.v + 0x15a));
                 RGBForeColor(valueColor);
-                DrawString(shipClass[shipData->type].subtitle);
+                DrawCString(FromNameField(shipClass[shipData->type].subtitle));
                 RGBForeColor(labelColor);
                 MoveTo((mainMenuCenter.h + 0x78), (mainMenuCenter.v + 0xfa));
                 DrawIndString(kGameStrList, 0x116);
@@ -114,9 +113,7 @@ void MainScreenUpdate(short which)
                 DrawIndString(kGameStrList, 0xfc);
                 MoveTo((mainMenuCenter.h + 0x7d), (mainMenuCenter.v + 0x15a));
                 RGBForeColor(valueColor);
-                DateToMedString(gameTime, (char *)text);
-                CtoPstr((char *)text);
-                DrawString(text);
+                DrawCString(DateMedText(gameTime));
                 ForeColor(blackColor);
                 i = shipClass[shipData->type].targetPictID;
                 if (targetInfoPic[i] != NULL) {
@@ -141,25 +138,20 @@ void MainScreenUpdate(short which)
                 if (playerName[1] == 'K' && playerName[2] == 'e' &&
                     playerName[3] == 'n' && playerName[4] == 'n' &&
                     playerName[5] == 'y') {
-                    DrawStringCentered("\pOh my God! They killed Kenny!",
+                    DrawStringCentered("Oh my God! They killed Kenny!",
                                        (mainMenuCenter.h - 0x96),
                                        (mainMenuCenter.h + 0x96),
                                        (mainMenuCenter.v + 0x136));
                 } else {
-                    pstrcpy(text, playerName);
-                    PtoCstr(text);
-                    strcat((char *)text, " ");
-                    StrcatIndCString((char *)text, kGameStrList, 0x115);
-                    CtoPstr((char *)text);
-                    DrawStringCentered(text, (mainMenuCenter.h - 0x96),
+                    DrawStringCentered(FromNameField(playerName) + " " + IndString(kGameStrList, 0x115),
+                                       (mainMenuCenter.h - 0x96),
                                        (mainMenuCenter.h + 0x96),
                                        (mainMenuCenter.v + 0x136));
                 }
             }
         } else if (slideIndex[2] >= slideFrameCount[2]) {
             RGBForeColor(labelColor);
-            GetIndString(text, kGameStrList, 0x114);
-            DrawStringCentered(text, (mainMenuCenter.h - 0x96),
+            DrawStringCentered(IndString(kGameStrList, 0x114), (mainMenuCenter.h - 0x96),
                                (mainMenuCenter.h + 0x96),
                                (mainMenuCenter.v + 0x136));
         }
@@ -487,14 +479,7 @@ void DoNewPilot(void)
         }
     }
     i = GetCharResourceShipType(newPilotPopupChoice[0]);
-    strcpy((char *)prompt, "");
-    StrcatIndCString((char *)prompt, kGameStrList, 121);
-    strcat((char *)prompt, " ");
-    pstrcpy(charName, shipyardLongNames[i]);
-    PtoCstr(charName);
-    strcat((char *)prompt, (char *)charName);
-    strcat((char *)prompt, ": ");
-    CtoPstr((char *)prompt);
+    ToPascal(IndString(kGameStrList, 121) + " " + TableEntry(shipyardLongNames, i) + ": ", prompt);
     GetIndString(charName, kNewNameStrList, Rand(3) + 7);
     ok = EVTextInputDialog(prompt, charName, 64);
     if (!ok)

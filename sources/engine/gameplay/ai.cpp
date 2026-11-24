@@ -14,6 +14,7 @@
 #include "prototypes.h"
 #include "burgermath.h"
 #include "outfitmods.h"
+#include "text.h"
 
 Boolean scanActive;
 short prevParent[kMaxShips];
@@ -203,8 +204,7 @@ void ScanPlayer(ShipObj *ship)
     float speed;
     short j;
     char c;
-    unsigned char msg[256];
-    unsigned char buf2[256];
+    std::string msg;
     char *cmsg;
 
     if (ship->aiType != kAIWarship && ship->aiType != kAIInterceptor)
@@ -242,42 +242,24 @@ void ScanPlayer(ShipObj *ship)
                     currentMissionObjectives[j].failed = 1;
                     if ((currentMissionObjectives[j].flags & kMissionHidden) == 0) {
                         ST_PlaySound(beepSnd[1], 1, gSoundVolume);
-                        GetIndString(msg, kGameStrList, 0x11e);
-                        DisplayComm((PStrChar *)msg, 400);
+                        DisplayComm(IndString(kGameStrList, 0x11e), 400);
                     }
                     QuickMissionFailure(j);
                     ship->targetShip = 0;
                     ship->targetStellar = -1;
                     ship->aiState = kAIStateFightSh;
                 } else {
-                    if (currentMissions[j].shipName[0] > 0) {
-                        pstrcpy(msg,
-                                (unsigned char *)currentMissions[j].shipName);
-                    } else {
-                        pstrcpy(msg,
-                                shipClass[ship->type].name);
-                    }
-                    PtoCstr(msg);
-                    strcat((char *)msg, ":  ");
-                    strncpy((char *)buf2, (char *)shipName, 0x40);
-                    PtoCstr(buf2);
-                    strcat((char *)msg, (char *)buf2);
-                    strcat((char *)msg, ", ");
-                    StrcatIndCString((char *)msg, kGameStrList, 0x178);
-                    strcat((char *)msg, " ");
-                    StrcatIndCString((char *)msg, kGameStrList, 0x179);
-                    strcat((char *)msg, " ");
-                    StrcatIndCString((char *)msg, kGameStrList, 0x17a);
-                    strcat((char *)msg, " ");
-                    StrcatIndCString((char *)msg, kGameStrList, 0x17b);
-                    strcat((char *)msg, ".");
+                    if (MissionHasShipName(j))
+                        msg = MissionShipName(j);
+                    else
+                        msg = ShipClassName(ship->type);
+                    msg += TextF(":  %s, %s %s %s %s.", FromNameField(shipName, 0x40).c_str(),
+                                 IndString(kGameStrList, 0x178).c_str(), IndString(kGameStrList, 0x179).c_str(),
+                                 IndString(kGameStrList, 0x17a).c_str(), IndString(kGameStrList, 0x17b).c_str());
                     ship->targetShip = 0;
                     ship->targetStellar = -1;
                     ship->aiState = kAIStateFightSh;
                     if (govtData[ship->govt].scanFine != 0) {
-                        strcat((char *)msg, " ");
-                        StrcatIndCString((char *)msg, kGameStrList, 0x17c);
-                        strcat((char *)msg, " ");
                         if (govtData[ship->govt].scanFine > 0)
                             amt = govtData[ship->govt].scanFine;
                         else {
@@ -286,21 +268,15 @@ void ScanPlayer(ShipObj *ship)
                             if (amt < 1)
                                 amt = 1;
                         }
-                        StrcatCommaNumber(amt, (char *)msg);
-                        strcat((char *)msg, " ");
-                        if (amt > 1)
-                            strcat((char *)msg, creditsCString);
-                        else
-                            strcat((char *)msg, creditCString);
-                        strcat((char *)msg, ".");
+                        msg += TextF(" %s %s %s.", IndString(kGameStrList, 0x17c).c_str(), CommaNumber(amt).c_str(),
+                                     FromField(amt > 1 ? creditsCString : creditCString, sizeof creditCString).c_str());
                         shipData->credits -= amt;
                         if (shipData->credits < 0)
                             shipData->credits = 0;
                         statusRedraw[kRedrawCargo] = 1;
                     }
-                    CtoPstr((char *)msg);
                     ST_PlaySound(beepSnd[4], 1, gSoundVolume);
-                    DisplayComm((PStrChar *)msg, 400);
+                    DisplayComm(msg, 400);
                 }
                 break;
             }
@@ -312,34 +288,17 @@ void ScanPlayer(ShipObj *ship)
                     if (junkData[i].held > 0 &&
                         (govtData[ship->govt].scanMask & junkData[i].scanMask) != 0) {
                         SlapWithPenalty(shipData->curSystem, ship->govt, 0, -1);
-                        if (ship->persType != -1) {
-                            pstrcpy(msg,
-                                    (unsigned char *)personData[ship->persType].name);
-                        } else {
-                            pstrcpy(msg,
-                                    shipClass[ship->type].name);
-                        }
-                        PtoCstr(msg);
-                        strcat((char *)msg, ":  ");
-                        strncpy((char *)buf2, (char *)shipName, 0x40);
-                        PtoCstr(buf2);
-                        strcat((char *)msg, (char *)buf2);
-                        strcat((char *)msg, ", ");
-                        StrcatIndCString((char *)msg, kGameStrList, 0x178);
-                        strcat((char *)msg, " ");
-                        strcat((char *)msg, junkData[i].lcName);
-                        strcat((char *)msg, " ");
-                        StrcatIndCString((char *)msg, kGameStrList, 0x17a);
-                        strcat((char *)msg, " ");
-                        StrcatIndCString((char *)msg, kGameStrList, 0x17b);
-                        strcat((char *)msg, ".");
+                        if (ship->persType != -1)
+                            msg = PersonName(ship->persType);
+                        else
+                            msg = ShipClassName(ship->type);
+                        msg += TextF(":  %s, %s %s %s %s.", FromNameField(shipName, 0x40).c_str(),
+                                     IndString(kGameStrList, 0x178).c_str(), JunkLcName(i).c_str(),
+                                     IndString(kGameStrList, 0x17a).c_str(), IndString(kGameStrList, 0x17b).c_str());
                         ship->targetShip = 0;
                         ship->targetStellar = -1;
                         ship->aiState = kAIStateFightSh;
                         if (govtData[ship->govt].scanFine != 0) {
-                            strcat((char *)msg, " ");
-                            StrcatIndCString((char *)msg, kGameStrList, 0x17c);
-                            strcat((char *)msg, " ");
                             if (govtData[ship->govt].scanFine > 0)
                                 amt = govtData[ship->govt].scanFine;
                             else {
@@ -348,21 +307,16 @@ void ScanPlayer(ShipObj *ship)
                                 if (amt < 1)
                                     amt = 1;
                             }
-                            StrcatCommaNumber(amt, (char *)msg);
-                            strcat((char *)msg, " ");
-                            if (amt > 1)
-                                strcat((char *)msg, creditsCString);
-                            else
-                                strcat((char *)msg, creditCString);
-                            strcat((char *)msg, ".");
+                            msg += TextF(" %s %s %s.", IndString(kGameStrList, 0x17c).c_str(), CommaNumber(amt).c_str(),
+                                         FromField(amt > 1 ? creditsCString : creditCString,
+                                                   sizeof creditCString).c_str());
                             shipData->credits -= amt;
                             if (shipData->credits < 0)
                                 shipData->credits = 0;
                             statusRedraw[kRedrawCargo] = 1;
                         }
-                        CtoPstr((char *)msg);
                         ST_PlaySound(beepSnd[4], 1, gSoundVolume);
-                        DisplayComm((PStrChar *)msg, 400);
+                        DisplayComm(msg, 400);
                         playerHasIllegalJunk = 0;
                         break;
                     }
@@ -375,63 +329,43 @@ void ScanPlayer(ShipObj *ship)
                 if (shipSystems[i] > 0 &&
                     (govtData[ship->govt].scanMask & outfitSystem[i].scanMask) != 0) {
                     SlapWithPenalty(shipData->curSystem, ship->govt, 0, -1);
-                    if (ship->persType != -1) {
-                        pstrcpy(msg,
-                                (unsigned char *)personData[ship->persType].name);
-                    } else {
-                        pstrcpy(msg,
-                                shipClass[ship->type].name);
-                    }
-                    PtoCstr(msg);
-                    strcat((char *)msg, ":  ");
-                    strncpy((char *)buf2, (char *)shipName, 0x40);
-                    PtoCstr(buf2);
-                    strcat((char *)msg, (char *)buf2);
-                    strcat((char *)msg, ", ");
-                    StrcatIndCString((char *)msg, kGameStrList, 0x177);
-                    strcat((char *)msg, " ");
+                    if (ship->persType != -1)
+                        msg = PersonName(ship->persType);
+                    else
+                        msg = ShipClassName(ship->type);
+                    msg += TextF(":  %s, %s ", FromNameField(shipName, 0x40).c_str(),
+                                 IndString(kGameStrList, 0x177).c_str());
                     if (shipSystems[i] == 1) {
-                        c = tolower(lcOutfitName[i][1]);
+                        c = tolower((unsigned char)lcOutfitName[i][0]);
                         if (c == 'a' || c == 'e' || c == 'i' || c == 'o' ||
                             c == 'u') {
-                            StrcatIndCString((char *)msg, kGameStrList, 0x18a);
+                            msg += IndString(kGameStrList, 0x18a);
                         } else {
-                            StrcatIndCString((char *)msg, kGameStrList, 0x189);
+                            msg += IndString(kGameStrList, 0x189);
                         }
-                        strcat((char *)msg, " ");
-                        pstrcpy(buf2, lcOutfitName[i]);
-                        PtoCstr(buf2);
-                        strcat((char *)msg, (char *)buf2);
+                        msg += " ";
+                        msg += lcOutfitName[i];
                     } else {
-                        pstrcpy(buf2, lcPluralOutfitName[i]);
-                        PtoCstr(buf2);
-                        strcat((char *)msg, (char *)buf2);
+                        msg += lcPluralOutfitName[i];
                     }
-                    strcat((char *)msg, " ");
-                    StrcatIndCString((char *)msg, kGameStrList, 0x17b);
-                    strcat((char *)msg, ".");
+                    msg += " ";
+                    msg += IndString(kGameStrList, 0x17b);
+                    msg += ".";
                     ship->targetShip = 0;
                     ship->targetStellar = -1;
                     ship->aiState = kAIStateFightSh;
                     if (govtData[ship->govt].scanFine > 0) {
-                        strcat((char *)msg, " ");
-                        StrcatIndCString((char *)msg, kGameStrList, 0x17c);
-                        strcat((char *)msg, " ");
-                        StrcatCommaNumber(govtData[ship->govt].scanFine, (char *)msg);
-                        strcat((char *)msg, " ");
-                        if (govtData[ship->govt].scanFine > 1)
-                            strcat((char *)msg, creditsCString);
-                        else
-                            strcat((char *)msg, creditCString);
-                        strcat((char *)msg, ".");
+                        msg += TextF(" %s %s %s.", IndString(kGameStrList, 0x17c).c_str(),
+                                     CommaNumber(govtData[ship->govt].scanFine).c_str(),
+                                     FromField(govtData[ship->govt].scanFine > 1 ? creditsCString : creditCString,
+                                               sizeof creditCString).c_str());
                         shipData->credits -= govtData[ship->govt].scanFine;
                         if (shipData->credits < 0)
                             shipData->credits = 0;
                         statusRedraw[kRedrawCargo] = 1;
                     }
-                    CtoPstr((char *)msg);
                     ST_PlaySound(beepSnd[4], 1, gSoundVolume);
-                    DisplayComm((PStrChar *)msg, 400);
+                    DisplayComm(msg, 400);
                     playerHasIllegalOutfits = 0;
                     break;
                 }
@@ -995,9 +929,8 @@ void InterceptorAI(ShipObj *ship)
     short t;
     short s;
     short f;
-    unsigned char msg[256];
+    std::string msg;
     short m;
-    unsigned char buf2[256];
 
     if (ship->IsDisabled() != 0)
         return;
@@ -1087,22 +1020,11 @@ void InterceptorAI(ShipObj *ship)
                                 }
                             }
                             if (m != -1 && commCount < 0) {
-                                strncpy((char *)msg,
-                                        (char *)shipClass[ship->type].name,
-                                        0x3f);
-                                PtoCstr(msg);
-                                strcat((char *)msg, ":  ");
-                                strncpy((char *)buf2, (char *)shipName,
-                                        0x3f);
-                                PtoCstr(buf2);
-                                strcat((char *)msg, (char *)buf2);
-                                strcat((char *)msg, ", ");
-                                StrcatIndCString((char *)msg, kGameStrList,
-                                                Rand(3) + kHailFirstIndex);
-                                strcat((char *)msg, ".");
-                                CtoPstr((char *)msg);
+                                msg = TextF("%s:  %s, %s.", ShipClassName(ship->type).c_str(),
+                                            FromNameField(shipName, 0x3f).c_str(),
+                                            IndString(kGameStrList, Rand(3) + kHailFirstIndex).c_str());
                                 ST_PlaySound(beepSnd[4], 1, gSoundVolume);
-                                DisplayComm((PStrChar *)msg, 400);
+                                DisplayComm(msg, 400);
                             }
                         }
                     }
@@ -1517,9 +1439,8 @@ void HighLevelAIHandler(ShipObj *ship)
 {
     short j;
     short best;
-    unsigned char msg[256];
+    std::string msg;
     FloatPoint pt;
-    char tmp[256];
     short reach;
     short range;
     short i;
@@ -2109,19 +2030,9 @@ void HighLevelAIHandler(ShipObj *ship)
                 } else {
                     if (ship->targetShip == 0) {
                         ST_PlaySound(beepSnd[1], 1, gSoundVolume);
-                        strncpy((char *)msg, (char *)shipClass[ship->type].name, 62);
-                        PtoCstr(msg);
-                        strcat((char *)msg, ":  ");
-                        pstrcpy((unsigned char *)tmp, fuelString[0]);
-                        PtoCstr((unsigned char *)tmp);
-                        strcat((char *)msg, tmp);
-                        strcat((char *)msg, ", ");
-                        strncpy(tmp, (char *)shipName, 62);
-                        PtoCstr((unsigned char *)tmp);
-                        strcat((char *)msg, tmp);
-                        strcat((char *)msg, ".");
-                        CtoPstr((char *)msg);
-                        DisplayComm((PStrChar *)msg, kCommFrames);
+                        msg = TextF("%s:  %s, %s.", ShipClassName(ship->type).c_str(), UpToNul(fuelString[0]).c_str(),
+                                    FromNameField(shipName, 62).c_str());
+                        DisplayComm(msg, kCommFrames);
                         statusRedraw[kRedrawShield] = 1;
                         statusRedraw[kRedrawFuel] = 1;
                     }
@@ -2224,8 +2135,7 @@ void LowLevelAIHandler(ShipObj *ship)
     FloatPoint aim;
     FloatPoint delta;
     FloatPoint anchor;
-    unsigned char msg[256];
-    char tmp[256];
+    std::string msg;
     short box;
     short bestBox;
     short best;
@@ -2660,18 +2570,9 @@ void LowLevelAIHandler(ShipObj *ship)
                             shipData[ship->targetStellar].armor += 1.0F;
                         if (ship->targetStellar == 0) {
                             ST_PlaySound(beepSnd[1], 1, gSoundVolume);
-                            strncpy((char *)msg, (char *)shipClass[ship->type].name,
-                                    0x3e);
-                            PtoCstr(msg);
-                            strcat((char *)msg, ":  ");
-                            StrcatIndCString((char *)msg, kGameStrList, 384);
-                            strcat((char *)msg, ", ");
-                            strncpy(tmp, (char *)shipName, 0x3e);
-                            PtoCstr((unsigned char *)tmp);
-                            strcat((char *)msg, tmp);
-                            strcat((char *)msg, ".");
-                            CtoPstr((char *)msg);
-                            DisplayComm((PStrChar *)msg, kCommFrames);
+                            msg = TextF("%s:  %s, %s.", ShipClassName(ship->type).c_str(),
+                                        IndString(kGameStrList, 384).c_str(), FromNameField(shipName, 0x3e).c_str());
+                            DisplayComm(msg, kCommFrames);
                             statusRedraw[kRedrawShield] = 1;
                             statusRedraw[kRedrawFuel] = 1;
                         }
@@ -3293,6 +3194,8 @@ void AIFireTurret(ShipObj *ship)
                         bearing = CalcInterceptAngle(&ship->pos,
                                                &shipData[ship->targetShip].pos);
                         ok = 0;
+                        // BUG (all versions): the cone test does not wrap at 0/360, so a quadrant turret is not
+                        // picked when its cone crosses 0 deg (heading near 0, or near 180 for rear quad)
                         if (weaponStats[k].guidance == kGuidanceFrontQuad) {
                             d = fabs(bearing - ship->heading);
                             angle = (short)d % kFullCircle;
@@ -3585,51 +3488,51 @@ void DrawHighGoalAbbreviation(short goal)
 
     state = goal;
     if (state == kAIStateHiJack)
-        DrawString("\pHiJack");
+        DrawCString("HiJack");
     if (state == kAIStateGoStel)
-        DrawString("\pGoStel");
+        DrawCString("GoStel");
     if (state == kAIStateHypOut)
-        DrawString("\pHypOut");
+        DrawCString("HypOut");
     if (state == kAIStateDefRet)
-        DrawString("\pDefRet");
+        DrawCString("DefRet");
     if (state == kAIStateFightSh)
-        DrawString("\pFightSh");
+        DrawCString("FightSh");
     if (state == kAIStateGoHome)
-        DrawString("\pGoHome");
+        DrawCString("GoHome");
     if (state == kAIStateWait)
-        DrawString("\pWait");
+        DrawCString("Wait");
     if (state == kAIStateInspect)
-        DrawString("\pInspect");
+        DrawCString("Inspect");
     if (state == kAIStateJumpIn)
-        DrawString("\pJumpIn");
+        DrawCString("JumpIn");
     if (state == kAIStateRefuel)
-        DrawString("\pRefuel");
+        DrawCString("Refuel");
     if (state == kAIStateFlyPr)
-        DrawString("\pFlyPr");
+        DrawCString("FlyPr");
     if (state == kAIStateHypPr)
-        DrawString("\pHypPr");
+        DrawCString("HypPr");
     if (state == kAIStateProtect)
-        DrawString("\pProtect");
+        DrawCString("Protect");
     if (state == kAIStatePlunder)
-        DrawString("\pPlunder");
+        DrawCString("Plunder");
     if (state == kAIStateRepair)
-        DrawString("\pRepair");
+        DrawCString("Repair");
     if (state == kAIStateUnPlunder)
-        DrawString("\pUnPlunder");
+        DrawCString("UnPlunder");
     if (state == kAIStateAtkAster)
-        DrawString("\pAtkAster");
+        DrawCString("AtkAster");
     if (state == kAIStateScoop)
-        DrawString("\pScoop");
+        DrawCString("Scoop");
     if (state == kAIStateDestStel)
-        DrawString("\pDestStel");
+        DrawCString("DestStel");
     if (state == kAIStateConfused)
-        DrawString("\pConfused");
+        DrawCString("Confused");
     if (state == kAIStateGoHGate)
-        DrawString("\pGoHGate");
+        DrawCString("GoHGate");
     if (state == kAIStateEmerge)
-        DrawString("\pEmerge");
+        DrawCString("Emerge");
     if (state == kAIStateCountWait)
-        DrawString("\pCountWait");
+        DrawCString("CountWait");
 }
 
 /*
@@ -3647,53 +3550,53 @@ void DrawLowGoalAbbreviation(short goal)
 
     state = goal;
     if (state == kSubLoJack)
-        DrawString("\pLoJack");
+        DrawCString("LoJack");
     if (state == kSubKillSpd)
-        DrawString("\pKillSpd");
+        DrawCString("KillSpd");
     if (state == kSubFlyStel)
-        DrawString("\pFlyStel");
+        DrawCString("FlyStel");
     if (state == kSubFlyHypD)
-        DrawString("\pFlyHypD");
+        DrawCString("FlyHypD");
     if (state == kSubHypJmp)
-        DrawString("\pHypJmp");
+        DrawCString("HypJmp");
     if (state == kSubRunAwy)
-        DrawString("\pRunAwy");
+        DrawCString("RunAwy");
     if (state == kSubTF)
-        DrawString("\pT+F");
+        DrawCString("T+F");
     if (state == kSubMissile)
-        DrawString("\pMissle");
+        DrawCString("Missle");
     if (state == kSubDock)
-        DrawString("\pDock");
+        DrawCString("Dock");
     if (state == kSubChase)
-        DrawString("\pChase");
+        DrawCString("Chase");
     if (state == kSubZoom)
-        DrawString("\pZoom");
+        DrawCString("Zoom");
     if (state == kSubChasSlw)
-        DrawString("\pChasSlw");
+        DrawCString("ChasSlw");
     if (state == kSubFormFly)
-        DrawString("\pFormFly");
+        DrawCString("FormFly");
     if (state == kSubJmpPar)
-        DrawString("\pJmpPar");
+        DrawCString("JmpPar");
     if (state == kSubWaitTarg)
-        DrawString("\pWaitTarg");
+        DrawCString("WaitTarg");
     if (state == kSubBoard)
-        DrawString("\pBoard");
+        DrawCString("Board");
     if (state == kSubVeerOff)
-        DrawString("\pVeerOff");
+        DrawCString("VeerOff");
     if (state == kSubAfterBurn)
-        DrawString("\pAfterBurn");
+        DrawCString("AfterBurn");
     if (state == kSubChaseSwarm)
-        DrawString("\pChaseSwarm");
+        DrawCString("ChaseSwarm");
     if (state == kSubChaseAst)
-        DrawString("\pChaseAst");
+        DrawCString("ChaseAst");
     if (state == kSubKillAst)
-        DrawString("\pKillAst");
+        DrawCString("KillAst");
     if (state == kSubScoop)
-        DrawString("\pScoop");
+        DrawCString("Scoop");
     if (state == kSubAttkStel)
-        DrawString("\pAttkStel");
+        DrawCString("AttkStel");
     if (state == kSubEnterHG)
-        DrawString("\pEnterHG");
+        DrawCString("EnterHG");
 }
 
 // FUNCTION: EVNOVA 0x0040e020
@@ -4843,17 +4746,15 @@ Boolean AIIsShipLeaving(ShipObj *ship)
 }
 
 /*
- * shipHelpRequests (0x005d9bcc, mac name) is a 20 x 256 table of Pascal
- * phrases; entry Rand(20) is appended after ":  ". The class name is also
- * copied unconditionally first - the exe really does copy it twice.
+ * shipHelpRequests (0x005d9bcc, mac name) holds 20 phrases; entry Rand(20)
+ * is appended after ":  ". The class name is copied twice.
  */
 
 // FUNCTION: EVNOVA 0x004112c0
 // MAC: _AICallForHelp i386 0x00082ffb ppc 0x0008d3d0
 void AICallForHelp(ShipObj *ship)
 {
-    char msg[255];
-    char name[256];
+    std::string msg;
 
     if (ship->persType != -1)
         return;
@@ -4866,23 +4767,18 @@ void AICallForHelp(ShipObj *ship)
             && !ExtendedIsThreatToShip(ship, shipData)
             && !shipData->IsDying() && !ship->IsCloaked()) {
         PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-    strncpy(name, (char *)shipClass[ship->type].name, 0x3f);
-    if (ship->specialMission != -1) {
-        if (currentMissions[ship->specialMission].shipName[0] > 0)
-            strncpy(name, currentMissions[ship->specialMission].shipName, 0x3f);
-    } else if (ship->persType != -1) {
-        strncpy(name, personData[ship->persType].name, 0x3f);
-    } else {
-        strncpy(name, (char *)shipClass[ship->type].name, 0x3f);
-    }
-    PtoCstr((unsigned char *)name);
-    strcpy(msg, name);
-    strcat(msg, ":  ");
-    pstrcpy((unsigned char *)name, shipHelpRequests[Rand(0x14)]);
-    PtoCstr((unsigned char *)name);
-    strcat(msg, name);
-    CtoPstr(msg);
-    DisplayComm((PStrChar *)msg, kCommFrames);
+        msg = ShipClassName(ship->type);
+        if (ship->specialMission != -1) {
+            if (MissionHasShipName(ship->specialMission))
+                msg = MissionShipName(ship->specialMission);
+        } else if (ship->persType != -1) {
+            msg = PersonName(ship->persType);
+        } else {
+            msg = ShipClassName(ship->type);
+        }
+        msg += ":  ";
+        msg += UpToNul(shipHelpRequests[Rand(0x14)]);
+        DisplayComm(msg, kCommFrames);
     }
 }
 
@@ -5315,8 +5211,7 @@ Boolean AIShipIsDocking(ShipObj *ship)
 // MAC: _AIPlunderShipContents i386 0x00083fab ppc 0x0008e624
 void AIPlunderShipContents(ShipObj *me, ShipObj *target)
 {
-    unsigned char msg[256];
-    unsigned char buf2[256];
+    std::string msg;
     short i;
     short avail;
     short room;
@@ -5393,51 +5288,35 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
             || (target->parentShip == -1 && target->specialMission == -1
                 && target->formerEscort >= 1)) {
         statusRedraw[kRedrawCargo] = 1;
-        strcpy((char *)msg, "");
+        msg.clear();
         if (taken > 0 || credits > 0) {
             if (taken > 0) {
-                StrcatCommaNumber(taken, (char *)msg);
-                strcat((char *)msg, " ");
-                if (taken == 1)
-                    pstrcpy(buf2, tonString);
-                else
-                    pstrcpy(buf2, tonsString);
-                PtoCstr(buf2);
-                strcat((char *)msg, (char *)buf2);
-                strcat((char *)msg, " ");
-                StrcatIndCString((char *)msg, kGameStrList, kStrOf);
-                strcat((char *)msg, " ");
-                StrcatIndCString((char *)msg, kGameStrList, kStrCargoWord);
-                strcat((char *)msg, " ");
+                msg += TextF("%s %s %s %s ", CommaNumber(taken).c_str(),
+                             UpToNul(taken == 1 ? tonString : tonsString).c_str(),
+                             IndString(kGameStrList, kStrOf).c_str(), IndString(kGameStrList, kStrCargoWord).c_str());
                 if (credits > 0) {
-                    StrcatIndCString((char *)msg, kGameStrList, kStrAnd);
-                    strcat((char *)msg, " ");
+                    msg += IndString(kGameStrList, kStrAnd);
+                    msg += " ";
                 }
             }
             if (credits > 0) {
                 if (taken <= 0)
-                    strcpy((char *)msg, "");
-                StrcatCommaNumber(credits, (char *)msg);
-                strcat((char *)msg, " ");
-                if (credits > 1)
-                    strcat((char *)msg, creditsCString);
-                else
-                    strcat((char *)msg, creditCString);
-                strcat((char *)msg, " ");
+                    msg.clear();
+                msg += TextF("%s %s ", CommaNumber(credits).c_str(),
+                             FromField(credits > 1 ? creditsCString : creditCString, sizeof creditCString).c_str());
             }
-            StrcatIndCString((char *)msg, kGameStrList, kStrPlunderTail);
-            CtoPstr((char *)msg);
+            msg += IndString(kGameStrList, kStrPlunderTail);
             ST_PlaySound(beepSnd[1], 1, gSoundVolume);
-            DisplayComm((PStrChar *)msg, 400);
+            DisplayComm(msg, 400);
         }
     }
     if (target->index != 0 && target->specialMission == -1
             && ((oddsL > 40 && Rand(101) <= oddsL * 0.5) || cheatsActive != 0)) {
         if (target->parentShip == 0 || target->formerEscort >= 0) {
             if (target->formerEscort == 0)
-                GetIndString(msg, kGameStrList, kStrShipSeized);
+                msg = IndString(kGameStrList, kStrShipSeized);
             else
-                GetIndString(msg, kGameStrList, kStrShipSeizedAlt);
+                msg = IndString(kGameStrList, kStrShipSeizedAlt);
             for (i = 1; i < kMaxShips; i++) {
                 if (shipData[i].active != 0
                         && shipData[i].targetShip == target->index) {
@@ -5448,12 +5327,10 @@ void AIPlunderShipContents(ShipObj *me, ShipObj *target)
                     shipData[i].grudge = 0;
                 }
             }
-            PtoCstr(msg);
-            strcat((char *)msg, " ");
-            StrcatIndCString((char *)msg, kGameStrList, kStrPlunderTail);
-            CtoPstr((char *)msg);
+            msg += " ";
+            msg += IndString(kGameStrList, kStrPlunderTail);
             ST_PlaySound(beepSnd[1], 1, gSoundVolume);
-            DisplayComm((PStrChar *)msg, 400);
+            DisplayComm(msg, 400);
         }
         target->parentShip = me->index;
         target->govt = me->govt;
@@ -5952,6 +5829,7 @@ void FireAIShipWeapon(ShipObj *ship)
                             angle = CalcInterceptAngle(
                                         &ship->pos,
                                         &shipData[ship->targetShip].pos);
+                            // BUG (all versions): no wrap at 0/360, same as AIFireTurret's cone test
                             if (weaponStats[ship->selectedWeapon].guidance == kGuidanceFrontQuad)
                                 cone = (short)FloatAbs(angle
                                            - ship->heading) % kFullCircle;

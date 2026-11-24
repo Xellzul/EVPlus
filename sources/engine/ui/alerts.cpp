@@ -91,7 +91,7 @@ Boolean EVYesNoDialog(unsigned char *text)
 
 // FUNCTION: EVNOVA 0x00497900
 // MAC: _EVTextInputDialog i386 0x000552a3 ppc 0x0005d610
-Boolean EVTextInputDialog(unsigned char *prompt, unsigned char *initial, short maxLen)
+Boolean EVTextInputDialog(const unsigned char *prompt, const unsigned char *initial, short maxLen)
 {
     Boolean result;
     Boolean done;
@@ -233,7 +233,7 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
                 }
             } else {
                 SysBeep(0);
-                SetDialogItemText((Handle)item,(const unsigned char *)"\p");
+                SetControlText((ControlPtr)item, "");
                 SelectDialogItemText(qtyDialog, kQtyTextItem, 0, 0x7fff);
             }
         }

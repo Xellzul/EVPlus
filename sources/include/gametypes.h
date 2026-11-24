@@ -1,6 +1,8 @@
 /* gametypes.h -- shared record and runtime-object layouts; types only. Notes: Research/notes/gametypes.md */
 #ifndef GAMETYPES_H
 #define GAMETYPES_H
+#include <string>
+#include "gameconst.h"
 #include "keycodes.h"
 
 /* the Toolbox flag type: the port's is signed, Carbon's unsigned char */
@@ -28,30 +30,6 @@ typedef struct AnimDelta {
     short                  width;
     short                  height;
 } AnimDelta;
-
-typedef struct MStr252 {
-    char                   c[0xfc];
-} MStr252;
-
-typedef struct MStr254 {
-    char                   c[0xfe];
-} MStr254;
-
-typedef struct MStr255 {
-    char                   c[0xff];
-} MStr255;
-
-typedef struct MStr256 {
-    char                   c[0x100];
-} MStr256;
-
-typedef struct MStr63 {
-    char                   c[0x3f];
-} MStr63;
-
-typedef struct MStr64 {
-    char                   c[0x40];
-} MStr64;
 
 typedef unsigned char Str255[256];
 
@@ -565,21 +543,21 @@ extern BoomSlot *explodData;
 extern BriefMissionRec briefMissionInfo[];
 extern unsigned char hypergateMapMode;
 extern Boolean *missionBit;
-extern char parseBuffer[];
-extern char briefingTextPtr[0x2000];
+extern char parseBuffer[kLongTextSize];
+extern char briefingTextPtr[kLongTextSize];
 extern unsigned char playerName[256];
 extern char creditsCString[0x20];
 extern short playerEscortOrders[4];
 extern short hyperRoute[32];
-extern unsigned char tonString[0x100];
-extern unsigned char tonsString[0x100];
-extern unsigned char lcCargoName[256][0x100];
-extern unsigned char cargoName[256][0x100];
-extern unsigned char cargoAbbrev[256][0x100];
-extern unsigned char creditString[0x100];
-extern unsigned char creditsString[0x100];
-extern unsigned char legalStatusStrings[18][256];
-extern unsigned char govtTargStrings[256][256];
+extern std::string tonString;
+extern std::string tonsString;
+extern std::string lcCargoName[256];
+extern std::string cargoName[256];
+extern std::string cargoAbbrev[256];
+extern std::string creditString;
+extern std::string creditsString;
+extern std::string legalStatusStrings[18];
+extern std::string govtTargStrings[256];
 #define kButtonLabelCount 61
 /* buttonLabel[] indices: STR# 150 (kButtonStrList) entry - 1 */
 #define kLeaveButtonLabel           0
@@ -649,10 +627,10 @@ extern char datePrefix[0x10];
 extern char dateSuffix[0x10];
 extern RoidRecord asteroidType[16];
 extern short dockedPortMissions[2][1000];
-extern unsigned char fuelString[8][0x100];
-extern unsigned char ratingStrings[11][256];
-extern unsigned char shipHelpRequests[20][256];
-extern unsigned char statusCargoName[6][0x100];
+extern std::string fuelString[8];
+extern std::string ratingStrings[11];
+extern std::string shipHelpRequests[20];
+extern std::string statusCargoName[6];
 extern unsigned char playerNickname[256];
 extern short missionRandom[1000];
 extern short prevParent[64];

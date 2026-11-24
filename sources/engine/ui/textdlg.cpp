@@ -92,7 +92,8 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
         return;
     }
 
-    strcat(textShowString, "\r");
+    if (strlen(textShowString) < sizeof textShowString - 1)
+        strcat(textShowString, "\r");
     Dialog dialog;
     if (descResourcePictId >= kFirstResourceID && showMovie) {
         dialog.Open(kTextDialogPictID, TextDialogUpdate, TextDialogFilter, &textDialog, DialogClose::NoFlash);

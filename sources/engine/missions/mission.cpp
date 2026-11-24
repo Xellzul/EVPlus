@@ -13,6 +13,7 @@
 #include "prototypes.h"
 #include "endianswap.h"
 #include "gamedialog.h"
+#include "text.h"
 
 #define kDudeResName "d\x9f" "de"
 #define kSpobResName "sp\x9a" "b"
@@ -152,13 +153,13 @@ void InitMissions(void)
                     crashlog_print("\n");
                 }
             }
-            strcpy(missionAvailData[i].availBits, ((MisnRes *)*missionFileHand)->availBits);
+            CopyCField(missionAvailData[i].availBits, ((MisnRes *)*missionFileHand)->availBits);
             AdjustHandleSize(missionFileHand, kMisnResSize);
             if (missionAvailData[i].availLoc < 0)
                 missionAvailData[i].availLoc = 0;
             GetResInfo(missionFileHand, &resID, &resType, name);
             TrimResourceName(name);
-            strncpy((char *)missionName[i], (char *)name, 250);
+            CopyPascalName(missionName[i], name, 250);
             ReleaseResource(missionFileHand);
             if (i % 5 == 0)
                 IterateInGameEventLoop(10);
@@ -224,14 +225,12 @@ Boolean DoMissionAccept(short mission)
 
     if (briefMissionInfo[mission].cargoUnits > 0) {
         if (ShipTotalHolds() < briefMissionInfo[mission].cargoUnits) {
-            strcpy(textShowString, "");
-            StrcatIndCString(textShowString, kGameStrList, kStrNoHoldsAtAll);
+            SetShowText(IndString(kGameStrList, kStrNoHoldsAtAll));
             ShowTextDialog(0, 0);
             return 0;
         }
         if (TotalMissionCargoSpace() < briefMissionInfo[mission].cargoUnits) {
-            strcpy(textShowString, "");
-            StrcatIndCString(textShowString, kGameStrList, kStrHoldsAreFull);
+            SetShowText(IndString(kGameStrList, kStrHoldsAreFull));
             ShowTextDialog(0, 0);
             return 0;
         }
@@ -246,7 +245,7 @@ Boolean DoMissionAccept(short mission)
     currentMissions[slot].specialShipsJumpedIn = 0;
     currentMissions[slot].specialShipsBoarded = 0;
     currentMissions[slot].specialShipsDisabled = 0;
-    strncpy(currentMissions[slot].name, (char *)missionName[mission], kMissionNameMax);
+    CopyPascalName(currentMissions[slot].name, missionName[mission], kMissionNameMax);
     LoadCurrentMissionData(mission, slot);
     currentMissions[slot].misnIndex = mission;
     if (currentMissions[slot].timeLimit > 0)
@@ -268,7 +267,7 @@ Boolean DoMissionAccept(short mission)
         strncpy(briefingTextPtr, "", 3);
         LoadDescription(briefingTextPtr, currentMissions[slot].briefDesc);
         MungeBriefing(0, slot);
-        strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+        CopyBriefingText(textShowString, briefingTextPtr);
         if (missionDialog != NULL)
             SetDialogVisible(missionDialog, 0);
         greenMissionSyst = -1;
@@ -290,7 +289,7 @@ Boolean DoMissionAccept(short mission)
             strncpy(briefingTextPtr, "", 3);
             LoadDescription(briefingTextPtr, currentMissions[slot].loadCargoDesc);
             MungeBriefing(0, slot);
-            strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+            CopyBriefingText(textShowString, briefingTextPtr);
             ShowTextDialog(0, 1);
             RefreshSAT();
         }
@@ -483,8 +482,8 @@ void LoadCurrentMissionData(short mission, short slot)
             }
             currentMissions[slot].shipSyst = -1;
         }
-        strncpy(currentMissions[slot].shipName, (char *)"\p", 3);
-        strncpy(currentMissions[slot].shipSubtitle, (char *)"\p", 3);
+        strncpy(currentMissions[slot].shipName, "", 3);
+        strncpy(currentMissions[slot].shipSubtitle, "", 3);
         if (((MisnRes *)*missionFileHand)->shipNameID != -1) {
             currentMissions[slot].destStrList = ((MisnRes *)*missionFileHand)->shipNameID;
             h = GetResource(kStringListType, currentMissions[slot].destStrList);
@@ -494,7 +493,7 @@ void LoadCurrentMissionData(short mission, short slot)
                 ReleaseResource(h);
                 n = Rand(strCount) + 1;
                 GetIndString(buf, ((MisnRes *)*missionFileHand)->shipNameID, n);
-                strncpy(currentMissions[slot].shipName, (char *)buf, 0x3f);
+                CopyPascalNameSigned(currentMissions[slot].shipName, buf, 0x3f);
                 currentMissions[slot].destStrIndex = n;
             }
         }
@@ -507,16 +506,16 @@ void LoadCurrentMissionData(short mission, short slot)
                 ReleaseResource(h);
                 n = Rand(strCount) + 1;
                 GetIndString(buf, ((MisnRes *)*missionFileHand)->shipSubtitle, n);
-                strncpy(currentMissions[slot].shipSubtitle, (char *)buf, 0x3f);
+                CopyPascalNameSigned(currentMissions[slot].shipSubtitle, buf, 0x3f);
                 currentMissions[slot].shipStrIndex = n;
             }
         }
-        strcpy(currentMissions[slot].beginSetString, ((MisnRes *)*missionFileHand)->onAccept);
-        strcpy(currentMissions[slot].setString2, ((MisnRes *)*missionFileHand)->onRefuse);
-        strcpy(currentMissions[slot].succSetString, ((MisnRes *)*missionFileHand)->onSuccess);
-        strcpy(currentMissions[slot].failSetString, ((MisnRes *)*missionFileHand)->onFailure);
-        strcpy(currentMissions[slot].abortSetString, ((MisnRes *)*missionFileHand)->onAbort);
-        strcpy(currentMissions[slot].shipDoneSetString, ((MisnRes *)*missionFileHand)->onShipDone);
+        CopyCField(currentMissions[slot].beginSetString, ((MisnRes *)*missionFileHand)->onAccept);
+        CopyCField(currentMissions[slot].setString2, ((MisnRes *)*missionFileHand)->onRefuse);
+        CopyCField(currentMissions[slot].succSetString, ((MisnRes *)*missionFileHand)->onSuccess);
+        CopyCField(currentMissions[slot].failSetString, ((MisnRes *)*missionFileHand)->onFailure);
+        CopyCField(currentMissions[slot].abortSetString, ((MisnRes *)*missionFileHand)->onAbort);
+        CopyCField(currentMissions[slot].shipDoneSetString, ((MisnRes *)*missionFileHand)->onShipDone);
         currentMissions[slot].hasCargo = 0;
         currentMissions[slot].specialShipsKilled = 0;
         currentMissions[slot].specialShipsBoarded = 0;
@@ -543,14 +542,12 @@ Boolean DoMissionCargoPickup(short unused, short needed)
 {
     if (needed > 0) {
         if (ShipTotalHolds() < needed) {
-            strcpy(textShowString, "");
-            StrcatIndCString(textShowString, kGameStrList, 357);
+            SetShowText(IndString(kGameStrList, 357));
             ShowTextDialog(0, 0);
             return 0;
         }
         if (TotalMissionCargoSpace() < needed) {
-            strcpy(textShowString, "");
-            StrcatIndCString(textShowString, kGameStrList, 358);
+            SetShowText(IndString(kGameStrList, 358));
             ShowTextDialog(0, 0);
             return 0;
         }
@@ -571,7 +568,7 @@ void DoMissionSuccess(short mission)
         strncpy(briefingTextPtr, "", 3);
         LoadDescription(briefingTextPtr, currentMissions[mission].compDesc);
         MungeBriefing(0, mission);
-        strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+        CopyBriefingText(textShowString, briefingTextPtr);
         ShowTextDialog(0, 1);
     }
     currentMissionObjectives[mission].active = 0;
@@ -668,7 +665,7 @@ void DoMissionFailure(short mission)
         strncpy(briefingTextPtr, "", 3);
         LoadDescription(briefingTextPtr, currentMissions[mission].failDesc);
         MungeBriefing(0, mission);
-        strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+        CopyBriefingText(textShowString, briefingTextPtr);
         ShowTextDialog(0, 1);
     }
     AbortMission(mission, 0);
@@ -1043,7 +1040,7 @@ void MissionLandCargoCheck(short slot, short stel)
                     strncpy(briefingTextPtr, "", 3);
                     LoadDescription(briefingTextPtr, currentMissions[slot].loadCargoDesc);
                     MungeBriefing(0, slot);
-                    strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+                    CopyBriefingText(textShowString, briefingTextPtr);
                     ShowTextDialog(0, 1);
                 }
             }
@@ -1060,7 +1057,7 @@ void MissionLandCargoCheck(short slot, short stel)
                 strncpy(briefingTextPtr, "", 3);
                 LoadDescription(briefingTextPtr, currentMissions[slot].dropCargoDesc);
                 MungeBriefing(0, slot);
-                strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+                CopyBriefingText(textShowString, briefingTextPtr);
                 ShowTextDialog(0, 1);
                 ResetPlayerPrecalcedValues();
             }
@@ -1080,7 +1077,7 @@ void MissionLandCargoCheck(short slot, short stel)
                     strncpy(briefingTextPtr, "", 3);
                     LoadDescription(briefingTextPtr, currentMissions[slot].dropCargoDesc);
                     MungeBriefing(0, slot);
-                    strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+                    CopyBriefingText(textShowString, briefingTextPtr);
                     ShowTextDialog(0, 1);
                 }
                 statusRedraw[kRedrawCargo] = 1;
@@ -1215,7 +1212,7 @@ void MissionObjectivesCheck(short slot)
             strncpy(briefingTextPtr, "", 3);
             LoadDescription(briefingTextPtr, currentMissions[slot].shipDoneDesc);
             MungeBriefing(0, slot);
-            strncpy(textShowString, briefingTextPtr, kBriefingTextMax);
+            CopyBriefingText(textShowString, briefingTextPtr);
             ShowTextDialog(0, 1);
         }
         if (currentMissions[slot].shipGoal != kMissionGoalNone) {

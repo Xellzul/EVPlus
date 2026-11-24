@@ -19,6 +19,7 @@
 #include "gamepaths.h"
 #include "prototypes.h"
 #include "outfitmods.h"
+#include "text.h"
 
 #define kMaxGamma     6
 #define kDefaultGamma 3
@@ -174,38 +175,38 @@ unsigned char playerName[256];
 unsigned char lastPlayerName[256];
 unsigned char playerNickname[256];
 unsigned char shipName[256];
-unsigned char weapName[kMaxWeapTypes][256];
-unsigned char shipyardLongNames[kMaxShipTypes][256];
-unsigned char shipHelpRequests[20][256];
-unsigned char legalStatusStrings[18][256];
-unsigned char outfitShortNames[kMaxOutfits][256];
-unsigned char shipyardShortNames[kMaxShipTypes][256];
-unsigned char ratingStrings[11][256];
-unsigned char govtTargStrings[kMaxGovts][256];
-unsigned char lcOutfitName[kMaxOutfits][256];
-unsigned char lcPluralOutfitName[kMaxOutfits][256];
-unsigned char cargoName[kMaxCargo][0x100];
-unsigned char statusCargoName[kCargoTypes][0x100];
-unsigned char cargoAbbrev[kMaxCargo][0x100];
-unsigned char lcCargoName[kMaxCargo][0x100];
-unsigned char govtShortNames[kMaxGovts][256];
-unsigned char shipCommNames[kMaxShipTypes][256];
-unsigned char shipMovieFilenames[kMaxShipTypes][256];
+std::string weapName[kMaxWeapTypes];
+std::string shipyardLongNames[kMaxShipTypes];
+std::string shipHelpRequests[20];
+std::string legalStatusStrings[18];
+std::string outfitShortNames[kMaxOutfits];
+std::string shipyardShortNames[kMaxShipTypes];
+std::string ratingStrings[11];
+std::string govtTargStrings[kMaxGovts];
+std::string lcOutfitName[kMaxOutfits];
+std::string lcPluralOutfitName[kMaxOutfits];
+std::string cargoName[kMaxCargo];
+std::string statusCargoName[kCargoTypes];
+std::string cargoAbbrev[kMaxCargo];
+std::string lcCargoName[kMaxCargo];
+std::string govtShortNames[kMaxGovts];
+std::string shipCommNames[kMaxShipTypes];
+std::string shipMovieFilenames[kMaxShipTypes];
 unsigned char descMovieName[256];
-unsigned char govtMediumNames[kMaxGovts][256];
-unsigned char tonString[0x100];
-unsigned char tonsString[0x100];
-unsigned char fuelString[8][0x100];
-unsigned char shieldString[6][0x100];
-unsigned char armorString[3][0x100];
-unsigned char newbieString[10][0x100];
-unsigned char creditString[0x100];
-unsigned char creditsString[0x100];
+std::string govtMediumNames[kMaxGovts];
+std::string tonString;
+std::string tonsString;
+std::string fuelString[8];
+std::string shieldString[6];
+std::string armorString[3];
+std::string newbieString[10];
+std::string creditString;
+std::string creditsString;
 char creditCString[0x20];
 char creditsCString[0x20];
-char descTextPtr[8192];
+char descTextPtr[kLongTextSize];
 char commMsg[2048];
-char textShowString[8192];
+char textShowString[kLongTextSize];
 char datePrefix[0x10];
 char dateSuffix[0x10];
 RGBColor bkgndGreen;
@@ -275,7 +276,7 @@ short jumpSoundLength[2];
 short playerEscortOrders[4];
 short lastIntfResourceID;
 short hypergateMapModeStellar;
-char absquatulateStr[256];
+std::string absquatulateStr;
 UnsignedWide lastFrameMicroseconds;
 Rect statusOffRect[8];
 RGBColor statusColor[8];
@@ -500,8 +501,7 @@ void InitEVNova(void)
 // MAC: _PlayGame i386 0x000457ba ppc 0x0004da00
 void PlayGame(void)
 {
-    unsigned char str[256];
-    unsigned char numStr[256];
+    std::string str;
     DateTimeRec d;
     float dx;
     float dy;
@@ -576,18 +576,12 @@ void PlayGame(void)
                 if (showFPS != 0) {
                     if (ReadTick() > lastFPSUpdateTime + 120) {
                         if ((uint32_t)lastFPSUpdateTime == 0) {
-                            GetIndString(str, kGameStrList, 282);
-                            DisplayComm((PStrChar *)str, 100);
+                            DisplayComm(IndString(kGameStrList, 282), 100);
                         } else {
-                            NumToString((fpsCounter * 60.0 /
-                                    (float)(ReadTick() - lastFPSUpdateTime)),
-                                    numStr);
-                            PtoCstr(numStr);
-                            strcpy((char *)str, (char *)numStr);
-                            strcat((char *)str, " ");
-                            StrcatIndCString((char *)str, kGameStrList, 283);
-                            CtoPstr((char *)str);
-                            DisplayComm((PStrChar *)str, 999);
+                            str = NumText(fpsCounter * 60.0 / (float)(ReadTick() - lastFPSUpdateTime));
+                            str += " ";
+                            str += IndString(kGameStrList, 283);
+                            DisplayComm(str, 999);
                         }
                         lastFPSUpdateTime = ReadTick();
                         fpsCounter = 0;
@@ -638,7 +632,7 @@ void PlayGame(void)
                 if (frameCounter > 1024) {
                     frameCounter = 0;
                     if (d.day == 30 && d.month == 6 && commCount <= 0)
-                        DisplayCommStyled((PStrChar *)"\pHappy birthday Matt", 5, 3, 9, &rgbDarkGrey);
+                        DisplayCommStyled(std::string("Happy birthday Matt"), 5, 3, 9, &rgbDarkGrey);
                 }
                 if (missionSoundID != -1 && missionSnd == 0) {
                     missionSnd = ST_LoadSndResource(missionSoundID);
@@ -697,10 +691,10 @@ void PlayGame(void)
             if (inBackground == 0)
                 RefreshWindowBuffer();
         }
-        if (absquatulateStr[0] != 0) {
+        if (!absquatulateStr.empty()) {
             PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-            DisplayComm((PStrChar *)absquatulateStr, 500);
-            absquatulateStr[0] = 0;
+            DisplayComm(absquatulateStr, 500);
+            absquatulateStr.clear();
         }
         MyProfileExit(kProfGameLoop);
     }
@@ -3308,6 +3302,7 @@ short SpawnEscort(short shipType, short fromSpob)
 // MAC: _DoEscortLand i386 0x0004031f ppc 0x00047904
 void DoEscortLand(void)
 {
+    std::string msg;
     short days;
     int32_t total;
     short i;
@@ -3371,45 +3366,22 @@ void DoEscortLand(void)
         }
 
         if (numSold > 0 || numUpgraded > 0) {
-            strcpy(textShowString, "");
+            msg.clear();
             if (numSold > 0) {
-                StrcatOrdinalNumber(numSold, textShowString, 1);
-                strcat(textShowString, " ");
-                if (numSold == 1)
-                    StrcatIndCString(textShowString, kGameStrList, kStrEscortOne);
-                else
-                    StrcatIndCString(textShowString, kGameStrList, kStrEscortMany);
-                strcat(textShowString, " ");
-                StrcatIndCString(textShowString, kGameStrList, kStrSoldFor);
-                strcat(textShowString, " ");
-                StrcatCommaNumber(saleValue, textShowString);
-                strcat(textShowString, " ");
-                if (saleValue > 1)
-                    strcat(textShowString, creditsCString);
-                else
-                    strcat(textShowString, creditCString);
-                strcat(textShowString, ".");
+                msg += TextF("%s %s %s %s %s.", OrdinalText(numSold, true).c_str(),
+                             IndString(kGameStrList, numSold == 1 ? kStrEscortOne : kStrEscortMany).c_str(),
+                             IndString(kGameStrList, kStrSoldFor).c_str(), CommaNumber(saleValue).c_str(),
+                             FromField(saleValue > 1 ? creditsCString : creditCString, sizeof creditCString).c_str());
                 if (numUpgraded > 0)
-                    strcat(textShowString, "\r\r");
+                    msg += "\r\r";
             }
             if (numUpgraded > 0) {
-                StrcatOrdinalNumber(numUpgraded, textShowString, 1);
-                strcat(textShowString, " ");
-                if (numUpgraded == 1)
-                    StrcatIndCString(textShowString, kGameStrList, kStrEscortOne);
-                else
-                    StrcatIndCString(textShowString, kGameStrList, kStrEscortMany);
-                strcat(textShowString, " ");
-                StrcatIndCString(textShowString, kGameStrList, kStrUpgradedFor);
-                strcat(textShowString, " ");
-                StrcatCommaNumber(upgradeCost, textShowString);
-                strcat(textShowString, " ");
-                if (upgradeCost > 1)
-                    strcat(textShowString, creditsCString);
-                else
-                    strcat(textShowString, creditCString);
-                strcat(textShowString, ".");
+                msg += TextF("%s %s %s %s %s.", OrdinalText(numUpgraded, true).c_str(),
+                             IndString(kGameStrList, numUpgraded == 1 ? kStrEscortOne : kStrEscortMany).c_str(),
+                             IndString(kGameStrList, kStrUpgradedFor).c_str(), CommaNumber(upgradeCost).c_str(),
+                             FromField(upgradeCost > 1 ? creditsCString : creditCString, sizeof creditCString).c_str());
             }
+            SetShowText(msg);
             ShowTextDialog(0, 0);
             total = numSold + numUpgraded;
             days = total / 2;
@@ -3482,12 +3454,7 @@ void DoEscortPayment(short days)
             hyperGamma = -1.0f;
             FadeGammaTo(100, 0);
         }
-        strcpy(textShowString, "");
-        if (numDismissed == 1) {
-            StrcatIndCString(textShowString, kGameStrList, 302);
-        } else {
-            StrcatIndCString(textShowString, kGameStrList, 303);
-        }
+        SetShowText(IndString(kGameStrList, numDismissed == 1 ? 302 : 303));
         statusRedraw[kRedrawCargo] = 1;
         ShowTextDialog(0, 0);
         DrawStatus();

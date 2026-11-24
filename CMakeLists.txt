@@ -15,7 +15,7 @@ if(WIN32)
   enable_language(RC)
 endif()
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  message(FATAL_ERROR "the game needs clang (-fpascal-strings): pass -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++")
+  message(FATAL_ERROR "the game needs clang: pass -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++")
 endif()
 
 set(SRC ${CMAKE_SOURCE_DIR}/sources)
@@ -259,9 +259,9 @@ endif()
 
 # signed plain char (as MW), its FP evaluation in double; the decompile's pointer/aliasing habits;
 set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fno-strict-aliasing
-    -fwrapv -fpascal-strings -fasm-blocks -ffp-eval-method=double
+    -fwrapv -fasm-blocks -ffp-eval-method=double
     -Wno-everything -Werror=pointer-to-int-cast -Werror=int-to-pointer-cast -Werror=void-pointer-to-int-cast
-    -Werror=int-to-void-pointer-cast
+    -Werror=int-to-void-pointer-cast -Werror=format -Werror=non-pod-varargs
     $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
 
 if(WIN32)

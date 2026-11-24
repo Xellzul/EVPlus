@@ -1,73 +1,83 @@
 /* briefingtext.cpp -- briefing text token substitution */
 
+#include <algorithm>
 #include "game.h"
 #include "gameutil.h"
 #include "player.h"
 #include "missions.h"
 #include "stellar.h"
 #include "prototypes.h"
+#include "text.h"
 
-#define kBriefingSize   0x2000
-#define kNameLen        0x3f    /* strncpy budget for a 64-byte token buffer */
+#define kNameLen        0x3f    /* name tokens: PascalToCBuffer size (62 chars), <PNN> cut */
+#define kTokenMax       63      /* other tokens from 64-byte fields */
+#define kRecentRankMax  127
 #define kNoRankIndex    341
 #define kOwedBase       50000   /* pay below -50000 is a debt of the excess */
+
+static void MungeForSymbol(std::string &text, const char *needle, const std::string &replacement);
+
+/* a Pascal name as a token: at most 62 bytes, up to a NUL */
+static std::string NameToken(const unsigned char *name)
+{
+    char buf[kNameLen];
+
+    PascalToCBuffer(buf, sizeof buf, name);
+    return buf;
+}
+
+static std::string NameToken(const std::string &name)
+{
+    return UpToNul(name, kNameLen - 1);
+}
+
+/* a C string field of srcSize bytes as a token: up to its NUL, at most max bytes */
+static std::string FieldToken(const char *src, size_t srcSize, size_t max)
+{
+    return std::string(src, strnlen(src, std::min(srcSize, max)));
+}
 
 // FUNCTION: EVNOVA 0x004444f0
 // MAC: _MungeBriefing i386 0x0009c11d ppc 0x000a81c0
 void MungeBriefing(Boolean briefing, short which)
 {
-    char tokenStr[64];
-    char destStelStr[64];
-    char destSysStr[64];
-    char retStelStr[64];
-    char retSysStr[64];
-    char cargoStr[64];
-    char cargoQtyStr[64];
-    char shipMsgStr[64];
-    char deadlineStr[64];
-    char playerNameStr[64];
-    char nickStr[64];
-    char playerShipStr[64];
-    char personStr[64];
-    char shipTypeStr[64];
-    char prkStr[64];
-    char srkStr[64];
-    char payStr[64];
-    char rank3Str[64];
-    char rank4Str[64];
-    char rrkStr[128];
-    Str255 numStr;
+    std::string text;
+    std::string tokenStr;
+    std::string destStelStr = "[Error]";
+    std::string destSysStr = "[Error]";
+    std::string retStelStr = "[Error]";
+    std::string retSysStr = "[Error]";
+    std::string cargoStr = "[Error]";
+    std::string cargoQtyStr = "[Error]";
+    std::string shipMsgStr = "[Error]";
+    std::string deadlineStr = "[Error]";
+    std::string personStr = "[Error]";
+    std::string shipTypeStr = "[Error]";
+    std::string prkStr = "[Error]";
+    std::string srkStr = "[Error]";
+    std::string rank3Str = "[Error]";
+    std::string rank4Str = "[Error]";
+    std::string rrkStr = "[Error]";
+    std::string payStr = "[Error]";
+    std::string playerNameStr;
+    std::string nickStr;
+    std::string playerShipStr;
+    std::string noRank;
+    std::string dateText;
+    size_t len;
     short i;
     short sys;
     short bestIdx;
-    short bestVal;
+    short bestVal = 0;
     int32_t pay;
     int32_t pct;
 
-    stringHandle = NULL;
-    stringHandle = (Handle)AllocAHandle2(strlen(briefingTextPtr), 0);
-    if (stringHandle == NULL)
+    /* an empty text leaves the buffer as it is */
+    len = strnlen(briefingTextPtr, kLongTextSize);
+    if (len == 0)
         return;
-    memmove(*stringHandle, briefingTextPtr, GetAHandleSize(stringHandle));
-    for (i = 0; i < kBriefingSize; i++)
-        briefingTextPtr[i] = '\0';
-
-    strncpy(destStelStr, "[Error]", 10);
-    strncpy(destSysStr, "[Error]", 10);
-    strncpy(retStelStr, "[Error]", 10);
-    strncpy(retSysStr, "[Error]", 10);
-    strncpy(cargoStr, "[Error]", 10);
-    strncpy(cargoQtyStr, "[Error]", 10);
-    strncpy(shipMsgStr, "[Error]", 10);
-    strncpy(deadlineStr, "[Error]", 10);
-    strncpy(personStr, "[Error]", 10);
-    strncpy(shipTypeStr, "[Error]", 10);
-    strncpy(prkStr, "[Error]", 10);
-    strncpy(srkStr, "[Error]", 10);
-    strncpy(rank3Str, "[Error]", 10);
-    strncpy(rank4Str, "[Error]", 10);
-    strncpy(rrkStr, "[Error]", 10);
-    strncpy(payStr, "[Error]", 10);
+    text.assign(briefingTextPtr, len);
+    memset(briefingTextPtr, 0, kLongTextSize);
 
     if (briefing != 0) {
         if (which == -1)
@@ -75,9 +85,7 @@ void MungeBriefing(Boolean briefing, short which)
 
         if (briefMissionInfo[which].destStellar >= 0 &&
             briefMissionInfo[which].destStellar < kMaxStellars) {
-            strncpy(destStelStr,
-                    (char *)stellarData[briefMissionInfo[which].destStellar].name, kNameLen);
-            PtoCstr((unsigned char *)destStelStr);
+            destStelStr = NameToken(stellarData[briefMissionInfo[which].destStellar].name);
         }
         if (briefMissionInfo[which].destSystem >= 0 &&
             briefMissionInfo[which].destSystem < kMaxSystems) {
@@ -85,15 +93,12 @@ void MungeBriefing(Boolean briefing, short which)
             if (sys == -1)
                 sys = FindFirstCoLocatedSystem(briefMissionInfo[which].destSystem);
             if (sys != -1) {
-                strncpy(destSysStr, (char *)systemData[sys].name, kNameLen);
-                PtoCstr((unsigned char *)destSysStr);
+                destSysStr = NameToken(systemData[sys].name);
             }
         }
         if (briefMissionInfo[which].returnStellar >= 0 &&
             briefMissionInfo[which].returnStellar < kMaxStellars) {
-            strncpy(retStelStr,
-                    (char *)stellarData[briefMissionInfo[which].returnStellar].name, kNameLen);
-            PtoCstr((unsigned char *)retStelStr);
+            retStelStr = NameToken(stellarData[briefMissionInfo[which].returnStellar].name);
         }
         if (briefMissionInfo[which].returnSystem >= 0 &&
             briefMissionInfo[which].returnSystem < kMaxSystems) {
@@ -101,38 +106,33 @@ void MungeBriefing(Boolean briefing, short which)
             if (sys == -1)
                 sys = FindFirstCoLocatedSystem(briefMissionInfo[which].returnSystem);
             if (sys != -1) {
-                strncpy(retSysStr, (char *)systemData[sys].name, kNameLen);
-                PtoCstr((unsigned char *)retSysStr);
+                retSysStr = NameToken(systemData[sys].name);
             }
         }
 
-        if (strcmp(destStelStr, "[Error]") == 0) {
-            if (strcmp(retStelStr, "[Error]") != 0)
-                strcpy(destStelStr, retStelStr);
+        if (destStelStr == "[Error]") {
+            if (retStelStr != "[Error]")
+                destStelStr = retStelStr;
         }
-        if (strcmp(destSysStr, "[Error]") == 0) {
-            if (strcmp(retSysStr, "[Error]") != 0)
-                strcpy(destSysStr, retSysStr);
+        if (destSysStr == "[Error]") {
+            if (retSysStr != "[Error]")
+                destSysStr = retSysStr;
         }
 
         if (briefMissionInfo[which].cargoType >= 0 &&
             briefMissionInfo[which].cargoType < kMaxCargo) {
-            strncpy(cargoStr, (char *)lcCargoName[briefMissionInfo[which].cargoType], kNameLen);
-            PtoCstr((unsigned char *)cargoStr);
-            if (cargoStr[0] == '*') {
-                sys = strlen(cargoStr);
-                for (i = 0; i < sys; i++)
-                    cargoStr[i] = cargoStr[i + 1];
-            }
-            NumToString(briefMissionInfo[which].cargoUnits, numStr);
-            strncpy(cargoQtyStr, (char *)numStr, kNameLen);
-            PtoCstr((unsigned char *)cargoQtyStr);
+            cargoStr = NameToken(lcCargoName[briefMissionInfo[which].cargoType]);
+            if (!cargoStr.empty() && cargoStr[0] == '*')
+                cargoStr.erase(0, 1);
+            cargoQtyStr = NumText(briefMissionInfo[which].cargoUnits);
         }
 
         if (briefMissionInfo[which].dueDate.month != gameTime.month ||
             briefMissionInfo[which].dueDate.day != gameTime.day ||
-            briefMissionInfo[which].dueDate.year != gameTime.year)
-            DateToLongString(briefMissionInfo[which].dueDate, deadlineStr);
+            briefMissionInfo[which].dueDate.year != gameTime.year) {
+            dateText = DateLongText(briefMissionInfo[which].dueDate);
+            deadlineStr = FieldToken(dateText.c_str(), dateText.size(), kTokenMax);
+        }
 
         pay = 0;
         if (briefMissionInfo[which].payment > 0) {
@@ -145,10 +145,8 @@ void MungeBriefing(Boolean briefing, short which)
         } else if (briefMissionInfo[which].payment < -kOwedBase) {
             pay = -kOwedBase - briefMissionInfo[which].payment;
         }
-        if (pay >= 0) {
-            payStr[0] = '\0';
-            StrcatCommaNumber(pay, payStr);
-        }
+        if (pay >= 0)
+            payStr = CommaNumber(pay);
     } else {
         if (which == -1)
             goto tokens;
@@ -157,9 +155,7 @@ void MungeBriefing(Boolean briefing, short which)
 
         if (currentMissions[which].travelStellar >= 0 &&
             currentMissions[which].travelStellar < kMaxStellars) {
-            strncpy(destStelStr,
-                    (char *)stellarData[currentMissions[which].travelStellar].name, kNameLen);
-            PtoCstr((unsigned char *)destStelStr);
+            destStelStr = NameToken(stellarData[currentMissions[which].travelStellar].name);
             if (stellarData[currentMissions[which].travelStellar].system >= 0 &&
                 stellarData[currentMissions[which].travelStellar].system < kMaxSystems) {
                 sys = FindActiveCoLocatedSystem(
@@ -173,15 +169,12 @@ void MungeBriefing(Boolean briefing, short which)
             if (sys == -1)
                 sys = FindSystemFromStellar(currentMissions[which].travelStellar);
             if (sys != -1) {
-                strncpy(destSysStr, (char *)systemData[sys].name, kNameLen);
-                PtoCstr((unsigned char *)destSysStr);
+                destSysStr = NameToken(systemData[sys].name);
             }
         }
         if (currentMissions[which].returnStellar >= 0 &&
             currentMissions[which].returnStellar < kMaxStellars) {
-            strncpy(retStelStr,
-                    (char *)stellarData[currentMissions[which].returnStellar].name, kNameLen);
-            PtoCstr((unsigned char *)retStelStr);
+            retStelStr = NameToken(stellarData[currentMissions[which].returnStellar].name);
             if (stellarData[currentMissions[which].returnStellar].system >= 0 &&
                 stellarData[currentMissions[which].returnStellar].system < kMaxSystems) {
                 sys = FindActiveCoLocatedSystem(
@@ -195,42 +188,37 @@ void MungeBriefing(Boolean briefing, short which)
             if (sys == -1)
                 sys = FindSystemFromStellar(currentMissions[which].returnStellar);
             if (sys != -1) {
-                strncpy(retSysStr, (char *)systemData[sys].name, kNameLen);
-                PtoCstr((unsigned char *)retSysStr);
+                retSysStr = NameToken(systemData[sys].name);
             }
         }
 
-        if (strcmp(destStelStr, "[Error]") == 0) {
-            if (strcmp(retStelStr, "[Error]") != 0)
-                strcpy(destStelStr, retStelStr);
+        if (destStelStr == "[Error]") {
+            if (retStelStr != "[Error]")
+                destStelStr = retStelStr;
         }
-        if (strcmp(destSysStr, "[Error]") == 0) {
-            if (strcmp(retSysStr, "[Error]") != 0)
-                strcpy(destSysStr, retSysStr);
+        if (destSysStr == "[Error]") {
+            if (retSysStr != "[Error]")
+                destSysStr = retSysStr;
         }
 
         if (currentMissions[which].cargoType >= 0 &&
             currentMissions[which].cargoType < kMaxCargo) {
-            strncpy(cargoStr, (char *)lcCargoName[currentMissions[which].cargoType], kNameLen);
-            PtoCstr((unsigned char *)cargoStr);
-            if (cargoStr[0] == '*') {
-                sys = strlen(cargoStr);
-                for (i = 0; i < sys; i++)
-                    cargoStr[i] = cargoStr[i + 1];
-            }
-            NumToString(currentMissions[which].cargoQty, numStr);
-            strncpy(cargoQtyStr, (char *)numStr, kNameLen);
-            PtoCstr((unsigned char *)cargoQtyStr);
+            cargoStr = NameToken(lcCargoName[currentMissions[which].cargoType]);
+            if (!cargoStr.empty() && cargoStr[0] == '*')
+                cargoStr.erase(0, 1);
+            cargoQtyStr = NumText(currentMissions[which].cargoQty);
         }
 
         if (currentMissionObjectives[which].dueDate.month != gameTime.month ||
             currentMissionObjectives[which].dueDate.day != gameTime.day ||
-            currentMissionObjectives[which].dueDate.year != gameTime.year)
-            DateToLongString(currentMissionObjectives[which].dueDate, deadlineStr);
+            currentMissionObjectives[which].dueDate.year != gameTime.year) {
+            dateText = DateLongText(currentMissionObjectives[which].dueDate);
+            deadlineStr = FieldToken(dateText.c_str(), dateText.size(), kTokenMax);
+        }
 
-        strncpy(shipMsgStr, currentMissions[which].shipName, kNameLen);
-        PtoCstr((unsigned char *)shipMsgStr);
+        shipMsgStr = NameToken((const unsigned char *)currentMissions[which].shipName);
 
+        pay = 0;
         if (currentMissions[which].payment > 0) {
             pay = currentMissions[which].payment;
         } else if (currentMissions[which].payment <= -(kPctOfCashBase + 1) &&
@@ -241,34 +229,26 @@ void MungeBriefing(Boolean briefing, short which)
         } else if (currentMissions[which].payment < -kOwedBase) {
             pay = -kOwedBase - currentMissions[which].payment;
         }
-        if (pay >= 0) {
-            payStr[0] = '\0';
-            StrcatCommaNumber(pay, payStr);
-        }
+        if (pay >= 0)
+            payStr = CommaNumber(pay);
     }
 
 tokens:
     if (offeringShipIndex >= 0 && offeringShipIndex < kMaxShips &&
         (shipData[offeringShipIndex].persType >= 0 &&
          shipData[offeringShipIndex].persType < kMaxPersons)) {
-        strncpy(personStr,
-                personData[shipData[offeringShipIndex].persType].name, kNameLen);
-        PtoCstr((unsigned char *)personStr);
+        personStr = NameToken((const unsigned char *)personData[shipData[offeringShipIndex].persType].name);
     }
 
-    strncpy(playerNameStr, (char *)playerName, kNameLen);
-    PtoCstr((unsigned char *)playerNameStr);
-    if (playerNickname[0] != 0) {
-        strncpy(nickStr, (char *)playerNickname, kNameLen);
-        PtoCstr((unsigned char *)nickStr);
-    } else {
-        strncpy(nickStr, (char *)playerName, kNameLen);
-    }
-    strncpy(playerShipStr, (char *)shipName, kNameLen);
-    PtoCstr((unsigned char *)playerShipStr);
-    strncpy(shipTypeStr, (char *)shipClass[shipData[0].type].name, kNameLen);
-    PtoCstr((unsigned char *)shipTypeStr);
+    playerNameStr = NameToken(playerName);
+    if (playerNickname[0] != 0)
+        nickStr = NameToken(playerNickname);
+    else
+        nickStr = FieldToken((const char *)playerName, sizeof playerName, kNameLen);
+    playerShipStr = NameToken(shipName);
+    shipTypeStr = NameToken(shipClass[shipData[0].type].name);
 
+    noRank = IndString(kGameStrList, kNoRankIndex);
     bestIdx = -1;
     for (i = 0; i < kMaxRanks; i++) {
         if (rankData[i].active != 0 && rankData[i].loaded != 0 &&
@@ -279,10 +259,9 @@ tokens:
         }
     }
     if (bestIdx != -1) {
-        strcpy(prkStr, rankData[bestIdx].convName);
+        prkStr = FieldToken(rankData[bestIdx].convName, sizeof rankData[bestIdx].convName, kTokenMax);
     } else {
-        strcpy(prkStr, "");
-        StrcatIndCString(prkStr, kGameStrList, kNoRankIndex);
+        prkStr = FieldToken(noRank.c_str(), noRank.size(), kTokenMax);
     }
 
     bestIdx = -1;
@@ -295,10 +274,9 @@ tokens:
         }
     }
     if (bestIdx != -1) {
-        strcpy(srkStr, rankData[bestIdx].shortName);
+        srkStr = FieldToken(rankData[bestIdx].shortName, sizeof rankData[bestIdx].shortName, kTokenMax);
     } else {
-        strcpy(srkStr, "");
-        StrcatIndCString(srkStr, kGameStrList, kNoRankIndex);
+        srkStr = FieldToken(noRank.c_str(), noRank.size(), kTokenMax);
     }
 
     bestIdx = -1;
@@ -314,10 +292,9 @@ tokens:
         }
     }
     if (bestIdx != -1) {
-        strcpy(rank3Str, rankData[bestIdx].shortName);
+        rank3Str = FieldToken(rankData[bestIdx].shortName, sizeof rankData[bestIdx].shortName, kTokenMax);
     } else {
-        strcpy(rank3Str, "");
-        StrcatIndCString(rank3Str, kGameStrList, kNoRankIndex);
+        rank3Str = FieldToken(noRank.c_str(), noRank.size(), kTokenMax);
     }
 
     bestIdx = -1;
@@ -333,80 +310,92 @@ tokens:
         }
     }
     if (bestIdx != -1) {
-        strcpy(rank4Str, rankData[bestIdx].shortName);
+        rank4Str = FieldToken(rankData[bestIdx].shortName, sizeof rankData[bestIdx].shortName, kTokenMax);
     } else {
-        strcpy(rank4Str, "");
-        StrcatIndCString(rank4Str, kGameStrList, kNoRankIndex);
+        rank4Str = FieldToken(noRank.c_str(), noRank.size(), kTokenMax);
     }
 
     if (recentActivatedRank != -1) {
-        strcpy(rrkStr, rankData[recentActivatedRank].name);
+        rrkStr = FieldToken(rankData[recentActivatedRank].name, sizeof rankData[recentActivatedRank].name,
+                            kRecentRankMax);
     } else {
-        strcpy(rrkStr, "");
-        StrcatIndCString(rrkStr, kGameStrList, kNoRankIndex);
+        rrkStr = FieldToken(noRank.c_str(), noRank.size(), kRecentRankMax);
     }
 
-    MungeForSymbol("<DST>", destStelStr);
-    MungeForSymbol("<DSY>", destSysStr);
-    MungeForSymbol("<RST>", retStelStr);
-    MungeForSymbol("<RSY>", retSysStr);
-    MungeForSymbol("<CT>", cargoStr);
-    MungeForSymbol("<CQ>", cargoQtyStr);
-    MungeForSymbol("<SN>", shipMsgStr);
-    MungeForSymbol("<DL>", deadlineStr);
-    MungeForSymbol("<PN>", playerNameStr);
-    MungeForSymbol("<PNN>", nickStr);
-    MungeForSymbol("<PSN>", playerShipStr);
-    MungeForSymbol("<PST>", shipTypeStr);
-    MungeForSymbol("<OSN>", personStr);
-    MungeForSymbol("<PRK>", prkStr);
-    MungeForSymbol("<SRK>", srkStr);
-    MungeForSymbol("<RRK>", rrkStr);
-    MungeForSymbol("<PAY>", payStr);
-    MungeForSymbol("<REG>", kRegisteredName);
+    MungeForSymbol(text, "<DST>", destStelStr);
+    MungeForSymbol(text, "<DSY>", destSysStr);
+    MungeForSymbol(text, "<RST>", retStelStr);
+    MungeForSymbol(text, "<RSY>", retSysStr);
+    MungeForSymbol(text, "<CT>", cargoStr);
+    MungeForSymbol(text, "<CQ>", cargoQtyStr);
+    MungeForSymbol(text, "<SN>", shipMsgStr);
+    MungeForSymbol(text, "<DL>", deadlineStr);
+    MungeForSymbol(text, "<PN>", playerNameStr);
+    MungeForSymbol(text, "<PNN>", nickStr);
+    MungeForSymbol(text, "<PSN>", playerShipStr);
+    MungeForSymbol(text, "<PST>", shipTypeStr);
+    MungeForSymbol(text, "<OSN>", personStr);
+    MungeForSymbol(text, "<PRK>", prkStr);
+    MungeForSymbol(text, "<SRK>", srkStr);
+    MungeForSymbol(text, "<RRK>", rrkStr);
+    MungeForSymbol(text, "<PAY>", payStr);
+    MungeForSymbol(text, "<REG>", kRegisteredName);
 
     if (descRankGovt[0] != -1) {
-        sprintf(tokenStr, "<PRK%i>", descRankGovt[0] + kFirstResourceID);
-        MungeForSymbol(tokenStr, rank4Str);
+        tokenStr = "<PRK" + std::to_string(descRankGovt[0] + kFirstResourceID) + ">";
+        MungeForSymbol(text, tokenStr.c_str(), rank4Str);
     }
     if (descRankGovt[1] != -1) {
-        sprintf(tokenStr, "<SRK%i>", descRankGovt[1] + kFirstResourceID);
-        MungeForSymbol(tokenStr, rank3Str);
+        tokenStr = "<SRK" + std::to_string(descRankGovt[1] + kFirstResourceID) + ">";
+        MungeForSymbol(text, tokenStr.c_str(), rank3Str);
     }
 
     if (leetMode != 0) {
-        MungeForSymbol("you", "j00");
-        MungeForSymbol("You", "j00");
-        MungeForSymbol("ck", "x0r");
-        MungeForSymbol("i", "1");
-        MungeForSymbol("I", "1");
-        MungeForSymbol("e", "3");
-        MungeForSymbol("E", "3");
-        MungeForSymbol("l", "7");
-        MungeForSymbol("L", "7");
+        MungeForSymbol(text, "you", "j00");
+        MungeForSymbol(text, "You", "j00");
+        MungeForSymbol(text, "ck", "x0r");
+        MungeForSymbol(text, "i", "1");
+        MungeForSymbol(text, "I", "1");
+        MungeForSymbol(text, "e", "3");
+        MungeForSymbol(text, "E", "3");
+        MungeForSymbol(text, "l", "7");
+        MungeForSymbol(text, "L", "7");
     }
 
-    if (GetAHandleSize(stringHandle) <= kBriefingSize) {
-        memmove(briefingTextPtr, *stringHandle, GetAHandleSize(stringHandle));
-    } else {
-        memmove(briefingTextPtr, *stringHandle, kBriefingSize);
-    }
-    DeallocAHandle(stringHandle);
-    stringHandle = NULL;
+    /* the text stays NUL-ended: at most kLongTextSize - 1 bytes */
+    memcpy(briefingTextPtr, text.data(), std::min(text.size(), (size_t)kLongTextSize - 1));
 }
 
+/* the first `find' at or after offset replaced by `repl'; returns the offset after the replacement, -1 when
+   there is none */
+// FUNCTION: EVNOVA 0x004bc100
+static int32_t ReplaceInText(std::string &text, int32_t offset, const char *find, int32_t findLen,
+                             const char *repl, int32_t replLen)
+{
+    size_t at;
+
+    if ((int32_t)text.size() - offset - findLen + 1 <= 0)
+        return -1;
+    at = text.find(find, (size_t)offset, (size_t)findLen);
+    if (at == std::string::npos)
+        return -1;
+    text.replace(at, (size_t)findLen, repl, (size_t)replLen);
+    return (int32_t)at + replLen;
+}
+
+/* every needle in the text replaced; the resume offset is a short: past 32767 it wraps */
 // FUNCTION: EVNOVA 0x00445d70
 // MAC: _MungeForSymbol i386 0x000984a3 ppc 0x000a4230
-void MungeForSymbol(char *needle, char *replacement)
+static void MungeForSymbol(std::string &text, const char *needle, const std::string &replacement)
 {
     short needleLen;
     short replLen;
     short at;
 
     needleLen = strlen(needle);
-    replLen = strlen(replacement);
+    replLen = replacement.size();
     at = 0;
     do {
-        at = ReplaceInHandle(stringHandle, at, needle, needleLen, replacement, replLen);
+        at = ReplaceInText(text, at, needle, needleLen, replacement.data(), replLen);
     } while (at >= 0);
 }

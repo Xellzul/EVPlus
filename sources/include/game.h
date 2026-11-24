@@ -1,6 +1,7 @@
 /* game.h -- starting, running and stopping a game. Notes: Research/notes/game.md */
 #ifndef GAME_H
 #define GAME_H
+#include <string>
 #include "resources.h"
 #include "gameconst.h"
 #include "spriteworld.h"
@@ -23,7 +24,6 @@ extern SpriteRec *masterStellarSprite[kMasterStellarSprites];
 extern SpriteRec *masterShotSprite[256];
 extern void CreateExplosion(FloatPoint pt, short type, short size, Boolean sound);
 extern void SpawnExplod(FloatPoint pos, short unused, short type, short delay);
-extern Handle stringHandle;
 extern short ConvertSpriteToRLE(SpriteRec *set);
 extern SpriteRec *masterNavTargetSprite;
 extern SpriteRec *masterWeapTargetSprite;
@@ -122,7 +122,7 @@ extern short TrackMainScreenButtons(Point where);
 extern void UpdateAllPortDialogs(); /* unprototyped: the 1.1.1 DoShipyardDialog passes it the port dialog */
 extern short WeaponBurstInterval(short weap, short count);
 extern Boolean WeaponDisableOnly(short weap);
-extern char absquatulateStr[];
+extern std::string absquatulateStr;
 extern SpriteLayerRec *asteroidLayer;
 extern SpriteLayerRec *boxLayer;
 extern float tableCos[360];

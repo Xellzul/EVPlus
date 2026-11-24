@@ -357,7 +357,7 @@ void MainScreenKey(char key, int32_t a, int32_t b)
         mainScreenBackgroundDirty = 1;
         LoadDescription(briefingTextPtr, kCreditsTextID);
         MungeBriefing(0, -1);
-        strcpy(textShowString, briefingTextPtr);
+        CopyBriefingText(textShowString, briefingTextPtr);
         ShowTextDialog(0, 1);
         mainScreenBackgroundDirty = 1;
     }

@@ -10,6 +10,7 @@
 #include "prototypes.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "text.h"
 #include "missionlist.h"
 
 #define kDateCaptionIdx     0x168
@@ -311,7 +312,7 @@ void MissionInfoDialogUpdate(void)
 {
     short itemType;
     void *item;
-    char text[256];
+    std::string date;
     Rect box;
 
     SetGWorldContainer(&loadPort);
@@ -328,12 +329,10 @@ void MissionInfoDialogUpdate(void)
     DrawIndString(kGameStrList, kDateCaptionIdx);
     ForeColor(blackColor);
     RGBForeColor(&rgbDarkGrey);
-    DateToMedString(gameTime, text);
-    CtoPstr(text);
+    date = DateMedText(gameTime);
     GetDialogItem(missionInfoDialog, 7, &itemType, (Handle *)&item, &box);
-    MoveTo((box.right + box.left) / 2 - StringWidth((unsigned char *)text) / 2,
-              box.top + smallTextSize);
-    DrawString((unsigned char *)text);
+    MoveTo((box.right + box.left) / 2 - MeasureCString(date) / 2, box.top + smallTextSize);
+    DrawCString(date);
     ForeColor(blackColor);
     DrawMissionBriefing(missionInfoDialog, selMissionInfoListItem != -1);
     MissionInfoButtons().Draw(-1);

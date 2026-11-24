@@ -11,12 +11,12 @@
 #include "game.h"
 #include "missions.h"
 #include "burgermath.h"
+#include "text.h"
 
 // FUNCTION: EVNOVA 0x0045e400
 // MAC: _DrawStatusNav i386 0x00049f43 ppc 0x00052bcc
 void DrawStatusNav(void)
 {
-    Str255 buf;
     Rect dstRect;
     Rect srcRect;
     FloatPoint origin;
@@ -41,21 +41,21 @@ void DrawStatusNav(void)
 
     if (shipData[0].navTargetKind == -1) {
         RGBForeColor(statusDimColor);
-        GetIndString(buf, kGameStrList, kNavNoDestination);
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0x16);
+        DrawStringCentered(IndString(kGameStrList, kNavNoDestination), dstRect.left, dstRect.right,
+                           dstRect.top + 0x16);
     }
     if (shipData[0].navTargetKind == 2) {
         RGBForeColor(statusDimColor);
-        GetIndString(buf, kGameStrList, kNavStellarLabel);
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0xc);
+        DrawStringCentered(IndString(kGameStrList, kNavStellarLabel), dstRect.left, dstRect.right,
+                           dstRect.top + 0xc);
         if (shipData[0].targetStellar != -1) {
             RGBForeColor(statusBrightColor);
-            DrawStringCentered(stellarData[shipData[0].targetStellar].name,
-                               dstRect.left, dstRect.right, dstRect.top + 0x1d);
+            DrawStringCentered(SpobName(shipData[0].targetStellar), dstRect.left, dstRect.right,
+                               dstRect.top + 0x1d);
         } else {
             RGBForeColor(statusDimColor);
-            GetIndString(buf, kGameStrList, kNavUnknown);
-            DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0x1d);
+            DrawStringCentered(IndString(kGameStrList, kNavUnknown), dstRect.left, dstRect.right,
+                               dstRect.top + 0x1d);
         }
     }
     if (shipData[0].navTargetKind == 3) {
@@ -63,8 +63,8 @@ void DrawStatusNav(void)
             RGBForeColor(statusBrightColor);
         else
             RGBForeColor(statusDimColor);
-        GetIndString(buf, kGameStrList, kNavHyperLabel);
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0xc);
+        DrawStringCentered(IndString(kGameStrList, kNavHyperLabel), dstRect.left, dstRect.right,
+                           dstRect.top + 0xc);
         if (shipData[0].targetStellar != -1) {
             origin.x = origin.y = 0.0f;
             safe = 1;
@@ -86,18 +86,15 @@ void DrawStatusNav(void)
             else
                 RGBForeColor(statusDimColor);
             i = systemData[shipData[0].curSystem].links[shipData[0].targetStellar];
-            if (systemData[i].exploreLevel > 0) {
-                DrawStringCentered(systemData[systemData[shipData[0].curSystem]
-                                       .links[shipData[0].targetStellar]].name,
-                                   dstRect.left, dstRect.right, dstRect.top + 0x1d);
-            } else {
-                GetIndString(buf, kGameStrList, kNavUnexplored);
-                DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0x1d);
-            }
+            if (systemData[i].exploreLevel > 0)
+                DrawStringCentered(SystName(i), dstRect.left, dstRect.right, dstRect.top + 0x1d);
+            else
+                DrawStringCentered(IndString(kGameStrList, kNavUnexplored), dstRect.left, dstRect.right,
+                                   dstRect.top + 0x1d);
         } else {
             RGBForeColor(statusDimColor);
-            GetIndString(buf, kGameStrList, kNavUnknown);
-            DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0x1d);
+            DrawStringCentered(IndString(kGameStrList, kNavUnknown), dstRect.left, dstRect.right,
+                               dstRect.top + 0x1d);
         }
     }
 
@@ -267,9 +264,9 @@ void DrawStatusFuel(void)
 void DrawStatusTarg(void)
 {
     Boolean found;
-    Str255 numBuf;
+    std::string label;
+    std::string subtitle;
     Rect dstRect;
-    Str255 buf;
     Rect srcRect;
     short mission;
     double capacity;
@@ -312,93 +309,83 @@ void DrawStatusTarg(void)
         MoveTo(dstRect.right - 15, dstRect.top + 20);
         RGBForeColor(statusDimColor);
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[0].targetShip, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[0].targetShip));
 
         MoveTo(dstRect.left + 5, dstRect.top + 20);
         RGBForeColor(statusDimColor);
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].index, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].index));
 
         MoveTo(dstRect.left + 5, dstRect.top + 40);
         RGBForeColor(statusDimColor);
-        DrawString("\phg: ");
+        DrawCString("hg: ");
         RGBForeColor(statusBrightColor);
         DrawHighGoalAbbreviation(shipData[shipData[0].targetShip].aiState);
 
         MoveTo(dstRect.left + 70, dstRect.top + 40);
         RGBForeColor(statusDimColor);
-        DrawString("\plg: ");
+        DrawCString("lg: ");
         RGBForeColor(statusBrightColor);
         DrawLowGoalAbbreviation(shipData[shipData[0].targetShip].aiSubstate);
 
         MoveTo(dstRect.left + 5, dstRect.top + 55);
         RGBForeColor(statusDimColor);
-        DrawString("\ptnav: ");
+        DrawCString("tnav: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].targetStellar, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].targetStellar));
 
         MoveTo(dstRect.left + 70, dstRect.top + 55);
         RGBForeColor(statusDimColor);
-        DrawString("\ptwep: ");
+        DrawCString("twep: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].targetShip, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].targetShip));
 
         MoveTo(dstRect.left + 5, dstRect.top + 70);
         RGBForeColor(statusDimColor);
-        DrawString("\pcnt: ");
+        DrawCString("cnt: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].aiTimer, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].aiTimer));
 
         MoveTo(dstRect.left + 70, dstRect.top + 70);
         RGBForeColor(statusDimColor);
-        DrawString("\pwp: ");
+        DrawCString("wp: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].selectedWeapon, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].selectedWeapon));
 
         MoveTo(dstRect.left + 5, dstRect.top + 85);
         RGBForeColor(statusDimColor);
-        DrawString("\pswl: ");
+        DrawCString("swl: ");
         RGBForeColor(statusBrightColor);
-        NumToString(AIFindSwarmLeader(&shipData[shipData[0].targetShip]), numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(AIFindSwarmLeader(&shipData[shipData[0].targetShip])));
 
         MoveTo(dstRect.left + 55, dstRect.top + 85);
         RGBForeColor(statusDimColor);
-        DrawString("\pai: ");
+        DrawCString("ai: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].aiType, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].aiType));
         if (shipData[shipData[0].targetShip].defenseStellar != -1) {
-            DrawString("\pd");
+            DrawCString("d");
         } else {
             if ((shipClass[shipData[shipData[0].targetShip].type].flags3 & kShipMiner) != 0 &&
                 shipData[shipData[0].targetShip].parentShip == -1) {
-                DrawString("\pm");
+                DrawCString("m");
             } else if (shipData[shipData[0].targetShip].aiType == kAIWarship && shipData[shipData[0].targetShip].govt != -1 &&
                        (govtData[shipData[shipData[0].targetShip].govt].flags & kGovtPlunders) != 0) {
-                DrawString("\pp");
+                DrawCString("p");
             }
         }
 
         MoveTo(dstRect.left + 120, dstRect.top + 85);
         RGBForeColor(statusDimColor);
-        DrawString("\pfl: ");
+        DrawCString("fl: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].formLeader, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].formLeader));
 
         MoveTo(dstRect.left + 150, dstRect.top + 85);
         RGBForeColor(statusDimColor);
-        DrawString("\psl: ");
+        DrawCString("sl: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].swarmLeader, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].swarmLeader));
 
         if (shipData[shipData[0].targetShip].parentShip != -1) {
             MoveTo(dstRect.left + 85, dstRect.top + 85);
@@ -406,47 +393,44 @@ void DrawStatusTarg(void)
                 ForeColor(cyanColor);
             else
                 RGBForeColor(statusDimColor);
-            DrawString("\por: ");
+            DrawCString("or: ");
             RGBForeColor(statusBrightColor);
             orders = shipData[shipData[0].targetShip].escortOrder;
             if ((int)orders == 0)
-                DrawString("\pform");
+                DrawCString("form");
             else if ((int)orders == 1)
-                DrawString("\pdef");
+                DrawCString("def");
             else if ((int)orders == 2)
-                DrawString("\patk");
+                DrawCString("atk");
             else if ((int)orders == 4)
-                DrawString("\pwait");
+                DrawCString("wait");
             else if ((int)orders == 3)
-                DrawString("\pret");
+                DrawCString("ret");
             else {
-                NumToString(orders, numBuf);
-                DrawString(numBuf);
+                DrawCString(NumText(orders));
             }
         }
 
         MoveTo(dstRect.left + 45, dstRect.top + 100);
         RGBForeColor(statusBrightColor);
         if (shipData[shipData[0].targetShip].defenseStellar != -1) {
-            DrawString("\pDf ");
+            DrawCString("Df ");
         } else {
             if (shipData[shipData[0].targetShip].specialMission != -1)
-                DrawString("\pSp");
+                DrawCString("Sp");
         }
 
         MoveTo(dstRect.left + 45, dstRect.top + 100);
         RGBForeColor(statusDimColor);
-        DrawString("\pgov: ");
+        DrawCString("gov: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].govt, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].govt));
 
         MoveTo(dstRect.left + 5, dstRect.top + 100);
         RGBForeColor(statusDimColor);
-        DrawString("\pt: ");
+        DrawCString("t: ");
         RGBForeColor(statusBrightColor);
-        NumToString(shipData[shipData[0].targetShip].type + 128, numBuf);
-        DrawString(numBuf);
+        DrawCString(NumText(shipData[shipData[0].targetShip].type + 128));
 
         if (shipData[0].targetShip == 0)
             shipData[0].targetShip = -1;
@@ -455,19 +439,18 @@ void DrawStatusTarg(void)
 
         found = 0;
         if (shipData[shipData[0].targetShip].specialMission != -1) {
-            if (currentMissions[shipData[shipData[0].targetShip].specialMission].shipName[0] > 0)
+            if (MissionHasShipName(shipData[shipData[0].targetShip].specialMission))
                 found = 1;
         }
         if (found) {
-            DrawStringCentered((unsigned char *)currentMissions[shipData[shipData[0].targetShip].specialMission].shipName,
-                               dstRect.left, dstRect.right,
-                               dstRect.top + 16);
+            DrawStringCentered(MissionShipName(shipData[shipData[0].targetShip].specialMission),
+                               dstRect.left, dstRect.right, dstRect.top + 16);
         } else {
             if (shipData[shipData[0].targetShip].persType != -1)
-                DrawStringCentered((unsigned char *)personData[shipData[shipData[0].targetShip].persType].name, dstRect.left, dstRect.right,
+                DrawStringCentered(PersonName(shipData[shipData[0].targetShip].persType), dstRect.left, dstRect.right,
                                    dstRect.top + 16);
             else
-                DrawStringCentered(shipClass[shipData[shipData[0].targetShip].type].name, dstRect.left,
+                DrawStringCentered(ShipClassName(shipData[shipData[0].targetShip].type), dstRect.left,
                                    dstRect.right, dstRect.top + 16);
         }
 
@@ -480,23 +463,23 @@ void DrawStatusTarg(void)
             DrawPicHandle((PicHandle)targetInfoPic[h], &picRect);
 
         if (shipData[shipData[0].targetShip].specialMission != -1) {
-            if (currentMissions[shipData[shipData[0].targetShip].specialMission].shipSubtitle[0] > 0)
-                pstrcpy(buf, (unsigned char *)currentMissions[shipData[shipData[0].targetShip].specialMission].shipSubtitle);
+            if (MissionHasShipSubtitle(shipData[shipData[0].targetShip].specialMission))
+                subtitle = MissionShipSubtitle(shipData[shipData[0].targetShip].specialMission);
             else
-                pstrcpy(buf, shipClass[shipData[shipData[0].targetShip].type].subtitle);
+                subtitle = FromNameField(shipClass[shipData[shipData[0].targetShip].type].subtitle);
         } else {
             if (shipData[shipData[0].targetShip].persType != -1) {
                 if (personData[shipData[shipData[0].targetShip].persType].subtitle[0] > 0)
-                    pstrcpy(buf, (unsigned char *)personData[shipData[shipData[0].targetShip].persType].subtitle);
+                    subtitle = FromNameField(personData[shipData[shipData[0].targetShip].persType].subtitle);
                 else
-                    pstrcpy(buf, shipClass[shipData[shipData[0].targetShip].type].subtitle);
+                    subtitle = FromNameField(shipClass[shipData[shipData[0].targetShip].type].subtitle);
             } else {
-                pstrcpy(buf, shipClass[shipData[shipData[0].targetShip].type].subtitle);
+                subtitle = FromNameField(shipClass[shipData[shipData[0].targetShip].type].subtitle);
             }
         }
         TextSize(statusFontSize[1]);
         RGBForeColor(statusBrightColor);
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 29);
+        DrawStringCentered(subtitle, dstRect.left, dstRect.right, dstRect.top + 29);
         TextSize(statusFontSize[0]);
         ForeColor(blackColor);
 
@@ -550,21 +533,19 @@ void DrawStatusTarg(void)
                 } else {
                     if ((shipClass[shipData[shipData[0].targetShip].type].flags & kShipShowArmorPercent) != 0) {
                         RGBForeColor(statusDimColor);
-                        DrawString(armorString[0]);
-                        DrawString("\p ");
+                        DrawCString(armorString[0]);
+                        DrawCString(" ");
                         RGBForeColor(statusBrightColor);
                         capacity = shipData[shipData[0].targetShip].ArmorCapacity();
                         if (capacity > 0.0) {
                             if (shipData[shipData[0].targetShip].armor <= 0.0f) {
-                                DrawString("\p0%");
+                                DrawCString("0%");
                             } else {
                                 if (shipData[shipData[0].targetShip].armor <= capacity) {
-                                    NumToString((shipData[shipData[0].targetShip].armor * 100.0f / capacity),
-                                                numBuf);
-                                    DrawString(numBuf);
-                                    DrawString("\p%");
+                                    DrawCString(NumText(shipData[shipData[0].targetShip].armor * 100.0f / capacity));
+                                    DrawCString("%");
                                 } else {
-                                    DrawString("\p100%");
+                                    DrawCString("100%");
                                 }
                             }
                         } else {
@@ -572,52 +553,50 @@ void DrawStatusTarg(void)
                         }
                     } else {
                         if (shipClass[shipData[shipData[0].targetShip].type].shield <= 0)
-                            DrawString(shieldString[3]);
+                            DrawCString(shieldString[3]);
                         else
-                            DrawString(shieldString[4]);
+                            DrawCString(shieldString[4]);
                     }
                 }
             } else {
                 RGBForeColor(statusDimColor);
-                DrawString(shieldString[2]);
-                DrawString("\p ");
+                DrawCString(shieldString[2]);
+                DrawCString(" ");
                 RGBForeColor(statusBrightColor);
                 capacity = shipData[shipData[0].targetShip].ShieldCapacity();
                 if (shipData[shipData[0].targetShip].shield <= capacity) {
-                    NumToString((shipData[shipData[0].targetShip].shield / capacity * 100.0), numBuf);
-                    DrawString(numBuf);
-                    DrawString("\p%");
+                    DrawCString(NumText((shipData[shipData[0].targetShip].shield / capacity * 100.0)));
+                    DrawCString("%");
                 } else {
-                    DrawString("\p100%");
+                    DrawCString("100%");
                 }
             }
 
             if (shipData[shipData[0].targetShip].govt >= 0) {
                 RGBForeColor(statusDimColor);
-                MoveTo(dstRect.right - 7 - StringWidth(govtTargStrings[shipData[shipData[0].targetShip].govt]),
-                          dstRect.bottom - 6);
-                DrawString(govtTargStrings[shipData[shipData[0].targetShip].govt]);
+                MoveTo(dstRect.right - 7 - MeasureCString(govtTargStrings[shipData[shipData[0].targetShip].govt]),
+                       dstRect.bottom - 6);
+                DrawCString(govtTargStrings[shipData[shipData[0].targetShip].govt]);
             } else {
                 if (shipData[shipData[0].targetShip].parentShip == 0 || shipData[shipData[0].targetShip].formerEscort >= 0) {
                     if (shipData[shipData[0].targetShip].aiType == kAIFighter || shipData[shipData[0].targetShip].formerEscort == 0) {
                         if (shipClass[shipData[shipData[0].targetShip].type].mass >= 100)
-                            GetIndString(numBuf, kGameStrList, kStatusNeutral);
+                            label = IndString(kGameStrList, kStatusNeutral);
                         else
-                            GetIndString(numBuf, kGameStrList, kStatusHostile);
+                            label = IndString(kGameStrList, kStatusHostile);
                     } else {
-                        GetIndString(numBuf, kGameStrList, kStatusNeutral);
+                        label = IndString(kGameStrList, kStatusNeutral);
                     }
                     RGBForeColor(statusDimColor);
-                    MoveTo(dstRect.right - 7 - StringWidth(numBuf), dstRect.bottom - 6);
-                    DrawString(numBuf);
+                    MoveTo(dstRect.right - 7 - MeasureCString(label), dstRect.bottom - 6);
+                    DrawCString(label);
                 }
             }
             }
         }
     } else {
         RGBForeColor(statusDimColor);
-        GetIndString(numBuf, kGameStrList, kStatusNoTarget);
-        DrawStringCentered(numBuf, dstRect.left, dstRect.right, dstRect.top + 47);
+        DrawStringCentered(IndString(kGameStrList, kStatusNoTarget), dstRect.left, dstRect.right, dstRect.top + 47);
     }
 
     ForeColor(blackColor);
@@ -633,8 +612,7 @@ void DrawStatusTarg(void)
 // MAC: _DrawStatusWeap i386 0x0004c00a ppc 0x00054e90
 void DrawStatusWeap(void)
 {
-    Str255 buf;
-    Str255 numBuf;
+    std::string text;
     Rect dstRect;
     Rect srcRect;
 
@@ -651,8 +629,8 @@ void DrawStatusWeap(void)
              &srcRect, &dstRect, 0, 0);
     if (shipData[0].selectedWeapon == -1) {
         RGBForeColor(statusDimColor);
-        GetIndString(buf, kGameStrList, kStatusNoWeapon);
-        DrawStringCentered(buf, dstRect.left, dstRect.right, dstRect.top + 0xc);
+        DrawStringCentered(IndString(kGameStrList, kStatusNoWeapon), dstRect.left, dstRect.right,
+                           dstRect.top + 0xc);
     } else {
         RGBForeColor(statusBrightColor);
         if (weaponStats[shipData[0].selectedWeapon].ammoType == -1 ||
@@ -660,22 +638,15 @@ void DrawStatusWeap(void)
             DrawStringCentered(weapName[shipData[0].selectedWeapon], dstRect.left,
                                dstRect.right, dstRect.top + 0xc);
         } else if (weaponStats[shipData[0].selectedWeapon].ammoType > -kWeapAmmoFuelBase) {
-            pstrcpy(buf, weapName[shipData[0].selectedWeapon]);
-            PtoCstr(buf);
-            strcat((char *)buf, " - ");
+            text = UpToNul(weapName[shipData[0].selectedWeapon]);
+            text += " - ";
             if (weaponStats[shipData[0].selectedWeapon].ammoType >= 0 &&
                 weaponStats[shipData[0].selectedWeapon].ammoType < 256 &&
                 weaponStats[shipData[0].selectedWeapon].guidance != kGuidanceBay)
-                NumToString(
-                    shipData[0].weap[weaponStats[shipData[0].selectedWeapon].ammoType].ammo,
-                    numBuf);
+                text += NumText(shipData[0].weap[weaponStats[shipData[0].selectedWeapon].ammoType].ammo);
             else
-                NumToString(shipData[0].weap[shipData[0].selectedWeapon].ammo, numBuf);
-            PtoCstr(numBuf);
-            strcat((char *)buf, (char *)numBuf);
-            CtoPstr((char *)buf);
-            DrawStringCentered(buf, dstRect.left, dstRect.right,
-                               dstRect.top + 0xc);
+                text += NumText(shipData[0].weap[shipData[0].selectedWeapon].ammo);
+            DrawStringCentered(text, dstRect.left, dstRect.right, dstRect.top + 0xc);
         } else if (weaponStats[shipData[0].selectedWeapon].ammoType <= -kWeapAmmoFuelBase) {
             DrawStringCentered(weapName[shipData[0].selectedWeapon], dstRect.left,
                                dstRect.right, dstRect.top + 0xc);
@@ -695,7 +666,7 @@ void DrawStatusWeap(void)
 void DrawStatusCargo(void)
 {
     Rect dstRect;
-    Str255 buf;
+    std::string text;
     Rect srcRect;
     short i;
     short j;
@@ -720,11 +691,10 @@ void DrawStatusCargo(void)
         if (shipData[0].cargo[i] > 0) {
             RGBForeColor(statusDimColor);
             MoveTo(dstRect.left + 3, dstRect.top + (i + 1) * 14 - 2);
-            DrawString(statusCargoName[i]);
+            DrawCString(statusCargoName[i]);
             RGBForeColor(statusBrightColor);
             MoveTo(dstRect.left + 0x29, dstRect.top + (i + 1) * 14 - 2);
-            NumToString(shipData[0].cargo[i], buf);
-            DrawString(buf);
+            DrawCString(NumText(shipData[0].cargo[i]));
         }
     }
     MoveTo(dstRect.left + 0x4d, dstRect.top + 0xc);
@@ -735,8 +705,7 @@ void DrawStatusCargo(void)
     missionCargoCount = TotalFleetHolds() - TotalCargo(shipData);
     if (missionCargoCount < 0)
         missionCargoCount = 0;
-    NumToString(missionCargoCount, buf);
-    DrawString(buf);
+    DrawCString(NumText(missionCargoCount));
     missionCargoCount = 0;
     junkCount = 0;
     missionCargoType = -1;
@@ -763,12 +732,10 @@ void DrawStatusCargo(void)
         MoveTo(dstRect.left + 0x57, dstRect.top + 0x2e);
         RGBForeColor(statusBrightColor);
         if (missionCargoCount == 1) {
-            DrawString(cargoAbbrev[missionCargoType]);
+            DrawCString(TableEntry(cargoAbbrev, missionCargoType));
         } else {
             if (junkCount == 1) {
-                strcpy((char *)buf, junkData[junkIndex].abbrev);
-                CtoPstr((char *)buf);
-                DrawString(buf);
+                DrawCString(FromField(junkData[junkIndex].abbrev, sizeof junkData[junkIndex].abbrev));
             } else {
                 DrawIndString(kGameStrList, 0x15);
             }
@@ -776,11 +743,11 @@ void DrawStatusCargo(void)
     }
     MoveTo(dstRect.left + 0x4d, dstRect.top + 0x42);
     RGBForeColor(statusDimColor);
-    pstrcpy(buf, creditsString);
-    if (buf[0] != 0)
-        buf[1] = toupper(buf[1]);
-    DrawString(buf);
-    DrawString("\p:");
+    text = creditsString;
+    if (!text.empty())
+        text[0] = (char)toupper((unsigned char)text[0]);
+    DrawCString(text);
+    DrawCString(":");
     MoveTo(dstRect.left + 0x57, dstRect.top + 0x52);
     RGBForeColor(statusBrightColor);
     DrawCommaNumber(shipData[0].credits);

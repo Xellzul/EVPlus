@@ -15,6 +15,7 @@
 #include "missions.h"
 #include "crashlog.h"
 #include "gameutil.h"
+#include "text.h"
 
 #define kSpriteSizeSlots    6
 #define kFullHilite         0x20
@@ -4771,8 +4772,7 @@ void PostAnimateHandler(void)
 // MAC: _HandleReinforcements i386 0x00039048 ppc 0x0003f228
 void HandleReinforcements(void)
 {
-    Str255 msg;
-    Str255 govtName;
+    std::string msg;
     short sys;
 
     sys = shipData[0].curSystem;
@@ -4788,20 +4788,17 @@ void HandleReinforcements(void)
             if (systemData[sys].reinforceTimer
                     < systemData[sys].reinforceTime * kAnnounceFraction
                 && systemData[sys].reinforceDaysLeft <= 0) {
-                if (govtMediumNames[fleetData[systemData[sys].reinforceFleet].govt][0]
-                        != 0) {
-                    strcpy((char *)msg, "");
-                    StrcatIndCString((char *)msg, kGameStrList, kReinforceIndexA);
-                    strcat((char *)msg, " ");
-                    pstrcpy(govtName,
-                            govtMediumNames[fleetData[systemData[sys].reinforceFleet].govt]);
-                    PtoCstr(govtName);
-                    strcat((char *)msg, (char *)govtName);
-                    strcat((char *)msg, " ");
-                    StrcatIndCString((char *)msg, kGameStrList, kReinforceIndexB);
-                    CtoPstr((char *)msg);
+                const std::string &govtName = TableEntry(govtMediumNames,
+                                                         fleetData[systemData[sys].reinforceFleet].govt);
+
+                if (!govtName.empty()) {
+                    msg = IndString(kGameStrList, kReinforceIndexA);
+                    msg += " ";
+                    msg += govtName;
+                    msg += " ";
+                    msg += IndString(kGameStrList, kReinforceIndexB);
                     PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
-                    DisplayComm((PStrChar *)msg, kCommFrames);
+                    DisplayComm(msg, kCommFrames);
                 }
                 systemData[sys].reinforceDaysLeft = systemData[sys].reinforceInterval;
                 if (systemData[sys].reinforceDaysLeft < 1)

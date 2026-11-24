@@ -1,9 +1,6 @@
 /* parser.cpp -- the Parser.c object: the mission-bit expression machine, ParseTextDescription and the parse-buffer save/restore (win 0x00448ba0-0x0044aa60, from its head Trim, the space skipper). Notes: Research/notes/parser.md */
-/*
- * The filename is not a guess: both functions assert with the literal
- * "Parser.c" and a line number (1116 and 1126), so the original TU is named
- * by the binary itself.
- */
+#include <algorithm>
+#include <string>
 #include "gameutil.h"
 #include "ships.h"
 #include "space.h"
@@ -13,6 +10,7 @@
 #include "prototypes.h"
 #include "render.h"
 #include "stellar.h"
+#include "text.h"
 
 // FUNCTION: EVNOVA 0x00448ba0
 // MAC: _Trim i386 0x000147ac ppc 0x00018064
@@ -93,7 +91,7 @@ char GetToken(short *pos)
             i++;
         }
         r = '0';
-        if (num < 10000 && missionBit[num] != 0)
+        if (num >= 0 && num < 10000 && missionBit[num] != 0)
             r = '1';
         return r;
     } else if (c == 'o' || c == 'O') {
@@ -298,7 +296,8 @@ void EvalSetExp(void)
     short max;
     unsigned char str[256];
     char op;
-    void *saved;
+    std::string saved;
+    std::string text;
     short i;
     short k;
     short n;
@@ -372,15 +371,15 @@ void EvalSetExp(void)
         if (armed != 0) {
             switch (op) {
             case ' ':
-                if (num < kMaxMissionBits)
+                if (num >= 0 && num < kMaxMissionBits)
                     missionBit[num] = 1;
                 break;
             case '!':
-                if (num < kMaxMissionBits)
+                if (num >= 0 && num < kMaxMissionBits)
                     missionBit[num] = 0;
                 break;
             case '^':
-                if (num < kMaxMissionBits) {
+                if (num >= 0 && num < kMaxMissionBits) {
                     if (missionBit[num] != 0)
                         missionBit[num] = 0;
                     else
@@ -621,15 +620,16 @@ void EvalSetExp(void)
                 }
                 break;
             case 'Q':
-                GetRandomIndString((unsigned char *)absquatulateStr, num);
+                GetRandomIndString(str, num);
+                absquatulateStr = FromPascal(str);
                 if (currentMissionIndexForSetParser >= 0
                         && currentMissionIndexForSetParser < kMaxActiveMissions) {
                     saved = SaveBuffer();
-                    PtoCstr((unsigned char *)absquatulateStr);
-                    strcpy(briefingTextPtr, (char *)absquatulateStr);
+                    /* munged in the briefing buffer, which keeps the result */
+                    text = FromField(absquatulateStr.c_str(), absquatulateStr.size());
+                    memcpy(briefingTextPtr, text.c_str(), text.size() + 1);
                     MungeBriefing(0, currentMissionIndexForSetParser);
-                    strcpy((char *)absquatulateStr, briefingTextPtr);
-                    CtoPstr((char *)absquatulateStr);
+                    absquatulateStr = FromField(briefingTextPtr, 255);
                     RestoreBuffer(saved);
                 }
                 break;
@@ -652,9 +652,6 @@ void EvalSetExp(void)
     }
 }
 
-#define kParseBufSize 0x2000
-
-
 
 /* only the registration byte at the tail of the shïp record is read here */
 
@@ -663,11 +660,12 @@ void EvalSetExp(void)
 // MAC: _ParseTextDescription i386 0x00014bdd ppc 0x00018598
 void ParseTextDescription(void)
 {
-    char out[kParseBufSize];
+    std::string out;
+    size_t len;
     char c;
     char kind;
     int32_t i;
-    int32_t outLen;
+    int32_t d;
     int32_t num;
     int32_t state;
     Boolean negate;
@@ -678,12 +676,13 @@ void ParseTextDescription(void)
     Boolean keep;
 
     state = 0;
-    outLen = 0;
     num = 0;
     escape = 0;
     negate = 0;
     kind = '?';
-    for (i = 0; i < strlen(parseBuffer); i++) {
+    len = strnlen(parseBuffer, kLongTextSize);
+    out.reserve(len);
+    for (i = 0; i < len; i++) {
         if (state == 1) {
             if (parseBuffer[i] == 'g' || parseBuffer[i] == 'G') {
                 if (negate != 0) {
@@ -715,7 +714,7 @@ void ParseTextDescription(void)
             } else {
                 if (kind == 'P') {
                     keep = 1;        /* Pnnn: always true (the game is registered) */
-                } else if (num < 10000) {
+                } else if (num >= 0 && num < 10000) {
                     keep = missionBit[num];
                 } else {
                     keep = 0;
@@ -744,8 +743,8 @@ void ParseTextDescription(void)
             } else if (parseBuffer[i] == '"' && escape == 0) {
                 state = 8;
             } else {
-                out[outLen] = parseBuffer[i];
-                outLen++;
+                if (out.size() < kLongTextSize - 1)
+                    out += parseBuffer[i];
                 escape = 0;
             }
         } else if (state == 5) {
@@ -770,38 +769,37 @@ void ParseTextDescription(void)
         } else {
             if (parseBuffer[i] == '{') {
                 state = 1;
-            } else {
-                out[outLen] = parseBuffer[i];
-                outLen++;
+            } else if (out.size() < kLongTextSize - 1) {
+                out += parseBuffer[i];
             }
         }
     }
-    out[outLen] = 0;
-    strcpy(parseBuffer, out);
-    if (strlen(parseBuffer) > 5) {
-        for (i = 0; i < strlen(parseBuffer) - 5; i++) {
-            if (parseBuffer[i] == '<') {
+    memcpy(parseBuffer, out.data(), out.size());
+    parseBuffer[out.size()] = 0;
+    if (out.size() > 5) {
+        for (i = 0; i < out.size() - 5; i++) {
+            if (out[i] == '<') {
                 j = i + 1;
-                if (parseBuffer[j] == 'P' || parseBuffer[j] == 'S') {
+                if (out[j] == 'P' || out[j] == 'S') {
                     k = i + 2;
-                    if (parseBuffer[k] == 'R') {
+                    if (out[k] == 'R') {
                         k = i + 3;
-                        if (parseBuffer[k] == 'K') {
+                        if (out[k] == 'K') {
                             k = i + 4;
-                            if (parseBuffer[k] != '>') {
+                            if (out[k] != '>') {
                                 rank = 0;
-                                for (outLen = i + 4; outLen < strlen(parseBuffer); outLen++) {
-                                    if (parseBuffer[outLen] < '0' || parseBuffer[outLen] > '9')
+                                for (d = i + 4; d < out.size(); d++) {
+                                    if (out[d] < '0' || out[d] > '9')
                                         break;
-                                    rank = rank * 10 + parseBuffer[outLen] - '0';
+                                    rank = rank * 10 + out[d] - '0';
                                 }
                                 if (rank >= kFirstResourceID && rank < kFirstResourceID + kMaxGovts) {
-                                    if (parseBuffer[j] == 'P')
+                                    if (out[j] == 'P')
                                         descRankGovt[0] = rank - kFirstResourceID;
                                     else
                                         descRankGovt[1] = rank - kFirstResourceID;
                                 } else {
-                                    if (parseBuffer[j] == 'P')
+                                    if (out[j] == 'P')
                                         descRankGovt[0] = -1;
                                     else
                                         descRankGovt[1] = -1;
@@ -816,28 +814,20 @@ void ParseTextDescription(void)
     }
 }
 
+/* the whole parse buffer, for RestoreBuffer */
 // FUNCTION: EVNOVA 0x0044a980
 // MAC: _SaveBuffer i386 0x000150ae ppc 0x00018a54
-void *SaveBuffer(void)
+std::string SaveBuffer(void)
 {
-    void *saved;
-
-    saved = AllocAPointer(kParseBufSize);
-    if (saved == NULL)
-        EV_ASSERT_FAIL("Parser.c", 1116, 1117);
-    BlockMove(parseBuffer, saved, kParseBufSize);
-    return saved;
+    return std::string(parseBuffer, kLongTextSize);
 }
 
 // FUNCTION: EVNOVA 0x0044a9d0
 // MAC: _RestoreBuffer i386 0x00015066 ppc 0x00018a00
-void RestoreBuffer(void *saved)
+void RestoreBuffer(const std::string &saved)
 {
-    if (saved == NULL)
-        EV_ASSERT_FAIL("Parser.c", 1126, 1127);
-    BlockMove(saved, parseBuffer, kParseBufSize);
-    DeallocAPointer(saved);
+    memcpy(parseBuffer, saved.data(), std::min(saved.size(), (size_t)kLongTextSize));
 }
 
-char parseBuffer[8192];
+char parseBuffer[kLongTextSize];
 short lastInteger;

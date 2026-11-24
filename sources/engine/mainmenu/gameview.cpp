@@ -2,6 +2,7 @@
 
 #include "dialogs.h"
 #include "game.h"
+#include "missions.h"
 #include "viewscale.h"
 #include "uisprite.h"
 #include "uiscale.h"
@@ -34,7 +35,7 @@ void DoAboutBox(void)
         mainScreenBackgroundDirty = 1;
         LoadDescription(briefingTextPtr, kIntroDescID);
         MungeBriefing(0, -1);
-        strcpy(textShowString, briefingTextPtr);
+        CopyBriefingText(textShowString, briefingTextPtr);
         ShowTextDialog(0, 1);
         mainScreenBackgroundDirty = 1;
     }

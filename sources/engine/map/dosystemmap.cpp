@@ -12,6 +12,7 @@
 #include "viewscale.h"
 #include "space.h"
 #include "buttons.h"
+#include "text.h"
 
 /* the mac plots the map arrows as colour icons */
 
@@ -741,14 +742,10 @@ struct PriceLevels {
     short lowered;
 };
 
-void DrawPiece(const char *text, const RGBColor &color)
+void DrawPiece(const std::string &text, const RGBColor &color)
 {
-    Str255 piece;
-
-    snprintf((char *)piece, sizeof(piece), "%s", text);
-    CtoPstr((char *)piece);
     RGBForeColor(&color);
-    DrawString(piece);
+    DrawCString(text);
 }
 
 /* A good's price levels after its name at (h, v), or indented on the next line when they do not fit the panel;
@@ -756,41 +753,37 @@ void DrawPiece(const char *text, const RGBColor &color)
 short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
 {
     static const short kLevels[] = { kDemandLow, kDemandMedium, kDemandHigh };
-    char names[3][256];
-    char higher[256] = "";
-    char lower[256] = "";
-    char text[1024] = " (";
-    Str255 shown;
+    std::string names[3];
+    std::string higher;
+    std::string lower;
+    std::string text = " (";
     short extra = 0;
 
     if (p.levels == 0)
         return 0;
-    StrcatIndCString(higher, kGameStrList, kDisasterStrings);
-    StrcatIndCString(lower, kGameStrList, kDisasterStrings + 1);
+    higher = IndString(kGameStrList, kDisasterStrings);
+    lower = IndString(kGameStrList, kDisasterStrings + 1);
     for (short i = 0; i < 3; i++) {
-        names[i][0] = 0;
         if ((p.levels & kLevels[i]) != 0) {
-            StrcatIndCString(names[i], kGameStrList, kPriceLevelStrings + i);
-            if (text[2] != 0)
-                strcat(text, ", ");
-            strcat(text, names[i]);
+            names[i] = IndString(kGameStrList, kPriceLevelStrings + i);
+            if (text.size() > 2)
+                text += ", ";
+            text += names[i];
             bool up = (p.raised & kLevels[i]) != 0;
             bool down = (p.lowered & kLevels[i]) != 0;
             if (up || down)
-                strcat(text, ": ");
+                text += ": ";
             if (up)
-                strcat(text, higher);
+                text += higher;
             if (up && down)
-                strcat(text, "/");
+                text += "/";
             if (down)
-                strcat(text, lower);
+                text += lower;
         }
     }
-    strcat(text, ")");
-    snprintf((char *)shown, sizeof(shown), "%s", text);
-    CtoPstr((char *)shown);
+    text += ")";
     const char *open = " (";
-    if (h + StringWidth(shown) > panel.right - 5) {
+    if (h + MeasureCString(text) > panel.right - 5) {
         open = "(";
         h = panel.left + 0x19;
         v += 0xc;
@@ -800,7 +793,7 @@ short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
     DrawPiece(open, rgbLightGrey);
     bool first = true;
     for (short i = 0; i < 3; i++) {
-        if (names[i][0] == 0)
+        if (names[i].empty())
             continue;
         if (!first)
             DrawPiece(", ", rgbLightGrey);
@@ -823,13 +816,13 @@ short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
 }
 
 /* one line of Goods Traded: the name and its price levels (none: 0); the height used */
-short DrawGoodsLine(const unsigned char *name, const PriceLevels &p, const Rect &panel, short v)
+short DrawGoodsLine(const std::string &name, const PriceLevels &p, const Rect &panel, short v)
 {
     MoveTo(panel.left + 0xf, v);
-    DrawString(name);
+    DrawCString(name);
     if (p.levels == 0)
         return 0xc;
-    return 0xc + DrawPriceLevels(p, panel, panel.left + 0xf + StringWidth(name), v);
+    return 0xc + DrawPriceLevels(p, panel, panel.left + 0xf + MeasureCString(UpToNul(name)), v);
 }
 
 /* a commodity's levels as the preferences show them on the map */
@@ -851,7 +844,8 @@ PriceLevels CommodityLevels(short sys, short commodity)
 // MAC: _MapDialogUpdate i386 0x0000f5d1 ppc 0x00012fe8
 void MapDialogUpdate(void)
 {
-    unsigned char text[256];
+    std::string text;
+    std::string line;
     Rect r2;
     Handle item;
     short found;
@@ -866,14 +860,12 @@ void MapDialogUpdate(void)
     short itemType;
     Rect box;
     Rect nebR;
-    unsigned char buf[256];
     Rect box6;
     short st2;
     Boolean ok;
     Boolean linked;
     float sy;
     short w, h;
-    unsigned char *name;
     short xoff;
     short k;
     short n;
@@ -1027,7 +1019,7 @@ void MapDialogUpdate(void)
                                - temp / mapZoom + 7.0),
                        (box.top + h / 2 + systemData[i].pos.v / mapZoom
                                - savedY / mapZoom + 4.0));
-                DrawString(systemData[i].name);
+                DrawCString(SystName(i));
             }
         }
         ForeColor(blackColor);
@@ -1055,10 +1047,10 @@ void MapDialogUpdate(void)
             && (selSystem == shipData->curSystem
                 || selSystem == -1)) {
             RGBForeColor(&rgbLightGrey);
-            GetIndString(text, kGameStrList, 0x134);
-            MoveTo(box.left + box.right / 2 - StringWidth(text) / 2,
+            text = IndString(kGameStrList, 0x134);
+            MoveTo(box.left + box.right / 2 - MeasureCString(text) / 2,
                    box.top + 0x18);
-            DrawString(text);
+            DrawCString(text);
         } else {
             RGBForeColor(&rgbLightGrey);
             MoveTo(box.left + 10, box.top + 0xc);
@@ -1081,18 +1073,19 @@ void MapDialogUpdate(void)
                         if (systemData[sel].navDefault[i] != -1
                             && (stellarData[systemData[sel].navDefault[i]].flags & kSpobUninhabited) == 0
                             && StellarIsLandable(&stellarData[systemData[sel].navDefault[i]]) != 0) {
-                            sw = StringWidth(stellarData[systemData[sel].navDefault[i]].name);
+                            text = SpobName(systemData[sel].navDefault[i]);
+                            sw = MeasureCString(text);
                             if (box.left + 0x2d + sw + xoff > box6.right - 0x14) {
                                 MoveTo(box.left + 0x2d, box.top + 0x18);
                                 xoff = 0;
                             } else {
                                 xoff += sw;
                             }
-                            DrawString(stellarData[systemData[sel].navDefault[i]].name);
+                            DrawCString(text);
                             drawn++;
                             if (count > drawn) {
-                                DrawString("\p, ");
-                                xoff += StringWidth("\p, ");
+                                DrawCString(", ");
+                                xoff += MeasureCString(", ");
                             }
                         }
                     }
@@ -1101,8 +1094,7 @@ void MapDialogUpdate(void)
                 }
             } else {
                 if (cheatsActive != 0) {
-                    NumToString(sel + kFirstResourceID, buf);
-                    DrawString(buf);
+                    DrawCString(NumText(sel + kFirstResourceID));
                 } else {
                     DrawIndString(kGameStrList, 0x136);
                 }
@@ -1113,15 +1105,15 @@ void MapDialogUpdate(void)
             ForeColor(whiteColor);
             MoveTo(box.left + 0x6e, box.top + 0x24);
             if (systemData[sel].exploreLevel > 0) {
-                strcpy((char *)buf, "");
+                line.clear();
                 for (j = 0; j < kNavSlots; j++) {
                     if (systemData[sel].navDefault[j] != -1
                         && stellarData[systemData[sel].navDefault[j]].gravity != 0) {
-                        StrcatIndCString((char *)buf, kGameStrList, 0x138);
+                        line += IndString(kGameStrList, 0x138);
                         if (systemData[sel].asteroidCount > 0
                             || systemData[sel].interference > 0
                             || systemData[sel].murk > 0)
-                            strcat((char *)buf, ", ");
+                            line += ", ";
                         break;
                     }
                 }
@@ -1129,62 +1121,59 @@ void MapDialogUpdate(void)
                     short roids = AsteroidReferenceCount(systemData[sel].asteroidCount);
 
                     if (roids <= 3)
-                        StrcatIndCString((char *)buf, kGameStrList, 0x139);
+                        line += IndString(kGameStrList, 0x139);
                     else if (roids <= 6)
-                        StrcatIndCString((char *)buf, kGameStrList, 0x13a);
+                        line += IndString(kGameStrList, 0x13a);
                     else
-                        StrcatIndCString((char *)buf, kGameStrList, 0x13b);
-                    strcat((char *)buf, " ");
-                    StrcatIndCString((char *)buf, kGameStrList, 0x13c);
+                        line += IndString(kGameStrList, 0x13b);
+                    line += " ";
+                    line += IndString(kGameStrList, 0x13c);
                     if (systemData[sel].interference > 0
                         || systemData[sel].murk > 0)
-                        strcat((char *)buf, ", ");
+                        line += ", ";
                 }
                 if (systemData[sel].interference > 0) {
                     if (systemData[sel].interference <= 0x21)
-                        StrcatIndCString((char *)buf, kGameStrList, 0x13d);
+                        line += IndString(kGameStrList, 0x13d);
                     else if (systemData[sel].interference <= 0x42)
-                        StrcatIndCString((char *)buf, kGameStrList, 0x13e);
+                        line += IndString(kGameStrList, 0x13e);
                     else
-                        StrcatIndCString((char *)buf, kGameStrList, 0x13f);
-                    strcat((char *)buf, " ");
-                    StrcatIndCString((char *)buf, kGameStrList, 0x140);
+                        line += IndString(kGameStrList, 0x13f);
+                    line += " ";
+                    line += IndString(kGameStrList, 0x140);
                     if (systemData[sel].murk > 0)
-                        strcat((char *)buf, ", ");
+                        line += ", ";
                 }
                 if (systemData[sel].murk > 0) {
                     if (systemData[sel].murk <= 0x1e)
-                        StrcatIndCString((char *)buf, kGameStrList, 0x141);
+                        line += IndString(kGameStrList, 0x141);
                     else if (systemData[sel].murk <= 0x3c)
-                        StrcatIndCString((char *)buf, kGameStrList, 0x142);
+                        line += IndString(kGameStrList, 0x142);
                     else
-                        StrcatIndCString((char *)buf, kGameStrList, 0x143);
-                    strcat((char *)buf, " ");
-                    StrcatIndCString((char *)buf, kGameStrList, 0x144);
+                        line += IndString(kGameStrList, 0x143);
+                    line += " ";
+                    line += IndString(kGameStrList, 0x144);
                 }
-                if ((int32_t)buf[0] == 0)
-                    StrcatIndCString((char *)buf, kGameStrList, 0x14f);
-                buf[0] = toupper(buf[0]);
-                CtoPstr((char *)buf);
-                DrawString(buf);
+                if (line.empty())
+                    line = IndString(kGameStrList, 0x14f);
+                if (!line.empty())
+                    line[0] = (char)toupper((unsigned char)line[0]);
+                DrawCString(line);
             } else {
                 if (cheatsActive != 0) {
-                    NumToString(sel + kFirstResourceID, buf);
-                    DrawString(buf);
+                    DrawCString(NumText(sel + kFirstResourceID));
                 } else {
                     DrawIndString(kGameStrList, 0x136);
                 }
             }
         }
         RGBForeColor(&rgbDarkGrey);
-        if (cheatsActive != 0) {
-            NumToString((1.0 / mapZoom * 1000.0), buf);
-        } else {
-            DateToMedString(gameTime, (char *)buf);
-            CtoPstr((char *)buf);
-        }
-        MoveTo(box.right - StringWidth(buf) - 5, box.top + 0x24);
-        DrawString(buf);
+        if (cheatsActive != 0)
+            line = NumText(1.0 / mapZoom * 1000.0);
+        else
+            line = DateMedText(gameTime);
+        MoveTo(box.right - MeasureCString(line) - 5, box.top + 0x24);
+        DrawCString(line);
         ForeColor(blackColor);
         didUpdateMap = 1;
         GetDialogItem(mapDialog, kMapRouteItem,&itemType, &item, &r2);
@@ -1235,17 +1224,15 @@ void MapDialogUpdate(void)
         ForeColor(whiteColor);
         if (systemData[sel].exploreLevel <= 0) {
             if (cheatsActive != 0) {
-                NumToString(sel + kFirstResourceID, buf);
-                DrawString(buf);
+                DrawCString(NumText(sel + kFirstResourceID));
             } else {
                 DrawIndString(kGameStrList, 0x136);
             }
         } else {
             if (cheatsActive != 0) {
-                NumToString(sel + kFirstResourceID, buf);
-                DrawString(buf);
+                DrawCString(NumText(sel + kFirstResourceID));
             } else {
-                DrawString(systemData[sel].name);
+                DrawCString(SystName(sel));
             }
             if (SystemIsInhabited(sel) != 0) {
                 RGBForeColor(&rgbLightGrey);
@@ -1257,11 +1244,10 @@ void MapDialogUpdate(void)
                 if (count == -1) {
                     DrawIndString(kGameStrList, 0x14d);
                 } else if (cheatsActive != 0) {
-                    NumToString(count + kFirstResourceID, buf);
-                    DrawString("\pID ");
-                    DrawString(buf);
+                    DrawCString("ID ");
+                    DrawCString(NumText(count + kFirstResourceID));
                 } else {
-                    DrawString(govtData[count].name);
+                    DrawCString(GovtName(count));
                 }
                 MoveTo(r2.left + 10, r2.top + 0x77);
                 RGBForeColor(&rgbLightGrey);
@@ -1269,8 +1255,7 @@ void MapDialogUpdate(void)
                 ForeColor(whiteColor);
                 MoveTo(r2.left + 0xf, r2.top + 0x84);
                 if (cheatsActive != 0) {
-                    NumToString(playerRecord[sel], buf);
-                    DrawString(buf);
+                    DrawCString(NumText(playerRecord[sel]));
                 } else {
                     DrawLegalStatusString(sel);
                 }
@@ -1283,16 +1268,16 @@ void MapDialogUpdate(void)
                     DrawIndString(kGameStrList, 0x136);
                 } else {
                     xoff = 0;
-                    for (k = 0, name = cargoName[0]; k <= 5; k++, name += sizeof(cargoName[0])) {
+                    for (k = 0; k <= 5; k++) {
                         if (SystemTradesGoods(sel, k) != 0)
-                            xoff += DrawGoodsLine(name, CommodityLevels(sel, k), r2, r2.top + 0xa8 + xoff);
+                            xoff += DrawGoodsLine(cargoName[k], CommodityLevels(sel, k), r2, r2.top + 0xa8 + xoff);
                     }
                     if (settings.mapPrices != 0) {
                         short junkLevels[kMaxJunks];
                         SystemJunkLevels(sel, junkLevels);
                         for (k = 0; k < kMaxJunks; k++) {
                             if (junkLevels[k] != 0)
-                                xoff += DrawGoodsLine(junkData[k].name, { junkLevels[k], 0, 0 }, r2,
+                                xoff += DrawGoodsLine(JunkName(k), { junkLevels[k], 0, 0 }, r2,
                                                       r2.top + 0xa8 + xoff);
                         }
                     }

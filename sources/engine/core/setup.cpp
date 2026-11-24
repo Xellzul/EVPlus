@@ -19,6 +19,7 @@
 #include "viewscale.h"
 #include "prefsdisplay.h"
 #include "sound.h"
+#include "text.h"
 
 static void SpriteWorldFailed(void)
 {
@@ -171,7 +172,7 @@ void SetupWind(void)
     short right;
 
     fullScreenRestore = 0;
-    gWind = OpenGamePort(&mainWindRect, "\pEV Nova");
+    gWind = OpenGamePort(&mainWindRect, PascalLiteral("EV Nova").text);
     top = mainWindRect.top;
     left = mainWindRect.left;
     bottom = mainWindRect.bottom;
@@ -935,7 +936,7 @@ void FatalStartupError(short index)
     unsigned char text[256];
 
     GetIndString(text, kAlertStrList, index);
-    ParamText(text, "\p", "\p", "\p");
+    ParamText(text, NULL, NULL, NULL);
     StopAlert(128, NULL);
     ExitToShell();
 }

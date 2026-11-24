@@ -8,6 +8,8 @@
 #define MISSIONS_H
 #include "macport.h"
 #include "resources.h"
+#include <string.h>
+#include <string>
 
 /* mission system codes */
 #define kSystemRandom       -2
@@ -23,6 +25,13 @@
 
 /* briefing text buffer */
 #define kBriefingTextMax    0x1ffe
+
+/* strncpy of a briefing (kBriefingTextMax bytes) into an 8 KB text buffer, then a NUL */
+inline void CopyBriefingText(char *dst, const char *src)
+{
+    strncpy(dst, src, kBriefingTextMax);
+    dst[kBriefingTextMax] = 0;
+}
 
 /* negative pay bands */
 #define kPayClearGovt   10000   /* pay -(10000 + id): clear the record with govt id */
@@ -56,7 +65,7 @@ extern Boolean PlayerMeetsRequirements(uint32_t reqLo, uint32_t reqHi); /* 0x004
 extern void QuickMissionFailure(short mission);                  /* 0x00440bf0 */
 extern void RandomizeMissionData(void);                         /* 0x0043cf00 */
 extern void RandomizeOneMission(short mission);          /* 0x0043d240 mac _RandomizeOneMission */
-extern void RestoreBuffer(void *saved);                 /* 0x0044a9d0 */
+extern void RestoreBuffer(const std::string &saved);    /* 0x0044a9d0 */
 extern short SelectMissionStellar(short sel, short loc, short avoid, short mission); /* 0x0043d510 */
 extern short SelectMissionSystem(short which, short curSystem);  /* 0x0043e6f0 */
 extern void SetupMissionList(void);                            /* 0x0043cc20 */

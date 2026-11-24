@@ -2,6 +2,7 @@
 #include "macport.h"
 #include "burger.h"
 #include "stellar.h"
+#include "text.h"
 
 #define kAssertAlertID 128
 
@@ -15,7 +16,7 @@ CleanUpCallBackPtr gSWCleanUpCallBackP;              /* 0x008700d0 */
 // MAC: _SWAssertFail i386 0x000a7a50 ppc 0x000b2850
 void SWAssertFail(char *filename, int lineNum)
 {
-    Str255 fileString = "\p";
+    Str255 fileString = { 0 };
     Str15 lineString;
     short n, result;
     uint32_t junkTime;
@@ -33,8 +34,8 @@ void SWAssertFail(char *filename, int lineNum)
         (*gSWCleanUpCallBackP)();
 
     OSCursorReset();
-    ParamText("\pAssertion failure! Nova will now quit. The failure occurred here:",
-              fileString, lineString, "\pN/A");
+    ParamText(PascalLiteral("Assertion failure! Nova will now quit. The failure occurred here:").text,
+              fileString, lineString, PascalLiteral("N/A").text);
     result = StopAlert(kAssertAlertID, NULL);
 
     if (result < 0) {

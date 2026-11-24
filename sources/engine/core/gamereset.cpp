@@ -9,6 +9,7 @@
 #include "gameutil.h"
 #include "player.h"
 #include "ships.h"
+#include "text.h"
 
 #define kEscortCount     4
 
@@ -209,7 +210,7 @@ void InitObjects(void)
         systemData[i].reinforceDaysLeft = 0;
         systemData[i].reinforceInterval = 0;
         systemData[i].reinforceTimer = 0.0f;
-        strncpy((char *)systemData[i].name, (char *)"\p", 31);
+        strncpy((char *)systemData[i].name, "", 31);
     }
 
     for (i = 0; i < kMaxDudes; i++) {
@@ -271,9 +272,9 @@ void InitObjects(void)
         for (j = 0; j < 8; j++) {
             junkData[i].boughtAt[j] = -1;
             junkData[i].soldAt[j] = -1;
-            pstrcpy(junkData[i].name, "\p");
-            pstrcpy((unsigned char *)junkData[i].abbrev, "\p");
-            pstrcpy((unsigned char *)junkData[i].lcName, "\p");
+            junkData[i].name[0] = 0;
+            junkData[i].abbrev[0] = 0;
+            junkData[i].lcName[0] = 0;
         }
     }
 
@@ -352,11 +353,11 @@ void InitObjects(void)
     dockPermission = dockTarget = -1;
     GetTime(&gameTime);
     gameTime.year += kGameYearOffset;
-    pstrcpy(lastPlayerName, "\p");
-    pstrcpy(playerName, "\pNo Name");
-    pstrcpy(shipName, "\pNo Name");
+    ToPascal("", lastPlayerName);
+    ToPascal("No Name", playerName);
+    ToPascal("No Name", shipName);
     descResourcePictId = 0;
-    pstrcpy(descMovieName, "\p");
+    ToPascal("", descMovieName);
     leetMode = 0;
     escortMenuOnscreen = 0;
     showFloatingMap = -1;
@@ -411,7 +412,7 @@ void InitObjects(void)
     menuTextSize = 9;
     playerIsLanded = 0;
     ignoreKeys = 0;
-    GetFNum("\pGeneva", &smallTextFont);
+    GetFNum(PascalLiteral("Geneva").text, &smallTextFont);
     smallTextSize = 9;
     hypergateMapMode = 0;
     hypergateMapModeStellar = -1;
@@ -661,7 +662,7 @@ void SetDefaultPrefs(void)
     settings.mapPrices = 0;
     settings.mapDisasters = 0;
     settings.uiScale = 1.0;
-    pstrcpy(lastPlayerName, "\p");
+    ToPascal("", lastPlayerName);
 }
 
 // FUNCTION: EVNOVA 0x004b4400
@@ -769,9 +770,9 @@ void ResetGameData(void)
     dockPermission = dockTarget = -1;
     GetTime(&gameTime);
     gameTime.year += kGameYearOffset;
-    pstrcpy(lastPlayerName, "\p");
-    pstrcpy(playerName, "\pNo Name");
-    pstrcpy(shipName, "\pNo Name");
+    ToPascal("", lastPlayerName);
+    ToPascal("No Name", playerName);
+    ToPascal("No Name", shipName);
     lastShipAIDispatched = 1;
     hypergateMapMode = 0;
     seenIntroScreen = 0;

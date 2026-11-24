@@ -70,7 +70,7 @@ void DrawEscortMenuInFrame()
         MoveTo(box.left + 7, (box.top + 0x28 + (i + 1) * 18));
         NumToString(i + 2, str);
         DrawString(str);
-        DrawString("\p) ");
+        DrawCString(") ");
 
         if (i == -1)
             DrawIndString(kGameStrList, 0x90);

@@ -8,6 +8,7 @@
 #include "burger.h"
 #include "platform.h"
 #include "fontraster.h"
+#include "text.h"
 
 #define kStyleCount     4               /* plain, bold, italic, bold italic: kFontBold | kFontItalic */
 #define kSourceMax      32
@@ -70,9 +71,9 @@ void InitFonts(void)
 
     PlatListFiles(PlatExeFolder(), kFontPattern, AddGameFont, NULL);
     LinkedListInit(&gFontFamilies);
-    GetFNum("\pChicago", &gChicagoFont);
-    GetFNum("\pTimes", &gTimesFont);
-    GetFNum("\pGeneva", &scratch);
+    GetFNum(PascalLiteral("Chicago").text, &gChicagoFont);
+    GetFNum(PascalLiteral("Times").text, &gTimesFont);
+    GetFNum(PascalLiteral("Geneva").text, &scratch);
 }
 
 /* A Mac font that is always drawn with a Windows font: the one entry CE kept of the exe's table

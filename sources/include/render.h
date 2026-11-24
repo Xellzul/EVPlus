@@ -1,6 +1,7 @@
 /* render.h -- sprites, GWorlds, the status bar and everything that draws. Notes: Research/notes/render.md */
 #ifndef RENDER_H
 #define RENDER_H
+#include <string>
 #include "burger.h"
 #include "spriteworld.h"
 #include "movie.h"
@@ -119,7 +120,7 @@ extern short logoIndex;
 extern short gMainPicHeightDelta;
 extern short gMainPicWidthDelta;
 extern short planetPicId;
-extern unsigned char weapName[256][256];
+extern std::string weapName[256];
 extern Rect interfacePicRect;
 extern short interferenceThisFrame;
 extern short lastIntfResourceID;
@@ -173,8 +174,7 @@ extern void DoPlayGameWork(unsigned char advance);
 extern void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite);
 extern void FloaterDrawCallback(SpriteWorldPtr world);
 extern void BeamEraseCallback(SpriteWorldPtr world);
-extern void StartLoopingMovie(const unsigned char *name, void *window,
-                              Rect *box);
+extern void StartLoopingMovie(const std::string &name, void *window, Rect *box);
 extern void PreloadPortDialog(SpobRecord *spob, short stellar);
 
 #endif
