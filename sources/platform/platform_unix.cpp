@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <sys/resource.h>
 #include <unistd.h>
 #ifdef __APPLE__
 #include <CoreText/CoreText.h>
@@ -162,3 +163,13 @@ void *PlatSystemFont(const char *family, int bold, int italic, int lookAlike, in
     return data;
 }
 #endif
+
+uint64_t PlatCpuMicroseconds(void)
+{
+    struct rusage use;
+
+    if (getrusage(RUSAGE_SELF, &use) != 0)
+        return 0;
+    return (uint64_t)(use.ru_utime.tv_sec + use.ru_stime.tv_sec) * 1000000
+           + use.ru_utime.tv_usec + use.ru_stime.tv_usec;
+}

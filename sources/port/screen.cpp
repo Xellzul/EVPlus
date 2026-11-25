@@ -2,6 +2,7 @@
    handed to the platform's window. */
 #include "burger.h"
 #include "platform.h"
+#include "profiler.h"
 #include "viewscale.h"
 #include "screen.h"
 
@@ -79,8 +80,10 @@ void Close()
 
 void ComposeView()
 {
+    Profiler::Begin(Profiler::Compose);
     if (View::Enlarge(page))
         DrawOverlays();
+    Profiler::End(Profiler::Compose);
 }
 
 void Present()

@@ -2,6 +2,7 @@
 
 #include "burgermath.h"
 #include "platform.h"
+#include "profiler.h"
 #include "sound.h"
 #include "ai.h"
 #include "crashlog.h"
@@ -473,30 +474,6 @@ void InitEVNova(void)
 
 #define kEscapePodType  0x2ff
 
-/* MyProfile bracket ids, registered by name in PlayGame */
-#define kProfGameLoop     0
-#define kProfPreDraw      1
-#define kProfDrawing      2
-#define kProfPostDraw     3
-#define kProfShip         4
-#define kProfShipDisp     5
-#define kProfAI           6
-#define kProfShots        7
-#define kProfSprites      8     /* "misc handlers" */
-#define kProfCollide      9
-#define kProfPlayer      10
-#define kProfHandlers    11     /* "misc handlers2" */
-#define kProfStatus      12
-#define kProfProcessSW   13
-#define kProfAnimateSW   14
-#define kProfPostAnimate 15
-#define kProfLocking     16
-#define kProfErase       17
-#define kProfDraw        18
-#define kProfUpdate      19
-#define kProfOdds        20
-
-
 // FUNCTION: EVNOVA 0x00417600
 // MAC: _PlayGame i386 0x000457ba ppc 0x0004da00
 void PlayGame(void)
@@ -528,28 +505,6 @@ void PlayGame(void)
     lastEventLoopTime = ReadTick();
     lastKeypressTime = ReadTick();
     AdjustSoundVolume();
-    MyProfileInit();
-    MyProfileSetName(kProfGameLoop, "game loop");
-    MyProfileSetName(kProfPreDraw, "pre draw tasks");
-    MyProfileSetName(kProfDrawing, "drawing");
-    MyProfileSetName(kProfPostDraw, "post draw tasks");
-    MyProfileSetName(kProfShip, "HandleShip");
-    MyProfileSetName(kProfShipDisp, "HandleShipDisplay");
-    MyProfileSetName(kProfAI, "AI routines");
-    MyProfileSetName(kProfShots, "HandleShot");
-    MyProfileSetName(kProfSprites, "misc handlers");
-    MyProfileSetName(kProfCollide, "collisions");
-    MyProfileSetName(kProfPlayer, "player");
-    MyProfileSetName(kProfHandlers, "misc handlers2");
-    MyProfileSetName(kProfStatus, "DrawStatus");
-    MyProfileSetName(kProfProcessSW, "ProcessSpriteWorld");
-    MyProfileSetName(kProfAnimateSW, "AnimateSpriteWorld");
-    MyProfileSetName(kProfPostAnimate, "PostAnimate");
-    MyProfileSetName(kProfLocking, "locking");
-    MyProfileSetName(kProfErase, "erase");
-    MyProfileSetName(kProfDraw, "draw");
-    MyProfileSetName(kProfUpdate, "update");
-    MyProfileSetName(kProfOdds, "calc AI odds");
     gSpriteWorld->fastBlit = 1;
     inBackground = 0;
     gPause = 0;
@@ -557,12 +512,13 @@ void PlayGame(void)
     FlushEvents(0xf, 0);
 
     while (gQuit == 0 && gPause == 0) {
-        MyProfileEnter(kProfGameLoop);
+        Profiler::Begin(Profiler::Frame);
+        Profiler::Begin(Profiler::Wait);
         HandleTimeAdjustment();
+        Profiler::End(Profiler::Wait);
         keyPressedThisFrame = 0;
         if (inBackground == 0) {
             if (gSpriteWorld->fastBlit != 0) {
-                MyProfileEnter(kProfPreDraw);
                 lastFramePlayerPos.x = shipData[0].pos.x;
                 lastFramePlayerPos.y = shipData[0].pos.y;
                 if (frameCounter % 3 == 0) {
@@ -571,9 +527,14 @@ void PlayGame(void)
                 } else {
                     updateSmokeThisFrame = 0;
                 }
+                Profiler::Begin(Profiler::Sim);
                 DoPlayGameWork(1);
+                Profiler::End(Profiler::Sim);
                 fpsCounter += 1;
-                if (showFPS != 0) {
+                if (Profiler::On()) {
+                    if (Profiler::LiveLine(str))
+                        DisplayComm(str, 999);
+                } else if (showFPS != 0) {
                     if (ReadTick() > lastFPSUpdateTime + 120) {
                         if ((uint32_t)lastFPSUpdateTime == 0) {
                             DisplayComm(IndString(kGameStrList, 282), 100);
@@ -597,21 +558,13 @@ void PlayGame(void)
                 }
                 ScrollStarfield(dx, dy);
                 HandleMouse();
-                MyProfileExit(kProfPreDraw);
-                MyProfileEnter(kProfDrawing);
-                MyProfileEnter(kProfProcessSW);
+                Profiler::Begin(Profiler::Sprites);
                 SWProcessSpriteWorld(gSpriteWorld);
-                MyProfileExit(kProfProcessSW);
-                MyProfileEnter(kProfAnimateSW);
                 SWAnimateSpriteWorld(gSpriteWorld);
-                MyProfileExit(kProfAnimateSW);
-                MyProfileEnter(kProfPostAnimate);
                 PostAnimateHandler();
+                Profiler::End(Profiler::Sprites);
                 Screen::ComposeView();
-                MyProfileExit(kProfPostAnimate);
                 ScreenEndScene();
-                MyProfileExit(kProfDrawing);
-                MyProfileEnter(kProfPostDraw);
                 if (KeyCheck(keyPrefs.pause)) {
                     if (pauseKeyFlag == 0 && gPause == 0) {
                         pauseKeyFlag = 1;
@@ -626,8 +579,11 @@ void PlayGame(void)
                 } else {
                     pauseKeyFlag = 0;
                 }
-                if (doubleTime != 0)
+                if (doubleTime != 0) {
+                    Profiler::Begin(Profiler::Sim);
                     DoPlayGameWork(0);
+                    Profiler::End(Profiler::Sim);
+                }
                 frameCounter += 1;
                 if (frameCounter > 1024) {
                     frameCounter = 0;
@@ -676,7 +632,6 @@ void PlayGame(void)
                 } else {
                     BusyIdle();
                 }
-                MyProfileExit(kProfPostDraw);
             } else {
                 SWUpdateSpriteWorld(gSpriteWorld, 0);
                 Screen::ComposeView();
@@ -696,10 +651,10 @@ void PlayGame(void)
             DisplayComm(absquatulateStr, 500);
             absquatulateStr.clear();
         }
-        MyProfileExit(kProfGameLoop);
+        Profiler::End(Profiler::Frame);
+        Profiler::FrameEnd();
     }
 
-    MyProfileDump("profile.txt");
     FadeScreenOut();
     ShowTheCursor();
     FlushEvents(everyEvent - diskMask, 0);
@@ -717,14 +672,12 @@ void DoPlayGameWork(unsigned char advance)
     short i;
     short n;
 
-    MyProfileEnter(kProfPlayer);
     QuickKeyCheckHandler();
     gravitySourcesPresent = 0;
     HandlePlayer(shipData);
     HandleShipDisplay(shipData);
-    MyProfileExit(kProfPlayer);
 
-    MyProfileEnter(kProfCollide);
+    Profiler::Begin(Profiler::Collisions);
     if (miningBoxesActive != 0)
         SWCollideSpriteLayer(gSpriteWorld, shipLayer, boxLayer);
     SWCollideSpriteLayer(gSpriteWorld, shipLayer, shotLayer);
@@ -742,15 +695,13 @@ void DoPlayGameWork(unsigned char advance)
     SWCollideSpriteLayer(gSpriteWorld, asteroidLayer, pointDefenseLayer);
     SWCollideSpriteLayer(gSpriteWorld, pointDefenseLayer, guidedShotLayer);
     CheckShotProximities();
-    MyProfileExit(kProfCollide);
+    Profiler::End(Profiler::Collisions);
 
     if (advance != 0) {
-        MyProfileEnter(kProfStatus);
         HandleStatus();
         DrawStatus();
-        MyProfileExit(kProfStatus);
 
-        MyProfileEnter(kProfAI);
+        Profiler::Begin(Profiler::AI);
         for (i = 0; i < kMaxShips; i++) {
             shipData[i].hasEscorts = 0;
             shipData[i].hasSwarm = 0;
@@ -783,9 +734,8 @@ void DoPlayGameWork(unsigned char advance)
                     shipData[shipData[i].formLeader].hasFormation = 1;
             }
         }
-        MyProfileExit(kProfAI);
+        Profiler::End(Profiler::AI);
 
-        MyProfileEnter(kProfHandlers);
         MissionHandler();
         HandleVoiceSound();
         HandleComm();
@@ -794,15 +744,13 @@ void DoPlayGameWork(unsigned char advance)
         SpawnAsteroid(1);
         scanActive = 0;
         miningShipsActive = 0;
-        MyProfileExit(kProfHandlers);
 
-        MyProfileEnter(kProfAI);
+        Profiler::Begin(Profiler::AI);
         for (i = 1; i < kMaxShips; i++) {
             if (shipData[i].active != 0 && AIIsSet(shipData[i].aiType) &&
                     shipData[i].curSystem == shipData[0].curSystem)
                 AIDispatch(&shipData[i], 0);
         }
-        MyProfileEnter(kProfOdds);
         for (i = 1; i < kMaxShips; i++) {
             if (shipData[i].odds < 0.0f) {
                 if (i < kMaxShips - 1)
@@ -817,11 +765,9 @@ void DoPlayGameWork(unsigned char advance)
                 shipData[i].odds = 0.0f;
             }
         }
-        MyProfileExit(kProfOdds);
-        MyProfileExit(kProfAI);
+        Profiler::End(Profiler::AI);
     }
 
-    MyProfileEnter(kProfShots);
     for (i = 0; i < kMaxShots; i++) {
         if (shotData[i].life >= -1.0f) {
             HandleShot(&shotData[i]);
@@ -829,7 +775,6 @@ void DoPlayGameWork(unsigned char advance)
             HandleShot(&shotData[i]);
         }
     }
-    MyProfileExit(kProfShots);
 
     for (i = 0; i < kMaxNavDefaults; i++) {
         n = systemData[shipData[0].curSystem].navDefault[i];
@@ -841,16 +786,11 @@ void DoPlayGameWork(unsigned char advance)
             stellarData[shipData[i].defenseStellar].defenseActive = 1;
     }
     for (i = 1; i < kMaxShips; i++) {
-        MyProfileEnter(kProfShip);
         if (shipData[i].active != 0 && shipData[i].curSystem == shipData[0].curSystem)
             HandleShip(&shipData[i]);
-        MyProfileExit(kProfShip);
-        MyProfileEnter(kProfShipDisp);
         HandleShipDisplay(&shipData[i]);
-        MyProfileExit(kProfShipDisp);
     }
 
-    MyProfileEnter(kProfSprites);
     HandleStellarSprites();
     HandleStellarWeapons();
     HandleDoubleTimeSprite();
@@ -867,7 +807,6 @@ void DoPlayGameWork(unsigned char advance)
     HandleEscapePods();
     if (advance != 0)
         HandleAlertSprite();
-    MyProfileExit(kProfSprites);
     HandleBeams(advance);
 }
 

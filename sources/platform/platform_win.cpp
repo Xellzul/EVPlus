@@ -125,3 +125,16 @@ void *PlatSystemFont(const char *family, int bold, int italic, int lookAlike, in
         DeleteDC(dc);
     return data;
 }
+
+uint64_t PlatCpuMicroseconds(void)
+{
+    FILETIME created;
+    FILETIME exited;
+    FILETIME kernel;
+    FILETIME user;
+
+    if (!GetProcessTimes(GetCurrentProcess(), &created, &exited, &kernel, &user))
+        return 0;
+    return ((((uint64_t)kernel.dwHighDateTime << 32) | kernel.dwLowDateTime)
+            + (((uint64_t)user.dwHighDateTime << 32) | user.dwLowDateTime)) / 10;
+}

@@ -18,6 +18,7 @@
 #include "screen.h"
 #include "platform.h"
 #include "outfitmods.h"
+#include "profiler.h"
 #include "text.h"
 
 /* the cheat keys HandlePlayer reads by code */
@@ -2020,7 +2021,7 @@ static void PlayerEscortKeys(short &n)
     }
 }
 
-/* FPS and speed-up toggles, cheat keys, credits clamp */
+/* FPS / profiler and speed-up toggles, cheat keys, credits clamp */
 static void PlayerToggleAndCheatKeys(ShipObj *player)
 {
     short i;
@@ -2029,13 +2030,25 @@ static void PlayerToggleAndCheatKeys(ShipObj *player)
     if (QuickKeyCheck(keyPrefs.toggleFPS)) {
         if (!framerateFlag) {
             framerateFlag = 1;
-            showFPS = !showFPS;
-            if (showFPS) {
-                lastFPSUpdateTime = 0;
-                fpsCounter = 0;
-                commCount = 0;
+            if (ShiftKeyQuick()) {
+                Profiler::Toggle();
+                commCount = Profiler::On() ? 0 : 1;
+            } else if (CtrlKeyQuick()) {
+                if (!Profiler::On())
+                    DisplayComm(std::string("Profiler is off (Shift + framerate key)"), 300);
+                else if (Profiler::WriteReport(msg))
+                    DisplayComm("Profile written: " + msg, 300);
+                else
+                    DisplayComm(std::string("Profile not written"), 300);
             } else {
-                commCount = 1;
+                showFPS = !showFPS;
+                if (showFPS) {
+                    lastFPSUpdateTime = 0;
+                    fpsCounter = 0;
+                    commCount = 0;
+                } else {
+                    commCount = 1;
+                }
             }
         }
     } else {

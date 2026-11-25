@@ -40,6 +40,7 @@ static Uint64 gShowRest;                /* ns after gShowEnd in which nothing mo
 static Uint64 gPresentEnd;              /* when the game's last present returned */
 static SDL_ScaleMode gScaleMode = SDL_SCALEMODE_LINEAR;
 static bool gWholePixel;                /* PlatVideoSetScaling's wholePixel */
+static PlatVideoTimes gTimes;           /* for PlatVideoTakeTimes */
 
 static int gButtons;                    /* mouse buttons held, a bit each */
 static SDL_Scancode gSwallowedKey;      /* the Enter of Alt+Enter: the game sees neither its press nor its release */
@@ -130,13 +131,17 @@ void PlatQuit(void)
 /* the frame as it was last shown, stretched into the window as it is now */
 static void Redraw(void)
 {
+    Uint64 start;
+
     if (gRenderer == NULL)
         return;
+    start = SDL_GetTicksNS();
     SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(gRenderer);
     if (gTexture != NULL && gFrameDrawn)
         SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
     SDL_RenderPresent(gRenderer);
+    gTimes.renderNs += SDL_GetTicksNS() - start;
 }
 
 /* ns until another frame may be shown; 0 = now */
@@ -189,9 +194,11 @@ static bool UploadFrame(const void *pixels, int pitch)
     int texelPitch;
     int x;
     int y;
+    Uint64 start;
 
     if (!gColorsMade)
         PlatVideoSetBrightness(1.0);
+    start = SDL_GetTicksNS();
     if (!SDL_LockTexture(gTexture, NULL, &texels, &texelPitch))
         return false;
     for (y = 0; y < gFrameHeight; y++) {
@@ -201,6 +208,7 @@ static bool UploadFrame(const void *pixels, int pitch)
             dst[x] = gColors[src[x] & (kColorCount - 1)];
     }
     SDL_UnlockTexture(gTexture);
+    gTimes.uploadNs += SDL_GetTicksNS() - start;
     return true;
 }
 
@@ -419,6 +427,12 @@ void PlatVideoPresent(const void *pixels, int pitch)
     if (FrameDueIn() != 0 || !ShowNow(pixels, pitch))
         KeepFrame(pixels, pitch);
     gPresentEnd = SDL_GetTicksNS();
+}
+
+void PlatVideoTakeTimes(PlatVideoTimes *times)
+{
+    *times = gTimes;
+    SDL_zero(gTimes);
 }
 
 void PlatVideoSetScaling(int filter, int wholePixel)

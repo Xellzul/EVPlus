@@ -36,6 +36,13 @@ extern void PlatVideoSetScaling(int filter, int wholePixel);
    Can be called before PlatVideoOpen. */
 extern void PlatVideoSetBrightness(double exponent);
 extern int PlatVideoIsFullScreen(void);
+/* Time spent showing frames since the last call, then zeroed: upload = frames into the texture, render =
+   the texture to the window and SDL's present. */
+typedef struct PlatVideoTimes {
+    uint64_t uploadNs;
+    uint64_t renderNs;
+} PlatVideoTimes;
+extern void PlatVideoTakeTimes(PlatVideoTimes *times);
 extern void PlatDesktopSize(int *width, int *height);      /* the main display, in pixels */
 /* The program starts in the platform layer, which calls the game (port/winmain.cpp) with the arguments
    kept for it: PlatArg(0) is the program, the rest what it was started with, UTF-8. */
@@ -153,6 +160,7 @@ extern void *PlatSystemFont(const char *family, int bold, int italic, int lookAl
 
 /* -- clocks, log ------------------------------------------------------------------------------------- */
 extern uint64_t PlatMicroseconds(void);                   /* monotonic, from any thread */
+extern uint64_t PlatCpuMicroseconds(void);                /* CPU time of the whole process, all threads */
 extern void PlatSleep(int ms);                            /* 0 may return at once */
 extern uint32_t PlatLocalSeconds1904(void);               /* Mac clock: seconds since 1904-01-01, local time */
 

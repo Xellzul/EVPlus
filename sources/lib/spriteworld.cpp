@@ -622,8 +622,6 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
 
     SWSetPortToFrame(spriteWorldP->workFrameP);
 
-    MyProfileEnter(17);
-
     curSpriteLayerP = spriteWorldP->headSpriteLayerP;
     curTileLayer = 0;
 
@@ -738,8 +736,6 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
         curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
     }
 
-    MyProfileExit(17);
-
     if (curActiveSpriteP != 0)
         curActiveSpriteP->nextActiveSpriteP = 0;
 
@@ -748,8 +744,6 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
 
     if (spriteWorldP->postEraseCallBack != 0)
         (*spriteWorldP->postEraseCallBack)(spriteWorldP);
-
-    MyProfileEnter(18);
 
     curSpriteLayerP = spriteWorldP->headSpriteLayerP;
 
@@ -794,12 +788,8 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
         curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
     }
 
-    MyProfileExit(18);
-
     if (spriteWorldP->postDrawCallBack != 0)
         (*spriteWorldP->postDrawCallBack)(spriteWorldP);
-
-    MyProfileEnter(19);
 
     SWSetPortToFrame(spriteWorldP->windowFrameP);
 
@@ -879,8 +869,6 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
 
     if (spriteWorldP->deadSpriteLayerP->headSpriteP != 0)
         SWRemoveSpriteLayer(spriteWorldP, spriteWorldP->deadSpriteLayerP);
-
-    MyProfileExit(19);
 
     gSWCurrentSpriteWorld = 0;
 }
