@@ -20,7 +20,6 @@ extern short height;
 
 /* uiScale: the UI's device pixels per logical one */
 void SetSizes(short gameW, short gameH, short drawW, short drawH, double uiScale);
-CWindowPtr Open();                  /* the view's buffer and port, for the sprite world */
 Rect OnPage(const Screen::Page &page);      /* where the view shows on a page */
 void ToView(Point *pt);             /* a screen point in view coordinates */
 

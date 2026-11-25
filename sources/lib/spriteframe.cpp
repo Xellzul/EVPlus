@@ -61,7 +61,6 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
             tempFrameP->tileMaskIsSolid = 0;
             tempFrameP->sharesGWorld = 0;
             tempFrameP->isFrameLocked = 0;
-            tempFrameP->isWindowFrame = 0;
             tempFrameP->interlacingIsOn = 0;
             tempFrameP->skipOddLines = 1;
 
@@ -88,78 +87,8 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
     return err;
 }
 
-/* SW_MIN/SW_MAX are the donor's double-evaluating macros over a non-inlinable accessor,
-   so each clip mentions its window bound twice and the exe parks the second call out of
-   line. Write the macro; do not hoist the call into a local. */
-
-
-// FUNCTION: EVNOVA 0x004765d0
-// MAC: _SWCreateWindowFrame i386 0x000ad32f ppc 0x000b877c
-short SWCreateWindowFrame(CWindowPtr srcWindowP, SWFrameRec **newFrameP,
-                          Rect *frameRect, short maxHeight)
-{
-    short err = 0;
-    SWFrameRec *tempFrameP = 0;
-    int32_t numScanLines;
-
-    if (!(frameRect->top >= 0 && frameRect->left >= 0))
-        SWAssertFail("SpriteFrame.c", 190);
-    if (!(frameRect->right > frameRect->left && frameRect->bottom > frameRect->top))
-        SWAssertFail("SpriteFrame.c", 191);
-
-    *newFrameP = 0;
-
-    numScanLines = (GetCWindowPortRect(srcWindowP)->bottom -
-                    GetCWindowPortRect(srcWindowP)->top);
-    numScanLines = SW_MAX(numScanLines, maxHeight);
-
-    frameRect->top = SW_MAX(frameRect->top, GetCWindowPortRect(srcWindowP)->top);
-    frameRect->left = SW_MAX(frameRect->left, GetCWindowPortRect(srcWindowP)->left);
-    frameRect->bottom = SW_MIN(frameRect->bottom, GetCWindowPortRect(srcWindowP)->bottom);
-    frameRect->right = SW_MIN(frameRect->right, GetCWindowPortRect(srcWindowP)->right);
-
-    tempFrameP = (SWFrameRec *)AllocAPointerClear(sizeof(SWFrameRec) +
-            (sizeof(uint32_t) * numScanLines));
-
-    if (tempFrameP != 0) {
-        tempFrameP->framePort = GetCWindowGrafPort(srcWindowP);
-        tempFrameP->frameDevice = (void *)(intptr_t)GetMainDevice();
-        tempFrameP->framePixHndl = GetWindowPixMap(srcWindowP);
-        if (tempFrameP->framePixHndl == 0)
-            tempFrameP->framePixHndl =
-                    GetCWindowPixMap(GetCWindowGrafPort(srcWindowP));
-        tempFrameP->frameDepth = GetPixDepth(tempFrameP->framePixHndl);
-        tempFrameP->frameRect.top = frameRect->top;
-        tempFrameP->frameRect.left = frameRect->left;
-        tempFrameP->frameRect.bottom = frameRect->bottom;
-        tempFrameP->frameRect.right = frameRect->right;
-        tempFrameP->numScanLines = numScanLines;
-        tempFrameP->sharesGWorld = 0;
-        tempFrameP->isWindowFrame = 1;
-        tempFrameP->isFrameLocked = 0;
-        tempFrameP->interlacingIsOn = 0;
-        tempFrameP->skipOddLines = 1;
-
-        SWInitializeFrame(tempFrameP);
-
-        *newFrameP = tempFrameP;
-    } else {
-        err = memFullErr;
-    }
-
-    if ((int)err != noErr) {
-        if (tempFrameP != 0) {
-            DeallocAPointer(tempFrameP);
-        }
-    }
-
-    SWSetStickyIfError(err);
-    return err;
-}
-
 /* `saveGDH = GetGWorldDevice(saveGWorld)' is never read, but the statement has to be
-   written: mwcc keeps the call and drops the store. SpriteWorldRec's mainSWGDH is at
-   +0xc0, immediately in front of the pixelDepth macport.h pins at +0xc4. */
+   written: mwcc keeps the call and drops the store. */
 
 // FUNCTION: EVNOVA 0x00476800
 // MAC: _SWCreateFrameFromCicnResource i386 0x000add00 ppc 0x000b91f4
@@ -188,7 +117,7 @@ short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
     if (cIconH != 0) {
         QDGetCIconBounds(cIconH, &frameRect);
 
-        err = SWCreateFrame(destSpriteWorld->mainSWGDH, &tempFrameP, &frameRect,
+        err = SWCreateFrame(GetGDevice(), &tempFrameP, &frameRect,
                 destSpriteWorld->pixelDepth, kCreateGWorld);
     } else {
         err = resNotFound;
@@ -306,7 +235,6 @@ short SWCreateFrameFromGWorldAndRectPartial(SWFrameRec **newFrameP,
         destRectP->bottom = frameRect->bottom;
         destRectP->right = frameRect->right;
         tempFrameP->sharesGWorld = 1;
-        tempFrameP->isWindowFrame = 0;
         tempFrameP->numScanLines = numScanLines;
 
         tempFrameP->useCount = 0;
@@ -342,9 +270,7 @@ void SWFreeFrameRecord(SWFrameRec *frameP)
     DeallocAPointer(frameP);
 }
 
-/* The donor's `SW_ASSERT(!oldFrameP->isWindowFrame)' became a guard that RETURNS FALSE
-   through its own exit. useCount is unsigned -- `cmp word ptr [esi+0x58], 1' followed by
-   `ja', not `jg'. */
+/* useCount is unsigned -- `cmp word ptr [esi+0x58], 1' followed by `ja', not `jg'. */
 
 // FUNCTION: EVNOVA 0x00476bd0
 // MAC: _SWDisposeFrame i386 0x000ad0d7 ppc 0x000b8494
@@ -355,9 +281,6 @@ Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
 
     frameDisposed = 0;
     if (oldFrameP != 0) {
-        if (oldFrameP->isWindowFrame)
-            return 0;
-
         if (oldFrameP->useCount > 1) {
             oldFrameP->useCount--;
         } else {
@@ -387,21 +310,6 @@ Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
     }
 
     return frameDisposed;
-}
-
-// FUNCTION: EVNOVA 0x00476c70
-// MAC: _SWDisposeWindowFrame i386 0x000ad197 ppc 0x000b8574
-void SWDisposeWindowFrame(SWFrameRec **oldFramePP)
-{
-    FramePtr oldFrameP = *oldFramePP;
-
-    if (oldFrameP != NULL) {
-        if (!oldFrameP->isWindowFrame)
-            SW_ASSERT_FAIL("SpriteFrame.c", 802, 770);
-
-        DeallocAPointer(oldFrameP);
-        *oldFramePP = NULL;
-    }
 }
 
 // FUNCTION: EVNOVA 0x00476cb0
@@ -470,11 +378,6 @@ void SWLockFrame(SWFrameRec *srcFrameP)
     if (srcFrameP == 0)
         SWAssertFail("SpriteFrame.c", 1278);
 
-    if (srcFrameP->isWindowFrame)
-        return;
-    if (srcFrameP->isWindowFrame)
-        SWAssertFail("SpriteFrame.c", 1283);
-
     if (!srcFrameP->isFrameLocked) {
         srcFrameP->isFrameLocked = 1;
 
@@ -489,7 +392,6 @@ void SWLockFrame(SWFrameRec *srcFrameP)
             srcFrameP->frameRowBytes = GetPixRowBytes(pixMapH);
             srcFrameP->frameDepth = GetPixDepth(pixMapH);
 
-            srcFrameP->worldRectOffset = 0;
         }
 
         if (srcFrameP->maskPort != 0) {
@@ -510,8 +412,6 @@ void SWUnlockFrame(SWFrameRec *srcFrameP)
 {
     if (srcFrameP == NULL)
         SW_ASSERT_FAIL("SpriteFrame.c", 1389, 1345);
-    if (srcFrameP->isWindowFrame)
-        SW_ASSERT_FAIL("SpriteFrame.c", 1390, 1346);
 
     if (srcFrameP->isFrameLocked) {
         srcFrameP->isFrameLocked = false;
@@ -521,61 +421,5 @@ void SWUnlockFrame(SWFrameRec *srcFrameP)
 
         srcFrameP->maskPix = NULL;
         srcFrameP->maskBaseAddr = NULL;
-    }
-}
-
-/* The dead Rect is real and must be written: the exe still brackets a
-   GetWindowPortRect(framePort) whose result goes nowhere, because mwcc keeps the call and
-   drops the copy. worldRectOffset collapses to the constant 0 the exe stores at +0x5a. */
-
-// FUNCTION: EVNOVA 0x00476f80
-// MAC: _SWLockWindowFrame i386 0x000ae9d8 ppc 0x000b9ec4
-void SWLockWindowFrame(SWFrameRec *windowFrameP)
-{
-    CGrafPtr savePort;
-    Rect globalRect;
-    PixMapPtr pixMapH;
-
-    if (windowFrameP == 0)
-        SWAssertFail("SpriteFrame.c", 1442);
-    if (windowFrameP->framePort == 0)
-        SWAssertFail("SpriteFrame.c", 1443);
-    if (windowFrameP->framePixHndl == 0)
-        SWAssertFail("SpriteFrame.c", 1444);
-    if (!windowFrameP->isWindowFrame)
-        SWAssertFail("SpriteFrame.c", 1445);
-
-    if (!windowFrameP->isFrameLocked) {
-        windowFrameP->isFrameLocked = 1;
-        pixMapH = windowFrameP->framePixHndl;
-        windowFrameP->framePix = pixMapH;
-
-        GetPort(&savePort);
-        SetPort(windowFrameP->framePort);
-        globalRect = *GetWindowPortRect(windowFrameP->framePort);
-        SetPort(savePort);
-
-        windowFrameP->frameBaseAddr = GetPixBaseAddr(pixMapH);
-        windowFrameP->frameRowBytes = GetPixRowBytes(pixMapH);
-        windowFrameP->frameDepth = GetPixDepth(pixMapH);
-        windowFrameP->worldRectOffset = 0;
-
-        SWInitializeFrame(windowFrameP);
-    }
-}
-
-// FUNCTION: EVNOVA 0x00477070
-// MAC: _SWUnlockWindowFrame i386 0x000aeb78 ppc 0x000ba0c0
-void SWUnlockWindowFrame(SWFrameRec *windowFrameP)
-{
-    if (windowFrameP == NULL)
-        SW_ASSERT_FAIL("SpriteFrame.c", 1528, 1475);
-    if (!windowFrameP->isWindowFrame)
-        SW_ASSERT_FAIL("SpriteFrame.c", 1529, 1476);
-
-    if (windowFrameP->isFrameLocked) {
-        windowFrameP->isFrameLocked = false;
-        windowFrameP->framePix = NULL;
-        windowFrameP->frameBaseAddr = NULL;
     }
 }

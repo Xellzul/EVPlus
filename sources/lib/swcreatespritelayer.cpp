@@ -1,7 +1,4 @@
 /* swcreatespritelayer.cpp -- SWCreateSpriteLayer (win 0x004770d0, donor SpriteLayer.c line 39) and SWDisposeSpriteLayer (win 0x00477120, donor line 73). Notes: Research/notes/swcreatespritelayer.md */
-/* The fork's SpriteLayerRec is 0x1c bytes, not the donor's 0x18: a 4-byte member at
-   +0x10 (the layer callback, which the GPU view does not use) pushes tileLayer to +0x18, isPaused to
-   +0x1a, layerIsNonScrolling to +0x1b and userData to +0x14. */
 #include "burger.h"
 #include "spriteworld.h"
 
@@ -18,12 +15,6 @@ short SWCreateSpriteLayer(SpriteLayerRec **spriteLayerP)
     tempSpriteLayerP = (SpriteLayerRec *)AllocAPointerClear(sizeof(SpriteLayerRec));
 
     if (tempSpriteLayerP != 0) {
-        tempSpriteLayerP->tileLayer = 10;
-        tempSpriteLayerP->isPaused = 0;
-        tempSpriteLayerP->layerIsNonScrolling = 0;
-        tempSpriteLayerP->headSpriteP = 0;
-        tempSpriteLayerP->layerCallBack = 0;
-
         *spriteLayerP = tempSpriteLayerP;
     } else {
         err = memFullErr;

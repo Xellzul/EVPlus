@@ -316,7 +316,6 @@ void EnterGameFromMainScreen(void)
 
     crashlog("---");
     crashlog("entering game");
-    SWWindowMoved(gSpriteWorld);
     playerIsLanded = 0;
     crashlog("adjusting sounds");
     AdjustSoundVolume();
@@ -351,7 +350,7 @@ void EnterGameFromMainScreen(void)
     gameFrozen = 0;
     RedrawStatus(1);
     RefreshSAT();
-    SWUpdateSpriteWorld(gSpriteWorld, 1);
+    SWUpdateSpriteWorld(gSpriteWorld);
     Screen::ComposeView();
     statusRedraw[kRedrawCargo] = 1;
     escortMenuOnscreen = 0;

@@ -198,12 +198,6 @@ PixMapPtr GetCWindowPixMap(CWindowPtr window)
     return &window->pix;
 }
 
-// FUNCTION: EVNOVA 0x004bbaf0
-PixMapPtr GetWindowPixMap(CWindowPtr window)
-{
-    return GetCWindowPixMap(GetCWindowGrafPort(window));
-}
-
 // FUNCTION: EVNOVA 0x004bbd20
 void *GetGDevice(void)
 {

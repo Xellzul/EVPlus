@@ -62,7 +62,6 @@ void SetupSpriteWorld(void)
 {
     short i;
     short err;
-    Str255 str;
     Rect windRect;
 
     mBarHidden = 1;
@@ -71,17 +70,9 @@ void SetupSpriteWorld(void)
     SetPortWindowPort((WindowRef)gWind);
     View::CreateUIFrames(windRect);
     SetRect(&windRect, 0, 0, View::width, View::height);
-    err = SWCreateSpriteWorldFromWindow(&gSpriteWorld, View::Open(), &windRect, &windRect, 0);
+    err = SWCreateSpriteWorld(&gSpriteWorld, gWind, windRect);
     if ((int32_t)err != 0)
         SpriteWorldFailed();
-    gSpriteWorld->screenPort = gWind;
-    if (gSpriteWorld->pixelDepth != 16) {
-        FadeScreenIn();
-        GetIndString(str, kAlertStrList, 37);
-        EVNoteAlert(str);
-        ST_Close();
-        ExitToShell();
-    }
 
     SWCreateSpriteLayer(&starLayer);
     SWCreateSpriteLayer(&stellarLayer);
@@ -119,7 +110,6 @@ void SetupSpriteWorld(void)
     CreateOverlayFrames();
 
     SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
-    SWLockSpriteWorld(gSpriteWorld);
     SWSetPortToWindow(gSpriteWorld);
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect((WindowRef)gWind));
@@ -145,7 +135,6 @@ void SetupSpriteWorld(void)
 
     if ((int32_t)InitParticles(100000, 0) != 0)
         SWAssertFail("Setup.c", SW_LINE(0x133));
-    SWSetPortToBackground(gSpriteWorld);
 }
 
 /* the middle of the space view */
@@ -557,19 +546,9 @@ void Bye(void)
         SWDisposeSpriteLayer(&starLayer);
     if (turretedShotLayer != NULL)
         SWDisposeSpriteLayer(&turretedShotLayer);
-    if (gSpriteWorld != NULL) {
-        if (gSpriteWorld->deadSpriteLayerP != NULL)
-            SWDisposeSpriteLayer(&gSpriteWorld->deadSpriteLayerP);
-        SWDisposeFrame(&gSpriteWorld->backFrameP);
-        SWDisposeFrame(&gSpriteWorld->workFrameP);
-        SWDisposeFrame(&gSpriteWorld->extraBackFrameP);
-        SWDisposeWindowFrame(&gSpriteWorld->windowFrameP);
-    }
 
     ByeLog("disposing sprite world");
-    if (gSpriteWorld != NULL)
-        DeallocAPointer(gSpriteWorld);
-    SWExitSpriteWorld();
+    SWDisposeSpriteWorld(&gSpriteWorld);
 
     ByeLog("disposing offscreen buffers");
     DisposeGWorldContainer(&loadPort);
@@ -874,8 +853,7 @@ void ReapplyUIScale(void)
     View::CreateUIFrames(r);
 
     SetRect(&r, 0, 0, View::width, View::height);
-    if (SWResizeSpriteWorld(gSpriteWorld, View::Open(), &r, &r) != 0)
-        SpriteWorldFailed();
+    SWResizeSpriteWorld(gSpriteWorld, r);
     SWDisposeFrame(&floatingMapFrame);
     SWDisposeFrame(&floatingEscortMenuFrame);
     CreateOverlayFrames();

@@ -64,7 +64,6 @@ extern Boolean DupKeyCheck(ScanCode code, short excludeRow);
 extern void CheckSpeechMgr(void);
 extern Boolean PlayerHasAnyCargo(void);
 extern void AddToPlayerKills(int strength);
-extern void SWExitSpriteWorld(void);
 extern short InitParticles(int numElements, int gravity);
 extern void DisposeParticles(void);
 extern void DoAboutBox(void);

@@ -14,18 +14,16 @@ typedef unsigned char MaskType;
 
 
 /* --- sprite world --- */
-extern short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP,
-        CWindowPtr srcWindowP, Rect *worldRectP, Rect *offscreenRectP,
-        short maxDepth);                                 /* 0x00477910 */
-/* a world's frames made anew for its window port's new size; the world stays locked */
-extern short SWResizeSpriteWorld(SpriteWorldPtr spriteWorldP, CWindowPtr srcWindowP,
-        Rect *worldRectP, Rect *offscreenRectP);
+/* a world for the space view `viewRect' (at 0,0), its UI drawn in `windowPort' */
+extern short SWCreateSpriteWorld(SpriteWorldRec **spriteWorldP, CGrafPtr windowPort,
+                                 const Rect &viewRect);  /* 0x00477640 */
+extern void SWResizeSpriteWorld(SpriteWorldPtr spriteWorldP, const Rect &viewRect);
+extern void SWDisposeSpriteWorld(SpriteWorldPtr *spriteWorldP);
+extern void SWSetPortToWindow(SpriteWorldPtr spriteWorld);  /* the game window's port */
+extern void SWSetSpriteWorldMaxFPS(SpriteWorldPtr world, short fps);
 extern void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x00478480 */
 extern void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x004781f0 */
-extern void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP,
-                                Boolean updateWindow);      /* 0x00477fa0 */
-extern void SWLockSpriteWorld(SpriteWorldPtr spriteWorld);   /* 0x00477ba0 */
-extern void SWSetPortToBackground(SpriteWorldPtr spriteWorld); /* 0x00477c10 */
+extern void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x00477fa0 */
 extern Boolean SWIsWindowInForeground(SpriteWorldPtr spriteWorldP); /* 0x00478e20 */
 
 /* --- layers --- */
@@ -44,8 +42,6 @@ extern void SWCollideSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *s
 extern short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
         short depth, unsigned char createGWorld);        /* 0x00476400 */
 extern Boolean SWDisposeFrame(SWFrameRec **oldFramePP);     /* 0x00476bd0 */
-extern void SWDisposeWindowFrame(SWFrameRec **oldFramePP); /* 0x00476c70 */
-extern void SWLockWindowFrame(SWFrameRec *windowFrameP); /* 0x00476f80 */
 extern void SWSetPortToFrame(SWFrameRec *dstFrameP);     /* 0x00476cb0 */
 extern void SWInitializeFrame(SWFrameRec *tempFrameP);   /* 0x00476d10 */
 extern void SWLockFrame(SWFrameRec *srcFrameP);          /* 0x00476e10 */
@@ -81,7 +77,6 @@ extern short SWCreateSpriteFromSinglePictXY(SpriteWorldRec *destSpriteWorldP,
                           short maskResID, short frameWidth, short frameHeight,
                           short borderWidth, short borderHeight, short maxFrames,
                           MaskType maskType);
-extern void SWWindowMoved(SpriteWorldPtr spriteWorldP);            /* 0x00477f10 */
 extern short SWCloneFramesFromMaster(SpritePtr dstSpriteP, SpritePtr masterSpriteP); /* 0x00475f70 */
 extern void SWSetSpriteFrameRange(SpritePtr srcSpriteP, short firstFrameIndex,
                                   short lastFrameIndex); /* 0x00475a60 */
@@ -133,7 +128,6 @@ extern void DrawLightningLines(BeamLines &out, Point srcPoint, Point dstPoint, u
 extern void ComputePixelValues(short pixelSize);                       /* 0x00479210 */
 extern void MoveParticles(void);                                       /* 0x0047c800 */
 extern SpriteRec *gSWCurrentSpriteBeingDrawn;            /* 0x00870da8 */
-extern SpriteWorldRec *gSWCurrentSpriteWorld;            /* 0x008706f0 */
 extern void (*gSWDraw)(SpriteWorldRec *spriteWorldP);   /* the game's drawing of the world (spriteworld.cpp) */
 extern void (*gSWFrameGone)(SWFrameRec *frameP);        /* set: told of each frame freed (spriteframe.cpp) */
 extern void SWFreeFrameRecord(SWFrameRec *frameP);
@@ -212,7 +206,6 @@ extern void SWSetStickyIfError(short errNum);            /* 0x004794b0 */
 /* --- particles --- */
 extern void ForEachDrawnParticle(const Rect &bounds, void (*visit)(void *ctx, int x, int y, int32_t color,
                                  int level), void *ctx);
-extern int SWEnterSpriteWorld(void);                           /* 0x00477630 */
 extern void SetParticleScrollOffset(int h, int v);                  /* 0x0047b940 */
 extern void ShiftParticles(int32_t h, int32_t v);
 
@@ -223,13 +216,6 @@ extern void AsteroidCollisionHandler(SpriteRec *roidSpr, SpriteRec *otherSpr,
 
 extern uint32_t SWGetValueFromColor(SWFrameRec *dstFrameP, RGBColor *color);
                                                          /* 0x004719d0 */
-extern short SWCreateWindowFrame(CWindowPtr srcWindowP, SWFrameRec **newFrameP,
-                                 Rect *frameRect, short maxHeight); /* 0x004765d0 */
-extern short SWCreateSpriteWorld(void *mainGDH, SpriteWorldRec **spriteWorldP,
-                                 SWFrameRec *windowFrameP, SWFrameRec *backFrameP,
-                                 SWFrameRec *workFrameP, short maxDepth);
-                                                         /* 0x00477640 */
-extern void SWSetWorldRects(SpriteWorldRec *spriteWorldP);
 extern short SWCreateGWorldFromPictResource(SpriteWorldPtr destSpriteWorld,
                                     CGrafPtr *pictGWorldP, short pictResID,
                                     Boolean useGetPicture); /* 0x00478f30 */
@@ -259,9 +245,6 @@ extern void SWCloseSprite(SpritePtr deadSpriteP);        /* 0x004754a0 */
 extern void SWClearStickyError(void);                    /* 0x004794a0 */
 extern short SWFixImageGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld,
                               Rect *rectP);              /* 0x00479260 */
-extern void SWUnlockWindowFrame(SWFrameRec *windowFrameP); /* 0x00477070 */
-extern void SWWindowFrameMoved(SWFrameRec *windowFrameP, Rect *frameRect);
-                                                         /* 0x00477f30 */
 
 
 /* the mac SpriteWorld's transparent colour (white) and 16-bit alpha-free colour mask,

@@ -1,7 +1,7 @@
 /* viewscale.cpp -- the space view: its sizes, its place on the screen, where space lies in it; the overlay and UI
    frames. */
 #include <math.h>
-#include <vector>
+#include <initializer_list>
 #include "burger.h"
 #include "player.h"
 #include "render.h"
@@ -25,8 +25,6 @@ SWFrameRec *uiWork;
 SWFrameRec *uiBack;
 SWFrameRec *menuWork;               /* the menu's, when its scale differs from the UI's */
 SWFrameRec *menuBack;
-CGrafPort viewPort;
-std::vector<unsigned short> pixels;
 
 /* where the status bar begins on the screen, in device pixels */
 int BarDeviceLeft()
@@ -57,22 +55,6 @@ void SetSizes(short gameW, short gameH, short drawW, short drawH, double ui)
     overlayScale = ui / scale;
     width = (short)(UI::ScreenDeviceX(UI::ScreenWidth() - kStatusBarWidth) / scale + 0.5);
     height = gameH;
-}
-
-CWindowPtr Open()
-{
-    pixels.assign((size_t)width * height, 0);
-    memset(&viewPort, 0, sizeof(viewPort));
-    viewPort.pnSize.h = viewPort.pnSize.v = 1;
-    viewPort.pix.pixelSize = 16;
-    viewPort.pix.bounds.right = width;
-    viewPort.pix.bounds.bottom = height;
-    viewPort.pix.baseAddr = pixels.data();
-    viewPort.pix.width = width;
-    viewPort.pix.height = height;
-    viewPort.pix.rowBytes = width * 2;
-    viewPort.depth = 15;
-    return &viewPort;
 }
 
 Rect OnPage(const Screen::Page &page)

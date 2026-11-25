@@ -40,7 +40,7 @@ void PlayerLandOnStellar(void)
     ShipStatsToSystemInfo();
     SWHideAllSprites(gSpriteWorld);
     ClearParticles(1);
-    SWUpdateSpriteWorld(gSpriteWorld, 1);
+    SWUpdateSpriteWorld(gSpriteWorld);
     MoveParticles();
     Screen::ComposeView();
     HideCursorSprite();

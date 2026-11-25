@@ -162,11 +162,6 @@ typedef struct BeamRecord {
     char pad21;
 } BeamRecord;
 
-typedef struct UpdateRectStruct {
-    Rect                   updateRect;
-    struct UpdateRectStruct *nextRectStructP;
-} UpdateRectStruct, *UpdateRectStructPtr;
-
 typedef struct GovtRecord {
     unsigned char          name[32];
     unsigned short         flags;

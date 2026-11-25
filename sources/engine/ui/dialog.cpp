@@ -1,6 +1,7 @@
 /* dialog.cpp -- Dialog, Picture and CopyLoadPortToDialog */
 #include "dialog.h"
 #include "dialogs.h"
+#include "spriteworld.h"
 
 void Picture::Release()
 {

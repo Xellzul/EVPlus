@@ -328,7 +328,7 @@ void Dot(void *, int x, int y, int32_t color, int level)
    after the target layer), the particles. */
 void DrawWorld(SpriteWorldRec *world)
 {
-    Rect view = world->workFrameP->frameRect;
+    Rect view = world->windRect;
     ViewLines lines;
 
     draws.clear();
@@ -381,7 +381,7 @@ void Clear()
     flashDraw = kNoFlashDraw;
     flashing = false;
     if (gSpriteWorld != NULL)
-        Background(gSpriteWorld->workFrameP->frameRect);
+        Background(gSpriteWorld->windRect);
 }
 
 void BeginOverlays()
@@ -446,7 +446,7 @@ void Take(PlatVideoView &view)
             flashStart = PlatMicroseconds();
         flashTaken = true;
         flashDraw = draws.size();
-        Fill(gSpriteWorld->workFrameP->frameRect, flashColor);
+        Fill(gSpriteWorld->windRect, flashColor);
     }
     view.draws = draws.data();
     view.drawCount = (int)draws.size();

@@ -3,125 +3,6 @@
 #include "render.h"
 #include "game.h"
 
-/* The window, back and work frames of a world over `srcWindowP': the window frame over `worldRectP' (NULL =
-   the whole port), back and work frames of `offscreenRectP''s size (NULL = the window frame's). */
-static short CreateWorldFrames(CWindowPtr srcWindowP, Rect *worldRectP, Rect *offscreenRectP,
-                               SWFrameRec **windowFramePP, SWFrameRec **backFramePP, SWFrameRec **workFramePP)
-{
-    short err = noErr;
-    SWFrameRec *windowFrameP, *backFrameP, *workFrameP;
-    Rect tempRect, windRect;
-    void *mainGDH;
-    Rect *srcRectP;
-
-    windowFrameP = backFrameP = workFrameP = 0;
-
-    SetPortWindowPort(srcWindowP);
-
-    if (worldRectP == 0)
-        srcRectP = GetCWindowPortRect(srcWindowP);
-    else
-        srcRectP = worldRectP;
-
-    windRect = *srcRectP;
-
-    mainGDH = (void *)(intptr_t)GetMainDevice();
-
-    if (offscreenRectP == 0) {
-        tempRect = windRect;
-    } else {
-        tempRect = *offscreenRectP;
-    }
-
-    OffsetRect(&tempRect, -tempRect.left, -tempRect.top);
-
-    err = SWCreateWindowFrame(srcWindowP, &windowFrameP, &windRect, tempRect.bottom);
-
-    if ((int)err == noErr)
-        err = SWCreateFrame(mainGDH, &backFrameP, &tempRect, 16, kCreateGWorld);
-
-    if ((int)err == noErr)
-        err = SWCreateFrame(mainGDH, &workFrameP, &tempRect, 16, kCreateGWorld);
-
-    if ((int)err != noErr) {
-        if (windowFrameP != 0)
-            SWDisposeWindowFrame(&windowFrameP);
-
-        if (backFrameP != 0)
-            SWDisposeFrame(&backFrameP);
-
-        if (workFrameP != 0)
-            SWDisposeFrame(&workFrameP);
-    }
-
-    *windowFramePP = windowFrameP;
-    *backFramePP = backFrameP;
-    *workFramePP = workFrameP;
-    return err;
-}
-
-// FUNCTION: EVNOVA 0x00477910
-// MAC: _SWCreateSpriteWorldFromWindow i386 0x000b6e56 ppc 0x000c2954
-short SWCreateSpriteWorldFromWindow(SpriteWorldPtr *spriteWorldP, CWindowPtr srcWindowP,
-                                    Rect *worldRectP, Rect *offscreenRectP, short maxDepth)
-{
-    short err;
-    SWFrameRec *windowFrameP, *backFrameP, *workFrameP;
-
-    *spriteWorldP = 0;
-
-    err = CreateWorldFrames(srcWindowP, worldRectP, offscreenRectP, &windowFrameP, &backFrameP, &workFrameP);
-
-    if ((int)err == noErr) {
-        err = SWCreateSpriteWorld((void *)(intptr_t)GetMainDevice(), spriteWorldP, windowFrameP,
-                                  backFrameP, workFrameP, maxDepth);
-
-        if ((int)err != noErr) {
-            SWDisposeWindowFrame(&windowFrameP);
-            SWDisposeFrame(&backFrameP);
-            SWDisposeFrame(&workFrameP);
-        }
-    }
-
-    SWSetStickyIfError(err);
-
-    return err;
-}
-
-/* A locked world's frames made anew over its window port, which changed size, as
-   SWCreateSpriteWorldFromWindow makes them; locked again. */
-short SWResizeSpriteWorld(SpriteWorldPtr spriteWorldP, CWindowPtr srcWindowP, Rect *worldRectP,
-                          Rect *offscreenRectP)
-{
-    short err;
-    SWFrameRec *windowFrameP, *backFrameP, *workFrameP;
-
-    err = CreateWorldFrames(srcWindowP, worldRectP, offscreenRectP, &windowFrameP, &backFrameP, &workFrameP);
-    SWSetStickyIfError(err);
-    if ((int)err != noErr)
-        return err;
-
-    SWDisposeWindowFrame(&spriteWorldP->windowFrameP);
-    SWDisposeFrame(&spriteWorldP->backFrameP);
-    SWDisposeFrame(&spriteWorldP->workFrameP);
-    spriteWorldP->windowFrameP = windowFrameP;
-    spriteWorldP->backFrameP = backFrameP;
-    spriteWorldP->workFrameP = workFrameP;
-    SWSetWorldRects(spriteWorldP);
-
-    SWLockWindowFrame(windowFrameP);
-    SWLockFrame(workFrameP);
-    SWLockFrame(backFrameP);
-    return noErr;
-}
-
-
-// FUNCTION: EVNOVA 0x00477af0
-// MAC: _SWExitSpriteWorld i386 0x000b70b2 ppc 0x000c2b8c
-void SWExitSpriteWorld(void)
-{
-}
-
 // FUNCTION: EVNOVA 0x00477b00
 // MAC: _SWAddSpriteLayer i386 0x000b71b0 ppc 0x000c2cf4
 void SWAddSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *newSpriteLayerP)
@@ -156,62 +37,12 @@ void SWRemoveSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *oldSprite
 }
 
 
-// FUNCTION: EVNOVA 0x00477ba0
-// MAC: _SWLockSpriteWorld i386 0x000b734d ppc 0x000c2ef4
-void SWLockSpriteWorld(SpriteWorldPtr spriteWorldP)
-{
-    SpriteLayerPtr curSpriteLayerP;
-
-    if (spriteWorldP == NULL)
-        SW_ASSERT_FAIL("SpriteWorld.c", 624, 609);
-
-    SWLockWindowFrame(spriteWorldP->windowFrameP);
-    SWLockFrame(spriteWorldP->workFrameP);
-    SWLockFrame(spriteWorldP->backFrameP);
-    if (spriteWorldP->extraBackFrameP != NULL)
-        SWLockFrame(spriteWorldP->extraBackFrameP);
-
-    curSpriteLayerP = spriteWorldP->headSpriteLayerP;
-
-    while (curSpriteLayerP != NULL) {
-        SWLockSpriteLayer(curSpriteLayerP);
-
-        curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
-    }
-}
-
-
-// FUNCTION: EVNOVA 0x00477c10
-// MAC: _SWSetPortToBackground i386 0x000b744a ppc 0x000c3014
-void SWSetPortToBackground(SpriteWorldPtr spriteWorld)
-{
-    if (spriteWorld == NULL)
-        SW_ASSERT_FAIL("SpriteWorld.c", 687, 668);
-    SWSetPortToFrame(spriteWorld->backFrameP);
-}
-
-// FUNCTION: EVNOVA 0x00477c40
-// MAC: _SWSetPortToWorkArea i386 0x000b7494 ppc 0x000c3058
-void SWSetPortToWorkArea(SpriteWorldPtr spriteWorld)
-{
-    if (spriteWorld == NULL) {
-        SW_ASSERT_FAIL("SpriteWorld.c", 700, 681);
-    }
-    SWSetPortToFrame(spriteWorld->workFrameP);
-}
-
 // FUNCTION: EVNOVA 0x00477c70
 // MAC: _SWSetPortToWindow i386 0x000b74e4 ppc 0x000c3098
 void SWSetPortToWindow(SpriteWorldPtr spriteWorld)
 {
-    if (spriteWorld != NULL) {
-        if (spriteWorld->screenPort != NULL) {
-            SetPort(spriteWorld->screenPort);
-            return;
-        }
-        SWSetPortToFrame(spriteWorld->windowFrameP);
-        return;
-    }
+    if (spriteWorld != NULL && spriteWorld->windowPort != NULL)
+        SetPort(spriteWorld->windowPort);
 }
 
 
@@ -231,37 +62,7 @@ void SWSetSpriteWorldMaxFPS(SpriteWorldPtr spriteWorldP, short framesPerSec)
     }
 }
 
-// FUNCTION: EVNOVA 0x00477f10
-// MAC: _SWWindowMoved i386 0x000b8d06 ppc 0x000c4c9c
-void SWWindowMoved(SpriteWorldPtr spriteWorldP)
-{
-    SWWindowFrameMoved(spriteWorldP->windowFrameP, &spriteWorldP->windRect);
-}
-
-// FUNCTION: EVNOVA 0x00477f30
-// MAC: _SWWindowFrameMoved i386 0x000b7f92 ppc 0x000c3b40
-void SWWindowFrameMoved(SWFrameRec *windowFrameP, Rect *frameRect)
-{
-    CGrafPtr savePort;
-
-    if (windowFrameP == 0)
-        SWAssertFail("SpriteWorld.c", 1346);
-    if (!windowFrameP->isFrameLocked)
-        SWAssertFail("SpriteWorld.c", 1347);
-
-    GetPort(&savePort);
-    SetPort(windowFrameP->framePort);
-
-    if (windowFrameP->isFrameLocked) {
-        SWUnlockWindowFrame(windowFrameP);
-        SWLockWindowFrame(windowFrameP);
-    }
-
-    SetPort(savePort);
-}
-
-/* The game's drawing of the world, called by Animate and Update after their bookkeeping; the sprite world's own
-   frames are not drawn into. */
+/* The game's drawing of the world, called by Animate and Update after their bookkeeping. */
 void (*gSWDraw)(SpriteWorldRec *spriteWorldP);
 
 /* a sprite as drawing leaves it: shown where it is now, nothing more to draw or erase */
@@ -276,16 +77,14 @@ static void SettleSprite(SpritePtr spriteP)
 
 // FUNCTION: EVNOVA 0x00477fa0
 // MAC: _SWUpdateSpriteWorld i386 0x000b9062 ppc 0x000c4ff0
-void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP, Boolean updateWindow)
+void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP)
 {
     SpriteLayerRec *curSpriteLayerP;
     SpritePtr curSpriteP;
 
-    (void)updateWindow;                 /* the whole view is drawn each frame */
     if (spriteWorldP == 0)
         SWAssertFail("SpriteWorld.c", 1440);
 
-    gSWCurrentSpriteWorld = spriteWorldP;
     SWIsWindowInForeground(spriteWorldP);
     for (curSpriteLayerP = spriteWorldP->headSpriteLayerP; curSpriteLayerP != 0;
          curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP) {
@@ -296,8 +95,6 @@ void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP, Boolean updateWindow)
     }
     if (gSWDraw != 0)
         (*gSWDraw)(spriteWorldP);
-    spriteWorldP->numTilesChanged = 0;
-    gSWCurrentSpriteWorld = 0;
 }
 
 
@@ -313,8 +110,6 @@ void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP)
 
     if (spriteWorldP == 0)
         SWAssertFail("SpriteWorld.c", 1618);
-
-    gSWCurrentSpriteWorld = spriteWorldP;
 
     curMicroseconds = TimerGetMicroseconds();
     millisecDifference = (curMicroseconds - spriteWorldP->lastMicroseconds) / 1000;
@@ -338,95 +133,87 @@ void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP)
     if (spriteWorldP->deadSpriteLayerP->headSpriteP != 0)
         SWFindSpritesToBeRemoved(spriteWorldP);
 
-    spriteWorldP->thereAreNonScrollingLayers = 0;
-
     curSpriteLayerP = spriteWorldP->headSpriteLayerP;
 
     while (curSpriteLayerP != 0) {
-        if (curSpriteLayerP->layerIsNonScrolling) {
-            spriteWorldP->thereAreNonScrollingLayers = 1;
-        } else if (!curSpriteLayerP->isPaused) {
-            curSpriteP = curSpriteLayerP->headSpriteP;
+        curSpriteP = curSpriteLayerP->headSpriteP;
 
-            while (curSpriteP != 0) {
-                nextSpriteP = curSpriteP->nextSpriteP;
+        while (curSpriteP != 0) {
+            nextSpriteP = curSpriteP->nextSpriteP;
 
-                if (curSpriteP->curFrameP != 0) {
-                    if (!curSpriteP->curFrameP->isFrameLocked)
-                        SWLockFrame(curSpriteP->curFrameP);
+            if (curSpriteP->curFrameP != 0) {
+                if (!curSpriteP->curFrameP->isFrameLocked)
+                    SWLockFrame(curSpriteP->curFrameP);
 
-                    if (curSpriteP->frameTimeInterval >= 0 &&
-                        (spriteWorldP->runningTimeCount - curSpriteP->timeOfLastFrameChange) >=
-                            curSpriteP->frameTimeInterval &&
-                        curSpriteP->curFrameP->isFrameLocked)
-                    {
-                        int32_t currentFrameIndex;
+                if (curSpriteP->frameTimeInterval >= 0 &&
+                    (spriteWorldP->runningTimeCount - curSpriteP->timeOfLastFrameChange) >=
+                        curSpriteP->frameTimeInterval &&
+                    curSpriteP->curFrameP->isFrameLocked)
+                {
+                    int32_t currentFrameIndex;
 
-                        curSpriteP->timeOfLastFrameChange = spriteWorldP->runningTimeCount;
+                    curSpriteP->timeOfLastFrameChange = spriteWorldP->runningTimeCount;
 
-                        currentFrameIndex  = curSpriteP->curFrameIndex;
-                        currentFrameIndex += curSpriteP->frameAdvance;
+                    currentFrameIndex  = curSpriteP->curFrameIndex;
+                    currentFrameIndex += curSpriteP->frameAdvance;
 
-                        if (currentFrameIndex < curSpriteP->firstFrameIndex) {
-                            if (curSpriteP->frameAdvanceMode == kSWWrapAroundMode) {
-                                currentFrameIndex = curSpriteP->lastFrameIndex;
-                            } else {
-                                curSpriteP->frameAdvance = -curSpriteP->frameAdvance;
-                                currentFrameIndex += curSpriteP->frameAdvance;
-                                currentFrameIndex += curSpriteP->frameAdvance;
-                            }
-                        } else if (currentFrameIndex > curSpriteP->lastFrameIndex) {
-                            if (curSpriteP->frameAdvanceMode == kSWWrapAroundMode) {
-                                currentFrameIndex = curSpriteP->firstFrameIndex;
-                            } else {
-                                curSpriteP->frameAdvance = -curSpriteP->frameAdvance;
-                                currentFrameIndex += curSpriteP->frameAdvance;
-                                currentFrameIndex += curSpriteP->frameAdvance;
-                            }
+                    if (currentFrameIndex < curSpriteP->firstFrameIndex) {
+                        if (curSpriteP->frameAdvanceMode == kSWWrapAroundMode) {
+                            currentFrameIndex = curSpriteP->lastFrameIndex;
+                        } else {
+                            curSpriteP->frameAdvance = -curSpriteP->frameAdvance;
+                            currentFrameIndex += curSpriteP->frameAdvance;
+                            currentFrameIndex += curSpriteP->frameAdvance;
                         }
-
-                        curSpriteP->curFrameIndex = currentFrameIndex;
-
-                        if (curSpriteP->frameChangeProc != 0) {
-                            newFrameP = curSpriteP->frameArray[currentFrameIndex];
-
-                            (*curSpriteP->frameChangeProc)(curSpriteP, newFrameP,
-                                    &curSpriteP->curFrameIndex);
-
-                            if (curSpriteP->curFrameIndex < 0) {
-                                curSpriteP->curFrameIndex = 0;
-                            } else if (curSpriteP->curFrameIndex >= curSpriteP->maxFrames) {
-                                curSpriteP->curFrameIndex = curSpriteP->maxFrames - 1;
-                            }
+                    } else if (currentFrameIndex > curSpriteP->lastFrameIndex) {
+                        if (curSpriteP->frameAdvanceMode == kSWWrapAroundMode) {
+                            currentFrameIndex = curSpriteP->firstFrameIndex;
+                        } else {
+                            curSpriteP->frameAdvance = -curSpriteP->frameAdvance;
+                            currentFrameIndex += curSpriteP->frameAdvance;
+                            currentFrameIndex += curSpriteP->frameAdvance;
                         }
-
-                        newFrameP = curSpriteP->frameArray[curSpriteP->curFrameIndex];
-
-                        if (curSpriteP->curFrameP != newFrameP)
-                            SWSetCurrentFrameIndex(curSpriteP, curSpriteP->curFrameIndex);
                     }
 
-                    if (curSpriteP->moveTimeInterval >= 0 &&
-                        (spriteWorldP->runningTimeCount - curSpriteP->timeOfLastMove) >=
-                            curSpriteP->moveTimeInterval)
-                    {
-                        curSpriteP->timeOfLastMove = spriteWorldP->runningTimeCount;
+                    curSpriteP->curFrameIndex = currentFrameIndex;
 
-                        if (curSpriteP->spriteMoveProc != 0)
-                            (*curSpriteP->spriteMoveProc)(curSpriteP);
+                    if (curSpriteP->frameChangeProc != 0) {
+                        newFrameP = curSpriteP->frameArray[currentFrameIndex];
+
+                        (*curSpriteP->frameChangeProc)(curSpriteP, newFrameP,
+                                &curSpriteP->curFrameIndex);
+
+                        if (curSpriteP->curFrameIndex < 0) {
+                            curSpriteP->curFrameIndex = 0;
+                        } else if (curSpriteP->curFrameIndex >= curSpriteP->maxFrames) {
+                            curSpriteP->curFrameIndex = curSpriteP->maxFrames - 1;
+                        }
                     }
+
+                    newFrameP = curSpriteP->frameArray[curSpriteP->curFrameIndex];
+
+                    if (curSpriteP->curFrameP != newFrameP)
+                        SWSetCurrentFrameIndex(curSpriteP, curSpriteP->curFrameIndex);
                 }
 
-                curSpriteP = nextSpriteP;
+                if (curSpriteP->moveTimeInterval >= 0 &&
+                    (spriteWorldP->runningTimeCount - curSpriteP->timeOfLastMove) >=
+                        curSpriteP->moveTimeInterval)
+                {
+                    curSpriteP->timeOfLastMove = spriteWorldP->runningTimeCount;
+
+                    if (curSpriteP->spriteMoveProc != 0)
+                        (*curSpriteP->spriteMoveProc)(curSpriteP);
+                }
             }
+
+            curSpriteP = nextSpriteP;
         }
 
         curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
     }
 
     SWIsWindowInForeground(spriteWorldP);
-
-    gSWCurrentSpriteWorld = 0;
 }
 
 
@@ -450,16 +237,12 @@ static void SettleLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *layerP)
     }
 }
 
-SpriteWorldRec *gSWCurrentSpriteWorld;                   /* 0x008706f0 */
-
 // FUNCTION: EVNOVA 0x00478480
 // MAC: _SWAnimateSpriteWorld i386 0x000b95e6 ppc 0x000c5550
 void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
 {
     if (spriteWorldP == 0)
         SWAssertFail("SpriteWorld.c", 1984);
-
-    gSWCurrentSpriteWorld = spriteWorldP;
 
     if (!spriteWorldP->frameHasOccurred)
         return;
@@ -468,10 +251,8 @@ void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
     for (SpriteLayerRec *layerP = spriteWorldP->headSpriteLayerP; layerP != 0; layerP = layerP->nextSpriteLayerP)
         SettleLayer(spriteWorldP, layerP);
     SettleLayer(spriteWorldP, spriteWorldP->deadSpriteLayerP);
-    spriteWorldP->numTilesChanged = 0;
     if (gSWDraw != 0)
         (*gSWDraw)(spriteWorldP);
-    gSWCurrentSpriteWorld = 0;
 }
 
 // FUNCTION: EVNOVA 0x00478cf0

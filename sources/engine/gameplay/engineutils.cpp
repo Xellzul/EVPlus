@@ -398,7 +398,7 @@ void RefreshSAT(void)
 
     /* the view drawn again from the sprite world; landed, it shows the system's colour alone */
     if (playerIsLanded == 0)
-        SWUpdateSpriteWorld(gSpriteWorld, 0);
+        SWUpdateSpriteWorld(gSpriteWorld);
     else
         ViewDraw::Clear();
     Screen::ComposeView();

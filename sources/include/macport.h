@@ -118,7 +118,6 @@ extern void *GetPortVisRgn(void *port);
 extern short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds,
                        void *theGDH);
 extern PixMapPtr GetGWorldPixMap(CGrafPtr world);
-extern PixMapPtr GetWindowPixMap(CWindowPtr window);
 extern void QDGetCIconBounds(Image_t *icon, Rect *r);
 extern PicHandle GetPictureNoGamma(int picID);
 
@@ -175,7 +174,6 @@ typedef struct SWFrameRec {
     short leftAlignFactor;
     short rightAlignFactor;
     Boolean isFrameLocked;
-    Boolean isWindowFrame;
     Boolean interlacingIsOn;
     Boolean skipOddLines;
     short frameDepth;
@@ -195,7 +193,6 @@ typedef struct SWFrameRec {
     Boolean usesCollisionInset;
     Boolean framePad57;
     unsigned short useCount;
-    short worldRectOffset;
     unsigned short numScanLines;
     unsigned short pixelShift;
     uint32_t *scanLinePtrArray;
@@ -208,84 +205,30 @@ typedef SWFrameRec *FramePtr;
 
 typedef void (*DrawProcPtr)(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
                             Rect *srcRect, Rect *dstRect);
-struct SpriteWorldRec;
-typedef void (*WorldProcPtr)(struct SpriteWorldRec *spriteWorldP);
 
+/* The sprite world: the layers of sprites the game moves and animates, the space view's rect and the frame
+   clock. The game draws it through gSWDraw (viewdraw.cpp). */
 typedef struct SpriteWorldRec {
     struct SpriteLayerRec *headSpriteLayerP;
     struct SpriteLayerRec *tailSpriteLayerP;
     struct SpriteLayerRec *deadSpriteLayerP;
-    struct UpdateRectStruct *headUpdateRectP;
-    SWFrameRec *extraBackFrameP;
-    SWFrameRec *backFrameP;
-    SWFrameRec *workFrameP;
-    SWFrameRec *windowFrameP;
-    DrawProcPtr offscreenDrawProc;
-    DrawProcPtr screenDrawProc;
-    void (*doubleRectDrawProc)(SWFrameRec *, SWFrameRec *, Rect *, Rect *, Rect *, Rect *);
-    WorldProcPtr postEraseCallBack;
-    WorldProcPtr postDrawCallBack;
-    Rect windRect;
-    Rect backRect;
-    Rect originalWindRect;
-    Rect originalBackRect;
-    Rect visScrollRect;
-    Rect oldVisScrollRect;
-    Rect offscreenScrollRect;
-    short horizScrollRectOffset;
-    short vertScrollRectOffset;
-    short horizScrollDelta;
-    short vertScrollDelta;
-    Rect scrollRectMoveBounds;
-    void (*worldMoveProc)(struct SpriteWorldRec *, struct SpriteRec *);
-    struct SpriteRec *followSpriteP;
-    struct TileMapStruct **tileLayerArray;
-    short lastActiveTileLayer;
-    Boolean tilingIsInitialized;
-    Boolean tilingIsOn;
-    short **tilingCache;
-    short numTilingCacheRows;
-    short numTilingCacheCols;
-    SWFrameRec **tileFrameArray;
-    short *curTileImage;
-    short maxNumTiles;
-    short tileWidth;
-    short tileHeight;
-    int32_t numTilesChanged;
-    Rect *changedTiles;
-    int32_t changedTilesArraySize;
-    WorldProcPtr tileChangeProc;
-    void (*tileRectDrawProc)(struct SpriteWorldRec *, Rect *, Boolean);
-    DrawProcPtr tileMaskDrawProc;
-    DrawProcPtr partialMaskDrawProc;
-    void *mainSWGDH;
+    Rect windRect;                  /* the space view, at 0,0 */
+    struct CGrafPort *windowPort;   /* the game window: SWSetPortToWindow's port */
     short pixelDepth;
     short frameInterval;
     uint32_t runningTimeCount;
     unsigned long long lastMicroseconds;
     uint32_t timeOfLastFrame;
     Boolean frameHasOccurred;
-    Boolean thereAreNonScrollingLayers;
-    Boolean pad1;
-    RGBColor backgroundColor;
-    int32_t backgroundValue;
     Boolean fastBlit;
-    char swFillerED[0xf8 - 0xed];
-    struct CGrafPort *screenPort;   /* the screen; the window frame is the view's own buffer (viewscale.cpp) */
 } SpriteWorldRec, *SpriteWorldPtr;
 
-extern void SWSetPortToWindow(SpriteWorldPtr spriteWorld);
 
 typedef struct SpriteLayerRec {
     struct SpriteLayerRec *nextSpriteLayerP;
     struct SpriteLayerRec *prevSpriteLayerP;
     struct SpriteRec *headSpriteP;
     struct SpriteRec *tailSpriteP;
-    void (*layerCallBack)(struct SpriteWorldRec *);
-    int32_t userData;
-    short tileLayer;
-    Boolean isPaused;
-    Boolean layerIsNonScrolling;
 } SpriteLayerRec, *SpriteLayerPtr;
 typedef struct RLEPixelData {
     unsigned short width;
@@ -723,8 +666,6 @@ extern void SWSetCurrentFrameIndex(SpritePtr srcSpriteP, short frameIndex);
 extern void SWSetSpriteLocation(SpritePtr srcSpriteP, short horizLoc,
                                 short vertLoc);
 extern void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible);
-extern void SWSetPortToWorkArea(SpriteWorldPtr sw);
-extern void SWSetSpriteWorldMaxFPS(SpriteWorldPtr world, short fps);
 
 extern void SetDialogItemText(Handle item, const unsigned char *pstr);
 extern void GetDialogItemText(Handle item, unsigned char *pstr);

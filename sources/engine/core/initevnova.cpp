@@ -377,7 +377,6 @@ void InitEVNova(void)
 
     crashlog("loading sounds");
     LoadSounds();
-    SWEnterSpriteWorld();
 
     crashlog("creating window");
     SetupWind();
@@ -499,7 +498,7 @@ void PlayGame(void)
     cursorAlpha = 0;
     PrepareAllSprites();
     RefreshWindowBuffer();
-    SWUpdateSpriteWorld(gSpriteWorld, 1);
+    SWUpdateSpriteWorld(gSpriteWorld);
     Screen::ComposeView();
     RefreshSAT();
     FadeScreenIn();
@@ -634,7 +633,7 @@ void PlayGame(void)
                     BusyIdle();
                 }
             } else {
-                SWUpdateSpriteWorld(gSpriteWorld, 0);
+                SWUpdateSpriteWorld(gSpriteWorld);
                 Screen::ComposeView();
                 IterateInGameEventLoop(3);
                 if (gSpriteWorld->fastBlit != 0) {
