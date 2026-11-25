@@ -220,7 +220,7 @@ static void PlayerWrapAndCheckTarget(ShipObj *player)
     }
 }
 
-/* player gone: death countdown, bomb description, pause, revive cheat; true ends the frame */
+/* player gone: death countdown, bomb description, pause, revive cheat (cheats on only); true ends the frame */
 static bool PlayerDead(ShipObj *player)
 {
     if (!player->active) {
@@ -244,7 +244,7 @@ static bool PlayerDead(ShipObj *player)
             }
             gPause = 1;
         }
-        if (QuickKeyCheck(keyPrefs.cheatRevive)) {
+        if (cheatsActive && QuickKeyCheck(keyPrefs.cheatRevive)) {
             ResetPlayer(1);
             player->targetShip = -1;
             player->selectedWeapon = -1;

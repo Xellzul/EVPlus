@@ -28,3 +28,4 @@
 - Asteroid field and particles stay in place when flying far from the system centre
 - Plug-in mission texts: <PAY> in active-mission briefings shows 0 instead of a garbage number for missions without pay
 - NPC quadrant turrets now fire across north
+- Revive cheat (Home) only works with cheats turned on
