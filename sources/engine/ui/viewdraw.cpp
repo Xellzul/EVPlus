@@ -9,6 +9,9 @@
 #include "render.h"
 #include "spriteworld.h"
 #include "viewdraw.h"
+#include <initializer_list>
+#include "viewscale.h"
+#include "uiscale.h"
 
 namespace ViewDraw {
 
@@ -17,6 +20,9 @@ namespace {
 std::vector<PlatDraw> draws;
 std::vector<PlatVertex> vertices;
 std::vector<PlatDraw> overlays;
+std::vector<PlatDraw> interfaceDraws;   /* the interface layer's sprites, in page pixels over the overlays */
+std::vector<PlatDraw> shownOverlays;    /* overlays + interfaceDraws, as Take hands them over */
+std::vector<PlatDraw> *building = &draws;   /* where NewDraw adds */
 std::unordered_map<const SWFrameRec *, PlatImage *> spriteImages;
 struct OverlayImage {
     PlatImage *image;
@@ -117,8 +123,8 @@ PlatImage *SpriteImage(const SWFrameRec *frame)
 
 PlatDraw &NewDraw(unsigned char kind, unsigned char blend, PlatImage *image = NULL)
 {
-    draws.push_back(PlatDraw());
-    PlatDraw &d = draws.back();
+    building->push_back(PlatDraw());
+    PlatDraw &d = building->back();
     d.kind = kind;
     d.blend = blend;
     d.alpha = 255;
@@ -159,7 +165,7 @@ uint32_t Field(uint32_t pair, int shift)
 /* A sprite as SpriteBlend::Of says, added: its pixels times each channel's weight -- after
    the tint (murk, ions, gate white) has taken its share -- over the view kept times the translucency; the
    tint and a weight over 32 come as the sprite's silhouette in their colour. */
-void Sprite(const SpriteRec &sprite)
+void Sprite(const SpriteRec &sprite, const Rect &place)
 {
     PlatImage *image = SpriteImage(sprite.curFrameP);
     SpriteBlend blend = SpriteBlend::Of(sprite);
@@ -168,7 +174,7 @@ void Sprite(const SpriteRec &sprite)
         return;
     PlatDraw &d = NewDraw(kPlatDrawImage, blend.kind == SpriteBlend::Kind::AddOver ? kPlatBlendAdd : kPlatBlendMix,
                           image);
-    Place(d, sprite.destFrameRect);
+    Place(d, place);
     if (blend.kind != SpriteBlend::Kind::Translucent)
         return;
     uint32_t keep = blend.alpha > kLevels ? kLevels : blend.alpha;
@@ -181,7 +187,7 @@ void Sprite(const SpriteRec &sprite)
     d.alpha = Weight(kLevels - keep);
     if (own < kLevels) {
         PlatDraw &tint = NewDraw(kPlatDrawSilhouette, kPlatBlendAdd, image);
-        Place(tint, sprite.destFrameRect);
+        Place(tint, place);
         /* the tint colour scaled and rounded down per channel as in the 16-bit blend, so at full tint it
            matches the system's background exactly */
         tint.color = (uint16_t)(Pixel::ScalePair(blend.biasColor, kLevels - own) & 0x7fff);
@@ -191,7 +197,7 @@ void Sprite(const SpriteRec &sprite)
     uint32_t over[3] = { Field(blend.overR, 10), Field(blend.overG, 5), Field(blend.overB, 0) };
     if (over[0] != 0 || over[1] != 0 || over[2] != 0) {
         PlatDraw &boost = NewDraw(kPlatDrawSilhouette, kPlatBlendAdd, image);
-        Place(boost, sprite.destFrameRect);
+        Place(boost, place);
         boost.color = 0x7fff;
         for (int c = 0; c < 3; c++)
             boost.mod[c] = (unsigned char)(over[c] * 255 / 31);
@@ -224,11 +230,14 @@ void Vertex(float x, float y, uint16_t color, int level)
     vertices.push_back(v);
 }
 
-/* a one-pixel-wide strip from a to b, its level changing linearly between the two */
+/* lines and dots are a game pixel wide, and never under a screen pixel where the view is reduced */
+float lineWidth = 1.0f;
+
+/* a line-wide strip from a to b, its level changing linearly between the two */
 void Strip(float ax, float ay, int levelA, float bx, float by, int levelB, bool longerHoriz, uint16_t color)
 {
-    float nx = longerHoriz ? 0.0f : 0.5f;
-    float ny = longerHoriz ? 0.5f : 0.0f;
+    float nx = longerHoriz ? 0.0f : 0.5f * lineWidth;
+    float ny = longerHoriz ? 0.5f * lineWidth : 0.0f;
 
     Vertex(ax - nx, ay - ny, color, levelA);
     Vertex(ax + nx, ay + ny, color, levelA);
@@ -241,8 +250,9 @@ void Strip(float ax, float ay, int levelA, float bx, float by, int levelB, bool 
 void DotAt(int x, int y, uint16_t color, int level)
 {
     size_t first = vertices.size();
+    float side = (lineWidth - 1.0f) / 2;
 
-    Strip(x, y + 0.5f, level, x + 1.0f, y + 0.5f, level, true, color);
+    Strip(x - side, y + 0.5f, level, x + 1.0f + side, y + 0.5f, level, true, color);
     Triangles(first);
 }
 
@@ -323,6 +333,28 @@ void Dot(void *, int x, int y, int32_t color, int level)
 
 /* -- the world ------------------------------------------------------------------------------------- */
 
+/* An interface sprite's rect (screen coordinates, as dialogs use) in the page's pixels. */
+Rect OnScreen(const Rect &r)
+{
+    Rect device;
+
+    SetRect(&device, UI::ScreenDeviceX(r.left), UI::ScreenDeviceY(r.top), UI::ScreenDeviceX(r.right),
+            UI::ScreenDeviceY(r.bottom));
+    return device;
+}
+
+/* The interface layer (cursor, alert, double time): over the view at the interface's scale, so the game size
+   and the zoom leave it as it is. */
+void InterfaceSprites(SpriteLayerRec *layer)
+{
+    building = &interfaceDraws;
+    for (SpritePtr sprite = layer->headSpriteP; sprite != NULL; sprite = sprite->nextSpriteP) {
+        if (sprite->isVisible && sprite->curFrameP != NULL && sprite->curFrameP->isFrameLocked)
+            Sprite(*sprite, OnScreen(sprite->destFrameRect));
+    }
+    building = &draws;
+}
+
 /* The sprite world's frame, back to front in SWAnimateSpriteWorld's order: the
    system's colour, each layer's visible sprites, the beams (under the ships after the stellar layer, the rest
    after the target layer), the particles. */
@@ -333,17 +365,23 @@ void DrawWorld(SpriteWorldRec *world)
 
     draws.clear();
     vertices.clear();
+    interfaceDraws.clear();
     flashDraw = kNoFlashDraw;
+    lineWidth = View::Scale() < 1.0 ? (float)(1.0 / View::Scale()) : 1.0f;
     Background(view);
     lines.bounds = view;
     for (SpriteLayerRec *layer = world->headSpriteLayerP; layer != NULL; layer = layer->nextSpriteLayerP) {
+        if (layer == interfaceLayer) {
+            InterfaceSprites(layer);
+            continue;
+        }
         for (SpritePtr sprite = layer->headSpriteP; sprite != NULL; sprite = sprite->nextSpriteP) {
             if (!sprite->isVisible || sprite->curFrameP == NULL || !sprite->curFrameP->isFrameLocked)
                 continue;
             const Rect &r = sprite->destFrameRect;
             if (r.left > view.right || r.right < view.left || r.bottom < view.top || r.top > view.bottom)
                 continue;
-            Sprite(*sprite);
+            Sprite(*sprite, r);
         }
         if (layer == stellarLayer)
             DrawBeams(lines, true);
@@ -360,9 +398,10 @@ void Forget(PlatImage *image)
     for (PlatDraw &d : draws)
         if (d.image == image)
             d.image = NULL;
-    for (PlatDraw &d : overlays)
-        if (d.image == image)
-            d.image = NULL;
+    for (std::vector<PlatDraw> *list : { &overlays, &interfaceDraws, &shownOverlays })
+        for (PlatDraw &d : *list)
+            if (d.image == image)
+                d.image = NULL;
     PlatImageDestroy(image);
 }
 
@@ -378,6 +417,7 @@ void Clear()
 {
     draws.clear();
     vertices.clear();
+    interfaceDraws.clear();
     flashDraw = kNoFlashDraw;
     flashing = false;
     if (gSpriteWorld != NULL)
@@ -452,8 +492,10 @@ void Take(PlatVideoView &view)
     view.drawCount = (int)draws.size();
     view.vertices = vertices.data();
     view.vertexCount = (int)vertices.size();
-    view.overlays = overlays.data();
-    view.overlayCount = (int)overlays.size();
+    shownOverlays = overlays;
+    shownOverlays.insert(shownOverlays.end(), interfaceDraws.begin(), interfaceDraws.end());
+    view.overlays = shownOverlays.data();
+    view.overlayCount = (int)shownOverlays.size();
 }
 
 void FrameGone(SWFrameRec *frame)

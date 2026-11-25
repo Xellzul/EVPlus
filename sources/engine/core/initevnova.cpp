@@ -109,6 +109,7 @@ SpriteLayerRec *shotLayer;
 SpriteLayerRec *guidedShotLayer;
 SpriteLayerRec *pointDefenseLayer;
 SpriteLayerRec *targetLayer;
+SpriteLayerRec *interfaceLayer;            /* cursor, alert, double time: screen coordinates, over the view */
 SpriteLayerRec *asteroidLayer;
 SpriteLayerRec *smokeLayer;
 SpriteLayerRec *disabledShipLayer;
@@ -511,6 +512,7 @@ void PlayGame(void)
     gPause = 0;
     FlushEvents(8, 0);
     FlushEvents(0xf, 0);
+    MouseFlushWheel();                          /* notches turned on the menu do not zoom */
 
     while (gQuit == 0 && gPause == 0) {
         Profiler::Begin(Profiler::Frame);

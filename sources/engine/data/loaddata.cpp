@@ -2451,6 +2451,9 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->asteroidScaling = settings.asteroidScaling != 0;
     rec->mapPrices = settings.mapPrices != 0;
     rec->mapDisasters = settings.mapDisasters != 0;
+    rec->runInWindow = settings.runInWindow != 0;
+    rec->gameSize = settings.gameSize;
+    rec->wheelZoom = settings.wheelZoom != 0;
     rec->uiScale = settings.uiScale;
     KeyPrefsToSlotTable();
     for (i = 0; i <= 35; i++)
@@ -2483,6 +2486,8 @@ static void RecordToPrefs(const PrefsRecord *rec)
         settings.gamma = 3;
     settings.gameWidth = rec->gameWidth;
     settings.gameHeight = rec->gameHeight;
+    if (settings.gameHeight != 0 && settings.gameHeight < kMinResolutionHeight)
+        settings.gameWidth = settings.gameHeight = 0;           /* under 768 lines: the desktop's */
     settings.scaleFilter = rec->scaleFilter;
     if (settings.scaleFilter < 0 || settings.scaleFilter >= kScaleFilterCount)
         settings.scaleFilter = kScaleFilterLinear;
@@ -2491,8 +2496,12 @@ static void RecordToPrefs(const PrefsRecord *rec)
     settings.asteroidScaling = rec->asteroidScaling != 0;
     settings.mapPrices = rec->mapPrices != 0;
     settings.mapDisasters = rec->mapDisasters != 0;
+    settings.runInWindow = rec->runInWindow != 0;
+    settings.gameSize = rec->gameSize;
+    if (settings.gameSize < kMinGameSize || settings.gameSize > kMaxGameSize)
+        settings.gameSize = kDefaultGameSize;
+    settings.wheelZoom = rec->wheelZoom != 0;
     settings.uiScale = rec->uiScale > 0 ? rec->uiScale : 1.0;
-    settings.windowedPending = settings.windowed;
     SetDefaultKeys();
     for (i = 0; i <= 35; i++)
         newKeyPrefs[i] = ScanCode(rec->keys[i]);

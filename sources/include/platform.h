@@ -19,7 +19,10 @@ extern void PlatQuit(void);
 extern int PlatVideoCreateWindow(const char *title);      /* hidden until PlatVideoOpen; 0 = made */
 extern int PlatVideoOpen(int width, int height, int fullScreen);   /* the frame's size; 0 = open */
 extern void PlatVideoClose(void);                          /* drops the frame, keeps the window */
-/* A complete frame: the size given to PlatVideoOpen, pitch bytes a row. It is shown at once, or -- when the
+/* The frame made anew at another size, the mode kept (a window fitted to it as PlatVideoOpen fits it); 0 = done,
+   else the old frame stays. */
+extern int PlatVideoResize(int width, int height);
+/* A complete frame: the size given to PlatVideoOpen or PlatVideoResize, pitch bytes a row. It is shown at once, or -- when the
    last one was shown too short a time ago for a display to tell them apart -- copied, and shown by the next
    present or event poll after that time; a newer frame replaces one still waiting. The pixels must stay
    readable until the next PlatVideoPresent or PlatVideoClose. */
@@ -67,9 +70,9 @@ typedef struct PlatVertex {
 } PlatVertex;
 
 /* A frame with the space view under it: the view is drawn by the GPU at width x height from draws/vertices,
-   scaled into the frame's rect x, y, w, h and shown wherever the frame's pixel is kPlatSeeThrough. Overlays are
-   images added over the view in the frame's pixels (kPlatDrawImage, Add). Everything is copied; the view is
-   shown under every later frame until another view, PlatVideoDropView or PlatVideoClose. */
+   scaled into the frame's rect x, y, w, h (magnified zoom times about its centre) and shown wherever the frame's
+   pixel is kPlatSeeThrough. Overlays are draws over the view in the frame's pixels. Everything is copied; the
+   view is shown under every later frame until another view, PlatVideoDropView or PlatVideoClose. */
 #define kPlatSeeThrough         0x8000
 typedef struct PlatVideoView {
     int width;
@@ -78,6 +81,7 @@ typedef struct PlatVideoView {
     int y;
     int w;
     int h;
+    float zoom;                         /* 1 = the whole view */
     const PlatDraw *draws;
     int drawCount;
     const PlatVertex *vertices;
@@ -102,6 +106,7 @@ extern void PlatVideoSetBrightness(double exponent);
    kCGDisplayBlendSolidColor; 0 = as drawn. Shown from the next frame on. */
 extern void PlatVideoSetWhite(unsigned level);
 extern int PlatVideoIsFullScreen(void);
+extern int PlatMaxTextureSize(void);                     /* the largest texture side; 0 = not known yet */
 /* Time spent showing frames since the last call, then zeroed: upload = frames into the texture, render =
    the texture to the window and SDL's present. */
 typedef struct PlatVideoTimes {

@@ -302,6 +302,7 @@ void SetupInterfaceBackground(void)
         DrawVersion();
         QDReleaseResource((PicHandle)pic);
     }
+    PlaceMainScreenAnim();
     SWSetPortToWindow(gSpriteWorld);
 }
 
@@ -544,6 +545,7 @@ void DoNewPilot(void)
     pstrcpy(playerNickname, shipNameP);
     gameTime = scenarioStartDate;
     gameInProgress = 1;
+    ApplyPilotGameSize();
     strictPlay = wantStrictPlay;
     shipData->deathTimer = -1.0f;
     shipData->ionization = 0.0f;

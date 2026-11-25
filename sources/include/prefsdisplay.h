@@ -1,5 +1,5 @@
-/* prefsdisplay.h -- the Display group of Preferences: the resolutions it offers, their names, the UI scale
-   range. */
+/* prefsdisplay.h -- the Display group of Preferences: the resolutions it offers, their names, the game area
+   of a game size, the UI scale range. */
 #pragma once
 
 #include <array>
@@ -22,15 +22,16 @@ struct PixelSize {
     int height;
 };
 
-/* the size a resolution stands for (0 x 0: the desktop's) */
-PixelSize GameSize(Resolution r);
-/* the size the game at a resolution is drawn at: the largest of its shape the desktop holds, never smaller */
+/* the size the game is drawn at for a resolution (0 x 0: the desktop's) */
 PixelSize DrawSize(Resolution r);
+/* the game's screen in game pixels for a game size: gameSize times the original 1024 x 768 in area, the drawn
+   size's shape, never under 768 lines */
+PixelSize GameArea(PixelSize draw, short gameSize);
 /* the UI scale at which a screen of that size shows the interface as 1024 x 768 does, fitted; never below 1 */
 double BaseUIScale(PixelSize draw);
 
 /* The resolutions offered, for the desktop as it is: each aspect ratio no wider than the desktop (4:3, 16:9,
-   the desktop's own) at 600 lines, 768 lines (the original game's 1024 x 768) and the desktop's height. */
+   the desktop's own) at 768 lines (the original game's 1024 x 768) and the desktop's height. */
 class ResolutionList {
 public:
     ResolutionList();

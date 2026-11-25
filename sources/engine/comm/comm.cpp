@@ -57,7 +57,8 @@ static void FitCommRect(SWFrameRec *frame)
    frame anew. */
 void ResetCommRect(void)
 {
-    SetRect(&commRect, 25, 0, View::width - 50, View::height - 5);
+    SetRect(&commRect, View::ScaleInView(25), 0, View::width - View::ScaleInView(50),
+            View::height - View::ScaleInView(5));
     commRect.top = commRect.bottom - View::ScaleInView(26 + 4);   /* CommOverlay grows it to the font's two lines */
     if (gCommFrame != NULL)
         SWDisposeFrame(&gCommFrame);

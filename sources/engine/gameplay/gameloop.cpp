@@ -4228,6 +4228,19 @@ void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite)
    on the same kind of record. */
 
 
+/* Mouse Wheel Zoom: the wheel magnifies the space view; off, the view is shown whole */
+static void WheelZoom(void)
+{
+    int notch;
+
+    if (settings.wheelZoom == 0) {
+        View::ResetZoom();
+        return;
+    }
+    while ((notch = MouseTakeWheel()) != 0)
+        View::ZoomBy(notch);
+}
+
 /*
  * The window rect's RIGHT edge is pulled in by the status panel's width before
  * the scan, and that store is dead on every path - `box` is address-taken,
@@ -4242,6 +4255,7 @@ void HandleMouse(void)
     Boolean canUntarget;
     Boolean canCloaked;
     Point mouse;
+    Point onScreen;
     short frame;
     Rect *port;
     Rect *fr;
@@ -4252,6 +4266,7 @@ void HandleMouse(void)
 
     SWSetPortToWindow(gSpriteWorld);
     GetGlobalMouse(&mouse);
+    onScreen = mouse;
     port = GetCWindowPortRect((WindowRef)gWind);
     box = *port;
     if (PtInRectPoint(mouse, &box))
@@ -4267,6 +4282,8 @@ void HandleMouse(void)
         lastMouseMoveTime = ReadTick();
         cursorAlpha = kCursorFullAlpha;
     }
+    WheelZoom();
+    View::Unzoom(&mouse);
     if (cursorAlpha < 0)
         cursorAlpha = 0;
     if (cursorAlpha > kCursorFullAlpha)
@@ -4339,8 +4356,8 @@ void HandleMouse(void)
     SWSetSpriteVisible(cursorSprite, 1);
     SWSetCurrentFrameIndex(cursorSprite, frame);
     SWSetSpriteLocation(cursorSprite,
-                        (mouse.h - GetSpriteXSize(cursorSprite) / 2),
-                        (mouse.v - GetSpriteYSize(cursorSprite) / 2));
+                        (onScreen.h - GetSpriteXSize(cursorSprite) / 2),
+                        (onScreen.v - GetSpriteYSize(cursorSprite) / 2));
 
     cursorSprite->translucency = kCursorHiliteFull;
     cursorSprite->tintRed = (cursorAlpha < cursorSprite->translucency)

@@ -13,15 +13,23 @@ void DrawOverlays();
 
 namespace View {
 
-/* the sizes, set by SetupMonitor */
-extern short gameWidth;             /* the game size (Resolution): what the game shows and plays at */
+/* the sizes, set by SetupMonitor and ApplyDisplaySettings */
+extern short gameWidth;             /* the game area (Game size): the space shown, in game pixels */
 extern short width;                 /* the space view, in game pixels */
 extern short height;
 
 /* uiScale: the UI's device pixels per logical one */
-void SetSizes(short gameW, short gameH, short drawW, short drawH, double uiScale);
+void SetSizes(short gameW, short gameH, short drawH, double uiScale);
+double Scale();                     /* screen pixels per game pixel: above 1 enlarged, below 1 reduced */
 Rect OnPage(const Screen::Page &page);      /* where the view shows on a page */
-void ToView(Point *pt);             /* a screen point in view coordinates */
+void ToView(Point *pt);             /* a screen point in view coordinates (the overlays' too) */
+
+/* Mouse Wheel Zoom: the view shown magnified about its centre, 1 to 4 times in steps of 2^(1/3); space and the
+   game are as unmagnified (it shows less, never more). */
+float Zoom();
+void ZoomBy(int notches);
+void ResetZoom();
+void Unzoom(Point *pt);             /* a view point as shown magnified -> the point of space's view under it */
 
 /* Where a point of space lies in the view: its distance from the player's ship -- truncated, as the original
    places sprites (X, Y) -- plus the view's centre; or unrounded (ExactX, ExactY), as it places beams and

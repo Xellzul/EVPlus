@@ -22,6 +22,7 @@ struct Page {
 const Page &Get();
 
 bool Open(int width, int height, int depth);    /* a cleared page, after Close; false when it can't be had */
+bool Resize(int width, int height);             /* a cleared page and frame of another size; false = the old kept */
 void Close();
 
 /* The frame: the space view the GPU draws, under the page, with the overlays over it (ComposeView, where the

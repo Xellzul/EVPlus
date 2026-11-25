@@ -1,5 +1,5 @@
-/* prefsdisplay.cpp -- the Display group of Preferences: the resolutions it offers, their names, the UI scale
-   range. */
+/* prefsdisplay.cpp -- the Display group of Preferences: the resolutions it offers, their names, the game area
+   of a game size, the UI scale range. */
 #include <math.h>
 #include "burger.h"
 #include "platform.h"
@@ -10,7 +10,6 @@ namespace {
 constexpr uint32_t kDLOGType = 0x444c4f47;
 constexpr short kOriginalWidth = 1024;
 constexpr short kOriginalHeight = 768;
-constexpr short kSmallHeight = 600;
 constexpr double kRatioTolerance = 0.01;        /* two ratios this close are the same */
 constexpr double kUIScaleMaxFloor = 1.0;      /* the largest UI scale offered is never below this */
 constexpr double kUIScaleStep = 0.1;
@@ -73,27 +72,21 @@ Size LargestDialog()
 
 } // namespace
 
-PixelSize GameSize(Resolution r)
+PixelSize DrawSize(Resolution r)
 {
     Size desktop = DesktopSize();
 
     return { r.width != 0 ? r.width : desktop.width, r.height != 0 ? r.height : desktop.height };
 }
 
-PixelSize DrawSize(Resolution r)
+PixelSize GameArea(PixelSize draw, short gameSize)
 {
-    Size desktop = DesktopSize();
-    Size game = GameSize(r);
-    Size draw = game;
-    double fit = (double)desktop.width / game.width < (double)desktop.height / game.height
-                     ? (double)desktop.width / game.width
-                     : (double)desktop.height / game.height;
+    double aspect = (double)draw.width / draw.height;
+    int height = (int)(sqrt(gameSize * (double)kOriginalWidth * kOriginalHeight / aspect) + 0.5);
 
-    if (fit > 1.0) {
-        draw.width = 2 * (int)(game.width * fit / 2 + 0.5);
-        draw.height = (int)(game.height * fit + 0.5);
-    }
-    return draw;
+    if (height < kOriginalHeight)
+        height = kOriginalHeight;
+    return { 2 * (int)(height * aspect / 2 + 0.5), height };
 }
 
 double BaseUIScale(PixelSize draw)
@@ -119,7 +112,7 @@ ResolutionList::ResolutionList() : count(0)
     if (ratioCount == 0 || !SameRatio(desktopRatio, ratios[ratioCount - 1]))
         ratios[ratioCount++] = desktopRatio;
 
-    const int heights[] = { kSmallHeight, kOriginalHeight, desktop.height };
+    const int heights[] = { kOriginalHeight, desktop.height };
     for (int r = 0; r < ratioCount; r++) {
         for (int height : heights) {
             if (height > desktop.height)
@@ -166,14 +159,14 @@ Resolution ResolutionList::step(Resolution r, int direction) const
 
 void ResolutionList::sizeText(Resolution r, char *out) const
 {
-    Size s = GameSize(r);
+    Size s = DrawSize(r);
 
     snprintf(out, kDisplayTextMax, "%d x %d", s.width, s.height);
 }
 
 void ResolutionList::aspectText(Resolution r, char *out) const
 {
-    Size s = GameSize(r);
+    Size s = DrawSize(r);
     double value = (double)s.width / s.height;
     char ratio[16];
     const char *name = NULL;

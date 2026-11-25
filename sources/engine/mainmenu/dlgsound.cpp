@@ -43,6 +43,25 @@ void PlayMainScreenClickSound(void)
 
 
 
+/* the logo, rollover and button slides, whole, where the menu's picture lies (menuTopCorner) */
+void PlaceMainScreenAnim(void)
+{
+    Rect rollover = { 0, 0, 0, 0 };
+
+    if (menuRolloverSprite != NULL && menuRolloverSprite->numFrames > 0)
+        rollover = menuRolloverSprite->frameArray[0]->frameRect;
+    SetRect(&logoDestRect, menuTopCorner.h + logoDestPoint.h, menuTopCorner.v + logoDestPoint.v,
+            menuTopCorner.h + logoDestPoint.h + gMainPicWidthDelta,
+            menuTopCorner.v + logoDestPoint.v + gMainPicHeightDelta);
+    SetRect(&rolloverDestRect, menuTopCorner.h + rolloverDestPoint.h, menuTopCorner.v + rolloverDestPoint.v,
+            menuTopCorner.h + rolloverDestPoint.h + (rollover.right - rollover.left),
+            menuTopCorner.v + rolloverDestPoint.v + (rollover.bottom - rollover.top));
+    for (short i = 0; i < 3; i++)
+        SetRect(&slideDestRect[i], menuTopCorner.h + slideDestPoint[i].h, menuTopCorner.v + slideDestPoint[i].v,
+                menuTopCorner.h + slideDestPoint[i].h + slideFrameSize[i].width,
+                menuTopCorner.v + slideDestPoint[i].v + slideFrameSize[i].height);
+}
+
 // FUNCTION: EVNOVA 0x0048bc90
 // MAC: _LoadMainScreenAnim i386 0x0001781d ppc 0x0001b404
 void LoadMainScreenAnim(void)
@@ -85,15 +104,7 @@ void LoadMainScreenAnim(void)
         rolloverAlpha = 0;
     }
 
-    logoDestRect.left = menuTopCorner.h + logoDestPoint.h;
-    logoDestRect.top = menuTopCorner.v + logoDestPoint.v;
-    rolloverDestRect.left = menuTopCorner.h + rolloverDestPoint.h;
-    rolloverDestRect.top = menuTopCorner.v + rolloverDestPoint.v;
-    for (i = 0; i < 3; i++) {
-        slideDestRect[i].left = menuTopCorner.h + slideDestPoint[i].h;
-        slideDestRect[i].top = menuTopCorner.v + slideDestPoint[i].v;
-    }
-
+    PlaceMainScreenAnim();                  /* the frame sizes are known now */
     tick = ReadTick();
     lastLogoAnimTime = lastSlideAnimTime = tick;
     lastRolloverAnimTime = 0;

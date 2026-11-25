@@ -481,6 +481,7 @@ void DrawBevel(Rect *r, const RGBColor *fill, const RGBColor *light, const RGBCo
 extern void LUpdate(void *list);
 extern void WinGameActivate(int on);
 extern void WinGameMinimized(void);
+extern void WinGameWindowMode(int windowed);
 extern void WinGameClose(void);
 extern void WinGameInputSeen(void);
 extern void ShutdownWinGame(void);
@@ -676,6 +677,7 @@ extern void SizeDialogWindow(DialogPtr dlg, short width, short height,
 extern void OffsetDialogWindow(DialogPtr dlg, short dh, short dv, Boolean update);
 extern void CreateGameWindow(void);
 extern CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title);
+extern void AttachGamePort(void);
 extern int32_t GetControlValue(ControlPtr ctl);
 extern void InvalDialogRect(DialogPtr dlg, Rect *box);
 extern void ModalDialog(void *filterProc, short *itemHitPtr);

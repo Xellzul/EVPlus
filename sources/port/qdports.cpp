@@ -34,23 +34,29 @@ CGrafPort gGamePort;
 // FUNCTION: EVNOVA 0x004b8ae0
 CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
 {
-    const Screen::Page &page = Screen::Get();
-
     memset(&gGamePort, 0, sizeof(gGamePort));
     gGamePort.pnSize.v = 1;
     gGamePort.pnSize.h = gGamePort.pnSize.v;
-    gGamePort.pix.pixelSize = (page.depth + 7) & ~7;
     gGamePort.pix.bounds.top = bounds->top;
     gGamePort.pix.bounds.left = bounds->left;
     gGamePort.pix.bounds.bottom = bounds->bottom;
     gGamePort.pix.bounds.right = bounds->right;
+    AttachGamePort();
+    CurrentGrafPort = &gGamePort;
+    return &gGamePort;
+}
+
+/* The game port onto the screen page as it is now (after it was opened or resized). */
+void AttachGamePort(void)
+{
+    const Screen::Page &page = Screen::Get();
+
+    gGamePort.pix.pixelSize = (page.depth + 7) & ~7;
     gGamePort.pix.baseAddr = page.pixels;
     gGamePort.pix.width = page.width;
     gGamePort.pix.height = page.height;
     gGamePort.pix.rowBytes = page.pitch;
     gGamePort.depth = page.depth;
-    CurrentGrafPort = &gGamePort;
-    return &gGamePort;
 }
 
 /* two more of the port's compiled-away QuickDraw calls */

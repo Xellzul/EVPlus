@@ -760,6 +760,7 @@ static void PlayerTargetSelect(ShipObj *player, short &n)
                     }
                 }
             } else if (PtInRectPoint(pt, &box)) {
+                View::Unzoom(&pt);
                 targetUncloaked = shipData->CanTargetUntargetableShips();
                 targetCloaked = shipData->CanTargetCloakedShips();
                 if (player->active && player->sprite != NULL) {

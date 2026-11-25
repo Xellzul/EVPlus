@@ -642,6 +642,7 @@ void SetDefaultPrefs(void)
     settings.noMovies = 0;
     settings.noDebris = 0;
     settings.windowed = 0;
+    settings.runInWindow = 0;
     settings.yieldEvents = 1;
     settings.unused = 0;
     settings.shipAnimations = 1;
@@ -655,6 +656,8 @@ void SetDefaultPrefs(void)
     settings.gamma = 3;
     settings.gameWidth = 0;
     settings.gameHeight = 0;
+    settings.gameSize = kDefaultGameSize;
+    settings.wheelZoom = 1;
     settings.scaleFilter = kScaleFilterLinear;
     settings.wholePixelScaling = 0;
     settings.stereoPan = 1;

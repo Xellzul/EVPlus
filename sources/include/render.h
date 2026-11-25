@@ -69,6 +69,7 @@ extern int KeyboardGet(void);
 extern short LoadExtendedShipSprites(short shipType);
 extern void LoadIntfResource(void);
 extern void LoadMainScreenAnim(void);
+extern void PlaceMainScreenAnim(void);
 extern void MainScreenAppear(void);
 extern void LoadMasterStellarSprite(short type);
 extern void LoadShipSprites(void);

@@ -19,8 +19,11 @@ short height;
 namespace {
 
 short gameHeight;
+int zoomLevel;                      /* Zoom() = 2^(zoomLevel / kZoomStepsPerDouble) */
+constexpr int kZoomStepsPerDouble = 3;
+constexpr int kMaxZoomLevel = 6;    /* 4 times */
 double scale = 1.0;                 /* screen pixels per game pixel; 1 = drawn as is */
-double overlayScale = 1.0;          /* view pixels per logical UI pixel: the UI scale over the view's enlargement */
+double overlayScale = 1.0;          /* view pixels per logical UI pixel: the UI scale over the view's scale */
 SWFrameRec *uiWork;
 SWFrameRec *uiBack;
 SWFrameRec *menuWork;               /* the menu's, when its scale differs from the UI's */
@@ -32,7 +35,7 @@ int BarDeviceLeft()
     return UI::Mapping(gGamePort.pix).X(UI::ScreenWidth() - kStatusBarWidth);
 }
 
-/* the size the view is shown at on a page, from its top left corner */
+/* the size the view is shown at on a page (enlarged or reduced), from its top left corner */
 struct Enlargement {
     int width;
     int height;
@@ -45,7 +48,12 @@ Enlargement EnlargedOnto(const Screen::Page &page)
 
 } // namespace
 
-void SetSizes(short gameW, short gameH, short drawW, short drawH, double ui)
+double Scale()
+{
+    return scale;
+}
+
+void SetSizes(short gameW, short gameH, short drawH, double ui)
 {
     gameWidth = gameW;
     gameHeight = gameH;
@@ -143,6 +151,33 @@ void ToView(Point *pt)
         return;
     pt->h = (short)floor(screen.X(pt->h) * (double)width / to.width);
     pt->v = (short)floor(screen.Y(pt->v) * (double)height / to.height);
+}
+
+float Zoom()
+{
+    return (float)pow(2.0, (double)zoomLevel / kZoomStepsPerDouble);
+}
+
+void ZoomBy(int notches)
+{
+    zoomLevel += notches;
+    if (zoomLevel < 0)
+        zoomLevel = 0;
+    if (zoomLevel > kMaxZoomLevel)
+        zoomLevel = kMaxZoomLevel;
+}
+
+void ResetZoom()
+{
+    zoomLevel = 0;
+}
+
+void Unzoom(Point *pt)
+{
+    float zoom = Zoom();
+
+    pt->h = (short)floor(screenCenter.h + (pt->h - screenCenter.h) / zoom);
+    pt->v = (short)floor(screenCenter.v + (pt->v - screenCenter.v) / zoom);
 }
 
 static void CreateFramePair(Rect bounds, SWFrameRec **work, SWFrameRec **back)

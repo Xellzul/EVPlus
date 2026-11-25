@@ -9,13 +9,12 @@
 #include "platform.h"
 #include "prefsdisplay.h"
 #include "dialog.h"
+#include "crashlog.h"
 
 namespace {
 
-unsigned char runInAWindow;
-
 constexpr short kWidth = 500;
-constexpr short kHeight = 335;
+constexpr short kHeight = 379;
 constexpr short kMusicVolStrList = 0x88;
 constexpr short kMaxMusicVol = 8;
 constexpr short kMaxGamma = 6;
@@ -91,6 +90,7 @@ struct CheckBox {
     short item;
     unsigned char *setting;
     bool inverted;
+    void (*changed)();                      /* applies the setting at once; NULL: nothing to apply */
 };
 
 unsigned char *Flag(Boolean &setting) { return (unsigned char *)&setting; }
@@ -143,7 +143,6 @@ public:
     void run();
 
     ResolutionList resolutions;
-    double uiSize;                          /* the UI scale on the screen, kept across Resolution steps */
 
 private:
     void show();
@@ -154,9 +153,9 @@ private:
 
     ItemList items;
     Dialog dialog;
-    std::array<CheckBox, 16> checks;
+    std::array<CheckBox, 20> checks;
     int checkCount = 0;
-    std::array<Stepper, 6> steppers;
+    std::array<Stepper, 8> steppers;
     int stepperCount = 0;
     short doneItem;
     short keysItem;
@@ -166,23 +165,28 @@ private:
 
 PrefsDialog::PrefsDialog()
 {
-    doneItem = items.add(kDitlButton, 302, 389, 322, 459, "OK");
+    doneItem = items.add(kDitlButton, 346, 389, 366, 459, "OK");
     gTitleItem = items.add(kDitlUserItem, 5, 12, 28, 489);
-    gNoticeItem = items.add(kDitlUserItem, 277, 69, 294, 431);
-    keysItem = items.add(kDitlButton, 302, 49, 322, 184, "Key Settings");
-    uiSize = settings.uiScale * BaseUIScale(DrawSize({ settings.gameWidth, settings.gameHeight }));
+    gNoticeItem = items.add(kDitlUserItem, 321, 69, 338, 431);
+    keysItem = items.add(kDitlButton, 346, 49, 366, 184, "Key Settings");
 
     Column graphics(items, kColGraphics, "Graphics");
     Column sound(items, kColSound, "Sound");
     Column display(items, kColDisplay, "Display");
     Column gameplay(items, kColSound, "Gameplay", kFirstRow + 6 * kRow);   /* below Sound */
 
-    auto check = [this](short item, unsigned char *setting, bool inverted = false) {
-        checks[checkCount++] = { item, setting, inverted };
+    auto check = [this](short item, unsigned char *setting, bool inverted = false, void (*changed)() = NULL) {
+        if (checkCount < (int)checks.size())
+            checks[checkCount++] = { item, setting, inverted, changed };
+        else
+            crashlog("preferences: more check boxes than PrefsDialog::checks holds");
     };
     auto stepper = [this](StepperItems s, void (*step)(PrefsDialog &, int),
                           void (*show)(const PrefsDialog &, char *, char *)) {
-        steppers[stepperCount++] = { s, step, show };
+        if (stepperCount < (int)steppers.size())
+            steppers[stepperCount++] = { s, step, show };
+        else
+            crashlog("preferences: more steppers than PrefsDialog::steppers holds");
     };
 
     check(graphics.check("Ship Animations"), Flag(settings.shipAnimations));
@@ -203,7 +207,12 @@ PrefsDialog::PrefsDialog()
                      settings.gamma >= 0 && settings.gamma <= kMaxGamma ? kGammaNames[settings.gamma] : "???");
         });
 
-    check(sound.check("Intro Music"), Flag(settings.introMusic));
+    check(sound.check("Intro Music"), Flag(settings.introMusic), false, [] {
+        if (settings.introMusic == 0)
+            StopIntroMusic(0);
+        else if (introMusicMovie == 0)
+            SetupIntroMusic();
+    });
     check(sound.check("Ambient Sounds"), Flag(settings.ambientSounds));
     check(sound.check("QuickTime Movies"), Flag(settings.noMovies), true);
     check(sound.check("Positional Stereo"), Flag(settings.stereoPan));
@@ -224,7 +233,7 @@ PrefsDialog::PrefsDialog()
     check(gameplay.check("Map Shows Disasters"), Flag(settings.mapDisasters));
 
     windowedItem = display.check("Run in a window");
-    check(display.check("Whole-pixel scaling"), Flag(settings.wholePixelScaling));
+    check(display.check("Whole-pixel scaling"), Flag(settings.wholePixelScaling), false, ApplyDisplayScaling);
     stepper(display.stepper("Resolution:", true),
         [](PrefsDialog &dialog, int direction) {
             Resolution r = dialog.resolutions.step({ settings.gameWidth, settings.gameHeight }, direction);
@@ -232,7 +241,6 @@ PrefsDialog::PrefsDialog()
             settings.gameHeight = r.height;
             double min = MinUIScale(r);
             double max = MaxUIScale(r, kWidth, kHeight);
-            settings.uiScale = dialog.uiSize / BaseUIScale(DrawSize(r));
             if (settings.uiScale < min)
                 settings.uiScale = min;
             if (settings.uiScale > max)
@@ -254,16 +262,30 @@ PrefsDialog::PrefsDialog()
             snprintf(value, kDisplayTextMax, "%s", kFilterNames[settings.scaleFilter]);
         });
     stepper(display.stepper("UI scale:"),
-        [](PrefsDialog &dialog, int direction) {
+        [](PrefsDialog &, int direction) {
             Resolution r = { settings.gameWidth, settings.gameHeight };
             double max = MaxUIScale(r, kWidth, kHeight);
             if (direction < 0 || settings.uiScale < max)
                 settings.uiScale = StepUIScale(settings.uiScale, direction, MinUIScale(r), max);
-            dialog.uiSize = settings.uiScale * BaseUIScale(DrawSize(r));
         },
         [](const PrefsDialog &, char *value, char *) {
             UIScaleText(settings.uiScale, value);
         });
+    stepper(display.stepper("Game size:", true),
+        [](PrefsDialog &, int direction) {
+            short size = settings.gameSize + direction;
+            if (size >= kMinGameSize && size <= kMaxGameSize)
+                settings.gameSize = size;
+        },
+        [](const PrefsDialog &, char *value, char *extra) {
+            PixelSize game = GameArea(DrawSize({ settings.gameWidth, settings.gameHeight }), settings.gameSize);
+            if (gameInProgress != 0 && settings.gameSize != GameSizeInUse())
+                snprintf(value, kDisplayTextMax, "%dx (after reload)", settings.gameSize);
+            else
+                snprintf(value, kDisplayTextMax, "%dx", settings.gameSize);
+            snprintf(extra, kDisplayTextMax, "%d x %d", game.width, game.height);
+        });
+    check(gameplay.check("Mouse Wheel Zoom"), Flag(settings.wheelZoom));
 
     savedSprites = SpriteSettings::Now();
     dialog.Open(kWidth, kHeight, items.data(), items.size(), PrefsDialogUpdate, NULL, &prefsDialog);
@@ -276,8 +298,6 @@ PrefsDialog::~PrefsDialog()
     if (gWind != NULL)
         SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
-    if (settings.introMusic == 0)
-        StopIntroMusic(0);
 }
 
 void PrefsDialog::setCheck(short item, bool on)
@@ -305,8 +325,7 @@ void PrefsDialog::show()
     ForeColor(blackColor);
     for (int i = 0; i < checkCount; i++)
         setCheck(checks[i].item, (*checks[i].setting != 0) != checks[i].inverted);
-    runInAWindow = PlatVideoIsFullScreen() == 0;
-    setCheck(windowedItem, runInAWindow);
+    setCheck(windowedItem, PlatVideoIsFullScreen() == 0);
     for (int i = 0; i < stepperCount; i++) {
         extra[0] = 0;
         steppers[i].show(*this, value, extra);
@@ -319,9 +338,7 @@ void PrefsDialog::show()
 
 bool PrefsDialog::needsRestart() const
 {
-    return settings.windowedPending != settings.windowed
-           || (gameLoaded != 0 && SpriteSettings::Now() != savedSprites)
-           || settings.gameWidth != startGameWidth || settings.gameHeight != startGameHeight;
+    return gameLoaded != 0 && SpriteSettings::Now() != savedSprites;
 }
 
 bool PrefsDialog::handle(short item)
@@ -339,15 +356,14 @@ bool PrefsDialog::handle(short item)
         return false;
     }
     if (item == windowedItem) {
-        runInAWindow = (runInAWindow == 0);
-        PlatVideoSetFullScreen(runInAWindow == 0);
+        PlatVideoSetFullScreen(PlatVideoIsFullScreen() == 0);
         return false;
     }
     for (int i = 0; i < checkCount; i++) {
         if (item == checks[i].item) {
             *checks[i].setting = (*checks[i].setting == 0);
-            if (checks[i].setting == Flag(settings.wholePixelScaling))
-                ApplyDisplayScaling();
+            if (checks[i].changed != NULL)
+                checks[i].changed();
             return false;
         }
     }

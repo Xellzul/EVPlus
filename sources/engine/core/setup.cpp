@@ -48,12 +48,24 @@ static void CreateOverlayFrames(void)
     SWCreateFrame(GetGDevice(), &floatingMapFrame, &windRect, gSpriteWorld->pixelDepth, 1);
     View::ScaleOverlayFrame(floatingMapFrame);
     SWLockFrame(floatingMapFrame);
-    OffsetRect(&floatingMapRect, View::width - (floatingMapRect.right + 16), 150);
+    OffsetRect(&floatingMapRect, View::width - (floatingMapRect.right + View::ScaleInView(16)), View::ScaleInView(150));
     SetRect(&windRect, 0, 0, 160, 120);
     SWCreateFrame(GetGDevice(), &floatingEscortMenuFrame, &windRect, gSpriteWorld->pixelDepth, 1);
     View::ScaleOverlayFrame(floatingEscortMenuFrame);
     SWLockFrame(floatingEscortMenuFrame);
-    SetRect(&escortMenuRect, 15, 150, 15 + View::ScaleInView(160), 150 + View::ScaleInView(120));
+    SetRect(&escortMenuRect, View::ScaleInView(15), View::ScaleInView(150), View::ScaleInView(15 + 160),
+            View::ScaleInView(150 + 120));
+}
+
+/* The UI frames for the space view left of the status bar; returns the view's rect at 0,0. */
+static Rect ViewFrames(void)
+{
+    Rect r = mainWindRect;
+
+    r.right -= kStatusBarWidth;
+    View::CreateUIFrames(r);
+    SetRect(&r, 0, 0, View::width, View::height);
+    return r;
 }
 
 // FUNCTION: EVNOVA 0x004ab980
@@ -65,11 +77,8 @@ void SetupSpriteWorld(void)
     Rect windRect;
 
     mBarHidden = 1;
-    windRect = mainWindRect;
-    windRect.right -= kStatusBarWidth;
     SetPortWindowPort((WindowRef)gWind);
-    View::CreateUIFrames(windRect);
-    SetRect(&windRect, 0, 0, View::width, View::height);
+    windRect = ViewFrames();
     err = SWCreateSpriteWorld(&gSpriteWorld, gWind, windRect);
     if ((int32_t)err != 0)
         SpriteWorldFailed();
@@ -88,6 +97,7 @@ void SetupSpriteWorld(void)
     SWCreateSpriteLayer(&turretedShotLayer);
     SWCreateSpriteLayer(&explodLayer);
     SWCreateSpriteLayer(&targetLayer);
+    SWCreateSpriteLayer(&interfaceLayer);
 
     SWAddSpriteLayer(gSpriteWorld, starLayer);
     SWAddSpriteLayer(gSpriteWorld, stellarLayer);
@@ -103,6 +113,7 @@ void SetupSpriteWorld(void)
     SWAddSpriteLayer(gSpriteWorld, turretedShotLayer);
     SWAddSpriteLayer(gSpriteWorld, explodLayer);
     SWAddSpriteLayer(gSpriteWorld, targetLayer);
+    SWAddSpriteLayer(gSpriteWorld, interfaceLayer);
 
     SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
 
@@ -532,6 +543,8 @@ void Bye(void)
         SWDisposeSpriteLayer(&pointDefenseLayer);
     if (targetLayer != NULL)
         SWDisposeSpriteLayer(&targetLayer);
+    if (interfaceLayer != NULL)
+        SWDisposeSpriteLayer(&interfaceLayer);
     if (asteroidLayer != NULL)
         SWDisposeSpriteLayer(&asteroidLayer);
     if (smokeLayer != NULL)
@@ -772,31 +785,41 @@ void ShowMenuArt(const Rect &area, bool onlyChanged)
     CopyBits(GWorldContainerBits(&menuArtPort), GWorldContainerBits(&loadPort), &shown, &shown, 0, NULL);
 }
 
-short startGameWidth;
-short startGameHeight;
-double startUIScale;
+/* the resolution, game size and UI scale the game runs at */
+static struct {
+    Resolution resolution;
+    short gameSize;
+    double uiScale;
+} applied;
 
-/* The game plays at the preferences' resolution (0 = the desktop's) and is drawn at the largest size of that
-   shape the desktop holds. The UI is scaled to look as on a 1024 x 768 screen, times the UI scale; the main
-   menu without the UI scale. */
+/* The game is drawn at the preferences' resolution (0 = the desktop's) and shows the game size's space. The
+   UI is scaled to look as on a 1024 x 768 screen, times the UI scale; the main menu without the UI scale. */
 // FUNCTION: EVNOVA 0x004b45e0
 void SetupMonitor(void)
 {
     Resolution resolution = { settings.gameWidth, settings.gameHeight };
 
-    startGameWidth = settings.gameWidth;
-    startGameHeight = settings.gameHeight;
+    applied.resolution = resolution;
+    applied.gameSize = settings.gameSize;
     ApplyUIScale();
     PixelSize draw = DrawSize(resolution);
     ApplyDisplayScaling();
-    SetDisplayToSize(draw.width, draw.height, kVideoDepth, kVideoFullScreen | kVideoAlways);
+    SetDisplayToSize(draw.width, draw.height, kVideoDepth,
+                     (settings.runInWindow != 0 ? 0 : kVideoFullScreen) | kVideoAlways);
 }
 
-/* The scales and sizes for a UI scale at a resolution drawn at `draw', the UI scale kept to what the
-   Preferences offer there (where every dialog fits); returns the UI scale used. */
-static double SetUIScales(Resolution resolution, PixelSize draw, double uiScale)
+/* The scales and sizes for a UI scale at a resolution and game size, the UI scale kept to what the Preferences
+   offer there (where every dialog fits); returns the UI scale used. */
+static double SetUIScales(Resolution resolution, short gameSize, double uiScale)
 {
-    PixelSize game = GameSize(resolution);
+    PixelSize draw = DrawSize(resolution);
+    PixelSize game = GameArea(draw, gameSize);
+    int maxSide = PlatMaxTextureSize();         /* the view is one texture: kept to what the GPU takes */
+    if (maxSide > 0 && (game.width > maxSide || game.height > maxSide)) {
+        double fit = game.width > game.height ? (double)maxSide / game.width : (double)maxSide / game.height;
+        game.width = 2 * (int)(game.width * fit / 2);
+        game.height = (int)(game.height * fit);
+    }
     double base = BaseUIScale(draw);
     double minUI = MinUIScale(resolution);
     double maxUI = MaxUIScale(resolution, 0, 0);
@@ -811,7 +834,7 @@ static double SetUIScales(Resolution resolution, PixelSize draw, double uiScale)
     UI::SetScreenSize((short)(draw.width / scale + 0.5), (short)(draw.height / scale + 0.5), draw.width,
                       draw.height);
     UI::SetMenuScale(base);
-    View::SetSizes(game.width, game.height, draw.width, draw.height, scale);
+    View::SetSizes(game.width, game.height, draw.height, scale);
     return uiScale;
 }
 
@@ -819,53 +842,63 @@ static double SetUIScales(Resolution resolution, PixelSize draw, double uiScale)
    known. */
 void ApplyUIScale(void)
 {
-    Resolution resolution = { startGameWidth, startGameHeight };
-
-    settings.uiScale = SetUIScales(resolution, DrawSize(resolution), settings.uiScale);
-    startUIScale = settings.uiScale;
+    settings.uiScale = SetUIScales(applied.resolution, applied.gameSize, settings.uiScale);
+    applied.uiScale = settings.uiScale;
 }
 
-/* A UI scale changed in the Preferences, to the running game: the scales, the screen's and the view's sizes,
-   and every port and frame made for them. The resolution stays as the game started; the UI keeps the size on
-   the screen the Preferences' resolution gives it. */
-void ReapplyUIScale(void)
+short GameSizeInUse(void)
 {
-    Resolution running = { startGameWidth, startGameHeight };
-    Resolution chosen = { settings.gameWidth, settings.gameHeight };
-    PixelSize draw = { Screen::Get().width, Screen::Get().height };
-    Rect r;
+    return applied.gameSize;
+}
 
-    if (settings.uiScale == startUIScale || gSpriteWorld == NULL || UI::InMenuScale())
+/* A resolution, game size and the preferences' UI scale, to the running game (from the main menu, no dialog
+   open): the scales and sizes, the page when its size changes, and every port and frame made for them. A page
+   that can't be had keeps the running resolution and UI scale. */
+static void ApplyDisplay(Resolution chosen, short gameSize)
+{
+    short viewWidth = View::width;
+    short viewHeight = View::height;
+
+    if (chosen == applied.resolution && gameSize == applied.gameSize && settings.uiScale == applied.uiScale)
         return;
+    if (gSpriteWorld == NULL || UI::InMenuScale()) {
+        crashlog("display settings not applied: no sprite world, or inside the menu's scale");
+        return;
+    }
     SWSetPortToWindow(gSpriteWorld);
-    double used = SetUIScales(running, draw, settings.uiScale * BaseUIScale(DrawSize(chosen)) / BaseUIScale(draw));
-    if (settings.gameWidth == startGameWidth && settings.gameHeight == startGameHeight)
-        settings.uiScale = used;
-    startUIScale = settings.uiScale;
+    PixelSize draw = DrawSize(chosen);
+    if (draw.width != Screen::Get().width || draw.height != Screen::Get().height) {
+        if (!Screen::Resize(draw.width, draw.height)) {
+            settings.gameWidth = applied.resolution.width;
+            settings.gameHeight = applied.resolution.height;
+            settings.uiScale = applied.uiScale;
+            SavePrefs();
+            return;
+        }
+        AttachGamePort();
+    }
+    applied.resolution = chosen;
+    applied.gameSize = gameSize;
+    double asked = settings.uiScale;
+    ApplyUIScale();
+    if (settings.uiScale != asked)
+        SavePrefs();
 
     ResetScreenRect();
     gGamePort.pix.bounds = mainWindRect;
     gGamePort.pnDeviceOffset = 0;
     SetScreenCenter();
-
-    r = mainWindRect;
-    r.right -= kStatusBarWidth;
-    View::CreateUIFrames(r);
-
-    SetRect(&r, 0, 0, View::width, View::height);
-    SWResizeSpriteWorld(gSpriteWorld, r);
+    SWResizeSpriteWorld(gSpriteWorld, ViewFrames());
     SWDisposeFrame(&floatingMapFrame);
     SWDisposeFrame(&floatingEscortMenuFrame);
     CreateOverlayFrames();
     redrawEscortMenu = 1;
 
-    loadPort.bounds = mainWindRect;
-    if (loadPort.world != NULL) {
-        loadPort.world->pix.bounds = mainWindRect;
-        loadPort.world->pnDeviceOffset = 0;
-    }
+    DisposeGWorldContainer(&loadPort);
+    DisposeGWorldContainer(&menuArtPort);
+    DisposeGWorldContainer(&menuShownPort);
     DisposeGWorldContainer(&statusOffPort);
-    CreateStatusOffPort(mainWindRect);
+    InitOffscreen();
     lastIntfResourceID = -1;
     DisposeGWorldContainer(&buttonPort);
     CreateButtonPort();
@@ -873,8 +906,24 @@ void ReapplyUIScale(void)
     ResetCommRect();
     if (alertSprite != NULL)
         PlaceAlertSprite();
+    if (gameInProgress != 0 && (View::width != viewWidth || View::height != viewHeight))
+        CreateAsteroids();
     mainScreenBackgroundDirty = 1;
     SWSetPortToWindow(gSpriteWorld);
+}
+
+/* The Preferences' display settings after the dialog closes; a game size waits for the next pilot while one
+   is loaded. */
+void ApplyDisplaySettings(void)
+{
+    ApplyDisplay({ settings.gameWidth, settings.gameHeight },
+                 gameInProgress != 0 ? applied.gameSize : settings.gameSize);
+}
+
+/* A pilot was opened or made: it plays at the preferences' game size. */
+void ApplyPilotGameSize(void)
+{
+    ApplyDisplay(applied.resolution, settings.gameSize);
 }
 
 void ApplyBrightness(void)

@@ -6,6 +6,8 @@
 - Jump flash always shows
 - Preferences dialog redone and moved to JSON
 - The interface is scaled
+- Mouse wheel zoom
+- Preferences: Game size (how much space you see)
 - Brightness slider works live, on the whole screen
 - Key settings `[` and `]` fixed orientation 
 - Unintended keypresses wont skip movies / launch figters

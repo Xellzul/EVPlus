@@ -46,6 +46,19 @@ void MarkView()
     viewFresh = true;
 }
 
+/* a cleared page of width x height; NULL pixels when it can't be had */
+Page NewPage(int width, int height, int depth)
+{
+    Page made;
+
+    made.pixels = (char *)AllocAPointerClear((Word32)(2 * width * height));
+    made.pitch = 2 * width;
+    made.width = width;
+    made.height = height;
+    made.depth = depth;
+    return made;
+}
+
 } // namespace
 
 const Page &Get()
@@ -55,13 +68,24 @@ const Page &Get()
 
 bool Open(int width, int height, int depth)
 {
-    page.pixels = (char *)AllocAPointerClear((Word32)(2 * width * height));
-    if (page.pixels == NULL)
+    page = NewPage(width, height, depth);
+    return page.pixels != NULL;
+}
+
+bool Resize(int width, int height)
+{
+    Page made = NewPage(width, height, page.depth);
+
+    if (made.pixels == NULL)
         return false;
-    page.pitch = 2 * width;
-    page.width = width;
-    page.height = height;
-    page.depth = depth;
+    if (PlatVideoResize(width, height) != 0) {
+        DeallocAPointer(made.pixels);
+        return false;
+    }
+    DeallocAPointer(page.pixels);
+    page = made;
+    viewFresh = false;
+    changed = true;
     return true;
 }
 
@@ -115,6 +139,7 @@ void EndFrame()
         view.y = r.top;
         view.w = r.right - r.left;
         view.h = r.bottom - r.top;
+        view.zoom = View::Zoom();
         ViewDraw::Take(view);
         viewFresh = false;
         PlatVideoPresentView(page.pixels, page.pitch, &view);

@@ -34,6 +34,9 @@ static const PrefsJsonField kPrefsJsonFields[] = {
     { "asteroidScaling", offsetof(PrefsRecord, asteroidScaling) },
     { "mapPrices",      offsetof(PrefsRecord, mapPrices) },
     { "mapDisasters",   offsetof(PrefsRecord, mapDisasters) },
+    { "runInWindow",    offsetof(PrefsRecord, runInWindow) },
+    { "gameSize",       offsetof(PrefsRecord, gameSize) },
+    { "wheelZoom",      offsetof(PrefsRecord, wheelZoom) },
 };
 #define kPrefsJsonFieldCount (sizeof(kPrefsJsonFields) / sizeof(kPrefsJsonFields[0]))
 

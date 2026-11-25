@@ -52,6 +52,7 @@ static int gViewHeight;
 static SDL_FRect gViewRect;             /* its place on the frame */
 static bool gViewOn;                    /* a view was given: it is drawn under the frame, which is blended */
 static bool gViewFresh;                 /* the draws are not yet rendered into gViewTexture */
+static float gViewZoom = 1.0f;          /* the view shown magnified about its centre */
 static Uint16 *gShown;                  /* with a view: the frame as the texture holds it */
 static bool gShownValid;
 static std::vector<PlatDraw> gDraws;    /* the GPU view's, as last given */
@@ -177,13 +178,18 @@ static void Redraw(void)
     SDL_RenderClear(gRenderer);
     if (gTexture != NULL && gFrameDrawn) {
         if (gViewOn && gViewTexture != NULL) {
-            SDL_RenderTexture(gRenderer, gViewTexture, NULL, &gViewRect);
+            SDL_FRect shown;
+            shown.w = gViewWidth / gViewZoom;
+            shown.h = gViewHeight / gViewZoom;
+            shown.x = (gViewWidth - shown.w) / 2;
+            shown.y = (gViewHeight - shown.h) / 2;
+            SDL_RenderTexture(gRenderer, gViewTexture, &shown, &gViewRect);
             /* the view's last column a little past its edge: where the window scales the frame, the frame's
                edge beside the view is blended over this, not over black */
-            edgeFrom.x = (float)(gViewWidth - 1);
-            edgeFrom.y = 0;
+            edgeFrom.x = shown.x + shown.w - 1;
+            edgeFrom.y = shown.y;
             edgeFrom.w = 1;
-            edgeFrom.h = (float)gViewHeight;
+            edgeFrom.h = shown.h;
             edgeTo.x = gViewRect.x + gViewRect.w;
             edgeTo.y = gViewRect.y;
             edgeTo.w = kViewEdge;
@@ -646,18 +652,10 @@ static bool RenderView(void)
 /* the overlays over the view, in the frame's pixels */
 static void DrawOverlays(void)
 {
-    SDL_Texture *texture;
+    std::vector<SDL_Vertex> scratch;
 
-    for (const PlatDraw &d : gOverlays) {
-        SDL_FRect rect = { d.x, d.y, d.w, d.h };
-        texture = d.image != NULL ? ImageTexture(d.image, false) : NULL;
-        if (texture == NULL)
-            continue;
-        SDL_SetTextureColorMod(texture, d.mod[0], d.mod[1], d.mod[2]);
-        SDL_SetTextureAlphaMod(texture, 255);
-        SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_ADD);
-        SDL_RenderTexture(gRenderer, texture, NULL, &rect);
-    }
+    for (const PlatDraw &d : gOverlays)
+        RenderDraw(d, scratch);
 }
 
 /* the view no longer shown: the frame alone, opaque */
@@ -770,7 +768,10 @@ static void ApplyPresentation(void)
     SDL_SetRenderLogicalPresentation(gRenderer, gFrameWidth, gFrameHeight, mode);
 }
 
-/* Called as SDL queues an event, on the main thread for the three taken here.
+static bool gFitWindowPending;          /* the frame changed size while full screen */
+static void FitWindow(int width, int height);
+
+/* Called as SDL queues an event, on the main thread for those taken here.
    - While the user drags the window's edge the event loop does not run: SDL sends these exposes for the
      window to be redrawn at once.
    - Where a focus loss goes can only be told while it happens; by the time the event is polled a dialog
@@ -784,6 +785,9 @@ static bool SDLCALL EventWatch(void *userdata, SDL_Event *event)
         Redraw();
     } else if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
         ApplyPresentation();
+    } else if (event->type == SDL_EVENT_WINDOW_LEAVE_FULLSCREEN && gFitWindowPending) {
+        gFitWindowPending = false;
+        FitWindow(gFrameWidth, gFrameHeight);
     } else if (event->type == SDL_EVENT_WINDOW_FOCUS_LOST) {
         next = (gFocusNoteTail + 1) & (kFocusNotes - 1);
         if (next != gFocusNoteHead) {
@@ -829,33 +833,16 @@ int PlatVideoCreateWindow(const char *title)
     return 0;
 }
 
-int PlatVideoOpen(int width, int height, int fullScreen)
+/* The window's size when it is not full screen, in the window system's units: the frame's, kept to a share of
+   the display and centred on it. */
+static void FitWindow(int width, int height)
 {
-    const SDL_DisplayMode *mode;
     SDL_DisplayID display;
     SDL_Rect usable;
     float density;
-    float refresh;
     int w;
     int h;
 
-    if (gWindow == NULL || width <= 0 || height <= 0)
-        return -1;
-    PlatVideoClose();
-    if (gRenderer == NULL) {
-        gRenderer = SDL_CreateRenderer(gWindow, NULL);
-        if (gRenderer == NULL)
-            return -1;
-        SDL_SetRenderVSync(gRenderer, 0);       /* the game paces itself */
-    }
-    gFrameWidth = width;
-    gFrameHeight = height;
-    gFrame = (unsigned char *)SDL_calloc((size_t)width * height, kBytesPerPixel);
-    if (gFrame == NULL || !MakeFrameTexture())
-        return -1;
-    SDL_SetRenderLogicalPresentation(gRenderer, width, height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-
-    /* the window's size when it is not full screen, in the window system's units */
     density = SDL_GetWindowPixelDensity(gWindow);
     if (density <= 0)
         density = 1;
@@ -877,6 +864,36 @@ int PlatVideoOpen(int width, int height, int fullScreen)
     }
     SDL_SetWindowSize(gWindow, w, h);
     SDL_SetWindowPosition(gWindow, SDL_WINDOWPOS_CENTERED_DISPLAY(display), SDL_WINDOWPOS_CENTERED_DISPLAY(display));
+}
+
+/* a cleared frame of width x height and its texture; false = no frame or no texture */
+static bool MakeFrame(int width, int height)
+{
+    gFrameWidth = width;
+    gFrameHeight = height;
+    gFrame = (unsigned char *)SDL_calloc((size_t)width * height, kBytesPerPixel);
+    return gFrame != NULL && MakeFrameTexture();
+}
+
+int PlatVideoOpen(int width, int height, int fullScreen)
+{
+    const SDL_DisplayMode *mode;
+    float refresh;
+
+    if (gWindow == NULL || width <= 0 || height <= 0)
+        return -1;
+    PlatVideoClose();
+    if (gRenderer == NULL) {
+        gRenderer = SDL_CreateRenderer(gWindow, NULL);
+        if (gRenderer == NULL)
+            return -1;
+        SDL_SetRenderVSync(gRenderer, 0);       /* the game paces itself */
+    }
+    if (!MakeFrame(width, height))
+        return -1;
+    SDL_SetRenderLogicalPresentation(gRenderer, width, height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    FitWindow(width, height);
+    gFitWindowPending = false;
     SDL_SetWindowFullscreen(gWindow, fullScreen != 0);     /* no mode chosen: the desktop's, borderless */
     SDL_ShowWindow(gWindow);
     SDL_SyncWindow(gWindow);
@@ -890,6 +907,39 @@ int PlatVideoOpen(int width, int height, int fullScreen)
     if (gShowInterval > kMaxShowInterval)
         gShowInterval = kMaxShowInterval;
     Redraw();
+    return 0;
+}
+
+int PlatVideoResize(int width, int height)
+{
+    unsigned char *oldFrame = gFrame;
+    const void *oldPixels = gGamePixels;
+    int oldPitch = gGamePitch;
+    int oldWidth = gFrameWidth;
+    int oldHeight = gFrameHeight;
+
+    if (gRenderer == NULL || gFrame == NULL || width <= 0 || height <= 0)
+        return -1;
+    gGamePixels = NULL;                     /* the game's page at the old size: not for the new frame */
+    gFrameFresh = false;
+    SDL_free(gShown);
+    gShown = NULL;
+    if (!MakeFrame(width, height)) {
+        SDL_free(gFrame);
+        gFrame = oldFrame;
+        gFrameWidth = oldWidth;
+        gFrameHeight = oldHeight;
+        gGamePixels = oldPixels;
+        gGamePitch = oldPitch;
+        MakeFrameTexture();
+        return -1;
+    }
+    SDL_free(oldFrame);
+    ApplyPresentation();
+    if (PlatVideoIsFullScreen())
+        gFitWindowPending = true;           /* SDL sizes no full-screen window: on leaving full screen */
+    else
+        FitWindow(width, height);
     return 0;
 }
 
@@ -954,6 +1004,7 @@ static void KeepView(const PlatVideoView *view)
     gViewRect.y = (float)view->y;
     gViewRect.w = (float)view->w;
     gViewRect.h = (float)view->h;
+    gViewZoom = view->zoom >= 1.0f ? view->zoom : 1.0f;
     gViewOn = true;
     gViewFresh = true;
 }
@@ -1003,8 +1054,18 @@ void PlatVideoSetScaling(int filter, int wholePixel)
 
 void PlatVideoSetFullScreen(int on)
 {
-    if (gWindow != NULL)
-        SDL_SetWindowFullscreen(gWindow, on != 0);
+    if (gWindow == NULL)
+        return;
+    SDL_SetWindowFullscreen(gWindow, on != 0);
+    SDL_SyncWindow(gWindow);                /* the mode is in place (and reported) before this returns */
+}
+
+int PlatMaxTextureSize(void)
+{
+    if (gRenderer == NULL)
+        return 0;
+    return (int)SDL_GetNumberProperty(SDL_GetRendererProperties(gRenderer), SDL_PROP_RENDERER_MAX_TEXTURE_SIZE_NUMBER,
+                                      0);
 }
 
 int PlatVideoIsFullScreen(void)

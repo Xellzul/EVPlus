@@ -232,6 +232,7 @@ void MainScreenChoice(short which)
             }
             crashlog("preparing universe");
             gameInProgress = 1;
+            ApplyPilotGameSize();
             InvalWindowPortRect((WindowRef)gWind);
             DeleteAllComputerShips(0, 1);
             PropagateMissionBitEffects();
@@ -288,7 +289,7 @@ void MainScreenChoice(short which)
 
     if (which == kMainScreenPrefs) {
         DoPrefsDialog();
-        ReapplyUIScale();
+        ApplyDisplaySettings();
         SWSetPortToWindow(gSpriteWorld);
         MainScreenAnimDraw();
         MainScreenUpdate(1);

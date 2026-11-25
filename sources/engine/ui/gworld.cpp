@@ -89,6 +89,7 @@ void DisposeGWorldContainer(GWorldContainer *gwc)
 {
     if (gwc->world != NULL) {
         DisposeGWorld(gwc->world);
+        gwc->world = NULL;
     }
 }
 

@@ -287,7 +287,7 @@ typedef struct Settings {
     Boolean yieldEvents;
     Boolean parallaxStars;
     Boolean windowed;
-    Boolean windowedPending;
+    Boolean runInWindow;            /* the game starts in a window, else full screen */
     unsigned char shipAnimations;
     unsigned char engineGlows;
     unsigned char weaponGlows;
@@ -297,8 +297,10 @@ typedef struct Settings {
     Boolean noHyperGamma;
     short volume;
     short gamma;
-    short gameWidth;                /* the resolution the game draws at; 0 = the desktop's */
+    short gameWidth;                /* the resolution the game is drawn at; 0 = the desktop's */
     short gameHeight;
+    short gameSize;                 /* the space seen: times the original 1024 x 768 in area, k*GameSize */
+    Boolean wheelZoom;              /* the mouse wheel magnifies the space view in flight */
     short scaleFilter;              /* kScaleFilter* */
     Boolean wholePixelScaling;
     Boolean stereoPan;              /* Positional Stereo: distant sounds panned left/right */
@@ -307,6 +309,11 @@ typedef struct Settings {
     Boolean mapDisasters;           /* with mapPrices: a level under an active disaster gets Higher/Lower */
     double uiScale;                 /* dialogs and status bar, 1.0 = as designed */
 } Settings;
+
+#define kMinResolutionHeight    768             /* the fewest lines a resolution may have */
+#define kMinGameSize            1
+#define kMaxGameSize            25
+#define kDefaultGameSize        4
 
 #define kScaleFilterNearest     0
 #define kScaleFilterLinear      1
@@ -337,6 +344,9 @@ typedef struct PrefsRecord {
     short asteroidScaling;
     short mapPrices;
     short mapDisasters;
+    short runInWindow;
+    short gameSize;
+    short wheelZoom;
     short keys[36];
     double uiScale;
 } PrefsRecord;

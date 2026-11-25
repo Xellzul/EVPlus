@@ -157,14 +157,13 @@ extern short lastPortMissionLoc;
 extern uint32_t lastSmokeUpdateTime;
 extern Boolean mBarHidden;
 extern Rect mainWindRect;
-extern short startGameWidth;                /* the preferences' resolution the game started with */
-extern short startGameHeight;
-extern double startUIScale;                 /* the preferences' UI scale last applied */
 extern GWorldContainer *MenuArt(void);
 extern void ShowMenuArt(const Rect &area, bool onlyChanged = false);
 extern void SetupMonitor(void);
 extern void ApplyUIScale(void);
-extern void ReapplyUIScale(void);
+extern void ApplyDisplaySettings(void);
+extern void ApplyPilotGameSize(void);
+extern short GameSizeInUse(void);           /* the game size the view has (Preferences may hold a later one) */
 extern void ApplyDisplayScaling(void);
 extern void ApplyBrightness(void);
 extern short menuFontID;
@@ -185,6 +184,7 @@ extern SpriteLayerRec *starLayer;
 extern SpriteLayerRec *stellarLayer;
 extern Boolean suppressMissionOffer[];
 extern SpriteLayerRec *targetLayer;
+extern SpriteLayerRec *interfaceLayer;
 extern float trigResult;
 extern Sound *voiceSnd;
 extern Sound *warpOutSnd;

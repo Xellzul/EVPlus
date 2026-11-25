@@ -7,6 +7,7 @@
 #include "prototypes.h"
 #include "gameutil.h"
 #include "viewscale.h"
+#include "uiscale.h"
 #include "sound.h"
 
 /* the spin resource type name, as printed in log lines */
@@ -602,7 +603,7 @@ void InitSprites(void)
     }
 
     if (cursorSprite != NULL) {
-        SWAddSprite(targetLayer, cursorSprite);
+        SWAddSprite(interfaceLayer, cursorSprite);
         SWSetSpriteVisible(cursorSprite, 0);
         SWSetSpriteDrawProc(cursorSprite, BlitPixieRLETranslucentDrawProc);
         cursorSprite->tintMode = 0;
@@ -615,14 +616,14 @@ void InitSprites(void)
 
     ServiceIntroMusic(0);
 
-    SWAddSprite(targetLayer, alertSprite);
+    SWAddSprite(interfaceLayer, alertSprite);
     SWSetCurrentFrameIndex(alertSprite, 0);
     SWSetSpriteVisible(alertSprite, 0);
     SWSetSpriteDrawProc(alertSprite, BlitPixieRLETranslucentDrawProc);
     SWLockSprite(alertSprite);
     PlaceAlertSprite();
 
-    SWAddSprite(targetLayer, doubleTimeSprite);
+    SWAddSprite(interfaceLayer, doubleTimeSprite);
     SWSetCurrentFrameIndex(doubleTimeSprite, 0);
     SWSetSpriteVisible(doubleTimeSprite, 0);
     SWSetSpriteDrawProc(doubleTimeSprite, BlitPixieRLETranslucentDrawProc);
@@ -639,16 +640,17 @@ void InitSprites(void)
     SWLockSpriteLayer(smokeLayer);
     SWLockSpriteLayer(explodLayer);
     SWLockSpriteLayer(targetLayer);
+    SWLockSpriteLayer(interfaceLayer);
 
     ServiceIntroMusic(0);
 
     ResetCommRect();
 }
 
-/* the alert sprite, in the view's top right corner */
+/* the alert sprite, in the view's top right corner (screen coordinates: it is in the interface layer) */
 void PlaceAlertSprite(void)
 {
-    SWSetSpriteLocation(alertSprite, screenCenter.h * 2 - GetSpriteXSize(alertSprite), 0);
+    SWSetSpriteLocation(alertSprite, UI::ScreenWidth() - kStatusBarWidth - GetSpriteXSize(alertSprite), 0);
 }
 
 /* 'r' 'l' <MacRoman e-diaeresis, 0x91> '8'/'D' as big-endian ResTypes */

@@ -9,6 +9,7 @@
 /* port/dialogmgr.cpp: the window's own events */
 extern void WinGameActivate(int on);
 extern void WinGameMinimized(void);
+extern void WinGameWindowMode(int windowed);
 extern void WinGameClose(void);
 extern void WinGameInputSeen(void);
 
@@ -308,6 +309,12 @@ static void Win95ProcessEvent(const SDL_Event *e)
         break;
     case SDL_EVENT_WINDOW_MINIMIZED:
         WinGameMinimized();
+        break;
+    case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
+        WinGameWindowMode(0);
+        break;
+    case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
+        WinGameWindowMode(1);
         break;
     case SDL_EVENT_QUIT:
         WinGameClose();

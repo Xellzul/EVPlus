@@ -10,6 +10,7 @@
 #include "endianswap.h"
 #include "screen.h"
 #include "text.h"
+#include "player.h"
 
 /* A control points back at the dialog that owns it so that changing a value
    can mark the dialog dirty. */
@@ -2271,6 +2272,15 @@ void WinGameMinimized(void)
 {
     Win95ApplsActive = 0;
     HandleIntroMusic(0);
+}
+
+/* the window went full screen or back (the Preferences, Alt+Enter, the window system): the next start opens so */
+void WinGameWindowMode(int windowed)
+{
+    if (settings.runInWindow == (windowed != 0))
+        return;
+    settings.runInWindow = windowed != 0;
+    SavePrefs();
 }
 
 /* the user asked to close the window or quit */
