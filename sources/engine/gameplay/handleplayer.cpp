@@ -139,55 +139,9 @@ static bool CommShows(short index)
     return pstrcmp(str, (unsigned char *)commMsg) == 0;
 }
 
-// FUNCTION: EVNOVA 0x0044aa70
-// MAC: _HandlePlayer i386 0x00068390 ppc 0x00070b28
-void HandlePlayer(ShipObj *player)
+/* clears the key check result, fades the hyperspace white-out, unfreezes without cheats */
+static void PlayerFrameStart(ShipObj *player)
 {
-    Boolean jumping;
-    short i;
-    short j;
-    short mapLink;
-    short n;
-    short count;
-    short days;
-    short fuelCap;
-    short turnStep;
-    float turnLim;
-    float dist;
-    float heading;
-    float angle;
-    Point pt;
-    float dmg;
-    Boolean ok;
-    Rect box;
-    Rect hit;
-    std::string msg;
-    char keyName[256];
-    FloatPoint pos;
-    FloatPoint dest;
-    FloatPoint origin;
-    short groupCount[4];
-    float step;
-    Boolean linked[kNavSlots];
-    Boolean canJump;
-    short lost;
-    short dir;
-    short k;
-    Boolean found;
-    Boolean escortHit;
-    Boolean turned;
-    Boolean targetUncloaked;
-    Boolean targetCloaked;
-    Boolean disabled;
-    Boolean dying;
-    Boolean routeDone;
-    Boolean flag;
-    Boolean destructing;
-    short sys;
-    short waiting;
-    short rank;
-    double span;
-
     quickKeyCheckResult = 0;
     if (settings.windowed == 0 && settings.noHyperGamma == 0 && ignoreKeys == 0) {
         if (player->jumpTimer > 0.0f) {
@@ -205,6 +159,13 @@ void HandlePlayer(ShipObj *player)
     }
     if (cheatsActive == 0)
         gameFrozen = 0;
+}
+
+/* tractor beam: drops a lost tractoring ship, pulls the velocity toward its velocity */
+static void PlayerTractorBeam(ShipObj *player)
+{
+    FloatPoint pos;
+    float step;
 
     if (player->tractorShip != -1) {
         if (player->tractorShip != player->index) {
@@ -238,8 +199,11 @@ void HandlePlayer(ShipObj *player)
         if (ReadTick() >= player->tractorTick + 0x1e)
             player->tractorShip = -1;
     }
+}
 
-    heading = player->heading;
+/* clears the turned-this-frame flag, wraps the position, drops a target that is gone, dying, emerging or cloaked */
+static void PlayerWrapAndCheckTarget(ShipObj *player)
+{
     playerTurnedThisFrame = 0;
     if (player->jumpTimer <= 0.0f)
         WrapPlayerPosition();
@@ -254,7 +218,11 @@ void HandlePlayer(ShipObj *player)
             statusRedraw[kRedrawTarg] = 1;
         }
     }
+}
 
+/* player gone: death countdown, bomb description, pause, revive cheat; true ends the frame */
+static bool PlayerDead(ShipObj *player)
+{
     if (!player->active) {
         player->targetShip = -1;
         player->targetStellar = -1;
@@ -282,8 +250,16 @@ void HandlePlayer(ShipObj *player)
             player->selectedWeapon = -1;
             RedrawStatus(1);
         }
-        return;
+        return true;
     }
+    return false;
+}
+
+/* disabled and dying state: jump abort, drift, self repair, point defence */
+static void PlayerDisabledState(ShipObj *player, Boolean &disabled, Boolean &dying)
+{
+    float step;
+    double span;
 
     disabled = player->IsDisabled();
     if (disabled && player->jumpTimer > 0.0f) {
@@ -331,8 +307,11 @@ void HandlePlayer(ShipObj *player)
     }
     if (!disabled)
         HandleShipPointDefense(player);
+}
 
-    turned = 0;
+/* red alert when a threat appears, checked every 60 frames */
+static void PlayerThreatAlert(ShipObj *player)
+{
     if (frameCounter % 60 == 0) {
         oldPlayerThreatened = playerThreatened;
         playerThreatened = IsPlayerThreatened();
@@ -343,6 +322,15 @@ void HandlePlayer(ShipObj *player)
                 alertSpritePending = 0x1e;
         }
     }
+}
+
+/* escape pod flight and the restart when it runs out; true ends the frame */
+static bool PlayerEscapePod(ShipObj *player)
+{
+    short i;
+    short j;
+    short n;
+    Boolean ok;
 
     if (player->escapePods > 0) {
         AdjustedAccel(player->heading,
@@ -458,8 +446,15 @@ void HandlePlayer(ShipObj *player)
             }
             FadeScreenIn();
         }
-        return;
+        return true;
     }
+    return false;
+}
+
+/* sabotage bomb countdown: destroys or disables the ship */
+static void PlayerSabotage(ShipObj *player, Boolean dying)
+{
+    std::string msg;
 
     if (playerSabotaged != 0) {
         if (sabotageCounter < 0.0f) {
@@ -529,6 +524,14 @@ void HandlePlayer(ShipObj *player)
     } else {
         sabotageCounter = 0;
     }
+}
+
+/* nav keys: clear target, hyperspace target, next system, nav presets */
+static void PlayerNavKeys(ShipObj *player, short &n)
+{
+    short i;
+    short j;
+    Boolean linked[kNavSlots];
 
     if (QuickKeyCheck(keyPrefs.clearTarget) && (KeyCheck(kScanLAlt) || KeyCheck(kScanRAlt))) {
         keyPressedThisFrame = 1;
@@ -649,6 +652,19 @@ void HandlePlayer(ShipObj *player)
             navDefaultSelectFlag = 0;
         }
     }
+}
+
+/* next-target key; mouse clicks on the escort menu, floating map, ships and stellars */
+static void PlayerTargetSelect(ShipObj *player, short &n)
+{
+    short i;
+    short j;
+    short mapLink;
+    Point pt;
+    Rect box;
+    Rect hit;
+    Boolean targetUncloaked;
+    Boolean targetCloaked;
 
     if (QuickKeyCheck(keyPrefs.targetNext)) {
         keyPressedThisFrame = 1;
@@ -822,7 +838,11 @@ void HandlePlayer(ShipObj *player)
     } else {
         weapTargetSelectFlag = 0;
     }
+}
 
+/* map and land keys, dock approach, board and nearest-target keys */
+static void PlayerMapLandBoardKeys(ShipObj *player, short &n)
+{
     if (QuickKeyCheck(keyPrefs.map)) {
         keyPressedThisFrame = 1;
         if (!mapTryFlag && player->jumpTimer <= 0.0f && shipData->deathTimer <= 0.0f
@@ -901,6 +921,14 @@ void HandlePlayer(ShipObj *player)
     } else {
         weapCloseTargFlag = 0;
     }
+}
+
+/* fire keys, secondary weapon selection, reload timers */
+static void PlayerWeapons(ShipObj *player, Boolean disabled, short &n)
+{
+    short i;
+    short j;
+    Boolean ok;
 
     if (player->jumpTimer <= 0.0f && QuickKeyCheck(keyPrefs.firePrimary)
             && player->aiTimer <= 0.0f && !disabled) {
@@ -998,6 +1026,15 @@ void HandlePlayer(ShipObj *player)
                 player->weap[i].reloadTimer = 1.0f;
         }
     }
+}
+
+/* face-target key; heading toward the hyperspace link while jumping */
+static void PlayerFaceTarget(ShipObj *player, Boolean &turned)
+{
+    short j;
+    FloatPoint pos;
+    FloatPoint dest;
+    FloatPoint origin;
 
     if (QuickKeyCheck(keyPrefs.faceTarget) && player->jumpTimer <= 0.0f) {
         keyPressedThisFrame = 1;
@@ -1040,6 +1077,20 @@ void HandlePlayer(ShipObj *player)
             turned = 1;
         }
     }
+}
+
+/* jump key: distance and fuel checks, fighter fuel warning, slow down, jump start; returns jumping */
+static Boolean PlayerJumpKey(ShipObj *player, Boolean disabled, Boolean &turned, short &n)
+{
+    Boolean jumping;
+    short i;
+    float turnLim;
+    std::string msg;
+    FloatPoint pos;
+    FloatPoint dest;
+    FloatPoint origin;
+    Boolean canJump;
+    short waiting;
 
     jumping = 0;
     if ((QuickKeyCheck(keyPrefs.jump) && !player->IsDisabled())
@@ -1189,6 +1240,25 @@ void HandlePlayer(ShipObj *player)
     } else {
         jumpTryFlag = 0;
     }
+    return jumping;
+}
+
+/* jump in progress: warp out, arrival in the new system; true ends the frame */
+static bool PlayerJumpSequence(ShipObj *player, Boolean jumping, Boolean disabled)
+{
+    short i;
+    short j;
+    short n;
+    short count;
+    short days;
+    std::string msg;
+    FloatPoint pos;
+    FloatPoint dest;
+    short lost;
+    short k;
+    Boolean routeDone;
+    short sys;
+    short rank;
 
     if ((jumping || player->jumpTimer > 1.0f) && !disabled) {
         MakeEscortsHyperWithParent(player);
@@ -1383,7 +1453,7 @@ void HandlePlayer(ShipObj *player)
             SWSetPortToWindow(gSpriteWorld);
             RefreshSAT();
             DoEscortPayment(days);
-            return;
+            return true;
         } else if (player->jumpTimer > 30.0f) {
             if ((ReadTick() - player->jumpTick)
                     > WarpSoundDuration()
@@ -1401,6 +1471,17 @@ void HandlePlayer(ShipObj *player)
     } else if (-999.0f == player->jumpTimer) {
         player->jumpTimer = 0;
     }
+    return false;
+}
+
+/* reverse, turning, afterburner key, acceleration, banking, engine glow */
+static void PlayerSteeringAndThrust(ShipObj *player, Boolean disabled, Boolean &turned)
+{
+    short turnStep;
+    float angle;
+    FloatPoint pos;
+    FloatPoint dest;
+    short dir;
 
     if (QuickKeyCheck(keyPrefs.reverse) && player->jumpTimer <= 0.0f && !disabled) {
         keyPressedThisFrame = 1;
@@ -1518,6 +1599,20 @@ void HandlePlayer(ShipObj *player)
         if (player->engineGlow > 0)
             player->engineGlow -= 1;
     }
+}
+
+/* regen, hyperspace acceleration, movement, jump-distance beep, timers, ionization, fuel */
+static void PlayerMoveAndRecharge(ShipObj *player, Boolean disabled, Boolean dying, short &n)
+{
+    short i;
+    short fuelCap;
+    float turnLim;
+    FloatPoint pos;
+    FloatPoint dest;
+    FloatPoint origin;
+    float step;
+    Boolean canJump;
+    double span;
 
     if (player->shield < player->ShieldCapacity() && !dying && !disabled) {
         player->shield = player->shield + player->ShieldRechargeRate() * gSpeedMult;
@@ -1662,6 +1757,12 @@ void HandlePlayer(ShipObj *player)
         player->fuel = fuelCap;
     if (player->fuel < 0.0f)
         player->fuel = 0;
+}
+
+/* explore, ammo refill and F7 AI cheat keys */
+static void PlayerExploreAndAmmoCheats(ShipObj *player)
+{
+    short i;
 
     if (CheckDebugKeys(kScanF10) && cheatsActive) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
@@ -1724,6 +1825,20 @@ void HandlePlayer(ShipObj *player)
         else
             AIMakeShipAttackPlayer(&shipData[player->targetShip]);
     }
+}
+
+/* dismiss key, escort menu, escort orders and order resets */
+static void PlayerEscortKeys(short &n)
+{
+    short i;
+    short j;
+    short count;
+    Boolean ok;
+    short groupCount[4];
+    short k;
+    Boolean found;
+    Boolean escortHit;
+    Boolean flag;
 
     escortHit = 0;
     if (QuickKeyCheck(keyPrefs.dismiss)) {
@@ -1903,6 +2018,13 @@ void HandlePlayer(ShipObj *player)
                 ShowEscortMenu();
         }
     }
+}
+
+/* FPS and speed-up toggles, cheat keys, credits clamp */
+static void PlayerToggleAndCheatKeys(ShipObj *player)
+{
+    short i;
+    std::string msg;
 
     if (QuickKeyCheck(keyPrefs.toggleFPS)) {
         if (!framerateFlag) {
@@ -2147,6 +2269,15 @@ void HandlePlayer(ShipObj *player)
         player->credits = 0x5fffffff;
         statusRedraw[kRedrawCargo] = 1;
     }
+}
+
+/* formation positions, death klaxon, ejection to an escape ship or pod */
+static void PlayerFormationAndEject(ShipObj *player, Boolean disabled, Boolean dying, short &n)
+{
+    short i;
+    Boolean ok;
+    std::string msg;
+
     if (player->hasFormation)
         AICalcFormationPositions(player, 0);
     if (player->deathTimer > 1.0f) {
@@ -2283,6 +2414,15 @@ void HandlePlayer(ShipObj *player)
             }
         }
     }
+}
+
+/* afterburner thrust and fuel; max velocity decay when it is off */
+static void PlayerAfterburner(ShipObj *player)
+{
+    float turnLim;
+    FloatPoint pos;
+    FloatPoint dest;
+    float step;
 
     if (abOn) {
         if (!gravitySourcesPresent) {
@@ -2335,6 +2475,14 @@ void HandlePlayer(ShipObj *player)
         if (player->engineGlow > 0x18)
             player->engineGlow -= 1;
     }
+}
+
+/* cargo jettison and the self-destruct countdown */
+static void PlayerJettisonAndSelfDestruct(ShipObj *player, Boolean dying)
+{
+    short i;
+    std::string msg;
+    Boolean destructing;
 
     if (CmdKeyQuick()
             && QuickKeyCheck(keyPrefs.jettison)) {
@@ -2408,7 +2556,11 @@ void HandlePlayer(ShipObj *player)
         }
         destructCount = -1.0f;
     }
+}
 
+/* player info, hail and mission keys; cloak key and cloak upkeep */
+static void PlayerDialogAndCloakKeys(ShipObj *player, Boolean disabled, Boolean dying, short &n)
+{
     if (QuickKeyCheck(keyPrefs.playerInfo)) {
         keyPressedThisFrame = 1;
         if (!playerInfoFlag) {
@@ -2507,6 +2659,16 @@ void HandlePlayer(ShipObj *player)
             }
         }
     }
+}
+
+/* tribbles and perishable cargo, newbie hints */
+static void PlayerPeriodicChecks(ShipObj *player, Boolean disabled, short &n)
+{
+    short i;
+    float dist;
+    std::string msg;
+    char keyName[256];
+    FloatPoint origin;
 
     if (playerHasTribbles && frameCounter % 250 == 0) {
         n = TotalFleetHolds() - TotalCargo(player);
@@ -2519,6 +2681,8 @@ void HandlePlayer(ShipObj *player)
             }
         }
     }
+    // BUG: `n' is set here only by the tribbles block; without tribbles the test reads what an earlier phase
+    // left in it, or an unset value when no phase wrote it this frame -- UB, needs a guard
     if (playerHasPerishableJunk && frameCounter % 250 == 0) {
         for (i = 0; i < kMaxJunks; i++) {
             if ((junkData[i].flags & kJunkPerishable) && junkData[i].held > 0) {
@@ -2581,6 +2745,12 @@ void HandlePlayer(ShipObj *player)
             }
         }
     }
+}
+
+/* end-of-frame clamps, explore level, turned flag, floating map zoom keys */
+static void PlayerEndOfFrame(ShipObj *player, float heading)
+{
+    short n;
 
     if (player->credits < 0) {
         player->credits = 0;
@@ -2622,6 +2792,50 @@ void HandlePlayer(ShipObj *player)
         else
             mapZoomFlag = 0;
     }
+}
+
+// FUNCTION: EVNOVA 0x0044aa70
+// MAC: _HandlePlayer i386 0x00068390 ppc 0x00070b28
+void HandlePlayer(ShipObj *player)
+{
+    Boolean jumping;
+    Boolean turned;
+    Boolean disabled;
+    Boolean dying;
+    float heading;
+    short n;    /* shared scratch: see the perishable cargo check in PlayerPeriodicChecks */
+
+    PlayerFrameStart(player);
+    PlayerTractorBeam(player);
+    heading = player->heading;
+    PlayerWrapAndCheckTarget(player);
+    if (PlayerDead(player))
+        return;
+    PlayerDisabledState(player, disabled, dying);
+    turned = 0;
+    PlayerThreatAlert(player);
+    if (PlayerEscapePod(player))
+        return;
+    PlayerSabotage(player, dying);
+    PlayerNavKeys(player, n);
+    PlayerTargetSelect(player, n);
+    PlayerMapLandBoardKeys(player, n);
+    PlayerWeapons(player, disabled, n);
+    PlayerFaceTarget(player, turned);
+    jumping = PlayerJumpKey(player, disabled, turned, n);
+    if (PlayerJumpSequence(player, jumping, disabled))
+        return;
+    PlayerSteeringAndThrust(player, disabled, turned);
+    PlayerMoveAndRecharge(player, disabled, dying, n);
+    PlayerExploreAndAmmoCheats(player);
+    PlayerEscortKeys(n);
+    PlayerToggleAndCheatKeys(player);
+    PlayerFormationAndEject(player, disabled, dying, n);
+    PlayerAfterburner(player);
+    PlayerJettisonAndSelfDestruct(player, dying);
+    PlayerDialogAndCloakKeys(player, disabled, dying, n);
+    PlayerPeriodicChecks(player, disabled, n);
+    PlayerEndOfFrame(player, heading);
 }
 
 #define kCommRefused        0x35
