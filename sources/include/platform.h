@@ -41,19 +41,35 @@ extern void PlatImageDestroy(PlatImage *image);
    - kPlatDrawSilhouette: the image's shape in `color' times mod[c] / 255, added
    - kPlatDrawFill: the rect in `color', mixed by `alpha'
    - kPlatDrawTriangles: `count' vertices from `first', each its own colour and alpha, mixed
+   - kPlatDrawOr: the image through the original renderer's 16-bit blend (PlatOrBlend); only while
+     PlatVideoOrBlend()
    Colours are x1r5g5b5, shown through the brightness. */
 #define kPlatDrawImage          0
 #define kPlatDrawSilhouette     1
 #define kPlatDrawFill           2
 #define kPlatDrawTriangles      3
+#define kPlatDrawOr             4
 #define kPlatBlendMix           0
 #define kPlatBlendAdd           1
+/* On 5-bit channels, each opaque pixel of the image (src) over the view (dst) becomes
+       Scale(s, weight[c]) | over[c] | Scale(dst, keep)
+   where s = Scale(src, own) | Scale(tint, 32 - own) when own < 32, else src, and Scale(v, k) = (v * k >> 5) & 31
+   with only k's low 10 bits counting, as in the 32-bit pair math. Each pixel is blended as the low one of a
+   pair; the high one differs only for factors that wrapped below 0. */
+typedef struct PlatOrBlend {
+    unsigned char weight[3];        /* 0..32 */
+    unsigned char over[3];          /* 0..31 */
+    unsigned char own;              /* 0..32 */
+    unsigned short tint;            /* x1r5g5b5 */
+    unsigned short keep;
+} PlatOrBlend;
 typedef struct PlatDraw {
     unsigned char kind;
     unsigned char blend;
     unsigned char alpha;
     unsigned char mod[3];
     unsigned short color;
+    PlatOrBlend orBlend;
     PlatImage *image;
     float x;
     float y;
@@ -102,6 +118,10 @@ extern void PlatVideoSetScaling(int filter, int wholePixel);
 /* The frame's brightness: a colour channel c (0..1) is shown as c to the power `exponent'; 1 = as drawn.
    Can be called before PlatVideoOpen. */
 extern void PlatVideoSetBrightness(double exponent);
+/* kPlatDrawOr asked for, before the first PlatVideoOpen: that makes the renderer, SDL's GPU renderer for it.
+   PlatVideoOrBlend: 1 while kPlatDrawOr is drawn, 0 when it cannot be (no such renderer or shader). */
+extern void PlatVideoAskOrBlend(int on);
+extern int PlatVideoOrBlend(void);
 /* The frame blended toward white by level of 256 in each 5-bit channel, as CGDisplayFade's
    kCGDisplayBlendSolidColor; 0 = as drawn. Shown from the next frame on. */
 extern void PlatVideoSetWhite(unsigned level);

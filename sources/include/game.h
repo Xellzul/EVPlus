@@ -164,6 +164,7 @@ extern void ApplyUIScale(void);
 extern void ApplyDisplaySettings(void);
 extern void ApplyPilotGameSize(void);
 extern short GameSizeInUse(void);           /* the game size the view has (Preferences may hold a later one) */
+extern Boolean OrBlendInUse(void);          /* the blending the renderer was made for (a change needs a restart) */
 extern void ApplyDisplayScaling(void);
 extern void ApplyBrightness(void);
 extern short menuFontID;

@@ -162,9 +162,34 @@ uint32_t Field(uint32_t pair, int shift)
     return pair >> shift & 0x1f;
 }
 
-/* A sprite as SpriteBlend::Of says, added: its pixels times each channel's weight -- after
-   the tint (murk, ions, gate white) has taken its share -- over the view kept times the translucency; the
-   tint and a weight over 32 come as the sprite's silhouette in their colour. */
+/* A sprite through the original renderer's blend, one draw: a plain copy keeps nothing of the view, AddOver
+   all of it, Translucent the blend's own factors. */
+void OrSprite(PlatImage *image, const SpriteBlend &blend, const Rect &place)
+{
+    PlatDraw &d = NewDraw(kPlatDrawOr, kPlatBlendMix, image);
+    PlatOrBlend &o = d.orBlend;
+
+    Place(d, place);
+    o.weight[0] = o.weight[1] = o.weight[2] = kLevels;
+    o.own = kLevels;
+    o.keep = blend.kind == SpriteBlend::Kind::AddOver ? kLevels : 0;
+    if (blend.kind != SpriteBlend::Kind::Translucent)
+        return;
+    o.weight[0] = (unsigned char)blend.alphaR;
+    o.weight[1] = (unsigned char)blend.alphaG;
+    o.weight[2] = (unsigned char)blend.alphaB;
+    o.over[0] = (unsigned char)Field(blend.overR, 10);
+    o.over[1] = (unsigned char)Field(blend.overG, 5);
+    o.over[2] = (unsigned char)Field(blend.overB, 0);
+    o.own = (unsigned char)(blend.overBias < kLevels ? blend.overBias : kLevels);
+    o.tint = (unsigned short)(blend.biasColor & 0x7fff);
+    o.keep = (unsigned short)blend.alpha;
+}
+
+/* A sprite as SpriteBlend::Of says. Through the original blend when the platform draws it, else added: its
+   pixels times each channel's weight -- after the tint (murk, ions, gate white) has taken its share -- over the
+   view kept times the translucency; the tint and a weight over 32 come as the sprite's silhouette in their
+   colour. */
 void Sprite(const SpriteRec &sprite, const Rect &place)
 {
     PlatImage *image = SpriteImage(sprite.curFrameP);
@@ -172,6 +197,10 @@ void Sprite(const SpriteRec &sprite, const Rect &place)
 
     if (image == NULL || blend.kind == SpriteBlend::Kind::Hidden)
         return;
+    if (PlatVideoOrBlend() && building == &draws) {     /* the view's; the interface layer is added over it */
+        OrSprite(image, blend, place);
+        return;
+    }
     PlatDraw &d = NewDraw(kPlatDrawImage, blend.kind == SpriteBlend::Kind::AddOver ? kPlatBlendAdd : kPlatBlendMix,
                           image);
     Place(d, place);

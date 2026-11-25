@@ -196,6 +196,7 @@ PrefsDialog::PrefsDialog()
     check(graphics.check("Smoke Trails"), Flag(settings.noDebris), true);
     check(graphics.check("Parallax Starfield"), Flag(settings.parallaxStars));
     check(graphics.check("Hyperspace Effects"), Flag(settings.noHyperGamma), true);
+    check(graphics.check("Original Blending"), Flag(settings.orBlend));
     stepper(graphics.stepper("Brightness:"),
         [](PrefsDialog &, int direction) {
             short gamma = settings.gamma + direction;
@@ -338,7 +339,7 @@ void PrefsDialog::show()
 
 bool PrefsDialog::needsRestart() const
 {
-    return gameLoaded != 0 && SpriteSettings::Now() != savedSprites;
+    return (gameLoaded != 0 && SpriteSettings::Now() != savedSprites) || settings.orBlend != OrBlendInUse();
 }
 
 bool PrefsDialog::handle(short item)

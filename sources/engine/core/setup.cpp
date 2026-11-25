@@ -785,15 +785,17 @@ void ShowMenuArt(const Rect &area, bool onlyChanged)
     CopyBits(GWorldContainerBits(&menuArtPort), GWorldContainerBits(&loadPort), &shown, &shown, 0, NULL);
 }
 
-/* the resolution, game size and UI scale the game runs at */
+/* the resolution, game size, UI scale and blending the game runs at */
 static struct {
     Resolution resolution;
     short gameSize;
     double uiScale;
+    Boolean orBlend;
 } applied;
 
 /* The game is drawn at the preferences' resolution (0 = the desktop's) and shows the game size's space. The
-   UI is scaled to look as on a 1024 x 768 screen, times the UI scale; the main menu without the UI scale. */
+   UI is scaled to look as on a 1024 x 768 screen, times the UI scale; the main menu without the UI scale. The
+   renderer is made here, for the original blending when it is on. */
 // FUNCTION: EVNOVA 0x004b45e0
 void SetupMonitor(void)
 {
@@ -801,11 +803,15 @@ void SetupMonitor(void)
 
     applied.resolution = resolution;
     applied.gameSize = settings.gameSize;
+    applied.orBlend = settings.orBlend;
     ApplyUIScale();
     PixelSize draw = DrawSize(resolution);
     ApplyDisplayScaling();
+    PlatVideoAskOrBlend(settings.orBlend);
     SetDisplayToSize(draw.width, draw.height, kVideoDepth,
                      (settings.runInWindow != 0 ? 0 : kVideoFullScreen) | kVideoAlways);
+    if (settings.orBlend != 0 && PlatVideoOrBlend() == 0)
+        crashlog("original blending not available here: sprites are added");
 }
 
 /* The scales and sizes for a UI scale at a resolution and game size, the UI scale kept to what the Preferences
@@ -849,6 +855,11 @@ void ApplyUIScale(void)
 short GameSizeInUse(void)
 {
     return applied.gameSize;
+}
+
+Boolean OrBlendInUse(void)
+{
+    return applied.orBlend;
 }
 
 /* A resolution, game size and the preferences' UI scale, to the running game (from the main menu, no dialog

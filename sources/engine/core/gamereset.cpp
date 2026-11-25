@@ -664,6 +664,7 @@ void SetDefaultPrefs(void)
     settings.asteroidScaling = 1;
     settings.mapPrices = 0;
     settings.mapDisasters = 0;
+    settings.orBlend = 0;
     settings.uiScale = 1.0;
     ToPascal("", lastPlayerName);
 }

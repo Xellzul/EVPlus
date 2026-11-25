@@ -2454,6 +2454,7 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->runInWindow = settings.runInWindow != 0;
     rec->gameSize = settings.gameSize;
     rec->wheelZoom = settings.wheelZoom != 0;
+    rec->orBlend = settings.orBlend != 0;
     rec->uiScale = settings.uiScale;
     KeyPrefsToSlotTable();
     for (i = 0; i <= 35; i++)
@@ -2501,6 +2502,7 @@ static void RecordToPrefs(const PrefsRecord *rec)
     if (settings.gameSize < kMinGameSize || settings.gameSize > kMaxGameSize)
         settings.gameSize = kDefaultGameSize;
     settings.wheelZoom = rec->wheelZoom != 0;
+    settings.orBlend = rec->orBlend != 0;
     settings.uiScale = rec->uiScale > 0 ? rec->uiScale : 1.0;
     SetDefaultKeys();
     for (i = 0; i <= 35; i++)

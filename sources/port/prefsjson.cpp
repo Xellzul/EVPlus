@@ -37,6 +37,7 @@ static const PrefsJsonField kPrefsJsonFields[] = {
     { "runInWindow",    offsetof(PrefsRecord, runInWindow) },
     { "gameSize",       offsetof(PrefsRecord, gameSize) },
     { "wheelZoom",      offsetof(PrefsRecord, wheelZoom) },
+    { "orBlend",        offsetof(PrefsRecord, orBlend) },
 };
 #define kPrefsJsonFieldCount (sizeof(kPrefsJsonFields) / sizeof(kPrefsJsonFields[0]))
 
