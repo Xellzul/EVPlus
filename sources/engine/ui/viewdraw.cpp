@@ -26,6 +26,15 @@ struct OverlayImage {
 std::unordered_map<const SWFrameRec *, OverlayImage> overlayImages;
 std::vector<uint16_t> scratchPixels;
 std::vector<uint8_t> scratchAlpha;
+/* A flash covers every frame taken for kFlashMicros from the first: a single frame can be gone before the
+   display shows it. Its fill is laid over the draws at Take and lifted again at the next Take. */
+constexpr uint64_t kFlashMicros = 50000;
+constexpr size_t kNoFlashDraw = (size_t)-1;
+bool flashing;
+bool flashTaken;
+uint64_t flashStart;
+uint16_t flashColor;
+size_t flashDraw = kNoFlashDraw;
 
 constexpr int kLevels = 32;         /* the game's alpha and weight steps */
 
@@ -324,6 +333,7 @@ void DrawWorld(SpriteWorldRec *world)
 
     draws.clear();
     vertices.clear();
+    flashDraw = kNoFlashDraw;
     Background(view);
     lines.bounds = view;
     for (SpriteLayerRec *layer = world->headSpriteLayerP; layer != NULL; layer = layer->nextSpriteLayerP) {
@@ -368,6 +378,8 @@ void Clear()
 {
     draws.clear();
     vertices.clear();
+    flashDraw = kNoFlashDraw;
+    flashing = false;
     if (gSpriteWorld != NULL)
         Background(gSpriteWorld->workFrameP->frameRect);
 }
@@ -417,11 +429,25 @@ void Flash(const RGBColor &color)
 {
     RGBColor c = color;
 
-    Fill(gSpriteWorld->workFrameP->frameRect, (uint16_t)Color2Index(&c));
+    flashColor = (uint16_t)Color2Index(&c);
+    flashing = true;
+    flashTaken = false;
 }
 
 void Take(PlatVideoView &view)
 {
+    if (flashDraw < draws.size())
+        draws.resize(flashDraw);
+    flashDraw = kNoFlashDraw;
+    if (flashing && flashTaken && PlatMicroseconds() - flashStart >= kFlashMicros)
+        flashing = false;
+    if (flashing && gSpriteWorld != NULL) {
+        if (!flashTaken)
+            flashStart = PlatMicroseconds();
+        flashTaken = true;
+        flashDraw = draws.size();
+        Fill(gSpriteWorld->workFrameP->frameRect, flashColor);
+    }
     view.draws = draws.data();
     view.drawCount = (int)draws.size();
     view.vertices = vertices.data();

@@ -238,6 +238,13 @@ static Uint32 ChannelOf(Uint32 v)
     return (Uint32)(SDL_pow((double)v / kChannelTop, gExponent) * 255.0 + 0.5);
 }
 
+/* the white-out as the alpha of white laid over everything, 8 bits: the page's colours and the view's white
+   quad take the same */
+static Uint32 WhiteAlpha(void)
+{
+    return gWhite >= 256 ? 255 : gWhite;
+}
+
 static void MakeColors(void)
 {
     Uint64 start = SDL_GetTicksNS();
@@ -245,8 +252,8 @@ static void MakeColors(void)
     Uint32 c;
 
     for (c = 0; c < kChannelSteps; c++) {
-        channel[c] = ChannelOf(c + (((kChannelTop - c) * gWhite + 128) >> 8));
         gPlainChannel[c] = ChannelOf(c);
+        channel[c] = gPlainChannel[c] + ((255 - gPlainChannel[c]) * WhiteAlpha() + 127) / 255;
     }
     for (c = 0; c < kColorCount; c++)
         gColors[c] = 0xff000000u | channel[(c >> 10) & 0x1f] << 16 | channel[(c >> 5) & 0x1f] << 8 | channel[c & 0x1f];
@@ -628,7 +635,7 @@ static bool RenderView(void)
         RenderDraw(d, scratch);
     if (gWhite > 0) {
         SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, (Uint8)(gWhite >= 256 ? 255 : gWhite));
+        SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, (Uint8)WhiteAlpha());
         SDL_RenderFillRect(gRenderer, &all);
     }
     SDL_SetRenderTarget(gRenderer, NULL);

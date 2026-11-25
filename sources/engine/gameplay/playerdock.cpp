@@ -18,8 +18,8 @@
 #include "viewdraw.h"
 #include "text.h"
 
-/* The jump, hypergate and wormhole flash: the whole view white, black when the Hyperspace Effects preference
-   is off. */
+/* The jump, hypergate and wormhole flash: the view white for a moment, black when the Hyperspace Effects
+   preference is off. */
 void FlashView(void)
 {
     ViewDraw::Flash(settings.noHyperGamma != 0 ? *blackColor : *whiteColor);
@@ -199,8 +199,6 @@ short PlayerEnterHypergate(void)
             ship->accelMag = (ship->MaxSpeed() * 0.5);
             Accel(ship->heading, ship->accelMag, &ship->vel);
             FlashView();
-            Screen::ComposeView();
-            Screen::EndFrame();             /* the flash is a frame of its own */
             msg = TextF("%s %s %s %s.", IndString(kGameStrList, 0x2e).c_str(), SystName(destSyst).c_str(),
                         IndString(kGameStrList, 0x30).c_str(), DateLongText(gameTime).c_str());
             n = 0;
@@ -360,8 +358,6 @@ short PlayerEnterWormhole(void)
     ship->accelMag = ship->MaxSpeed() * 0.5;
     Accel(ship->heading, ship->accelMag, &ship->vel);
     FlashView();
-    Screen::ComposeView();
-    Screen::EndFrame();                     /* the flash is a frame of its own */
     PlaySound(warpOutSnd, 0x32, gSoundVolume, gSoundVolume);
     msg = TextF("%s %s %s %s.", IndString(kGameStrList, 0x2f).c_str(), SystName(dest).c_str(),
                 IndString(kGameStrList, 0x30).c_str(), DateLongText(gameTime).c_str());

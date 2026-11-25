@@ -3,6 +3,7 @@
 - Mac, Win, Linux 64bit builds
 - No quicktime dependency
 - Hyperspace white-out from the Mac 1.1.1 release
+- Jump flash always shows
 - Preferences dialog redone and moved to JSON
 - The interface is scaled
 - Brightness slider works live, on the whole screen
@@ -29,3 +30,4 @@
 - Plug-in mission texts: <PAY> in active-mission briefings shows 0 instead of a garbage number for missions without pay
 - NPC quadrant turrets now fire across north
 - Revive cheat (Home) only works with cheats turned on
+- Lower CPU use in flight: the frame limiter sleeps instead of busy-waiting

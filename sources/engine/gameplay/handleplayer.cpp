@@ -15,7 +15,6 @@
 #include "ships.h"
 #include "crashlog.h"
 #include "viewscale.h"
-#include "screen.h"
 #include "platform.h"
 #include "outfitmods.h"
 #include "profiler.h"
@@ -1314,8 +1313,6 @@ static bool PlayerJumpSequence(ShipObj *player, Boolean jumping, Boolean disable
             player->targetShip = -1;
             player->fuel = player->fuel - 100.0f;
             FlashView();
-            Screen::ComposeView();
-            Screen::EndFrame();             /* the flash is a frame of its own */
             PropagateMissionBitEffects();
             if (systemData[shipData->curSystem].murk < 0)
                 ClearStarfield();

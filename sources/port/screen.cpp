@@ -88,6 +88,7 @@ void ComposeView()
 void DropView()
 {
     viewFresh = false;
+    ViewDraw::Clear();
     PlatVideoDropView();
 }
 
