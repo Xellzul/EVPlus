@@ -415,7 +415,7 @@ void RefreshSAT(void)
     CopyBits((BitMapPtr)GetGWCPixMap(&loadPort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
              &box, &box, 0, 0);
-    QDFlushPortBuffer(GetWindowPort(gWind), NULL);
+    QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
 }
 
 // FUNCTION: EVNOVA 0x0046aad0

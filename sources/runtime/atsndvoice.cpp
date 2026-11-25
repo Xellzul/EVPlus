@@ -102,7 +102,9 @@ void _ST_ReapVoices(void)
     }
 }
 
+#if EVPLUS_TEST_PAGES
 void _ST_RenderVoices(float *out, float *unclamped, int frames)
 {
     PlatVoicesRender(gVoices, out, unclamped, frames);
 }
+#endif

@@ -4,8 +4,6 @@
 #include "burgerplat.h"
 #include "gameutil.h"
 
-static Word8 ExitProc;
-
 #define kExtendedSign   0x8000                   /* sign bit of the 80-bit exponent word */
 #define kExponentRebias 0x3c00                   /* 16383 - 1023: extended to double bias */
 #define kExponentMask   0x7ff

@@ -4,7 +4,6 @@
 #include "burger.h"
 
 char ErrorMsg[512];                              /* 0x0086e420 */
-Word BombFlag;                                   /* 0x008701bc */
 
 typedef struct KeyName {
     const char *name;

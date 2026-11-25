@@ -14,14 +14,12 @@
 short SWFixImageGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP)
 {
     CGrafPtr saveGWorld;
-    void *saveDevice;
     char *baseAddr;
     char *maskAddr;
     int32_t rowBytes;
     int32_t width, height;
     int32_t depth;
     int32_t x, y;
-    unsigned short transparentValue;
     PixMapPtr pictPix;
     PixMapPtr maskPix;
     short err = noErr;
@@ -39,11 +37,8 @@ short SWFixImageGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP)
     height = rectP->bottom - rectP->top;
 
     depth = GetPixDepth(pictPix);
-    ComputePixelValues(depth);
-    transparentValue = SWTransparentRGBValue;
 
     GetPort(&saveGWorld);
-    saveDevice = GetGWorldDevice(saveGWorld);
 
     baseAddr = GetPixBaseAddr(pictPix);
     maskAddr = GetPixBaseAddr(maskPix);

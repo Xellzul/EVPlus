@@ -464,7 +464,6 @@ short OfferOneMission(short mission)
 // MAC: _SingleMissionDialogUpdate i386 0x00098950 ppc 0x000a45e0
 void SingleMissionDialogUpdate(void)
 {
-    Boolean inside;
     PicHandle loaded;
     Rect r;
     short itemType;
@@ -480,13 +479,10 @@ void SingleMissionDialogUpdate(void)
     SingleMissionButtons().Draw(-1);
     if (descResourcePictId >= kFirstResourceID) {
         GetDialogItem(missionDialog, 8, &itemType, (Handle *)&item, &r);
-        inside = RectInRgn(&r, GetWindowVisRgn(FrontWindow(missionDialog)));
-        if (inside) {
-            loaded = GetPicture(descResourcePictId);
-            if (loaded != NULL) {
-                DrawPicHandle(loaded, &r);
-                QDReleaseResource(loaded);
-            }
+        loaded = GetPicture(descResourcePictId);
+        if (loaded != NULL) {
+            DrawPicHandle(loaded, &r);
+            QDReleaseResource(loaded);
         }
     }
     GetDialogItem(missionDialog, kItemBriefText, &itemType, (Handle *)&item, &r);

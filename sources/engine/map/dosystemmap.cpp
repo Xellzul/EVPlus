@@ -855,7 +855,6 @@ void MapDialogUpdate(void)
     Rect nebR;
     Rect box6;
     short st2;
-    Boolean ok;
     Boolean linked;
     float sy;
     short w, h;
@@ -887,146 +886,138 @@ void MapDialogUpdate(void)
         MapButtons().Draw(-1);
     }
     if (partialMapDialogUpdate != 0) {
-        ok = 1;
-    } else {
+        SetGWorldContainer(&loadPort);
         GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
-        ok = RectInRgn(&box, GetWindowVisRgn(FrontWindow(mapDialog)));
+    } else {
+        View::SetPortToUIWork();
+        PenSize(1, 1);
+        GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
     }
-    if (ok != 0) {
-        if (partialMapDialogUpdate != 0) {
-            SetGWorldContainer(&loadPort);
-            GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
-        } else {
-            View::SetPortToUIWork();
-            PenSize(1, 1);
-            GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
-        }
-        w = box.right - box.left;
-        h = box.bottom - box.top;
-        ForeColor(blackColor);
-        PaintRect(&box);
-        if (partialMapDialogUpdate == 0 && settings.showMapBorders != 0) {
-            View::SetPortToUIWork();
-            GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &r2);
-            DrawMapInfluence(r2);
-        }
-        TextFont(smallTextFont);
+    w = box.right - box.left;
+    h = box.bottom - box.top;
+    ForeColor(blackColor);
+    PaintRect(&box);
+    if (partialMapDialogUpdate == 0 && settings.showMapBorders != 0) {
+        View::SetPortToUIWork();
+        GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &r2);
+        DrawMapInfluence(r2);
+    }
+    TextFont(smallTextFont);
+    TextSize(smallTextSize - 2);
+    if (mapZoom >= 1.1)
         TextSize(smallTextSize - 2);
-        if (mapZoom >= 1.1)
-            TextSize(smallTextSize - 2);
-        else if (mapZoom >= 0.9)
-            TextSize(smallTextSize);
-        else
-            TextSize(smallTextSize);
-        for (i = 0; i < kMaxNebulae; i++) {
-            if (nebulaData[i].loaded != 0 && nebulaData[i].explored != 0) {
-                nebR.left = (box.left + w / 2
-                                    + nebulaData[i].xPos / (float)mapZoom
-                                    - temp / mapZoom);
-                nebR.top = (box.top + h / 2
-                                   + nebulaData[i].yPos / (float)mapZoom
-                                   - savedY / mapZoom);
-                nebR.right = (nebR.left
-                                     + nebulaData[i].width / (float)mapZoom);
-                nebR.bottom = (nebR.top
-                                      + nebulaData[i].height / (float)mapZoom);
-                if (SectRect(&nebR, &box, &box6)) {
-                    fit = 0;
-                    for (j = 0; j < 7; j++) {
-                        if (nebulaPic[i][j] != 0) {
-                            QDGetPictureBounds(nebulaPic[i][j], &r2);
-                            fit = j;
-                            if (r2.right - r2.left >= nebR.right - nebR.left
-                                    || r2.bottom - r2.top >= nebR.bottom - nebR.top)
-                                break;
-                        }
+    else if (mapZoom >= 0.9)
+        TextSize(smallTextSize);
+    else
+        TextSize(smallTextSize);
+    for (i = 0; i < kMaxNebulae; i++) {
+        if (nebulaData[i].loaded != 0 && nebulaData[i].explored != 0) {
+            nebR.left = (box.left + w / 2
+                                + nebulaData[i].xPos / (float)mapZoom
+                                - temp / mapZoom);
+            nebR.top = (box.top + h / 2
+                               + nebulaData[i].yPos / (float)mapZoom
+                               - savedY / mapZoom);
+            nebR.right = (nebR.left
+                                 + nebulaData[i].width / (float)mapZoom);
+            nebR.bottom = (nebR.top
+                                  + nebulaData[i].height / (float)mapZoom);
+            if (SectRect(&nebR, &box, &box6)) {
+                fit = 0;
+                for (j = 0; j < 7; j++) {
+                    if (nebulaPic[i][j] != 0) {
+                        QDGetPictureBounds(nebulaPic[i][j], &r2);
+                        fit = j;
+                        if (r2.right - r2.left >= nebR.right - nebR.left
+                                || r2.bottom - r2.top >= nebR.bottom - nebR.top)
+                            break;
                     }
-                    if (nebulaPic[i][fit] != 0) {
-                        SectRect(&box, &nebR, &r2);
-                        if (partialMapDialogUpdate != 0) {
-                            View::SetPortToUIWork();
-                            ForeColor(blackColor);
-                            DrawPicHandle(nebulaPic[i][fit], &nebR);
-                            SetGWorldContainer(&loadPort);
-                            ForeColor(blackColor);
-                            CopyBits(GetPortPixMapBits(
-                                         View::UIWork()->framePort),
-                                     (BitMapPtr)GWorldContainerBits(&loadPort),
-                                     &r2, &r2, 0, 0);
-                        } else {
-                            View::SetPortToUIBack();
-                            ForeColor(blackColor);
-                            DrawPicHandle(nebulaPic[i][fit], &nebR);
-                            CopyBits(GetPortPixMapBits(
-                                         View::UIBack()->framePort),
-                                     GetPortPixMapBits(
-                                         View::UIWork()->framePort),
-                                     &r2, &r2, 0x25, 0);
-                            View::SetPortToUIWork();
-                            ForeColor(blackColor);
-                        }
+                }
+                if (nebulaPic[i][fit] != 0) {
+                    SectRect(&box, &nebR, &r2);
+                    if (partialMapDialogUpdate != 0) {
+                        View::SetPortToUIWork();
+                        ForeColor(blackColor);
+                        DrawPicHandle(nebulaPic[i][fit], &nebR);
+                        SetGWorldContainer(&loadPort);
+                        ForeColor(blackColor);
+                        CopyBits(GetPortPixMapBits(
+                                     View::UIWork()->framePort),
+                                 (BitMapPtr)GWorldContainerBits(&loadPort),
+                                 &r2, &r2, 0, 0);
+                    } else {
+                        View::SetPortToUIBack();
+                        ForeColor(blackColor);
+                        DrawPicHandle(nebulaPic[i][fit], &nebR);
+                        CopyBits(GetPortPixMapBits(
+                                     View::UIBack()->framePort),
+                                 GetPortPixMapBits(
+                                     View::UIWork()->framePort),
+                                 &r2, &r2, 0x25, 0);
+                        View::SetPortToUIWork();
+                        ForeColor(blackColor);
                     }
                 }
             }
         }
-        DrawMap(box);
-        if (selSystem != -1) {
-            sy = systemData[selSystem].pos.v;
-            r2.left = (box.left + w / 2
-                              + (float)systemData[selSystem].pos.h / mapZoom
-                              - temp / mapZoom);
-            r2.top = (box.top + h / 2
-                             + sy / mapZoom
-                             - savedY / mapZoom);
-            r2.right = r2.left;
-            r2.bottom = r2.top;
-            if (mapZoom <= 0.5)
-                InsetRect(&r2, -8, -8);
-            else
-                InsetRect(&r2, -6, -6);
-            RGBForeColor(&brightGreen);
-            PenSize(1, 1);
-            MoveTo(r2.left + 1, r2.top);
-            LineTo(r2.left + 4, r2.top);
-            MoveTo(r2.left + 1, r2.bottom);
-            LineTo(r2.left + 4, r2.bottom);
-            MoveTo(r2.right - 1, r2.top);
-            LineTo(r2.right - 4, r2.top);
-            MoveTo(r2.right - 1, r2.bottom);
-            LineTo(r2.right - 4, r2.bottom);
-            MoveTo(r2.left, r2.top + 1);
-            LineTo(r2.left, r2.top + 4);
-            MoveTo(r2.left, r2.bottom - 1);
-            LineTo(r2.left, r2.bottom - 4);
-            MoveTo(r2.right, r2.top + 1);
-            LineTo(r2.right, r2.top + 4);
-            MoveTo(r2.right, r2.bottom - 1);
-            LineTo(r2.right, r2.bottom - 4);
-            ForeColor(blackColor);
-        }
-        ForeColor(whiteColor);
-        for (i = 0; i < kMaxSystems; i++) {
-            if (systemData[i].loaded != 0 && systemData[i].exploreLevel > 0
-                && (mapZoom <= 1.1 || i == selSystem)) {
-                MoveTo((box.left + w / 2 + systemData[i].pos.h / mapZoom
-                               - temp / mapZoom + 7.0),
-                       (box.top + h / 2 + systemData[i].pos.v / mapZoom
-                               - savedY / mapZoom + 4.0));
-                DrawCString(SystName(i));
-            }
-        }
+    }
+    DrawMap(box);
+    if (selSystem != -1) {
+        sy = systemData[selSystem].pos.v;
+        r2.left = (box.left + w / 2
+                          + (float)systemData[selSystem].pos.h / mapZoom
+                          - temp / mapZoom);
+        r2.top = (box.top + h / 2
+                         + sy / mapZoom
+                         - savedY / mapZoom);
+        r2.right = r2.left;
+        r2.bottom = r2.top;
+        if (mapZoom <= 0.5)
+            InsetRect(&r2, -8, -8);
+        else
+            InsetRect(&r2, -6, -6);
+        RGBForeColor(&brightGreen);
+        PenSize(1, 1);
+        MoveTo(r2.left + 1, r2.top);
+        LineTo(r2.left + 4, r2.top);
+        MoveTo(r2.left + 1, r2.bottom);
+        LineTo(r2.left + 4, r2.bottom);
+        MoveTo(r2.right - 1, r2.top);
+        LineTo(r2.right - 4, r2.top);
+        MoveTo(r2.right - 1, r2.bottom);
+        LineTo(r2.right - 4, r2.bottom);
+        MoveTo(r2.left, r2.top + 1);
+        LineTo(r2.left, r2.top + 4);
+        MoveTo(r2.left, r2.bottom - 1);
+        LineTo(r2.left, r2.bottom - 4);
+        MoveTo(r2.right, r2.top + 1);
+        LineTo(r2.right, r2.top + 4);
+        MoveTo(r2.right, r2.bottom - 1);
+        LineTo(r2.right, r2.bottom - 4);
         ForeColor(blackColor);
-        didUpdateMap = 1;
-        if (partialMapDialogUpdate != 0) {
-            CopyLoadPortToDialog(mapDialog, box);
-        } else {
-            SetGWorldContainer(&loadPort);
-            ForeColor(blackColor);
-            CopyBits(GetPortPixMapBits(
-                         View::UIWork()->framePort),
-                     (BitMapPtr)GWorldContainerBits(&loadPort),
-                     &box, &box, 0, 0);
+    }
+    ForeColor(whiteColor);
+    for (i = 0; i < kMaxSystems; i++) {
+        if (systemData[i].loaded != 0 && systemData[i].exploreLevel > 0
+            && (mapZoom <= 1.1 || i == selSystem)) {
+            MoveTo((box.left + w / 2 + systemData[i].pos.h / mapZoom
+                           - temp / mapZoom + 7.0),
+                   (box.top + h / 2 + systemData[i].pos.v / mapZoom
+                           - savedY / mapZoom + 4.0));
+            DrawCString(SystName(i));
         }
+    }
+    ForeColor(blackColor);
+    didUpdateMap = 1;
+    if (partialMapDialogUpdate != 0) {
+        CopyLoadPortToDialog(mapDialog, box);
+    } else {
+        SetGWorldContainer(&loadPort);
+        ForeColor(blackColor);
+        CopyBits(GetPortPixMapBits(
+                     View::UIWork()->framePort),
+                 (BitMapPtr)GWorldContainerBits(&loadPort),
+                 &box, &box, 0, 0);
     }
     if (partialMapDialogUpdate == 0) {
         GetDialogItem(mapDialog, kMapInfoItem,&itemType, &item, &box);

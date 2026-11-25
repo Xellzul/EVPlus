@@ -33,14 +33,12 @@ extern void FadeScreenOut(void);
 extern short FindActiveCoLocatedSystem(short sys);
 extern short FindNearestStellar(ShipObj *ship);
 extern short FindNearestThreatToPlayer(void);
-extern int32_t FixedMultiply(int32_t a, int32_t b);
 extern void HandleStatus(void);
 extern void HandleStellarSystemVisibility(void);
 extern void SetupDialogs(void);
 extern void InitStatus(void);
 extern void MapDialogUpdate(void);
 extern float RandomSkillLevel(short type);
-extern uint32_t ReadTickMilliseconds(void);
 extern void RecalcAllMapInfluence(Rect *r);
 extern void RecalcMapInfluence(int32_t left, int32_t top, int32_t right, int32_t bottom,
                                Rect *r);

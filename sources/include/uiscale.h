@@ -48,9 +48,11 @@ private:
     int logicalY;
 };
 
+#if EVPLUS_TEST_PAGES
 /* An offscreen port made at its logical size (NewGWorld) gets device pixels for the scale; its bounds stay
    logical. A scale of 1 leaves it as it is. */
 void ScalePortPixels(CGrafPtr port, double scale);
+#endif
 
 /* The UI scale in use: device pixels per logical pixel on UI pixel maps; inside a MenuScale the menu scale.
    1 = the interface is not scaled. */

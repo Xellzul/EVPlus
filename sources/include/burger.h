@@ -21,10 +21,6 @@ extern ULong TimerGetTicks(void);                 /* atticks.cpp: milliseconds; 
 extern ULong TimerGetTickRate(void);                 /* atticks.cpp: the tick rate that goes with it */
 extern void DebugXString(const char *string);
 
-/* the lock (atthreadtbl.cpp) */
-extern int32_t CriticalDispose(void *lock);
-extern int32_t CriticalCreate(void *lock);
-
 /* lists, images, resources, whole files */
 struct AudioDesc;
 struct Image_t;
@@ -50,10 +46,6 @@ extern Handle ResourceLoadHandleByName(struct RezFile *rez, const char *name);
 extern void *LoadWholeFile(const char *path, uint32_t *length);
 extern int32_t SaveWholeFile(const char *path, const void *data, uint32_t length);
 extern char *GetFileExtension(const char *name);
-extern char *StrCopy(const char *text);
-extern void StripLeadingAndTrailingWhiteSpace(char *text);
-extern void ExtractAString2(const char *src, ULong *size, Word flags, char *dst, ULong dstSize);
-extern Word BombFlag;
 extern char ErrorMsg[512];                       /* burgerfatal.cpp */
 extern Word IAmExiting;                          /* burgerfatal2.cpp */
 #ifdef _WIN32
@@ -64,12 +56,6 @@ extern int stricmp(const char *s1, const char *s2);   /* MSL Extras */
 
 /* runtime-block globals */
 extern int32_t MouseClicked;
-/* a lock (atthreadtbl.cpp: CriticalCreate .. CriticalLeave take its address) */
-typedef struct Mutex {
-    struct PlatMutex *section;
-    ULong magic;
-    unsigned char live;
-} Mutex;
 extern Word8 ResourceJustLoaded;                 /* 0x00870e11, set by ResourceLoadHandle */
 /* handles */
 extern void **AllocAHandle2(Word32 MemSize, Word Flag);
@@ -89,7 +75,6 @@ extern void ReleaseResource(Handle h);
 extern void GetResInfo(Handle h, short *id, uint32_t *type,
                        unsigned char *name);
 
-extern unsigned long long TimerGetMicroseconds(void);
 extern ULong UFix32_Divide(ULong device, ULong rate);
 extern ULong UFix32_Multiply(ULong ratio, ULong rate);
 extern char *NumberToAscii(char *dst, ULong value, ULong flags);
@@ -104,7 +89,6 @@ extern void WaitTicks(Word tickCount);
 #define ResetLastTick() LastTick=ReadTick()
 
 /* BurgerLib's own constants */
-#define kOutOfMemory    -7004
 #define kNoDevice       -7401      /* sound: no output device */
 #define kMillisPerSecond 1000
 
@@ -116,7 +100,6 @@ extern void WaitTicks(Word tickCount);
 /* BurgerLib's memory manager, number and string helpers, fixed-point maths */
 #define kHandleFixed        0x40                 /* fixed memory flag */
 #define kNoTerminator       0x4000               /* NumberToAscii flag */
-#define kExtractStrDelimitLF 1                   /* ExtractAString2: stop at the end of a line */
 #define kFixedShift         16                   /* Fixed32 is 16.16 */
 
 /* QuickDraw's Style bits, as the port's font code spells them */
@@ -130,8 +113,6 @@ extern void WaitTicks(Word tickCount);
 #define kPixMapFlagMask     0xc000
 #define kRowBytesMask       0x3fff
 
-/* video globals; the screen page is screen.h's */
-extern int32_t ScreenFlags;                         /* burgergraphics.cpp */
 extern Word Win95ApplsActive;                    /* burgeronce.cpp */
 
 extern int32_t fgetstr(char *buf, int32_t size, FILE *stream);
@@ -141,11 +122,7 @@ extern int32_t fgetlong(FILE *stream);
 extern void *LoadAFileFP(FILE *fp, uint32_t *length);
 extern int32_t SaveAFileFP(FILE *file, const void *data, uint32_t length);
 extern ULong fgetfilesize(FILE *fp);     /* BurgerLib fgetfilesize */
-extern char *ParseQuotedString(char *out, int32_t outSize, const char *src);
 
-extern ULong UFix32_To_UInt32(ULong rate);
-extern void CriticalEnter(void *lock);
-extern void CriticalLeave(void *lock);
 
 extern void GetDateTime(uint32_t *seed);
 extern void ResourceDestroy(struct RezFile *rez);

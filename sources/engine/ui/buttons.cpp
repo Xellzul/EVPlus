@@ -385,7 +385,7 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
         SetPort((GrafPtr)savedPort);
         ForeColor(blackColor);
         CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(savedPort),
-                 bounds, bounds, 0, GetPortVisRgn(port));
+                 bounds, bounds, 0, NULL);
     } else {
         GWorldContainerSetPort(&buttonPort);
         ForeColor(blackColor);
@@ -439,6 +439,6 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
         SetPort((GrafPtr)savedPort);
         ForeColor(blackColor);
         CopyBits(GWorldContainerBits(&buttonPort), GetPortBitMapForCopyBits(savedPort),
-                 &box, bounds, 0, GetPortVisRgn(port));
+                 &box, bounds, 0, NULL);
     }
 }

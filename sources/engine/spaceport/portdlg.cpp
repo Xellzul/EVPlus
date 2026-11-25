@@ -374,7 +374,6 @@ void PortDialogUpdate(void)
     Rect box;
     short itemType;
     Handle item;
-    Boolean inside;
 
     SetGWorldContainer(&loadPort);
     ForeColor(blackColor);
@@ -382,36 +381,26 @@ void PortDialogUpdate(void)
     if (portBackgroundPic != NULL)
         DrawPicHandle(portBackgroundPic, GetDialogPortRect(portDialog));
     GetDialogItem(portDialog, 3, &itemType, &item, &box);
-    inside = RectInRgn(&box, GetWindowVisRgn(FrontWindow(portDialog)));
-    if (inside) {
-        ForeColor(blackColor);
-        PaintRect(&box);
-        ForeColor(whiteColor);
-        MoveTo(box.left, (box.top + kNameBaseline));
-        TextFont(gTimesFont);
-        TextSize(kNameSize);
-        DrawStringCentered(dockedPort->name, box.left, box.right,
-                           box.top + kNameBaseline);
-        ForeColor(blackColor);
-    }
+    ForeColor(blackColor);
+    PaintRect(&box);
+    ForeColor(whiteColor);
+    MoveTo(box.left, (box.top + kNameBaseline));
+    TextFont(gTimesFont);
+    TextSize(kNameSize);
+    DrawStringCentered(dockedPort->name, box.left, box.right,
+                       box.top + kNameBaseline);
+    ForeColor(blackColor);
     GetDialogItem(portDialog, 5, &itemType, &item, &box);
-    inside = RectInRgn(&box, GetWindowVisRgn(FrontWindow(portDialog)));
-    if (inside) {
-        if (planetPicContainer.world != NULL)
-            CopyBits(GWorldContainerBits(&planetPicContainer),
-                     (BitMapPtr)GWorldContainerBits(&loadPort),
-                     &planetPicContainer.bounds, &box, 0,
-                     GetWindowVisRgn(FrontWindow(portDialog)));
-    }
+    if (planetPicContainer.world != NULL)
+        CopyBits(GWorldContainerBits(&planetPicContainer),
+                 (BitMapPtr)GWorldContainerBits(&loadPort),
+                 &planetPicContainer.bounds, &box, 0, NULL);
     GetDialogItem(portDialog, 6, &itemType, &item, &box);
-    inside = RectInRgn(&box, GetWindowVisRgn(FrontWindow(portDialog)));
-    if (inside) {
-        ForeColor(blackColor);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        TETextBox(descTextPtr, strlen(descTextPtr), &box, 0);
-        InvertRect(&box);
-    }
+    ForeColor(blackColor);
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    TETextBox(descTextPtr, strlen(descTextPtr), &box, 0);
+    InvertRect(&box);
     SetGWorldContainer(&loadPort);
     PlanetButtons().Draw(-8);
     CopyLoadPortToDialog(portDialog);

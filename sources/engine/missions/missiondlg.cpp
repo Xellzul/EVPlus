@@ -411,36 +411,32 @@ void MissionDialogUpdate(void)
     if (missionBackgroundPic[0] != NULL)
         DrawPicHandle(missionBackgroundPic[0], GetDialogPortRect(missionDialog));
     GetDialogItem(missionDialog, 8, &itemType, (Handle *)&item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(missionDialog)))) {
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        RGBForeColor(&rgbLightGrey);
-        MoveTo(box.left, box.top + 12);
-        DrawIndString(kGameStrList, kListCaptionIdx);
-        ForeColor(blackColor);
-    }
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    RGBForeColor(&rgbLightGrey);
+    MoveTo(box.left, box.top + 12);
+    DrawIndString(kGameStrList, kListCaptionIdx);
+    ForeColor(blackColor);
     GetDialogItem(missionDialog, 5, &itemType, (Handle *)&item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(missionDialog)))) {
-        if (selMissionListItem != -1) {
-            ForeColor(whiteColor);
-            TextFont(gTimesFont);
-            TextSize(18);
-            strncpy((char *)text, (char *)missionName[dockedPortMissions[missionsOutside]
-                                                               [selMissionListItem]], 0xfa);
-            PtoCstr((unsigned char *)text);
-            CopyBriefingText(savedBriefing, briefingTextPtr);
-            strncpy(briefingTextPtr, (char *)text, 0xfa);
-            MungeBriefing(1, dockedPortMissions[missionsOutside][selMissionListItem]);
-            strncpy((char *)text, briefingTextPtr, 0xfa);
-            text[0xfa] = 0;
-            CopyBriefingText(briefingTextPtr, savedBriefing);
-            TruncateTextToWidth(text, box.right - box.left - 1);
-            MoveTo(box.left, box.top + CurrentGrafPort->txSize);
-            DrawTextRun(text, strlen(text), NULL, 0, 0);
-        } else {
-            ForeColor(blackColor);
-            PaintRect(&box);
-        }
+    if (selMissionListItem != -1) {
+        ForeColor(whiteColor);
+        TextFont(gTimesFont);
+        TextSize(18);
+        strncpy((char *)text, (char *)missionName[dockedPortMissions[missionsOutside]
+                                                           [selMissionListItem]], 0xfa);
+        PtoCstr((unsigned char *)text);
+        CopyBriefingText(savedBriefing, briefingTextPtr);
+        strncpy(briefingTextPtr, (char *)text, 0xfa);
+        MungeBriefing(1, dockedPortMissions[missionsOutside][selMissionListItem]);
+        strncpy((char *)text, briefingTextPtr, 0xfa);
+        text[0xfa] = 0;
+        CopyBriefingText(briefingTextPtr, savedBriefing);
+        TruncateTextToWidth(text, box.right - box.left - 1);
+        MoveTo(box.left, box.top + CurrentGrafPort->txSize);
+        DrawTextRun(text, strlen(text), NULL, 0, 0);
+    } else {
+        ForeColor(blackColor);
+        PaintRect(&box);
     }
     DrawMissionBriefing(missionDialog, selMissionListItem != -1);
     GetDialogItem(missionDialog, 11, &itemType, (Handle *)&item, &box);

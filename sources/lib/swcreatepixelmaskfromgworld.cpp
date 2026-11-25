@@ -10,6 +10,8 @@
 #define kClear  0xFFFF
 #define kSolid  0x0000
 
+RGBColor gSWTransparentColor = {0xFFFF, 0xFFFF, 0xFFFF};  /* white */
+
 // FUNCTION: EVNOVA 0x00479250
 // MAC: _SWCreatePixelMaskFromGWorld i386 0x000a875d ppc 0x000b36b8
 short SWCreatePixelMaskFromGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld,

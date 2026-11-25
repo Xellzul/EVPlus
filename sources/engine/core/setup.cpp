@@ -115,12 +115,9 @@ void SetupSpriteWorld(void)
     SWAddSpriteLayer(gSpriteWorld, targetLayer);
     SWAddSpriteLayer(gSpriteWorld, interfaceLayer);
 
-    SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
-
     crashlog("creating scratch frames");
     CreateOverlayFrames();
 
-    SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
     SWSetPortToWindow(gSpriteWorld);
     ForeColor(blackColor);
     PaintRect(GetCWindowPortRect((WindowRef)gWind));

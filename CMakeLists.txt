@@ -257,6 +257,13 @@ else()
   list(REMOVE_ITEM GAME_SRC ${SRC}/platform/platform_win.cpp)
 endif()
 
+# -- the developer test pages (font, drawing, sprite and sound pages, switched on in engine/mainmenu/mainscreen.cpp)
+option(EVPLUS_TEST_PAGES "Build the developer test pages" OFF)
+if(NOT EVPLUS_TEST_PAGES)
+  list(REMOVE_ITEM GAME_SRC ${SRC}/port/fonttest.cpp ${SRC}/port/scaletest.cpp ${SRC}/port/spritetest.cpp
+       ${SRC}/port/soundtest.cpp ${SRC}/lib/blitpixierect.cpp)
+endif()
+
 # signed plain char (as MW), its FP evaluation in double; the decompile's pointer/aliasing habits;
 set(EVNOVA_FLAGS -O2 -ffunction-sections -fdata-sections -fsigned-char -fno-strict-aliasing
     -fwrapv -fasm-blocks -ffp-eval-method=double
@@ -290,6 +297,9 @@ else()
 endif()
 target_include_directories(evnova_ce PRIVATE ${SRC}/include)
 target_compile_options(evnova_ce PRIVATE ${EVNOVA_FLAGS})
+if(EVPLUS_TEST_PAGES)
+  target_compile_definitions(evnova_ce PRIVATE EVPLUS_TEST_PAGES=1)
+endif()
 target_include_directories(evnova_ce PRIVATE ${FFMPEG_ROOT}/include)
 set_source_files_properties(${SRC}/port/fontraster.cpp PROPERTIES
     INCLUDE_DIRECTORIES ${FREETYPE_ROOT}/include/freetype2)

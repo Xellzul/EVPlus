@@ -399,234 +399,226 @@ void TradeDialogUpdate(void)
     TextFont(smallTextFont);
     TextSize(smallTextSize);
     GetDialogItem(tradeDialog, kHoldsItem, &itemType, (Handle *)&item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(tradeDialog)))) {
-        RGBForeColor(&rgbDarkGrey);
-        FrameRect(&box);
-        RGBForeColor(&rgbLightGrey);
-        MoveTo(box.left + 7, box.top + 12);
-        DrawIndString(kGameStrList, 0xc5);
-        MoveTo(box.right - 0x7b, box.top + 12);
-        if (TotalFleetHolds() > ShipTotalHolds())
-            DrawIndString(kGameStrList, 0xc6);
-        else
-            DrawIndString(kGameStrList, 0xc7);
-        MoveTo(box.right - 0x46, box.top + 12);
-        DrawIndString(kGameStrList, 0xc8);
-        ForeColor(blackColor);
-    }
+    RGBForeColor(&rgbDarkGrey);
+    FrameRect(&box);
+    RGBForeColor(&rgbLightGrey);
+    MoveTo(box.left + 7, box.top + 12);
+    DrawIndString(kGameStrList, 0xc5);
+    MoveTo(box.right - 0x7b, box.top + 12);
+    if (TotalFleetHolds() > ShipTotalHolds())
+        DrawIndString(kGameStrList, 0xc6);
+    else
+        DrawIndString(kGameStrList, 0xc7);
+    MoveTo(box.right - 0x46, box.top + 12);
+    DrawIndString(kGameStrList, 0xc8);
+    ForeColor(blackColor);
 
     for (i = 0; i <= kLastRow; i++) {
         GetDialogItem(tradeDialog, i + kFirstRowItem, &itemType, (Handle *)&item, &box);
-        if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(tradeDialog)))) {
-            insetBox = box;
-            InsetRect(&insetBox, 1, 1);
-            if (i == selTradeItem)
-                RGBForeColor((RGBColor *)&ldefColors[2]);
-            else
-                RGBForeColor((RGBColor *)&ldefColors[1]);
-            PaintRect(&insetBox);
-            ForeColor(blackColor);
+        insetBox = box;
+        InsetRect(&insetBox, 1, 1);
+        if (i == selTradeItem)
+            RGBForeColor((RGBColor *)&ldefColors[2]);
+        else
+            RGBForeColor((RGBColor *)&ldefColors[1]);
+        PaintRect(&insetBox);
+        ForeColor(blackColor);
 
-            RGBForeColor(&rgbDarkGrey);
+        RGBForeColor(&rgbDarkGrey);
+        MoveTo(box.left, box.top);
+        LineTo(box.left, (box.bottom - 1));
+        MoveTo((box.right - 1), box.top);
+        LineTo((box.right - 1), (box.bottom - 1));
+        if (i == 0) {
             MoveTo(box.left, box.top);
-            LineTo(box.left, (box.bottom - 1));
-            MoveTo((box.right - 1), box.top);
-            LineTo((box.right - 1), (box.bottom - 1));
-            if (i == 0) {
-                MoveTo(box.left, box.top);
-                LineTo((box.right - 1), box.top);
-            }
-            if (i == kLastRow) {
-                MoveTo(box.left, (box.bottom - 1));
-                LineTo((box.right - 1), (box.bottom - 1));
-            }
-
-            if (tradePrice[i] != 0) {
-                RGBForeColor((RGBColor *)&ldefColors[0]);
-                if (i <= kLastCommodity) {
-                    MoveTo(box.left + 7, box.top + 10);
-                    DrawCString(cargoName[i]);
-                    qty = shipData->cargo[i];
-                    if (qty > 0) {
-                        text = NumText(qty);
-                        MoveTo(box.right - (MeasureCString(text) + 0x6e),
-                                  box.top + 10);
-                        DrawCString(text);
-                    }
-                } else if (junkType[i - kFirstJunkItem] != -1) {
-                    MoveTo(box.left + 6, box.top + 10);
-                    DrawString(junkData[junkType[i - kFirstJunkItem]].name);
-                    qty = junkData[junkType[i - kFirstJunkItem]].held;
-                    if (qty > 0) {
-                        text = NumText(qty);
-                        MoveTo(box.right - (MeasureCString(text) + 0x6e),
-                                  box.top + 10);
-                        DrawCString(text);
-                    }
-                }
-
-                MoveTo(box.right - 0x46, box.top + 10);
-                found = 0;
-                for (k = 0; k < kMaxDisasters; k++) {
-                    if (disasterData[k].loaded != 0 && disasterData[k].countdown > 0 &&
-                        disasterData[k].stellarID == shipData->targetStellar &&
-                        i == disasterData[k].commodity) {
-                        found = 1;
-                        if (disasterData[k].amount > 0) {
-                            RGBForeColor(&betterRGB);
-                            DrawIndString(kGameStrList, 0xcc);
-                        }
-                        if (disasterData[k].amount < 0) {
-                            RGBForeColor(&worseRGB);
-                            DrawIndString(kGameStrList, 0xcd);
-                        }
-                        RGBForeColor((RGBColor *)&ldefColors[0]);
-                        break;
-                    }
-                }
-                if (!found) {
-                    if (i <= kLastCommodity) {
-                        if (portDemand[i] == kPortShortage)
-                            DrawIndString(kGameStrList, 0xc9);
-                        if (portDemand[i] == kPortSurplus)
-                            DrawIndString(kGameStrList, 0xca);
-                        if (portDemand[i] == kPortEmbargo)
-                            DrawIndString(kGameStrList, 0xcb);
-                    } else if (junkType[i - kFirstJunkItem] != -1) {
-                        if (i == kFirstJunkItem)
-                            DrawIndString(kGameStrList, 0xcb);
-                        if (i == kLastRow)
-                            DrawIndString(kGameStrList, 0xc9);
-                    }
-                }
-
-                text = NumText(tradePrice[i]);
-                MoveTo(box.right - (MeasureCString(text) + 10),
-                          box.top + 10);
-                DrawCString(text);
-            }
-            ForeColor(blackColor);
+            LineTo((box.right - 1), box.top);
         }
+        if (i == kLastRow) {
+            MoveTo(box.left, (box.bottom - 1));
+            LineTo((box.right - 1), (box.bottom - 1));
+        }
+
+        if (tradePrice[i] != 0) {
+            RGBForeColor((RGBColor *)&ldefColors[0]);
+            if (i <= kLastCommodity) {
+                MoveTo(box.left + 7, box.top + 10);
+                DrawCString(cargoName[i]);
+                qty = shipData->cargo[i];
+                if (qty > 0) {
+                    text = NumText(qty);
+                    MoveTo(box.right - (MeasureCString(text) + 0x6e),
+                              box.top + 10);
+                    DrawCString(text);
+                }
+            } else if (junkType[i - kFirstJunkItem] != -1) {
+                MoveTo(box.left + 6, box.top + 10);
+                DrawString(junkData[junkType[i - kFirstJunkItem]].name);
+                qty = junkData[junkType[i - kFirstJunkItem]].held;
+                if (qty > 0) {
+                    text = NumText(qty);
+                    MoveTo(box.right - (MeasureCString(text) + 0x6e),
+                              box.top + 10);
+                    DrawCString(text);
+                }
+            }
+
+            MoveTo(box.right - 0x46, box.top + 10);
+            found = 0;
+            for (k = 0; k < kMaxDisasters; k++) {
+                if (disasterData[k].loaded != 0 && disasterData[k].countdown > 0 &&
+                    disasterData[k].stellarID == shipData->targetStellar &&
+                    i == disasterData[k].commodity) {
+                    found = 1;
+                    if (disasterData[k].amount > 0) {
+                        RGBForeColor(&betterRGB);
+                        DrawIndString(kGameStrList, 0xcc);
+                    }
+                    if (disasterData[k].amount < 0) {
+                        RGBForeColor(&worseRGB);
+                        DrawIndString(kGameStrList, 0xcd);
+                    }
+                    RGBForeColor((RGBColor *)&ldefColors[0]);
+                    break;
+                }
+            }
+            if (!found) {
+                if (i <= kLastCommodity) {
+                    if (portDemand[i] == kPortShortage)
+                        DrawIndString(kGameStrList, 0xc9);
+                    if (portDemand[i] == kPortSurplus)
+                        DrawIndString(kGameStrList, 0xca);
+                    if (portDemand[i] == kPortEmbargo)
+                        DrawIndString(kGameStrList, 0xcb);
+                } else if (junkType[i - kFirstJunkItem] != -1) {
+                    if (i == kFirstJunkItem)
+                        DrawIndString(kGameStrList, 0xcb);
+                    if (i == kLastRow)
+                        DrawIndString(kGameStrList, 0xc9);
+                }
+            }
+
+            text = NumText(tradePrice[i]);
+            MoveTo(box.right - (MeasureCString(text) + 10),
+                      box.top + 10);
+            DrawCString(text);
+        }
+        ForeColor(blackColor);
     }
 
     GetDialogItem(tradeDialog, kCargoItem, &itemType, (Handle *)&item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(tradeDialog)))) {
-        ForeColor(blackColor);
-        insetBox = box;
-        InsetRect(&insetBox, 5, 3);
-        text.clear();
+    ForeColor(blackColor);
+    insetBox = box;
+    InsetRect(&insetBox, 5, 3);
+    text.clear();
 
-        available = 0;
-        k = 0;
-        missionTons = 0;
-        junkTons = 0;
-        missionSlots = 0;
-        junkSlots = 0;
+    available = 0;
+    k = 0;
+    missionTons = 0;
+    junkTons = 0;
+    missionSlots = 0;
+    junkSlots = 0;
 
-        for (i = 0; i < kMaxCargo; i++)
-            seen[i] = 0;
-        for (j = 0; j < kMaxActiveMissions; j++) {
-            if (currentMissionObjectives[j].active && currentMissions[j].hasCargo &&
-                currentMissions[j].cargoType != -1 && currentMissions[j].cargoQty >= 0) {
-                available++;
-                missionSlots++;
-                missionTons += currentMissions[j].cargoQty;
-                if (seen[currentMissions[j].cargoType] == 0) {
-                    seen[currentMissions[j].cargoType] = 1;
-                    k++;
-                }
-            }
-        }
-        for (j = 0; j < kMaxJunks; j++) {
-            if (junkData[j].held > 0 && j != junkType[0] && j != junkType[1]) {
-                available++;
-                junkTons += junkData[j].held;
-                junkSlots++;
+    for (i = 0; i < kMaxCargo; i++)
+        seen[i] = 0;
+    for (j = 0; j < kMaxActiveMissions; j++) {
+        if (currentMissionObjectives[j].active && currentMissions[j].hasCargo &&
+            currentMissions[j].cargoType != -1 && currentMissions[j].cargoQty >= 0) {
+            available++;
+            missionSlots++;
+            missionTons += currentMissions[j].cargoQty;
+            if (seen[currentMissions[j].cargoType] == 0) {
+                seen[currentMissions[j].cargoType] = 1;
                 k++;
             }
         }
-        if (available > 0) {
-            if (missionSlots + junkSlots > 0) {
-                text += IndString(kGameStrList, 0x16b);
-                text += " ";
-                if (missionTons + junkTons > 0)
-                    text += TextF("%d %s %s ", missionTons + junkTons,
-                                  UpToNul(missionTons + junkTons == 1 ? tonString : tonsString).c_str(),
-                                  IndString(kGameStrList, 0x187).c_str());
-                if (missionSlots > 0) {
-                    text += IndString(kGameStrList, 0x16f);
-                    if (junkSlots > 0) {
-                        text += " ";
-                        text += IndString(kGameStrList, 0x188);
-                        text += " ";
-                    }
-                }
-                if (junkSlots > 0)
-                    text += IndString(kGameStrList, 0x170);
-                text += "\r\r";
-            }
-        }
-
-        holds = ShipTotalHolds();
-        fleetHolds = TotalFleetHolds();
-        totalCargo = TotalCargo(shipData);
-        text += IndString(kGameStrList, 0x16c);
-        if (fleetHolds > holds) {
-            text += " ";
-            text += IndString(kGameStrList, 0x16d);
-        }
-        text += ": ";
-        if (fleetHolds > holds) {
-            over = totalCargo - missionTons;
-            over -= fleetHolds - holds;
-            if (over < 0)
-                over = 0;
-            available = holds - (over + missionTons);
-            if (available < 0)
-                available = 0;
-        } else {
-            available = holds - totalCargo;
-            if (available < 0)
-                available = 0;
-        }
-        text += TextF("%d %s", available, UpToNul(available == 1 ? tonString : tonsString).c_str());
-        if (fleetHolds > holds) {
-            available = fleetHolds - totalCargo;
-            if (available < 0)
-                available = 0;
-            text += TextF("\r%s %s: %d %s", IndString(kGameStrList, 0x16c).c_str(),
-                          IndString(kGameStrList, 0x16e).c_str(), available,
-                          UpToNul(available == 1 ? tonString : tonsString).c_str());
-        }
-
-        TETextBox(text.data(), text.size(), &insetBox, 0);
-        InvertRect(&insetBox);
-        RGBForeColor(&rgbDarkGrey);
-        FrameRect(&box);
-        ForeColor(blackColor);
     }
+    for (j = 0; j < kMaxJunks; j++) {
+        if (junkData[j].held > 0 && j != junkType[0] && j != junkType[1]) {
+            available++;
+            junkTons += junkData[j].held;
+            junkSlots++;
+            k++;
+        }
+    }
+    if (available > 0) {
+        if (missionSlots + junkSlots > 0) {
+            text += IndString(kGameStrList, 0x16b);
+            text += " ";
+            if (missionTons + junkTons > 0)
+                text += TextF("%d %s %s ", missionTons + junkTons,
+                              UpToNul(missionTons + junkTons == 1 ? tonString : tonsString).c_str(),
+                              IndString(kGameStrList, 0x187).c_str());
+            if (missionSlots > 0) {
+                text += IndString(kGameStrList, 0x16f);
+                if (junkSlots > 0) {
+                    text += " ";
+                    text += IndString(kGameStrList, 0x188);
+                    text += " ";
+                }
+            }
+            if (junkSlots > 0)
+                text += IndString(kGameStrList, 0x170);
+            text += "\r\r";
+        }
+    }
+
+    holds = ShipTotalHolds();
+    fleetHolds = TotalFleetHolds();
+    totalCargo = TotalCargo(shipData);
+    text += IndString(kGameStrList, 0x16c);
+    if (fleetHolds > holds) {
+        text += " ";
+        text += IndString(kGameStrList, 0x16d);
+    }
+    text += ": ";
+    if (fleetHolds > holds) {
+        over = totalCargo - missionTons;
+        over -= fleetHolds - holds;
+        if (over < 0)
+            over = 0;
+        available = holds - (over + missionTons);
+        if (available < 0)
+            available = 0;
+    } else {
+        available = holds - totalCargo;
+        if (available < 0)
+            available = 0;
+    }
+    text += TextF("%d %s", available, UpToNul(available == 1 ? tonString : tonsString).c_str());
+    if (fleetHolds > holds) {
+        available = fleetHolds - totalCargo;
+        if (available < 0)
+            available = 0;
+        text += TextF("\r%s %s: %d %s", IndString(kGameStrList, 0x16c).c_str(),
+                      IndString(kGameStrList, 0x16e).c_str(), available,
+                      UpToNul(available == 1 ? tonString : tonsString).c_str());
+    }
+
+    TETextBox(text.data(), text.size(), &insetBox, 0);
+    InvertRect(&insetBox);
+    RGBForeColor(&rgbDarkGrey);
+    FrameRect(&box);
+    ForeColor(blackColor);
     TradeButtons().Draw(-1);
 
     GetDialogItem(tradeDialog, kNewsItem, &itemType, (Handle *)&item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(tradeDialog)))) {
-        for (p = 0; p < kMaxDisasters; p++) {
-            if (disasterData[p].loaded != 0 && disasterData[p].countdown > 0 &&
-                disasterData[p].stellarID == shipData->targetStellar) {
-                if (cheatsActive)
-                    text = "Disaster ID " + NumText(p + 0x80);
-                else
-                    text = FromNameField(disasterData[p].name, 0x3f);
-                text += TextF(" %s %s %s %s.", IndString(kGameStrList, 0xc0).c_str(),
-                              IndString(kGameStrList, disasterData[p].amount > 0 ? 0xc1 : 0xc2).c_str(),
-                              IndString(kGameStrList, 0xb5).c_str(),
-                              UpToNul(TableEntry(lcCargoName, disasterData[p].commodity), 0x3f).c_str());
-                ForeColor(blackColor);
-                TextFont(smallTextFont);
-                TextSize(smallTextSize);
-                TETextBox(text.data(), text.size(), &box, 0);
-                InvertRect(&box);
-                break;
-            }
+    for (p = 0; p < kMaxDisasters; p++) {
+        if (disasterData[p].loaded != 0 && disasterData[p].countdown > 0 &&
+            disasterData[p].stellarID == shipData->targetStellar) {
+            if (cheatsActive)
+                text = "Disaster ID " + NumText(p + 0x80);
+            else
+                text = FromNameField(disasterData[p].name, 0x3f);
+            text += TextF(" %s %s %s %s.", IndString(kGameStrList, 0xc0).c_str(),
+                          IndString(kGameStrList, disasterData[p].amount > 0 ? 0xc1 : 0xc2).c_str(),
+                          IndString(kGameStrList, 0xb5).c_str(),
+                          UpToNul(TableEntry(lcCargoName, disasterData[p].commodity), 0x3f).c_str());
+            ForeColor(blackColor);
+            TextFont(smallTextFont);
+            TextSize(smallTextSize);
+            TETextBox(text.data(), text.size(), &box, 0);
+            InvertRect(&box);
+            break;
         }
     }
 

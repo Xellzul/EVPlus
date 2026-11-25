@@ -39,10 +39,12 @@ extern int32_t ST_PlaySoundStereo(Sound *sound, unsigned short priority, unsigne
                                   unsigned short right);
 extern uint32_t ST_PlaySoundParam(SoundRequest *req);
 
-/* the channels playing this sound (or this id); a null sound counts every channel, id 0 none */
+/* the channels playing this sound; a null sound counts every channel */
 extern unsigned short ST_IsSoundPlaying(const Sound *sound);
-extern unsigned short ST_IsSoundIdPlaying(uint32_t id);
 
-/* stop the channels playing this sound (or this id); a null sound stops every channel, id 0 none */
+/* stop the channels playing this sound; a null sound stops every channel */
 extern void ST_HaltSound(const Sound *sound);
+#if EVPLUS_TEST_PAGES
+/* stop the channels playing this id; id 0 stops none */
 extern void ST_HaltSoundId(uint32_t id);
+#endif

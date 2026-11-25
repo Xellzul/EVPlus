@@ -35,8 +35,10 @@ extern SoundChannel gTheVoices[kSoundChannels];
 extern int32_t gNumVoices;
 extern unsigned char gSoundToolOpen;
 extern void _ST_HaltASound(short index);
+#if EVPLUS_TEST_PAGES
 /* ST_Open with its voices rendered by _ST_RenderVoices instead of played (soundtest.cpp) */
 extern int32_t _ST_OpenOffline(void);
+#endif
 
 /* the resampler (atsnddrv.cpp) */
 extern unsigned char PCM_Mixer(const short *data, short **out, ULong frames, ULong step,
@@ -48,8 +50,10 @@ extern void _ST_CloseVoices(void);
 extern void _ST_StartVoice(const SoundChannel *chan, int32_t rate);
 extern void _ST_StopVoice(unsigned char out);
 extern void _ST_ReapVoices(void);                /* drops the rows whose voice has played out */
+#if EVPLUS_TEST_PAGES
 /* offline: the next frames of the mix as PlatVoicesRender (platform.h) makes it */
 extern void _ST_RenderVoices(float *out, float *unclamped, int frames);
+#endif
 
 /* IMA ADPCM to 16-bit PCM (atadpcm.cpp) */
 extern void ImaDecodePackets(const unsigned char *src, ULong packets, short *out);

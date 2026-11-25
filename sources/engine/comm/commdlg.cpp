@@ -979,86 +979,80 @@ void PlanetCommDialogUpdate(void)
         DrawPicHandle(commBackgroundPic, GetDialogPortRect(commDialog));
     PlanetCommButtons().Draw(-1);
     GetDialogItem(commDialog, 4, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
-        pstrcpy(text, commResponseString);
-        PtoCstr(text);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        ForeColor(whiteColor);
-        InsetRect(&box, 1, 1);
-        PaintRect(&box);
-        textBox = box;
-        InsetRect(&textBox, 4, 2);
-        ForeColor(blackColor);
-        TETextBox(text, strlen((char *)text), &textBox, 0);
-        InvertRect(&box);
-    }
+    pstrcpy(text, commResponseString);
+    PtoCstr(text);
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    ForeColor(whiteColor);
+    InsetRect(&box, 1, 1);
+    PaintRect(&box);
+    textBox = box;
+    InsetRect(&textBox, 4, 2);
+    ForeColor(blackColor);
+    TETextBox(text, strlen((char *)text), &textBox, 0);
+    InvertRect(&box);
     GetDialogItem(commDialog, 5, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
-        ForeColor(blackColor);
-        for (i = 0; i < kStellarSprites; i++) {
-            if (stellarSprite[i]->isVisible != 0 &&
-                stellarSprite[i]->userData == shipData->targetStellar) {
-                spriteWidth = GetSpriteXSize(stellarSprite[i]);
-                spriteHeight = GetSpriteYSize(stellarSprite[i]);
-                break;
-            }
+    ForeColor(blackColor);
+    for (i = 0; i < kStellarSprites; i++) {
+        if (stellarSprite[i]->isVisible != 0 &&
+            stellarSprite[i]->userData == shipData->targetStellar) {
+            spriteWidth = GetSpriteXSize(stellarSprite[i]);
+            spriteHeight = GetSpriteYSize(stellarSprite[i]);
+            break;
         }
-        textBox.left = textBox.right = (box.left + box.right) / 2;
-        textBox.top = textBox.bottom = (box.top + box.bottom) / 2;
-        InsetRect(&textBox, -spriteWidth / 2, -spriteHeight / 2);
-        CopyBits(GWorldContainerBits(&loadPort),
-                 GetPortPixMapBits(View::UIWork()->framePort),
-                 &textBox, &textBox, 0, NULL);
-        UI::DrawSprite(BlitPixieRLEDrawProc, stellarSprite[i]->curFrameP, View::UIWork(),
-                             &stellarSprite[i]->curFrameP->frameRect, &textBox);
-        CopyBits(GetPortPixMapBits(
-                     View::UIWork()->framePort),
-                 (BitMapPtr)GWorldContainerBits(&loadPort),
-                 &textBox, &textBox, 0, NULL);
     }
+    textBox.left = textBox.right = (box.left + box.right) / 2;
+    textBox.top = textBox.bottom = (box.top + box.bottom) / 2;
+    InsetRect(&textBox, -spriteWidth / 2, -spriteHeight / 2);
+    CopyBits(GWorldContainerBits(&loadPort),
+             GetPortPixMapBits(View::UIWork()->framePort),
+             &textBox, &textBox, 0, NULL);
+    UI::DrawSprite(BlitPixieRLEDrawProc, stellarSprite[i]->curFrameP, View::UIWork(),
+                         &stellarSprite[i]->curFrameP->frameRect, &textBox);
+    CopyBits(GetPortPixMapBits(
+                 View::UIWork()->framePort),
+             (BitMapPtr)GWorldContainerBits(&loadPort),
+             &textBox, &textBox, 0, NULL);
     GetDialogItem(commDialog, 6, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        MoveTo(box.left, (box.top + 12));
-        ForeColor(whiteColor);
-        DrawString(stellarData[shipData->targetStellar].name);
-        MoveTo(box.left, (box.top + 0x1a));
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    MoveTo(box.left, (box.top + 12));
+    ForeColor(whiteColor);
+    DrawString(stellarData[shipData->targetStellar].name);
+    MoveTo(box.left, (box.top + 0x1a));
+    RGBForeColor(&rgbMedGrey);
+    DrawString(stellarTypeStr);
+    if (stellarData[shipData->targetStellar].flags & kSpobUninhabited) {
+        MoveTo(box.left, (box.top + 0x2a));
         RGBForeColor(&rgbMedGrey);
-        DrawString(stellarTypeStr);
-        if (stellarData[shipData->targetStellar].flags & kSpobUninhabited) {
-            MoveTo(box.left, (box.top + 0x2a));
-            RGBForeColor(&rgbMedGrey);
-            DrawIndString(kGameStrList, 0xc4);
-            DrawCString("  ");
-            RGBForeColor(&rgbLightGrey);
-            DrawIndString(kGameStrList, 0xaa);
-        } else if (stellarData[shipData->targetStellar].dominated != 0) {
-            MoveTo(box.left, (box.top + 0x2a));
-            RGBForeColor(&rgbMedGrey);
-            DrawIndString(kGameStrList, 0xc4);
-            DrawCString("  ");
-            RGBForeColor(&brightGreen);
-            if (stellarData[shipData->targetStellar].flags2 & kSpobAlwaysDominated)
-                DrawIndString(kGameStrList, 0xab);
-            else
-                DrawIndString(kGameStrList, 0xac);
-        } else if (hatesPlayer != 0) {
-            MoveTo(box.left, (box.top + 0x2a));
-            RGBForeColor(&rgbMedGrey);
-            DrawIndString(kGameStrList, 0xc4);
-            DrawCString("  ");
-            TextFace(1);
-            if (playerRecord[shipData->curSystem] >= 0) {
-                RGBForeColor(&rgbGold);
-                DrawIndString(kGameStrList, 0xad);
-            } else {
-                ForeColor(redColor);
-                DrawIndString(kGameStrList, 0xae);
-            }
-            TextFace(0);
+        DrawIndString(kGameStrList, 0xc4);
+        DrawCString("  ");
+        RGBForeColor(&rgbLightGrey);
+        DrawIndString(kGameStrList, 0xaa);
+    } else if (stellarData[shipData->targetStellar].dominated != 0) {
+        MoveTo(box.left, (box.top + 0x2a));
+        RGBForeColor(&rgbMedGrey);
+        DrawIndString(kGameStrList, 0xc4);
+        DrawCString("  ");
+        RGBForeColor(&brightGreen);
+        if (stellarData[shipData->targetStellar].flags2 & kSpobAlwaysDominated)
+            DrawIndString(kGameStrList, 0xab);
+        else
+            DrawIndString(kGameStrList, 0xac);
+    } else if (hatesPlayer != 0) {
+        MoveTo(box.left, (box.top + 0x2a));
+        RGBForeColor(&rgbMedGrey);
+        DrawIndString(kGameStrList, 0xc4);
+        DrawCString("  ");
+        TextFace(1);
+        if (playerRecord[shipData->curSystem] >= 0) {
+            RGBForeColor(&rgbGold);
+            DrawIndString(kGameStrList, 0xad);
+        } else {
+            ForeColor(redColor);
+            DrawIndString(kGameStrList, 0xae);
         }
+        TextFace(0);
     }
     CopyLoadPortToDialog(commDialog);
 }
@@ -2300,96 +2294,90 @@ void EscortDialogUpdate(void)
         DrawPicHandle(commBackgroundPic, GetDialogPortRect(commDialog));
     EscortButtons().Draw(-1);
     GetDialogItem(commDialog, 11, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
-        ForeColor(blackColor);
-        DrawPicHandle(commShipPic, &box);
-    }
+    ForeColor(blackColor);
+    DrawPicHandle(commShipPic, &box);
     GetDialogItem(commDialog, 12, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
-        ForeColor(blackColor);
-        PaintRect(&box);
-        RGBForeColor(&rgbMedGrey);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        MoveTo(box.left, (box.top + 12));
-        if (commShip->hired != 0)
-            DrawIndString(kGameStrList, 0xa6);
-        else
-            DrawIndString(kGameStrList, 0xa7);
-        DrawCString(":");
-        ForeColor(whiteColor);
-        MoveTo((box.left + 3), (box.top + 0x1b));
-        DrawCString(shipClassStr);
-        subtitle = FromNameField(shipClass[commShip->type].subtitle);
-        if (!subtitle.empty()) {
-            MoveTo((box.left + 3), (box.top + 0x29));
-            DrawCString(subtitle);
-        }
-        ForeColor(blackColor);
+    ForeColor(blackColor);
+    PaintRect(&box);
+    RGBForeColor(&rgbMedGrey);
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    MoveTo(box.left, (box.top + 12));
+    if (commShip->hired != 0)
+        DrawIndString(kGameStrList, 0xa6);
+    else
+        DrawIndString(kGameStrList, 0xa7);
+    DrawCString(":");
+    ForeColor(whiteColor);
+    MoveTo((box.left + 3), (box.top + 0x1b));
+    DrawCString(shipClassStr);
+    subtitle = FromNameField(shipClass[commShip->type].subtitle);
+    if (!subtitle.empty()) {
+        MoveTo((box.left + 3), (box.top + 0x29));
+        DrawCString(subtitle);
     }
+    ForeColor(blackColor);
     GetDialogItem(commDialog, 10, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(commDialog)))) {
-        ForeColor(blackColor);
-        PaintRect(&box);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        MoveTo(box.left, (box.top + 12));
-        if (canUpgradeEscort) {
-            if (commShip->upgradeOnLanding != 0) {
-                RGBForeColor(&rgbLightGrey);
-                DrawIndString(kGameStrList, 0x124);
-            } else {
-                RGBForeColor(&rgbMedGrey);
-                DrawIndString(kGameStrList, 0x125);
-                DrawCString(" ");
-                MoveTo((box.left + 0x46), (box.top + 12));
-                ForeColor(whiteColor);
-                DrawCommaNumber(shipClass[commShip->type].escUpgradeCost);
-                DrawCString(" ");
-                if (shipClass[commShip->type].escUpgradeCost == 1)
-                    DrawCString(creditString);
-                else
-                    DrawCString(creditsString);
-            }
-        } else {
+    ForeColor(blackColor);
+    PaintRect(&box);
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    MoveTo(box.left, (box.top + 12));
+    if (canUpgradeEscort) {
+        if (commShip->upgradeOnLanding != 0) {
             RGBForeColor(&rgbLightGrey);
-            DrawIndString(kGameStrList, 0x126);
-        }
-        if (canSellEscort) {
-            MoveTo(box.left, (box.top + 0x1c));
-            if (commShip->sellOnLanding != 0) {
-                RGBForeColor(&rgbLightGrey);
-                DrawIndString(kGameStrList, 0x127);
-            } else {
-                RGBForeColor(&rgbMedGrey);
-                DrawIndString(kGameStrList, 0x128);
-                DrawCString(" ");
-                MoveTo((box.left + 0x46), (box.top + 0x1c));
-                ForeColor(whiteColor);
-                DrawCommaNumber(shipClass[commShip->type].tradeIn);
-                DrawCString(" ");
-                if (shipClass[commShip->type].tradeIn == 1)
-                    DrawCString(creditString);
-                else
-                    DrawCString(creditsString);
-            }
-        }
-        if (commShip->hired != 0) {
-            MoveTo(box.left, (box.top + 0x2a));
+            DrawIndString(kGameStrList, 0x124);
+        } else {
             RGBForeColor(&rgbMedGrey);
-            DrawIndString(kGameStrList, 0x129);
+            DrawIndString(kGameStrList, 0x125);
             DrawCString(" ");
-            MoveTo((box.left + 0x1e), (box.top + 0x2a));
+            MoveTo((box.left + 0x46), (box.top + 12));
             ForeColor(whiteColor);
-            DrawCommaNumber((shipClass[commShip->type].cost * 0.01));
+            DrawCommaNumber(shipClass[commShip->type].escUpgradeCost);
             DrawCString(" ");
-            if (shipClass[commShip->type].cost * 0.01 == 1.0)
+            if (shipClass[commShip->type].escUpgradeCost == 1)
                 DrawCString(creditString);
             else
                 DrawCString(creditsString);
-            DrawCString(" ");
-            DrawIndString(kGameStrList, 0x10b);
         }
+    } else {
+        RGBForeColor(&rgbLightGrey);
+        DrawIndString(kGameStrList, 0x126);
+    }
+    if (canSellEscort) {
+        MoveTo(box.left, (box.top + 0x1c));
+        if (commShip->sellOnLanding != 0) {
+            RGBForeColor(&rgbLightGrey);
+            DrawIndString(kGameStrList, 0x127);
+        } else {
+            RGBForeColor(&rgbMedGrey);
+            DrawIndString(kGameStrList, 0x128);
+            DrawCString(" ");
+            MoveTo((box.left + 0x46), (box.top + 0x1c));
+            ForeColor(whiteColor);
+            DrawCommaNumber(shipClass[commShip->type].tradeIn);
+            DrawCString(" ");
+            if (shipClass[commShip->type].tradeIn == 1)
+                DrawCString(creditString);
+            else
+                DrawCString(creditsString);
+        }
+    }
+    if (commShip->hired != 0) {
+        MoveTo(box.left, (box.top + 0x2a));
+        RGBForeColor(&rgbMedGrey);
+        DrawIndString(kGameStrList, 0x129);
+        DrawCString(" ");
+        MoveTo((box.left + 0x1e), (box.top + 0x2a));
+        ForeColor(whiteColor);
+        DrawCommaNumber((shipClass[commShip->type].cost * 0.01));
+        DrawCString(" ");
+        if (shipClass[commShip->type].cost * 0.01 == 1.0)
+            DrawCString(creditString);
+        else
+            DrawCString(creditsString);
+        DrawCString(" ");
+        DrawIndString(kGameStrList, 0x10b);
     }
     CopyLoadPortToDialog(commDialog);
 }

@@ -59,19 +59,6 @@ void AttachGamePort(void)
     gGamePort.depth = page.depth;
 }
 
-/* two more of the port's compiled-away QuickDraw calls */
-// FUNCTION: EVNOVA 0x004b9160
-void *GetPortVisRgn(void *port)
-{
-    return NULL;
-}
-
-// FUNCTION: EVNOVA 0x004b9170
-void *GetCWindowVisRgn(void *window)
-{
-    return 0;
-}
-
 /* The DIB is created top-down (negative biHeight) so row 0 is the top, and its rowBytes
    is the width rounded up to a multiple of eight. 16 maps to 15 because the port's DIBs
    are 555. */

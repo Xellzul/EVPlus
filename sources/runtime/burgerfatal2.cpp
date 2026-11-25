@@ -4,6 +4,7 @@
 #include "burger.h"
 #include "macport.h"
 #include "platform.h"
+#include "crashlog.h"
 
 #define kFatalExitCode 0x37
 
@@ -31,17 +32,20 @@ void Fatal(const char *fmt, ...)
     }
 }
 
-/* NonFatal (BurgerLib DbDebugManager). */
+/* NonFatal: the message kept in ErrorMsg and written to the debug log as one line. */
 // FUNCTION: EVNOVA 0x00503e80
 void NonFatal(const char *fmt, ...)
 {
     va_list args;
+    size_t length;
 
     if (fmt != 0) {
         va_start(args, fmt);
         vsprintf(ErrorMsg, fmt, args);
         va_end(args);
-        if (BombFlag != 0)
-            Fatal(ErrorMsg);
+        length = strlen(ErrorMsg);
+        crashlog_print(ErrorMsg);
+        if (length == 0 || ErrorMsg[length - 1] != '\n')
+            crashlog_print("\n");
     }
 }

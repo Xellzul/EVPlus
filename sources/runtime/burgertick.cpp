@@ -44,9 +44,3 @@ void WaitTicks(Word tickCount)
     }
     LastTick = now;
 }
-
-// FUNCTION: EVNOVA 0x004d6000
-ULong ReadTickMilliseconds(void)
-{
-    return (ULong)(PlatMicroseconds() / kMicrosPerMs);
-}

@@ -29,12 +29,9 @@ short SWAddSprite(SpriteLayerRec *spriteLayerP, SpriteRec *newSpriteP)
 
         spriteLayerP->tailSpriteP = newSpriteP;
 
-        newSpriteP->needsToBeDrawn = 1;
-
         newSpriteP->parentSpriteLayerP = spriteLayerP;
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
 
@@ -69,7 +66,6 @@ short SWRemoveSprite(SpriteRec *oldSpriteP)
         oldSpriteP->parentSpriteLayerP = 0;
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
 
@@ -187,26 +183,17 @@ void SWCollideSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *srcSprit
 
                             (*srcSpriteP->spriteCollideProc)(srcSpriteP, dstSpriteP, &sectRect);
 
-                            if (srcSpriteP->spriteRemoval != kSWDontRemoveSprite ||
-                                srcSpriteP->parentSpriteLayerP == 0)
-                            {
+                            if (srcSpriteP->parentSpriteLayerP == 0)
                                 break;
-                            }
                         }
                     }
                 }
 
-                if (nextDstSpriteP != 0 && nextDstSpriteP->spriteRemoval != kSWDontRemoveSprite)
-                    dstSpriteP = dstSpriteLayerP->headSpriteP;
-                else
-                    dstSpriteP = nextDstSpriteP;
+                dstSpriteP = nextDstSpriteP;
             }
         }
 
-        if (nextSrcSpriteP != 0 && nextSrcSpriteP->spriteRemoval != kSWDontRemoveSprite)
-            srcSpriteP = srcSpriteLayerP->headSpriteP;
-        else
-            srcSpriteP = nextSrcSpriteP;
+        srcSpriteP = nextSrcSpriteP;
     }
 }
 

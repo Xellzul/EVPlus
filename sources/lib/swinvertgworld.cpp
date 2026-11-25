@@ -13,10 +13,8 @@ void SWInvertGWorld(CGrafPtr gWorldP)
 void SWInvertRect(CGrafPtr gWorldP, Rect *rectP)
 {
     CGrafPtr saveGWorld;
-    void *saveDevice;
 
     GetPort(&saveGWorld);
-    saveDevice = GetGWorldDevice(saveGWorld);
     SetPort(gWorldP);
 
     InvertRect(rectP);

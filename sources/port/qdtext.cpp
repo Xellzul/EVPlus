@@ -511,7 +511,7 @@ static int DeviceWidthOf(const UI::Mapping &map, const TextUnit *units, int coun
     return WidthOf(&glyphs, units, count);
 }
 
-/* BUG (exe, all Windows versions): StringWidth, MeasureCString, TextWidth and MeasureWrappedText take the
+/* BUG (exe, all Windows versions): StringWidth, MeasureCString and MeasureWrappedText take the
    bytes as ANSI text with `&' as an accelerator mark, while DrawTextRun draws them as Mac Roman with `&'
    shown: text with characters above 0x7f or with an `&' is measured at another width than it is drawn. */
 static int AnsiDeviceWidth(const UI::Mapping &map, const char *text, int byteCount)
@@ -556,16 +556,6 @@ short MeasureCString(const char *text)
     return MeasureAnsi(text, strlen(text));
 }
 
-// FUNCTION: EVNOVA 0x004bcbc0
-short TextWidth(const char *text, int byteCount)
-{
-    if (CurrentGrafPort == NULL)
-        return 0;
-    if (text == NULL || text[0] == 0)
-        return 0;
-    return MeasureAnsi(text, byteCount);
-}
-
 short MeasureCString(const std::string &text)
 {
     if (CurrentGrafPort == NULL || text.empty())
@@ -573,12 +563,7 @@ short MeasureCString(const std::string &text)
     return MeasureAnsi(text.data(), (int)text.size());
 }
 
-short TextWidth(const std::string &text)
-{
-    return MeasureCString(text);
-}
-
-/* TextWidth in the current port's device pixels, before rounding to logical ones: where the glyphs of the
+/* The text's width in the current port's device pixels, before rounding to logical ones: where the glyphs of the
    first byteCount bytes end, from where they start */
 int TextDeviceWidth(const char *text, int byteCount)
 {
@@ -602,8 +587,8 @@ short CapsCenteredPenV(short top, short bottom)
     return (short)((top + bottom + capHeight) / 2 + CurrentGrafPort->txSize - style.ascent);
 }
 
-/* TextWidth measured the way DrawTextRun draws: as Mac Roman (TextWidth measures the bytes as ANSI, so
-   characters such as the ellipsis come out wrong) */
+/* The text's width measured the way DrawTextRun draws: as Mac Roman (MeasureCString measures the bytes as ANSI,
+   so characters such as the ellipsis come out wrong) */
 short TextWidthMacRoman(const char *text, int byteCount)
 {
     TextUnit *units;

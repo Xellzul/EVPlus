@@ -15,7 +15,6 @@ short SWCreateGWorldFromCIconMask(SpriteWorldPtr destSpriteWorld,
     short err;
     PixMapPtr maskPix;
     PixMapPtr pixBounds;
-    void *saveGDevice;
     short depth;
     int32_t y;
     int32_t width;
@@ -25,7 +24,6 @@ short SWCreateGWorldFromCIconMask(SpriteWorldPtr destSpriteWorld,
     int32_t dstSkip;
 
     GetPort(&saveGWorld);
-    saveGDevice = GetGWorldDevice(saveGWorld);
 
     depth = destSpriteWorld->pixelDepth;
 
@@ -69,7 +67,6 @@ short SWCreateGWorldFromCIconMask(SpriteWorldPtr destSpriteWorld,
 
     SetPort(saveGWorld);
 
-    SWSetStickyIfError(err);
 
     return err;
 }

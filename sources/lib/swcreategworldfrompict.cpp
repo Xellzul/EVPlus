@@ -12,7 +12,6 @@ short SWCreateGWorldFromPict(SpriteWorldPtr destSpriteWorld,
 {
     short err;
     CGrafPtr saveGWorld;
-    void *saveGDevice;
     CGrafPtr tempGWorld;
     Rect pictRect;
     short depth;
@@ -20,7 +19,6 @@ short SWCreateGWorldFromPict(SpriteWorldPtr destSpriteWorld,
     *pictGWorld = 0;
 
     GetPort(&saveGWorld);
-    saveGDevice = GetGWorldDevice(saveGWorld);
 
     depth = destSpriteWorld->pixelDepth;
 
@@ -40,7 +38,6 @@ short SWCreateGWorldFromPict(SpriteWorldPtr destSpriteWorld,
 
     SetPort(saveGWorld);
 
-    SWSetStickyIfError(err);
 
     return err;
 }

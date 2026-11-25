@@ -27,6 +27,7 @@ bool ClipToFrame(const Rect &frame, Rect &src, Rect &dst)
     return dst.right > dst.left;
 }
 
+#if EVPLUS_TEST_PAGES
 /* a rect copy between two frames */
 struct RectBlit {
     Rect src;
@@ -37,18 +38,13 @@ struct RectBlit {
     int rows;
 };
 
-/* Asserts the frames (BlitPixieInterface.c from `line' on), clips the rects to the destination frame and,
-   with interlace on an interlaced frame, takes every other row; false when nothing is left. */
+/* Asserts the frames (BlitPixieInterface.c from `line' on) and clips the rects to the destination frame;
+   false when nothing is left. */
 bool PrepareRectBlit(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, const Rect *srcRect, const Rect *dstRect,
-                     int line, bool mask, bool interlace, RectBlit &blit)
+                     int line, RectBlit &blit)
 {
     if (srcFrameP->framePort == 0)
         SW_ASSERT_FAIL("BlitPixieInterface.c", line, line + 2);
-    if (mask) {
-        line++;
-        if (srcFrameP->maskPort == 0)
-            SW_ASSERT_FAIL("BlitPixieInterface.c", line, line + 2);
-    }
     if (dstFrameP->framePort == 0)
         SW_ASSERT_FAIL("BlitPixieInterface.c", line + 1, line + 3);
     if (!(srcFrameP->isFrameLocked && dstFrameP->isFrameLocked))
@@ -68,19 +64,9 @@ bool PrepareRectBlit(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, const Rect *s
 
     blit.width = blit.dst.right - blit.dst.left;
     blit.rows = blit.dst.bottom - blit.dst.top;
-
-    if (interlace && dstFrameP->interlacingIsOn) {
-        if (((blit.dst.top - frame.top) & 1) == (unsigned char)dstFrameP->skipOddLines) {
-            blit.src.top++;
-            blit.dst.top++;
-            blit.rows--;
-        }
-        blit.rows = (blit.rows >> 1) + (blit.rows & 1);
-        blit.srcRowBytes += blit.srcRowBytes;
-        blit.dstRowBytes += blit.dstRowBytes;
-    }
     return blit.width > 0 && blit.rows > 0;
 }
+#endif
 
 /* an RLE frame drawn into a frame */
 struct RLEBlit {
@@ -135,13 +121,14 @@ bool PrepareRLEBlit(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, const Rect *sr
 
 } // namespace
 
+#if EVPLUS_TEST_PAGES
 // FUNCTION: EVNOVA 0x004703e0
 // MAC: _BlitPixieRectDrawProc i386 0x000ba16f ppc 0x000c6154
 void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
                            Rect *srcRect, Rect *dstRect)
 {
     RectBlit blit;
-    if (!PrepareRectBlit(srcFrameP, dstFrameP, srcRect, dstRect, 155, false, true, blit))
+    if (!PrepareRectBlit(srcFrameP, dstFrameP, srcRect, dstRect, 155, blit))
         return;
 
     BlitPixieRect(
@@ -152,48 +139,7 @@ void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
         SW_PIXELBYTES(dstFrameP, blit.width),
         blit.rows);
 }
-
-// FUNCTION: EVNOVA 0x00470960
-// MAC: _BlitPixieMaskDrawProc i386 0x000ba6c5 ppc 0x000c6644
-void BlitPixieMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
-                           Rect *srcRect, Rect *dstRect)
-{
-    RectBlit blit;
-    if (!PrepareRectBlit(srcFrameP, dstFrameP, srcRect, dstRect, 283, true, true, blit))
-        return;
-
-    int32_t srcBaseOffset = SW_ROWBYTES(srcFrameP, blit.src.top) + SW_PIXELBYTES(srcFrameP, blit.src.left);
-
-    BlitPixieMask(
-        (unsigned char *)(srcFrameP->frameBaseAddr + srcBaseOffset),
-        (unsigned char *)SW_PIXELPTR(dstFrameP, blit.dst.left, blit.dst.top),
-        (unsigned char *)(srcFrameP->maskBaseAddr + srcBaseOffset),
-        blit.srcRowBytes,
-        blit.dstRowBytes,
-        SW_PIXELBYTES(dstFrameP, blit.width),
-        blit.rows);
-}
-
-// FUNCTION: EVNOVA 0x00470c20
-// MAC: _BlitPixiePartialMaskDrawProc i386 0x000ba98b ppc 0x000c68c4
-void BlitPixiePartialMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
-                                  Rect *srcRect, Rect *dstRect)
-{
-    RectBlit blit;
-    if (!PrepareRectBlit(srcFrameP, dstFrameP, srcRect, dstRect, 355, true, true, blit))
-        return;
-
-    int32_t srcBaseOffset = SW_ROWBYTES(srcFrameP, blit.src.top) + SW_PIXELBYTES(srcFrameP, blit.src.left);
-
-    BlitPixiePartialMask(
-        (unsigned char *)(srcFrameP->frameBaseAddr + srcBaseOffset),
-        (unsigned char *)SW_PIXELPTR(dstFrameP, blit.dst.left, blit.dst.top),
-        (unsigned char *)(srcFrameP->maskBaseAddr + srcBaseOffset),
-        blit.srcRowBytes,
-        blit.dstRowBytes,
-        SW_PIXELBYTES(dstFrameP, blit.width),
-        blit.rows);
-}
+#endif
 
 // FUNCTION: EVNOVA 0x00470ee0
 // MAC: _BlitPixieRLEDrawProc i386 0x000bb12d ppc 0x000c6fc4
@@ -298,31 +244,3 @@ Boolean BlitPixieRLEPointCollisionProc(SpritePtr sprite, Point *pt, Rect *rect)
     p.v = pt->v;
     return BlitPixieRLECollisionWithPoint((unsigned char *)fr->rleTokenStart, &p, &r);
 }
-
-
-// FUNCTION: EVNOVA 0x004719d0
-// MAC: _SWGetValueFromColor i386 0x000bd4a0 ppc 0x000c8e14
-uint32_t SWGetValueFromColor(FramePtr dstFrameP, RGBColor *color)
-{
-    CGrafPtr saveGWorld;
-    void *saveGDevice;
-    uint32_t pixelValue;
-
-    if (dstFrameP == 0)
-        SW_ASSERT_FAIL("BlitPixieInterface.c", 1929, 1927);
-    if (dstFrameP->framePort == 0)
-        SW_ASSERT_FAIL("BlitPixieInterface.c", 1930, 1928);
-
-    GetPort(&saveGWorld);
-    saveGDevice = GetGWorldDevice(saveGWorld);
-    SetPort(dstFrameP->framePort);
-
-    pixelValue = Color2Index(color);
-
-    if (dstFrameP->frameDepth < 32)
-        pixelValue |= pixelValue << 16;
-
-    SetPort(saveGWorld);
-    return pixelValue;
-}
-

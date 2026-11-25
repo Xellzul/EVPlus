@@ -8,10 +8,6 @@
 
 typedef unsigned char Str15[16];
 
-typedef void (*CleanUpCallBackPtr)(void);
-
-CleanUpCallBackPtr gSWCleanUpCallBackP;              /* 0x008700d0 */
-
 // FUNCTION: EVNOVA 0x004794d0
 // MAC: _SWAssertFail i386 0x000a7a50 ppc 0x000b2850
 void SWAssertFail(char *filename, int lineNum)
@@ -29,9 +25,6 @@ void SWAssertFail(char *filename, int lineNum)
         fileString[n + 1] = filename[n];
     }
     fileString[0] += n;
-
-    if (gSWCleanUpCallBackP != NULL)
-        (*gSWCleanUpCallBackP)();
 
     OSCursorReset();
     ParamText(PascalLiteral("Assertion failure! Nova will now quit. The failure occurred here:").text,

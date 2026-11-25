@@ -1,15 +1,8 @@
-/* atsndrate.cpp -- the sound driver's 16.16 rate helpers: to whole hertz, and the saturating multiply and divide. Notes: Research/notes/atsnddrv.md */
+/* atsndrate.cpp -- the sound driver's 16.16 rate helpers: the saturating multiply and divide. Notes: Research/notes/atsnddrv.md */
 
 #include "burger.h"
 
 
-
-/* A 16.16 rate to whole hertz, rounded. */
-// FUNCTION: EVNOVA 0x00507d0b
-ULong UFix32_To_UInt32(ULong rate)
-{
-    return ((rate >> 15) + 1) >> 1;
-}
 
 /* 16.16 multiply and divide, saturating; 0 if either side is 0. */
 // FUNCTION: EVNOVA 0x00507d16

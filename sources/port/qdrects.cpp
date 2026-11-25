@@ -1,4 +1,4 @@
-/* qdrects.cpp -- QuickDraw's Rect maths: OffsetRect, SetRect, InsetRect, SectRect, PtInRect, RectInRgn. */
+/* qdrects.cpp -- QuickDraw's Rect maths: OffsetRect, SetRect, InsetRect, SectRect, PtInRect. */
 #include "macport.h"
 
 // FUNCTION: EVNOVA 0x004b8d50
@@ -89,10 +89,4 @@ int PtInRect(int h, int v, Rect *r)
     if (h < r->right && h >= r->left && v < r->bottom && v >= r->top)
         inside = 1;
     return inside;
-}
-
-// FUNCTION: EVNOVA 0x004bb860
-char RectInRgn(Rect *r, void *rgn)
-{
-    return 1;
 }

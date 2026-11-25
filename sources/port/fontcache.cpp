@@ -244,6 +244,7 @@ int GetFont(short familyID, short size, short style, FontSpec *spec)
     return 1;
 }
 
+#if EVPLUS_TEST_PAGES
 /* -- for the font test page (port/fonttest.cpp) -- */
 
 short FontFamilyCount(void)
@@ -275,6 +276,7 @@ void FontRealName(short familyID, short size, short style, char *out, int outSiz
     }
     snprintf(out, outSize, "%s (%s)", RasterFamily(spec.font), family->source);
 }
+#endif
 
 // FUNCTION: EVNOVA 0x004bc6e0
 void GetFNum(const unsigned char *name, short *familyID)

@@ -122,6 +122,5 @@ short SWCreateRLEData(SpritePtr srcSpriteP, short requestedDepth)
         }
     }
 
-    SWSetStickyIfError(err);
     return err;
 }

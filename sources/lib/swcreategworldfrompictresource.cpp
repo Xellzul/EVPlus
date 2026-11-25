@@ -29,7 +29,6 @@ short SWCreateGWorldFromPictResource(SpriteWorldPtr destSpriteWorld,
         err = resNotFound;
     }
 
-    SWSetStickyIfError(err);
 
     return err;
 }

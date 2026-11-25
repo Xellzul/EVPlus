@@ -5,7 +5,6 @@
 #include "screen.h"
 
 #define kFullscreen      1                      /* SETDISPLAYFULLSCREEN */
-#define kDoubleOk        4                      /* SETDISPLAYDOUBLEOK */
 #define kDepth555        15
 
 /* UpdateAndPageFlip (BurgerLib GrWin95Code): show the page now. */
@@ -31,13 +30,11 @@ int32_t SetDisplayToSize(ULong width, ULong height, ULong depth, ULong flags)
 {
     depth = (unsigned short)depth;
     ReleaseVideo();
-    flags &= ~kDoubleOk;
     if (depth != kDepth555
         || PlatVideoOpen(width, height, (flags & kFullscreen) != 0) != 0) {
         NonFatal("Couldn't set display mode %dx%dx%d\n", width, height, depth);
         return 1;
     }
-    ScreenFlags = flags;
     if (!Screen::Open(width, height, depth)) {
         PlatVideoClose();
         return 1;

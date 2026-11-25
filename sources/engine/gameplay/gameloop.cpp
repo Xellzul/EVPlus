@@ -18,7 +18,6 @@
 #include "platform.h"
 #include "viewdraw.h"
 
-#define kSpriteSizeSlots    6
 #define kFullHilite         0x20
 #define kNoHilite           (-32)
 
@@ -37,14 +36,12 @@ void HandleShipDisplay(ShipObj *ship)
     short damage;
     Boolean altTimed;
     unsigned char msg[256];
-    short sizes[kSpriteSizeSlots];
     float dx;
     float dy;
     float rate;
     float ion;
     short nFrames;
     short h;
-    short best;
     short i;
     short jitter;
     short impact;
@@ -86,8 +83,6 @@ void HandleShipDisplay(ShipObj *ship)
         return;
     }
 
-    for (i = 0; i < kSpriteSizeSlots; i++)
-        sizes[i] = 0;
     disabled = ship->IsDisabled();
     hasGlow = hasLight = hasAlt = hasWeap = hasShield = 0;
     hideAll = 0;
@@ -519,53 +514,6 @@ void HandleShipDisplay(ShipObj *ship)
                 ship->altSprite->tintGreen = ship->sprite->tintGreen;
                 ship->altSprite->tintBlue = ship->sprite->tintBlue;
             }
-
-            if (ship->sprite != NULL)
-                ship->sprite->onTop = 1;
-            if (ship->altSprite != NULL)
-                ship->altSprite->onTop = 1;
-            if (ship->glowSprite != NULL)
-                ship->glowSprite->onTop = 1;
-            if (ship->weapSprite != NULL)
-                ship->weapSprite->onTop = 1;
-            if (ship->lightSprite != NULL)
-                ship->lightSprite->onTop = 1;
-            if (ship->shieldSprite != NULL)
-                ship->shieldSprite->onTop = 1;
-
-            if (ship->sprite != NULL)
-                sizes[0] = GetFrameBiggestSize(ship->sprite->curFrameP);
-            if (hasAlt != 0 && ship->altSprite->isVisible != 0)
-                sizes[1] = GetFrameBiggestSize(ship->altSprite->curFrameP);
-            if (hasGlow != 0 && ship->glowSprite->isVisible != 0)
-                sizes[2] = GetFrameBiggestSize(ship->glowSprite->curFrameP);
-            if (hasWeap != 0 && ship->weapSprite->isVisible != 0)
-                sizes[3] = GetFrameBiggestSize(ship->weapSprite->curFrameP);
-            if (hasLight != 0 && ship->lightSprite->isVisible != 0)
-                sizes[4] = GetFrameBiggestSize(ship->lightSprite->curFrameP);
-            if (hasShield != 0 && ship->shieldSprite->isVisible != 0)
-                sizes[5] = GetFrameBiggestSize(ship->shieldSprite->curFrameP);
-
-            best = -1;
-            w = 0;
-            for (i = 0; i < kSpriteSizeSlots; i++) {
-                if (sizes[i] > w) {
-                    best = i;
-                    w = sizes[i];
-                }
-            }
-            if (best == 1)
-                ship->altSprite->onTop = 0;
-            else if (best == 2)
-                ship->glowSprite->onTop = 0;
-            else if (best == 3)
-                ship->weapSprite->onTop = 0;
-            else if (best == 4)
-                ship->lightSprite->onTop = 0;
-            else if (best == 5)
-                ship->shieldSprite->onTop = 0;
-            else
-                ship->sprite->onTop = 0;
         } else {
             SWSetSpriteVisible(ship->sprite, 0);
             if (hasGlow != 0)
@@ -1494,8 +1442,6 @@ void HandleStars(void)
         if (starData[i].live != 0) {
             SWSetSpriteVisible(starData[i].sprite, 1);
             SWSetCurrentFrameIndex(starData[i].sprite, starData[i].frame);
-            SWSetSpriteDrawProc(starData[i].sprite,
-                                BlitPixieRLETranslucentDrawProc);
             starData[i].sprite->translucency = kTranslucencyOpaque;
             starData[i].sprite->tintMode = 0;
             starData[i].sprite->tintRed = alpha;
@@ -2637,7 +2583,6 @@ void HandleStellarSystemVisibility(void)
             SWLockSprite(stellarSprite[n]);
             if (fresh)
                 SWAddSprite(stellarLayer, stellarSprite[n]);
-            SWSetSpriteDrawProc(stellarSprite[n], BlitPixieRLETranslucentDrawProc);
             SWSetSpriteVisible(stellarSprite[n], 1);
             SWSetCurrentFrameIndex(stellarSprite[n], stellarData[i].curFrame);
             SWSetSpriteLocation(stellarSprite[n],
@@ -3833,7 +3778,6 @@ void HandleAsteroidHit(ShotObj *shot, AsteroidObj *roid)
     }
     shot->life = -1.0f;
     SWSetSpriteVisible(shot->sprite, 0);
-    ((SpriteRec *)shot->sprite)->needsToBeErased = 1;
 }
 
 /* shipcollide -- the SpriteWorld collision callback for a ship sprite (win 0x004374f0, mac _ShipCollisionHandler). Notes: Research/notes/shipcollide.md */
@@ -4017,7 +3961,6 @@ void HandleShipHit(ShotObj *shot, ShipObj *ship, Boolean spawnSubs)
     shot->life = -1.0f;
     if (shot->sprite != NULL && shot->sprite->curFrameP != 0) {
         SWSetSpriteVisible(shot->sprite, 0);
-        shot->sprite->needsToBeErased = 1;
     }
 }
 
@@ -4070,7 +4013,6 @@ void CheckShotProximities(void)
                                          weaponStats[shotData[i].weapType].hitParticles, 0);
                         shotData[i].life = -1.0f;
                         SWSetSpriteVisible(shotData[i].sprite, 0);
-                        shotData[i].sprite->needsToBeErased = 1;
                         if (StellarIsDestroyed(&stellarData[stel])) {
                             if (stellarData[stel].explodType != -1)
                                 CreateExplosion(

@@ -1,44 +1,6 @@
-/* burgerunquote.cpp -- BurgerLib StStringManager: trimming, extensions, the quoted-value reader, number formatting, string copies. Notes: Research/notes/burgerunquote.md */
+/* burgerunquote.cpp -- BurgerLib StStringManager: file extensions, number formatting, Pascal string copies. Notes: Research/notes/burgerunquote.md */
 
 #include "burger.h"
-
-/* The member's one byte of .bss; no live code reads it. */
-namespace Burger {
-class Str {
-public:
-    static const char Empty[1];
-};
-}
-
-const char Burger::Str::Empty[1] = "";
-
-/* StripLeadingAndTrailingWhiteSpace (BurgerLib StStringManager): spaces and tabs off both
-   ends, in place. */
-// FUNCTION: EVNOVA 0x004fbec0
-void StripLeadingAndTrailingWhiteSpace(char *text)
-{
-    char *end;
-    Word c;
-    char *out;
-
-    end = text;
-    c = (Word8)*text++;
-    if (c == ' ' || c == '\t') {
-        do {
-            c = (Word8)*text++;
-        } while (c == ' ' || c == '\t');
-    }
-    if (c != 0) {
-        out = end;
-        do {
-            *out++ = c;
-            if (c != ' ' && c != '\t')
-                end = out;
-            c = (Word8)*text++;
-        } while (c != 0);
-    }
-    *end = c;
-}
 
 /* GetFileExtension (BurgerLib StStringManager): past the last '.', or the terminator when
    there is none. */
@@ -62,46 +24,6 @@ char *GetFileExtension(const char *name)
             name = p;
     }
     return (char *)name;
-}
-
-// FUNCTION: EVNOVA 0x004fbf50
-char *ParseQuotedString(char *out, int32_t outSize, const char *src)
-{
-    int32_t room;
-    uint32_t c;
-    int32_t next;
-
-    if (*src == '"') {
-        room = outSize;
-        if (room != 0)
-            --room;
-        for (;;) {
-            src = src + 1;
-            c = (unsigned char)*src;
-            if (c == '\t') {
-                c = ' ';
-            } else if (c == '"') {
-                src = src + 1;
-                next = (unsigned char)*src;
-                if (next != '"')
-                    break;
-            } else if (c == 0 || c == '\n') {
-                break;
-            } else if (c == '\r') {
-                if (*src == '\n')
-                    src = src + 1;
-                break;
-            }
-            if (room != 0) {
-                *out = c;
-                out = out + 1;
-                room = room - 1;
-            }
-        }
-    }
-    if (outSize != 0)
-        *out = 0;
-    return (char *)src;
 }
 
 #define kDigitMask     0xff
@@ -151,29 +73,7 @@ char *NumberToAscii(char *dst, ULong value, ULong flags)
     return dst + 1;
 }
 
-static const float PowerOf10FltTable[6] = {
-    1.0e1f, 1.0e2f, 1.0e4f, 1.0e8f, 1.0e16f, 1.0e32f
-};
-
-static const double PowerOf10DblTable[9] = {
-    1.0e1, 1.0e2, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256
-};
-
 #define kPascalMaxLen   0xff
-
-/* StrCopy (BurgerLib StStringManager): a C string copied into a new pointer. */
-// FUNCTION: EVNOVA 0x004fc120
-char *StrCopy(const char *text)
-{
-    Word length;
-    char *copy;
-
-    length = strlen(text) + 1;
-    copy = (char *)AllocAPointer(length);
-    if (copy != 0)
-        memcpy(copy, text, length);
-    return copy;
-}
 
 /* C string to Pascal string, capped at 255 payload bytes. */
 // FUNCTION: EVNOVA 0x004fc170

@@ -324,8 +324,6 @@ void PlayerInfoDialogUpdate(void)
     TextFont(smallTextFont);
     TextSize(smallTextSize);
     GetDialogItem(infoDialog, 6, &itemType, (Handle *)&itemHandle, &box);
-    if (!RectInRgn(&box, GetWindowVisRgn(FrontWindow(infoDialog))))
-        goto blit_back;
 
     if (selPlayerInfoMode == 1) {
         /* --- left column --- */
@@ -666,7 +664,6 @@ void PlayerInfoDialogUpdate(void)
         }
     }
 
-blit_back:
     PlayerInfoButtons(selPlayerInfoMode).Draw(-1);
     CopyLoadPortToDialog(infoDialog);
 }

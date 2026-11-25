@@ -20,7 +20,6 @@ short SWCreateSpriteLayer(SpriteLayerRec **spriteLayerP)
         err = memFullErr;
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
 

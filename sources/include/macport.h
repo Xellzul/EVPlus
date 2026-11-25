@@ -77,7 +77,9 @@ extern GWorldContainer iconsPort;
 extern void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int32_t end);
 extern void FrameRect(const Rect *r);
 extern void GetFNum(const unsigned char *name, short *familyID);
-/* the font test page (port/fonttest.cpp) and what it asks the font cache */
+#if EVPLUS_TEST_PAGES
+/* the test pages (port/fonttest.cpp, scaletest.cpp, spritetest.cpp, soundtest.cpp) and what the font page asks
+   the font cache */
 extern void DebugFontScreen(void);
 extern void DebugScaleTest(void);
 extern void DebugSpriteTest(void);
@@ -85,6 +87,7 @@ extern void DebugSoundTest(void);
 extern short FontFamilyCount(void);
 extern const char *FontFamilyName(short familyID);
 extern void FontRealName(short familyID, short size, short style, char *out, int outSize);
+#endif
 extern void DrawTextRun(const void *text, uint32_t byteCount, Rect *box,
                         Boolean clipped, int height);
 /* bytes start..end - 1 of a text drawn in `color' */
@@ -101,7 +104,6 @@ extern void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits,
                      const Rect *srcRect, const Rect *dstRect,
                      int32_t mode, void *maskRgn);
 extern BitMapPtr GetPortBitMapForCopyBits(CGrafPtr port);
-extern void BlockMove(const void *src, void *dst, uint32_t len);
 extern void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
                      Rect *srcRect, Rect *maskRect, Rect *dstRect);
 /* the engine's older spelling of a port's bits, (BitMap *)*GetPortPixMap; the port has one call */
@@ -114,7 +116,6 @@ extern void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
 #define GWorldContainerSetPort(gwc) SetGWorldContainer(gwc)
 /* a Point in hand: the mac passes it whole, the win port's PtInRect takes h and v */
 #define PtInRectPoint(pt, r) PtInRect((pt).h, (pt).v, r)
-extern void *GetPortVisRgn(void *port);
 extern short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds,
                        void *theGDH);
 extern PixMapPtr GetGWorldPixMap(CGrafPtr world);
@@ -166,39 +167,26 @@ extern PixMapPtr GetGWCPixMap(GWorldContainer *gwc);
 
 typedef struct SWFrameRec {
     CGrafPtr framePort;
-    void *frameDevice;
     PixMapPtr framePixHndl;
-    PixMapPtr framePix;
     char *frameBaseAddr;
     uint32_t frameRowBytes;
-    short leftAlignFactor;
-    short rightAlignFactor;
     Boolean isFrameLocked;
-    Boolean interlacingIsOn;
-    Boolean skipOddLines;
     short frameDepth;
     Rect frameRect;
     short hotSpotH;
     short hotSpotV;
     Rect collisionInset;
-    Point offsetPoint;
-    void *maskRgn;
     CGrafPtr maskPort;
-    void *maskDevice;
     PixMapPtr maskPixHndl;
-    PixMapPtr maskPix;
     char *maskBaseAddr;
-    Boolean tileMaskIsSolid;
     Boolean sharesGWorld;
     Boolean usesCollisionInset;
-    Boolean framePad57;
     unsigned short useCount;
     unsigned short numScanLines;
     unsigned short pixelShift;
     uint32_t *scanLinePtrArray;
     void *rleDataH;
     void *rleTokenStart;
-    int32_t userData;
 } SWFrameRec;
 
 typedef SWFrameRec *FramePtr;
@@ -206,19 +194,14 @@ typedef SWFrameRec *FramePtr;
 typedef void (*DrawProcPtr)(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
                             Rect *srcRect, Rect *dstRect);
 
-/* The sprite world: the layers of sprites the game moves and animates, the space view's rect and the frame
-   clock. The game draws it through gSWDraw (viewdraw.cpp). */
+/* The sprite world: the layers of sprites the game moves and animates and the space view's rect. The game draws
+   it through gSWDraw (viewdraw.cpp). */
 typedef struct SpriteWorldRec {
     struct SpriteLayerRec *headSpriteLayerP;
     struct SpriteLayerRec *tailSpriteLayerP;
-    struct SpriteLayerRec *deadSpriteLayerP;
     Rect windRect;                  /* the space view, at 0,0 */
     struct CGrafPort *windowPort;   /* the game window: SWSetPortToWindow's port */
     short pixelDepth;
-    short frameInterval;
-    uint32_t runningTimeCount;
-    unsigned long long lastMicroseconds;
-    uint32_t timeOfLastFrame;
     Boolean frameHasOccurred;
     Boolean fastBlit;
 } SpriteWorldRec, *SpriteWorldPtr;
@@ -226,7 +209,6 @@ typedef struct SpriteWorldRec {
 
 typedef struct SpriteLayerRec {
     struct SpriteLayerRec *nextSpriteLayerP;
-    struct SpriteLayerRec *prevSpriteLayerP;
     struct SpriteRec *headSpriteP;
     struct SpriteRec *tailSpriteP;
 } SpriteLayerRec, *SpriteLayerPtr;
@@ -271,87 +253,36 @@ typedef struct RLEPixelData {
 
 typedef struct SpriteRec SpriteRec, *SpritePtr;
 
-typedef void (*FrameProcPtr)(SpritePtr srcSpriteP, SWFrameRec *curFrameP,
-                             int32_t *frameIndex);
-typedef void (*MoveProcPtr)(SpritePtr srcSpriteP);
 typedef void (*CollideProcPtr)(SpritePtr srcSpriteP, SpritePtr dstSpriteP,
                                Rect *sectRect);
-
-typedef enum RemovalType {
-    kSWDontRemoveSprite = 0,
-    kSWRemoveSprite,
-    kSWRemoveAndDisposeSprite
-} RemovalType;
-
-typedef enum AdvanceType {
-    kSWWrapAroundMode = 0,
-    kSWPatrollingMode
-} AdvanceType;
 
 struct SpriteRec {
     SpriteLayerRec *parentSpriteLayerP;
     SpritePtr nextSpriteP;
     SpritePtr prevSpriteP;
-    SpritePtr nextActiveSpriteP;
-    SpritePtr nextIdleSpriteP;
     unsigned char isVisible;
-    Boolean needsToBeDrawn;
-    Boolean needsToBeErased;
-    Boolean onTop;
-    Boolean justBecameVisible;
-    char pad1b;
     Rect destFrameRect;
-    Rect oldFrameRect;
-    Rect deltaFrameRect;
-    DrawProcPtr frameDrawProc;
-    short tileDepth;
-    Boolean destRectIsVisible;
-    Boolean oldRectIsVisible;
-    Rect clippedSourceRect;
-    Rect destOffscreenRect;
     SWFrameRec **frameArray;
     SWFrameRec *curFrameP;
     int32_t numFrames;
     int32_t maxFrames;
-    int32_t frameTimeInterval;
-    uint32_t timeOfLastFrameChange;
-    int32_t frameAdvance;
     int32_t curFrameIndex;
-    int32_t firstFrameIndex;
-    int32_t lastFrameIndex;
-    FrameProcPtr frameChangeProc;
-    int32_t moveTimeInterval;
-    uint32_t timeOfLastMove;
-    short horizMoveDelta;
-    short vertMoveDelta;
-    Rect moveBoundsRect;
-    MoveProcPtr spriteMoveProc;
-    MoveProcPtr realSpriteMoveProc;
     CollideProcPtr spriteCollideProc;
     CGrafPtr sharedPictGWorld;
     CGrafPtr sharedMaskGWorld;
-    RemovalType spriteRemoval;
-    AdvanceType frameAdvanceMode;
     short translucency;
     short tintRed;
     short tintGreen;
     short tintBlue;
     short tintMode;
     uint32_t tintColor;
-    uint32_t rotation;
     short scaledWidth;
     short scaledHeight;
-    uint32_t colorValue;
-    RGBColor colorRGB;
-    Boolean flippedHorizontal;
-    Boolean flippedVertical;
-    short pad2;
     int32_t userData;
     char **rleDataH;
     Boolean collisionsDisabled;
     Boolean ownsRLEData;
     Boolean isEmptySprite;
-    Boolean srD3;
 };
 
 typedef struct TERec {
@@ -494,7 +425,6 @@ extern void FlushEvents(unsigned short whichMask, unsigned short stopMask);
 extern void FrameOval(Rect *r);
 extern CWindowPtr FrontWindow(void *window);
 extern Image_t *GetCIcon(short iconID);
-extern void *GetCWindowVisRgn(void *window);
 extern Rect *GetDialogPortRect(DialogPtr dlg);
 #define kMinFontSize 10                     /* GetFont makes a smaller font this size */
 struct FontSpec;
@@ -564,9 +494,7 @@ extern int PtInRect(int h, int v, Rect *r);
 extern void QDReleaseResource(PicHandle pic);
 extern void RGBForeColor(const RGBColor *color);
 #define TickCount() ReadTick()
-extern CGrafPtr GetWindowPort(CWindowPtr window);
 #define QDFlushPortBuffer(port, region) ScreenEndScene()
-extern Boolean RectInRgn(Rect *r, void *rgn);
 extern void RedrawDialog(DialogPtr dlg);
 extern void RedrawDialogs(int a);
 extern void ResetScreenRect(void);
@@ -575,7 +503,6 @@ extern int SectRect(const Rect *a, const Rect *b, Rect *dst);
 extern uint32_t Color2Index(RGBColor *color);
 extern void SetDialogDefaultItem(DialogPtr dlg, int32_t value);
 extern short Random(void);
-extern int32_t GetQDGlobalsRandomSeed(void);
 extern void SetQDGlobalsRandomSeed(int32_t seed);
 extern void Microseconds(UnsignedWide *now);
 extern void StringToNum(const unsigned char *str, int32_t *value);
@@ -613,7 +540,6 @@ extern bool SplitTwoLineString(const std::string &src, std::string &line1, std::
 extern void TextFace(short face);
 extern void TextFont(short font);
 extern void TextSize(short size);
-extern short TextWidth(const char *text, int byteCount);
 extern short TextWidthMacRoman(const char *text, int byteCount);
 extern int TextDeviceWidth(const char *text, int byteCount);
 extern unsigned AnsiToUnicode(unsigned char c);             /* code page 1252, the typed text's */
@@ -670,7 +596,6 @@ extern void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible);
 
 extern void SetDialogItemText(Handle item, const unsigned char *pstr);
 extern void GetDialogItemText(Handle item, unsigned char *pstr);
-extern void DisableControl(ControlPtr ctl);
 extern void SetDialogVisible(DialogPtr dlg, unsigned char value);
 extern void SizeDialogWindow(DialogPtr dlg, short width, short height,
                          Boolean update);
@@ -734,6 +659,5 @@ extern short GetPixDepth(PixMapPtr pm);
    BackColor takes the RGBColor */
 #define ForeColor(c) RGBForeColor(c)
 #define RGBBackColor(c) BackColor(c)
-#define GetWindowVisRgn(window) GetCWindowVisRgn(window)
 
 #endif

@@ -586,193 +586,182 @@ void ShipyardDialogUpdate(void)
     GetDialogItem(shipyardDialog, kGridItem, &itemType, &item, &box);
     box.right += 1;
     box.bottom += 1;
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipyardDialog)))) {
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        ForeColor(blackColor);
-        drawn = 0;
-        for (i = shipyardScroll; i < kMaxShipTypes; i++) {
-                if (RectInRgn(&listScreenRect[i - shipyardScroll],
-                              GetWindowVisRgn(FrontWindow(shipyardDialog))) &&
-                    drawn < kGridCells && (i >= 0 &&
-                    dockedPortShipTypes[i] != -1)) {
-                    if (skipped < 3) {
-                        if (i - shipyardScroll >= 0 &&
-                            i - shipyardScroll < kGridCells) {
-                            if (!RetrieveMenuIcon(
-                                    shipClass[dockedPortShipTypes[i]].shipyardPictID,
-                                    MenuIconPort(&loadPort), &listPicScreenRect[i - shipyardScroll]))
-                                skipped++;
-                        } else {
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    ForeColor(blackColor);
+    drawn = 0;
+    for (i = shipyardScroll; i < kMaxShipTypes; i++) {
+            if (drawn < kGridCells && (i >= 0 &&
+                dockedPortShipTypes[i] != -1)) {
+                if (skipped < 3) {
+                    if (i - shipyardScroll >= 0 &&
+                        i - shipyardScroll < kGridCells) {
+                        if (!RetrieveMenuIcon(
+                                shipClass[dockedPortShipTypes[i]].shipyardPictID,
+                                MenuIconPort(&loadPort), &listPicScreenRect[i - shipyardScroll]))
                             skipped++;
-                        }
                     } else {
-                        InvalDialogRect(shipyardDialog, &box);
-                        break;
+                        skipped++;
                     }
-                    if (cheatsActive) {
-                        id = NumText(dockedPortShipTypes[i] + kFirstResourceID);
-                        ForeColor(whiteColor);
-                        MoveTo(((listScreenRect[i - shipyardScroll].left
-                                        + listScreenRect[i - shipyardScroll].right
-                                        - MeasureCString(id)) / 2),
-                               (listScreenRect[i - shipyardScroll].top + 24));
-                        DrawCString(id);
-                        ForeColor(blackColor);
-                    }
-                    if (SplitTwoLineString(shipyardShortNames[dockedPortShipTypes[i]],
-                                           line1, line2)) {
-                        c = (unsigned char)line1[0];
-                        if (isalpha(HeldChar(c, line1[0])) || isdigit(HeldChar(c, line1[0])))
-                            ForeColor(whiteColor);
-                        else
-                            RGBForeColor(&rgbLessDarkGrey);
-                        MoveTo((listScreenRect[i - shipyardScroll].left
-                                       + listScreenRect[i - shipyardScroll].right) / 2
-                                      - MeasureCString(line1) / 2,
-                                  listScreenRect[i - shipyardScroll].bottom - 14);
-                        DrawCString(line1);
-                        c = (unsigned char)line2[0];
-                        if (isalpha(HeldChar(c, line2[0])) || isdigit(HeldChar(c, line2[0])))
-                            ForeColor(whiteColor);
-                        else
-                            RGBForeColor(&rgbLessDarkGrey);
-                        MoveTo((listScreenRect[i - shipyardScroll].left
-                                       + listScreenRect[i - shipyardScroll].right) / 2
-                                      - MeasureCString(line2) / 2,
-                                  listScreenRect[i - shipyardScroll].bottom - 3);
-                        DrawCString(line2);
-                        ForeColor(blackColor);
-                    } else {
-                        MoveTo((listScreenRect[i - (int32_t)shipyardScroll].left
-                                       + listScreenRect[i - (int32_t)shipyardScroll].right) / 2
-                                      - MeasureCString(line1) / 2,
-                                  listScreenRect[i - (int32_t)shipyardScroll].bottom - 6);
-                        ForeColor(whiteColor);
-                        DrawCString(line1);
-                        ForeColor(blackColor);
-                    }
-                    RGBForeColor(&shopGridColor[1]);
-                    FrameRect(&listScreenRect[i - shipyardScroll]);
-                    ForeColor(blackColor);
-                    drawn++;
+                } else {
+                    InvalDialogRect(shipyardDialog, &box);
+                    break;
                 }
-        }
-        if (selShipListItem != -1) {
-            RGBForeColor(&shopGridColor[0]);
-            FrameRect(&listScreenRect[selShipListItem]);
-            ForeColor(blackColor);
-        }
+                if (cheatsActive) {
+                    id = NumText(dockedPortShipTypes[i] + kFirstResourceID);
+                    ForeColor(whiteColor);
+                    MoveTo(((listScreenRect[i - shipyardScroll].left
+                                    + listScreenRect[i - shipyardScroll].right
+                                    - MeasureCString(id)) / 2),
+                           (listScreenRect[i - shipyardScroll].top + 24));
+                    DrawCString(id);
+                    ForeColor(blackColor);
+                }
+                if (SplitTwoLineString(shipyardShortNames[dockedPortShipTypes[i]],
+                                       line1, line2)) {
+                    c = (unsigned char)line1[0];
+                    if (isalpha(HeldChar(c, line1[0])) || isdigit(HeldChar(c, line1[0])))
+                        ForeColor(whiteColor);
+                    else
+                        RGBForeColor(&rgbLessDarkGrey);
+                    MoveTo((listScreenRect[i - shipyardScroll].left
+                                   + listScreenRect[i - shipyardScroll].right) / 2
+                                  - MeasureCString(line1) / 2,
+                              listScreenRect[i - shipyardScroll].bottom - 14);
+                    DrawCString(line1);
+                    c = (unsigned char)line2[0];
+                    if (isalpha(HeldChar(c, line2[0])) || isdigit(HeldChar(c, line2[0])))
+                        ForeColor(whiteColor);
+                    else
+                        RGBForeColor(&rgbLessDarkGrey);
+                    MoveTo((listScreenRect[i - shipyardScroll].left
+                                   + listScreenRect[i - shipyardScroll].right) / 2
+                                  - MeasureCString(line2) / 2,
+                              listScreenRect[i - shipyardScroll].bottom - 3);
+                    DrawCString(line2);
+                    ForeColor(blackColor);
+                } else {
+                    MoveTo((listScreenRect[i - (int32_t)shipyardScroll].left
+                                   + listScreenRect[i - (int32_t)shipyardScroll].right) / 2
+                                  - MeasureCString(line1) / 2,
+                              listScreenRect[i - (int32_t)shipyardScroll].bottom - 6);
+                    ForeColor(whiteColor);
+                    DrawCString(line1);
+                    ForeColor(blackColor);
+                }
+                RGBForeColor(&shopGridColor[1]);
+                FrameRect(&listScreenRect[i - shipyardScroll]);
+                ForeColor(blackColor);
+                drawn++;
+            }
+    }
+    if (selShipListItem != -1) {
+        RGBForeColor(&shopGridColor[0]);
+        FrameRect(&listScreenRect[selShipListItem]);
+        ForeColor(blackColor);
     }
     if (selShipyardItem != -1) {
         GetDialogItem(shipyardDialog, kMovieItem, &itemType, &item, &box);
-        if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipyardDialog)))) {
-            if (loopingMovie != NULL) {
-                CopyBits(GetPortBitMapForCopyBits(
-                             GetDialogPort(shipyardDialog)),
-                         (BitMapPtr)GWorldContainerBits(&loadPort), &box, &box, 0,
-                         GetWindowVisRgn(FrontWindow(shipyardDialog)));
-            } else {
-                if (previewPicID != shipClass[selShipyardItem].shipyardPictID) {
-                    if (previewPic != NULL) {
-                        QDReleaseResource(previewPic);
-                        previewPic = NULL;
-                    }
-                    previewPicID = shipClass[selShipyardItem].shipyardPictID;
-                    if (previewPicID >= kFirstResourceID)
-                        previewPic = GetPicture(previewPicID);
-                }
+        if (loopingMovie != NULL) {
+            CopyBits(GetPortBitMapForCopyBits(
+                         GetDialogPort(shipyardDialog)),
+                     (BitMapPtr)GWorldContainerBits(&loadPort), &box, &box, 0, NULL);
+        } else {
+            if (previewPicID != shipClass[selShipyardItem].shipyardPictID) {
                 if (previewPic != NULL) {
-                    ForeColor(blackColor);
-                    DrawPicHandle(previewPic, &box);
-                } else {
-                    ForeColor(whiteColor);
-                    TextFont(smallTextFont);
-                    TextSize(smallTextSize);
-                    DrawStringCentered(IndString(kGameStrList, 0xd5), box.left, box.right,
-                                       ((box.bottom + box.top) / 2 - 6));
-                    DrawStringCentered(IndString(kGameStrList, 0xd6), box.left, box.right,
-                                       ((box.bottom + box.top) / 2 + 6));
-                    ForeColor(blackColor);
+                    QDReleaseResource(previewPic);
+                    previewPic = NULL;
                 }
+                previewPicID = shipClass[selShipyardItem].shipyardPictID;
+                if (previewPicID >= kFirstResourceID)
+                    previewPic = GetPicture(previewPicID);
+            }
+            if (previewPic != NULL) {
+                ForeColor(blackColor);
+                DrawPicHandle(previewPic, &box);
+            } else {
+                ForeColor(whiteColor);
+                TextFont(smallTextFont);
+                TextSize(smallTextSize);
+                DrawStringCentered(IndString(kGameStrList, 0xd5), box.left, box.right,
+                                   ((box.bottom + box.top) / 2 - 6));
+                DrawStringCentered(IndString(kGameStrList, 0xd6), box.left, box.right,
+                                   ((box.bottom + box.top) / 2 + 6));
+                ForeColor(blackColor);
             }
         }
         GetDialogItem(shipyardDialog, 9, &itemType, &item, &box);
-        if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipyardDialog)))) {
-            TextFont(smallTextFont);
-            TextSize(smallTextSize);
-            if (shipBuyMode == 0 && selShipyardItem != shipData->type) {
-                ForeColor(whiteColor);
-                MoveTo(box.left, (box.top + 12));
-                DrawIndString(kGameStrList, 0xe1);
-                MoveTo((box.left + 0x46), (box.top + 12));
-                price = ApplyPriceAndTechnologyFlux(
-                    shipClass[selShipyardItem].cost, priceFluxMult[1],
-                    shipClass[selShipyardItem].techLevel,
-                    stellarData[shipData->targetStellar].techLevel);
-                DrawCommaNumber(price);
-                DrawCString(" ");
-                DrawIndString(kGameStrList, 0x22);
-                MoveTo(box.left, (box.top + 0x18));
-                DrawIndString(kGameStrList, 0xe2);
-                MoveTo((box.left + 0x46), (box.top + 0x18));
-                net = tradeIn = ApplyPriceAndTechnologyFlux(
-                    PlayerShipTradeInPrice(), priceFluxMult[0],
-                    shipClass[shipData->type].techLevel,
-                    stellarData[shipData->targetStellar].techLevel);
-                tradeIn = ApplyPriceAndTechnologyFlux(
-                    net, priceFluxMult[1],
-                    shipClass[shipData->type].techLevel,
-                    stellarData[shipData->targetStellar].techLevel);
-                DrawCommaNumber(tradeIn);
-                DrawCString(" ");
-                DrawIndString(kGameStrList, 0x22);
-                net = price - tradeIn;
-                if (net < 0)
-                    net = 0;
-                MoveTo(box.left, (box.top + 0x30));
-                DrawIndString(kGameStrList, 0xe3);
-                MoveTo((box.left + 0x46), (box.top + 0x30));
-                DrawCommaNumber(net);
-                DrawCString(" ");
-                DrawIndString(kGameStrList, 0x22);
-                MoveTo(box.left, (box.top + 0x48));
-                DrawIndString(kGameStrList, 0xd9);
-                MoveTo((box.left + 0x46), (box.top + 0x48));
-                DrawCommaNumber(shipData->credits);
-                DrawCString(" ");
-                DrawIndString(kGameStrList, 0x22);
-                ForeColor(blackColor);
-            } else if (shipBuyMode != 0) {
-                ForeColor(whiteColor);
-                MoveTo(box.left, (box.top + 12));
-                DrawIndString(kGameStrList, 0xe4);
-                MoveTo((box.left + 0x46), (box.top + 12));
-                tradeIn = ApplyPriceAndTechnologyFlux(
-                    shipClass[selShipyardItem].cost, priceFluxMult[1],
-                    shipClass[selShipyardItem].techLevel,
-                    stellarData[shipData->targetStellar].techLevel);
-                DrawCommaNumber(0.1 * tradeIn);
-                DrawCString(" ");
-                DrawIndString(kGameStrList, 0x22);
-                DrawEscortPay(box, (int32_t)(0.01 * shipClass[selShipyardItem].cost));
-                MoveTo(box.left, (box.top + 0x30));
-                DrawIndString(kGameStrList, 0xd9);
-                MoveTo((box.left + 0x46), (box.top + 0x30));
-                DrawCommaNumber(shipData->credits);
-                DrawCString(" ");
-                DrawIndString(kGameStrList, 0x22);
-                ForeColor(blackColor);
-            }
+        TextFont(smallTextFont);
+        TextSize(smallTextSize);
+        if (shipBuyMode == 0 && selShipyardItem != shipData->type) {
+            ForeColor(whiteColor);
+            MoveTo(box.left, (box.top + 12));
+            DrawIndString(kGameStrList, 0xe1);
+            MoveTo((box.left + 0x46), (box.top + 12));
+            price = ApplyPriceAndTechnologyFlux(
+                shipClass[selShipyardItem].cost, priceFluxMult[1],
+                shipClass[selShipyardItem].techLevel,
+                stellarData[shipData->targetStellar].techLevel);
+            DrawCommaNumber(price);
+            DrawCString(" ");
+            DrawIndString(kGameStrList, 0x22);
+            MoveTo(box.left, (box.top + 0x18));
+            DrawIndString(kGameStrList, 0xe2);
+            MoveTo((box.left + 0x46), (box.top + 0x18));
+            net = tradeIn = ApplyPriceAndTechnologyFlux(
+                PlayerShipTradeInPrice(), priceFluxMult[0],
+                shipClass[shipData->type].techLevel,
+                stellarData[shipData->targetStellar].techLevel);
+            tradeIn = ApplyPriceAndTechnologyFlux(
+                net, priceFluxMult[1],
+                shipClass[shipData->type].techLevel,
+                stellarData[shipData->targetStellar].techLevel);
+            DrawCommaNumber(tradeIn);
+            DrawCString(" ");
+            DrawIndString(kGameStrList, 0x22);
+            net = price - tradeIn;
+            if (net < 0)
+                net = 0;
+            MoveTo(box.left, (box.top + 0x30));
+            DrawIndString(kGameStrList, 0xe3);
+            MoveTo((box.left + 0x46), (box.top + 0x30));
+            DrawCommaNumber(net);
+            DrawCString(" ");
+            DrawIndString(kGameStrList, 0x22);
+            MoveTo(box.left, (box.top + 0x48));
+            DrawIndString(kGameStrList, 0xd9);
+            MoveTo((box.left + 0x46), (box.top + 0x48));
+            DrawCommaNumber(shipData->credits);
+            DrawCString(" ");
+            DrawIndString(kGameStrList, 0x22);
+            ForeColor(blackColor);
+        } else if (shipBuyMode != 0) {
+            ForeColor(whiteColor);
+            MoveTo(box.left, (box.top + 12));
+            DrawIndString(kGameStrList, 0xe4);
+            MoveTo((box.left + 0x46), (box.top + 12));
+            tradeIn = ApplyPriceAndTechnologyFlux(
+                shipClass[selShipyardItem].cost, priceFluxMult[1],
+                shipClass[selShipyardItem].techLevel,
+                stellarData[shipData->targetStellar].techLevel);
+            DrawCommaNumber(0.1 * tradeIn);
+            DrawCString(" ");
+            DrawIndString(kGameStrList, 0x22);
+            DrawEscortPay(box, (int32_t)(0.01 * shipClass[selShipyardItem].cost));
+            MoveTo(box.left, (box.top + 0x30));
+            DrawIndString(kGameStrList, 0xd9);
+            MoveTo((box.left + 0x46), (box.top + 0x30));
+            DrawCommaNumber(shipData->credits);
+            DrawCString(" ");
+            DrawIndString(kGameStrList, 0x22);
+            ForeColor(blackColor);
         }
     }
     GetDialogItem(shipyardDialog, 6, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipyardDialog)))) {
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        TETextBox(dialogDescTextPtr, strlen(dialogDescTextPtr), &box, 0);
-        InvertRect(&box);
-    }
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+    TETextBox(dialogDescTextPtr, strlen(dialogDescTextPtr), &box, 0);
+    InvertRect(&box);
     ShipyardButtons().Draw(-1);
     CopyLoadPortToDialog(shipyardDialog);
 }
@@ -1265,218 +1254,211 @@ void ShipDescDialogUpdate(void)
         hasPict = 0;
     ForeColor(blackColor);
     GetDialogItem(shipDescDialog, 3, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipDescDialog)))) {
-        TextFont(gTimesFont);
-        TextSize(18);
-        MoveTo(box.left, (box.top + 18));
-        ForeColor(whiteColor);
-        if (hasPict)
-            DrawStringCentered(shipyardLongNames[selShipyardItem], box.left,
-                               box.right, box.top + 18);
-        else
-            DrawStringCentered(ShipClassName(selShipyardItem), box.left,
-                               box.right, box.top + 18);
-        ForeColor(blackColor);
-    }
+    TextFont(gTimesFont);
+    TextSize(18);
+    MoveTo(box.left, (box.top + 18));
+    ForeColor(whiteColor);
+    if (hasPict)
+        DrawStringCentered(shipyardLongNames[selShipyardItem], box.left,
+                           box.right, box.top + 18);
+    else
+        DrawStringCentered(ShipClassName(selShipyardItem), box.left,
+                           box.right, box.top + 18);
+    ForeColor(blackColor);
     GetDialogItem(shipDescDialog, 5, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipDescDialog)))) {
-        sel = selShipyardItem;
-        stock = StockShipOf(sel);
-        valueRight = box.right - 2;
-        valueLeft = box.left + 128;              /* 2 px before the right column's labels */
-        ForeColor(blackColor);
-        PaintRect(&box);
+    sel = selShipyardItem;
+    stock = StockShipOf(sel);
+    valueRight = box.right - 2;
+    valueLeft = box.left + 128;              /* 2 px before the right column's labels */
+    ForeColor(blackColor);
+    PaintRect(&box);
+    ForeColor(whiteColor);
+    TextFont(smallTextFont);
+    TextSize(smallTextSize);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo(box.left, (box.top + 12));
+    DrawIndString(kGameStrList, 229);
+    DrawStatLine(kStatSpeed, sel, stock, box.left + 45, box.top + 12, valueLeft);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo(box.left, (box.top + 24));
+    DrawIndString(kGameStrList, 230);
+    DrawStatLine(kStatAccel, sel, stock, box.left + 45, box.top + 24, valueLeft);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo(box.left, (box.top + 36));
+    DrawIndString(kGameStrList, 231);
+    DrawStatLine(kStatTurn, sel, stock, box.left + 45, box.top + 36, valueLeft);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo(box.left, (box.top + 48));
+    DrawCString(shieldString[0]);
+    DrawStatLine(kStatShield, sel, stock, box.left + 45, box.top + 48, valueLeft);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo(box.left, (box.top + 60));
+    DrawCString(armorString[0]);
+    DrawStatLine(kStatArmor, sel, stock, box.left + 45, box.top + 60, valueLeft);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo(box.left, (box.top + 72));
+    DrawIndString(kGameStrList, 232);
+    DrawStatLine(kStatGuns, sel, stock, box.left + 45, box.top + 72, valueLeft);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo(box.left, (box.top + 84));
+    DrawIndString(kGameStrList, 233);
+    DrawStatLine(kStatTurrets, sel, stock, box.left + 45, box.top + 84, valueLeft);
+
+    MoveTo((box.left + 130), (box.top + 12));
+    RGBForeColor(&rgbMedGrey);
+    DrawIndString(kGameStrList, 234);
+    DrawStatLine(kStatSpace, sel, stock, box.left + 175, box.top + 12, valueRight);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo((box.left + 130), (box.top + 24));
+    DrawCString(kTotalSpaceLabel);
+    totalH = box.left + 130 + TextWidthMacRoman(kTotalSpaceLabel, strlen(kTotalSpaceLabel)) + 4;
+    DrawStatLine(kStatTotalSpace, sel, stock, totalH > box.left + 175 ? totalH : box.left + 175, box.top + 24,
+                 valueRight);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo((box.left + 130), (box.top + 36));
+    DrawIndString(kGameStrList, 110);
+    DrawStatLine(kStatCargo, sel, stock, box.left + 175, box.top + 36, valueRight);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo((box.left + 130), (box.top + 48));
+    DrawCString(fuelString[4]);
+    DrawStatLine(kStatFuel, sel, stock, box.left + 175, box.top + 48, valueRight);
+    numWeapTypes = 0;
+    for (i = 0; i < kMaxWeapTypes; i++) {
+        if (shipClass[sel].weapCount[i] > 0)
+            numWeapTypes++;
+    }
+    if (numWeapTypes == 0) {
         ForeColor(whiteColor);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo(box.left, (box.top + 12));
-        DrawIndString(kGameStrList, 229);
-        DrawStatLine(kStatSpeed, sel, stock, box.left + 45, box.top + 12, valueLeft);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo(box.left, (box.top + 24));
-        DrawIndString(kGameStrList, 230);
-        DrawStatLine(kStatAccel, sel, stock, box.left + 45, box.top + 24, valueLeft);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo(box.left, (box.top + 36));
-        DrawIndString(kGameStrList, 231);
-        DrawStatLine(kStatTurn, sel, stock, box.left + 45, box.top + 36, valueLeft);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo(box.left, (box.top + 48));
-        DrawCString(shieldString[0]);
-        DrawStatLine(kStatShield, sel, stock, box.left + 45, box.top + 48, valueLeft);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo(box.left, (box.top + 60));
-        DrawCString(armorString[0]);
-        DrawStatLine(kStatArmor, sel, stock, box.left + 45, box.top + 60, valueLeft);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo(box.left, (box.top + 72));
-        DrawIndString(kGameStrList, 232);
-        DrawStatLine(kStatGuns, sel, stock, box.left + 45, box.top + 72, valueLeft);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo(box.left, (box.top + 84));
-        DrawIndString(kGameStrList, 233);
-        DrawStatLine(kStatTurrets, sel, stock, box.left + 45, box.top + 84, valueLeft);
-
-        MoveTo((box.left + 130), (box.top + 12));
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 234);
-        DrawStatLine(kStatSpace, sel, stock, box.left + 175, box.top + 12, valueRight);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo((box.left + 130), (box.top + 24));
-        DrawCString(kTotalSpaceLabel);
-        totalH = box.left + 130 + TextWidthMacRoman(kTotalSpaceLabel, strlen(kTotalSpaceLabel)) + 4;
-        DrawStatLine(kStatTotalSpace, sel, stock, totalH > box.left + 175 ? totalH : box.left + 175, box.top + 24,
-                     valueRight);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo((box.left + 130), (box.top + 36));
-        DrawIndString(kGameStrList, 110);
-        DrawStatLine(kStatCargo, sel, stock, box.left + 175, box.top + 36, valueRight);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo((box.left + 130), (box.top + 48));
-        DrawCString(fuelString[4]);
-        DrawStatLine(kStatFuel, sel, stock, box.left + 175, box.top + 48, valueRight);
-        numWeapTypes = 0;
-        for (i = 0; i < kMaxWeapTypes; i++) {
-            if (shipClass[sel].weapCount[i] > 0)
-                numWeapTypes++;
-        }
-        if (numWeapTypes == 0) {
-            ForeColor(whiteColor);
-            if (hasPict) {
-                GetDialogItem(shipDescDialog, 8, &itemType, &item, &box2);
-                MoveTo(box2.left, (box2.top + 12));
-            } else {
-                MoveTo(box.left, (box.top + 108));
-            }
-            DrawIndString(kGameStrList, 242);
+        if (hasPict) {
+            GetDialogItem(shipDescDialog, 8, &itemType, &item, &box2);
+            MoveTo(box2.left, (box2.top + 12));
         } else {
-            ForeColor(whiteColor);
-            drawn = 0;
-            if (hasPict) {
-                line.clear();
-                GetDialogItem(shipDescDialog, 8, &itemType, &item, &box2);
-                MoveTo(box2.left, (box2.top + 12));
-                box2.top += 16;
-            } else {
-                MoveTo(box.left, (box.top + 108));
-            }
-            DrawIndString(kGameStrList, 241);
-            for (i = 0; i < kMaxWeapTypes; i++) {
-                if (shipClass[sel].weapCount[i] > 0) {
-                    if (!hasPict)
-                        MoveTo(box.left + 8, box.top + 120 + drawn * 12);
-                    if (weaponStats[i].guidance != kGuidanceBay) {
-                        if (hasPict) {
-                            line += NumText(shipClass[sel].weapCount[i]);
-                            line += " ";
-                        } else {
-                            DrawCString(NumText(shipClass[sel].weapCount[i]));
-                            DrawCString(" ");
-                        }
-                        for (j = 0; j < kMaxOutfits; j++) {
-                            if (outfitSystem[j].modType[0] == OutfMod::Weapon
-                                && i == outfitSystem[j].modVal[0]) {
-                                if (hasPict) {
-                                    line += FromNameField(outfitSystem[j].name);
-                                } else {
-                                    DrawCString(OutfitName(j));
-                                }
-                                break;
-                            }
-                        }
-                        if (shipClass[sel].weapCount[i] > 1) {
-                            if (hasPict)
-                                line += "s";
-                            else
-                                DrawCString("s");
-                        }
-                        if (shipClass[sel].weapAmmo[i] > 0) {
-                            if (hasPict) {
-                                line += TextF(" + %d %s", shipClass[sel].weapAmmo[i],
-                                              IndString(kGameStrList, 243).c_str());
-                            } else {
-                                DrawCString(" + ");
-                                DrawCString(NumText(shipClass[sel].weapAmmo[i]));
-                                DrawCString(" ");
-                                DrawIndString(kGameStrList, 243);
-                            }
-                        }
+            MoveTo(box.left, (box.top + 108));
+        }
+        DrawIndString(kGameStrList, 242);
+    } else {
+        ForeColor(whiteColor);
+        drawn = 0;
+        if (hasPict) {
+            line.clear();
+            GetDialogItem(shipDescDialog, 8, &itemType, &item, &box2);
+            MoveTo(box2.left, (box2.top + 12));
+            box2.top += 16;
+        } else {
+            MoveTo(box.left, (box.top + 108));
+        }
+        DrawIndString(kGameStrList, 241);
+        for (i = 0; i < kMaxWeapTypes; i++) {
+            if (shipClass[sel].weapCount[i] > 0) {
+                if (!hasPict)
+                    MoveTo(box.left + 8, box.top + 120 + drawn * 12);
+                if (weaponStats[i].guidance != kGuidanceBay) {
+                    if (hasPict) {
+                        line += NumText(shipClass[sel].weapCount[i]);
+                        line += " ";
                     } else {
-                        if (hasPict) {
-                            line += NumText(shipClass[sel].weapAmmo[i]);
-                            line += " ";
-                        } else {
-                            DrawCString(NumText(shipClass[sel].weapAmmo[i]));
-                            DrawCString(" ");
-                        }
-                        for (j = 0; j < kMaxOutfits; j++) {
-                            if (outfitSystem[j].modType[0] == OutfMod::Ammo
-                                && i == outfitSystem[j].modVal[0]) {
-                                if (hasPict) {
-                                    line += FromNameField(outfitSystem[j].name);
-                                } else {
-                                    DrawCString(OutfitName(j));
-                                }
-                                break;
+                        DrawCString(NumText(shipClass[sel].weapCount[i]));
+                        DrawCString(" ");
+                    }
+                    for (j = 0; j < kMaxOutfits; j++) {
+                        if (outfitSystem[j].modType[0] == OutfMod::Weapon
+                            && i == outfitSystem[j].modVal[0]) {
+                            if (hasPict) {
+                                line += FromNameField(outfitSystem[j].name);
+                            } else {
+                                DrawCString(OutfitName(j));
                             }
-                        }
-                        if (shipClass[sel].weapAmmo[i] > 1) {
-                            if (hasPict)
-                                line += "s";
-                            else
-                                DrawCString("s");
+                            break;
                         }
                     }
-                    if (hasPict && numWeapTypes > 1
-                        && drawn < numWeapTypes - 1)
-                        line += ", ";
-                    drawn++;
+                    if (shipClass[sel].weapCount[i] > 1) {
+                        if (hasPict)
+                            line += "s";
+                        else
+                            DrawCString("s");
+                    }
+                    if (shipClass[sel].weapAmmo[i] > 0) {
+                        if (hasPict) {
+                            line += TextF(" + %d %s", shipClass[sel].weapAmmo[i],
+                                          IndString(kGameStrList, 243).c_str());
+                        } else {
+                            DrawCString(" + ");
+                            DrawCString(NumText(shipClass[sel].weapAmmo[i]));
+                            DrawCString(" ");
+                            DrawIndString(kGameStrList, 243);
+                        }
+                    }
+                } else {
+                    if (hasPict) {
+                        line += NumText(shipClass[sel].weapAmmo[i]);
+                        line += " ";
+                    } else {
+                        DrawCString(NumText(shipClass[sel].weapAmmo[i]));
+                        DrawCString(" ");
+                    }
+                    for (j = 0; j < kMaxOutfits; j++) {
+                        if (outfitSystem[j].modType[0] == OutfMod::Ammo
+                            && i == outfitSystem[j].modVal[0]) {
+                            if (hasPict) {
+                                line += FromNameField(outfitSystem[j].name);
+                            } else {
+                                DrawCString(OutfitName(j));
+                            }
+                            break;
+                        }
+                    }
+                    if (shipClass[sel].weapAmmo[i] > 1) {
+                        if (hasPict)
+                            line += "s";
+                        else
+                            DrawCString("s");
+                    }
                 }
-            }
-            if (hasPict) {
-                ForeColor(blackColor);
-                TETextBox(line.data(), line.size(), &box2, 0);
-                InvertRect(&box2);
+                if (hasPict && numWeapTypes > 1
+                    && drawn < numWeapTypes - 1)
+                    line += ", ";
+                drawn++;
             }
         }
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo((box.left + 130), (box.top + 60));
-        DrawIndString(kGameStrList, 235);
-        DrawStatLine(kStatLength, sel, stock, box.left + 175, box.top + 60, valueRight);
-
-        RGBForeColor(&rgbMedGrey);
-        MoveTo((box.left + 130), (box.top + 72));
-        DrawIndString(kGameStrList, 236);
-        DrawStatLine(kStatMass, sel, stock, box.left + 175, box.top + 72, valueRight);
-
-        if (shipClass[sel].crew > 0 || (stock != -1 && shipClass[stock].crew > 0)) {
-            RGBForeColor(&rgbMedGrey);
-            MoveTo((box.left + 130), (box.top + 84));
-            DrawIndString(kGameStrList, 237);
-            DrawStatLine(kStatCrew, sel, stock, box.left + 175, box.top + 84, valueRight);
+        if (hasPict) {
+            ForeColor(blackColor);
+            TETextBox(line.data(), line.size(), &box2, 0);
+            InvertRect(&box2);
         }
+    }
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo((box.left + 130), (box.top + 60));
+    DrawIndString(kGameStrList, 235);
+    DrawStatLine(kStatLength, sel, stock, box.left + 175, box.top + 60, valueRight);
+
+    RGBForeColor(&rgbMedGrey);
+    MoveTo((box.left + 130), (box.top + 72));
+    DrawIndString(kGameStrList, 236);
+    DrawStatLine(kStatMass, sel, stock, box.left + 175, box.top + 72, valueRight);
+
+    if (shipClass[sel].crew > 0 || (stock != -1 && shipClass[stock].crew > 0)) {
+        RGBForeColor(&rgbMedGrey);
+        MoveTo((box.left + 130), (box.top + 84));
+        DrawIndString(kGameStrList, 237);
+        DrawStatLine(kStatCrew, sel, stock, box.left + 175, box.top + 84, valueRight);
     }
     GetDialogItem(shipDescDialog, 1, &itemType, &item, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipDescDialog)))) {
-        GetIndString(label, kButtonStrList, 5);
-        DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 0, 0);
-    }
+    GetIndString(label, kButtonStrList, 5);
+    DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 0, 0);
     if (bigShipPic != NULL) {
         GetDialogItem(shipDescDialog, 7, &itemType, &item, &box);
-        if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(shipDescDialog))))
-            DrawPicHandle(bigShipPic, &box);
+        DrawPicHandle(bigShipPic, &box);
     }
     CopyLoadPortToDialog(shipDescDialog);
 }

@@ -18,22 +18,13 @@ short SWCreateSpriteWorld(SpriteWorldRec **spriteWorldP, CGrafPtr windowPort, co
         err = memFullErr;
 
     if ((int)err == noErr) {
-        err = SWCreateSpriteLayer(&tempSpriteWorldP->deadSpriteLayerP);
-
-        if ((int)err != noErr)
-            DeallocAPointer(tempSpriteWorldP);
-    }
-
-    if ((int)err == noErr) {
         tempSpriteWorldP->pixelDepth = 16;
         tempSpriteWorldP->windowPort = windowPort;
         tempSpriteWorldP->windRect = viewRect;
         tempSpriteWorldP->fastBlit = 1;
-        SWClearStickyError();
         *spriteWorldP = tempSpriteWorldP;
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
 
@@ -48,8 +39,6 @@ void SWDisposeSpriteWorld(SpriteWorldPtr *spriteWorldP)
 {
     if (*spriteWorldP == NULL)
         return;
-    if ((*spriteWorldP)->deadSpriteLayerP != NULL)
-        SWDisposeSpriteLayer(&(*spriteWorldP)->deadSpriteLayerP);
     DeallocAPointer(*spriteWorldP);
     *spriteWorldP = NULL;
 }

@@ -9,8 +9,6 @@
 #include "gamepaths.h"
 #include "platform.h"
 
-static Word8 OnceHit;
-
 #define kRezHeaderSize  0x18
 #define kRezStateSize   offsetof(RezFile, types)   /* BurgerLib's part, 0x24 on 32-bit */
 #define kOldVersion     0x20

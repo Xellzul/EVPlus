@@ -114,7 +114,6 @@ bool MissionHasShipSubtitle(int slot);
 void DrawCString(const std::string &text);
 /* MeasureCString's measurer (the bytes as ANSI, '&' an accelerator mark) */
 short MeasureCString(const std::string &text);
-short TextWidth(const std::string &text);
 /* DrawStringCentered's centring over the same measurer (width up to a NUL, all bytes drawn) */
 void DrawStringCentered(const std::string &text, short left, short right, short v);
 /* textShowString (ShowTextDialog's text) set to the text up to a NUL, cut to the buffer */

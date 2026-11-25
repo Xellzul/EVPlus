@@ -41,10 +41,12 @@ int32_t ST_Open(void)
     return OpenTool(false);
 }
 
+#if EVPLUS_TEST_PAGES
 int32_t _ST_OpenOffline(void)
 {
     return OpenTool(true);
 }
+#endif
 
 // FUNCTION: EVNOVA 0x004d6440
 void ST_Close(void)
@@ -186,11 +188,6 @@ unsigned short ST_IsSoundPlaying(const Sound *sound)
     return CountPlaying((uintptr_t)sound);
 }
 
-unsigned short ST_IsSoundIdPlaying(uint32_t id)
-{
-    return id != 0 ? CountPlaying(id) : 0;
-}
-
 static void HaltMatching(uintptr_t key)
 {
     ULong i;
@@ -213,11 +210,13 @@ void ST_HaltSound(const Sound *sound)
     HaltMatching((uintptr_t)sound);
 }
 
+#if EVPLUS_TEST_PAGES
 void ST_HaltSoundId(uint32_t id)
 {
     if (id != 0)
         HaltMatching(id);
 }
+#endif
 
 /* Drop one channel and close the table up behind it; the row freed at the end keeps the channel's voice. */
 // FUNCTION: EVNOVA 0x004d6890

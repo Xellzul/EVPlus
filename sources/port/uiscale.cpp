@@ -122,6 +122,7 @@ void ResizePixels(CGrafPtr port, int width, int height)
 
 } // namespace
 
+#if EVPLUS_TEST_PAGES
 void ScalePortPixels(CGrafPtr port, double scale)
 {
     if (scale == 1.0)
@@ -129,6 +130,7 @@ void ScalePortPixels(CGrafPtr port, double scale)
     ResizePixels(port, (int)floor((port->pix.bounds.right - port->pix.bounds.left) * scale + 0.5),
                  (int)floor((port->pix.bounds.bottom - port->pix.bounds.top) * scale + 0.5));
 }
+#endif
 
 void ScaleUIPort(CGrafPtr port)
 {

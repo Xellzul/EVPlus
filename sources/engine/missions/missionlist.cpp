@@ -98,16 +98,14 @@ void DrawMissionBriefing(DialogPtr dlg, bool selected)
     Rect box;
 
     GetDialogItem(dlg, 4, NULL, NULL, &box);
-    if (RectInRgn(&box, GetWindowVisRgn(FrontWindow(dlg)))) {
-        if (selected) {
-            ForeColor(blackColor);
-            TextFont(smallTextFont);
-            TextSize(smallTextSize);
-            TETextBox(briefingTextPtr, strlen(briefingTextPtr), &box, 0);
-            InvertRect(&box);
-        } else {
-            ForeColor(blackColor);
-            PaintRect(&box);
-        }
+    if (selected) {
+        ForeColor(blackColor);
+        TextFont(smallTextFont);
+        TextSize(smallTextSize);
+        TETextBox(briefingTextPtr, strlen(briefingTextPtr), &box, 0);
+        InvertRect(&box);
+    } else {
+        ForeColor(blackColor);
+        PaintRect(&box);
     }
 }

@@ -1,5 +1,5 @@
 /* toolbox.cpp -- small Mac Toolbox calls the game makes: the clocks, QuickDraw's Random, StringToNum and NumToString,
-   BlockMove, DebugStr, the main device, GetIndString, ParamText and Alert, Delay, ExitToShell */
+   DebugStr, the main device, GetIndString, ParamText and Alert, Delay, ExitToShell */
 
 #include <time.h>
 
@@ -56,19 +56,10 @@ short Random(void)
     return r;
 }
 
-int32_t GetQDGlobalsRandomSeed(void)
-{
-    return (int32_t)gRandSeed;
-}
-
+/* seeds Random; the headless test driver calls it */
 void SetQDGlobalsRandomSeed(int32_t seed)
 {
     gRandSeed = (uint32_t)seed;
-}
-
-void BlockMove(const void *src, void *dst, uint32_t len)
-{
-    memmove(dst, src, len);
 }
 
 void DebugStr(const char *message)

@@ -43,14 +43,12 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
 
             if ((int)err == noErr) {
                 tempFrameP->framePort = frameGWorld;
-                tempFrameP->frameDevice = GetGWorldDevice(frameGWorld);
                 tempFrameP->framePixHndl = GetCWindowPixMap(frameGWorld);
 
                 SWInitializeFrame(tempFrameP);
             }
         } else {
             tempFrameP->framePort = 0;
-            tempFrameP->frameDevice = 0;
             tempFrameP->framePixHndl = 0;
             err = 0;
         }
@@ -58,11 +56,8 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
         if ((int)err == noErr) {
             tempFrameP->hotSpotH = 0;
             tempFrameP->hotSpotV = 0;
-            tempFrameP->tileMaskIsSolid = 0;
             tempFrameP->sharesGWorld = 0;
             tempFrameP->isFrameLocked = 0;
-            tempFrameP->interlacingIsOn = 0;
-            tempFrameP->skipOddLines = 1;
 
             tempFrameP->rleDataH = 0;
             tempFrameP->rleTokenStart = 0;
@@ -83,12 +78,8 @@ short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
         }
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
-
-/* `saveGDH = GetGWorldDevice(saveGWorld)' is never read, but the statement has to be
-   written: mwcc keeps the call and drops the store. */
 
 // FUNCTION: EVNOVA 0x00476800
 // MAC: _SWCreateFrameFromCicnResource i386 0x000add00 ppc 0x000b91f4
@@ -98,7 +89,6 @@ short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
 {
     short err;
     CGrafPtr saveGWorld;
-    void *saveGDH;
     SWFrameRec *tempFrameP;
     CIconHandle cIconH;
     Rect frameRect;
@@ -110,7 +100,6 @@ short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
         SWAssertFail("SpriteFrame.c", 288);
 
     GetPort(&saveGWorld);
-    saveGDH = GetGWorldDevice(saveGWorld);
 
     cIconH = GetCIcon(iconResID);
 
@@ -135,7 +124,6 @@ short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
                     &tempFrameP->maskPort, cIconH);
 
             if ((int)err == noErr) {
-                tempFrameP->maskDevice = GetGWorldDevice(tempFrameP->maskPort);
                 tempFrameP->maskPixHndl =
                         GetCWindowPixMap(tempFrameP->maskPort);
 
@@ -161,38 +149,14 @@ short SWCreateFrameFromCicnResource(SpriteWorldRec *destSpriteWorld,
 
     SetPort(saveGWorld);
 
-    SWSetStickyIfError(err);
     return err;
 }
 
-
-/* Start's `if ((maskType & kRegionMask) != 0)' arm is GONE, not merely never taken, so
-   its three trailing parameters are dead; they survive because 0x00474d07 still pushes
-   four arguments, which is the only evidence for the signature. */
-
-// FUNCTION: EVNOVA 0x004769d0
-// MAC: _SWCreateFrameFromGWorldAndRectStart i386 0x000ad091 ppc 0x000b8454
-short SWCreateFrameFromGWorldAndRectStart(CGrafPtr *tempMaskGWorld, short maxWidth,
-                                          short maxHeight, unsigned char maskType)
-{
-    short err = 0;
-
-    *tempMaskGWorld = 0;
-    return err;
-}
-
-// FUNCTION: EVNOVA 0x004769e0
-// MAC: _SWCreateFrameFromGWorldAndRectFinish i386 0x000ad0ce ppc 0x000b8490
-void SWCreateFrameFromGWorldAndRectFinish(CGrafPtr tempMaskGWorld)
-{
-    SWCreateRegionFromGWorldAndRectFinish(tempMaskGWorld);
-}
 
 // FUNCTION: EVNOVA 0x004769f0
 // MAC: _SWCreateFrameFromGWorldAndRectPartial i386 0x000ad7f1 ppc 0x000b8cc4
 short SWCreateFrameFromGWorldAndRectPartial(SWFrameRec **newFrameP,
-        CGrafPtr pictGWorld, CGrafPtr maskGWorld, CGrafPtr tempMaskGWorld,
-        Rect *frameRect, unsigned char maskType)
+        CGrafPtr pictGWorld, CGrafPtr maskGWorld, Rect *frameRect, unsigned char maskType)
 {
     short err = 0;
     short depth;
@@ -217,7 +181,6 @@ short SWCreateFrameFromGWorldAndRectPartial(SWFrameRec **newFrameP,
 
     if (tempFrameP != 0) {
         tempFrameP->framePort = pictGWorld;
-        tempFrameP->frameDevice = GetGWorldDevice(pictGWorld);
         tempFrameP->framePixHndl = GetCWindowPixMap(pictGWorld);
         tempFrameP->frameDepth = depth;
 
@@ -225,7 +188,6 @@ short SWCreateFrameFromGWorldAndRectPartial(SWFrameRec **newFrameP,
             if (maskGWorld == 0)
                 SWAssertFail("SpriteFrame.c", 654);
             tempFrameP->maskPort = maskGWorld;
-            tempFrameP->maskDevice = GetGWorldDevice(maskGWorld);
             tempFrameP->maskPixHndl = GetCWindowPixMap(maskGWorld);
         }
 
@@ -254,7 +216,6 @@ short SWCreateFrameFromGWorldAndRectPartial(SWFrameRec **newFrameP,
         }
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
 
@@ -292,7 +253,6 @@ Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
                 if (!oldFrameP->sharesGWorld)
                     DisposeGWorld(oldFrameP->framePort);
                 oldFrameP->framePort = 0;
-                oldFrameP->frameDevice = 0;
                 oldFrameP->framePixHndl = 0;
             }
 
@@ -300,7 +260,6 @@ Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
                 if (!oldFrameP->sharesGWorld)
                     DisposeGWorld(oldFrameP->maskPort);
                 oldFrameP->maskPort = 0;
-                oldFrameP->maskDevice = 0;
                 oldFrameP->maskPixHndl = 0;
             }
 
@@ -352,9 +311,6 @@ void SWInitializeFrame(SWFrameRec *tempFrameP)
 
     tempFrameP->frameRowBytes = GetPixRowBytes(pixmap);
 
-    tempFrameP->rightAlignFactor = (32 / depth) - 1;
-    tempFrameP->leftAlignFactor = ~(tempFrameP->rightAlignFactor);
-
     tempFrameP->pixelShift = depth >> 4;
 
     tempFrameP->scanLinePtrArray = (uint32_t *)(tempFrameP + 1);
@@ -386,7 +342,6 @@ void SWLockFrame(SWFrameRec *srcFrameP)
                 SWAssertFail("SpriteFrame.c", 1291);
 
             pixMapH = srcFrameP->framePixHndl;
-            srcFrameP->framePix = pixMapH;
 
             srcFrameP->frameBaseAddr = GetPixBaseAddr(pixMapH);
             srcFrameP->frameRowBytes = GetPixRowBytes(pixMapH);
@@ -399,7 +354,6 @@ void SWLockFrame(SWFrameRec *srcFrameP)
                 SWAssertFail("SpriteFrame.c", 1348);
 
             pixMapH = srcFrameP->maskPixHndl;
-            srcFrameP->maskPix = pixMapH;
 
             srcFrameP->maskBaseAddr = GetPixBaseAddr(pixMapH);
         }
@@ -416,10 +370,7 @@ void SWUnlockFrame(SWFrameRec *srcFrameP)
     if (srcFrameP->isFrameLocked) {
         srcFrameP->isFrameLocked = false;
 
-        srcFrameP->framePix = NULL;
         srcFrameP->frameBaseAddr = NULL;
-
-        srcFrameP->maskPix = NULL;
         srcFrameP->maskBaseAddr = NULL;
     }
 }

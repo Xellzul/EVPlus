@@ -330,38 +330,36 @@ void KeyDialogUpdate(void)
     TextSize(12);
     for (i = 0; i < kBindingCount; i++) {
         GetDialogItem(keyDialog, i + kFirstBindingItem, &itemType, &item, &itemBox);
-        if (RectInRgn(&itemBox, GetWindowVisRgn(FrontWindow(keyDialog)))) {
-            if (keyDialogSel == i) {
-                fill = itemBox;
-                InsetRect(&fill, 1, 1);
-                ForeColor(whiteColor);
-                FrameRect(&itemBox);
-                InsetRect(&fill, 1, 1);
-                ForeColor(blackColor);
-                PaintRect(&fill);
-                ForeColor(blackColor);
-                FrameRect(&itemBox);
-                ForeColor(whiteColor);
-                MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
-            } else {
-                fill = itemBox;
-                InsetRect(&fill, 1, 1);
-                ForeColor(whiteColor);
-                PaintRect(&fill);
-                ForeColor(blackColor);
-                FrameRect(&itemBox);
-                ForeColor(blackColor);
-                MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
-            }
-            if (DupKeyCheck(newKeyPrefs[i], i))
-                RGBForeColor(&redRGB);
-            KeyboardScanCodeToString((char *)name, sizeof(name), newKeyPrefs[i]);
-            CtoPstr((char *)name);
-            if (name[0] == 0)
-                DrawIndString(kGameStrList, kNoNameStrIndex);
-            else
-                DrawString(name);
+        if (keyDialogSel == i) {
+            fill = itemBox;
+            InsetRect(&fill, 1, 1);
+            ForeColor(whiteColor);
+            FrameRect(&itemBox);
+            InsetRect(&fill, 1, 1);
+            ForeColor(blackColor);
+            PaintRect(&fill);
+            ForeColor(blackColor);
+            FrameRect(&itemBox);
+            ForeColor(whiteColor);
+            MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
+        } else {
+            fill = itemBox;
+            InsetRect(&fill, 1, 1);
+            ForeColor(whiteColor);
+            PaintRect(&fill);
+            ForeColor(blackColor);
+            FrameRect(&itemBox);
+            ForeColor(blackColor);
+            MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
         }
+        if (DupKeyCheck(newKeyPrefs[i], i))
+            RGBForeColor(&redRGB);
+        KeyboardScanCodeToString((char *)name, sizeof(name), newKeyPrefs[i]);
+        CtoPstr((char *)name);
+        if (name[0] == 0)
+            DrawIndString(kGameStrList, kNoNameStrIndex);
+        else
+            DrawString(name);
     }
     ForeColor(blackColor);
     if (gWind != NULL)

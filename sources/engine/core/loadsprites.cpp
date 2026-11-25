@@ -267,7 +267,6 @@ void LoadSprites(void)
     err = SWCreateRLEData(alertSprite, 0);
     if ((int32_t)err != 0)
         SpriteLoadFailed("error converting cicn sprite to RLE, ID ", 18000, 4, 18000, err);
-    SWSetSpriteDrawProc(alertSprite, BlitPixieRLETranslucentDrawProc);
 
     err = SWCreateSpriteFromCicnResource(gSpriteWorld, &doubleTimeSprite, NULL, 20000, 1, 1);
     if ((int32_t)err != 0)
@@ -276,7 +275,6 @@ void LoadSprites(void)
     err = SWCreateRLEData(doubleTimeSprite, 0);
     if ((int32_t)err != 0)
         SpriteLoadFailed("error converting cicn sprite to RLE, ID ", 20000, 4, 20000, err);
-    SWSetSpriteDrawProc(doubleTimeSprite, BlitPixieRLETranslucentDrawProc);
     IterateInGameEventLoop(1);
 
     redMapArrow = (Image_t *)GetCIcon(15000);
@@ -357,7 +355,6 @@ void InitSprites(void)
         SWAddSprite(shipLayer, shipData[i].sprite);
         SWSetSpriteVisible(shipData[i].sprite, 0);
         SWSetCurrentFrameIndex(shipData[i].sprite, 0);
-        SWSetSpriteDrawProc(shipData[i].sprite, BlitPixieRLETranslucentDrawProc);
         SWSetSpriteCollideProc(shipData[i].sprite, ShipCollisionHandler);
         shipData[i].sprite->userData = i;
         SWLockSprite(shipData[i].sprite);
@@ -370,8 +367,6 @@ void InitSprites(void)
             SWAddSprite(shipLayer, shipData[i].altSprite);
             SWSetSpriteVisible(shipData[i].altSprite, 0);
             SWSetCurrentFrameIndex(shipData[i].altSprite, 0);
-            SWSetSpriteDrawProc(shipData[i].altSprite,
-                                BlitPixieRLETranslucentDrawProc);
             shipData[i].altSprite->userData = i;
             SWSetSpriteCollideProc(shipData[i].altSprite, ShipCollisionHandler);
             SWLockSprite(shipData[i].altSprite);
@@ -386,8 +381,6 @@ void InitSprites(void)
             SWAddSprite(shipLayer, shipData[i].glowSprite);
             SWSetSpriteVisible(shipData[i].glowSprite, 0);
             SWSetCurrentFrameIndex(shipData[i].glowSprite, 0);
-            SWSetSpriteDrawProc(shipData[i].glowSprite,
-                                BlitPixieRLETranslucentDrawProc);
             SWLockSprite(shipData[i].glowSprite);
             shipData[i].glowSprite->translucency = 0x20;
             shipData[i].glowSprite->tintRed = 0x20;
@@ -404,8 +397,6 @@ void InitSprites(void)
             SWAddSprite(shipLayer, shipData[i].lightSprite);
             SWSetSpriteVisible(shipData[i].lightSprite, 0);
             SWSetCurrentFrameIndex(shipData[i].lightSprite, 0);
-            SWSetSpriteDrawProc(shipData[i].lightSprite,
-                                BlitPixieRLETranslucentDrawProc);
             SWLockSprite(shipData[i].lightSprite);
             shipData[i].lightSprite->translucency = 0x20;
             shipData[i].lightSprite->tintRed = 0x20;
@@ -422,8 +413,6 @@ void InitSprites(void)
             SWAddSprite(shipLayer, shipData[i].weapSprite);
             SWSetSpriteVisible(shipData[i].weapSprite, 0);
             SWSetCurrentFrameIndex(shipData[i].weapSprite, 0);
-            SWSetSpriteDrawProc(shipData[i].weapSprite,
-                                BlitPixieRLETranslucentDrawProc);
             SWLockSprite(shipData[i].weapSprite);
             shipData[i].weapSprite->translucency = 0x20;
             shipData[i].weapSprite->tintRed = 0x20;
@@ -440,8 +429,6 @@ void InitSprites(void)
             SWAddSprite(shipLayer, shipData[i].shieldSprite);
             SWSetSpriteVisible(shipData[i].shieldSprite, 0);
             SWSetCurrentFrameIndex(shipData[i].shieldSprite, 0);
-            SWSetSpriteDrawProc(shipData[i].shieldSprite,
-                                BlitPixieRLETranslucentDrawProc);
             SWLockSprite(shipData[i].shieldSprite);
             shipData[i].shieldSprite->translucency = 0x20;
             shipData[i].shieldSprite->tintRed = 0x20;
@@ -465,7 +452,6 @@ void InitSprites(void)
         SWAddSprite(stellarLayer, stellarSprite[i]);
         SWSetCurrentFrameIndex(stellarSprite[i], 0);
         SWSetSpriteVisible(stellarSprite[i], 0);
-        SWSetSpriteDrawProc(stellarSprite[i], BlitPixieRLETranslucentDrawProc);
         SWLockSprite(stellarSprite[i]);
     }
 
@@ -478,7 +464,6 @@ void InitSprites(void)
         SWAddSprite(explodLayer, explodData[i].sprite);
         SWSetCurrentFrameIndex(explodData[i].sprite, 0);
         SWSetSpriteVisible(explodData[i].sprite, 0);
-        SWSetSpriteDrawProc(explodData[i].sprite, BlitPixieRLETranslucentDrawProc);
         explodData[i].sprite->translucency = 0x20;
         explodData[i].sprite->tintRed = 0x20;
         explodData[i].sprite->tintGreen = 0x20;
@@ -496,7 +481,6 @@ void InitSprites(void)
         SWAddSprite(shotLayer, shotData[i].sprite);
         SWSetCurrentFrameIndex(shotData[i].sprite, 0);
         SWSetSpriteVisible(shotData[i].sprite, 0);
-        SWSetSpriteDrawProc(shotData[i].sprite, BlitPixieRLETranslucentDrawProc);
         shotData[i].sprite->userData = i;
         SWLockSprite(shotData[i].sprite);
     }
@@ -510,7 +494,6 @@ void InitSprites(void)
         SWAddSprite(boxLayer, boxData[i].sprite);
         SWSetCurrentFrameIndex(boxData[i].sprite, 0);
         SWSetSpriteVisible(boxData[i].sprite, 0);
-        SWSetSpriteDrawProc(boxData[i].sprite, BlitPixieRLETranslucentDrawProc);
         SWLockSprite(boxData[i].sprite);
     }
 
@@ -522,7 +505,6 @@ void InitSprites(void)
         SWAddSprite(boxLayer, podData[i].sprite);
         SWSetCurrentFrameIndex(podData[i].sprite, 0);
         SWSetSpriteVisible(podData[i].sprite, 0);
-        SWSetSpriteDrawProc(podData[i].sprite, BlitPixieRLETranslucentDrawProc);
         SWLockSprite(podData[i].sprite);
     }
 
@@ -536,7 +518,6 @@ void InitSprites(void)
         SWAddSprite(starLayer, starData[i].sprite);
         SWSetCurrentFrameIndex(starData[i].sprite, 0);
         SWSetSpriteVisible(starData[i].sprite, 0);
-        SWSetSpriteDrawProc(starData[i].sprite, BlitPixieRLEDrawProc);
         SWLockSprite(starData[i].sprite);
     }
 
@@ -548,8 +529,6 @@ void InitSprites(void)
             SWAddSprite(smokeLayer, smokeData[i].sprite);
             SWSetCurrentFrameIndex(smokeData[i].sprite, 0);
             SWSetSpriteVisible(smokeData[i].sprite, 0);
-            SWSetSpriteDrawProc(smokeData[i].sprite,
-                                BlitPixieRLETranslucentDrawProc);
             SWLockSprite(smokeData[i].sprite);
         }
     } else {
@@ -566,7 +545,6 @@ void InitSprites(void)
         SWAddSprite(asteroidLayer, asteroidData[i].sprite);
         SWSetCurrentFrameIndex(asteroidData[i].sprite, 0);
         SWSetSpriteVisible(asteroidData[i].sprite, 0);
-        SWSetSpriteDrawProc(asteroidData[i].sprite, BlitPixieRLETranslucentDrawProc);
         SWSetSpriteCollideProc(asteroidData[i].sprite, AsteroidCollisionHandler);
         SWLockSprite(asteroidData[i].sprite);
         asteroidData[i].sprite->userData = i;
@@ -578,7 +556,6 @@ void InitSprites(void)
             SpriteLoadFailed("error cloning nav target sprite, #", i, 1, 0, err);
         SWAddSprite(targetLayer, navTargetSprite[i]);
         SWSetSpriteVisible(navTargetSprite[i], 0);
-        SWSetSpriteDrawProc(navTargetSprite[i], BlitPixieRLETranslucentDrawProc);
         navTargetSprite[i]->tintMode = 0;
         navTargetSprite[i]->translucency = 0x20;
         navTargetSprite[i]->tintRed = 0x20;
@@ -593,7 +570,6 @@ void InitSprites(void)
             SpriteLoadFailed("error cloning weap target sprite, #", i, 1, 0, err);
         SWAddSprite(targetLayer, weapTargetSprite[i]);
         SWSetSpriteVisible(weapTargetSprite[i], 0);
-        SWSetSpriteDrawProc(weapTargetSprite[i], BlitPixieRLETranslucentDrawProc);
         weapTargetSprite[i]->tintMode = 0;
         weapTargetSprite[i]->translucency = 0x20;
         weapTargetSprite[i]->tintRed = 0x20;
@@ -605,7 +581,6 @@ void InitSprites(void)
     if (cursorSprite != NULL) {
         SWAddSprite(interfaceLayer, cursorSprite);
         SWSetSpriteVisible(cursorSprite, 0);
-        SWSetSpriteDrawProc(cursorSprite, BlitPixieRLETranslucentDrawProc);
         cursorSprite->tintMode = 0;
         cursorSprite->translucency = 0x20;
         cursorSprite->tintRed = 0x20;
@@ -619,14 +594,12 @@ void InitSprites(void)
     SWAddSprite(interfaceLayer, alertSprite);
     SWSetCurrentFrameIndex(alertSprite, 0);
     SWSetSpriteVisible(alertSprite, 0);
-    SWSetSpriteDrawProc(alertSprite, BlitPixieRLETranslucentDrawProc);
     SWLockSprite(alertSprite);
     PlaceAlertSprite();
 
     SWAddSprite(interfaceLayer, doubleTimeSprite);
     SWSetCurrentFrameIndex(doubleTimeSprite, 0);
     SWSetSpriteVisible(doubleTimeSprite, 0);
-    SWSetSpriteDrawProc(doubleTimeSprite, BlitPixieRLETranslucentDrawProc);
     SWLockSprite(doubleTimeSprite);
     SWSetSpriteLocation(doubleTimeSprite, 0, 0);
 
@@ -723,9 +696,7 @@ short ConvertSpriteToRLE(SpriteRec *set)
         if (set->maxFrames > 0) {
             do {
                 set->frameArray[(short)i]->framePort = NULL;
-                set->frameArray[(short)i]->framePix = NULL;
                 set->frameArray[(short)i]->maskPort = NULL;
-                set->frameArray[(short)i]->maskPix = NULL;
                 i = i + 1;
             } while ((short)i < set->maxFrames);
         }

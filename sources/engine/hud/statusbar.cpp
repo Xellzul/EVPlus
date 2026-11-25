@@ -67,7 +67,7 @@ void RedrawStatus(Boolean copyToScreen)
         } else {
             CopyBits(GWorldContainerBits(&loadPort),
                      GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                     &box, &box, 0, GetCWindowVisRgn((WindowRef)gWind));
+                     &box, &box, 0, NULL);
         }
     }
 }

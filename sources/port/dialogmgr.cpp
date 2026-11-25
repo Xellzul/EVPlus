@@ -1001,15 +1001,6 @@ int32_t GetControlValue(ControlPtr ctl)
     return value;
 }
 
-// FUNCTION: EVNOVA 0x004cfd90
-void DisableControl(ControlPtr ctl)
-{
-    if (ctl != NULL) {
-        ctl->enabled = 0;
-        ctl->owner->needsUpdate = 1;
-    }
-}
-
 // FUNCTION: EVNOVA 0x004cfdb0
 void RedrawDialog(DialogPtr dlg)
 {

@@ -43,13 +43,11 @@ short SWCreateSpriteFromCicnResource(SpriteWorldPtr destSpriteWorldP, SpritePtr 
         }
 
         if ((int)err == noErr) {
-            SWSetSpriteFrameRange(tempSpriteP, 0, maxFrames - 1);
             SWSetCurrentFrameIndex(tempSpriteP, 0);
             *newSpriteP = tempSpriteP;
         }
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
 
@@ -76,10 +74,10 @@ short SWCreateSpriteFromSinglePictXY(
     PicHandle tempPic;
     CGrafPtr tempPictGWorldP;
     CGrafPtr tempMaskGWorldP;
-    CGrafPtr tempTempMaskGWorldP;
     Rect frameRect;
     SpritePtr tempSpriteP;
     FramePtr newFrameP;
+    Boolean frameAdded;
     short frame;
 
     err = 0;
@@ -122,11 +120,6 @@ short SWCreateSpriteFromSinglePictXY(
         }
 
         if ((int)err == noErr) {
-            err = SWCreateFrameFromGWorldAndRectStart(&tempTempMaskGWorldP, frameWidth,
-                    frameHeight, maskType);
-        }
-
-        if ((int)err == noErr) {
             frameRect.right = frameWidth;
             frameRect.left = 0;
             frameRect.top = 0;
@@ -134,12 +127,14 @@ short SWCreateSpriteFromSinglePictXY(
 
             for (frame = 0; frame < maxFrames; frame++) {
                 err = SWCreateFrameFromGWorldAndRectPartial(&newFrameP, tempPictGWorldP,
-                        tempMaskGWorldP, tempTempMaskGWorldP, &frameRect, maskType);
+                        tempMaskGWorldP, &frameRect, maskType);
+                frameAdded = 0;
 
                 if ((int)err == noErr) {
                     newFrameP->rleDataH = 0;
 
                     err = SWAddFrame(tempSpriteP, newFrameP);
+                    frameAdded = (int)err == noErr;
                     if (frame < maxFrames - 1) {
                         frameRect.left += frameWidth + borderWidth;
                         frameRect.right = frameRect.left + frameWidth;
@@ -159,15 +154,13 @@ short SWCreateSpriteFromSinglePictXY(
                 }
 
                 if ((int)err != noErr) {
-                    // BUG (likely, all versions): on kOutOfRangeErr the frame was already added to the sprite,
-                    // so it is disposed here and again by SWDisposeSprite (double free); also leaks the temp GWorlds
-                    SWDisposeFrame(&newFrameP);
+                    // BUG (all versions): leaks the temp GWorlds
+                    if (!frameAdded)
+                        SWDisposeFrame(&newFrameP);
                     SWDisposeSprite(&tempSpriteP);
                     break;
                 }
             }
-
-            SWCreateFrameFromGWorldAndRectFinish(tempTempMaskGWorldP);
         }
 
         if ((int)err == noErr) {
@@ -178,7 +171,6 @@ short SWCreateSpriteFromSinglePictXY(
                 }
             }
 
-            SWSetSpriteFrameRange(tempSpriteP, 0, maxFrames - 1);
             SWSetCurrentFrameIndex(tempSpriteP, 0);
             tempSpriteP->sharedPictGWorld = tempPictGWorldP;
             tempSpriteP->sharedMaskGWorld = tempMaskGWorldP;
@@ -187,7 +179,6 @@ short SWCreateSpriteFromSinglePictXY(
         }
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
 
@@ -244,7 +235,6 @@ short SWCreateSpriteFromRLEResource(SpritePtr *srcSpriteP, void *spriteStorageP,
             }
 
             if ((int)err == noErr) {
-                SWSetSpriteFrameRange(tempSpriteP, 0, numFrames - 1);
                 SWSetCurrentFrameIndex(tempSpriteP, 0);
 
                 *srcSpriteP = tempSpriteP;
@@ -253,16 +243,16 @@ short SWCreateSpriteFromRLEResource(SpritePtr *srcSpriteP, void *spriteStorageP,
             }
         }
 
-        tempSpriteP->rleDataH = (Handle)spriteData;
-        tempSpriteP->ownsRLEData = 1;
+        if ((int)err == noErr) {
+            tempSpriteP->rleDataH = (Handle)spriteData;
+            tempSpriteP->ownsRLEData = 1;
 
-        if ((int)err == noErr)
             DetachResource((Handle)spriteData);
+        }
     } else {
         err = resNotFound;
     }
 
-    SWSetStickyIfError(err);
     return err;
 }
 
@@ -296,8 +286,6 @@ short SWCloneSprite(SpritePtr cloneSpriteP, SpritePtr *newSpriteP, void *spriteS
         tempSpriteP->nextSpriteP = 0;
         tempSpriteP->prevSpriteP = 0;
 
-        tempSpriteP->spriteMoveProc = SWTempSpriteMoveProc;
-        tempSpriteP->realSpriteMoveProc = cloneSpriteP->realSpriteMoveProc;
         tempSpriteP->ownsRLEData = 0;
     }
 
@@ -321,7 +309,6 @@ short SWCloneSprite(SpritePtr cloneSpriteP, SpritePtr *newSpriteP, void *spriteS
     if ((int)err == noErr)
         *newSpriteP = tempSpriteP;
 
-    SWSetStickyIfError(err);
     return err;
 }
 
@@ -494,42 +481,7 @@ short SWAddFrame(SpritePtr srcSpriteP, FramePtr newFrameP)
         err = kMaxFramesErr;
     }
 
-    SWSetStickyIfError(err);
     return err;
-}
-
-
-/* maskRgn is never dereferenced -- this port has no Region Manager, so the donor's
-   OffsetRgn block is gone -- but the handle is still PASSED to CopyBits as the mask,
-   which is why the field is read at all. */
-
-// FUNCTION: EVNOVA 0x004757a0
-// MAC: _SWStdSpriteDrawProc i386 0x000ab015 ppc 0x000b5e34
-void SWStdSpriteDrawProc(FramePtr srcFrameP, FramePtr dstFrameP, Rect *srcRect, Rect *dstRect)
-{
-    if (!srcFrameP->isFrameLocked || !dstFrameP->isFrameLocked)
-        SWAssertFail("Sprite.c", 1892);
-
-    CopyBits(GetPortBitMapForCopyBits(srcFrameP->framePort),
-             GetPortBitMapForCopyBits(dstFrameP->framePort),
-             srcRect, dstRect, srcCopy, srcFrameP->maskRgn);
-}
-
-
-/* `[s+0x8c] = [s+0x90]', then a call through +0x90 guarded on the byte +0x15: that is
-   what pins spriteMoveProc/realSpriteMoveProc to +0x8c/+0x90 and needsToBeDrawn to +0x15
-   for the rest of the file. */
-
-// FUNCTION: EVNOVA 0x00475800
-// MAC: _SWTempSpriteMoveProc i386 0x000ab1c9 ppc 0x000b600c
-void SWTempSpriteMoveProc(SpritePtr srcSpriteP)
-{
-    srcSpriteP->spriteMoveProc = srcSpriteP->realSpriteMoveProc;
-
-    if (srcSpriteP->needsToBeDrawn == 0) {
-        if (srcSpriteP->realSpriteMoveProc != 0)
-            (*srcSpriteP->realSpriteMoveProc)(srcSpriteP);
-    }
 }
 
 
@@ -575,14 +527,8 @@ void SWSetCurrentFrameIndex(SpritePtr srcSpriteP, short frameIndex)
         srcSpriteP->destFrameRect.bottom += vertOffset;
 
         srcSpriteP->curFrameIndex = frameIndex;
-
-        srcSpriteP->needsToBeDrawn = 1;
     }
 }
-
-/* The only store is `[sprite+0x94] = arg2', and +0x94 is spriteCollideProc -- pinned by
-   SWTempSpriteMoveProc, which moves +0x90 into +0x8c and so fixes
-   realSpriteMoveProc/spriteMoveProc, leaving the donor's next member at +0x94. */
 
 // FUNCTION: EVNOVA 0x00475940
 // MAC: _SWSetSpriteCollideProc i386 0x000ab28d ppc 0x000b60fc
@@ -592,86 +538,6 @@ void SWSetSpriteCollideProc(SpritePtr srcSpriteP, CollideProcPtr collideProc)
         SW_ASSERT_FAIL("Sprite.c", 2079, 2034);
 
     srcSpriteP->spriteCollideProc = collideProc;
-}
-
-
-/* The framePort list repeats Mask and PartialMask, and that duplication is the donor's
-   verbatim: where the exe writes a sequence out twice, write it out twice. */
-
-
-#define kSpriteNotCompiledErr   113
-
-// FUNCTION: EVNOVA 0x00475970
-// MAC: _SWSetSpriteDrawProc i386 0x000ab327 ppc 0x000b61ac
-short SWSetSpriteDrawProc(SpritePtr srcSpriteP, DrawProcPtr drawProc)
-{
-    short err = 0;
-    FramePtr headFrameP = 0;
-
-    if (srcSpriteP == 0 || drawProc == 0)
-        SWAssertFail("Sprite.c", 2112);
-
-    headFrameP = srcSpriteP->frameArray[0];
-    if (headFrameP != 0) {
-        if (headFrameP->frameDepth < 8) {
-            if ((drawProc == BlitPixieRectDrawProc) ||
-                (drawProc == BlitPixieMaskDrawProc) ||
-                (drawProc == BlitPixiePartialMaskDrawProc) ||
-                (drawProc == BlitPixieRLEDrawProc)) {
-                err = kWrongDepthErr;
-            }
-        }
-    }
-
-    if (headFrameP->framePort == 0) {
-        if ((drawProc == BlitPixieRectDrawProc) ||
-            (drawProc == BlitPixieMaskDrawProc) ||
-            (drawProc == BlitPixiePartialMaskDrawProc) ||
-            (drawProc == BlitPixieMaskDrawProc) ||
-            (drawProc == BlitPixiePartialMaskDrawProc)) {
-            err = kWrongMaskErr;
-        }
-    }
-
-    if (headFrameP->maskPort == 0) {
-        if ((drawProc == BlitPixieMaskDrawProc) ||
-            (drawProc == BlitPixiePartialMaskDrawProc)) {
-            err = kWrongMaskErr;
-        }
-    }
-
-    if (drawProc == BlitPixieRLEDrawProc && headFrameP->rleDataH == 0) {
-        err = kSpriteNotCompiledErr;
-    }
-
-    if ((int)err == noErr)
-        srcSpriteP->frameDrawProc = drawProc;
-
-    SWSetStickyIfError(err);
-    return err;
-}
-
-
-// FUNCTION: EVNOVA 0x00475a60
-// MAC: _SWSetSpriteFrameRange i386 0x000a91f3 ppc 0x000b4108
-void SWSetSpriteFrameRange(SpritePtr srcSpriteP, short firstFrameIndex, short lastFrameIndex)
-{
-    if (srcSpriteP == 0)
-        SW_ASSERT_FAIL("Sprite.c", 2253, 2195);
-
-    if (firstFrameIndex < 0)
-        firstFrameIndex = 0;
-
-    if (lastFrameIndex > srcSpriteP->maxFrames - 1)
-        lastFrameIndex = srcSpriteP->maxFrames - 1;
-
-    srcSpriteP->firstFrameIndex = firstFrameIndex;
-    srcSpriteP->lastFrameIndex = lastFrameIndex;
-
-    if (srcSpriteP->curFrameIndex < firstFrameIndex)
-        SWSetCurrentFrameIndex(srcSpriteP, firstFrameIndex);
-    else if (srcSpriteP->curFrameIndex > lastFrameIndex)
-        SWSetCurrentFrameIndex(srcSpriteP, lastFrameIndex);
 }
 
 
@@ -691,10 +557,6 @@ void SWSetSpriteLocation(SpritePtr srcSpriteP, short horizLoc, short vertLoc)
                                                 srcSpriteP->destFrameRect.left);
     srcSpriteP->destFrameRect.top = vertLoc;
     srcSpriteP->destFrameRect.left = horizLoc;
-
-    srcSpriteP->deltaFrameRect = srcSpriteP->destFrameRect;
-
-    srcSpriteP->needsToBeDrawn = 1;
 }
 
 
@@ -708,14 +570,8 @@ void SWSetSpriteVisible(SpritePtr srcSpriteP, unsigned char isVisible)
     if (srcSpriteP == 0)
         SW_ASSERT_FAIL("Sprite.c", 2398, 2339);
 
-    if (srcSpriteP->isVisible != isVisible) {
-        if (isVisible && !srcSpriteP->needsToBeDrawn && !srcSpriteP->needsToBeErased)
-            srcSpriteP->justBecameVisible = 1;
-
+    if (srcSpriteP->isVisible != isVisible)
         srcSpriteP->isVisible = isVisible;
-        srcSpriteP->needsToBeDrawn = 1;
-        srcSpriteP->needsToBeErased = !isVisible;
-    }
 }
 
 
@@ -763,7 +619,6 @@ Boolean SWRLECollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
     Rect sectRect;
     Rect srcSectRect;
     Rect dstSectRect;
-    FramePtr srcFrameP, dstFrameP;
 
     if (srcSpriteP == 0 || dstSpriteP == 0)
         SW_ASSERT_FAIL("Sprite.c", 2761, 2701);
@@ -782,9 +637,6 @@ Boolean SWRLECollision(SpritePtr srcSpriteP, SpritePtr dstSpriteP)
     sectRect.bottom = SW_MIN(srcSpriteP->destFrameRect.bottom, dstSpriteP->destFrameRect.bottom);
 
     if (sectRect.right > sectRect.left && sectRect.bottom > sectRect.top) {
-        srcFrameP = srcSpriteP->curFrameP;
-        dstFrameP = dstSpriteP->curFrameP;
-
         srcSectRect.left = (sectRect.left - srcSpriteP->destFrameRect.left);
         srcSectRect.top = (sectRect.top - srcSpriteP->destFrameRect.top);
         srcSectRect.right = (sectRect.right - srcSpriteP->destFrameRect.left);
