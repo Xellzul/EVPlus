@@ -5,7 +5,6 @@
 #include "space.h"
 #include "prototypes.h"
 #include "player.h"
-#include "pixel.h"
 #include "render.h"
 #include "ships.h"
 #include "ai.h"
@@ -16,6 +15,8 @@
 #include "crashlog.h"
 #include "gameutil.h"
 #include "text.h"
+#include "platform.h"
+#include "viewdraw.h"
 
 #define kSpriteSizeSlots    6
 #define kFullHilite         0x20
@@ -582,42 +583,42 @@ void HandleShipDisplay(ShipObj *ship)
         w = GetSpriteXSize(ship->sprite);
         h = GetSpriteYSize(ship->sprite);
         SWSetSpriteLocation(ship->sprite,
-            (short)(ship->pos.x - shipData[0].pos.x) + screenCenter.h - w / 2,
-            (short)(ship->pos.y - shipData[0].pos.y) + screenCenter.v - h / 2);
+            View::X(ship->pos.x) - w / 2,
+            View::Y(ship->pos.y) - h / 2);
         if (hasGlow != 0) {
             w = GetSpriteXSize(ship->glowSprite);
             h = GetSpriteYSize(ship->glowSprite);
             SWSetSpriteLocation(ship->glowSprite,
-                (short)(ship->pos.x - shipData[0].pos.x) + screenCenter.h - w / 2,
-                (short)(ship->pos.y - shipData[0].pos.y) + screenCenter.v - h / 2);
+                View::X(ship->pos.x) - w / 2,
+                View::Y(ship->pos.y) - h / 2);
         }
         if (hasLight != 0) {
             w = GetSpriteXSize(ship->lightSprite);
             h = GetSpriteYSize(ship->lightSprite);
             SWSetSpriteLocation(ship->lightSprite,
-                (short)(ship->pos.x - shipData[0].pos.x) + screenCenter.h - w / 2,
-                (short)(ship->pos.y - shipData[0].pos.y) + screenCenter.v - h / 2);
+                View::X(ship->pos.x) - w / 2,
+                View::Y(ship->pos.y) - h / 2);
         }
         if (hasAlt != 0) {
             w = GetSpriteXSize(ship->altSprite);
             h = GetSpriteYSize(ship->altSprite);
             SWSetSpriteLocation(ship->altSprite,
-                (short)(ship->pos.x - shipData[0].pos.x) + screenCenter.h - w / 2,
-                (short)(ship->pos.y - shipData[0].pos.y) + screenCenter.v - h / 2);
+                View::X(ship->pos.x) - w / 2,
+                View::Y(ship->pos.y) - h / 2);
         }
         if (hasWeap != 0) {
             w = GetSpriteXSize(ship->weapSprite);
             h = GetSpriteYSize(ship->weapSprite);
             SWSetSpriteLocation(ship->weapSprite,
-                (short)(ship->pos.x - shipData[0].pos.x) + screenCenter.h - w / 2,
-                (short)(ship->pos.y - shipData[0].pos.y) + screenCenter.v - h / 2);
+                View::X(ship->pos.x) - w / 2,
+                View::Y(ship->pos.y) - h / 2);
         }
         if (hasShield != 0) {
             w = GetSpriteXSize(ship->shieldSprite);
             h = GetSpriteYSize(ship->shieldSprite);
             SWSetSpriteLocation(ship->shieldSprite,
-                (short)(ship->pos.x - shipData[0].pos.x) + screenCenter.h - w / 2,
-                (short)(ship->pos.y - shipData[0].pos.y) + screenCenter.v - h / 2);
+                View::X(ship->pos.x) - w / 2,
+                View::Y(ship->pos.y) - h / 2);
         }
 
         if (ship->cloakDir != 0) {
@@ -925,10 +926,8 @@ void HandleBoxes(void)
             SWSetCurrentFrameIndex(boxData[i].sprite,
                                    boxData[i].angle);
             SWSetSpriteLocation(boxData[i].sprite,
-                (short)(boxData[i].pos.x - shipData[0].pos.x)
-                    + screenCenter.h - GetSpriteXSize(boxData[i].sprite),
-                (short)(boxData[i].pos.y - shipData[0].pos.y)
-                    + screenCenter.v - GetSpriteYSize(boxData[i].sprite));
+                View::X(boxData[i].pos.x) - GetSpriteXSize(boxData[i].sprite),
+                View::Y(boxData[i].pos.y) - GetSpriteYSize(boxData[i].sprite));
             boxData[i].sprite->userData = i;
         }
         if (boxData[i].mining != 0)
@@ -1007,21 +1006,16 @@ void HandleSmoke(void)
             frame = GetSpriteXSize(smokeData[i].sprite) / 2;
             halfY = GetSpriteYSize(smokeData[i].sprite) / 2;
             SWSetSpriteLocation(smokeData[i].sprite,
-                (short)(smokeData[i].pos.x - shipData[0].pos.x)
-                    + screenCenter.h - frame,
-                (short)(smokeData[i].pos.y - shipData[0].pos.y)
-                    + screenCenter.v - halfY);
+                View::X(smokeData[i].pos.x) - frame,
+                View::Y(smokeData[i].pos.y) - halfY);
         }
         else if (smokeData[i].sprite != 0) {
             SWSetSpriteVisible(smokeData[i].sprite, 0);
             smokeData[i].timer = -1.0f;
         }
     }
-    if (killSmoke != 0) {
-        ClearParticles(1);
-        UpdateParticlesInWindow(gSpriteWorld);
+    if (killSmoke != 0)
         ClearParticles(0);
-    }
 }
 
 // FUNCTION: EVNOVA 0x0042cbb0
@@ -1253,10 +1247,8 @@ void HandleStellarSprites(void)
             HandleSpriteMurkiness(stellarData[k].pos.h, stellarData[k].pos.v,
                                   stellarSprite[i]);
             SWSetSpriteLocation(stellarSprite[i],
-                (short)(stellarData[k].pos.h - shipData[0].pos.x)
-                    + screenCenter.h - w,
-                (short)(stellarData[k].pos.v - shipData[0].pos.y)
-                    + screenCenter.v - h);
+                View::X(stellarData[k].pos.h) - w,
+                View::Y(stellarData[k].pos.v) - h);
         }
     }
 }
@@ -1442,10 +1434,8 @@ void HandleExplods(void)
                 w = (GetSpriteXSize(explodData[i].sprite) / 2);
                 h = (GetSpriteYSize(explodData[i].sprite) / 2);
                 SWSetSpriteLocation(explodData[i].sprite,
-                    (short)(explodData[i].pos.x - shipData[0].pos.x)
-                        + screenCenter.h - w,
-                    (short)(explodData[i].pos.y - shipData[0].pos.y)
-                        + screenCenter.v - h);
+                    View::X(explodData[i].pos.x) - w,
+                    View::Y(explodData[i].pos.y) - h);
                 murk = (kMurkBase - explodData[i].timer
                                / explodData[i].sprite->numFrames * kMurkSpan);
                 if (murk < 0)
@@ -1536,8 +1526,8 @@ void HandleStars(void)
                 starData[i].pos.y = starData[i].pos.y - (viewH + h * 2);
                 starData[i].pos.x = shipData[0].pos.x + Rand(viewW) - viewW / 2;
             }
-            edgeX = screenCenter.h + (short)(starData[i].pos.x - shipData[0].pos.x);
-            edgeY = screenCenter.v + (short)(starData[i].pos.y - shipData[0].pos.y);
+            edgeX = View::X(starData[i].pos.x);
+            edgeY = View::Y(starData[i].pos.y);
             SWSetSpriteLocation(starData[i].sprite, edgeX - w, edgeY - h);
         } else {
             SWSetSpriteVisible(starData[i].sprite, 0);
@@ -1647,10 +1637,8 @@ void HandleWeapTargetSprites(void)
         }
         for (i = 0; i < kWeapTargetCorners; i++)
             SWSetCurrentFrameIndex(weapTargetSprite[i], i + frame);
-        x = (short)(shipData[shipData[0].targetShip].pos.x - shipData[0].pos.x)
-            + screenCenter.h;
-        y = (short)(shipData[shipData[0].targetShip].pos.y - shipData[0].pos.y)
-            + screenCenter.v;
+        x = View::X(shipData[shipData[0].targetShip].pos.x);
+        y = View::Y(shipData[shipData[0].targetShip].pos.y);
         half = (GetSpriteXSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)
                     > GetSpriteYSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)
                 ? GetSpriteXSize((SpriteRec *)shipData[shipData[0].targetShip].sprite)
@@ -1736,10 +1724,6 @@ void HandleBeams(unsigned char advance)
                 beamData[i].state--;
             if (killShots)
                 beamData[i].state = -1;
-            if (advance) {
-                beamData[i].lastHead = beamData[i].head;
-                beamData[i].lastTail = beamData[i].tail;
-            }
             if (advance) {
                 angle = shipData[beamData[i].owner].sprite->curFrameIndex
                         % shipClass[shipData[beamData[i].owner].type].framesPer;
@@ -1833,8 +1817,8 @@ void HandleBeams(unsigned char advance)
                     muzzle.y += off.y;
                 }
 
-                drawPt.x = muzzle.x - shipData[0].pos.x + screenCenter.h;
-                drawPt.y = muzzle.y - shipData[0].pos.y + screenCenter.v;
+                drawPt.x = View::ExactX(muzzle.x);
+                drawPt.y = View::ExactY(muzzle.y);
                 beamData[i].head.h = drawPt.x;
                 beamData[i].head.v = drawPt.y;
 
@@ -1842,10 +1826,8 @@ void HandleBeams(unsigned char advance)
                     if (weaponStats[beamData[i].weapType].guidance == kGuidancePDBeam
                         && beamData[i].targetIsShot == 1) {
                         if (beamData[i].target != -1) {
-                            beamData[i].tail.h = shotData[beamData[i].target].pos.x
-                                                 - shipData[0].pos.x + screenCenter.h;
-                            beamData[i].tail.v = shotData[beamData[i].target].pos.y
-                                                 - shipData[0].pos.y + screenCenter.v;
+                            beamData[i].tail.h = View::ExactX(shotData[beamData[i].target].pos.x);
+                            beamData[i].tail.v = View::ExactY(shotData[beamData[i].target].pos.y);
                             massDmg = weaponStats[beamData[i].weapType].damage[0];
                             energyDmg = weaponStats[beamData[i].weapType].damage[1] / 2;
                             if (doubleTime) {
@@ -2606,7 +2588,7 @@ void HandleStellarSystemVisibility(void)
                     masterStellarSprite[i]->rleDataH = NULL;
                 }
                 for (j = 0; j < masterStellarSprite[i]->numFrames; j++) {
-                    DeallocAPointer(masterStellarSprite[i]->frameArray[j]);
+                    SWFreeFrameRecord(masterStellarSprite[i]->frameArray[j]);
                     masterStellarSprite[i]->frameArray[j] = NULL;
                 }
                 masterStellarSprite[i]->numFrames = 0;
@@ -2659,9 +2641,9 @@ void HandleStellarSystemVisibility(void)
             SWSetSpriteVisible(stellarSprite[n], 1);
             SWSetCurrentFrameIndex(stellarSprite[n], stellarData[i].curFrame);
             SWSetSpriteLocation(stellarSprite[n],
-                (stellarData[i].pos.h - shipData[0].pos.x + screenCenter.h
+                (View::ExactX(stellarData[i].pos.h)
                        - GetSpriteXSize(stellarSprite[n]) / 2),
-                (stellarData[i].pos.v - shipData[0].pos.y + screenCenter.v
+                (View::ExactY(stellarData[i].pos.v)
                        - GetSpriteYSize(stellarSprite[n]) / 2));
             stellarData[i].numFrames = stellarSprite[n]->numFrames;
             if (fresh) {
@@ -2703,6 +2685,9 @@ void HandleStellarSystemVisibility(void)
 
 /* framepace -- hold the frame to a floor length and track how fast the machine is running (win 0x00432ea0). Notes: Research/notes/framepace.md */
 
+static const int kSleepMissLimit = 3;    /* 1 ms sleeps in a row that took over 2 ms: coarse timer, spin instead */
+static int sleepMisses;
+
 // FUNCTION: EVNOVA 0x00432ea0
 // MAC: _HandleTimeAdjustment i386 0x00033332 ppc 0x00038be0
 void HandleTimeAdjustment(void)
@@ -2723,6 +2708,14 @@ void HandleTimeAdjustment(void)
                 IterateInGameEventLoop(1);
                 lastEventLoopTime = ReadTick();
             }
+        }
+        if (ms < 19 && sleepMisses < kSleepMissLimit) {
+            uint64_t before = PlatMicroseconds();
+            PlatSleep(1);
+            if (PlatMicroseconds() - before > 2000)
+                sleepMisses++;
+            else
+                sleepMisses = 0;
         }
     } while (ms <= 20);
 
@@ -3545,10 +3538,8 @@ void HandleShot(ShotObj *shot)
         HandleSpriteMurkiness(shot->pos.x, shot->pos.y, shot->sprite);
         half = GetSpriteXSize(shot->sprite) / 2;
         SWSetSpriteLocation(shot->sprite,
-                            (short)(shot->pos.x - shipData->pos.x)
-                            + screenCenter.h - half,
-                            (short)(shot->pos.y - shipData->pos.y)
-                            + screenCenter.v - half);
+                            View::X(shot->pos.x) - half,
+                            View::Y(shot->pos.y) - half);
 
         if (updateSmokeThisFrame != 0 && gameFrozen == 0) {
             frame = -1;
@@ -3710,10 +3701,8 @@ void HandleAsteroids(void)
             spriteW = GetSpriteXSize(asteroidData[i].sprite);
             spriteH = GetSpriteYSize(asteroidData[i].sprite);
             SWSetSpriteLocation(asteroidData[i].sprite,
-                         ((short)(asteroidData[i].pos.x - shipData->pos.x)
-                                 + screenCenter.h - spriteW / 2),
-                         ((short)(asteroidData[i].pos.y - shipData->pos.y)
-                                 + screenCenter.v - spriteH / 2));
+                         (View::X(asteroidData[i].pos.x) - spriteW / 2),
+                         (View::Y(asteroidData[i].pos.y) - spriteH / 2));
             /* once the sprite is kWrapMargin past a screen edge, a fresh asteroid takes its place at the far
                side of the margin beyond the opposite edge, at a random place along it; asteroids over the
                system's count are removed instead */
@@ -3745,10 +3734,8 @@ void HandleAsteroids(void)
                     asteroidData[i].pos.x = shipData->pos.x + Rand(2 * halfW) - halfW;
                 }
                 SWSetSpriteLocation(asteroidData[i].sprite,
-                             ((short)(asteroidData[i].pos.x - shipData->pos.x)
-                                     + screenCenter.h - spriteW / 2),
-                             ((short)(asteroidData[i].pos.y - shipData->pos.y)
-                                     + screenCenter.v - spriteH / 2));
+                             (View::X(asteroidData[i].pos.x) - spriteW / 2),
+                             (View::Y(asteroidData[i].pos.y) - spriteH / 2));
             }
         }
     }
@@ -4150,12 +4137,6 @@ void CheckShotProximities(void)
     }
 }
 
-/*
- * All three are referenced only from function-pointer dispatchers
- * (PostDrawCallback/PostEraseCallback), so no direct win caller pins their names, and
- * none has an established mac twin yet.
- */
-
 // FUNCTION: EVNOVA 0x00438630
 // MAC: _PointDefenseCollisionHandler i386 0x00037776 ppc 0x0003d738
 void PointDefenseCollisionHandler(SpriteRec *shotSpr, SpriteRec *otherSpr, Rect *sectRect)
@@ -4178,172 +4159,29 @@ void PointDefenseCollisionHandler(SpriteRec *shotSpr, SpriteRec *otherSpr, Rect 
     }
 }
 
-// FUNCTION: EVNOVA 0x004386f0
-// MAC: _BeamEraseCallback i386 0x0003785e ppc 0x0003d83c
-void BeamEraseCallback(SpriteWorldPtr world)
+/* the beams drawn under the ships, or the rest */
+void DrawBeams(BeamLines &out, bool underShips)
 {
-    short count;
-    short density;
-    Point p1, p2;
+    Point p1;
+    Point p2;
 
-    count = 0;
-    while (count < kMaxBeams) {
-        if (beamData[count].state >= -1 &&
-            beamData[count].owner != -1) {
-            p1.h = beamData[count].lastHead.h;
-            p1.v = beamData[count].lastHead.v;
-            p2.h = beamData[count].lastTail.h;
-            p2.v = beamData[count].lastTail.v;
-            density = weaponStats[beamData[count].weapType].lightningDensity;
-            if (density > 0) {
-                EraseLightningBeam(gSpriteWorld->backFrameP, gSpriteWorld->workFrameP, p1, p2,
-                             weaponStats[beamData[count].weapType].beamWidth, density,
-                             weaponStats[beamData[count].weapType].lightningAmplitude);
-            } else {
-                EraseBeam(gSpriteWorld->backFrameP, gSpriteWorld->workFrameP, p1, p2,
-                             weaponStats[beamData[count].weapType].beamWidth,
-                             weaponStats[beamData[count].weapType].coronaFalloff);
-            }
-        }
-        count++;
-    }
-}
-
-// FUNCTION: EVNOVA 0x00438810
-// MAC: _BeamDrawCallback i386 0x00037952 ppc 0x0003d928
-void BeamDrawCallback(SpriteWorldPtr world)
-{
-    short count;
-    short density;
-    Point p1, p2;
-
-    if (world->fastBlit != 0) {
-        count = 0;
-        while (count < kMaxBeams) {
-            if (beamData[count].state >= -1 &&
-                beamData[count].owner != -1) {
-                p1.h = beamData[count].lastHead.h;
-                p1.v = beamData[count].lastHead.v;
-                p2.h = beamData[count].lastTail.h;
-                p2.v = beamData[count].lastTail.v;
-                if (weaponStats[beamData[count].weapType].lightningDensity > 0) {
-                    EraseLightningBeam(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP, p1, p2,
-                                 weaponStats[beamData[count].weapType].beamWidth,
-                                 weaponStats[beamData[count].weapType].lightningDensity,
-                                 weaponStats[beamData[count].weapType].lightningAmplitude);
-                } else {
-                    EraseBeam(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP, p1, p2,
-                                 0x20, 0x10);
-                }
-            }
-            count++;
-        }
-    }
-
-    count = 0;
-    while (count < kMaxBeams) {
-        if (beamData[count].state >= 0 &&
-            beamData[count].owner != -1) {
-            if ((weaponStats[beamData[count].weapType].flags2 & kWeapBeamUnderShip) != 0) {
-                if (world->fastBlit != 0) {
-                    p1.h = beamData[count].head.h;
-                    p1.v = beamData[count].head.v;
-                    p2.h = beamData[count].tail.h;
-                    p2.v = beamData[count].tail.v;
-                    if (weaponStats[beamData[count].weapType].lightningDensity > 0) {
-                        EraseLightningBeam(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP, p1, p2,
-                                     weaponStats[beamData[count].weapType].beamWidth,
-                                     weaponStats[beamData[count].weapType].lightningDensity,
-                                     weaponStats[beamData[count].weapType].lightningAmplitude);
-                    } else {
-                        EraseBeam(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP, p1, p2,
-                                     weaponStats[beamData[count].weapType].beamWidth,
-                                     weaponStats[beamData[count].weapType].coronaFalloff);
-                    }
-                }
-            } else {
-                p1.h = beamData[count].head.h;
-                p1.v = beamData[count].head.v;
-                p2.h = beamData[count].tail.h;
-                p2.v = beamData[count].tail.v;
-                density = weaponStats[beamData[count].weapType].lightningDensity;
-                if (density > 0) {
-                    if (world->fastBlit != 0) {
-                        DrawLightningBeam(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP, p1, p2,
-                                     weaponStats[beamData[count].weapType].beamColor,
-                                     weaponStats[beamData[count].weapType].beamWidth, density,
-                                     weaponStats[beamData[count].weapType].lightningAmplitude,
-                                     0x20 - beamData[count].frame);
-                    } else {
-                        DrawLightningBeam(gSpriteWorld->workFrameP, 0, p1, p2,
-                                     weaponStats[beamData[count].weapType].beamColor,
-                                     weaponStats[beamData[count].weapType].beamWidth, density,
-                                     weaponStats[beamData[count].weapType].lightningAmplitude,
-                                     0x20 - beamData[count].frame);
-                    }
-                } else {
-                    DrawBeam(gSpriteWorld->workFrameP, p1, p2,
-                                 weaponStats[beamData[count].weapType].beamColor,
-                                 weaponStats[beamData[count].weapType].beamWidth,
-                                 weaponStats[beamData[count].weapType].coronaColor,
-                                 beamData[count].frame +
-                                     weaponStats[beamData[count].weapType].coronaFalloff);
-                    if (world->fastBlit != 0) {
-                        DrawBeam(gSpriteWorld->windowFrameP, p1, p2,
-                                     weaponStats[beamData[count].weapType].beamColor,
-                                     weaponStats[beamData[count].weapType].beamWidth,
-                                     weaponStats[beamData[count].weapType].coronaColor,
-                                     beamData[count].frame +
-                                         weaponStats[beamData[count].weapType].coronaFalloff);
-                    }
-                }
-            }
-        }
-        count++;
-    }
-}
-
-/*
- * Same table, same weapon fields as BeamEraseCallback, but gated by weaponStats[].flags2
- * bit 0x2000, drawing from a SECOND coordinate pair (unk0/unk2/unk4/unk6,
- * immediately before x1/y1) with the beam and corona COLOURS added.
- */
-
-// FUNCTION: EVNOVA 0x00438c40
-// MAC: _BeamDrawOffscreenCallback i386 0x00037e90 ppc 0x0003dd70
-void BeamDrawOffscreenCallback(SpriteWorldPtr world)
-{
-    short count;
-    short density;
-    Point p1, p2;
-
-    count = 0;
-    while (count < kMaxBeams) {
-        if (beamData[count].state >= 0 &&
-            beamData[count].owner != -1 &&
-            (weaponStats[beamData[count].weapType].flags2 & kWeapBeamUnderShip) != 0) {
-            p1.h = beamData[count].head.h;
-            p1.v = beamData[count].head.v;
-            p2.h = beamData[count].tail.h;
-            p2.v = beamData[count].tail.v;
-            density = weaponStats[beamData[count].weapType].lightningDensity;
-            if (density > 0) {
-                DrawLightningBeam(gSpriteWorld->workFrameP, 0, p1, p2,
-                             weaponStats[beamData[count].weapType].beamColor,
-                             weaponStats[beamData[count].weapType].beamWidth,
-                             density,
-                             weaponStats[beamData[count].weapType].lightningAmplitude,
-                             0x20 - beamData[count].frame);
-            } else {
-                DrawBeam(gSpriteWorld->workFrameP, p1, p2,
-                             weaponStats[beamData[count].weapType].beamColor,
-                             weaponStats[beamData[count].weapType].beamWidth,
-                             weaponStats[beamData[count].weapType].coronaColor,
-                             weaponStats[beamData[count].weapType].coronaFalloff +
-                                 beamData[count].frame);
-            }
-        }
-        count++;
+    for (short count = 0; count < kMaxBeams; count++) {
+        const BeamRecord &beam = beamData[count];
+        if (beam.state < 0 || beam.owner == -1)
+            continue;
+        const auto &weapon = weaponStats[beam.weapType];
+        if (((weapon.flags2 & kWeapBeamUnderShip) != 0) != underShips)
+            continue;
+        p1.h = beam.head.h;
+        p1.v = beam.head.v;
+        p2.h = beam.tail.h;
+        p2.v = beam.tail.v;
+        if (weapon.lightningDensity > 0)
+            DrawLightningLines(out, p1, p2, weapon.beamColor, weapon.beamWidth, weapon.lightningDensity,
+                               weapon.lightningAmplitude, 0x20 - beam.frame);
+        else
+            DrawBeamLines(out, p1, p2, weapon.beamColor, weapon.beamWidth, weapon.coronaColor,
+                          weapon.coronaFalloff + beam.frame);
     }
 }
 
@@ -4665,9 +4503,8 @@ void TerminateCron(short index)
     }
 }
 
-/* A floating frame (drawn in device pixels) laid over the screen where its view rect is, `level' of 32
-   translucent as in the view. */
-static void BlendOnScreen(SWFrameRec *frame, const Rect &viewRect, short level)
+/* an overlay frame's place on the screen, kept to the frame and the page; false = nothing of it shows */
+static bool OverlayPlace(SWFrameRec *frame, const Rect &viewRect, Rect *place)
 {
     Rect device = View::ScreenRectOfView(viewRect);
     PixMap &from = frame->framePort->pix;
@@ -4681,29 +4518,28 @@ static void BlendOnScreen(SWFrameRec *frame, const Rect &viewRect, short level)
         height = from.height;
     if (device.left < 0 || device.top < 0 || device.left + width > to.width || device.top + height > to.height
         || width <= 0 || height <= 0)
-        return;
-    BlitPixieFloatingRect((unsigned char *)from.baseAddr,
-                          (unsigned char *)(Pixel::Row(to, device.top) + device.left),
-                          from.rowBytes, to.rowBytes, (unsigned short)(width * Pixel::kBytes), (unsigned short)height,
-                          (unsigned short)(32 - level));
+        return false;
+    SetRect(place, device.left, device.top, device.left + width, device.top + height);
+    return true;
 }
 
-/* the comm line, floating map and escort menu over the view */
+/* the comm line, floating map and escort menu laid over the view, each faded by its level of 32 */
 void DrawOverlays()
 {
     SWFrameRec *comm = CommOverlay();
+    Rect place;
     short tick;
     short blink;
 
-    if (comm != NULL)
-        BlendOnScreen(comm, commRect, 0);
-    if (showFloatingMap > 0) {
+    if (comm != NULL && OverlayPlace(comm, commRect, &place))
+        ViewDraw::Overlay(comm, place, 0);
+    if (showFloatingMap > 0 && OverlayPlace(floatingMapFrame, floatingMapRect, &place)) {
         tick = (floatingMapStartTime + 0x96) - ReadTick();
         blink = tick <= 0 ? 0x20 : tick < 0x20 ? 0x20 - tick : 0;
-        BlendOnScreen(floatingMapFrame, floatingMapRect, blink);
+        ViewDraw::Overlay(floatingMapFrame, place, blink);
     }
-    if (escortMenuOnscreen > 0)
-        BlendOnScreen(floatingEscortMenuFrame, escortMenuRect, 0x20 - escortMenuOnscreen);
+    if (escortMenuOnscreen > 0 && OverlayPlace(floatingEscortMenuFrame, escortMenuRect, &place))
+        ViewDraw::Overlay(floatingEscortMenuFrame, place, 0x20 - escortMenuOnscreen);
 }
 
 // FUNCTION: EVNOVA 0x00439bb0
@@ -4721,22 +4557,6 @@ void FloaterDrawCallback(SpriteWorldPtr world)
     }
 }
 
-// FUNCTION: EVNOVA 0x00439d00
-// MAC: _PostDrawCallback i386 0x00038c80 ppc 0x0003ed10
-void PostDrawCallback(SpriteWorldPtr world)
-{
-    FloaterDrawCallback(world);
-    DrawParticlesOffscreen(world);
-}
-
-// FUNCTION: EVNOVA 0x00439d20
-// MAC: _PostEraseCallback i386 0x00038c9f ppc 0x0003ed40
-void PostEraseCallback(SpriteWorldPtr world)
-{
-    BeamEraseCallback(world);
-    EraseParticlesOffscreen(world);
-}
-
 // FUNCTION: EVNOVA 0x00439d40
 // MAC: _PostAnimateHandler i386 0x00038cc6 ppc 0x0003ed78
 void PostAnimateHandler(void)
@@ -4748,7 +4568,7 @@ void PostAnimateHandler(void)
         showFloatingMap = -1;
     if (escortMenuOnscreen == 0)
         escortMenuOnscreen = -1;
-    UpdateParticlesInWindow(gSpriteWorld);
+    MoveParticles();
     i = 0;
     for (;;) {
         if (doubleTime != 0)
@@ -5150,10 +4970,8 @@ void HandleEscapePods(void)
             xSize = GetSpriteXSize(podData[i].sprite);
             ySize = GetSpriteYSize(podData[i].sprite);
             SWSetSpriteLocation(podData[i].sprite,
-                ((short)(podData[i].pos.x - shipData->pos.x)
-                        + screenCenter.h - xSize / 2),
-                ((short)(podData[i].pos.y - shipData->pos.y)
-                        + screenCenter.v - ySize / 2));
+                (View::X(podData[i].pos.x) - xSize / 2),
+                (View::Y(podData[i].pos.y) - ySize / 2));
             podData[i].sprite->translucency = 0;
             HandleSpriteMurkiness(podData[i].pos.x, podData[i].pos.y,
                          podData[i].sprite);

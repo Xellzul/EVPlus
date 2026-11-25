@@ -131,9 +131,6 @@ void PortDialog::Run(SpobRecord *spob, short stellar)
     ForeColor(blackColor);
     RedrawDialog(portDialog);
     PortDialogUpdate();
-    SWSetPortToWorkArea(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(&gSpriteWorld->workFrameP->frameRect);
     SWSetPortToWindow(gSpriteWorld);
     DrawStatusRadar(1);
     DrawStatusCargo();

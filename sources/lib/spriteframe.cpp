@@ -330,6 +330,18 @@ short SWCreateFrameFromGWorldAndRectPartial(SWFrameRec **newFrameP,
     return err;
 }
 
+void (*gSWFrameGone)(SWFrameRec *frameP);
+
+/* a frame record freed outright, by a caller that manages its sprite's frames itself */
+void SWFreeFrameRecord(SWFrameRec *frameP)
+{
+    if (frameP == 0)
+        return;
+    if (gSWFrameGone != 0)
+        (*gSWFrameGone)(frameP);
+    DeallocAPointer(frameP);
+}
+
 /* The donor's `SW_ASSERT(!oldFrameP->isWindowFrame)' became a guard that RETURNS FALSE
    through its own exit. useCount is unsigned -- `cmp word ptr [esi+0x58], 1' followed by
    `ja', not `jg'. */
@@ -350,6 +362,8 @@ Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
             oldFrameP->useCount--;
         } else {
             frameDisposed = 1;
+            if (gSWFrameGone != 0)
+                (*gSWFrameGone)(oldFrameP);
 
             if (oldFrameP->framePort != 0) {
                 if (!oldFrameP->sharesGWorld)

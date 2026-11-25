@@ -1,4 +1,5 @@
-/* viewscale.h -- the space view drawn at the game size and enlarged onto the screen. */
+/* viewscale.h -- the space view: its sizes, its place on the screen, where space lies in it; the overlay and UI
+   frames. */
 #pragma once
 
 #include "macport.h"
@@ -20,9 +21,16 @@ extern short height;
 /* uiScale: the UI's device pixels per logical one */
 void SetSizes(short gameW, short gameH, short drawW, short drawH, double uiScale);
 CWindowPtr Open();                  /* the view's buffer and port, for the sprite world */
-bool Enlarge(const Screen::Page &page);     /* the view (enlarged) into its place on a page; false: no view */
+Rect OnPage(const Screen::Page &page);      /* where the view shows on a page */
 void ToView(Point *pt);             /* a screen point in view coordinates */
-void SetPortToView();               /* the port of the space view itself */
+
+/* Where a point of space lies in the view: its distance from the player's ship -- truncated, as the original
+   places sprites (X, Y) -- plus the view's centre; or unrounded (ExactX, ExactY), as it places beams and
+   stellars, and as a renderer drawing between pixels would use it. */
+int X(float spaceX);
+int Y(float spaceY);
+float ExactX(float spaceX);
+float ExactY(float spaceY);
 
 /* The comm line, floating map and escort menu are drawn on the screen over the view, not inside it. Their
    frames get device pixels; Screen::ComposeView lays them over the screen. */

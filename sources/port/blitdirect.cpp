@@ -420,14 +420,15 @@ void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
     Blit(src, dst, srcRect, dstRect, 0);
 }
 
-/* A black mask pixel makes its source pixel opaque, written into the source itself; maskRect is not
-   read. */
+/* A black mask pixel makes its source pixel opaque, marked in the source itself for the blit and cleared after
+   it, so no other copy of the source carries the mark; maskRect is not read. */
 void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect,
                    Rect *maskRect, Rect *dstRect,
                    int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     unsigned char *pixels;
     unsigned char *maskPixels;
+    unsigned char *high;
     int32_t x;
     int32_t y;
 
@@ -435,9 +436,16 @@ void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRec
     maskPixels = (unsigned char *)mask->baseAddr;
     for (y = 0; y < src->height; y++) {
         for (x = 0; x < src->width; x++) {
+            high = &pixels[y * src->rowBytes + x * 2 + 1];
             if (maskPixels[y * mask->rowBytes + x * 2] == 0)
-                pixels[y * src->rowBytes + x * 2 + 1] |= kAlpha1555High;
+                *high |= kAlpha1555High;
+            else
+                *high &= (unsigned char)~kAlpha1555High;
         }
     }
     Blit(src, dst, srcRect, dstRect, 1);
+    for (y = 0; y < src->height; y++) {
+        for (x = 0; x < src->width; x++)
+            pixels[y * src->rowBytes + x * 2 + 1] &= (unsigned char)~kAlpha1555High;
+    }
 }

@@ -8,6 +8,7 @@
 #include "platform.h"
 #include "uiscale.h"
 #include "scaleddraw.h"
+#include "screen.h"
 
 namespace {
 
@@ -429,6 +430,7 @@ void DebugScaleTest(void)
     SWSetPortToWindow(gSpriteWorld);
     CopyBits(GWorldContainerBits(&page), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
              &bounds, &bounds, 0, NULL);
-    QDFlushPortBuffer(GetWindowPort(gWind), 0);
+    Screen::Changed();
+    Screen::EndFrame();
     DisposeGWorldContainer(&page);
 }

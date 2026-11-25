@@ -49,10 +49,10 @@ static inline uint32_t BlendPair(uint32_t src, uint32_t dst, const SpriteBlend &
     if (blend.overBias < 32)
         src = Pixel::ScalePair(src, blend.overBias) | Pixel::ScalePair(blend.biasColor, 32 - blend.overBias);
 
-    return (Pixel::ScaleRedPair(src, blend.alphaR) | blend.overR) |
-           (Pixel::ScaleGreenPair(src, blend.alphaG) | blend.overG) |
-           (Pixel::ScaleBluePair(src, blend.alphaB) | blend.overB) |
-           Pixel::ScalePair(dst, blend.alpha);
+    return Pixel::AddPair((Pixel::ScaleRedPair(src, blend.alphaR) | blend.overR) |
+                          (Pixel::ScaleGreenPair(src, blend.alphaG) | blend.overG) |
+                          (Pixel::ScaleBluePair(src, blend.alphaB) | blend.overB),
+                          Pixel::ScalePair(dst, blend.alpha));
 }
 
 // FUNCTION: EVNOVA 0x004736c0

@@ -59,8 +59,6 @@ short SWCreateSpriteWorld(void *mainGDH, SpriteWorldRec **spriteWorldP,
         tempSpriteWorldP->extraBackFrameP = 0;
         tempSpriteWorldP->backFrameP = backFrameP;
         tempSpriteWorldP->workFrameP = workFrameP;
-        tempSpriteWorldP->offscreenDrawProc = SWStdWorldDrawProc;
-        tempSpriteWorldP->screenDrawProc = SWStdWorldDrawProc;
         tempSpriteWorldP->doubleRectDrawProc = 0;
         tempSpriteWorldP->postEraseCallBack = 0;
         tempSpriteWorldP->postDrawCallBack = 0;

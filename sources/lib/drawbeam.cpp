@@ -1,270 +1,11 @@
-/* drawbeam.cpp -- the SWBeams.c run from DrawTranslucentLine to EraseLightningBeam (win 0x00479590-0x0047b399). Notes: Research/notes/drawbeam.md */
+/* drawbeam.cpp -- the beam and lightning shapes of SWBeams.c (win 0x00479fe0, 0x0047a410), as lines handed to a
+   BeamLines (the GPU view draws them). Notes: Research/notes/drawbeam.md */
 #include "spriteworld.h"
-
-// FUNCTION: EVNOVA 0x00479590
-// MAC: _DrawTranslucentLine i386 0x000c3259 ppc 0x000cf604
-void DrawTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
-                uint32_t color, short srcShade, short dstShade,
-                short srcRamp, short dstRamp)
-{
-    Boolean thereIsALine;
-    Boolean longerHoriz;
-    Point origSrc, origDst;
-
-    if (dstFrameP == 0)
-        return;
-
-    if (dstFrameP == 0 || !dstFrameP->isFrameLocked)
-        SW_ASSERT_FAIL("SWBeams.c", 23, 24);
-
-    origSrc = srcPoint;
-    origDst = dstPoint;
-
-    thereIsALine = SWClipLineWithRect(&srcPoint, &dstPoint, &dstFrameP->frameRect);
-
-    if (thereIsALine)
-    {
-        if (ABS(srcPoint.h - dstPoint.h) > ABS(srcPoint.v - dstPoint.v))
-            longerHoriz = 1;
-        else
-            longerHoriz = 0;
-
-        if (longerHoriz)
-        {
-            srcRamp -= ABS(srcPoint.h - origSrc.h);
-            dstRamp -= ABS(dstPoint.h - origDst.h);
-        }
-        else
-        {
-            srcRamp -= ABS(srcPoint.v - origSrc.v);
-            dstRamp -= ABS(dstPoint.v - origDst.v);
-        }
-
-        if (srcShade < 0)
-            srcShade = 0;
-        if (srcShade > 32)
-            srcShade = 32;
-
-        if (dstShade < 0)
-            dstShade = 0;
-        if (dstShade > 32)
-            dstShade = 32;
-
-        if (srcRamp < 0)
-            srcRamp = 0;
-        if (srcRamp > 32)
-            srcRamp = 32;
-
-        if (dstRamp < 0)
-            dstRamp = 0;
-        if (dstRamp > 32)
-            dstRamp = 32;
-
-        BlitTranslucentLine(dstFrameP, srcPoint, dstPoint, color,
-                 srcShade, dstShade, srcRamp, dstRamp);
-    }
-}
-
-// FUNCTION: EVNOVA 0x004797b0
-// MAC: _BlitTranslucentLine i386 0x000c2c90 ppc 0x000cf0a0
-void BlitTranslucentLine(FramePtr dstFrameP, Point srcPoint, Point dstPoint,
-                         uint32_t color, int32_t srcShade, int32_t dstShade,
-                         uint32_t srcRamp, uint32_t dstRamp)
-{
-    uint32_t   alpha;
-    short           x1, y1, x2, y2;
-    short           dx, dy, sx, sy;
-    short           accum;
-    short           curX, curY;
-    short           shade;
-
-    x1 = srcPoint.h;
-    y1 = srcPoint.v;
-    x2 = dstPoint.h;
-    y2 = dstPoint.v;
-
-    dx = x2 - x1;
-    dy = y2 - y1;
-
-    sx = SIGN(dx);
-    sy = SIGN(dy);
-
-    dx = ABS(dx);
-    dy = ABS(dy);
-
-    curX = x1;
-    curY = y1;
-
-    shade = srcShade;
-    alpha = srcShade;
-    if (srcRamp != 0)
-        alpha = dstShade;
-
-    if (alpha != 0)
-        *SW_PIXELPTR16(dstFrameP, curX, curY) =
-            Trans16Bit(color, *SW_PIXELPTR16(dstFrameP, curX, curY), alpha);
-
-    if (dx > dy)
-    {
-        accum = dx >> 1;
-        while (x1 != x2)
-        {
-            accum -= dy;
-            if (accum < 0)
-            {
-                accum += dx;
-                curY += sy;
-            }
-            x1 += sx;
-            curX += sx;
-
-            if (ABS(x1 - srcPoint.h) < srcRamp)
-            {
-                if (alpha < shade)
-                    alpha++;
-            }
-            else if (ABS(x1 - dstPoint.h) < dstRamp)
-            {
-                if (alpha == 0)
-                    return;
-                alpha--;
-            }
-            else if (alpha != shade)
-                alpha = shade;
-
-            if (alpha != 0)
-                *SW_PIXELPTR16(dstFrameP, curX, curY) =
-                    Trans16Bit(color, *SW_PIXELPTR16(dstFrameP, curX, curY), alpha);
-        }
-    }
-    else
-    {
-        accum = dy >> 1;
-        while (y1 != y2)
-        {
-            accum -= dx;
-            if (accum < 0)
-            {
-                accum += dy;
-                curX += sx;
-            }
-            y1 += sy;
-            curY += sy;
-
-            if (ABS(y1 - srcPoint.v) < srcRamp)
-            {
-                if (alpha < shade)
-                    alpha++;
-            }
-            else if (ABS(y1 - dstPoint.v) < dstRamp)
-            {
-                if (alpha == 0)
-                    return;
-                alpha--;
-            }
-            else if (alpha != shade)
-                alpha = shade;
-
-            if (alpha != 0)
-                *SW_PIXELPTR16(dstFrameP, curX, curY) =
-                    Trans16Bit(color, *SW_PIXELPTR16(dstFrameP, curX, curY), alpha);
-        }
-    }
-}
-
-// FUNCTION: EVNOVA 0x00479c50
-// MAC: _CopyLine i386 0x000c3936 ppc 0x000cfc64
-void CopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstPoint)
-{
-    Boolean thereIsALine;
-
-    if (srcFrameP == 0 || !srcFrameP->isFrameLocked)
-        SW_ASSERT_FAIL("SWBeams.c", 214, 211);
-    if (dstFrameP == 0 || !dstFrameP->isFrameLocked)
-        SW_ASSERT_FAIL("SWBeams.c", 215, 212);
-
-    if (srcPoint.h == dstPoint.h && srcPoint.v == dstPoint.v)
-        return;
-
-    thereIsALine = SWClipLineWithRect(&srcPoint, &dstPoint, &dstFrameP->frameRect);
-
-    if (thereIsALine)
-        BlitCopyLine(srcFrameP, dstFrameP, srcPoint, dstPoint);
-}
-
-// FUNCTION: EVNOVA 0x00479cf0
-// MAC: _BlitCopyLine i386 0x000c3483 ppc 0x000cf7f4
-void BlitCopyLine(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstPoint)
-{
-    short   x1, y1, x2, y2;
-    short   dx, dy, sx, sy;
-    short   accum;
-    short   curX, curY;
-    short   DEPTH;
-
-    x1 = srcPoint.h;
-    y1 = srcPoint.v;
-    x2 = dstPoint.h;
-    y2 = dstPoint.v;
-
-    if (x1 == x2 && y1 == y2)
-        return;
-
-    DEPTH = 16;
-
-    dx = x2 - x1;
-    dy = y2 - y1;
-
-    sx = SIGN(dx);
-    sy = SIGN(dy);
-
-    dx = ABS(dx);
-    dy = ABS(dy);
-
-    curX = x1;
-    curY = y1;
-
-    SET_DEPTH_PIXEL(dstFrameP,x1, y1, GET_DEPTH_PIXEL(srcFrameP,x1, y1))
-
-    if (dx > dy)
-    {
-        accum = dx >> 1;
-        while (x1 != x2)
-        {
-            accum -= dy;
-            if (accum < 0)
-            {
-                accum += dx;
-                curY += sy;
-            }
-            x1 += sx;
-            curX += sx;
-            SET_DEPTH_PIXEL(dstFrameP,curX, curY, GET_DEPTH_PIXEL(srcFrameP,curX, curY))
-        }
-    }
-    else
-    {
-        accum = dy >> 1;
-        while (y1 != y2)
-        {
-            accum -= dx;
-            if (accum < 0)
-            {
-                accum += dy;
-                curX += sx;
-            }
-            y1 += sy;
-            curY += sy;
-            SET_DEPTH_PIXEL(dstFrameP,curX, curY, GET_DEPTH_PIXEL(srcFrameP,curX, curY))
-        }
-    }
-}
-
 
 // FUNCTION: EVNOVA 0x00479fe0
 // MAC: _DrawBeam i386 0x000c3b3c ppc 0x000cfe70
-void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color,
-              short halfWidth, uint32_t coronaColor, short fadeStep)
+void DrawBeamLines(BeamLines &out, Point srcPoint, Point dstPoint, uint32_t color, short halfWidth,
+                   uint32_t coronaColor, short fadeStep)
 {
     Point   ptA;
     Point   ptB;
@@ -276,7 +17,7 @@ void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color
     if (srcPoint.h == dstPoint.h && srcPoint.v == dstPoint.v)
         return;
 
-    clipRect = dstFrameP->frameRect;
+    clipRect = out.bounds;
 
     InsetRect(&clipRect, -32, -32);
 
@@ -310,7 +51,7 @@ void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color
         }
         ptB.h = dstPoint.h + ptA.h - srcPoint.h;
         ptB.v = dstPoint.v + ptA.v - srcPoint.v;
-        DrawTranslucentLine(dstFrameP, ptA, ptB, color, shade, shade, 0, 20 - i * 10);
+        out.Line(ptA, ptB, color, shade, shade, 0, 20 - i * 10);
 
         if (i > 0)
         {
@@ -326,7 +67,7 @@ void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color
             }
             ptB.h = dstPoint.h + ptA.h - srcPoint.h;
             ptB.v = dstPoint.v + ptA.v - srcPoint.v;
-            DrawTranslucentLine(dstFrameP, ptA, ptB, color, shade, shade, 0, 20 - i * 10);
+            out.Line(ptA, ptB, color, shade, shade, 0, 20 - i * 10);
         }
     }
 
@@ -348,7 +89,7 @@ void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color
             }
             ptB.h = dstPoint.h + ptA.h - srcPoint.h;
             ptB.v = dstPoint.v + ptA.v - srcPoint.v;
-            DrawTranslucentLine(dstFrameP, ptA, ptB, coronaColor, shade, 8 - i * 2, i * 2, 8 + i * 6);
+            out.Line(ptA, ptB, coronaColor, shade, 8 - i * 2, i * 2, 8 + i * 6);
 
             if (longerHoriz)
             {
@@ -362,7 +103,7 @@ void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color
             }
             ptB.h = dstPoint.h + ptA.h - srcPoint.h;
             ptB.v = dstPoint.v + ptA.v - srcPoint.v;
-            DrawTranslucentLine(dstFrameP, ptA, ptB, coronaColor, shade, 8 - i * 2, i * 2, 8 + i * 6);
+            out.Line(ptA, ptB, coronaColor, shade, 8 - i * 2, i * 2, 8 + i * 6);
 
             shade -= fadeStep;
             i++;
@@ -373,9 +114,8 @@ void DrawBeam(FramePtr dstFrameP, Point srcPoint, Point dstPoint, uint32_t color
 
 // FUNCTION: EVNOVA 0x0047a410
 // MAC: _DrawLightningBeam i386 0x000c3f9d ppc 0x000d01fc
-void DrawLightningBeam(FramePtr frameA, FramePtr frameB, Point srcPoint, Point dstPoint,
-                       uint32_t color, short width, short segPercent, short jitter,
-                       short shade)
+void DrawLightningLines(BeamLines &out, Point srcPoint, Point dstPoint, uint32_t color, short width,
+                        short segPercent, short jitter, short shade)
 {
     int     srcV;
     int     dstH;
@@ -411,7 +151,7 @@ void DrawLightningBeam(FramePtr frameA, FramePtr frameB, Point srcPoint, Point d
     srcPtH = srcPoint.h;
     dstPtH = dstPoint.h;
 
-    clipRect = frameA->frameRect;
+    clipRect = out.bounds;
 
     InsetRect(&clipRect, -32, -32);
 
@@ -539,30 +279,26 @@ void DrawLightningBeam(FramePtr frameA, FramePtr frameB, Point srcPoint, Point d
                 {
                     ptA.v += i;
                     ptB.v += i;
-                    DrawTranslucentLine(frameA, ptA, ptB, color, shade2, shade2, 0, rampEnd);
-                    DrawTranslucentLine(frameB, ptA, ptB, color, shade2, shade2, 0, rampEnd);
+                    out.Line(ptA, ptB, color, shade2, shade2, 0, rampEnd);
 
                     if (i > 0)
                     {
                         ptA.v = lastV - i;
                         ptB.v = newV - i;
-                        DrawTranslucentLine(frameA, ptA, ptB, color, shade2, shade2, 0, rampEnd);
-                        DrawTranslucentLine(frameB, ptA, ptB, color, shade2, shade2, 0, rampEnd);
+                        out.Line(ptA, ptB, color, shade2, shade2, 0, rampEnd);
                     }
                 }
                 else
                 {
                     ptA.h += i;
                     ptB.h += i;
-                    DrawTranslucentLine(frameA, ptA, ptB, color, shade2, shade2, 0, rampEnd);
-                    DrawTranslucentLine(frameB, ptA, ptB, color, shade2, shade2, 0, rampEnd);
+                    out.Line(ptA, ptB, color, shade2, shade2, 0, rampEnd);
 
                     if (i > 0)
                     {
                         ptA.h = lastH - i;
                         ptB.h = newH - i;
-                        DrawTranslucentLine(frameA, ptA, ptB, color, shade2, shade2, 0, rampEnd);
-                        DrawTranslucentLine(frameB, ptA, ptB, color, shade2, shade2, 0, rampEnd);
+                        out.Line(ptA, ptB, color, shade2, shade2, 0, rampEnd);
                     }
                 }
 
@@ -573,184 +309,5 @@ void DrawLightningBeam(FramePtr frameA, FramePtr frameB, Point srcPoint, Point d
 
         lastV = newV;
         lastH = newH;
-    }
-}
-
-// FUNCTION: EVNOVA 0x0047ac50
-// MAC: _EraseBeam i386 0x000c48b5 ppc 0x000d08c0
-void EraseBeam(FramePtr srcFrameP, FramePtr dstFrameP, Point srcPoint, Point dstPoint,
-               short halfWidth, short fadeStep)
-{
-    Point   ptA;
-    Point   ptB;
-    Boolean longerHoriz;
-    short   i;
-    short   level;
-    Rect    clipRect;
-
-    clipRect = dstFrameP->frameRect;
-
-    InsetRect(&clipRect, -32, -32);
-
-    if (srcPoint.h < clipRect.left && dstPoint.h < clipRect.left)
-        return;
-    if (srcPoint.h > clipRect.right && dstPoint.h > clipRect.right)
-        return;
-    if (srcPoint.v < clipRect.top && dstPoint.v < clipRect.top)
-        return;
-    if (srcPoint.v > clipRect.bottom && dstPoint.v > clipRect.bottom)
-        return;
-
-    if (ABS(srcPoint.h - dstPoint.h) > ABS(srcPoint.v - dstPoint.v))
-        longerHoriz = 1;
-    else
-        longerHoriz = 0;
-
-    for (i = 0; i <= halfWidth; i++)
-    {
-        if (longerHoriz)
-        {
-            ptA.h = srcPoint.h;
-            ptA.v = srcPoint.v - i;
-        }
-        else
-        {
-            ptA.h = srcPoint.h - i;
-            ptA.v = srcPoint.v;
-        }
-        ptB.h = dstPoint.h + ptA.h - srcPoint.h;
-        ptB.v = dstPoint.v + ptA.v - srcPoint.v;
-        CopyLine(srcFrameP, dstFrameP, ptA, ptB);
-
-        if (i > 0)
-        {
-            if (longerHoriz)
-            {
-                ptA.h = srcPoint.h;
-                ptA.v = srcPoint.v + i;
-            }
-            else
-            {
-                ptA.h = srcPoint.h + i;
-                ptA.v = srcPoint.v;
-            }
-            ptB.h = dstPoint.h + ptA.h - srcPoint.h;
-            ptB.v = dstPoint.v + ptA.v - srcPoint.v;
-            CopyLine(srcFrameP, dstFrameP, ptA, ptB);
-        }
-    }
-
-    i = 0;
-    level = 16;
-    if (fadeStep > 0)
-    {
-        do
-        {
-            if (longerHoriz)
-            {
-                ptA.h = srcPoint.h;
-                ptA.v = srcPoint.v - halfWidth - i;
-            }
-            else
-            {
-                ptA.h = srcPoint.h - halfWidth - i;
-                ptA.v = srcPoint.v;
-            }
-            ptB.h = dstPoint.h + ptA.h - srcPoint.h;
-            ptB.v = dstPoint.v + ptA.v - srcPoint.v;
-            CopyLine(srcFrameP, dstFrameP, ptA, ptB);
-
-            if (longerHoriz)
-            {
-                ptA.h = srcPoint.h;
-                ptA.v = srcPoint.v + halfWidth + i;
-            }
-            else
-            {
-                ptA.h = srcPoint.h + halfWidth + i;
-                ptA.v = srcPoint.v;
-            }
-            ptB.h = dstPoint.h + ptA.h - srcPoint.h;
-            ptB.v = dstPoint.v + ptA.v - srcPoint.v;
-            CopyLine(srcFrameP, dstFrameP, ptA, ptB);
-
-            level -= fadeStep;
-            i++;
-        }
-        while (level > 2);
-    }
-}
-
-// FUNCTION: EVNOVA 0x0047afd0
-// MAC: _EraseLightningBeam i386 0x000c4be1 ppc 0x000d0ca4
-void EraseLightningBeam(FramePtr srcFrameP, FramePtr dstFrameP,
-                        Point srcPoint, Point dstPoint,
-                        short halfWidth, short segPercent, short jitter)
-{
-    short   i;
-    Rect    clipRect;
-    Rect    r;
-    Point   tempPt;
-    Point   curPt;
-    Point   lastPt;
-    float   stepH, stepV, curH, curV;
-    short   segs;
-    short   margin, t;
-
-    clipRect = dstFrameP->frameRect;
-
-    InsetRect(&clipRect, -32, -32);
-
-    if (srcPoint.h < clipRect.left && dstPoint.h < clipRect.left)
-        return;
-    if (srcPoint.h > clipRect.right && dstPoint.h > clipRect.right)
-        return;
-    if (srcPoint.v < clipRect.top && dstPoint.v < clipRect.top)
-        return;
-    if (srcPoint.v > clipRect.bottom && dstPoint.v > clipRect.bottom)
-        return;
-
-    tempPt.h = abs(srcPoint.h - dstPoint.h);
-
-    tempPt.v = abs(srcPoint.v - dstPoint.v);
-    lastPt = tempPt;
-    if (tempPt.h > tempPt.v)
-        segs = (segPercent * tempPt.h * 0.01);
-    else
-        segs = (segPercent * tempPt.v * 0.01);
-
-    if (segs < 1)
-        segs = 1;
-
-    stepH = (dstPoint.h - srcPoint.h) / (float)segs;
-    stepV = (dstPoint.v - srcPoint.v) / (float)segs;
-    curH = srcPoint.h;
-    curV = srcPoint.v;
-
-    margin = ((halfWidth + jitter) * 2.5);
-
-    t = stepH;
-    t = abs(t) * 2;
-    if (margin < t)
-        margin = t;
-
-    t = stepV;
-    t = abs(t) * 2;
-    if (margin < t)
-        margin = t;
-
-    for (i = 0; i < segs - 1; i++)
-    {
-        curH += stepH;
-        curV += stepV;
-
-        curPt.h = curH;
-        curPt.v = curV;
-        lastPt = curPt;
-        r.left = r.right = curPt.h;
-        r.bottom = r.top = curPt.v;
-
-        InsetRect(&r, -margin, -margin);
-        BlitPixieRectDrawProc(srcFrameP, dstFrameP, &r, &r);
     }
 }

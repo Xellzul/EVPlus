@@ -215,35 +215,6 @@ void SWSetPortToWindow(SpriteWorldPtr spriteWorld)
 }
 
 
-// FUNCTION: EVNOVA 0x00477c90
-// MAC: _SWSetSpriteWorldScreenDrawProc i386 0x000b7599 ppc 0x000c3170
-short SWSetSpriteWorldScreenDrawProc(SpriteWorldPtr spriteWorld, DrawProcPtr proc)
-{
-    if (spriteWorld == NULL) {
-        SWAssertFail("SpriteWorld.c", 0x2fc);
-    }
-    if (proc == NULL) {
-        SWAssertFail("SpriteWorld.c", 0x2fd);
-    }
-    spriteWorld->screenDrawProc = proc;
-    SWSetStickyIfError(0);
-    return 0;
-}
-
-// FUNCTION: EVNOVA 0x00477ce0
-// MAC: _SWSetPostEraseCallBack i386 0x000b76a8 ppc 0x000c32a0
-void SWSetPostEraseCallBack(SpriteWorldPtr spriteWorld, WorldProcPtr proc)
-{
-    spriteWorld->postEraseCallBack = proc;
-}
-
-// FUNCTION: EVNOVA 0x00477cf0
-// MAC: _SWSetPostDrawCallBack i386 0x000b76b6 ppc 0x000c32a8
-void SWSetPostDrawCallBack(SpriteWorldPtr spriteWorld, WorldProcPtr proc)
-{
-    spriteWorld->postDrawCallBack = proc;
-}
-
 // FUNCTION: EVNOVA 0x00477d00
 // MAC: _SWSetSpriteWorldMaxFPS i386 0x000b76c4 ppc 0x000c32b0
 void SWSetSpriteWorldMaxFPS(SpriteWorldPtr spriteWorldP, short framesPerSec)
@@ -259,61 +230,6 @@ void SWSetSpriteWorldMaxFPS(SpriteWorldPtr spriteWorldP, short framesPerSec)
         spriteWorldP->frameInterval = 0;
     }
 }
-
-// FUNCTION: EVNOVA 0x00477d60
-// MAC: _SWSetBackgroundColor i386 0x000b7737 ppc 0x000c3324
-void SWSetBackgroundColor(SpriteWorldPtr spriteWorldP, RGBColor *color)
-{
-    if (spriteWorldP == NULL)
-        SW_ASSERT_FAIL("SpriteWorld.c", 845, 834);
-    if (spriteWorldP->workFrameP == NULL)
-        SW_ASSERT_FAIL("SpriteWorld.c", 846, 835);
-
-    spriteWorldP->backgroundColor = *color;
-    spriteWorldP->backgroundValue = SWGetValueFromColor(spriteWorldP->workFrameP, color);
-}
-
-
-// FUNCTION: EVNOVA 0x00477de0
-// MAC: _SWStdWorldDrawProc i386 0x000b788a ppc 0x000c34bc
-void SWStdWorldDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
-                        Rect *srcRect, Rect *dstRect)
-{
-    Rect srcCopyBitsRect = *srcRect;
-    Rect dstCopyBitsRect = *dstRect;
-
-    if (dstCopyBitsRect.top < dstFrameP->frameRect.top) {
-        srcCopyBitsRect.top += dstFrameP->frameRect.top - dstCopyBitsRect.top;
-        dstCopyBitsRect.top = dstFrameP->frameRect.top;
-        if (dstCopyBitsRect.top >= dstCopyBitsRect.bottom)
-            return;
-    }
-
-    if (dstCopyBitsRect.bottom > dstFrameP->frameRect.bottom) {
-        srcCopyBitsRect.bottom -= dstCopyBitsRect.bottom - dstFrameP->frameRect.bottom;
-        dstCopyBitsRect.bottom = dstFrameP->frameRect.bottom;
-        if (dstCopyBitsRect.bottom <= dstCopyBitsRect.top)
-            return;
-    }
-
-    if (dstCopyBitsRect.left < dstFrameP->frameRect.left) {
-        srcCopyBitsRect.left += dstFrameP->frameRect.left - dstCopyBitsRect.left;
-        dstCopyBitsRect.left = dstFrameP->frameRect.left;
-        if (dstCopyBitsRect.left >= dstCopyBitsRect.right)
-            return;
-    }
-
-    if (dstCopyBitsRect.right > dstFrameP->frameRect.right) {
-        srcCopyBitsRect.right -= dstCopyBitsRect.right - dstFrameP->frameRect.right;
-        dstCopyBitsRect.right = dstFrameP->frameRect.right;
-        if (dstCopyBitsRect.right <= dstCopyBitsRect.left)
-            return;
-    }
-
-    CopyBits((BitMapPtr)srcFrameP->framePix,(BitMapPtr)dstFrameP->framePix,
-             &srcCopyBitsRect, &dstCopyBitsRect, srcCopy, 0);
-}
-
 
 // FUNCTION: EVNOVA 0x00477f10
 // MAC: _SWWindowMoved i386 0x000b8d06 ppc 0x000c4c9c
@@ -344,115 +260,44 @@ void SWWindowFrameMoved(SWFrameRec *windowFrameP, Rect *frameRect)
     SetPort(savePort);
 }
 
+/* The game's drawing of the world, called by Animate and Update after their bookkeeping; the sprite world's own
+   frames are not drawn into. */
+void (*gSWDraw)(SpriteWorldRec *spriteWorldP);
+
+/* a sprite as drawing leaves it: shown where it is now, nothing more to draw or erase */
+static void SettleSprite(SpritePtr spriteP)
+{
+    spriteP->deltaFrameRect = spriteP->destFrameRect;
+    spriteP->oldFrameRect = spriteP->destFrameRect;
+    spriteP->needsToBeDrawn = 0;
+    spriteP->needsToBeErased = 0;
+    spriteP->onTop = 0;
+}
 
 // FUNCTION: EVNOVA 0x00477fa0
 // MAC: _SWUpdateSpriteWorld i386 0x000b9062 ppc 0x000c4ff0
 void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP, Boolean updateWindow)
 {
-    UpdateRectStructPtr curRectStructP, nextRectStructP;
     SpriteLayerRec *curSpriteLayerP;
     SpritePtr curSpriteP;
-    CGrafPtr holdGWorld;
-    void *holdGDH;
-    short curTileLayer;
-    DrawProcPtr saveScreenDrawProc;
 
+    (void)updateWindow;                 /* the whole view is drawn each frame */
     if (spriteWorldP == 0)
         SWAssertFail("SpriteWorld.c", 1440);
-    if (!spriteWorldP->backFrameP->isFrameLocked)
-        SWAssertFail("SpriteWorld.c", 1441);
-    if (!spriteWorldP->workFrameP->isFrameLocked)
-        SWAssertFail("SpriteWorld.c", 1442);
-    if (!spriteWorldP->windowFrameP->isFrameLocked)
-        SWAssertFail("SpriteWorld.c", 1443);
-
-    saveScreenDrawProc = spriteWorldP->screenDrawProc;
-    SWSetSpriteWorldScreenDrawProc(spriteWorldP, BlitPixieRectDrawProc);
-
-    GetPort(&holdGWorld);
-    holdGDH = GetGWorldDevice(holdGWorld);
 
     gSWCurrentSpriteWorld = spriteWorldP;
     SWIsWindowInForeground(spriteWorldP);
-
-    SWSetPortToFrame(spriteWorldP->workFrameP);
-    (*spriteWorldP->offscreenDrawProc)(spriteWorldP->backFrameP,
-                                       spriteWorldP->workFrameP,
-                                       &spriteWorldP->backFrameP->frameRect,
-                                       &spriteWorldP->workFrameP->frameRect);
-
-    if (spriteWorldP->postEraseCallBack != 0)
-        (*spriteWorldP->postEraseCallBack)(spriteWorldP);
-
-    curSpriteLayerP = spriteWorldP->headSpriteLayerP;
-    curTileLayer = 0;
-
-    while (curSpriteLayerP != 0) {
-        curSpriteP = curSpriteLayerP->headSpriteP;
-
-        if (curSpriteLayerP->tileLayer > curTileLayer)
-            curTileLayer = curSpriteLayerP->tileLayer;
-
-        while (curSpriteP != 0) {
-            if (curSpriteP->curFrameP != 0) {
-                curSpriteP->tileDepth = curTileLayer;
-
-                if (curSpriteP->isVisible && curSpriteP->curFrameP->isFrameLocked) {
-                    gSWCurrentSpriteBeingDrawn = curSpriteP;
-
-                    (*curSpriteP->frameDrawProc)(curSpriteP->curFrameP,
-                                                 spriteWorldP->workFrameP,
-                                                 &curSpriteP->curFrameP->frameRect,
-                                                 &curSpriteP->destFrameRect);
-
-                    gSWCurrentSpriteBeingDrawn = 0;
-                }
-
-                curSpriteP->deltaFrameRect = curSpriteP->destFrameRect;
-
-                curSpriteP->oldFrameRect = curSpriteP->destFrameRect;
-
-                curSpriteP->needsToBeDrawn = 0;
-                curSpriteP->needsToBeErased = 0;
-                curSpriteP->onTop = 0;
-            }
-
-            curSpriteP = curSpriteP->nextSpriteP;
+    for (curSpriteLayerP = spriteWorldP->headSpriteLayerP; curSpriteLayerP != 0;
+         curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP) {
+        for (curSpriteP = curSpriteLayerP->headSpriteP; curSpriteP != 0; curSpriteP = curSpriteP->nextSpriteP) {
+            if (curSpriteP->curFrameP != 0)
+                SettleSprite(curSpriteP);
         }
-
-        if (curSpriteLayerP->layerCallBack != 0)
-            (*curSpriteLayerP->layerCallBack)(spriteWorldP);
-
-        curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
     }
-
-    if (spriteWorldP->postDrawCallBack != 0)
-        (*spriteWorldP->postDrawCallBack)(spriteWorldP);
-
-    if (updateWindow) {
-        SWSetPortToFrame(spriteWorldP->windowFrameP);
-
-        (*spriteWorldP->screenDrawProc)(spriteWorldP->workFrameP,
-                                        spriteWorldP->windowFrameP,
-                                        &spriteWorldP->visScrollRect,
-                                        &spriteWorldP->windowFrameP->frameRect);
-    }
-
-    nextRectStructP = spriteWorldP->headUpdateRectP;
-    while (nextRectStructP != 0) {
-        curRectStructP = nextRectStructP;
-        nextRectStructP = curRectStructP->nextRectStructP;
-        DeallocAPointer(curRectStructP);
-    }
-    spriteWorldP->headUpdateRectP = 0;
-
+    if (gSWDraw != 0)
+        (*gSWDraw)(spriteWorldP);
     spriteWorldP->numTilesChanged = 0;
-
-    SWSetSpriteWorldScreenDrawProc(spriteWorldP, saveScreenDrawProc);
-
     gSWCurrentSpriteWorld = 0;
-
-    SetPort(holdGWorld);
 }
 
 
@@ -587,342 +432,47 @@ void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP)
 
 
 
+/* SWAnimateSpriteWorld's bookkeeping for one layer, without its blits: a sprite it would draw or erase is
+   settled -- once the frame reaches the window, as fastBlit says */
+static void SettleLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *layerP)
+{
+    for (SpritePtr spriteP = layerP->headSpriteP; spriteP != 0; spriteP = spriteP->nextSpriteP) {
+        if (spriteP->curFrameP == 0 || !spriteP->curFrameP->isFrameLocked
+                || !((spriteP->needsToBeDrawn && spriteP->isVisible) || spriteP->needsToBeErased))
+            continue;
+        if (spriteP->justBecameVisible) {
+            if (!spriteP->needsToBeErased)
+                spriteP->oldFrameRect = spriteP->destFrameRect;
+            spriteP->justBecameVisible = 0;
+        }
+        if (spriteWorldP->fastBlit)
+            SettleSprite(spriteP);
+    }
+}
+
 SpriteWorldRec *gSWCurrentSpriteWorld;                   /* 0x008706f0 */
 
 // FUNCTION: EVNOVA 0x00478480
 // MAC: _SWAnimateSpriteWorld i386 0x000b95e6 ppc 0x000c5550
 void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP)
 {
-    SpriteLayerRec *curSpriteLayerP;
-    SpritePtr curSpriteP;
-    SpritePtr headActiveSpriteP = 0;
-    SpritePtr headIdleSpriteP = 0;
-    SpritePtr curActiveSpriteP = 0;
-    SpritePtr curIdleSpriteP = 0;
-    Rect screenDestRect;
-    Rect oldScreenDestRect;
-    short curTileLayer;
-
     if (spriteWorldP == 0)
         SWAssertFail("SpriteWorld.c", 1984);
-    if (!spriteWorldP->backFrameP->isFrameLocked)
-        SWAssertFail("SpriteWorld.c", 1985);
-    if (!spriteWorldP->workFrameP->isFrameLocked)
-        SWAssertFail("SpriteWorld.c", 1986);
-    if (!spriteWorldP->windowFrameP->isFrameLocked)
-        SWAssertFail("SpriteWorld.c", 1987);
 
     gSWCurrentSpriteWorld = spriteWorldP;
 
     if (!spriteWorldP->frameHasOccurred)
         return;
 
-    if (spriteWorldP->deadSpriteLayerP->headSpriteP != 0)
-        SWAddSpriteLayer(spriteWorldP, spriteWorldP->deadSpriteLayerP);
-
-    SWSetPortToFrame(spriteWorldP->workFrameP);
-
-    curSpriteLayerP = spriteWorldP->headSpriteLayerP;
-    curTileLayer = 0;
-
-    while (curSpriteLayerP != 0) {
-        curSpriteP = curSpriteLayerP->headSpriteP;
-
-        if (curSpriteLayerP->tileLayer > curTileLayer)
-            curTileLayer = curSpriteLayerP->tileLayer;
-
-        while (curSpriteP != 0) {
-            if (curSpriteP->curFrameP) {
-                curSpriteP->tileDepth = curTileLayer;
-
-                if (curSpriteP->curFrameP->isFrameLocked) {
-                    if ((curSpriteP->needsToBeDrawn && curSpriteP->isVisible) ||
-                        curSpriteP->needsToBeErased)
-                    {
-                        if (headActiveSpriteP == 0)
-                            headActiveSpriteP = curSpriteP;
-
-                        if (curActiveSpriteP != 0)
-                            curActiveSpriteP->nextActiveSpriteP = curSpriteP;
-
-                        curActiveSpriteP = curSpriteP;
-
-                        if (curSpriteP->justBecameVisible) {
-                            if (!curSpriteP->needsToBeErased) {
-                                curSpriteP->oldFrameRect = curSpriteP->destFrameRect;
-                            }
-
-                            curSpriteP->justBecameVisible = 0;
-                        }
-
-                        curSpriteP->srD3 = 0;
-
-                        curSpriteP->deltaFrameRect.top =
-                            SW_MIN(curSpriteP->oldFrameRect.top, curSpriteP->destFrameRect.top);
-                        curSpriteP->deltaFrameRect.left =
-                            SW_MIN(curSpriteP->oldFrameRect.left, curSpriteP->destFrameRect.left);
-                        curSpriteP->deltaFrameRect.bottom =
-                            SW_MAX(curSpriteP->oldFrameRect.bottom, curSpriteP->destFrameRect.bottom);
-                        curSpriteP->deltaFrameRect.right =
-                            SW_MAX(curSpriteP->oldFrameRect.right, curSpriteP->destFrameRect.right);
-                        {
-                            short temp;
-
-                            curSpriteP->deltaFrameRect.left &=
-                                    (spriteWorldP->workFrameP->leftAlignFactor);
-
-                            temp = curSpriteP->deltaFrameRect.right &
-                                spriteWorldP->workFrameP->rightAlignFactor;
-                            if (temp != 0)
-                            {
-                                curSpriteP->deltaFrameRect.right +=
-                                        (spriteWorldP->workFrameP->rightAlignFactor + 1) - temp;
-                            }
-
-                            curSpriteP->oldFrameRect.left &=
-                                (spriteWorldP->workFrameP->leftAlignFactor);
-
-                            temp = curSpriteP->oldFrameRect.right &
-                                spriteWorldP->workFrameP->rightAlignFactor;
-                            if (temp != 0)
-                            {
-                                curSpriteP->oldFrameRect.right +=
-                                    (spriteWorldP->workFrameP->rightAlignFactor + 1) - temp;
-                            }
-                        }
-
-                        if ((curSpriteP->deltaFrameRect.right - curSpriteP->deltaFrameRect.left) *
-                            (curSpriteP->deltaFrameRect.bottom - curSpriteP->deltaFrameRect.top) >
-                            (curSpriteP->oldFrameRect.right - curSpriteP->oldFrameRect.left) *
-                            (curSpriteP->oldFrameRect.bottom - curSpriteP->oldFrameRect.top) * 2)
-                        {
-                            curSpriteP->srD3 = 1;
-                        }
-
-                        if (!curSpriteP->onTop || curSpriteP->needsToBeErased) {
-                            if (curSpriteP->oldFrameRect.left <=
-                                    spriteWorldP->workFrameP->frameRect.right &&
-                                curSpriteP->oldFrameRect.right >=
-                                    spriteWorldP->workFrameP->frameRect.left &&
-                                curSpriteP->oldFrameRect.bottom >=
-                                    spriteWorldP->workFrameP->frameRect.top &&
-                                curSpriteP->oldFrameRect.top <=
-                                    spriteWorldP->workFrameP->frameRect.bottom)
-                            {
-                                (*spriteWorldP->offscreenDrawProc)(
-                                        spriteWorldP->backFrameP,
-                                        spriteWorldP->workFrameP,
-                                        &curSpriteP->oldFrameRect,
-                                        &curSpriteP->oldFrameRect);
-                            }
-                        }
-                    }
-                    else if (curSpriteP->isVisible && !curSpriteP->onTop)
-                    {
-                        if (headIdleSpriteP == 0)
-                            headIdleSpriteP = curSpriteP;
-
-                        if (curIdleSpriteP != 0)
-                            curIdleSpriteP->nextIdleSpriteP = curSpriteP;
-
-                        curIdleSpriteP = curSpriteP;
-                    }
-                }
-            }
-
-            curSpriteP = curSpriteP->nextSpriteP;
-        }
-
-        curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
-    }
-
-    if (curActiveSpriteP != 0)
-        curActiveSpriteP->nextActiveSpriteP = 0;
-
-    if (curIdleSpriteP != 0)
-        curIdleSpriteP->nextIdleSpriteP = 0;
-
-    if (spriteWorldP->postEraseCallBack != 0)
-        (*spriteWorldP->postEraseCallBack)(spriteWorldP);
-
-    curSpriteLayerP = spriteWorldP->headSpriteLayerP;
-
-    while (curSpriteLayerP != 0) {
-        curSpriteP = curSpriteLayerP->headSpriteP;
-
-        while (curSpriteP != 0) {
-            if (curSpriteP->isVisible) {
-                if (curSpriteP->needsToBeDrawn) {
-                    if (curSpriteP->destFrameRect.left <=
-                            spriteWorldP->workFrameP->frameRect.right &&
-                        curSpriteP->destFrameRect.right >=
-                            spriteWorldP->workFrameP->frameRect.left &&
-                        curSpriteP->destFrameRect.bottom >=
-                            spriteWorldP->workFrameP->frameRect.top &&
-                        curSpriteP->destFrameRect.top <=
-                            spriteWorldP->workFrameP->frameRect.bottom)
-                    {
-                        gSWCurrentSpriteBeingDrawn = curSpriteP;
-
-                        (*curSpriteP->frameDrawProc)(
-                                curSpriteP->curFrameP,
-                                spriteWorldP->workFrameP,
-                                &curSpriteP->curFrameP->frameRect,
-                                &curSpriteP->destFrameRect);
-
-                        gSWCurrentSpriteBeingDrawn = 0;
-                    }
-                }
-                else
-                {
-                    SWCheckIdleSpriteOverlap(spriteWorldP, curSpriteP, headActiveSpriteP);
-                }
-            }
-
-            curSpriteP = curSpriteP->nextSpriteP;
-        }
-
-        if (curSpriteLayerP->layerCallBack != 0)
-            (*curSpriteLayerP->layerCallBack)(spriteWorldP);
-
-        curSpriteLayerP = curSpriteLayerP->nextSpriteLayerP;
-    }
-
-    if (spriteWorldP->postDrawCallBack != 0)
-        (*spriteWorldP->postDrawCallBack)(spriteWorldP);
-
-    SWSetPortToFrame(spriteWorldP->windowFrameP);
-
-    curSpriteP = headActiveSpriteP;
-
-    if (spriteWorldP->fastBlit) {
-        while (curSpriteP != 0) {
-            if (curSpriteP->srD3) {
-                screenDestRect = curSpriteP->destFrameRect;
-
-                oldScreenDestRect = curSpriteP->oldFrameRect;
-
-                oldScreenDestRect.left += spriteWorldP->windRect.left;
-                oldScreenDestRect.right += spriteWorldP->windRect.left;
-                oldScreenDestRect.top += spriteWorldP->windRect.top;
-                oldScreenDestRect.bottom += spriteWorldP->windRect.top;
-            }
-            else
-            {
-                screenDestRect = curSpriteP->deltaFrameRect;
-            }
-
-            screenDestRect.left += spriteWorldP->windRect.left;
-            screenDestRect.right += spriteWorldP->windRect.left;
-            screenDestRect.top += spriteWorldP->windRect.top;
-            screenDestRect.bottom += spriteWorldP->windRect.top;
-
-            if (screenDestRect.left <= spriteWorldP->windowFrameP->frameRect.right &&
-                screenDestRect.right >= spriteWorldP->windowFrameP->frameRect.left &&
-                screenDestRect.bottom >= spriteWorldP->windowFrameP->frameRect.top &&
-                screenDestRect.top <= spriteWorldP->windowFrameP->frameRect.bottom)
-            {
-                if (curSpriteP->srD3) {
-                    BlitPixieRectDrawProc(
-                            spriteWorldP->workFrameP,
-                            spriteWorldP->windowFrameP,
-                            &curSpriteP->destFrameRect,
-                            &screenDestRect);
-                }
-                else
-                {
-                    BlitPixieRectDrawProc(
-                            spriteWorldP->workFrameP,
-                            spriteWorldP->windowFrameP,
-                            &curSpriteP->deltaFrameRect,
-                            &screenDestRect);
-                }
-            }
-
-            if (curSpriteP->srD3) {
-                if (oldScreenDestRect.left <= spriteWorldP->windowFrameP->frameRect.right &&
-                    oldScreenDestRect.right >= spriteWorldP->windowFrameP->frameRect.left &&
-                    oldScreenDestRect.bottom >= spriteWorldP->windowFrameP->frameRect.top &&
-                    oldScreenDestRect.top <= spriteWorldP->windowFrameP->frameRect.bottom)
-                {
-                    BlitPixieRectDrawProc(
-                            spriteWorldP->workFrameP,
-                            spriteWorldP->windowFrameP,
-                            &curSpriteP->oldFrameRect,
-                            &oldScreenDestRect);
-                }
-            }
-
-            curSpriteP->deltaFrameRect = curSpriteP->destFrameRect;
-
-            curSpriteP->oldFrameRect = curSpriteP->destFrameRect;
-
-            curSpriteP->needsToBeDrawn = 0;
-            curSpriteP->needsToBeErased = 0;
-            curSpriteP->onTop = 0;
-
-            curSpriteP = curSpriteP->nextActiveSpriteP;
-        }
-    }
-
+    /* every layer settled, the dead sprites' too, then the world drawn */
+    for (SpriteLayerRec *layerP = spriteWorldP->headSpriteLayerP; layerP != 0; layerP = layerP->nextSpriteLayerP)
+        SettleLayer(spriteWorldP, layerP);
+    SettleLayer(spriteWorldP, spriteWorldP->deadSpriteLayerP);
     spriteWorldP->numTilesChanged = 0;
-
-    if (spriteWorldP->deadSpriteLayerP->headSpriteP != 0)
-        SWRemoveSpriteLayer(spriteWorldP, spriteWorldP->deadSpriteLayerP);
-
+    if (gSWDraw != 0)
+        (*gSWDraw)(spriteWorldP);
     gSWCurrentSpriteWorld = 0;
 }
-
-/* The srcSectRect copy goes through a POINTER local -- `mov edi,[ebx+0x50] / add
-   edi,0x22' then four movzx/mov word pairs. SW_MIN/SW_MAX stay macros: they
-   double-evaluate, and the exe re-reads deltaFrameRect.left and .bottom for the pair. */
-
-// FUNCTION: EVNOVA 0x00478bb0
-// MAC: _SWCheckIdleSpriteOverlap i386 0x000b82a0 ppc 0x000c3efc
-void SWCheckIdleSpriteOverlap(SpriteWorldRec *spriteWorldP, SpritePtr idleSpriteP,
-                              SpritePtr headActiveSpriteP)
-{
-    SpritePtr activeSpriteP = headActiveSpriteP;
-    Rect srcSectRect, dstSectRect;
-    Rect *frameRectP;
-
-    while (activeSpriteP != 0) {
-        if ((idleSpriteP->oldFrameRect.top < activeSpriteP->deltaFrameRect.bottom) &&
-            (idleSpriteP->oldFrameRect.bottom > activeSpriteP->deltaFrameRect.top) &&
-            (idleSpriteP->oldFrameRect.left < activeSpriteP->deltaFrameRect.right) &&
-            (idleSpriteP->oldFrameRect.right > activeSpriteP->deltaFrameRect.left))
-        {
-            dstSectRect.left =
-                SW_MAX(idleSpriteP->destFrameRect.left, activeSpriteP->deltaFrameRect.left);
-            dstSectRect.top =
-                SW_MAX(idleSpriteP->destFrameRect.top, activeSpriteP->deltaFrameRect.top);
-            dstSectRect.right =
-                SW_MIN(idleSpriteP->destFrameRect.right, activeSpriteP->deltaFrameRect.right);
-            dstSectRect.bottom =
-                SW_MIN(idleSpriteP->destFrameRect.bottom, activeSpriteP->deltaFrameRect.bottom);
-
-            frameRectP = &idleSpriteP->curFrameP->frameRect;
-            srcSectRect = *frameRectP;
-
-            srcSectRect.left += (dstSectRect.left - idleSpriteP->destFrameRect.left);
-            srcSectRect.top += (dstSectRect.top - idleSpriteP->destFrameRect.top);
-            srcSectRect.right -= (idleSpriteP->destFrameRect.right - dstSectRect.right);
-            srcSectRect.bottom -= (idleSpriteP->destFrameRect.bottom - dstSectRect.bottom);
-
-            gSWCurrentSpriteBeingDrawn = idleSpriteP;
-
-            (*idleSpriteP->frameDrawProc)(idleSpriteP->curFrameP,
-                                          spriteWorldP->workFrameP,
-                                          &srcSectRect,
-                                          &dstSectRect);
-
-            gSWCurrentSpriteBeingDrawn = 0;
-        }
-
-        activeSpriteP = activeSpriteP->nextActiveSpriteP;
-    }
-}
-
 
 // FUNCTION: EVNOVA 0x00478cf0
 // MAC: _SWFindSpritesToBeRemoved i386 0x000b8042 ppc 0x000c3be8
@@ -951,45 +501,6 @@ void SWFindSpritesToBeRemoved(SpriteWorldPtr spriteWorldP)
     }
 }
 
-// FUNCTION: EVNOVA 0x00478d70
-// MAC: _SWFlagRectAsChanged i386 0x000b8758 ppc 0x000c4594
-short SWFlagRectAsChanged(SpriteWorldPtr spriteWorldP, Rect *theChangedRect)
-{
-    UpdateRectStructPtr curRectStructP, newUpdateRectP;
-    short temp;
-    short err = 0;
-
-    theChangedRect->left &= spriteWorldP->workFrameP->leftAlignFactor;
-
-    temp = theChangedRect->right & spriteWorldP->workFrameP->rightAlignFactor;
-    if (temp != 0)
-        theChangedRect->right += (spriteWorldP->workFrameP->rightAlignFactor + 1) - temp;
-
-    newUpdateRectP = (UpdateRectStructPtr)AllocAPointer(sizeof(UpdateRectStruct));
-
-    if (newUpdateRectP != 0) {
-        newUpdateRectP->updateRect = *theChangedRect;
-        newUpdateRectP->nextRectStructP = 0;
-
-        if (spriteWorldP->headUpdateRectP == 0) {
-            spriteWorldP->headUpdateRectP = newUpdateRectP;
-        } else {
-            curRectStructP = spriteWorldP->headUpdateRectP;
-
-            while (curRectStructP->nextRectStructP != 0)
-                curRectStructP = curRectStructP->nextRectStructP;
-
-            curRectStructP->nextRectStructP = newUpdateRectP;
-        }
-    } else {
-        // BUG: a failed allocation reports success
-        err = noErr;
-    }
-
-    return err;
-}
-
-
 // FUNCTION: EVNOVA 0x00478e20
 // MAC: _SWIsWindowInForeground i386 0x000b88cd ppc 0x000c47c8
 Boolean SWIsWindowInForeground(SpriteWorldPtr spriteWorldP)
@@ -1008,12 +519,6 @@ void SWHideAllSprites(SpriteWorldPtr spriteWorldP)
 
     if (spriteWorldP == 0)
         SW_ASSERT_FAIL("SpriteWorld.c", 2847, 2823);
-    if (!spriteWorldP->backFrameP->isFrameLocked)
-        SW_ASSERT_FAIL("SpriteWorld.c", 2848, 2824);
-    if (!spriteWorldP->workFrameP->isFrameLocked)
-        SW_ASSERT_FAIL("SpriteWorld.c", 2849, 2825);
-    if (!spriteWorldP->windowFrameP->isFrameLocked)
-        SW_ASSERT_FAIL("SpriteWorld.c", 2850, 2826);
 
     curSpriteLayerP = spriteWorldP->headSpriteLayerP;
 

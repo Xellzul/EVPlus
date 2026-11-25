@@ -2,7 +2,6 @@
 #include "burger.h"
 #include "stellar.h"
 
-int gDisableUpdatesMode;
 SpriteRec *gSWCurrentSpriteBeingDrawn;
 char gNeedUpdateFlag;
 Word8 ResourceJustLoaded;

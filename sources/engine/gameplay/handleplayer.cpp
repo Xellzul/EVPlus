@@ -115,7 +115,6 @@ static unsigned char CheckDebugKeys(ScanCode scanCode)
 
 /* SpriteWorldRec +0x1c is the third SWFrameRec in the arrival blit, so the
    macro casts it. */
-#define SWWindowFrame(sw)   ((sw)->windowFrameP)
 #define SWWindowRect(sw)    (&(sw)->windRect)
 
                                                             /* 0x004b8ca0 */
@@ -418,9 +417,6 @@ static bool PlayerEscapePod(ShipObj *player)
             CtoPstr((char *)shipName);
             ForeColor(blackColor);
             PaintRect(GetCWindowPortRect((WindowRef)gWind));
-            SetSystemBackgroundColor();
-            PaintRect(&SWWindowFrame(gSpriteWorld)->frameRect);
-            ForeColor(blackColor);
             RefreshSAT();
             RedrawStatus(1);
             statusRedraw[kRedrawTarg] = statusRedraw[kRedrawNav] = statusRedraw[kRedrawWeap] =
@@ -1317,23 +1313,15 @@ static bool PlayerJumpSequence(ShipObj *player, Boolean jumping, Boolean disable
             player->targetStellar = -1;
             player->targetShip = -1;
             player->fuel = player->fuel - 100.0f;
-            View::SetPortToView();
-            SetFlashColor(whiteColor);
-            PaintRect(&gSpriteWorld->workFrameP->frameRect);
-            ForeColor(blackColor);
+            FlashView();
             Screen::ComposeView();
-            ScreenEndScene();
-            SWSetPortToWorkArea(gSpriteWorld);
-            BlitPixieRectDrawProc(gSpriteWorld->workFrameP, SWWindowFrame(gSpriteWorld),
-                         &gSpriteWorld->workFrameP->frameRect,
-                         &SWWindowFrame(gSpriteWorld)->frameRect);
+            Screen::EndFrame();             /* the flash is a frame of its own */
             PropagateMissionBitEffects();
             if (systemData[shipData->curSystem].murk < 0)
                 ClearStarfield();
             else
                 RandomizeStars();
             ScrollStarfield(0.0f, 0.0f);
-            EraseParticlesOffscreen(gSpriteWorld);
             ClearParticles(1);
             statusRedraw[kRedrawNav] = 1;
             statusRedraw[kRedrawTarg] = 1;
@@ -1445,12 +1433,6 @@ static bool PlayerJumpSequence(ShipObj *player, Boolean jumping, Boolean disable
             SWHideAllSprites(gSpriteWorld);
             HandleStellarSystemVisibility();
             PrepareAllSprites();
-            SWSetPortToWorkArea(gSpriteWorld);
-            SetSystemBackgroundColor();
-            PaintRect(&gSpriteWorld->backFrameP->frameRect);
-            SWSetPortToWorkArea(gSpriteWorld);
-            SetSystemBackgroundColor();
-            PaintRect(&gSpriteWorld->workFrameP->frameRect);
             SWSetPortToWindow(gSpriteWorld);
             RefreshSAT();
             DoEscortPayment(days);

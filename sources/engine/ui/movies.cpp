@@ -6,6 +6,7 @@
 #include "player.h"
 #include "render.h"
 #include "uiscale.h"
+#include "screen.h"
 
 Movie loopingMovie = NULL;
 
@@ -47,7 +48,6 @@ void LoopingMovieIdle(void)
     if (loopingMovie != NULL) {
         MovieDraw(loopingMovie);
         nv_UpdateDialogWindow(0);
-        ScreenEndScene();
     }
 }
 
@@ -142,8 +142,10 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
     KeyboardKbhit();
     held = MovieSkipInputs();
     while (MovieDone(movie) == 0) {
-        if (MovieDraw(movie))
-            ScreenEndScene();
+        if (MovieDraw(movie)) {
+            Screen::Changed();
+            Screen::EndFrame();
+        }
         KeyboardKbhit();
         down = MovieSkipInputs();
         held &= down;

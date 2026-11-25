@@ -13,9 +13,9 @@ enum Stage {
     AI,             /* inside Sim */
     Collisions,     /* inside Sim */
     Sprites,        /* sprite world process + animate, PostAnimateHandler */
-    Compose,        /* Screen::ComposeView: view enlarged onto the page, overlays */
-    Upload,         /* platform: the page into the texture */
-    Render,         /* platform: the texture to the window + present */
+    Compose,        /* Screen::ComposeView: view marked on the page, overlays */
+    Upload,         /* platform: the page into its texture, the view's draws, colour table */
+    Render,         /* platform: the textures to the window + present */
     kStages
 };
 

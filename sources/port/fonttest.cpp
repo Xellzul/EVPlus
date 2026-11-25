@@ -5,6 +5,7 @@
 
 #include "render.h"
 #include "crashlog.h"
+#include "screen.h"
 
 #define kLabelLeft      20
 #define kSampleLeft     250
@@ -177,7 +178,8 @@ void DebugFontScreen(void)
         ForeColor(blackColor);
         CopyBits(GWorldContainerBits(&page), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                  &page.bounds, &page.bounds, 0, 0);
-        QDFlushPortBuffer(GetWindowPort(gWind), 0);
+        Screen::Changed();
+        Screen::EndFrame();
         if (WaitForInput())
             break;
     }

@@ -250,7 +250,7 @@ void MainScreenIdle(void)
     }
 }
 
-#define kVersionText        "EV (plus) Nova Community Edition r4 "
+#define kVersionText        "Escape Velocity Plus vDEV 1"
 #define kVersionGrey        0x8000
 #define kVersionLeft        5
 #define kVersionRaise       6           /* baseline above the backdrop's bottom edge */
@@ -332,14 +332,6 @@ void EnterGameFromMainScreen(void)
     StopIntroMusic(1);
     crashlog("drawing stuff");
     LoadIntfResource();
-    SWSetPortToWorkArea(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->workFrameP->frameRect);
-    ForeColor(blackColor);
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->backFrameP->frameRect);
-    ForeColor(blackColor);
     SWSetPortToWindow(gSpriteWorld);
     RandomizeStars();
     PropagateMissionBitEffects();
@@ -382,6 +374,7 @@ void EnterGameFromMainScreen(void)
     crashlog("playing game");
     if (!EVBugResourceFieldTest(10))
         PlayGame();
+    Screen::DropView();
     crashlog("paused");
     crashlog("resetting window attributes");
     if (strictPlay && shipData->IsDying() && shipData->type != kShipTypeEscapePod) {

@@ -342,7 +342,8 @@ Word8 *DecodeImage(const Word8 *Input, Image_t *ImagePtr, Word32 RowBytes, Word 
                     if (Swap) {
                         WorkPtr = DestPtr;
                         do {
-                            *(Word16 *)WorkPtr = SwapShort(*(Word16 *)WorkPtr);
+                            /* the unused top bit cleared: the screen takes 0x8000 for see-through */
+                            *(Word16 *)WorkPtr = SwapShort(*(Word16 *)WorkPtr) & 0x7fff;
                             WorkPtr += 2;
                         } while (--Swap);
                     }
@@ -633,7 +634,7 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
 
                             Pixels16 = ImagePtr->Width;
                             do {
-                                *SwapPtr = SwapShort(*SwapPtr);
+                                *SwapPtr = SwapShort(*SwapPtr) & 0x7fff;   /* the top bit cleared, as for PICT pixels */
                                 ++SwapPtr;
                             } while (--Pixels16);
                             SwapPtr = (Word16 *)((Word8 *)SwapPtr + Skip);

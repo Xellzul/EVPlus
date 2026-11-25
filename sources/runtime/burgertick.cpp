@@ -1,6 +1,7 @@
 /* burgertick.cpp -- BurgerLib TkWin95Code: the 60 Hz tick counter. Notes: Research/notes/burgertick.md */
 
 #include "burger.h"
+#include "screen.h"
 #include "platform.h"
 
 static uint64_t TickStart;                       /* the clock at the first ReadTick */
@@ -36,6 +37,7 @@ void WaitTicks(Word tickCount)
     KeyboardKbhit();
     now = ReadTick();
     while (now - LastTick < tickCount) {
+        Screen::EndFrame();
         PlatWaitEvent(kWaitStepMs);
         KeyboardKbhit();
         now = ReadTick();

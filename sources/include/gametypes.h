@@ -148,8 +148,8 @@ extern ShortPoint menuButtonPos[];
 typedef struct BeamRecord {
     ShortPoint             head;
     ShortPoint             tail;
-    ShortPoint             lastHead;
-    ShortPoint             lastTail;
+    ShortPoint             lastHead;        /* unused */
+    ShortPoint             lastTail;        /* unused */
     short                  state;
     short                  frame;
     short                  weapType;

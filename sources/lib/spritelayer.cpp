@@ -74,16 +74,6 @@ short SWRemoveSprite(SpriteRec *oldSpriteP)
 }
 
 
-/* The fork's extra SpriteLayerRec member: this function stores its proc argument to
-   +0x10 and does nothing else, and SWCreateSpriteLayer is what clears it. */
-
-// FUNCTION: EVNOVA 0x00477240
-// MAC: _SWSetLayerCallBack i386 0x000acab1 ppc 0x000b7db8
-void SWSetLayerCallBack(SpriteLayerRec *spriteLayerP, WorldProcPtr callBack)
-{
-    spriteLayerP->layerCallBack = callBack;
-}
-
 // FUNCTION: EVNOVA 0x00477250
 // MAC: _SWLockSpriteLayer i386 0x000acabf ppc 0x000b7dc0
 void SWLockSpriteLayer(SpriteLayerRec *spriteLayerP)

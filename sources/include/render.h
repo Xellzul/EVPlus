@@ -173,7 +173,6 @@ extern short statusFontSize[2];
 extern void DoPlayGameWork(unsigned char advance);
 extern void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite);
 extern void FloaterDrawCallback(SpriteWorldPtr world);
-extern void BeamEraseCallback(SpriteWorldPtr world);
 extern void StartLoopingMovie(const std::string &name, void *window, Rect *box);
 extern void PreloadPortDialog(SpobRecord *spob, short stellar);
 

@@ -45,7 +45,6 @@ extern void DisplayCommStyled(PStrChar *msg, short count, short font, short size
 extern void DoNewPilot(void);
 extern void DoStellarTimePassage(void);
 extern Boolean DoesPilotExist(const char *path);
-extern void DrawParticlesOffscreen(SpriteWorldPtr spriteWorldP);
 extern void EnterGameFromMainScreen(void);
 extern Boolean EvalMissionBitTestString(char *expr);
 extern void EvalMissionBitSetString(char *expr);
@@ -56,10 +55,7 @@ extern void MakeEscortsHyperWithParent(ShipObj *ship);
 extern void HandleLocalPriceFlux(void);
 extern void PointDefenseCollisionHandler(SpriteRec *shotSpr, SpriteRec *otherSpr,
                          Rect *sectRect);
-extern void BeamDrawCallback(SpriteWorldPtr world);
-extern void BeamDrawOffscreenCallback(SpriteWorldPtr world);
-extern void PostDrawCallback(SpriteWorldPtr world);
-extern void PostEraseCallback(SpriteWorldPtr world);
+extern void DrawBeams(struct BeamLines &out, bool underShips);
 extern short SelectMissionCargoType(short v);
 extern short SelectMissionCargoQty(short v);
 extern void ResetMissionOfferVenue(void);
@@ -213,7 +209,7 @@ extern Boolean CanSellGoods(short item);
 extern void PropagateMissionBitEffects(void);
 extern void FadeWhiteIn(void);
 extern void FadeWhiteOut(void);
-extern void SetFlashColor(const RGBColor *color);
+extern void FlashView(void);
 extern void ExploreNebulaeFromSystem(short sys);
 extern short introTextID;
 extern short introPictID[4];

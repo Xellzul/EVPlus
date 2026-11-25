@@ -1,9 +1,10 @@
-/* viewscale.cpp -- the space view drawn at the game size and enlarged onto the screen. */
+/* viewscale.cpp -- the space view: its sizes, its place on the screen, where space lies in it; the overlay and UI
+   frames. */
 #include <math.h>
 #include <vector>
 #include "burger.h"
-#include "pixel.h"
 #include "player.h"
+#include "render.h"
 #include "spriteworld.h"
 #include "uiscale.h"
 #include "viewscale.h"
@@ -27,46 +28,13 @@ SWFrameRec *menuBack;
 CGrafPort viewPort;
 std::vector<unsigned short> pixels;
 
-/* one destination pixel's two source pixels along an axis and the weight of the second (0..32) */
-struct Tap {
-    int first;
-    int second;
-    unsigned weight;
-};
-
-constexpr unsigned kWeightOne = 32;
-
-/* the taps along one axis for the filter; Pixel art blends only within a screen pixel of a texel edge */
-std::vector<Tap> Taps(int src, int dst, int filter)
-{
-    std::vector<Tap> taps(dst);
-    double step = (double)src / dst;
-
-    for (int i = 0; i < dst; i++) {
-        double center = (i + 0.5) * step - 0.5;
-        int first = (int)floor(center);
-        double frac = center - first;
-        if (filter == kScaleFilterNearest)
-            frac = frac < 0.5 ? 0.0 : 1.0;
-        else if (filter == kScaleFilterPixelArt)
-            frac = fmin(fmax((frac - 0.5) / step + 0.5, 0.0), 1.0);
-        if (first < 0) {
-            first = 0;
-            frac = 0;
-        }
-        int second = first + 1 < src ? first + 1 : first;
-        taps[i] = { first, second, (unsigned)(frac * kWeightOne + 0.5) };
-    }
-    return taps;
-}
-
 /* where the status bar begins on the screen, in device pixels */
 int BarDeviceLeft()
 {
     return UI::Mapping(gGamePort.pix).X(UI::ScreenWidth() - kStatusBarWidth);
 }
 
-/* the size on a page the whole view is enlarged to, from its top left corner */
+/* the size the view is shown at on a page, from its top left corner */
 struct Enlargement {
     int width;
     int height;
@@ -107,62 +75,13 @@ CWindowPtr Open()
     return &viewPort;
 }
 
-bool Enlarge(const Screen::Page &page)
+Rect OnPage(const Screen::Page &page)
 {
-    static std::vector<Tap> across;
-    static std::vector<Tap> down;
-    static std::vector<uint32_t> rows;      /* each view row stretched across, spread */
-    static int cachedFilter = -1;
-    static int cachedWidth;
-    static int cachedHeight;
-    static int cachedSrcWidth;
-    static int cachedSrcHeight;
     Enlargement to = EnlargedOnto(page);
-    int dstWidth = to.width;
-    int dstHeight = to.height;
-    int filter = settings.scaleFilter;
+    Rect r;
 
-    if (pixels.empty() || dstWidth <= 0 || page.pixels == NULL)
-        return false;
-    if (dstWidth == width && dstHeight == height) {
-        for (int y = 0; y < height; y++)
-            memcpy(page.pixels + (size_t)y * page.pitch, &pixels[(size_t)y * width], (size_t)width * 2);
-        return true;
-    }
-    if (filter != cachedFilter || dstWidth != cachedWidth || dstHeight != cachedHeight || width != cachedSrcWidth
-            || height != cachedSrcHeight) {
-        across = Taps(width, dstWidth, filter);
-        down = Taps(height, dstHeight, filter);
-        rows.assign((size_t)height * dstWidth, 0);
-        cachedFilter = filter;
-        cachedWidth = dstWidth;
-        cachedHeight = dstHeight;
-        cachedSrcWidth = width;
-        cachedSrcHeight = height;
-    }
-    for (int y = 0; y < height; y++) {
-        const unsigned short *src = &pixels[(size_t)y * width];
-        uint32_t *row = &rows[(size_t)y * dstWidth];
-        for (int x = 0; x < dstWidth; x++) {
-            const Tap &t = across[x];
-            uint32_t a = Pixel::Spread(src[t.first]);
-            row[x] = t.weight == 0 ? a : Pixel::Mix(a, Pixel::Spread(src[t.second]), t.weight);
-        }
-    }
-    for (int y = 0; y < dstHeight; y++) {
-        const Tap &t = down[y];
-        const uint32_t *row0 = &rows[(size_t)t.first * dstWidth];
-        const uint32_t *row1 = &rows[(size_t)t.second * dstWidth];
-        unsigned short *out = (unsigned short *)(page.pixels + (size_t)y * page.pitch);
-        if (t.weight == 0) {
-            for (int x = 0; x < dstWidth; x++)
-                out[x] = Pixel::Unspread(row0[x]);
-        } else {
-            for (int x = 0; x < dstWidth; x++)
-                out[x] = Pixel::Unspread(Pixel::Mix(row0[x], row1[x], t.weight));
-        }
-    }
-    return true;
+    SetRect(&r, 0, 0, to.width, to.height);
+    return r;
 }
 
 Rect OverlayFrameRect(const Rect &viewRect)
@@ -213,9 +132,24 @@ Rect ScreenRectOfView(const Rect &viewRect)
     return r;
 }
 
-void SetPortToView()
+int X(float spaceX)
 {
-    SWSetPortToFrame(gSpriteWorld->windowFrameP);
+    return (short)(spaceX - shipData[0].pos.x) + screenCenter.h;
+}
+
+int Y(float spaceY)
+{
+    return (short)(spaceY - shipData[0].pos.y) + screenCenter.v;
+}
+
+float ExactX(float spaceX)
+{
+    return spaceX - shipData[0].pos.x + screenCenter.h;
+}
+
+float ExactY(float spaceY)
+{
+    return spaceY - shipData[0].pos.y + screenCenter.v;
 }
 
 void ToView(Point *pt)

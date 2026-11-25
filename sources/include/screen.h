@@ -24,10 +24,16 @@ const Page &Get();
 bool Open(int width, int height, int depth);    /* a cleared page, after Close; false when it can't be had */
 void Close();
 
-/* The frame: the space view enlarged onto the page with the overlays over it (ComposeView, where the view
-   is finished), then the page shown (Present, at the end of a scene). */
+/* The frame: the space view the GPU draws, under the page, with the overlays over it (ComposeView, where the
+   view is finished); the page holds see-through pixels where the view shows. */
 void ComposeView();
-void Present();
+void DropView();                    /* flight is over: the page alone from now on */
+
+/* The page is shown only where a frame is finished -- the end of a loop's turn (EndFrame) or a wait for input
+   or time (Idle) -- never by the helpers that draw it, so a screen built in steps is not shown half done. */
+void Changed();                     /* the page has something new to show */
+void EndFrame();                    /* a frame is finished: shown, if anything changed */
+void Idle();                        /* a wait loop's turn: EndFrame, then a sleep until an event or 1 ms */
 void FadeWhite(unsigned from, unsigned to, uint32_t ticks);
 
 } // namespace Screen

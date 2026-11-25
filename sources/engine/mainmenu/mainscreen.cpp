@@ -30,6 +30,7 @@
 #include "crashlog.h"
 #include "game.h"
 #include "uiscale.h"
+#include "screen.h"
 
 #define kStrListMainScreen   0x8c
 #define kStrNewPilotConfirm     8
@@ -92,14 +93,6 @@ void DoMainScreen(void)
         onPlanet = 0;
         killShots = killBoxes = killExplods = killSmoke = 1;
         missionSoundID = -1;
-        SWSetPortToBackground(gSpriteWorld);
-        SetSystemBackgroundColor();
-        PaintRect(&gSpriteWorld->windRect);
-        ForeColor(blackColor);
-        SWSetPortToWorkArea(gSpriteWorld);
-        SetSystemBackgroundColor();
-        PaintRect(&gSpriteWorld->windRect);
-        ForeColor(blackColor);
         SWSetPortToWindow(gSpriteWorld);
     }
 
@@ -184,6 +177,7 @@ void DoMainScreen(void)
             MainScreenUpdate(1);
             gNeedUpdateFlag = 0;
         }
+        Screen::Idle();
         if (closeRequested != 0) {
             closeRequested = 0;
             if (screenFaded == 0) {

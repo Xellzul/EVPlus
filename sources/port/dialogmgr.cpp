@@ -599,6 +599,7 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
                 lastH = pt.h;
             }
             HandleIntroMusic(0);
+            Screen::Idle();
             KeyboardKbhit();
         } while (MouseReadButtons() != 0);
         DisposeGWorldContainer(&gw);
@@ -1186,6 +1187,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                         lastV = pt2.v;
                         lastH = pt2.h;
                     }
+                    Screen::Idle();
                     KeyboardKbhit();
                 } while (MouseReadButtons() != 0);
                 if (rec->value != doubleClick) {
@@ -1371,12 +1373,10 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     for (i = 0; i < gDialogCount; i++)
         found = found || gDialogStack[i]->needsUpdate;
     if (found != 0) {
-        gDisableUpdatesMode = 1;
         for (n = 0; n < gDialogCount; n++)
             DrawDialog(gDialogStack[n]);
-        gDisableUpdatesMode = 0;
-        ScreenEndScene();
     }
+    Screen::Idle();
 }
 
 // FUNCTION: EVNOVA 0x004d0610
@@ -1902,10 +1902,7 @@ void RedrawDialogs(int all)
 {
     int i;
     int n;
-    int saved;
 
-    saved = gDisableUpdatesMode;
-    gDisableUpdatesMode = 1;
     if (gPause != 0)
         MainScreenUpdate(1);
     else if (gSpriteWorld != NULL)
@@ -1917,7 +1914,6 @@ void RedrawDialogs(int all)
         for (i = 0; i < n; i++)
             DrawDialog(gDialogStack[i]);
     }
-    gDisableUpdatesMode = saved;
 }
 
 // FUNCTION: EVNOVA 0x004d1890

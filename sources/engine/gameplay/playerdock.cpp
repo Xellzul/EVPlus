@@ -14,16 +14,15 @@
 #include "render.h"
 #include "ships.h"
 #include "crashlog.h"
-#include "viewscale.h"
 #include "screen.h"
+#include "viewdraw.h"
 #include "text.h"
 
-/* The jump, hypergate and wormhole flash, drawn black when the Hyperspace Effects
-   preference is off. */
-void SetFlashColor(const RGBColor *color)
+/* The jump, hypergate and wormhole flash: the whole view white, black when the Hyperspace Effects preference
+   is off. */
+void FlashView(void)
 {
-    // BUG (CE F22): CE stores the colour without RGBForeColor's NULL-port test; no caller hits it
-    CurrentGrafPort->foreColor = settings.noHyperGamma != 0 ? *blackColor : *color;
+    ViewDraw::Flash(settings.noHyperGamma != 0 ? *blackColor : *whiteColor);
 }
 
 // FUNCTION: EVNOVA 0x00455e10
@@ -41,9 +40,8 @@ void PlayerLandOnStellar(void)
     ShipStatsToSystemInfo();
     SWHideAllSprites(gSpriteWorld);
     ClearParticles(1);
-    EraseParticlesOffscreen(gSpriteWorld);
     SWUpdateSpriteWorld(gSpriteWorld, 1);
-    UpdateParticlesInWindow(gSpriteWorld);
+    MoveParticles();
     Screen::ComposeView();
     HideCursorSprite();
     RefreshSAT();
@@ -200,16 +198,9 @@ short PlayerEnterHypergate(void)
             ship->vel.x = ship->vel.y = 0;
             ship->accelMag = (ship->MaxSpeed() * 0.5);
             Accel(ship->heading, ship->accelMag, &ship->vel);
-            View::SetPortToView();
-            SetFlashColor(whiteColor);
-            PaintRect(&gSpriteWorld->workFrameP->frameRect);
-            ForeColor(blackColor);
+            FlashView();
             Screen::ComposeView();
-            ScreenEndScene();
-            SWSetPortToWorkArea(gSpriteWorld);
-            BlitPixieRectDrawProc(gSpriteWorld->workFrameP, gSpriteWorld->windowFrameP,
-                         &gSpriteWorld->workFrameP->frameRect,
-                         &gSpriteWorld->windowFrameP->frameRect);
+            Screen::EndFrame();             /* the flash is a frame of its own */
             msg = TextF("%s %s %s %s.", IndString(kGameStrList, 0x2e).c_str(), SystName(destSyst).c_str(),
                         IndString(kGameStrList, 0x30).c_str(), DateLongText(gameTime).c_str());
             n = 0;
@@ -231,16 +222,9 @@ short PlayerEnterHypergate(void)
             hyperRoute[0] = shipData->curSystem;
             PlaySound(warpOutSnd, 0x32, gSoundVolume, gSoundVolume);
             ClearParticles(1);
-            EraseParticlesOffscreen(gSpriteWorld);
             SWHideAllSprites(gSpriteWorld);
             HandleStellarSystemVisibility();
             PrepareAllSprites();
-            SWSetPortToWorkArea(gSpriteWorld);
-            SetSystemBackgroundColor();
-            PaintRect(&gSpriteWorld->backFrameP->frameRect);
-            SWSetPortToWorkArea(gSpriteWorld);
-            SetSystemBackgroundColor();
-            PaintRect(&gSpriteWorld->workFrameP->frameRect);
             SWSetPortToWindow(gSpriteWorld);
             RefreshSAT();
             DisplayComm(msg, 0x168);
@@ -375,12 +359,9 @@ short PlayerEnterWormhole(void)
     ship->vel.x = ship->vel.y = 0;
     ship->accelMag = ship->MaxSpeed() * 0.5;
     Accel(ship->heading, ship->accelMag, &ship->vel);
-    View::SetPortToView();
-    SetFlashColor(whiteColor);
-    PaintRect(&gSpriteWorld->windRect);
-    ForeColor(blackColor);
+    FlashView();
     Screen::ComposeView();
-    ScreenEndScene();
+    Screen::EndFrame();                     /* the flash is a frame of its own */
     PlaySound(warpOutSnd, 0x32, gSoundVolume, gSoundVolume);
     msg = TextF("%s %s %s %s.", IndString(kGameStrList, 0x2f).c_str(), SystName(dest).c_str(),
                 IndString(kGameStrList, 0x30).c_str(), DateLongText(gameTime).c_str());
@@ -405,19 +386,12 @@ short PlayerEnterWormhole(void)
         RandomizeStars();
     ScrollStarfield(0.0f, 0.0f);
     ClearParticles(1);
-    EraseParticlesOffscreen(gSpriteWorld);
     for (i = 1; i < kMaxHyperRoute; i++)
         hyperRoute[i] = -1;
     hyperRoute[0] = shipData->curSystem;
     SWHideAllSprites(gSpriteWorld);
     HandleStellarSystemVisibility();
     PrepareAllSprites();
-    SWSetPortToWorkArea(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->backFrameP->frameRect);
-    SWSetPortToWorkArea(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->workFrameP->frameRect);
     SWSetPortToWindow(gSpriteWorld);
     RefreshSAT();
     return destStellar;
@@ -596,12 +570,7 @@ void HandlePlayerDockRequest(void)
                 if (systemData[ship->curSystem].murk < 0)
                     ClearStarfield();
                 LoadIntfResource();
-                SWSetPortToBackground(gSpriteWorld);
-                SetSystemBackgroundColor();
-                PaintRect(&gSpriteWorld->windRect);
-                ForeColor(blackColor);
                 SWSetPortToWindow(gSpriteWorld);
-                SWFlagRectAsChanged(gSpriteWorld, &gSpriteWorld->windRect);
                 if (qtStellar != -1 || commResult != -1) {
                     MissionHandlePlayerEnteredNewSystem();
                     for (sVal = 0; sVal < kMaxActiveMissions; sVal++) {

@@ -3,6 +3,7 @@
 #include "render.h"
 #include "stellar.h"
 #include "uiscale.h"
+#include "screen.h"
 
 #define kSplashPictID       0x83
 #define kAmbrosiaLogoPictID 0x1fa4
@@ -34,7 +35,8 @@ void ShowSplashScreen(void)
     CopyBits(GWorldContainerBits(&loadPort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
              rect, GetCWindowPortRect(gWind), 0, 0);
-    ScreenEndScene();
+    Screen::Changed();
+    Screen::EndFrame();
 }
 
 
@@ -63,6 +65,7 @@ void ShowAmbrosiaLogo(void)
     if (pic != 0)
         QDReleaseResource((PicHandle)pic);
     FadeScreenIn();
+    Screen::EndFrame();                     /* shown while loading runs, which has no frame end of its own */
 }
 
 // FUNCTION: EVNOVA 0x004ab180

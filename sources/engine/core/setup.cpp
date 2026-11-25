@@ -64,7 +64,6 @@ void SetupSpriteWorld(void)
     short err;
     Str255 str;
     Rect windRect;
-    RGBColor color;
 
     mBarHidden = 1;
     windRect = mainWindRect;
@@ -114,17 +113,11 @@ void SetupSpriteWorld(void)
     SWAddSpriteLayer(gSpriteWorld, explodLayer);
     SWAddSpriteLayer(gSpriteWorld, targetLayer);
 
-    SWSetLayerCallBack(stellarLayer, BeamDrawOffscreenCallback);
-    SWSetLayerCallBack(targetLayer, BeamDrawCallback);
     SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
 
     crashlog("creating scratch frames");
     CreateOverlayFrames();
 
-    color.red = color.green = color.blue = 0;
-    SWSetBackgroundColor(gSpriteWorld, &color);
-    SWSetPostEraseCallBack(gSpriteWorld, PostEraseCallback);
-    SWSetPostDrawCallBack(gSpriteWorld, PostDrawCallback);
     SWSetSpriteWorldMaxFPS(gSpriteWorld, 0);
     SWLockSpriteWorld(gSpriteWorld);
     SWSetPortToWindow(gSpriteWorld);
@@ -433,7 +426,7 @@ void Bye(void)
         if (masterStellarSprite[i] != NULL) {
             if (masterStellarSprite[i]->frameArray != NULL) {
                 for (j = 0; j < masterStellarSprite[i]->numFrames; j++) {
-                    DeallocAPointer(masterStellarSprite[i]->frameArray[j]);
+                    SWFreeFrameRecord(masterStellarSprite[i]->frameArray[j]);
                     masterStellarSprite[i]->frameArray[j] = NULL;
                 }
                 masterStellarSprite[i]->numFrames = 0;

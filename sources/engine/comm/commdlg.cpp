@@ -726,10 +726,6 @@ void PlanetCommDialog::Run()
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
     dialog.Close();
     gSpeedMult = 0;
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->windRect);
-    ForeColor(blackColor);
     SWSetPortToWindow(gSpriteWorld);
     RedrawStatus(1);
 }

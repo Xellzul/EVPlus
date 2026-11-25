@@ -8,9 +8,9 @@
 #include "space.h"
 #include "dialogs.h"
 #include "stellar.h"
-#include "viewscale.h"
 #include "platform.h"
 #include "screen.h"
+#include "viewdraw.h"
 
 /* fills `frame` with the picture's bounds (name invented) */
 
@@ -162,7 +162,6 @@ Boolean DupKeyCheck(ScanCode value, short skip)
     return 0;
 }
 
-#define kFadeMillis 500
 #define kMessageStrings 1000    /* STR# holding the numbered player messages */
 
 Boolean speechMgrPresent;
@@ -171,12 +170,6 @@ uint64_t randomSeed;
 /* screen fade state (names invented; the mac fades via CGDisplayFade instead) */
 int32_t screenGamma = 0x00010000;           /* 0x00575878 — 16.16, 1.0 = full brightness */
 
-/*
- * The windows port drives the palette from the DirectDraw side, so the mac
- * gamma write is compiled out here. The ramp is still walked at the original
- * rate, which is what paces the fade.
- */
-#define SetScreenGamma(level)  ((void)(level))
 
 /* Show numbered message `index`, letting a plug-in override the built-in text. */
 // FUNCTION: EVNOVA 0x00467cf0
@@ -190,29 +183,14 @@ void DisplayMessage(short index)
     DisplayComm((PStrChar *)text, 480);
 }
 
-/* Walk the gamma ramp to `percent` brightness over `duration` milliseconds. */
+/* The screen's brightness as `percent'. The original walked the display gamma there over 500 ms; the port has
+   no gamma ramp, so it is set at once and the fades take no time. */
 // FUNCTION: EVNOVA 0x00467d60
-void FadeGammaTo(uint32_t percent, uint32_t duration)
+void FadeGammaTo(uint32_t percent)
 {
-    uint32_t target;
-    uint32_t start;
-    uint32_t elapsed;
-    int32_t delta;
-
     /* 1.1.1 */
     Screen::FadeWhite(kWhiteNone, kWhiteNone, 0);
-    target = (percent << 16) / 100;
-    delta = target - screenGamma;
-    if (duration != 0) {
-        start = ReadTickMilliseconds();
-        do {
-            elapsed = ReadTickMilliseconds() - start;
-            if (elapsed > duration)
-                elapsed = duration;
-            SetScreenGamma(FixedMultiply((elapsed << 16) / duration, delta));
-        } while (elapsed < duration);
-    }
-    screenGamma = target;
+    screenGamma = (percent << 16) / 100;
 }
 
 // FUNCTION: EVNOVA 0x00467de0
@@ -223,7 +201,7 @@ void FadeScreenOut(void)
         return;
     ScreenEndScene();
     if (settings.windowed == 0)
-        FadeGammaTo(0, kFadeMillis);
+        FadeGammaTo(0);
     screenFaded = 1;
 }
 
@@ -235,7 +213,7 @@ void FadeScreenIn(void)
         return;
     ScreenEndScene();
     if (settings.windowed == 0)
-        FadeGammaTo(100, kFadeMillis);
+        FadeGammaTo(100);
     screenFaded = 0;
 }
 
@@ -418,24 +396,11 @@ void RefreshSAT(void)
     if (creatingPilotFile != 0 || gPause != 0)
         return;
 
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->windRect);
-    ForeColor(blackColor);
-    SWSetPortToWorkArea(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->windRect);
-    ForeColor(blackColor);
-    SWSetPortToWindow(gSpriteWorld);
-
+    /* the view drawn again from the sprite world; landed, it shows the system's colour alone */
     if (playerIsLanded == 0)
         SWUpdateSpriteWorld(gSpriteWorld, 0);
-
-    CopyBits(GetPortBitMapForCopyBits(*(CGrafPtr *)gSpriteWorld->workFrameP),
-             GetPortBitMapForCopyBits(gSpriteWorld->windowFrameP->framePort),
-             &gSpriteWorld->workFrameP->frameRect,
-             &gSpriteWorld->windowFrameP->frameRect,
-             0, 0);
+    else
+        ViewDraw::Clear();
     Screen::ComposeView();
 
     r = GetCWindowPortRect((WindowRef)gWind);
@@ -450,11 +415,6 @@ void RefreshSAT(void)
     CopyBits((BitMapPtr)GetGWCPixMap(&loadPort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
              &box, &box, 0, 0);
-
-    if (playerIsLanded == 0) {
-        FloaterDrawCallback(gSpriteWorld);
-    }
-    SWSetPortToWindow(gSpriteWorld);
     QDFlushPortBuffer(GetWindowPort(gWind), NULL);
 }
 
@@ -510,33 +470,6 @@ void ShowTheCursor(void)
     cursorHidden = (OSCursorIsVisible() == 0);
 }
 
-/* paint in the current system's colour, and tell SpriteWorld about it too */
-
-// FUNCTION: EVNOVA 0x0046bbf0
-// MAC: _SetSystemBackgroundColor i386 0x00006af4 ppc 0x00008568
-void SetSystemBackgroundColor(void)
-{
-    short sys;
-
-    if (shipData[0].curSystem < 0)
-        sys = 0;
-    else
-        sys = shipData[0].curSystem;
-    RGBForeColor(&systemData[sys].rgb);
-    SWSetBackgroundColor(gSpriteWorld, &systemData[sys].rgb);
-}
-
-// FUNCTION: EVNOVA 0x0046bc50
-// MAC: _SetSystemBackgroundBackColor i386 0x00006e06 ppc 0x00008850
-void SetSystemBackgroundBackColor(void)
-{
-    if (shipData[0].curSystem < 0) {
-        BackColor(blackColor);
-        return;
-    }
-    RGBBackColor(&systemData[shipData[0].curSystem].rgb);
-}
-
 // FUNCTION: EVNOVA 0x0046cc60
 // MAC: _PutSpriteInLayer i386 0x0000766c ppc 0x000091c0
 void PutSpriteInLayer(SpriteRec *sprite, SpriteLayerRec *layer)
@@ -551,23 +484,19 @@ void PutSpriteInLayer(SpriteRec *sprite, SpriteLayerRec *layer)
 
 // FUNCTION: EVNOVA 0x0046e840
 // MAC: _BusyIdle i386 0x00005981 ppc 0x0000707c
-/* one turn of a wait loop: handle pending events, then sleep until the next event or a millisecond */
+/* one turn of a wait loop: handle pending events, show the screen if it changed, then sleep until the next
+   event or a millisecond */
 void BusyIdle(void)
 {
     ProcessSystemEvents();
-    PlatWaitEvent(1);
+    Screen::Idle();
 }
 
 // FUNCTION: EVNOVA 0x0046e8e0
 // MAC: _DisposeDialogNoFlash i386 0x00007f91 ppc 0x00009db4
 void DisposeDialogNoFlash(void *dlg)
 {
-    int saved;
-
-    saved = gDisableUpdatesMode;
-    gDisableUpdatesMode = 1;
     DisposeDialog((DialogRecord *)dlg);
-    gDisableUpdatesMode = saved;
 }
 
 #define kStarLayers kMaxStars

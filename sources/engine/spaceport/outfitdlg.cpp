@@ -702,10 +702,6 @@ void OutfitDialog::Run()
     dialog.Close();
     backdrop.Release();
     preview.Release();
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->backFrameP->frameRect);
-    ForeColor(blackColor);
     RedrawStatus(0);
     SWSetPortToWindow(gSpriteWorld);
     shipData->targetStellar = savedUnk6C;

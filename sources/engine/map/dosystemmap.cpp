@@ -145,13 +145,6 @@ void MapDialog::Run()
     while (KeyCheck(keyPrefs.map))
         BusyIdle();
     dialog.Close();
-    SWSetPortToWorkArea(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(&gSpriteWorld->workFrameP->frameRect);
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->backFrameP->frameRect);
-    ForeColor(blackColor);
     SWSetPortToWindow(gSpriteWorld);
     found = (GetCWindowPortRect(gWind)->right - GetCWindowPortRect(gWind)->left) / 2;
     sys = (GetCWindowPortRect(gWind)->bottom - GetCWindowPortRect(gWind)->top) / 2;

@@ -1,8 +1,10 @@
-/* screen.cpp -- the screen page and the frame: the view composed onto the page, the page (or its white-out)
-   handed to the platform's window. */
+/* screen.cpp -- the screen page and the frame: the page handed to the platform's window, with the space view the
+   GPU draws under it. */
+#include <algorithm>
 #include "burger.h"
 #include "platform.h"
 #include "profiler.h"
+#include "viewdraw.h"
 #include "viewscale.h"
 #include "screen.h"
 
@@ -11,11 +13,13 @@ namespace Screen {
 namespace {
 
 Page page;
-unsigned short *whitePage;          /* the page blended toward white, while a white-out runs */
+bool viewFresh;                     /* composed since the last present */
+bool changed;                       /* something to show since the last frame end */
+unsigned shownWhite;                /* the white-out level of the frame last shown */
 
 /* 1.1.1's hyperspace white-out: 1.1.1 has CGDisplayFade blend the whole display to and from solid white over
-   1.5 s while the game runs on; here a copy of the page blended toward white is shown in its place, by the
-   fade's position at that moment. The page the game draws into is untouched. */
+   1.5 s while the game runs on; here the platform shows the frame blended toward white by the fade's position
+   at that moment. The page the game draws into is untouched. */
 unsigned whiteFrom;
 unsigned whiteTo;
 Word32 whiteStart;
@@ -30,22 +34,16 @@ unsigned CurrentWhite()
     return whiteFrom + ((int32_t)whiteTo - (int32_t)whiteFrom) * (int32_t)elapsed / (int32_t)whiteTicks;
 }
 
-/* the page into whitePage, blended toward white by a of 256, linear in each channel as CGDisplayFade's
-   kCGDisplayBlendSolidColor mix */
-void BlendPageToWhite(unsigned a)
+/* The view goes to the platform at its own size, under the page; its place on the page is marked see-through. */
+void MarkView()
 {
-    unsigned short lut5[32];
+    Rect r = View::OnPage(page);
 
-    for (unsigned i = 0; i < 32; i++)
-        lut5[i] = i + (((31 - i) * a + 128) >> 8);
-    for (int y = 0; y < page.height; y++) {
-        const unsigned short *src = (const unsigned short *)(page.pixels + (size_t)y * page.pitch);
-        unsigned short *dst = (unsigned short *)((char *)whitePage + (size_t)y * page.pitch);
-        for (int x = 0; x < page.width; x++) {
-            unsigned short p = src[x];
-            dst[x] = lut5[(p >> 10) & 31] << 10 | lut5[(p >> 5) & 31] << 5 | lut5[p & 31];
-        }
+    for (int y = r.top; y < r.bottom; y++) {
+        unsigned short *row = (unsigned short *)(page.pixels + (size_t)y * page.pitch);
+        std::fill(row + r.left, row + r.right, (unsigned short)kPlatSeeThrough);
     }
+    viewFresh = true;
 }
 
 } // namespace
@@ -69,10 +67,7 @@ bool Open(int width, int height, int depth)
 
 void Close()
 {
-    if (whitePage != NULL) {
-        DeallocAPointer(whitePage);
-        whitePage = NULL;
-    }
+    viewFresh = false;
     if (page.pixels != NULL)
         DeallocAPointer(page.pixels);
     page = Page();
@@ -80,25 +75,57 @@ void Close()
 
 void ComposeView()
 {
+    if (page.pixels == NULL || View::width <= 0)
+        return;
     Profiler::Begin(Profiler::Compose);
-    if (View::Enlarge(page))
-        DrawOverlays();
+    MarkView();
+    ViewDraw::BeginOverlays();
+    DrawOverlays();
+    changed = true;
     Profiler::End(Profiler::Compose);
 }
 
-void Present()
+void DropView()
 {
-    if (page.pixels == NULL)
-        return;
+    viewFresh = false;
+    PlatVideoDropView();
+}
+
+void Changed()
+{
+    changed = true;
+}
+
+void EndFrame()
+{
     unsigned white = CurrentWhite();
-    if (white != kWhiteNone && whitePage == NULL)
-        whitePage = (unsigned short *)AllocAPointer((Word32)(page.pitch * page.height));
-    if (white != kWhiteNone && whitePage != NULL) {
-        BlendPageToWhite(white);
-        PlatVideoPresent(whitePage, page.pitch);
+
+    if ((!changed && white == shownWhite) || page.pixels == NULL)
+        return;
+    changed = false;
+    shownWhite = white;
+    PlatVideoSetWhite(white);
+    if (viewFresh) {
+        Rect r = View::OnPage(page);
+        PlatVideoView view = {};
+        view.width = View::width;
+        view.height = View::height;
+        view.x = r.left;
+        view.y = r.top;
+        view.w = r.right - r.left;
+        view.h = r.bottom - r.top;
+        ViewDraw::Take(view);
+        viewFresh = false;
+        PlatVideoPresentView(page.pixels, page.pitch, &view);
     } else {
         PlatVideoPresent(page.pixels, page.pitch);
     }
+}
+
+void Idle()
+{
+    EndFrame();
+    PlatWaitEvent(1);
 }
 
 void FadeWhite(unsigned from, unsigned to, uint32_t ticks)

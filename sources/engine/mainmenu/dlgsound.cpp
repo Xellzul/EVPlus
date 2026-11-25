@@ -178,5 +178,10 @@ void MainScreenAnimIdle(void)
         }
     }
 
-    ScreenEndScene();
+    /* the animation and the rollover move by ticks: shown once a tick, not on every pass of the menu loop */
+    static Word32 lastShown;
+    if (ReadTick() != lastShown) {
+        lastShown = ReadTick();
+        ScreenEndScene();
+    }
 }

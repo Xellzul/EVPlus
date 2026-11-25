@@ -314,25 +314,6 @@ typedef struct RLEPixelData {
 #define SW_PIXELPTR(frame, x, y) \
     ((frame)->frameBaseAddr + SW_ROWBYTES(frame, y) + SW_PIXELBYTES(frame, x))
 
-#define SW_PIXELPTR16(frame, x, y)  \
-    ((unsigned short *) ( (frame)->frameBaseAddr + SW_ROWBYTES(frame,y) + ((x)+(x)) ))
-#define SW_PIXELPTR32(frame, x, y)  \
-    ((uint32_t  *) ( (frame)->frameBaseAddr + SW_ROWBYTES(frame,y) + ((x) << 2) ))
-
-/* DEPTH is the switch variable FOREACH_DEPTH_DO binds. */
-#define FOREACH_DEPTH_DO(depth, instructions)   \
-    switch ( depth )    \
-    {   case 16:    { int DEPTH=16; instructions } break;   \
-        case 32:    { int DEPTH=32; instructions } break; }
-
-#define GET_DEPTH_PIXEL(frame, x, y)            \
-    ( DEPTH==16 ?   *SW_PIXELPTR16(frame,x,y) : \
-                    *SW_PIXELPTR32(frame,x,y) )
-
-#define SET_DEPTH_PIXEL(frame, x, y, c)         \
-    { if(DEPTH==16) *SW_PIXELPTR16(frame,x,y)=c; else   \
-                    *SW_PIXELPTR32(frame,x,y)=c; }
-
 #define SW_MIN(a, b)            ((a) < (b) ? (a) : (b))
 #define SW_MAX(a, b)            ((a) > (b) ? (a) : (b))
 
@@ -492,8 +473,6 @@ typedef struct Particle {
     int32_t oldVertLoc;
     int32_t horizSpeed;
     int32_t vertSpeed;
-    int32_t drawnHorizLoc;
-    int32_t drawnVertLoc;
     int32_t shade;
     uint32_t color;
 } Particle, *ParticlePtr;
@@ -654,8 +633,6 @@ extern void SetDialogDefaultItem(DialogPtr dlg, int32_t value);
 extern short Random(void);
 extern int32_t GetQDGlobalsRandomSeed(void);
 extern void SetQDGlobalsRandomSeed(int32_t seed);
-extern short SWSetSpriteWorldScreenDrawProc(SpriteWorldRec *spriteWorld,
-                                            DrawProcPtr proc);
 extern void Microseconds(UnsignedWide *now);
 extern void StringToNum(const unsigned char *str, int32_t *value);
 extern void SetPort(CGrafPtr port);
@@ -677,8 +654,6 @@ extern void DebugStr(const char *message);
 extern void FillCRect(Rect *dstRect, Image_t *pat);
 extern short GetFrameBiggestSize(SWFrameRec *frame);
 extern void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text);
-extern void SWSetPostEraseCallBack(SpriteWorldPtr world, WorldProcPtr proc);
-extern void SWSetPostDrawCallBack(SpriteWorldPtr world, WorldProcPtr proc);
 extern void *GetGDevice(void);
 extern void BuildGammaRamp(float gamma);
 extern void GetListCellRect(Rect *box, Point cell, ScrollRec **h);
@@ -689,7 +664,7 @@ extern char gParamText0[];
 extern char gParamText1[];
 extern char gParamText2[];
 extern char gParamText3[];
-extern void FadeGammaTo(uint32_t percent, uint32_t duration);
+extern void FadeGammaTo(uint32_t percent);
 extern bool SplitTwoLineString(const std::string &src, std::string &line1, std::string &line2);
 extern void TextFace(short face);
 extern void TextFont(short font);
@@ -727,7 +702,6 @@ extern CGrafPort gGamePort;
 extern RGBColor blackRGB;
 extern int32_t gRezOpenPending;
 extern void nv_BlitImageOr(Rect *dstRect, Image_t *icon);
-extern int gDisableUpdatesMode;
 extern RGBColor *whiteColor;
 extern RGBColor bkgndGreen;
 extern RGBColor brightGreen;

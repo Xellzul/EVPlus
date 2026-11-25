@@ -3,6 +3,7 @@
 #include "render.h"
 #include "sound.h"
 #include "uiscale.h"
+#include "screen.h"
 
 /* the bar's rect comes out of the colr resource */
 
@@ -49,6 +50,7 @@ void InitIntroProgressBar(void)
         fill.right = line.right;
         InsetRect(&fill, 1, 1);
         PaintRect(&fill);
+        Screen::Changed();                  /* each step shown by the Delay's wait */
         InsetRect(&line, 0, -1);
         HandleIntroMusic(0);
         Delay(2, &tix);
@@ -105,5 +107,6 @@ void DrawIntroProgressBar(void)
     CopyBits(GWorldContainerBits(&loadPort),
              GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
              &progressRect, &progressRect, 0, 0);
-    ScreenEndScene();
+    Screen::Changed();
+    Screen::EndFrame();                     /* loading has no other frame end */
 }

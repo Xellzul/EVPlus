@@ -1,5 +1,6 @@
 /* blitpixieaddovercopy.cpp -- BlitPixieAddOverCopy (win 0x00473b60), inside the un-anchored BlitPixie block. Notes: Research/notes/blitpixieaddovercopy.md */
 #include "shipobj.h"
+#include "pixel.h"
 
 // FUNCTION: EVNOVA 0x00473b60
 // MAC: _BlitPixieAddOverCopy i386 0x000c177d ppc 0x000cd7d4
@@ -13,7 +14,7 @@ void BlitPixieAddOverCopy(unsigned char *dstPixels, unsigned char *srcPixels,
     sp = (uint32_t *)srcPixels;
     dp = (uint32_t *)dstPixels;
     for (i = 0; i < (byteWidth >> 2); i++) {
-        *dp |= *sp++;
+        *dp = Pixel::AddPair(*sp++, *dp);
         dp++;
     }
 
@@ -22,10 +23,10 @@ void BlitPixieAddOverCopy(unsigned char *dstPixels, unsigned char *srcPixels,
 
     if (byteWidth & 2) {
         unsigned short *wordDst = (unsigned short *)dstPixels;
-        *wordDst = *wordDst | *(unsigned short *)srcPixels;
+        *wordDst = (unsigned short)Pixel::AddPair(*(unsigned short *)srcPixels, *wordDst);
     }
 
-    /* BUG: the tails never advance srcPixels and dstPixels, so a width of 4n+3 re-ORs the short's low byte */
+    /* BUG: the tails never advance srcPixels and dstPixels, so a width of 4n+3 re-adds the short's low byte */
     if (byteWidth & 1)
-        *dstPixels = *dstPixels | *srcPixels;
+        *dstPixels = (unsigned char)Pixel::AddPair(*srcPixels, *dstPixels);
 }

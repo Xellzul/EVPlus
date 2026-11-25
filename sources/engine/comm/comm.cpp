@@ -1,15 +1,9 @@
 /* comm.cpp -- the communication message strip (win TU region 0x0047e2d0-0x0047e463). Notes: Research/notes/comm.md */
-/*
- * The two SpriteWorld frame offsets are the real ones from SpriteWorld's own
- * SpriteWorld.h - backFrameP at +0x14, workFrameP at +0x18, each a FramePtr
- * whose first field is the CGrafPtr the port hands to CopyBits.
- */
 
 #include "game.h"
 #include "viewscale.h"
 #include "missions.h"
 #include "render.h"
-#include "stellar.h"
 #include "text.h"
 
 #define kCommMsgMax     0xff
@@ -24,7 +18,7 @@ static struct {
 static bool gCommDrawn;                 /* CommOverlay's frame shows the message */
 static SWFrameRec *gCommFrame;          /* CommOverlay's */
 
-/* The comm message in its box on the current port, on the system's background colour. */
+/* The comm message in its box on the current port, on black: added over the view, black adds nothing */
 static void DrawCommText(Rect *box)
 {
     unsigned char text[256];
@@ -36,7 +30,7 @@ static void DrawCommText(Rect *box)
     TextFont(gCommStyle.font);
     TextSize(gCommStyle.size);
     TextFace(0);
-    SetSystemBackgroundBackColor();
+    BackColor(blackColor);
     TETextBox(text, strlen((char *)text), box, 0);
     ForeColor(blackColor);
     BackColor(whiteColor);
@@ -105,13 +99,11 @@ void DisplayCommStyled(const std::string &msg, short count, short font, short si
 }
 
 /* The comm message drawn in its own frame, at the screen's resolution, for Screen::ComposeView to lay over
-   the view; NULL when there is none. The frame is drawn again only when the message or the system's colour
-   changes. */
+   the view; NULL when there is none. The frame is drawn again only when the message changes. */
 SWFrameRec *CommOverlay(void)
 {
     SWFrameRec *&frame = gCommFrame;
     static Rect bounds;
-    static RGBColor drawnOn;                /* the system colour the frame was drawn on */
     if (commCount <= 0)
         return NULL;
     for (int pass = 0; pass < 2; pass++) {          /* the second pass follows a commRect FitCommRect grew */
@@ -132,9 +124,7 @@ SWFrameRec *CommOverlay(void)
         gCommDrawn = false;
         FitCommRect(frame);
     }
-    RGBColor background = shipData[0].curSystem < 0 ? rgbBlack : systemData[shipData[0].curSystem].rgb;
-    if (!gCommDrawn || memcmp(&background, &drawnOn, sizeof background) != 0) {
-        drawnOn = background;
+    if (!gCommDrawn) {
         GrafPtr saved;
         GetPort(&saved);
         SWSetPortToFrame(frame);

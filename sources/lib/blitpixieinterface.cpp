@@ -153,28 +153,6 @@ void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
         blit.rows);
 }
 
-/* backgroundValue is unused; the blitter is handed `32 - level', an alpha weight out of 32. */
-
-// FUNCTION: EVNOVA 0x00470680
-// MAC: _BlitPixieFloatingRectDrawProc i386 0x000ba405 ppc 0x000c63a4
-void BlitPixieFloatingRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
-                                   Rect *srcRect, Rect *dstRect, short level,
-                                   int32_t backgroundValue)
-{
-    RectBlit blit;
-    if (!PrepareRectBlit(srcFrameP, dstFrameP, srcRect, dstRect, 222, false, false, blit))
-        return;
-
-    BlitPixieFloatingRect(
-        (unsigned char *)SW_PIXELPTR(srcFrameP, blit.src.left, blit.src.top),
-        (unsigned char *)SW_PIXELPTR(dstFrameP, blit.dst.left, blit.dst.top),
-        blit.srcRowBytes,
-        blit.dstRowBytes,
-        SW_PIXELBYTES(dstFrameP, blit.width),
-        blit.rows,
-        32 - level);
-}
-
 // FUNCTION: EVNOVA 0x00470960
 // MAC: _BlitPixieMaskDrawProc i386 0x000ba6c5 ppc 0x000c6644
 void BlitPixieMaskDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,

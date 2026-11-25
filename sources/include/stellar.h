@@ -48,8 +48,6 @@ extern void RecalcMissionSystsForMap(void);
 void RecursiveAutoExplore(short sys, short depth, short level);
 short RecursiveEscapeStellarSearch(short sys);
 extern void ShowEscortMenu(void);
-extern void SetSystemBackgroundBackColor(void);
-extern void SetSystemBackgroundColor(void);
 extern Boolean SetupPortAvailableItems(SpobRecord *spob);
 extern void SetupPortAvailableShipTypes(SpobRecord *port);
 extern void ShowFloatingMap(void);

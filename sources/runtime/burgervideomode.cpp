@@ -8,11 +8,12 @@
 #define kDoubleOk        4                      /* SETDISPLAYDOUBLEOK */
 #define kDepth555        15
 
-/* UpdateAndPageFlip (BurgerLib GrWin95Code): show the page. */
+/* UpdateAndPageFlip (BurgerLib GrWin95Code): show the page now. */
 // FUNCTION: EVNOVA 0x004ec960
 void UpdateAndPageFlip(void)
 {
-    Screen::Present();
+    Screen::Changed();
+    Screen::EndFrame();
 }
 
 /* ReleaseVideo (BurgerLib GrWin95Code). */

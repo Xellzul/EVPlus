@@ -133,10 +133,6 @@ void ShipyardDialog::Run()
         PaintRect(&box);
         RedrawStatus(1);
     }
-    SWSetPortToBackground(gSpriteWorld);
-    SetSystemBackgroundColor();
-    PaintRect(&gSpriteWorld->backFrameP->frameRect);
-    ForeColor(blackColor);
     RedrawStatus(0);
     SWSetPortToWindow(gSpriteWorld);
     shipData->targetStellar = savedTargetStellar;

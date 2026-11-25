@@ -11,6 +11,7 @@
 #include "game.h"
 #include "missions.h"
 #include "uiscale.h"
+#include "screen.h"
 
 #define kIntroPictSlots 4
 
@@ -66,7 +67,8 @@ void ShowIntroScreen(void)
             PaintRect(GetCWindowPortRect((WindowRef)gWind));
             CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
                      &rect, &rect, 0, NULL);
-            QDFlushPortBuffer(GetWindowPort(gWind), NULL);
+            Screen::Changed();
+            Screen::EndFrame();
 
             SWSetPortToWindow(gSpriteWorld);
 

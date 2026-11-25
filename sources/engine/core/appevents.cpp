@@ -6,8 +6,8 @@
 #include "player.h"
 #include "render.h"
 #include "sound.h"
-#include "viewscale.h"
 #include "screen.h"
+#include "viewdraw.h"
 
 // FUNCTION: EVNOVA 0x00497500
 // MAC: _IterateInGameEventLoop i386 0x00056859 ppc 0x0005ebe0
@@ -103,29 +103,11 @@ void SwitchedOut(void)
     SetPort(savedPort);
 }
 
-/*
- * SpriteWorld's +0x1c is windowFrameP, so the destination rect is the same
- * frameRect member reached through the other frame.
- */
-
 // FUNCTION: EVNOVA 0x00497df0
 // MAC: _RefreshWindowBuffer i386 0x00051420 ppc 0x00059d54
 void RefreshWindowBuffer(void)
 {
-    SWSetPortToWorkArea(gSpriteWorld);
-    if (gameLoaded && gameInProgress)
-        SetSystemBackgroundColor();
-    else
-        ForeColor(blackColor);
-    PaintRect(&gSpriteWorld->workFrameP->frameRect);
-    ForeColor(blackColor);
-    SWSetPortToWindow(gSpriteWorld);
-    CopyBits(GetPortBitMapForCopyBits(
-                 gSpriteWorld->workFrameP->framePort),
-             GetPortBitMapForCopyBits(gSpriteWorld->windowFrameP->framePort),
-             &gSpriteWorld->workFrameP->frameRect,
-             &gSpriteWorld->windowFrameP->frameRect,
-             0, 0);
+    ViewDraw::Clear();
     Screen::ComposeView();
     ScreenEndScene();
 }

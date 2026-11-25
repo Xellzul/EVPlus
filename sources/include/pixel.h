@@ -55,32 +55,6 @@ inline unsigned short FromColorGamma(const RGBColor &c)
     return Pack(gGammaRamp[c.red >> 11], gGammaRamp[c.green >> 11], gGammaRamp[c.blue >> 11]);
 }
 
-/* A spread pixel has green moved up, so each channel can be multiplied by up to 32 without reaching the
-   next one. */
-constexpr uint32_t kSpreadMask = 0x01f07c1f;
-
-constexpr uint32_t Spread(uint32_t p)
-{
-    return (p & kGreen555) << 15 | (p & (kRed555 | kBlue555));
-}
-
-constexpr unsigned short Unspread(uint32_t e)
-{
-    return (unsigned short)((e & (kRed555 | kBlue555)) | (e >> 15 & kGreen555));
-}
-
-/* two spread pixels mixed, w/32 of the second, each channel rounded down */
-constexpr uint32_t Mix(uint32_t a, uint32_t b, uint32_t w)
-{
-    return (a * (32 - w) + b * w) >> 5 & kSpreadMask;
-}
-
-/* alpha/32 of src over dst */
-constexpr unsigned short Blend(uint32_t src, uint32_t dst, uint32_t alpha)
-{
-    return Unspread(Mix(Spread(dst), Spread(src), alpha));
-}
-
 /* Two pixels in one 32-bit word: one channel of both scaled by k/32, rounded down. */
 constexpr uint32_t kRedPair = 0x7c007c00;
 constexpr uint32_t kGreenPair = 0x03e003e0;
@@ -92,6 +66,21 @@ constexpr uint32_t ScaleBluePair(uint32_t c, uint32_t k) { return (c & kBluePair
 constexpr uint32_t ScalePair(uint32_t c, uint32_t k)
 {
     return ScaleRedPair(c, k) | ScaleGreenPair(c, k) | ScaleBluePair(c, k);
+}
+
+/* Two packed pixels added per channel, each channel clamped at 31: how a sprite's part and the screen's
+   combine, as a GPU's additive blend does (the original ORed them). */
+inline uint32_t AddPair(uint32_t a, uint32_t b)
+{
+    constexpr uint32_t kHigh = 0x42104210;      /* each channel's top bit */
+    constexpr uint32_t kLow = 0x3def3def;       /* each channel's other bits */
+
+    a &= 0x7fff7fff;
+    b &= 0x7fff7fff;
+    uint32_t low = (a & kLow) + (b & kLow);
+    uint32_t sum = low ^ ((a ^ b) & kHigh);
+    uint32_t carry = ((a & b) | ((a | b) & low)) & kHigh;
+    return sum | (carry >> 4) * 31;
 }
 
 /* row y of 16-bit pixels */

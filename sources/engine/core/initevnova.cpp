@@ -17,6 +17,7 @@
 #include "stellar.h"
 #include "viewscale.h"
 #include "screen.h"
+#include "viewdraw.h"
 #include "gamepaths.h"
 #include "prototypes.h"
 #include "outfitmods.h"
@@ -337,6 +338,7 @@ void InitEVNova(void)
     crashlog("opening data files & loading prefs");
     InitDataFiles();
     LoadPrefs();
+    ViewDraw::Install();
 
     crashlog("initializing monitor");
     SetupMonitor();
@@ -564,7 +566,6 @@ void PlayGame(void)
                 PostAnimateHandler();
                 Profiler::End(Profiler::Sprites);
                 Screen::ComposeView();
-                ScreenEndScene();
                 if (KeyCheck(keyPrefs.pause)) {
                     if (pauseKeyFlag == 0 && gPause == 0) {
                         pauseKeyFlag = 1;
@@ -651,6 +652,7 @@ void PlayGame(void)
             DisplayComm(absquatulateStr, 500);
             absquatulateStr.clear();
         }
+        Screen::EndFrame();
         Profiler::End(Profiler::Frame);
         Profiler::FrameEnd();
     }
@@ -3391,7 +3393,7 @@ void DoEscortPayment(short days)
     if (numDismissed > 0) {
         if (hyperGamma >= 0.0) {
             hyperGamma = -1.0f;
-            FadeGammaTo(100, 0);
+            FadeGammaTo(100);
         }
         SetShowText(IndString(kGameStrList, numDismissed == 1 ? 302 : 303));
         statusRedraw[kRedrawCargo] = 1;

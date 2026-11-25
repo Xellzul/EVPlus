@@ -3,13 +3,14 @@
 #include "pixel.h"
 #include "render.h"
 #include "uiscale.h"
+#include "screen.h"
 
-/* ScreenEndScene (mac @ScreenEndScene@0). */
+/* ScreenEndScene (mac @ScreenEndScene@0): the page has changed. It is shown at the next frame end or wait
+   (Screen::EndFrame, Screen::Idle), not here. */
 // FUNCTION: EVNOVA 0x004b6850
 void ScreenEndScene(void)
 {
-    if (gDisableUpdatesMode == 0)
-        UpdateAndPageFlip();
+    Screen::Changed();
 }
 
 // FUNCTION: EVNOVA 0x004b68a0
