@@ -9,6 +9,7 @@
 #include "gameutil.h"
 #include "render.h"
 #include "sound.h"
+#include "painter.h"
 
 #define kViewWidth  640
 #define kViewHeight 480
@@ -50,6 +51,14 @@ void DoAboutBox(void)
 #define kButtonUpSnd   1
 #define kSoundChannel  10
 
+/* one frame of a menu button drawn on the work page and that copied to the screen */
+static void ShowMenuButton(SWFrameRec *frame, const Rect &box)
+{
+    UI::Painter(UI::Surface(View::UIWork())).Sprite(BlitPixieRLEDrawProc, frame, box, box);
+    UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(View::UIWork()), box, box);
+    ScreenEndScene();
+}
+
 /*
  * Returns the button under the mouse at release, or -1. Each redraw reads the
  * frame rect out of buttonArray[0] even when it draws buttonArray[1], because
@@ -66,7 +75,6 @@ short TrackMainScreenButtons(Point where)
     short over;
     short hit;
 
-    SWSetPortToWindow(gSpriteWorld);
     for (i = 0; i < kMainButtons; i++)
         SWSetSpriteLocation(menuButtonSprite[i],
                             (menuTopCorner.h + menuButtonPos[i].h),
@@ -91,31 +99,19 @@ short TrackMainScreenButtons(Point where)
                                     (menuTopCorner.h + menuButtonPos[i].h),
                                     (menuTopCorner.v + menuButtonPos[i].v));
                 if (hit == i)
-                    UI::DrawSprite(BlitPixieRLEDrawProc, menuButtonSprite[i]->frameArray[1],
-                                         View::UIWork(), &box, &box);
+                    ShowMenuButton(menuButtonSprite[i]->frameArray[1], box);
                 else
-                    UI::DrawSprite(BlitPixieRLEDrawProc, menuButtonSprite[i]->frameArray[0],
-                                         View::UIWork(), &box, &box);
-                ForeColor(blackColor);
-                CopyBits(GetPortPixMapBits(View::UIWork()->framePort),
-                         GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                         &box, &box, 0, NULL);
-                QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
+                    ShowMenuButton(menuButtonSprite[i]->frameArray[0], box);
             }
         }
-        SWSetPortToWindow(gSpriteWorld);
         while (Button()) {
             BusyIdle();
             HandleIntroMusic(0);
             GetGlobalMouse(&pt);
-            CopyBits(GWorldContainerBits(&loadPort),
-                     GetPortBitMapForCopyBits(View::UIWork()->framePort),
-                     &rolloverDestRect, &rolloverDestRect, 0, NULL);
+            UI::Painter(UI::Surface(View::UIWork())).Copy(UI::Surface::Load(), rolloverDestRect, rolloverDestRect);
             MainScreenRolloverIdle();
             MainScreenRolloverDraw();
-            CopyBits(GetPortBitMapForCopyBits(View::UIWork()->framePort),
-                     GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                     &rolloverDestRect, &rolloverDestRect, 0, NULL);
+            UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(View::UIWork()), rolloverDestRect, rolloverDestRect);
             over = -1;
             for (i = 0; i < kMainButtons; i++) {
                 if (menuButtonSprite[i] != NULL
@@ -134,13 +130,7 @@ short TrackMainScreenButtons(Point where)
                     SWSetSpriteLocation(menuButtonSprite[over],
                                         (menuTopCorner.h + menuButtonPos[over].h),
                                         (menuTopCorner.v + menuButtonPos[over].v));
-                    UI::DrawSprite(BlitPixieRLEDrawProc, menuButtonSprite[over]->frameArray[1],
-                                         View::UIWork(), &box, &box);
-                    ForeColor(blackColor);
-                    CopyBits(GetPortPixMapBits(View::UIWork()->framePort),
-                             GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                             &box, &box, 0, NULL);
-                    QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
+                    ShowMenuButton(menuButtonSprite[over]->frameArray[1], box);
                 } else {
                     PlaySound(mainScreenSnd[kButtonUpSnd], kSoundChannel,
                               gSoundVolume, gSoundVolume);
@@ -152,13 +142,7 @@ short TrackMainScreenButtons(Point where)
                     SWSetSpriteLocation(menuButtonSprite[hit],
                                         (menuTopCorner.h + menuButtonPos[hit].h),
                                         (menuTopCorner.v + menuButtonPos[hit].v));
-                    UI::DrawSprite(BlitPixieRLEDrawProc, menuButtonSprite[hit]->frameArray[0],
-                                         View::UIWork(), &box, &box);
-                    ForeColor(blackColor);
-                    CopyBits(GetPortPixMapBits(View::UIWork()->framePort),
-                             GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                             &box, &box, 0, NULL);
-                    QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
+                    ShowMenuButton(menuButtonSprite[hit]->frameArray[0], box);
                 }
             }
             hit = over;

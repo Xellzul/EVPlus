@@ -5,6 +5,7 @@
 #include "stellar.h"
 #include "dialogs.h"
 #include "game.h"
+#include "painter.h"
 
 /* the mission object's globals; this file ends that object (the .CRT hook) */
 unsigned char missionName[1000][256];
@@ -81,44 +82,28 @@ void MissionHandlePlayerEnteredNewSystem(void)
 void MissionListDefinition(short lMessage, Boolean lSelect, Rect *lRect, Point *lCell,
                    short lDataOffset, short lDataLen, ScrollRec **lHandle)
 {
-    void *text;
+    const char *text;
     short v;
 
-    text = *(*lHandle)->cells;
+    text = (const char *)*(*lHandle)->cells;
+    UI::Painter p(UI::Painter::ListSurface());
+
     switch (lMessage) {
     case 1:
-        if (lSelect)
-            RGBForeColor(&ldefColors[2]);
-        else
-            RGBForeColor(&ldefColors[1]);
-        PaintRect(lRect);
-        ForeColor(blackColor);
+        p.Fill(*lRect, lSelect ? ldefColors[2] : ldefColors[1]);
         if (lDataLen <= 0)
             break;
         v = lRect->top + (*lHandle)->indent.v;
-        MoveTo(lRect->left + (*lHandle)->indent.h + 4,
-                  v + smallTextSize);
-        TextFace(0);
-        RGBForeColor(&ldefColors[0]);
-        DrawText(text, lDataOffset, lDataLen);
-        ForeColor(blackColor);
+        p.Text(lRect->left + (*lHandle)->indent.h + 4, v + smallTextSize, std::string(text + lDataOffset, lDataLen),
+               { UI::Style::Small, ldefColors[0] });
         break;
     case 2:
-        if (lSelect)
-            RGBForeColor(&ldefColors[2]);
-        else
-            RGBForeColor(&ldefColors[1]);
-        PaintRect(lRect);
-        ForeColor(blackColor);
+        p.Fill(*lRect, lSelect ? ldefColors[2] : ldefColors[1]);
         if (lDataLen <= 0)
             break;
         v = lRect->top + (*lHandle)->indent.v;
-        MoveTo(lRect->left + (*lHandle)->indent.h + 4,
-                  v + smallTextSize);
-        TextFace(0);
-        RGBForeColor(&ldefColors[0]);
-        DrawText(text, lDataOffset, lDataLen);
-        ForeColor(blackColor);
+        p.Text(lRect->left + (*lHandle)->indent.h + 4, v + smallTextSize, std::string(text + lDataOffset, lDataLen),
+               { UI::Style::Small, ldefColors[0] });
         break;
     }
 }

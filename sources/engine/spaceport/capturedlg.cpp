@@ -6,6 +6,8 @@
 #include "sound.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "painter.h"
+#include "text.h"
 
 DialogPtr captureDialog;
 PicHandle captureBackgroundPic;
@@ -38,11 +40,9 @@ CaptureUse CapturedAssignmentDialog::Run()
         return CaptureUse::Escort;
     Picture backdrop(captureBackgroundPic);
     backdrop.Load(kCapturePictID);
-    SetDialogGWorld(captureDialog);
     CapturedAssignmentDialogUpdate();
     FlushEvents(everyEvent - diskMask, 0);
     Loop();
-    SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
     backdrop.Release();
     return result;
@@ -98,26 +98,14 @@ CaptureUse DoCapturedShipAssignmentDialog(void)
 // MAC: _CapturedAssignmentDialogUpdate i386 0x0005157d ppc 0x00059e90
 void CapturedAssignmentDialogUpdate(void)
 {
-    short itemType;
-    void *item;
     Rect box;
-    char text[255];
+    UI::Painter p(UI::Surface::Load());
 
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(captureDialog));
+    p.Fill(*GetDialogPortRect(captureDialog), UI::kBlack);
     if (captureBackgroundPic != NULL)
-        DrawPicHandle(captureBackgroundPic, GetDialogPortRect(captureDialog));
-    ForeColor(whiteColor);
-    BackColor(blackColor);
-    GetDialogItem(captureDialog, 3, &itemType, (Handle *)&item, &box);
-    strcpy(text, "");
-    StrcatIndCString(text, kGameStrList, kCaptureStrIdx);
-    TETextBox(text, strlen(text), &box, 0);
-    ForeColor(blackColor);
-    BackColor(whiteColor);
-    CapAssignButtons().Draw(-1);
-    CopyLoadPortToDialog(captureDialog);
+        p.Picture(captureBackgroundPic, *GetDialogPortRect(captureDialog));
+    GetDialogItem(captureDialog, 3, NULL, NULL, &box);
+    p.TextBox(box, IndString(kGameStrList, kCaptureStrIdx), { UI::Style::Small, UI::kWhite }, UI::kBlack);
+    CapAssignButtons().Draw(p, -1);
+    LoadPageToDialog(captureDialog);
 }

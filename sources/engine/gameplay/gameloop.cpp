@@ -4206,7 +4206,6 @@ void HandleMouse(void)
     short j;
     Boolean hit;
 
-    SWSetPortToWindow(gSpriteWorld);
     GetGlobalMouse(&mouse);
     onScreen = mouse;
     port = GetCWindowPortRect((WindowRef)gWind);
@@ -4462,7 +4461,7 @@ void TerminateCron(short index)
     }
 }
 
-/* an overlay frame's place on the screen, kept to the frame and the page; false = nothing of it shows */
+/* an overlay frame's place on the screen, kept to the frame and the screen; false = nothing of it shows */
 static bool OverlayPlace(SWFrameRec *frame, const Rect &viewRect, Rect *place)
 {
     Rect device = View::ScreenRectOfView(viewRect);

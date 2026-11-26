@@ -5,6 +5,7 @@
 
 #include "render.h"
 #include "crashlog.h"
+#include "painter.h"
 #include "screen.h"
 
 #define kLabelLeft      20
@@ -176,8 +177,7 @@ void DebugFontScreen(void)
         DrawFontPage(family, count);
         SWSetPortToWindow(gSpriteWorld);
         ForeColor(blackColor);
-        CopyBits(GWorldContainerBits(&page), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                 &page.bounds, &page.bounds, 0, 0);
+        UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(page), page.bounds, page.bounds);
         Screen::Changed();
         Screen::EndFrame();
         if (WaitForInput())

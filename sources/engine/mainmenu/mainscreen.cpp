@@ -15,6 +15,9 @@
 #define kDebugFonts         0       /* 1: the font test page (fonttest.cpp) before the main screen */
 #define kScaleTest          0       /* 1: the drawing test pages (scaletest.cpp, spritetest.cpp) before the main screen */
 #define kSoundTest          0       /* 1: the mixer capture (soundtest.cpp) before the main screen */
+#if !EVPLUS_TEST_PAGES && (kDebugFonts || kScaleTest || kSoundTest)
+#error "the test pages need the CMake option EVPLUS_TEST_PAGES"
+#endif
 #define kMainScreenAbout    5
 
 #define kCreditsTextID      0x7ffe
@@ -94,7 +97,6 @@ void DoMainScreen(void)
         onPlanet = 0;
         killShots = killBoxes = killExplods = killSmoke = 1;
         missionSoundID = -1;
-        SWSetPortToWindow(gSpriteWorld);
     }
 
     crashlog("setting up main screen graphics");
@@ -109,13 +111,13 @@ void DoMainScreen(void)
     }
     if (kSoundTest)
         DebugSoundTest();
+    DebugGpuTest();
 #endif
     crashlog("doing main screen");
     LoadMainScreenAnim();
     MainScreenAnimDraw();
     MainScreenAppearStart();
     MainScreenAppear();
-    SWSetPortToWindow(gSpriteWorld);
     GetCWindowPortRect(gWind);
     gNeedUpdateFlag = 1;
     regNoticeShown = 1;
@@ -156,7 +158,6 @@ void DoMainScreen(void)
                 }
                 i = i + 1;
             } while ((short)i < 3);
-            SWSetPortToWindow(gSpriteWorld);
             {
                 UI::MenuScale menu;             /* where: in the menu's coordinates */
                 GetGlobalMouse(&where);
@@ -217,7 +218,6 @@ void MainScreenChoice(short which)
         }
         if (confirmed) {
             DoNewPilot();
-            SWSetPortToWindow(gSpriteWorld);
             InvalWindowPortRect((WindowRef)gWind);
             SWHideAllSprites(gSpriteWorld);
         }
@@ -293,20 +293,16 @@ void MainScreenChoice(short which)
     if (which == kMainScreenPrefs) {
         DoPrefsDialog();
         ApplyDisplaySettings();
-        SWSetPortToWindow(gSpriteWorld);
         MainScreenAnimDraw();
         MainScreenUpdate(1);
-        SWSetPortToWindow(gSpriteWorld);
         InvalWindowPortRect((WindowRef)gWind);
         AdjustSoundVolume();
     }
 
     if (which == kMainScreenAbout || which == 6) {
         DoAboutBox();
-        SWSetPortToWindow(gSpriteWorld);
         MainScreenAnimDraw();
         MainScreenUpdate(1);
-        SWSetPortToWindow(gSpriteWorld);
         InvalWindowPortRect((WindowRef)gWind);
     }
 

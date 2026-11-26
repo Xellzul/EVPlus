@@ -10,6 +10,7 @@
 #include "buttons.h"
 #include "missionlist.h"
 #include "text.h"
+#include "painter.h"
 
 #define kStrTooManyA            351
 #define kStrTooManyB            352
@@ -64,7 +65,6 @@ void MissionDialog::Run()
             if (msg.size() >= kShowStringMax)
                 textShowString[kShowStringMax] = 0;
             ShowTextDialog(0, 0);
-            SetDialogGWorld(portDialog);
         }
         return;
     }
@@ -84,7 +84,6 @@ void MissionDialog::Run()
             SetShowText(IndString(kGameStrList, kStrNoMissions));
             ShowTextDialog(0, 0);
         }
-        SetDialogGWorld(portDialog);
         return;
     }
     dialog.Open(kMissionDlogID, MissionDialogUpdate, Filter, &missionDialog, DialogClose::NoFlash);
@@ -92,10 +91,8 @@ void MissionDialog::Run()
         return;
     Picture backdrop(missionBackgroundPic[0]);
     backdrop.Load(kMissionPictID);
-    SetDialogGWorld(missionDialog);
     FlushEvents(everyEvent - diskMask, 0);
     reenterMissionDialog = 0;
-    ForeColor(blackColor);
     RedrawDialog(missionDialog);
     SetupMissionList();
     ShowTheCursor();
@@ -342,11 +339,7 @@ void SetupMissionList(void)
             count++;
     }
 
-    SetDialogGWorld(missionDialog);
     GetDialogItem(missionDialog, 2, &itemType, &itemHandle, &box);
-
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
 
     bool scrollBar = !MissionList::Fits(box, count);
     if (!scrollBar) {
@@ -378,18 +371,19 @@ void SetupMissionList(void)
 }
 
 #define kListCaptionIdx  0x167
+#define kTitleSize       18      /* the title style's size: its baseline below the box top */
 
 /* The mac's TruncString(width, title, smTruncEnd) for the mission title: cut the end and add an
-   ellipsis until it fits. Done after MungeBriefing, so expanded tags fit too (the mac truncated
+   ellipsis until it fits in the style. Done after MungeBriefing, so expanded tags fit too (the mac truncated
    before expanding them). */
-static void TruncateTextToWidth(char *text, short width)
+static void TruncateTextToWidth(UI::Painter &p, char *text, short width, UI::Style style)
 {
     short len;
 
     len = strlen(text);
-    if (TextWidthMacRoman(text, len) <= width)
+    if (p.DrawnWidth(text, len, style) <= width)
         return;
-    while (len > 0 && TextWidthMacRoman(text, len) + TextWidthMacRoman("\xc9", 1) > width)
+    while (len > 0 && p.DrawnWidth(text, len, style) + p.DrawnWidth("\xc9", 1, style) > width)
         len--;
     text[len] = '\xc9';
     text[len + 1] = 0;
@@ -405,23 +399,15 @@ void MissionDialogUpdate(void)
     char text[256];
     Rect box;
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(missionDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(missionDialog), UI::kBlack);
     if (missionBackgroundPic[0] != NULL)
-        DrawPicHandle(missionBackgroundPic[0], GetDialogPortRect(missionDialog));
+        p.Picture(missionBackgroundPic[0], *GetDialogPortRect(missionDialog));
     GetDialogItem(missionDialog, 8, &itemType, (Handle *)&item, &box);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    RGBForeColor(&rgbLightGrey);
-    MoveTo(box.left, box.top + 12);
-    DrawIndString(kGameStrList, kListCaptionIdx);
-    ForeColor(blackColor);
+    p.Text(box.left, box.top + 12, IndStringRaw(kGameStrList, kListCaptionIdx), { UI::Style::Small, rgbLightGrey });
     GetDialogItem(missionDialog, 5, &itemType, (Handle *)&item, &box);
     if (selMissionListItem != -1) {
-        ForeColor(whiteColor);
-        TextFont(gTimesFont);
-        TextSize(18);
         strncpy((char *)text, (char *)missionName[dockedPortMissions[missionsOutside]
                                                            [selMissionListItem]], 0xfa);
         PtoCstr((unsigned char *)text);
@@ -431,19 +417,14 @@ void MissionDialogUpdate(void)
         strncpy((char *)text, briefingTextPtr, 0xfa);
         text[0xfa] = 0;
         CopyBriefingText(briefingTextPtr, savedBriefing);
-        TruncateTextToWidth(text, box.right - box.left - 1);
-        MoveTo(box.left, box.top + CurrentGrafPort->txSize);
-        DrawTextRun(text, strlen(text), NULL, 0, 0);
+        TruncateTextToWidth(p, text, box.right - box.left - 1, UI::Style::Title);
+        p.Text(box.left, box.top + kTitleSize, text, { UI::Style::Title, UI::kWhite });
     } else {
-        ForeColor(blackColor);
-        PaintRect(&box);
+        p.Fill(box, UI::kBlack);
     }
-    DrawMissionBriefing(missionDialog, selMissionListItem != -1);
+    DrawMissionBriefing(p, missionDialog, selMissionListItem != -1);
     GetDialogItem(missionDialog, 11, &itemType, (Handle *)&item, &box);
-    RGBForeColor(&rgbDarkGrey);
-    MoveTo(box.left, box.bottom);
-    DrawCString(DateMedText(gameTime));
-    ForeColor(blackColor);
-    MissionButtons().Draw(-1);
-    MissionList(missionList).Present(missionDialog);
+    p.Text(box.left, box.bottom, DateMedText(gameTime), { UI::Style::Small, rgbDarkGrey });
+    MissionButtons().Draw(p, -1);
+    MissionList(missionList).Present(p, missionDialog);
 }

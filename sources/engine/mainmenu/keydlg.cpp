@@ -7,6 +7,8 @@
 #include "viewscale.h"
 #include "render.h"
 #include "gamedialog.h"
+#include "painter.h"
+#include "text.h"
 
 namespace {
 
@@ -103,14 +105,14 @@ Rect RowBox(const Group &group, short row)
 }
 
 /* a 50% dotted frame, its top line left out from gapFrom to gapTo */
-void DrawDots(const Rect &frame, short gapFrom, short gapTo)
+void DrawDots(UI::Painter &p, const Rect &frame, short gapFrom, short gapTo)
 {
-    auto dot = [](short h, short v) {
+    auto dot = [&p](short h, short v) {
         Rect r;
 
         if (((h + v) & 1) != 0) {
             SetRect(&r, h, v, h + 1, v + 1);
-            PaintRect(&r);
+            p.Fill(r, UI::kBlack);
         }
     };
 
@@ -125,41 +127,34 @@ void DrawDots(const Rect &frame, short gapFrom, short gapTo)
     }
 }
 
-void DrawGroups()
+void DrawGroups(UI::Painter &p)
 {
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
+    const UI::TextSpec small = { UI::Style::Small, UI::kBlack };
+
     for (const Group &group : kGroups) {
         short headingLeft = group.frame.left + kHeadingInset;
 
-        DrawDots(group.frame, headingLeft - 4, headingLeft + MeasureCString(group.heading) + 7);
-        MoveTo(headingLeft, group.frame.top + 3);
-        DrawCString(group.heading);
+        DrawDots(p, group.frame, headingLeft - 4, headingLeft + p.Measure(group.heading, UI::Style::Small) + 7);
+        p.Text(headingLeft, group.frame.top + 3, group.heading, small);
         for (short i = group.firstRow; i < group.firstRow + group.rowCount; i++) {
             const Row &row = kRows[i];
             Rect box = RowBox(group, i);
-            short altLeft = box.left - kAltGap - MeasureCString("Alt");
+            short altLeft = box.left - kAltGap - p.Measure("Alt", UI::Style::Small);
             short right = (row.alt ? altLeft : box.left) - kLabelGap;
-            short left = right - MeasureCString(row.label);
+            short left = right - p.Measure(row.label, UI::Style::Small);
 
             if (left > group.labelLeft)
                 left = group.labelLeft;
             if (left < group.frame.left + 2)
                 left = group.frame.left + 2;
             if (row.more == nullptr) {
-                MoveTo(left, box.top + kLabelBaseline);
-                DrawCString(row.label);
+                p.Text(left, box.top + kLabelBaseline, row.label, small);
             } else {
-                MoveTo(group.labelLeft, box.top + kLabelBaseline - 8);
-                DrawCString(row.label);
-                MoveTo(group.labelLeft, box.top + kLabelBaseline + 4);
-                DrawCString(row.more);
+                p.Text(group.labelLeft, box.top + kLabelBaseline - 8, row.label, small);
+                p.Text(group.labelLeft, box.top + kLabelBaseline + 4, row.more, small);
             }
-            if (row.alt) {
-                MoveTo(altLeft, box.top + kLabelBaseline);
-                DrawCString("Alt");
-            }
+            if (row.alt)
+                p.Text(altLeft, box.top + kLabelBaseline, "Alt", small);
         }
     }
 }
@@ -195,14 +190,11 @@ void KeyDialog::Run()
 
     KeyPrefsToSlotTable();
     FrontWindow(keyDialog);
-    SetDialogGWorld(keyDialog);
     RedrawDialog(keyDialog);
 
     KeyDialogUpdate();
     Loop();
 
-    if (gWind != NULL)
-        SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
 }
 
@@ -268,9 +260,7 @@ Boolean KeyDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemHi
     ScanCode code;
     short sel;
 
-    SetDialogGWorld(keyDialog);
     if (ev.what == DialogInput::Click) {
-        SetDialogGWorld(keyDialog);
         v = ev.where.v;
         h = ev.where.h;
         *itemHit = -1;
@@ -319,54 +309,37 @@ void KeyDialogUpdate(void)
     Rect picBox;
     short i;
 
-    SetDialogGWorld(keyDialog);
     GetDialogItem(keyDialog, kPanelItem, &itemType, &item, &picBox);
-    View::SetPortToUIWork();
-    ForeColor(whiteColor);
-    PaintRect(&picBox);
-    DrawGroups();
-    ForeColor(blackColor);
-    TextFont(0);
-    TextSize(12);
-    for (i = 0; i < kBindingCount; i++) {
-        GetDialogItem(keyDialog, i + kFirstBindingItem, &itemType, &item, &itemBox);
-        if (keyDialogSel == i) {
-            fill = itemBox;
-            InsetRect(&fill, 1, 1);
-            ForeColor(whiteColor);
-            FrameRect(&itemBox);
-            InsetRect(&fill, 1, 1);
-            ForeColor(blackColor);
-            PaintRect(&fill);
-            ForeColor(blackColor);
-            FrameRect(&itemBox);
-            ForeColor(whiteColor);
-            MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
-        } else {
-            fill = itemBox;
-            InsetRect(&fill, 1, 1);
-            ForeColor(whiteColor);
-            PaintRect(&fill);
-            ForeColor(blackColor);
-            FrameRect(&itemBox);
-            ForeColor(blackColor);
-            MoveTo(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline);
+    {
+        UI::Painter work{UI::Surface(View::UIWork())};
+
+        work.Fill(picBox, UI::kWhite);
+        DrawGroups(work);
+        for (i = 0; i < kBindingCount; i++) {
+            UI::TextSpec key = { UI::Style::System, UI::kBlack };
+
+            GetDialogItem(keyDialog, i + kFirstBindingItem, &itemType, &item, &itemBox);
+            if (keyDialogSel == i) {
+                fill = itemBox;
+                InsetRect(&fill, 1, 1);
+                work.Frame(itemBox, UI::kWhite);
+                InsetRect(&fill, 1, 1);
+                work.Fill(fill, UI::kBlack);
+                work.Frame(itemBox, UI::kBlack);
+                key.colour = UI::kWhite;
+            } else {
+                fill = itemBox;
+                InsetRect(&fill, 1, 1);
+                work.Fill(fill, UI::kWhite);
+                work.Frame(itemBox, UI::kBlack);
+            }
+            if (DupKeyCheck(newKeyPrefs[i], i))
+                key.colour = redRGB;
+            KeyboardScanCodeToString((char *)name, sizeof(name), newKeyPrefs[i]);
+            CtoPstr((char *)name);
+            work.Text(itemBox.left + kRowTextInset, itemBox.top + kRowBaseline,
+                      name[0] == 0 ? IndStringRaw(kGameStrList, kNoNameStrIndex) : FromPascal(name), key);
         }
-        if (DupKeyCheck(newKeyPrefs[i], i))
-            RGBForeColor(&redRGB);
-        KeyboardScanCodeToString((char *)name, sizeof(name), newKeyPrefs[i]);
-        CtoPstr((char *)name);
-        if (name[0] == 0)
-            DrawIndString(kGameStrList, kNoNameStrIndex);
-        else
-            DrawString(name);
     }
-    ForeColor(blackColor);
-    if (gWind != NULL)
-        SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(keyDialog);
-    ForeColor(blackColor);
-    CopyBits(GetPortPixMapBits(View::UIWork()->framePort),
-             GetPortBitMapForCopyBits(GetDialogPort(keyDialog)),
-             &picBox, &picBox, 0, NULL);
+    UI::Painter(UI::Surface::Dialog(keyDialog)).Copy(UI::Surface(View::UIWork()), picBox, picBox);
 }

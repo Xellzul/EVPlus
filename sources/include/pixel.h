@@ -43,6 +43,13 @@ constexpr unsigned short FromColorRounded(const RGBColor &c)
     return Pack((c.red + 0x801) >> 11 & 0x1f, (c.green + 0x801) >> 11 & 0x1f, (c.blue + 0x801) >> 11 & 0x1f);
 }
 
+/* as opaque ARGB, each channel's top bits repeated in its low ones, as a GPU widens 5 bits */
+constexpr uint32_t ToArgb(unsigned p)
+{
+    return 0xff000000u | (Red(p) << 3 | Red(p) >> 2) << 16 | (Green(p) << 3 | Green(p) >> 2) << 8
+           | (Blue(p) << 3 | Blue(p) >> 2);
+}
+
 /* each channel through a 32-entry table */
 inline unsigned short Map(unsigned p, const unsigned char *table)
 {

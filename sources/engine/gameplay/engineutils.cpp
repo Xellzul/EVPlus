@@ -11,6 +11,7 @@
 #include "platform.h"
 #include "screen.h"
 #include "viewdraw.h"
+#include "painter.h"
 
 /* fills `frame` with the picture's bounds (name invented) */
 
@@ -411,10 +412,7 @@ void RefreshSAT(void)
 
     RedrawStatus(0);
     DrawStatusRadar(0);
-    SWSetPortToWindow(gSpriteWorld);
-    CopyBits((BitMapPtr)GetGWCPixMap(&loadPort),
-             GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-             &box, &box, 0, 0);
+    UI::Painter(UI::Surface::Screen()).Copy(UI::Surface::Load(), box, box);
     QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
 }
 

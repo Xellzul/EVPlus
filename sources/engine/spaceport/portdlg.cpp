@@ -11,6 +11,8 @@
 #include "ai.h"
 #include "gamedialog.h"
 #include "buttons.h"
+#include "painter.h"
+#include "text.h"
 
 DialogPtr portDialog;
 short planetPicId;
@@ -57,12 +59,10 @@ void PreloadPortDialog(SpobRecord *spob, short stellar)
         OffsetRect(&rect, -rect.left, -rect.top);
         CreateGWorldContainer(&planetPicContainer, 0, gSpriteWorld->pixelDepth, &rect);
         if (planetPicContainer.world != NULL) {
-            SetGWorldContainer(&planetPicContainer);
-            ForeColor(blackColor);
-            PaintRect(&planetPicContainer.bounds);
-            DrawPicHandle(pic, &planetPicContainer.bounds);
+            UI::Painter p{UI::Surface(planetPicContainer)};
+            p.Fill(planetPicContainer.bounds, UI::kBlack);
+            p.Picture(pic, planetPicContainer.bounds);
             QDReleaseResource(pic);
-            UnsetGWorldContainer(&planetPicContainer);
         }
     }
 }
@@ -123,18 +123,11 @@ void PortDialog::Run(SpobRecord *spob, short stellar)
         canDoMissions = 0;
     else
         canDoMissions = 1;
-    SetDialogGWorld(portDialog);
-    BackColor(blackColor);
-    BackColor(whiteColor);
-    SetDialogGWorld(portDialog);
     FlushEvents(everyEvent - diskMask, 0);
-    ForeColor(blackColor);
     RedrawDialog(portDialog);
     PortDialogUpdate();
-    SWSetPortToWindow(gSpriteWorld);
     DrawStatusRadar(1);
     DrawStatusCargo();
-    SetDialogGWorld(portDialog);
     UpdateAllPortDialogs();
     MissionLandCheck();
     HandleStellarSystemVisibility();
@@ -203,9 +196,7 @@ void PortDialog::Hit(short item)
             gSpriteWorld->fastBlit = 1;
             DrawStatus();
             gSpriteWorld->fastBlit = 0;
-            SetDialogGWorld(portDialog);
         }
-        SetDialogGWorld(portDialog);
         RedrawDialog(portDialog);
     } else if (item == 5) {
         if (planetSnd != NULL
@@ -213,12 +204,10 @@ void PortDialog::Hit(short item)
             ST_PlaySoundParam(&planetSoundSpec);
     } else if (item == 7) {
         if (SpobHasTrade(dockedPort) != 0) {
-            SetDialogGWorld(portDialog);
-            PlanetButtons().Draw(kAllButtonsOff);
+            PlanetButtons().DrawOnDialog(kAllButtonsOff);
             DoTradeDialog();
             statusRedraw[kRedrawCargo] = 1;
             DrawStatus();
-            SetDialogGWorld(portDialog);
             RedrawDialog(portDialog);
         }
     } else if (item == 8) {
@@ -228,7 +217,6 @@ void PortDialog::Hit(short item)
             DoOutfitDialog();
             statusRedraw[kRedrawCargo] = 1;
             DrawStatus();
-            SetDialogGWorld(portDialog);
             RedrawDialog(portDialog);
         }
     } else if (item == 9) {
@@ -238,14 +226,12 @@ void PortDialog::Hit(short item)
             shipBuyMode = 0;
             DoShipyardDialog();
             statusRedraw[kRedrawCargo] = 1;
-            SetDialogGWorld(portDialog);
             RedrawDialog(portDialog);
         }
     } else if (item == 10) {
         if (canDoMissions != 0) {
             savedStellar = shipData->targetStellar;
             savedRoute = shipData->navTargetKind;
-            SetDialogGWorld(portDialog);
             RedrawDialog(portDialog);
             UpdateAllPortDialogs();
             reenterMissionDialog = 0;
@@ -255,7 +241,6 @@ void PortDialog::Hit(short item)
                 statusRedraw[kRedrawNav] = 1;
                 DrawStatus();
             } while (reenterMissionDialog != 0);
-            SetDialogGWorld(portDialog);
             RedrawDialog(portDialog);
             shipData->targetStellar = savedStellar;
             shipData->navTargetKind = savedRoute;
@@ -264,13 +249,11 @@ void PortDialog::Hit(short item)
             DrawStatus();
         }
     } else if (item == 11) {
-        SetDialogGWorld(portDialog);
         RedrawDialog(portDialog);
         UpdateAllPortDialogs();
         if (SpobHasBar(dockedPort) != 0) {
             DoBarDialog();
             DrawStatusCargo();
-            SetDialogGWorld(portDialog);
             RedrawDialog(portDialog);
         }
     } else if (item == 14) {
@@ -284,7 +267,6 @@ void PortDialog::Hit(short item)
 
 
 #define kNameBaseline 0x12
-#define kNameSize     0x12
 
 constexpr KeyItem kPortKeys[] = {
     { 'r', 4 }, { 'f', 4 }, { 'c', 7 }, { 't', 7 },
@@ -375,55 +357,34 @@ void PortDialogUpdate(void)
     short itemType;
     Handle item;
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(portDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(portDialog), UI::kBlack);
     if (portBackgroundPic != NULL)
-        DrawPicHandle(portBackgroundPic, GetDialogPortRect(portDialog));
+        p.Picture(portBackgroundPic, *GetDialogPortRect(portDialog));
     GetDialogItem(portDialog, 3, &itemType, &item, &box);
-    ForeColor(blackColor);
-    PaintRect(&box);
-    ForeColor(whiteColor);
-    MoveTo(box.left, (box.top + kNameBaseline));
-    TextFont(gTimesFont);
-    TextSize(kNameSize);
-    DrawStringCentered(dockedPort->name, box.left, box.right,
-                       box.top + kNameBaseline);
-    ForeColor(blackColor);
+    p.Fill(box, UI::kBlack);
+    p.Text(box.left, box.right, box.top + kNameBaseline, FromPascal(dockedPort->name),
+           { UI::Style::Title, UI::kWhite }, UI::Align::Center);
     GetDialogItem(portDialog, 5, &itemType, &item, &box);
-    if (planetPicContainer.world != NULL)
-        CopyBits(GWorldContainerBits(&planetPicContainer),
-                 (BitMapPtr)GWorldContainerBits(&loadPort),
-                 &planetPicContainer.bounds, &box, 0, NULL);
+    p.Copy(UI::Surface(planetPicContainer), planetPicContainer.bounds, box);
     GetDialogItem(portDialog, 6, &itemType, &item, &box);
-    ForeColor(blackColor);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    TETextBox(descTextPtr, strlen(descTextPtr), &box, 0);
-    InvertRect(&box);
-    SetGWorldContainer(&loadPort);
-    PlanetButtons().Draw(-8);
-    CopyLoadPortToDialog(portDialog);
+    p.TextBox(box, descTextPtr, strlen(descTextPtr), { UI::Style::Small, UI::kWhite }, UI::kBlack);
+    PlanetButtons().Draw(p, -8);
+    LoadPageToDialog(portDialog);
 }
 
 // FUNCTION: EVNOVA 0x00497430
 // MAC: _UpdateAllPortDialogs i386 0x000598a6 ppc 0x000619d8
 void UpdateAllPortDialogs(void)
 {
-    if (portDialog != NULL) {
-        SetDialogGWorld(portDialog);
+    if (portDialog != NULL)
         PortDialogUpdate();
-    }
-    if (shipyardDialog != NULL) {
-        SetDialogGWorld(shipyardDialog);
+    if (shipyardDialog != NULL)
         ShipyardDialogUpdate();
-    }
-    if (outfitDialog != NULL) {
-        SetDialogGWorld(outfitDialog);
+    if (outfitDialog != NULL)
         OutfitDialogUpdate();
-    }
     if (missionDialog != NULL) {
-        SetDialogGWorld(missionDialog);
         if (missionsOutside != 0)
             SingleMissionDialogUpdate();
         else if (portDialog != NULL)
@@ -437,7 +398,6 @@ void UpdateAllPortDialogs(void)
 void RedrawAfterSubDialog(DialogPtr self)
 {
     UpdateAllPortDialogs();
-    SetDialogGWorld(self);
     RedrawDialog(self);
 }
 

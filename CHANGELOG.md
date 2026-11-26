@@ -3,7 +3,7 @@
 - Mac, Win, Linux 64bit builds
 - No quicktime dependency
 - Hyperspace white-out from the Mac 1.1.1 release
-- Jump flash always shows
+- Jump flash is always shown
 - Preferences dialog redone and moved to JSON
 - The interface is scaled
 - Mouse wheel zoom
@@ -13,6 +13,7 @@
 - Unintended keypresses wont skip movies / launch figters
 - Mission computer and bar: available missions are listed correctly by their display weight
 - Rendering in SDL
+- Brightness setting fixed
 - Positional Audio
 - Mouse wheel scroll for shops / galaxy map / mission texts
 - Shipyard: double-click opens it description
@@ -33,3 +34,14 @@
 - NPC quadrant turrets now fire across north
 - Revive cheat (Home) only works with cheats turned on
 - Lower CPU use in flight: the frame limiter sleeps instead of busy-waiting
+- nplay, ddraw support removed
+- Two copies of the game can run at the same time
+- Ship colours (`gövt` and `përs` ShipColor) now tint ships correctly
+- Main screen: pressing E (Enter Ship) no longer carries the key press into flight
+- plug-ins and data files are loaded in the order of their names
+- native open-pilot dialog
+- Alt+Enter switches between full screen and a resizable window
+- Double-speed key can be changed in preferences
+- Modern text rendering
+- 8-bit sound effects play at full quality
+- Plug-in PICT sprites whose mask ID is their own picture load, with white as transparent, as on the Mac

@@ -4,6 +4,7 @@
 #include "stellar.h"
 #include "uiscale.h"
 #include "screen.h"
+#include "painter.h"
 
 #define kSplashPictID       0x83
 #define kAmbrosiaLogoPictID 0x1fa4
@@ -18,23 +19,21 @@ void ShowSplashScreen(void)
     Rect box;
 
     pic = GetPicture(kSplashPictID);
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
     rect = &loadPort.bounds;
-    PaintRect(rect);
-    box = loadPort.bounds;
-    if (pic != 0) {
-        CenterPict(pic, &box);
-        DrawPicHandle((PicHandle)pic, &box);
-        QDReleaseResource((PicHandle)pic);
+    {
+        UI::Painter load(UI::Surface::Load());
+
+        load.Fill(*rect, UI::kBlack);
+        box = loadPort.bounds;
+        if (pic != 0) {
+            CenterPict(pic, &box);
+            load.Picture((PicHandle)pic, box);
+            QDReleaseResource((PicHandle)pic);
+        }
     }
-    UnsetGWorldContainer(&loadPort);
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect((WindowRef)gWind));
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-             rect, GetCWindowPortRect(gWind), 0, 0);
+    UI::Painter screen(UI::Surface::Screen());
+    screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+    screen.Copy(UI::Surface::Load(), *rect, *GetCWindowPortRect(gWind));
     Screen::Changed();
     Screen::EndFrame();
 }
@@ -49,19 +48,22 @@ void ShowAmbrosiaLogo(void)
     Rect box;
 
     pic = GetPicture(kAmbrosiaLogoPictID);
-    SetGWorldContainer(&loadPort);
     box = loadPort.bounds;
     CenterPict(pic, &box);
-    ForeColor(blackColor);
-    PaintRect(&loadPort.bounds);
-    DrawPicHandle((PicHandle)pic, &box);
-    UnsetGWorldContainer(&loadPort);
-    SWSetPortToWindow(gSpriteWorld);
+    {
+        UI::Painter load(UI::Surface::Load());
+
+        load.Fill(loadPort.bounds, UI::kBlack);
+        load.Picture((PicHandle)pic, box);
+    }
     box = *GetCWindowPortRect((WindowRef)gWind);
     CenterPict(pic, &box);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect((WindowRef)gWind));
-    DrawPicHandle((PicHandle)pic, &box);
+    {
+        UI::Painter screen(UI::Surface::Screen());
+
+        screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+        screen.Picture((PicHandle)pic, box);
+    }
     if (pic != 0)
         QDReleaseResource((PicHandle)pic);
     FadeScreenIn();
@@ -73,6 +75,5 @@ void ShowAmbrosiaLogo(void)
 void HideAmbrosiaLogo(void)
 {
     FadeScreenOut();
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect((WindowRef)gWind));
+    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
 }

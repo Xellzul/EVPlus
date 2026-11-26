@@ -1,4 +1,4 @@
-/* screen.h -- the screen page the game draws into, and the frame shown from it */
+/* screen.h -- the screen the game draws on, and the frame shown from it */
 #pragma once
 
 #include <stdint.h>
@@ -10,29 +10,28 @@
 
 namespace Screen {
 
-/* 5-5-5 pixels, row 0 at the top; pixels is NULL (and the rest 0) while no display mode is set */
+/* the screen in device pixels; all 0 while no display mode is set */
 struct Page {
-    char *pixels;
-    int pitch;                      /* bytes per row */
     int width;
     int height;
-    int depth;                      /* 15 */
 };
 
 const Page &Get();
 
-bool Open(int width, int height, int depth);    /* a cleared page, after Close; false when it can't be had */
-bool Resize(int width, int height);             /* a cleared page and frame of another size; false = the old kept */
+/* the game port's GPU target of that size, clear, is the interface's layer: see-through where nothing is drawn */
+bool Open(int width, int height);               /* the screen of a display mode, after Close; false = no layer */
+bool Resize(int width, int height);             /* a screen of another size; false = the old kept (layer and frame) */
 void Close();
 
-/* The frame: the space view the GPU draws, under the page, with the overlays over it (ComposeView, where the
-   view is finished); the page holds see-through pixels where the view shows. */
-void ComposeView();
-void DropView();                    /* flight is over: the page alone from now on */
+/* the canvas drew into the layer, within these device pixels */
+void Drawn(int left, int top, int right, int bottom);
 
-/* The page is shown only where a frame is finished -- the end of a loop's turn (EndFrame) or a wait for input
-   or time (Idle) -- never by the helpers that draw it, so a screen built in steps is not shown half done. */
-void Changed();                     /* the page has something new to show */
+/* the frame: the space view the GPU draws under the layer, its place there see-through, the overlays over it */
+void ComposeView();
+void DropView();                    /* flight is over: the layer alone from now on */
+
+/* shown only at a frame's end (EndFrame, Idle); a layer the GPU lost (PlatUIEpoch) is put together again first */
+void Changed();                     /* the screen has something new to show */
 void EndFrame();                    /* a frame is finished: shown, if anything changed */
 void Idle();                        /* a wait loop's turn: EndFrame, then a sleep until an event or 1 ms */
 void FadeWhite(unsigned from, unsigned to, uint32_t ticks);

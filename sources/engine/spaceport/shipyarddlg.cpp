@@ -14,6 +14,7 @@
 #include "gamedialog.h"
 #include "buttons.h"
 #include "text.h"
+#include "painter.h"
 
 DialogPtr shipyardDialog;
 DialogPtr shipDescDialog;
@@ -78,7 +79,6 @@ void ShipyardDialog::Run()
         ShowTextDialog(0, 0);
         return;
     }
-    SWSetPortToWindow(gSpriteWorld);
     selShipyardItem = -1;
     selShipListItem = -1;
     lastClickItem = -1;
@@ -100,9 +100,7 @@ void ShipyardDialog::Run()
     GetDialogItem(shipyardDialog, kGridItem, &itemType, (Handle *)&item, &box);
     SetupListRects((Point *)&box);
     strncpy(dialogDescTextPtr, "", 3);
-    SetDialogGWorld(shipyardDialog);
     FlushEvents(everyEvent - diskMask, 0);
-    ForeColor(blackColor);
     ShipyardDialogUpdate();
     if (shipBuyMode == 0)
         OfferMissionFromPort(5);
@@ -128,13 +126,10 @@ void ShipyardDialog::Run()
         box.top = box.bottom = ((GetCWindowPortRect((WindowRef)gWind)->top +
                               GetCWindowPortRect((WindowRef)gWind)->bottom) / 2);
         InsetRect(&box, n - 1, halfHeight - 1);
-        SWSetPortToWindow(gSpriteWorld);
-        ForeColor(blackColor);
-        PaintRect(&box);
+        UI::Painter(UI::Surface::Screen()).Fill(box, UI::kBlack);
         RedrawStatus(1);
     }
     RedrawStatus(0);
-    SWSetPortToWindow(gSpriteWorld);
     shipData->targetStellar = savedTargetStellar;
     shipData->navTargetKind = savedUnk6A;
     statusRedraw[kRedrawNav] = 1;
@@ -171,7 +166,6 @@ void ShipyardDialog::Hit(short item)
                         text += NumText(Rand(9) + 1);
                     ToPascal(text, defaultName);
                     confirmed = EVTextInputDialog(prompt, defaultName, 0x40);
-                    SetDialogGWorld(shipyardDialog);
                     RedrawDialog(shipyardDialog);
                     if (confirmed != 0) {
                         didBuyShip = 1;
@@ -267,11 +261,9 @@ void ShipyardDialog::Hit(short item)
                         statusRedraw[kRedrawCargo] = 1;
                         LoadIntfResource();
                         DrawStatus();
-                        SetDialogGWorld(shipyardDialog);
                         done = 1;
                     }
                     shipClass[selShipyardItem].dailySaleRoll = Rand(100) + 1;
-                    SetDialogGWorld(shipyardDialog);
                     RedrawDialog(shipyardDialog);
                 } else {
                     hireCost = ApplyPriceAndTechnologyFlux(shipClass[selShipyardItem].cost,
@@ -305,7 +297,6 @@ void ShipyardDialog::Hit(short item)
     if (item == 10 && selShipyardItem != -1) {
         ShipyardDialogUpdate();
         DoShipyardDescription(selShipyardItem);
-        SetDialogGWorld(shipyardDialog);
         RedrawDialog(shipyardDialog);
     }
     if (item == 0xc && shipyardScroll >= kGridCols) {
@@ -507,7 +498,6 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
                     ev.when - lastClickTime <= 15) {
                     ShipyardDialogUpdate();
                     DoShipyardDescription(selShipyardItem);
-                    SetDialogGWorld(shipyardDialog);
                     RedrawDialog(shipyardDialog);
                 }
                 lastClickItem = selShipListItem;
@@ -542,14 +532,12 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
 }
 
 /* the hire box's daily "Pay: <n> cr" line */
-void DrawEscortPay(const Rect &box, int32_t pay)
+void DrawEscortPay(UI::Painter &p, const Rect &box, int32_t pay, const UI::TextSpec &spec)
 {
-    MoveTo(box.left, box.top + 0x18);
-    DrawIndString(kGameStrList, 0x129);
-    MoveTo(box.left + 0x46, box.top + 0x18);
-    DrawCommaNumber(pay);
-    DrawCString(" ");
-    DrawIndString(kGameStrList, 0x22);
+    p.Text(box.left, box.top + 0x18, IndStringRaw(kGameStrList, 0x129), spec);
+    p.Text(box.left + 0x46, box.top + 0x18, CommaNumber(pay), spec);
+    p.Text(" ", spec);
+    p.Text(IndStringRaw(kGameStrList, 0x22), spec);
 }
 
 } // namespace
@@ -577,18 +565,17 @@ void ShipyardDialogUpdate(void)
     int32_t tradeIn;
     int32_t net;
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(shipyardDialog));
+    UI::Painter load(UI::Surface::Load());
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
+    const UI::TextSpec grey = { UI::Style::Small, rgbLessDarkGrey };
+
+    load.Fill(*GetDialogPortRect(shipyardDialog), UI::kBlack);
     if (shipyardBackgroundPic != NULL)
-        DrawPicHandle(shipyardBackgroundPic, GetDialogPortRect(shipyardDialog));
+        load.Picture(shipyardBackgroundPic, *GetDialogPortRect(shipyardDialog));
     skipped = 0;
     GetDialogItem(shipyardDialog, kGridItem, &itemType, &item, &box);
     box.right += 1;
     box.bottom += 1;
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
     drawn = 0;
     for (i = shipyardScroll; i < kMaxShipTypes; i++) {
             if (drawn < kGridCells && (i >= 0 &&
@@ -598,7 +585,7 @@ void ShipyardDialogUpdate(void)
                         i - shipyardScroll < kGridCells) {
                         if (!RetrieveMenuIcon(
                                 shipClass[dockedPortShipTypes[i]].shipyardPictID,
-                                MenuIconPort(&loadPort), &listPicScreenRect[i - shipyardScroll]))
+                                UI::Surface::Load(), &listPicScreenRect[i - shipyardScroll]))
                             skipped++;
                     } else {
                         skipped++;
@@ -609,63 +596,39 @@ void ShipyardDialogUpdate(void)
                 }
                 if (cheatsActive) {
                     id = NumText(dockedPortShipTypes[i] + kFirstResourceID);
-                    ForeColor(whiteColor);
-                    MoveTo(((listScreenRect[i - shipyardScroll].left
-                                    + listScreenRect[i - shipyardScroll].right
-                                    - MeasureCString(id)) / 2),
-                           (listScreenRect[i - shipyardScroll].top + 24));
-                    DrawCString(id);
-                    ForeColor(blackColor);
+                    load.Text(((listScreenRect[i - shipyardScroll].left
+                                       + listScreenRect[i - shipyardScroll].right
+                                       - load.Measure(id, UI::Style::Small)) / 2),
+                              (listScreenRect[i - shipyardScroll].top + 24), id, white);
                 }
                 if (SplitTwoLineString(shipyardShortNames[dockedPortShipTypes[i]],
                                        line1, line2)) {
                     c = (unsigned char)line1[0];
-                    if (isalpha(HeldChar(c, line1[0])) || isdigit(HeldChar(c, line1[0])))
-                        ForeColor(whiteColor);
-                    else
-                        RGBForeColor(&rgbLessDarkGrey);
-                    MoveTo((listScreenRect[i - shipyardScroll].left
-                                   + listScreenRect[i - shipyardScroll].right) / 2
-                                  - MeasureCString(line1) / 2,
-                              listScreenRect[i - shipyardScroll].bottom - 14);
-                    DrawCString(line1);
+                    load.Text(listScreenRect[i - shipyardScroll].left, listScreenRect[i - shipyardScroll].right,
+                              listScreenRect[i - shipyardScroll].bottom - 14, line1,
+                              isalpha(HeldChar(c, line1[0])) || isdigit(HeldChar(c, line1[0])) ? white : grey,
+                              UI::Align::Center);
                     c = (unsigned char)line2[0];
-                    if (isalpha(HeldChar(c, line2[0])) || isdigit(HeldChar(c, line2[0])))
-                        ForeColor(whiteColor);
-                    else
-                        RGBForeColor(&rgbLessDarkGrey);
-                    MoveTo((listScreenRect[i - shipyardScroll].left
-                                   + listScreenRect[i - shipyardScroll].right) / 2
-                                  - MeasureCString(line2) / 2,
-                              listScreenRect[i - shipyardScroll].bottom - 3);
-                    DrawCString(line2);
-                    ForeColor(blackColor);
+                    load.Text(listScreenRect[i - shipyardScroll].left, listScreenRect[i - shipyardScroll].right,
+                              listScreenRect[i - shipyardScroll].bottom - 3, line2,
+                              isalpha(HeldChar(c, line2[0])) || isdigit(HeldChar(c, line2[0])) ? white : grey,
+                              UI::Align::Center);
                 } else {
-                    MoveTo((listScreenRect[i - (int32_t)shipyardScroll].left
-                                   + listScreenRect[i - (int32_t)shipyardScroll].right) / 2
-                                  - MeasureCString(line1) / 2,
-                              listScreenRect[i - (int32_t)shipyardScroll].bottom - 6);
-                    ForeColor(whiteColor);
-                    DrawCString(line1);
-                    ForeColor(blackColor);
+                    load.Text(listScreenRect[i - (int32_t)shipyardScroll].left,
+                              listScreenRect[i - (int32_t)shipyardScroll].right,
+                              listScreenRect[i - (int32_t)shipyardScroll].bottom - 6, line1, white,
+                              UI::Align::Center);
                 }
-                RGBForeColor(&shopGridColor[1]);
-                FrameRect(&listScreenRect[i - shipyardScroll]);
-                ForeColor(blackColor);
+                load.Frame(listScreenRect[i - shipyardScroll], shopGridColor[1]);
                 drawn++;
             }
     }
-    if (selShipListItem != -1) {
-        RGBForeColor(&shopGridColor[0]);
-        FrameRect(&listScreenRect[selShipListItem]);
-        ForeColor(blackColor);
-    }
+    if (selShipListItem != -1)
+        load.Frame(listScreenRect[selShipListItem], shopGridColor[0]);
     if (selShipyardItem != -1) {
         GetDialogItem(shipyardDialog, kMovieItem, &itemType, &item, &box);
         if (loopingMovie != NULL) {
-            CopyBits(GetPortBitMapForCopyBits(
-                         GetDialogPort(shipyardDialog)),
-                     (BitMapPtr)GWorldContainerBits(&loadPort), &box, &box, 0, NULL);
+            load.Copy(UI::Surface::Dialog(shipyardDialog), box, box);
         } else {
             if (previewPicID != shipClass[selShipyardItem].shipyardPictID) {
                 if (previewPic != NULL) {
@@ -677,37 +640,25 @@ void ShipyardDialogUpdate(void)
                     previewPic = GetPicture(previewPicID);
             }
             if (previewPic != NULL) {
-                ForeColor(blackColor);
-                DrawPicHandle(previewPic, &box);
+                load.Picture(previewPic, box);
             } else {
-                ForeColor(whiteColor);
-                TextFont(smallTextFont);
-                TextSize(smallTextSize);
-                DrawStringCentered(IndString(kGameStrList, 0xd5), box.left, box.right,
-                                   ((box.bottom + box.top) / 2 - 6));
-                DrawStringCentered(IndString(kGameStrList, 0xd6), box.left, box.right,
-                                   ((box.bottom + box.top) / 2 + 6));
-                ForeColor(blackColor);
+                load.Text(box.left, box.right, ((box.bottom + box.top) / 2 - 6), IndString(kGameStrList, 0xd5),
+                          white, UI::Align::Center);
+                load.Text(box.left, box.right, ((box.bottom + box.top) / 2 + 6), IndString(kGameStrList, 0xd6),
+                          white, UI::Align::Center);
             }
         }
         GetDialogItem(shipyardDialog, 9, &itemType, &item, &box);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
         if (shipBuyMode == 0 && selShipyardItem != shipData->type) {
-            ForeColor(whiteColor);
-            MoveTo(box.left, (box.top + 12));
-            DrawIndString(kGameStrList, 0xe1);
-            MoveTo((box.left + 0x46), (box.top + 12));
+            load.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 0xe1), white);
             price = ApplyPriceAndTechnologyFlux(
                 shipClass[selShipyardItem].cost, priceFluxMult[1],
                 shipClass[selShipyardItem].techLevel,
                 stellarData[shipData->targetStellar].techLevel);
-            DrawCommaNumber(price);
-            DrawCString(" ");
-            DrawIndString(kGameStrList, 0x22);
-            MoveTo(box.left, (box.top + 0x18));
-            DrawIndString(kGameStrList, 0xe2);
-            MoveTo((box.left + 0x46), (box.top + 0x18));
+            load.Text((box.left + 0x46), (box.top + 12), CommaNumber(price), white);
+            load.Text(" ", white);
+            load.Text(IndStringRaw(kGameStrList, 0x22), white);
+            load.Text(box.left, (box.top + 0x18), IndStringRaw(kGameStrList, 0xe2), white);
             net = tradeIn = ApplyPriceAndTechnologyFlux(
                 PlayerShipTradeInPrice(), priceFluxMult[0],
                 shipClass[shipData->type].techLevel,
@@ -716,54 +667,40 @@ void ShipyardDialogUpdate(void)
                 net, priceFluxMult[1],
                 shipClass[shipData->type].techLevel,
                 stellarData[shipData->targetStellar].techLevel);
-            DrawCommaNumber(tradeIn);
-            DrawCString(" ");
-            DrawIndString(kGameStrList, 0x22);
+            load.Text((box.left + 0x46), (box.top + 0x18), CommaNumber(tradeIn), white);
+            load.Text(" ", white);
+            load.Text(IndStringRaw(kGameStrList, 0x22), white);
             net = price - tradeIn;
             if (net < 0)
                 net = 0;
-            MoveTo(box.left, (box.top + 0x30));
-            DrawIndString(kGameStrList, 0xe3);
-            MoveTo((box.left + 0x46), (box.top + 0x30));
-            DrawCommaNumber(net);
-            DrawCString(" ");
-            DrawIndString(kGameStrList, 0x22);
-            MoveTo(box.left, (box.top + 0x48));
-            DrawIndString(kGameStrList, 0xd9);
-            MoveTo((box.left + 0x46), (box.top + 0x48));
-            DrawCommaNumber(shipData->credits);
-            DrawCString(" ");
-            DrawIndString(kGameStrList, 0x22);
-            ForeColor(blackColor);
+            load.Text(box.left, (box.top + 0x30), IndStringRaw(kGameStrList, 0xe3), white);
+            load.Text((box.left + 0x46), (box.top + 0x30), CommaNumber(net), white);
+            load.Text(" ", white);
+            load.Text(IndStringRaw(kGameStrList, 0x22), white);
+            load.Text(box.left, (box.top + 0x48), IndStringRaw(kGameStrList, 0xd9), white);
+            load.Text((box.left + 0x46), (box.top + 0x48), CommaNumber(shipData->credits), white);
+            load.Text(" ", white);
+            load.Text(IndStringRaw(kGameStrList, 0x22), white);
         } else if (shipBuyMode != 0) {
-            ForeColor(whiteColor);
-            MoveTo(box.left, (box.top + 12));
-            DrawIndString(kGameStrList, 0xe4);
-            MoveTo((box.left + 0x46), (box.top + 12));
+            load.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 0xe4), white);
             tradeIn = ApplyPriceAndTechnologyFlux(
                 shipClass[selShipyardItem].cost, priceFluxMult[1],
                 shipClass[selShipyardItem].techLevel,
                 stellarData[shipData->targetStellar].techLevel);
-            DrawCommaNumber(0.1 * tradeIn);
-            DrawCString(" ");
-            DrawIndString(kGameStrList, 0x22);
-            DrawEscortPay(box, (int32_t)(0.01 * shipClass[selShipyardItem].cost));
-            MoveTo(box.left, (box.top + 0x30));
-            DrawIndString(kGameStrList, 0xd9);
-            MoveTo((box.left + 0x46), (box.top + 0x30));
-            DrawCommaNumber(shipData->credits);
-            DrawCString(" ");
-            DrawIndString(kGameStrList, 0x22);
-            ForeColor(blackColor);
+            load.Text((box.left + 0x46), (box.top + 12), CommaNumber(0.1 * tradeIn), white);
+            load.Text(" ", white);
+            load.Text(IndStringRaw(kGameStrList, 0x22), white);
+            DrawEscortPay(load, box, (int32_t)(0.01 * shipClass[selShipyardItem].cost), white);
+            load.Text(box.left, (box.top + 0x30), IndStringRaw(kGameStrList, 0xd9), white);
+            load.Text((box.left + 0x46), (box.top + 0x30), CommaNumber(shipData->credits), white);
+            load.Text(" ", white);
+            load.Text(IndStringRaw(kGameStrList, 0x22), white);
         }
     }
     GetDialogItem(shipyardDialog, 6, &itemType, &item, &box);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    TETextBox(dialogDescTextPtr, strlen(dialogDescTextPtr), &box, 0);
-    InvertRect(&box);
-    ShipyardButtons().Draw(-1);
-    CopyLoadPortToDialog(shipyardDialog);
+    load.TextBox(box, dialogDescTextPtr, strlen(dialogDescTextPtr), white, UI::kBlack);
+    ShipyardButtons().Draw(load, -1);
+    LoadPageToDialog(shipyardDialog);
 }
 
 #define kLabelStrList 150
@@ -801,9 +738,7 @@ void ShipDescDialog::Run()
         return;
     Picture backdrop(shipDescBackgroundPic);
     backdrop.Load(descResourcePictId >= kFirstResourceID ? kDescPictID : kPlainDescPictID);
-    SetDialogGWorld(shipDescDialog);
     FlushEvents(everyEvent - diskMask, 0);
-    ForeColor(blackColor);
     RedrawDialog(shipDescDialog);
     ShipDescDialogUpdate();
     Loop();
@@ -851,8 +786,10 @@ Boolean ShipDescDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
         where = ev.where;
         GetDialogItem(shipDescDialog, 1, &itemType, (Handle *)&item, &box);
         if (PtInRectPoint(where, &box)) {
+            UI::Painter window(UI::Surface::Dialog(shipDescDialog));
+
             GetIndString(label, kLabelStrList, kLabelStrIdx);
-            DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 1, 0);
+            DrawButton(window, box, label, 0, 1, NULL);
             nv_UpdateDialogWindow(0);
             lastHit = 1;
             while (StillDown()) {
@@ -864,9 +801,9 @@ Boolean ShipDescDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
                     hit = -1;
                 if (hit != lastHit) {
                     if (hit == 1)
-                        DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 1, 0);
+                        DrawButton(window, box, label, 0, 1, NULL);
                     else
-                        DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 0, 0);
+                        DrawButton(window, box, label, 0, 0, NULL);
                     nv_UpdateDialogWindow(0);
                 }
                 lastHit = hit;
@@ -1151,8 +1088,9 @@ static void StatOf(StatText *s, short stat, short type, short wordType)
    whose text differs from the stock ship's shows the stock text struck through, then its own in green when
    better, red when worse; words both share are drawn once, or dropped when the line is too wide, and when
    it still is only the new value is shown. */
-static void DrawStatLine(short stat, short type, short stock, short h, short v, short right)
+static void DrawStatLine(UI::Painter &p, short stat, short type, short stock, short h, short v, short right)
 {
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
     StatText now;
     StatText old;
     std::string nowText;
@@ -1165,17 +1103,16 @@ static void DrawStatLine(short stat, short type, short stock, short h, short v, 
     const std::string none;
     short left;
     Rect strike;
+    RGBColor changed;
 
     StatOf(&now, stat, type, type);
     nowText = now.pre + now.num + now.post;
-    MoveTo(h, v);
-    ForeColor(whiteColor);
     if (stock != -1) {
         StatOf(&old, stat, stock, type);
         oldText = old.pre + old.num + old.post;
     }
     if (stock == -1 || oldText == nowText) {
-        DrawCString(nowText);
+        p.Text(h, v, nowText, white);
         return;
     }
 
@@ -1191,35 +1128,36 @@ static void DrawStatLine(short stat, short type, short stock, short h, short v, 
         post = &none;
     }
     text = *pre + *struck + " " + *shown + *post;
-    if (TextWidthMacRoman(text.data(), text.size()) > right - h) {
+    if (p.DrawnWidth(text.data(), text.size(), UI::Style::Small) > right - h) {
         pre = &none;
         struck = &old.num;
         shown = &now.num;
         post = &none;
         text = *struck + " " + *shown;
-        if (TextWidthMacRoman(text.data(), text.size()) > right - h)
+        if (p.DrawnWidth(text.data(), text.size(), UI::Style::Small) > right - h)
             struck = NULL;
     }
 
+    if (stat == kStatLength || stat == kStatMass || now.value == old.value)
+        changed = UI::kWhite;
+    else if (now.value > old.value)
+        changed = betterRGB;
+    else
+        changed = worseRGB;
     if (struck != NULL) {
         /* a 1 px bar through the middle of the digits, from the pen's start and the widths before it */
-        left = h + TextWidthMacRoman(pre->data(), pre->size());
+        left = h + p.DrawnWidth(pre->data(), pre->size(), UI::Style::Small);
         text = *pre + *struck;
-        SetRect(&strike, left, v - 4, h + TextWidthMacRoman(text.data(), text.size()), v - 3);
-        DrawCString(*pre);
-        DrawCString(*struck);
-        PaintRect(&strike);
-        DrawCString(" ");
+        SetRect(&strike, left, v - 4, h + p.DrawnWidth(text.data(), text.size(), UI::Style::Small), v - 3);
+        p.Text(h, v, *pre, white);
+        p.Text(*struck, white);
+        p.Fill(strike, UI::kWhite);
+        p.Text(" ", white);
+        p.Text(*shown, { UI::Style::Small, changed });
+    } else {
+        p.Text(h, v, *shown, { UI::Style::Small, changed });
     }
-    if (stat == kStatLength || stat == kStatMass || now.value == old.value)
-        ForeColor(whiteColor);
-    else if (now.value > old.value)
-        RGBForeColor(&betterRGB);
-    else
-        RGBForeColor(&worseRGB);
-    DrawCString(*shown);
-    ForeColor(whiteColor);
-    DrawCString(*post);
+    p.Text(*post, white);
 }
 
 // FUNCTION: EVNOVA 0x00495c80
@@ -1243,132 +1181,96 @@ void ShipDescDialogUpdate(void)
     short valueLeft;
     short totalH;
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(shipDescDialog));
+    UI::Painter load(UI::Surface::Load());
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
+    const UI::TextSpec grey = { UI::Style::Small, rgbMedGrey };
+    const UI::TextSpec title = { UI::Style::Title, UI::kWhite };
+
+    load.Fill(*GetDialogPortRect(shipDescDialog), UI::kBlack);
     if (shipDescBackgroundPic != NULL)
-        DrawPicHandle(shipDescBackgroundPic, GetDialogPortRect(shipDescDialog));
+        load.Picture(shipDescBackgroundPic, *GetDialogPortRect(shipDescDialog));
     if (descResourcePictId >= kFirstResourceID)
         hasPict = 1;
     else
         hasPict = 0;
-    ForeColor(blackColor);
     GetDialogItem(shipDescDialog, 3, &itemType, &item, &box);
-    TextFont(gTimesFont);
-    TextSize(18);
-    MoveTo(box.left, (box.top + 18));
-    ForeColor(whiteColor);
     if (hasPict)
-        DrawStringCentered(shipyardLongNames[selShipyardItem], box.left,
-                           box.right, box.top + 18);
+        load.Text(box.left, box.right, box.top + 18, shipyardLongNames[selShipyardItem], title, UI::Align::Center);
     else
-        DrawStringCentered(ShipClassName(selShipyardItem), box.left,
-                           box.right, box.top + 18);
-    ForeColor(blackColor);
+        load.Text(box.left, box.right, box.top + 18, ShipClassName(selShipyardItem), title, UI::Align::Center);
     GetDialogItem(shipDescDialog, 5, &itemType, &item, &box);
     sel = selShipyardItem;
     stock = StockShipOf(sel);
     valueRight = box.right - 2;
     valueLeft = box.left + 128;              /* 2 px before the right column's labels */
-    ForeColor(blackColor);
-    PaintRect(&box);
-    ForeColor(whiteColor);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
+    load.Fill(box, UI::kBlack);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo(box.left, (box.top + 12));
-    DrawIndString(kGameStrList, 229);
-    DrawStatLine(kStatSpeed, sel, stock, box.left + 45, box.top + 12, valueLeft);
+    load.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 229), grey);
+    DrawStatLine(load, kStatSpeed, sel, stock, box.left + 45, box.top + 12, valueLeft);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo(box.left, (box.top + 24));
-    DrawIndString(kGameStrList, 230);
-    DrawStatLine(kStatAccel, sel, stock, box.left + 45, box.top + 24, valueLeft);
+    load.Text(box.left, (box.top + 24), IndStringRaw(kGameStrList, 230), grey);
+    DrawStatLine(load, kStatAccel, sel, stock, box.left + 45, box.top + 24, valueLeft);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo(box.left, (box.top + 36));
-    DrawIndString(kGameStrList, 231);
-    DrawStatLine(kStatTurn, sel, stock, box.left + 45, box.top + 36, valueLeft);
+    load.Text(box.left, (box.top + 36), IndStringRaw(kGameStrList, 231), grey);
+    DrawStatLine(load, kStatTurn, sel, stock, box.left + 45, box.top + 36, valueLeft);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo(box.left, (box.top + 48));
-    DrawCString(shieldString[0]);
-    DrawStatLine(kStatShield, sel, stock, box.left + 45, box.top + 48, valueLeft);
+    load.Text(box.left, (box.top + 48), shieldString[0], grey);
+    DrawStatLine(load, kStatShield, sel, stock, box.left + 45, box.top + 48, valueLeft);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo(box.left, (box.top + 60));
-    DrawCString(armorString[0]);
-    DrawStatLine(kStatArmor, sel, stock, box.left + 45, box.top + 60, valueLeft);
+    load.Text(box.left, (box.top + 60), armorString[0], grey);
+    DrawStatLine(load, kStatArmor, sel, stock, box.left + 45, box.top + 60, valueLeft);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo(box.left, (box.top + 72));
-    DrawIndString(kGameStrList, 232);
-    DrawStatLine(kStatGuns, sel, stock, box.left + 45, box.top + 72, valueLeft);
+    load.Text(box.left, (box.top + 72), IndStringRaw(kGameStrList, 232), grey);
+    DrawStatLine(load, kStatGuns, sel, stock, box.left + 45, box.top + 72, valueLeft);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo(box.left, (box.top + 84));
-    DrawIndString(kGameStrList, 233);
-    DrawStatLine(kStatTurrets, sel, stock, box.left + 45, box.top + 84, valueLeft);
+    load.Text(box.left, (box.top + 84), IndStringRaw(kGameStrList, 233), grey);
+    DrawStatLine(load, kStatTurrets, sel, stock, box.left + 45, box.top + 84, valueLeft);
 
-    MoveTo((box.left + 130), (box.top + 12));
-    RGBForeColor(&rgbMedGrey);
-    DrawIndString(kGameStrList, 234);
-    DrawStatLine(kStatSpace, sel, stock, box.left + 175, box.top + 12, valueRight);
+    load.Text((box.left + 130), (box.top + 12), IndStringRaw(kGameStrList, 234), grey);
+    DrawStatLine(load, kStatSpace, sel, stock, box.left + 175, box.top + 12, valueRight);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo((box.left + 130), (box.top + 24));
-    DrawCString(kTotalSpaceLabel);
-    totalH = box.left + 130 + TextWidthMacRoman(kTotalSpaceLabel, strlen(kTotalSpaceLabel)) + 4;
-    DrawStatLine(kStatTotalSpace, sel, stock, totalH > box.left + 175 ? totalH : box.left + 175, box.top + 24,
+    load.Text((box.left + 130), (box.top + 24), kTotalSpaceLabel, grey);
+    totalH = box.left + 130 + load.DrawnWidth(kTotalSpaceLabel, strlen(kTotalSpaceLabel), UI::Style::Small) + 4;
+    DrawStatLine(load, kStatTotalSpace, sel, stock, totalH > box.left + 175 ? totalH : box.left + 175, box.top + 24,
                  valueRight);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo((box.left + 130), (box.top + 36));
-    DrawIndString(kGameStrList, 110);
-    DrawStatLine(kStatCargo, sel, stock, box.left + 175, box.top + 36, valueRight);
+    load.Text((box.left + 130), (box.top + 36), IndStringRaw(kGameStrList, 110), grey);
+    DrawStatLine(load, kStatCargo, sel, stock, box.left + 175, box.top + 36, valueRight);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo((box.left + 130), (box.top + 48));
-    DrawCString(fuelString[4]);
-    DrawStatLine(kStatFuel, sel, stock, box.left + 175, box.top + 48, valueRight);
+    load.Text((box.left + 130), (box.top + 48), fuelString[4], grey);
+    DrawStatLine(load, kStatFuel, sel, stock, box.left + 175, box.top + 48, valueRight);
     numWeapTypes = 0;
     for (i = 0; i < kMaxWeapTypes; i++) {
         if (shipClass[sel].weapCount[i] > 0)
             numWeapTypes++;
     }
     if (numWeapTypes == 0) {
-        ForeColor(whiteColor);
         if (hasPict) {
             GetDialogItem(shipDescDialog, 8, &itemType, &item, &box2);
-            MoveTo(box2.left, (box2.top + 12));
+            load.Text(box2.left, (box2.top + 12), IndStringRaw(kGameStrList, 242), white);
         } else {
-            MoveTo(box.left, (box.top + 108));
+            load.Text(box.left, (box.top + 108), IndStringRaw(kGameStrList, 242), white);
         }
-        DrawIndString(kGameStrList, 242);
     } else {
-        ForeColor(whiteColor);
         drawn = 0;
         if (hasPict) {
             line.clear();
             GetDialogItem(shipDescDialog, 8, &itemType, &item, &box2);
-            MoveTo(box2.left, (box2.top + 12));
+            load.Text(box2.left, (box2.top + 12), IndStringRaw(kGameStrList, 241), white);
             box2.top += 16;
         } else {
-            MoveTo(box.left, (box.top + 108));
+            load.Text(box.left, (box.top + 108), IndStringRaw(kGameStrList, 241), white);
         }
-        DrawIndString(kGameStrList, 241);
         for (i = 0; i < kMaxWeapTypes; i++) {
             if (shipClass[sel].weapCount[i] > 0) {
-                if (!hasPict)
-                    MoveTo(box.left + 8, box.top + 120 + drawn * 12);
                 if (weaponStats[i].guidance != kGuidanceBay) {
                     if (hasPict) {
                         line += NumText(shipClass[sel].weapCount[i]);
                         line += " ";
                     } else {
-                        DrawCString(NumText(shipClass[sel].weapCount[i]));
-                        DrawCString(" ");
+                        load.Text(box.left + 8, box.top + 120 + drawn * 12, NumText(shipClass[sel].weapCount[i]),
+                                  white);
+                        load.Text(" ", white);
                     }
                     for (j = 0; j < kMaxOutfits; j++) {
                         if (outfitSystem[j].modType[0] == OutfMod::Weapon
@@ -1376,7 +1278,7 @@ void ShipDescDialogUpdate(void)
                             if (hasPict) {
                                 line += FromNameField(outfitSystem[j].name);
                             } else {
-                                DrawCString(OutfitName(j));
+                                load.Text(OutfitName(j), white);
                             }
                             break;
                         }
@@ -1385,17 +1287,17 @@ void ShipDescDialogUpdate(void)
                         if (hasPict)
                             line += "s";
                         else
-                            DrawCString("s");
+                            load.Text("s", white);
                     }
                     if (shipClass[sel].weapAmmo[i] > 0) {
                         if (hasPict) {
                             line += TextF(" + %d %s", shipClass[sel].weapAmmo[i],
                                           IndString(kGameStrList, 243).c_str());
                         } else {
-                            DrawCString(" + ");
-                            DrawCString(NumText(shipClass[sel].weapAmmo[i]));
-                            DrawCString(" ");
-                            DrawIndString(kGameStrList, 243);
+                            load.Text(" + ", white);
+                            load.Text(NumText(shipClass[sel].weapAmmo[i]), white);
+                            load.Text(" ", white);
+                            load.Text(IndStringRaw(kGameStrList, 243), white);
                         }
                     }
                 } else {
@@ -1403,8 +1305,9 @@ void ShipDescDialogUpdate(void)
                         line += NumText(shipClass[sel].weapAmmo[i]);
                         line += " ";
                     } else {
-                        DrawCString(NumText(shipClass[sel].weapAmmo[i]));
-                        DrawCString(" ");
+                        load.Text(box.left + 8, box.top + 120 + drawn * 12, NumText(shipClass[sel].weapAmmo[i]),
+                                  white);
+                        load.Text(" ", white);
                     }
                     for (j = 0; j < kMaxOutfits; j++) {
                         if (outfitSystem[j].modType[0] == OutfMod::Ammo
@@ -1412,7 +1315,7 @@ void ShipDescDialogUpdate(void)
                             if (hasPict) {
                                 line += FromNameField(outfitSystem[j].name);
                             } else {
-                                DrawCString(OutfitName(j));
+                                load.Text(OutfitName(j), white);
                             }
                             break;
                         }
@@ -1421,7 +1324,7 @@ void ShipDescDialogUpdate(void)
                         if (hasPict)
                             line += "s";
                         else
-                            DrawCString("s");
+                            load.Text("s", white);
                     }
                 }
                 if (hasPict && numWeapTypes > 1
@@ -1430,37 +1333,28 @@ void ShipDescDialogUpdate(void)
                 drawn++;
             }
         }
-        if (hasPict) {
-            ForeColor(blackColor);
-            TETextBox(line.data(), line.size(), &box2, 0);
-            InvertRect(&box2);
-        }
+        if (hasPict)
+            load.TextBox(box2, line, white, UI::kBlack);
     }
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo((box.left + 130), (box.top + 60));
-    DrawIndString(kGameStrList, 235);
-    DrawStatLine(kStatLength, sel, stock, box.left + 175, box.top + 60, valueRight);
+    load.Text((box.left + 130), (box.top + 60), IndStringRaw(kGameStrList, 235), grey);
+    DrawStatLine(load, kStatLength, sel, stock, box.left + 175, box.top + 60, valueRight);
 
-    RGBForeColor(&rgbMedGrey);
-    MoveTo((box.left + 130), (box.top + 72));
-    DrawIndString(kGameStrList, 236);
-    DrawStatLine(kStatMass, sel, stock, box.left + 175, box.top + 72, valueRight);
+    load.Text((box.left + 130), (box.top + 72), IndStringRaw(kGameStrList, 236), grey);
+    DrawStatLine(load, kStatMass, sel, stock, box.left + 175, box.top + 72, valueRight);
 
     if (shipClass[sel].crew > 0 || (stock != -1 && shipClass[stock].crew > 0)) {
-        RGBForeColor(&rgbMedGrey);
-        MoveTo((box.left + 130), (box.top + 84));
-        DrawIndString(kGameStrList, 237);
-        DrawStatLine(kStatCrew, sel, stock, box.left + 175, box.top + 84, valueRight);
+        load.Text((box.left + 130), (box.top + 84), IndStringRaw(kGameStrList, 237), grey);
+        DrawStatLine(load, kStatCrew, sel, stock, box.left + 175, box.top + 84, valueRight);
     }
     GetDialogItem(shipDescDialog, 1, &itemType, &item, &box);
     GetIndString(label, kButtonStrList, 5);
-    DrawButton(GetDialogPort(shipDescDialog), &box, label, 0, 0, 0);
+    DrawButton(load, box, label, 0, 0, NULL);
     if (bigShipPic != NULL) {
         GetDialogItem(shipDescDialog, 7, &itemType, &item, &box);
-        DrawPicHandle(bigShipPic, &box);
+        load.Picture(bigShipPic, box);
     }
-    CopyLoadPortToDialog(shipDescDialog);
+    LoadPageToDialog(shipDescDialog);
 }
 
 // FUNCTION: EVNOVA 0x00498dc0

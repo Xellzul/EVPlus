@@ -7,39 +7,6 @@
 #include "missions.h"
 #include "text.h"
 
-// FUNCTION: EVNOVA 0x00465af0
-// MAC: _DrawCommaNumber i386 0x00004895 ppc 0x00005cb0
-void DrawCommaNumber(int32_t value)
-{
-    int32_t group;
-    unsigned char str[256];
-
-    if (value < 1000) {
-        NumToString(value, str);
-        DrawString(str);
-    } else if (value < 1000000) {
-        NumToString(value / 1000, str);
-        DrawString(str);
-        DrawCString(",");
-        if (value % 1000 < 100)
-            DrawCString("0");
-        if (value % 1000 < 10)
-            DrawCString("0");
-        NumToString(value % 1000, str);
-        DrawString(str);
-    } else {
-        NumToString(value / 1000000, str);
-        DrawString(str);
-        DrawCString(".");
-        group = value % 1000000;
-        NumToString(group / 10000, str);
-        if (group / 10000 < 10)
-            DrawCString("0");
-        DrawString(str);
-        DrawCString("M");
-    }
-}
-
 // FUNCTION: EVNOVA 0x00465c10
 // MAC: _StrcatCommaNumber i386 0x00008820 ppc 0x0000a8e0
 void StrcatCommaNumber(int32_t value, char *dst)
@@ -106,7 +73,8 @@ void DateToLongString(DateTimeRec date, char *out)
 
 // FUNCTION: EVNOVA 0x00468d90
 // MAC: _DrawLegalStatusString i386 0x0000d43f ppc 0x00010888
-void DrawLegalStatusString(short sys)
+/* the player's legal status in a system, in words */
+std::string LegalStatusText(short sys)
 {
     int32_t base;
     short haven;
@@ -175,14 +143,14 @@ void DrawLegalStatusString(short sys)
         rating = 0;
 
     if (rating == 0)
-        DrawIndString(kGameStrList, 0x18c);
-    else
-        DrawCString(legalStatusStrings[rating]);
+        return IndStringRaw(kGameStrList, 0x18c);
+    return legalStatusStrings[rating];
 }
 
 // FUNCTION: EVNOVA 0x00469030
 // MAC: _DrawCombatRatingString i386 0x000057e5 ppc 0x00006e68
-void DrawCombatRatingString(void)
+/* the player's combat rating, in words */
+std::string CombatRatingText(void)
 {
     short rating;
 
@@ -207,7 +175,7 @@ void DrawCombatRatingString(void)
         rating = 9;
     if (playerKills >= 25600)
         rating = 10;
-    DrawCString(ratingStrings[rating]);
+    return ratingStrings[rating];
 }
 
 // FUNCTION: EVNOVA 0x0046d250

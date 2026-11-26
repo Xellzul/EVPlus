@@ -5,7 +5,6 @@
 #include "missions.h"
 #include "player.h"
 #include "viewscale.h"
-#include "uisprite.h"
 #include "render.h"
 #include "ships.h"
 #include "sound.h"
@@ -19,6 +18,7 @@
 #include "buttons.h"
 #include "outfitmods.h"
 #include "text.h"
+#include "painter.h"
 
 DialogPtr commDialog;
 DialogPtr haggleDialog;
@@ -236,7 +236,6 @@ void CommDialog::Run(short shipIndex)
     FlushEvents(3, 0);
     FlushEvents(4, 0);
     FlushEvents(5, 0);
-    SetDialogGWorld(commDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(commDialog);
     CommDialogUpdate();
@@ -260,7 +259,6 @@ void CommDialog::Run(short shipIndex)
     gSpeedMult = 0;
     commShip->hailed = 1;
     commShip = NULL;
-    SWSetPortToWindow(gSpriteWorld);
 }
 
 void CommDialog::Hit(short item)
@@ -269,7 +267,7 @@ void CommDialog::Hit(short item)
     Boolean missionPending;
 
     if (item == 1) {
-        CommButtons().Draw(-1);
+        CommButtons().DrawOnDialog(-1);
         done = 1;
     }
     if (item == 2) {
@@ -280,9 +278,9 @@ void CommDialog::Hit(short item)
                 releaseCommEscort = 1;
                 LoadResponse(0x26);
                 InvalDialogItem(commDialog, 12);
-                CommButtons().Draw(-1);
+                CommButtons().DrawOnDialog(-1);
             } else if (!cantTalk) {
-                CommButtons().Draw(-1);
+                CommButtons().DrawOnDialog(-1);
                 if (ExtendedIsThreatToPlayer(commShip)) {
                     missionPending = 0;
                     if (commShip->specialMission != -1
@@ -303,7 +301,6 @@ void CommDialog::Hit(short item)
                                 LoadResponse(0x12);
                             CommDialogUpdate();
                             r = DoShipCommPayment();
-                            SetDialogGWorld(commDialog);
                             if (r == 1) {
                                 LoadResponse(0x14);
                                 AIMakeShipLeave(commShip);
@@ -348,7 +345,6 @@ void CommDialog::Hit(short item)
                                         LoadResponse(0x12);
                                     CommDialogUpdate();
                                     r = DoShipCommPayment();
-                                    SetDialogGWorld(commDialog);
                                     if (r == 1) {
                                         LoadResponse(0x1d);
                                         AIFightEnemyThreatToPlayer(commShip);
@@ -368,7 +364,6 @@ void CommDialog::Hit(short item)
                                     LoadResponse(0x12);
                                 CommDialogUpdate();
                                 r = DoShipCommPayment();
-                                SetDialogGWorld(commDialog);
                                 if (r == 1) {
                                     LoadResponse(0x1d);
                                     AIFightEnemyThreatToPlayer(commShip);
@@ -398,10 +393,8 @@ void CommDialog::Hit(short item)
                                 r = 0;
                                 if (canAskHelp)
                                     r = 1;
-                                if (r != 1) {
+                                if (r != 1)
                                     r = DoShipCommPayment();
-                                    SetDialogGWorld(commDialog);
-                                }
                                 if (r == 1) {
                                     LoadResponse(0x1d);
                                     if (shipData->IsDisabled())
@@ -427,7 +420,7 @@ void CommDialog::Hit(short item)
     }
     if (item == 3) {
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-        CommButtons().Draw(-1);
+        CommButtons().DrawOnDialog(-1);
         if (commShip->IsDisabled() || isMissionShip)
             LoadResponse(1);
         else if (ExtendedIsThreatToPlayer(commShip))
@@ -438,7 +431,6 @@ void CommDialog::Hit(short item)
             LoadResponse(0xd);
     }
     if (item != -1) {
-        SetDialogGWorld(commDialog);
         InvalDialogItem(commDialog, 10);
         InvalDialogItem(commDialog, 12);
     }
@@ -509,7 +501,6 @@ short DoShipCommPayment(void)
     CommDialogUpdate();
     haggleVal = initialHaggleVal;
     answer = DoHaggleDialog(0, 0x23);
-    SetDialogGWorld(commDialog);
     if (shipData->credits >= haggleVal) {
         if (answer == 1) {
             shipData->credits -= haggleVal;
@@ -531,70 +522,47 @@ void CommDialogUpdate(void)
     short itemType;
     Rect box;
     Rect textBox;
+    const UI::TextSpec grey = { UI::Style::Small, rgbMedGrey };
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(commDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(commDialog), UI::kBlack);
     if (commBackgroundPic != NULL)
-        DrawPicHandle(commBackgroundPic, GetDialogPortRect(commDialog));
-    CommButtons().Draw(-1);
+        p.Picture(commBackgroundPic, *GetDialogPortRect(commDialog));
+    CommButtons().Draw(p, -1);
     GetDialogItem(commDialog, 11, &itemType, &item, &box);
-    if (commShipPic != NULL) {
-        ForeColor(blackColor);
-        DrawPicHandle(commShipPic, &box);
-    }
+    if (commShipPic != NULL)
+        p.Picture(commShipPic, box);
     GetDialogItem(commDialog, 12, &itemType, &item, &box);
-    ForeColor(blackColor);
-    PaintRect(&box);
-    RGBForeColor(&rgbMedGrey);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    MoveTo(box.left, (box.top + 12));
-    DrawIndString(kGameStrList, 0xc3);
-    MoveTo((box.left + 0x23), (box.top + 12));
-    ForeColor(whiteColor);
-    DrawCString(shipClassStr);
+    p.Fill(box, UI::kBlack);
+    p.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 0xc3), grey);
+    p.Text((box.left + 0x23), (box.top + 12), shipClassStr, white);
     if (!shipGovtStr.empty()) {
-        MoveTo((box.left + 0x23), (box.top + 0x19));
-        DrawCString("(");
-        DrawCString(shipGovtStr);
-        DrawCString(")");
+        p.Text((box.left + 0x23), (box.top + 0x19), "(", white);
+        p.Text(shipGovtStr, white);
+        p.Text(")", white);
     }
-    MoveTo(box.left, (box.top + 0x28));
-    RGBForeColor(&rgbMedGrey);
     if (ExtendedIsThreatToPlayer(commShip)) {
-        DrawIndString(kGameStrList, 0xc4);
-        DrawCString("  ");
-        ForeColor(redColor);
-        TextFace(1);
-        DrawIndString(kGameStrList, 0xae);
-        TextFace(0);
+        p.Text(box.left, (box.top + 0x28), IndStringRaw(kGameStrList, 0xc4), grey);
+        p.Text("  ", grey);
+        p.Text(IndStringRaw(kGameStrList, 0xae), { UI::Style::Small, redRGB, true });
     } else if (commShip->parentShip == 0 && releaseCommEscort == 0) {
-        DrawIndString(kGameStrList, 0xc4);
-        MoveTo((box.left + 0x23), (box.top + 0x28));
-        RGBForeColor(&brightGreen);
-        if (commShip->hired != 0)
-            DrawIndString(kGameStrList, 0xa6);
-        else
-            DrawIndString(kGameStrList, 0xa8);
+        p.Text(box.left, (box.top + 0x28), IndStringRaw(kGameStrList, 0xc4), grey);
+        p.Text((box.left + 0x23), (box.top + 0x28), IndStringRaw(kGameStrList, commShip->hired != 0 ? 0xa6 : 0xa8),
+               { UI::Style::Small, brightGreen });
     }
-    ForeColor(blackColor);
     GetDialogItem(commDialog, 10, &itemType, &item, &box);
     pstrcpy(text, commResponseString);
     PtoCstr(text);
     InsetRect(&box, 1, 1);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(whiteColor);
-    PaintRect(&box);
+    p.Fill(box, UI::kBlack);
     textBox = box;
     InsetRect(&textBox, 4, 2);
-    ForeColor(blackColor);
     strcpy(briefingTextPtr, (char *)text);
     MungeBriefing(0, -1);
-    TETextBox(briefingTextPtr, strlen(briefingTextPtr), &textBox, 0);
-    InvertRect(&box);
-    CopyLoadPortToDialog(commDialog);
+    p.TextBox(textBox, briefingTextPtr, strlen(briefingTextPtr), white, UI::kBlack);
+    LoadPageToDialog(commDialog);
 }
 
 /*
@@ -715,7 +683,6 @@ void PlanetCommDialog::Run()
     FlushEvents(3, 0);
     FlushEvents(4, 0);
     FlushEvents(5, 0);
-    SetDialogGWorld(commDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(commDialog);
     PlanetCommDialogUpdate();
@@ -726,7 +693,6 @@ void PlanetCommDialog::Run()
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
     dialog.Close();
     gSpeedMult = 0;
-    SWSetPortToWindow(gSpriteWorld);
     RedrawStatus(1);
 }
 
@@ -739,8 +705,7 @@ void PlanetCommDialog::Hit(short item)
     if (item == 1)
         done = 1;
     if (item == 2 || item == 3) {
-        SetDialogGWorld(commDialog);
-        PlanetCommButtons().Draw(-1);
+        PlanetCommButtons().DrawOnDialog(-1);
         LoadResponse(1);
         PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
         if (item == 2) {
@@ -838,13 +803,11 @@ void PlanetCommDialog::Hit(short item)
                     SlapWithPenalty(shipData->curSystem,
                                  stellarData[shipData->targetStellar].govt, 3, -1);
                     if (playerKills < 0x3200 && !cheatsActive) {
-                        SetDialogGWorld(commDialog);
                         LoadStellarResponse(1);
                         RedrawDialog(commDialog);
                     } else if (hasDemandedTribute
                                || stellarData[shipData->targetStellar].defWaveSize > 0
                                || stellarData[shipData->targetStellar].defenseActive != 0) {
-                        SetDialogGWorld(commDialog);
                         LoadStellarResponse(2);
                         RedrawDialog(commDialog);
                         if (stellarData[shipData->targetStellar].defenseActive == 0) {
@@ -884,14 +847,12 @@ void PlanetCommDialog::Hit(short item)
                             (char *)stellarData[shipData->targetStellar].name, 1, shipData->targetStellar + kFirstResourceID,
                             stellarData[shipData->targetStellar].onDominate);
                         EvalMissionBitSetString(stellarData[shipData->targetStellar].onDominate);
-                        SetDialogGWorld(commDialog);
                         RedrawDialog(commDialog);
                     }
                     hasDemandedTribute = 1;
                 }
             }
         }
-        SetDialogGWorld(commDialog);
         InvalDialogItem(commDialog, 4);
         InvalDialogItem(commDialog, 6);
     }
@@ -968,31 +929,28 @@ void PlanetCommDialogUpdate(void)
     short i;
     short spriteWidth;
     short spriteHeight;
+    const UI::TextSpec grey = { UI::Style::Small, rgbMedGrey };
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
 
     rgbGold.red = 0xffff;
     rgbGold.green = 0x6666;
     rgbGold.blue = 0;
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(commDialog));
+
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(commDialog), UI::kBlack);
     if (commBackgroundPic != NULL)
-        DrawPicHandle(commBackgroundPic, GetDialogPortRect(commDialog));
-    PlanetCommButtons().Draw(-1);
+        p.Picture(commBackgroundPic, *GetDialogPortRect(commDialog));
+    PlanetCommButtons().Draw(p, -1);
     GetDialogItem(commDialog, 4, &itemType, &item, &box);
     pstrcpy(text, commResponseString);
     PtoCstr(text);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(whiteColor);
     InsetRect(&box, 1, 1);
-    PaintRect(&box);
+    p.Fill(box, UI::kBlack);
     textBox = box;
     InsetRect(&textBox, 4, 2);
-    ForeColor(blackColor);
-    TETextBox(text, strlen((char *)text), &textBox, 0);
-    InvertRect(&box);
+    p.TextBox(textBox, text, strlen((char *)text), white, UI::kBlack);
     GetDialogItem(commDialog, 5, &itemType, &item, &box);
-    ForeColor(blackColor);
     for (i = 0; i < kStellarSprites; i++) {
         if (stellarSprite[i]->isVisible != 0 &&
             stellarSprite[i]->userData == shipData->targetStellar) {
@@ -1004,57 +962,36 @@ void PlanetCommDialogUpdate(void)
     textBox.left = textBox.right = (box.left + box.right) / 2;
     textBox.top = textBox.bottom = (box.top + box.bottom) / 2;
     InsetRect(&textBox, -spriteWidth / 2, -spriteHeight / 2);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortPixMapBits(View::UIWork()->framePort),
-             &textBox, &textBox, 0, NULL);
-    UI::DrawSprite(BlitPixieRLEDrawProc, stellarSprite[i]->curFrameP, View::UIWork(),
-                         &stellarSprite[i]->curFrameP->frameRect, &textBox);
-    CopyBits(GetPortPixMapBits(
-                 View::UIWork()->framePort),
-             (BitMapPtr)GWorldContainerBits(&loadPort),
-             &textBox, &textBox, 0, NULL);
-    GetDialogItem(commDialog, 6, &itemType, &item, &box);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    MoveTo(box.left, (box.top + 12));
-    ForeColor(whiteColor);
-    DrawString(stellarData[shipData->targetStellar].name);
-    MoveTo(box.left, (box.top + 0x1a));
-    RGBForeColor(&rgbMedGrey);
-    DrawString(stellarTypeStr);
-    if (stellarData[shipData->targetStellar].flags & kSpobUninhabited) {
-        MoveTo(box.left, (box.top + 0x2a));
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 0xc4);
-        DrawCString("  ");
-        RGBForeColor(&rgbLightGrey);
-        DrawIndString(kGameStrList, 0xaa);
-    } else if (stellarData[shipData->targetStellar].dominated != 0) {
-        MoveTo(box.left, (box.top + 0x2a));
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 0xc4);
-        DrawCString("  ");
-        RGBForeColor(&brightGreen);
-        if (stellarData[shipData->targetStellar].flags2 & kSpobAlwaysDominated)
-            DrawIndString(kGameStrList, 0xab);
-        else
-            DrawIndString(kGameStrList, 0xac);
-    } else if (hatesPlayer != 0) {
-        MoveTo(box.left, (box.top + 0x2a));
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 0xc4);
-        DrawCString("  ");
-        TextFace(1);
-        if (playerRecord[shipData->curSystem] >= 0) {
-            RGBForeColor(&rgbGold);
-            DrawIndString(kGameStrList, 0xad);
-        } else {
-            ForeColor(redColor);
-            DrawIndString(kGameStrList, 0xae);
-        }
-        TextFace(0);
+    {
+        UI::Painter work{UI::Surface(View::UIWork())};
+
+        work.Copy(UI::Surface::Load(), textBox, textBox);
+        work.Sprite(BlitPixieRLEDrawProc, stellarSprite[i]->curFrameP, stellarSprite[i]->curFrameP->frameRect,
+                    textBox);
     }
-    CopyLoadPortToDialog(commDialog);
+    p.Copy(UI::Surface(View::UIWork()), textBox, textBox);
+    GetDialogItem(commDialog, 6, &itemType, &item, &box);
+    p.Text(box.left, (box.top + 12), FromPascal(stellarData[shipData->targetStellar].name), white);
+    p.Text(box.left, (box.top + 0x1a), FromPascal(stellarTypeStr), grey);
+    if (stellarData[shipData->targetStellar].flags & kSpobUninhabited) {
+        p.Text(box.left, (box.top + 0x2a), IndStringRaw(kGameStrList, 0xc4), grey);
+        p.Text("  ", grey);
+        p.Text(IndStringRaw(kGameStrList, 0xaa), { UI::Style::Small, rgbLightGrey });
+    } else if (stellarData[shipData->targetStellar].dominated != 0) {
+        p.Text(box.left, (box.top + 0x2a), IndStringRaw(kGameStrList, 0xc4), grey);
+        p.Text("  ", grey);
+        p.Text(IndStringRaw(kGameStrList,
+                            stellarData[shipData->targetStellar].flags2 & kSpobAlwaysDominated ? 0xab : 0xac),
+               { UI::Style::Small, brightGreen });
+    } else if (hatesPlayer != 0) {
+        p.Text(box.left, (box.top + 0x2a), IndStringRaw(kGameStrList, 0xc4), grey);
+        p.Text("  ", grey);
+        if (playerRecord[shipData->curSystem] >= 0)
+            p.Text(IndStringRaw(kGameStrList, 0xad), { UI::Style::Small, rgbGold, true });
+        else
+            p.Text(IndStringRaw(kGameStrList, 0xae), { UI::Style::Small, redRGB, true });
+    }
+    LoadPageToDialog(commDialog);
 }
 
 #define kAdviceNone         175
@@ -1321,7 +1258,6 @@ short HaggleDialog::Run(Boolean raise, short chance)
         return 0;
 
     backdrop.Load(kHagglePictID);
-    SetDialogGWorld(haggleDialog);
     HaggleDialogUpdate();
     FlushEvents(everyEvent - diskMask, 0);
     Loop();
@@ -1336,7 +1272,7 @@ void HaggleDialog::Hit(short item)
     int32_t conv;
 
     if (item == kItemDone) {
-        HaggleButtons().Draw(-1);
+        HaggleButtons().DrawOnDialog(-1);
         if (result != 2)
             result = 1;
         done = 1;
@@ -1357,7 +1293,7 @@ void HaggleDialog::Hit(short item)
             result = 2;
             done = 1;
         }
-        HaggleButtons().Draw(-1);
+        HaggleButtons().DrawOnDialog(-1);
     }
 }
 
@@ -1401,39 +1337,36 @@ void HaggleDialogUpdate(void)
     Rect box;
     short itemType;
     Handle item;
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
 
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(haggleDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(haggleDialog), UI::kBlack);
     if (haggleBackgroundPic != NULL)
-        DrawPicHandle(haggleBackgroundPic, GetDialogPortRect(haggleDialog));
+        p.Picture(haggleBackgroundPic, *GetDialogPortRect(haggleDialog));
     GetDialogItem(haggleDialog, 3, &itemType, &item, &box);
-    ForeColor(whiteColor);
-    MoveTo(box.left + kTextInsetH, box.top + kTextBaseline);
+    p.Pen(box.left + kTextInsetH, box.top + kTextBaseline);
     if (haggleMode == kHaggleMission) {
-        DrawCString("The pay for having completed this mission is ");
+        p.Text("The pay for having completed this mission is ", white);
     } else if (haggleMode == kHaggleTrade) {
-        DrawIndString(kGameStrList, kHaggleTradeStr);
-        DrawCString(" ");
+        p.Text(IndStringRaw(kGameStrList, kHaggleTradeStr), white);
+        p.Text(" ", white);
     } else if (haggleMode == kHaggleCapture) {
         if (shipData->targetShip != -1)
-            DrawIndString(kGameStrList, kHaggleCaptureA);
+            p.Text(IndStringRaw(kGameStrList, kHaggleCaptureA), white);
         else
-            DrawIndString(kGameStrList, kHaggleCaptureB);
-        DrawCString(" ");
+            p.Text(IndStringRaw(kGameStrList, kHaggleCaptureB), white);
+        p.Text(" ", white);
     }
-    DrawCommaNumber(haggleVal);
-    DrawCString(" ");
+    p.Text(CommaNumber(haggleVal), white);
+    p.Text(" ", white);
     if (haggleVal > 1)
-        DrawCString(creditsString);
+        p.Text(creditsString, white);
     else
-        DrawCString(creditString);
-    DrawCString(".");
-    ForeColor(blackColor);
-    HaggleButtons().Draw(-1);
-    CopyLoadPortToDialog(haggleDialog);
+        p.Text(creditString, white);
+    p.Text(".", white);
+    HaggleButtons().Draw(p, -1);
+    LoadPageToDialog(haggleDialog);
 }
 
 /*
@@ -1576,14 +1509,11 @@ void PlunderDialog::Run()
     if (!dialog.IsOpen())
         return;
     backdrop.Load(kPlunderPictID);
-    SetDialogGWorld(plunderDialog);
     PlunderDialogUpdate();
     FlushEvents(everyEvent - diskMask, 0);
     Loop();
     backdrop.Release();
-    SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
-    SWSetPortToWindow(gSpriteWorld);
     ResetPlayerPrecalcedValues();
 }
 
@@ -1614,7 +1544,6 @@ void PlunderDialog::Hit(short item)
         shipData[shipData->targetShip].deathTimer = 0;
         PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
         DisplayComm(IndString(kGameStrList, 0x71), kCommFrames);
-        SetDialogGWorld(plunderDialog);
         done = 1;
         return;
     }
@@ -1638,7 +1567,6 @@ void PlunderDialog::Hit(short item)
                 statusRedraw[kRedrawCargo] = 1;
                 salvageQty = 0;
                 salvageType = -1;
-                SetDialogGWorld(plunderDialog);
                 RedrawDialog(plunderDialog);
             }
             salvageType = -1;
@@ -1649,7 +1577,6 @@ void PlunderDialog::Hit(short item)
         }
     }
     if (item == 3) {
-        SetDialogGWorld(plunderDialog);
         PlunderDialogUpdate();
         if (salvageCredits > 0) {
             PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
@@ -1663,7 +1590,6 @@ void PlunderDialog::Hit(short item)
             statusRedraw[kRedrawCargo] = 1;
             DrawStatus();
             salvageCredits = 0;
-            SetDialogGWorld(plunderDialog);
             RedrawDialog(plunderDialog);
         } else {
             PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
@@ -1715,7 +1641,6 @@ void PlunderDialog::Hit(short item)
             risky = 1;
             salvageAmmoQty = 0;
             salvageAmmoType = -1;
-            SetDialogGWorld(plunderDialog);
             RedrawDialog(plunderDialog);
         } else {
             PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
@@ -1728,7 +1653,6 @@ void PlunderDialog::Hit(short item)
             fuelSpace = (shipData->FuelCapacity() - shipData->fuel);
             if (fuelSpace > salvageFuelQty)
                 fuelSpace = salvageFuelQty;
-            SWSetPortToWindow(gSpriteWorld);
             if (fuelSpace > 0) {
                 shipData->fuel = shipData->fuel + fuelSpace;
                 if (shipData->fuel >= shipData->FuelCapacity())
@@ -1743,7 +1667,6 @@ void PlunderDialog::Hit(short item)
             risk *= 1.5;
             risky = 1;
             salvageFuelQty = 0;
-            SetDialogGWorld(plunderDialog);
             RedrawDialog(plunderDialog);
         } else {
             PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
@@ -1762,7 +1685,6 @@ void PlunderDialog::Hit(short item)
                 shipData[shipData->targetShip].armor = 0;
                 shipData[shipData->targetShip].deathTimer = 0;
                 DisplayComm(IndString(kGameStrList, 0x71), kCommFrames);
-                SetDialogGWorld(plunderDialog);
             } else {
                 PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
                 if (CanHireEscorts() != 0) {
@@ -1781,16 +1703,12 @@ void PlunderDialog::Hit(short item)
                         tmp[tmp[0]++] = Rand(9) + '1';
                         tmp[tmp[0]] = 0;
                         ok2 = EVTextInputDialog(prompt, tmp, 0x40);
-                        SetDialogGWorld(plunderDialog);
                         if (ok2 != 0) {
                             pstrcpy(shipName, textInputString);
-                            SetDialogGWorld(plunderDialog);
                             DoShipCapture(&shipData[shipData->targetShip], 0);
-                            SetDialogGWorld(plunderDialog);
                             LoadIntfResource();
                         } else {
                             DisplayComm(IndString(kGameStrList, 0x7a), kCommFrames);
-                            SetDialogGWorld(plunderDialog);
                         }
                     } else if (use == CaptureUse::Escort) {
                         done = 1;
@@ -1821,7 +1739,6 @@ void PlunderDialog::Hit(short item)
                         for (i = 0; i < 4; i++)
                             shipData[shipData->targetShip].jamming[i] = -1;
                         DisplayComm(IndString(kGameStrList, 0x7b), kCommFrames);
-                        SetDialogGWorld(plunderDialog);
                         statusRedraw[kRedrawCargo] = 1;
                     } else {
                         done = 1;
@@ -1829,20 +1746,17 @@ void PlunderDialog::Hit(short item)
                 } else {
                     PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
                     DisplayComm(IndString(kGameStrList, 0x7c), kCommFrames);
-                    SetDialogGWorld(plunderDialog);
                 }
             }
         } else {
             done = 1;
             PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
             DisplayComm(IndString(kGameStrList, 0x7d), kCommFrames);
-            SetDialogGWorld(plunderDialog);
         }
     }
     if (done == 0) {
         PlunderDialogUpdate();
         HandleComm();
-        SetDialogGWorld(plunderDialog);
     }
 }
 
@@ -2024,70 +1938,55 @@ void PlunderDialogUpdate(void)
     short i;
     short j;
     Boolean found;
+    const UI::TextSpec light = { UI::Style::Small, rgbLightGrey };
+    const UI::TextSpec grey = { UI::Style::Small, rgbMedGrey };
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
 
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(plunderDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(plunderDialog), UI::kBlack);
     if (plunderBackgroundPic != NULL)
-        DrawPicHandle(plunderBackgroundPic, GetDialogPortRect(plunderDialog));
+        p.Picture(plunderBackgroundPic, *GetDialogPortRect(plunderDialog));
     GetDialogItem(plunderDialog, 5, &itemType, &item, &box);
-    ForeColor(blackColor);
-    PaintRect(&box);
-    RGBForeColor(&rgbLightGrey);
-    MoveTo(box.left, (box.top + 12));
-    DrawIndString(kGameStrList, 0x6d);
-    RGBForeColor(&rgbLightGrey);
-    MoveTo(box.left, (box.top + 0x1c));
-    DrawIndString(kGameStrList, 0x6e);
-    MoveTo(box.left, (box.top + 0x2a));
+    p.Fill(box, UI::kBlack);
+    p.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 0x6d), light);
+    p.Text(box.left, (box.top + 0x1c), IndStringRaw(kGameStrList, 0x6e), light);
     text = creditsString;
     if (!text.empty())
         text[0] = (char)toupper((unsigned char)text[0]);
-    DrawCString(text);
-    DrawCString(":");
-    MoveTo(box.left, (box.top + 0x38));
-    DrawIndString(kGameStrList, 0x6f);
-    MoveTo((box.left + 0x32), (box.top + 0x1c));
+    p.Text(box.left, (box.top + 0x2a), text, light);
+    p.Text(":", light);
+    p.Text(box.left, (box.top + 0x38), IndStringRaw(kGameStrList, 0x6f), light);
     if (salvageType != -1) {
-        ForeColor(whiteColor);
-        DrawCString(NumText(salvageQty));
-        DrawCString(" ");
+        p.Text((box.left + 0x32), (box.top + 0x1c), NumText(salvageQty), white);
+        p.Text(" ", white);
         if (salvageQty > 1)
-            DrawCString(tonsString);
+            p.Text(tonsString, white);
         else
-            DrawCString(tonString);
-        DrawCString(" ");
-        DrawIndString(kGameStrList, 0x187);
-        DrawCString(" ");
-        DrawCString(lcCargoName[salvageType]);
+            p.Text(tonString, white);
+        p.Text(" ", white);
+        p.Text(IndStringRaw(kGameStrList, 0x187), white);
+        p.Text(" ", white);
+        p.Text(lcCargoName[salvageType], white);
     } else {
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 0x14f);
+        p.Text((box.left + 0x32), (box.top + 0x1c), IndStringRaw(kGameStrList, 0x14f), grey);
     }
-    MoveTo((box.left + 0x32), (box.top + 0x2a));
-    if (salvageCredits > 0) {
-        ForeColor(whiteColor);
-        DrawCommaNumber(salvageCredits);
-    } else {
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 0x14f);
-    }
-    MoveTo((box.left + 0x32), (box.top + 0x38));
+    if (salvageCredits > 0)
+        p.Text((box.left + 0x32), (box.top + 0x2a), CommaNumber(salvageCredits), white);
+    else
+        p.Text((box.left + 0x32), (box.top + 0x2a), IndStringRaw(kGameStrList, 0x14f), grey);
     if (salvageAmmoType != (SalvageAmmo)-1) {
-        ForeColor(whiteColor);
-        DrawCString(NumText(salvageAmmoQty));
-        DrawCString(" ");
+        p.Text((box.left + 0x32), (box.top + 0x38), NumText(salvageAmmoQty), white);
+        p.Text(" ", white);
         found = 0;
         for (i = 0; i < kMaxOutfits; i++) {
             for (j = 0; j < kOutfMods; j++) {
                 if (outfitSystem[i].modType[j] == OutfMod::Ammo &&
                     salvageAmmoType == (SalvageAmmo)outfitSystem[i].modVal[j]) {
                     if (salvageAmmoQty == 1)
-                        DrawCString(lcOutfitName[i]);
+                        p.Text(lcOutfitName[i], white);
                     else
-                        DrawCString(lcPluralOutfitName[i]);
+                        p.Text(lcPluralOutfitName[i], white);
                     found = 1;
                     break;
                 }
@@ -2096,30 +1995,18 @@ void PlunderDialogUpdate(void)
                 break;
         }
     } else {
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 0x14f);
+        p.Text((box.left + 0x32), (box.top + 0x38), IndStringRaw(kGameStrList, 0x14f), grey);
     }
-    MoveTo((box.left + 1), (box.top + 0x46));
-    RGBForeColor(&rgbLightGrey);
-    DrawCString(fuelString[4]);
-    MoveTo((box.left + 0x32), (box.top + 0x46));
-    if (salvageFuelQty > 0) {
-        ForeColor(whiteColor);
-        DrawCommaNumber(salvageFuelQty);
-    } else {
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 0x14f);
-    }
-    MoveTo((box.left + 0x78), (box.top + 0x46));
-    RGBForeColor(&rgbLightGrey);
-    DrawIndString(kGameStrList, 0x70);
-    MoveTo((box.left + 0xc3), (box.top + 0x46));
-    ForeColor(whiteColor);
-    DrawCString(NumText(captureOdds));
-    DrawCString("%");
-    ForeColor(blackColor);
-    PlunderButtons().Draw(-1);
-    CopyLoadPortToDialog(plunderDialog);
+    p.Text((box.left + 1), (box.top + 0x46), fuelString[4], light);
+    if (salvageFuelQty > 0)
+        p.Text((box.left + 0x32), (box.top + 0x46), CommaNumber(salvageFuelQty), white);
+    else
+        p.Text((box.left + 0x32), (box.top + 0x46), IndStringRaw(kGameStrList, 0x14f), grey);
+    p.Text((box.left + 0x78), (box.top + 0x46), IndStringRaw(kGameStrList, 0x70), light);
+    p.Text((box.left + 0xc3), (box.top + 0x46), NumText(captureOdds), white);
+    p.Text("%", white);
+    PlunderButtons().Draw(p, -1);
+    LoadPageToDialog(plunderDialog);
 }
 
 /*
@@ -2176,7 +2063,6 @@ void EscortDialog::Run(ShipObj *ship)
 
     commDialogMode = 2;
 
-    SetDialogGWorld(commDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(commDialog);
     EscortDialogUpdate();
@@ -2206,7 +2092,6 @@ void EscortDialog::Run(ShipObj *ship)
     commShip = NULL;
     gSpeedMult = 0;
     backdrop.Release();
-    SWSetPortToWindow(gSpriteWorld);
 }
 
 void EscortDialog::Hit(short item)
@@ -2286,99 +2171,70 @@ void EscortDialogUpdate(void)
     short itemType;
     Handle item;
     Rect box;
+    const UI::TextSpec light = { UI::Style::Small, rgbLightGrey };
+    const UI::TextSpec grey = { UI::Style::Small, rgbMedGrey };
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(commDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(commDialog), UI::kBlack);
     if (commBackgroundPic != NULL)
-        DrawPicHandle(commBackgroundPic, GetDialogPortRect(commDialog));
-    EscortButtons().Draw(-1);
+        p.Picture(commBackgroundPic, *GetDialogPortRect(commDialog));
+    EscortButtons().Draw(p, -1);
     GetDialogItem(commDialog, 11, &itemType, &item, &box);
-    ForeColor(blackColor);
-    DrawPicHandle(commShipPic, &box);
+    p.Picture(commShipPic, box);
     GetDialogItem(commDialog, 12, &itemType, &item, &box);
-    ForeColor(blackColor);
-    PaintRect(&box);
-    RGBForeColor(&rgbMedGrey);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    MoveTo(box.left, (box.top + 12));
-    if (commShip->hired != 0)
-        DrawIndString(kGameStrList, 0xa6);
-    else
-        DrawIndString(kGameStrList, 0xa7);
-    DrawCString(":");
-    ForeColor(whiteColor);
-    MoveTo((box.left + 3), (box.top + 0x1b));
-    DrawCString(shipClassStr);
+    p.Fill(box, UI::kBlack);
+    p.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, commShip->hired != 0 ? 0xa6 : 0xa7), grey);
+    p.Text(":", grey);
+    p.Text((box.left + 3), (box.top + 0x1b), shipClassStr, white);
     subtitle = FromNameField(shipClass[commShip->type].subtitle);
-    if (!subtitle.empty()) {
-        MoveTo((box.left + 3), (box.top + 0x29));
-        DrawCString(subtitle);
-    }
-    ForeColor(blackColor);
+    if (!subtitle.empty())
+        p.Text((box.left + 3), (box.top + 0x29), subtitle, white);
     GetDialogItem(commDialog, 10, &itemType, &item, &box);
-    ForeColor(blackColor);
-    PaintRect(&box);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    MoveTo(box.left, (box.top + 12));
+    p.Fill(box, UI::kBlack);
     if (canUpgradeEscort) {
         if (commShip->upgradeOnLanding != 0) {
-            RGBForeColor(&rgbLightGrey);
-            DrawIndString(kGameStrList, 0x124);
+            p.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 0x124), light);
         } else {
-            RGBForeColor(&rgbMedGrey);
-            DrawIndString(kGameStrList, 0x125);
-            DrawCString(" ");
-            MoveTo((box.left + 0x46), (box.top + 12));
-            ForeColor(whiteColor);
-            DrawCommaNumber(shipClass[commShip->type].escUpgradeCost);
-            DrawCString(" ");
+            p.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 0x125), grey);
+            p.Text(" ", grey);
+            p.Text((box.left + 0x46), (box.top + 12), CommaNumber(shipClass[commShip->type].escUpgradeCost), white);
+            p.Text(" ", white);
             if (shipClass[commShip->type].escUpgradeCost == 1)
-                DrawCString(creditString);
+                p.Text(creditString, white);
             else
-                DrawCString(creditsString);
+                p.Text(creditsString, white);
         }
     } else {
-        RGBForeColor(&rgbLightGrey);
-        DrawIndString(kGameStrList, 0x126);
+        p.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 0x126), light);
     }
     if (canSellEscort) {
-        MoveTo(box.left, (box.top + 0x1c));
         if (commShip->sellOnLanding != 0) {
-            RGBForeColor(&rgbLightGrey);
-            DrawIndString(kGameStrList, 0x127);
+            p.Text(box.left, (box.top + 0x1c), IndStringRaw(kGameStrList, 0x127), light);
         } else {
-            RGBForeColor(&rgbMedGrey);
-            DrawIndString(kGameStrList, 0x128);
-            DrawCString(" ");
-            MoveTo((box.left + 0x46), (box.top + 0x1c));
-            ForeColor(whiteColor);
-            DrawCommaNumber(shipClass[commShip->type].tradeIn);
-            DrawCString(" ");
+            p.Text(box.left, (box.top + 0x1c), IndStringRaw(kGameStrList, 0x128), grey);
+            p.Text(" ", grey);
+            p.Text((box.left + 0x46), (box.top + 0x1c), CommaNumber(shipClass[commShip->type].tradeIn), white);
+            p.Text(" ", white);
             if (shipClass[commShip->type].tradeIn == 1)
-                DrawCString(creditString);
+                p.Text(creditString, white);
             else
-                DrawCString(creditsString);
+                p.Text(creditsString, white);
         }
     }
     if (commShip->hired != 0) {
-        MoveTo(box.left, (box.top + 0x2a));
-        RGBForeColor(&rgbMedGrey);
-        DrawIndString(kGameStrList, 0x129);
-        DrawCString(" ");
-        MoveTo((box.left + 0x1e), (box.top + 0x2a));
-        ForeColor(whiteColor);
-        DrawCommaNumber((shipClass[commShip->type].cost * 0.01));
-        DrawCString(" ");
+        p.Text(box.left, (box.top + 0x2a), IndStringRaw(kGameStrList, 0x129), grey);
+        p.Text(" ", grey);
+        p.Text((box.left + 0x1e), (box.top + 0x2a), CommaNumber((shipClass[commShip->type].cost * 0.01)), white);
+        p.Text(" ", white);
         if (shipClass[commShip->type].cost * 0.01 == 1.0)
-            DrawCString(creditString);
+            p.Text(creditString, white);
         else
-            DrawCString(creditsString);
-        DrawCString(" ");
-        DrawIndString(kGameStrList, 0x10b);
+            p.Text(creditsString, white);
+        p.Text(" ", white);
+        p.Text(IndStringRaw(kGameStrList, 0x10b), white);
     }
-    CopyLoadPortToDialog(commDialog);
+    LoadPageToDialog(commDialog);
 }
 

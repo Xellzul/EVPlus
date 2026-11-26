@@ -1,7 +1,7 @@
-/* screen.cpp -- the screen page and the frame: the page handed to the platform's window, with the space view the
-   GPU draws under it. */
-#include <algorithm>
+/* screen.cpp -- the screen and the frame: the interface's layer (the game port's GPU target) handed to the
+   platform's window, with the space view the GPU draws under it. */
 #include "burger.h"
+#include "canvas.h"
 #include "platform.h"
 #include "profiler.h"
 #include "viewdraw.h"
@@ -12,14 +12,19 @@ namespace Screen {
 
 namespace {
 
+constexpr int kTargetDepth = 32;    /* a GPU target's pixels */
+
 Page page;
 bool viewFresh;                     /* composed since the last present */
+bool viewCovered;                   /* drawn over the view's place since that was last made clear */
 bool changed;                       /* something to show since the last frame end */
+bool redrawing;                     /* inside Redraw */
 unsigned shownWhite;                /* the white-out level of the frame last shown */
+unsigned drawnEpoch;                /* PlatUIEpoch when the layer was made, or last drawn whole again */
 
 /* 1.1.1's hyperspace white-out: 1.1.1 has CGDisplayFade blend the whole display to and from solid white over
    1.5 s while the game runs on; here the platform shows the frame blended toward white by the fade's position
-   at that moment. The page the game draws into is untouched. */
+   at that moment. What the game draws is untouched. */
 unsigned whiteFrom;
 unsigned whiteTo;
 Word32 whiteStart;
@@ -34,29 +39,43 @@ unsigned CurrentWhite()
     return whiteFrom + ((int32_t)whiteTo - (int32_t)whiteFrom) * (int32_t)elapsed / (int32_t)whiteTicks;
 }
 
-/* The view goes to the platform at its own size, under the page; its place on the page is marked see-through. */
-void MarkView()
+/* the GPU lost what the layer held: it is put together again from nothing */
+void Redraw()
 {
-    Rect r = View::OnPage(page);
-
-    for (int y = r.top; y < r.bottom; y++) {
-        unsigned short *row = (unsigned short *)(page.pixels + (size_t)y * page.pitch);
-        std::fill(row + r.left, row + r.right, (unsigned short)kPlatSeeThrough);
-    }
-    viewFresh = true;
+    redrawing = true;
+    drawnEpoch = PlatUIEpoch();
+    UI::Canvas::FlushAll();
+    PlatTargetClear(gGamePort.target);
+    viewCovered = false;
+    RedrawInterface();
+    changed = true;
+    redrawing = false;
 }
 
-/* a cleared page of width x height; NULL pixels when it can't be had */
-Page NewPage(int width, int height, int depth)
+/* the game port on a screen of width x height, drawn through a new layer; false = none made, nothing changed */
+bool MakeLayer(int width, int height)
 {
-    Page made;
+    PixMap &pix = gGamePort.pix;
+    Page old = { pix.width, pix.height };
 
-    made.pixels = (char *)AllocAPointerClear((Word32)(2 * width * height));
-    made.pitch = 2 * width;
-    made.width = width;
-    made.height = height;
-    made.depth = depth;
-    return made;
+    pix.width = width;
+    pix.height = height;
+    if (!UI::Canvas::MakeTarget(&gGamePort)) {
+        pix.width = old.width;
+        pix.height = old.height;
+        return false;
+    }
+    pix.pixelSize = kTargetDepth;
+    pix.baseAddr = NULL;
+    pix.rowBytes = 0;
+    gGamePort.depth = kTargetDepth;
+    page.width = width;
+    page.height = height;
+    drawnEpoch = PlatUIEpoch();
+    viewCovered = false;
+    viewFresh = false;
+    changed = true;
+    return true;
 }
 
 } // namespace
@@ -66,43 +85,46 @@ const Page &Get()
     return page;
 }
 
-bool Open(int width, int height, int depth)
+bool Open(int width, int height)
 {
-    page = NewPage(width, height, depth);
-    return page.pixels != NULL;
+    return MakeLayer(width, height);
 }
 
 bool Resize(int width, int height)
 {
-    Page made = NewPage(width, height, page.depth);
-
-    if (made.pixels == NULL)
+    if (!PlatVideoCanResize(width, height) || !MakeLayer(width, height))
         return false;
-    if (PlatVideoResize(width, height) != 0) {
-        DeallocAPointer(made.pixels);
-        return false;
-    }
-    DeallocAPointer(page.pixels);
-    page = made;
-    viewFresh = false;
-    changed = true;
+    PlatVideoResize(width, height);
     return true;
 }
 
 void Close()
 {
     viewFresh = false;
-    if (page.pixels != NULL)
-        DeallocAPointer(page.pixels);
+    UI::Canvas::DropTarget(&gGamePort);
+    gGamePort.pix.width = 0;
+    gGamePort.pix.height = 0;
     page = Page();
+}
+
+void Drawn(int left, int top, int right, int bottom)
+{
+    Rect view = View::OnPage(page);
+
+    if (left < view.right && right > view.left && top < view.bottom && bottom > view.top)
+        viewCovered = true;
 }
 
 void ComposeView()
 {
-    if (page.pixels == NULL || View::width <= 0)
+    if (gGamePort.target == NULL || View::width <= 0)
         return;
     Profiler::Begin(Profiler::Compose);
-    MarkView();
+    if (viewCovered) {
+        UI::Painter(UI::Surface::Screen()).Clear(View::OnScreen());
+        viewCovered = false;
+    }
+    viewFresh = true;
     ViewDraw::BeginOverlays();
     DrawOverlays();
     changed = true;
@@ -125,14 +147,20 @@ void EndFrame()
 {
     unsigned white = CurrentWhite();
 
-    if ((!changed && white == shownWhite) || page.pixels == NULL)
+    if (gGamePort.target == NULL)
+        return;
+    if (drawnEpoch != PlatUIEpoch() && !redrawing)
+        Redraw();
+    if (!changed && white == shownWhite)
         return;
     changed = false;
     shownWhite = white;
+    UI::Canvas::FrameDone();
     PlatVideoSetWhite(white);
+    PlatVideoView view = {};
+    const PlatVideoView *given = NULL;
     if (viewFresh) {
         Rect r = View::OnPage(page);
-        PlatVideoView view = {};
         view.width = View::width;
         view.height = View::height;
         view.x = r.left;
@@ -142,10 +170,9 @@ void EndFrame()
         view.zoom = View::Zoom();
         ViewDraw::Take(view);
         viewFresh = false;
-        PlatVideoPresentView(page.pixels, page.pitch, &view);
-    } else {
-        PlatVideoPresent(page.pixels, page.pitch);
+        given = &view;
     }
+    PlatVideoPresentLayer(gGamePort.target, given);
 }
 
 void Idle()

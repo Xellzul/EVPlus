@@ -151,6 +151,14 @@ std::string IndString(int list, int index)
     return text;
 }
 
+std::string IndStringRaw(int list, int index)
+{
+    Str255 str;
+
+    GetIndString(str, list, index);
+    return FromPascal(str);
+}
+
 std::string NumText(int32_t value)
 {
     Str255 str;
@@ -159,6 +167,8 @@ std::string NumText(int32_t value)
     return FromPascal(str);
 }
 
+// FUNCTION: EVNOVA 0x00465af0
+// MAC: _DrawCommaNumber i386 0x00004895 ppc 0x00005cb0
 std::string CommaNumber(int32_t value)
 {
     if (value < 1000)

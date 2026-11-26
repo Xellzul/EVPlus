@@ -1,7 +1,7 @@
 /* atticks.cpp -- the platform layer's clocks: the millisecond tick count and its rate.
    The exe reads the performance counter, corrects it against GetTickCount when the two drift more than
-   half a second apart, and keeps a timer thread that touches the counter every 4 s; all of them read the
-   platform's one monotonic clock here. Notes: Research/notes/atticks.md */
+   half a second apart, and keeps a timer thread that touches the counter every 4 s; here it reads the
+   platform's one monotonic clock. Notes: Research/notes/atticks.md */
 
 #include "burger.h"
 #include "platform.h"

@@ -2,8 +2,11 @@
    the particles, handed to the platform with the overlays. */
 #pragma once
 
+#include <vector>
 #include "macport.h"
 #include "platform.h"
+
+struct SpriteBlend;
 
 namespace ViewDraw {
 
@@ -11,16 +14,19 @@ void Install();                     /* hooks the sprite world to draw through th
 void Clear();                       /* the view plain, the system's colour, no flash (landed, a refresh, dropped) */
 
 /* Added to the frame being built: an overlay frame (comm line, floating map, escort menu) laid over the view
-   at `place' on the page, faded by `level' of 32 (after BeginOverlays, where the page's overlays start). */
+   at `place' on the screen, faded by `level' of 32 (after BeginOverlays, where a frame's overlays start). */
 void BeginOverlays();
 void Overlay(SWFrameRec *frame, const Rect &place, short level);
 void Flash(const RGBColor &color);  /* the whole view one colour for 50 ms of frames from the next taken (jump flashes) */
 
-/* The frame built last: draws in view pixels; overlays, then the interface layer's sprites, in page pixels.
+/* The frame built last: draws in view pixels; overlays, then the interface layer's sprites, in screen pixels.
    Brightness is applied to each image and colour before blending (exact at the default brightness; with the
-   original blending, to the whole view after it), and overlays are laid over the white-out. */
+   original blending, to the whole view after it); the white-out is laid over the overlays too. */
 void Take(PlatVideoView &view);
 
 void FrameGone(SWFrameRec *frame);  /* a sprite frame is freed: its image goes with it */
+
+/* the draws that show a sprite's image at `place' as a blend says (never the original blend), added to `list' */
+void BlendDraws(PlatImage *image, const SpriteBlend &blend, const Rect &place, std::vector<PlatDraw> &list);
 
 } // namespace ViewDraw

@@ -29,7 +29,6 @@ static const PrefsJsonField kPrefsJsonFields[] = {
     { "gameWidth",      offsetof(PrefsRecord, gameWidth) },
     { "gameHeight",     offsetof(PrefsRecord, gameHeight) },
     { "scaleFilter",    offsetof(PrefsRecord, scaleFilter) },
-    { "wholePixelScaling", offsetof(PrefsRecord, wholePixelScaling) },
     { "stereoPan",      offsetof(PrefsRecord, stereoPan) },
     { "asteroidScaling", offsetof(PrefsRecord, asteroidScaling) },
     { "mapPrices",      offsetof(PrefsRecord, mapPrices) },

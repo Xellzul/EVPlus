@@ -2,7 +2,9 @@
 
 #include <math.h>
 #include "burgerplat.h"
+#include "canvas.h"
 #include "game.h"
+#include "glyphatlas.h"
 #include "render.h"
 #include "stellar.h"
 #include "crashlog.h"
@@ -20,6 +22,8 @@
 #include "prefsdisplay.h"
 #include "sound.h"
 #include "text.h"
+#include "painter.h"
+#include "uiart.h"
 
 static void SpriteWorldFailed(void)
 {
@@ -77,7 +81,6 @@ void SetupSpriteWorld(void)
     Rect windRect;
 
     mBarHidden = 1;
-    SetPortWindowPort((WindowRef)gWind);
     windRect = ViewFrames();
     err = SWCreateSpriteWorld(&gSpriteWorld, gWind, windRect);
     if ((int32_t)err != 0)
@@ -118,9 +121,7 @@ void SetupSpriteWorld(void)
     crashlog("creating scratch frames");
     CreateOverlayFrames();
 
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect((WindowRef)gWind));
+    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
 
     spriteClipRect = floatingEscortMenuFrame->frameRect;
     spriteClipRect.top -= 75;
@@ -176,9 +177,7 @@ void SetupWind(void)
     crashlog_print(", ");
     crashlog_print_num(bottom);
     crashlog_print(")\n");
-    SetPortWindowPort(gWind);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect(gWind));
+    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect(gWind), UI::kBlack);
     if (settings.windowed == 0) {
         mBarHidden = 1;
     }
@@ -304,7 +303,6 @@ void InitOffscreen(void)
         ExitToShell();
     }
     CreateStatusOffPort(r);
-    SWSetPortToWindow(gSpriteWorld);
 }
 
 #define kVoiceClipsMax           9
@@ -377,7 +375,6 @@ void Bye(void)
         ST_DisposeSound(voiceSnd);
 
     ByeLog("disposing buttons");
-    SetPortWindowPort((WindowRef)gWind);
     DisposeButtons();
 
     ByeLog("disposing sprites");
@@ -778,8 +775,7 @@ void ShowMenuArt(const Rect &area, bool onlyChanged)
     if (onlyChanged && SameAsShown(read))
         return;
     KeepAsShown(read);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&menuArtPort), GWorldContainerBits(&loadPort), &shown, &shown, 0, NULL);
+    UI::Painter(UI::Surface::Load()).Copy(UI::Surface(menuArtPort), shown, shown);
 }
 
 /* the resolution, game size, UI scale and blending the game runs at */
@@ -805,8 +801,18 @@ void SetupMonitor(void)
     PixelSize draw = DrawSize(resolution);
     ApplyDisplayScaling();
     PlatVideoAskOrBlend(settings.orBlend);
-    SetDisplayToSize(draw.width, draw.height, kVideoDepth,
-                     (settings.runInWindow != 0 ? 0 : kVideoFullScreen) | kVideoAlways);
+    long flags = (settings.runInWindow != 0 ? 0 : kVideoFullScreen) | kVideoAlways;
+    if (SetDisplayToSize(draw.width, draw.height, kVideoDepth, flags) != 0) {
+        /* the preferences' resolution can't be had: this run at the desktop's, the preferences kept */
+        crashlog("preferences resolution not available: the default one");
+        applied.resolution.width = 0;
+        applied.resolution.height = 0;
+        ApplyUIScale();
+        draw = DrawSize(applied.resolution);
+        ApplyDisplayScaling();
+        if (SetDisplayToSize(draw.width, draw.height, kVideoDepth, flags) != 0)
+            Fatal("Couldn't set display mode %dx%d\n", draw.width, draw.height);
+    }
     if (settings.orBlend != 0 && PlatVideoOrBlend() == 0)
         crashlog("original blending not available here: sprites are added");
 }
@@ -860,8 +866,8 @@ Boolean OrBlendInUse(void)
 }
 
 /* A resolution, game size and the preferences' UI scale, to the running game (from the main menu, no dialog
-   open): the scales and sizes, the page when its size changes, and every port and frame made for them. A page
-   that can't be had keeps the running resolution and UI scale. */
+   open): the scales and sizes, the screen when its size changes, and every port and frame made for them. A
+   screen that can't be had keeps the running resolution and UI scale. */
 static void ApplyDisplay(Resolution chosen, short gameSize)
 {
     short viewWidth = View::width;
@@ -873,7 +879,6 @@ static void ApplyDisplay(Resolution chosen, short gameSize)
         crashlog("display settings not applied: no sprite world, or inside the menu's scale");
         return;
     }
-    SWSetPortToWindow(gSpriteWorld);
     PixelSize draw = DrawSize(chosen);
     if (draw.width != Screen::Get().width || draw.height != Screen::Get().height) {
         if (!Screen::Resize(draw.width, draw.height)) {
@@ -883,7 +888,6 @@ static void ApplyDisplay(Resolution chosen, short gameSize)
             SavePrefs();
             return;
         }
-        AttachGamePort();
     }
     applied.resolution = chosen;
     applied.gameSize = gameSize;
@@ -900,24 +904,53 @@ static void ApplyDisplay(Resolution chosen, short gameSize)
     SWDisposeFrame(&floatingMapFrame);
     SWDisposeFrame(&floatingEscortMenuFrame);
     CreateOverlayFrames();
-    redrawEscortMenu = 1;
 
     DisposeGWorldContainer(&loadPort);
     DisposeGWorldContainer(&menuArtPort);
     DisposeGWorldContainer(&menuShownPort);
     DisposeGWorldContainer(&statusOffPort);
     InitOffscreen();
-    lastIntfResourceID = -1;
     DisposeGWorldContainer(&buttonPort);
     CreateButtonPort();
+    /* what the GPU kept for the sizes and ports before */
+    UI::Canvas::Release();
+    UI::Art::Clear();
+    UI::GlyphAtlas::Clear();
 
     ResetCommRect();
     if (alertSprite != NULL)
         PlaceAlertSprite();
     if (gameInProgress != 0 && (View::width != viewWidth || View::height != viewHeight))
         CreateAsteroids();
+    /* what the interface keeps drawn is of another size: each piece is made again where it is next shown */
+    redrawEscortMenu = 1;
+    lastIntfResourceID = -1;
     mainScreenBackgroundDirty = 1;
-    SWSetPortToWindow(gSpriteWorld);
+}
+
+/* the load page whole onto the screen: while loading and in the intro it holds the picture shown */
+void ShowLoadPage(void)
+{
+    UI::Painter(UI::Surface::Screen())
+        .Copy(UI::Surface::Load(), *GetCWindowPortRect(gWind), *GetCWindowPortRect(gWind));
+}
+
+/* the screen put together again: the menu, the view with its status bar or the load page, then the dialogs' ports */
+void RedrawInterface(void)
+{
+    if (gWind == NULL)
+        return;
+    if (showingIntroText != 0)
+        UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect(gWind), UI::kBlack);
+    else if (gPause != 0 && textDialog != NULL)
+        ShowMainScreen();               /* a text dialog draws on the load page: the menu as composed before it */
+    else if (gPause != 0)
+        MainScreenUpdate(1);
+    else if (gameInProgress != 0 && gameLoaded != 0)
+        RefreshSAT();
+    else
+        ShowLoadPage();
+    nv_UpdateDialogWindow(1);
 }
 
 /* The Preferences' display settings after the dialog closes; a game size waits for the next pilot while one
@@ -939,13 +972,13 @@ void ApplyBrightness(void)
     PlatVideoSetBrightness(100.0 / (settings.gamma * 10.0 + 70.0));
 }
 
-/* The preferences' upscaling filter and whole-pixel scaling, to the window. */
+/* The preferences' upscaling filter, to the window. */
 void ApplyDisplayScaling(void)
 {
     static const int kFilters[kScaleFilterCount] = { kPlatFilterNearest, kPlatFilterLinear,
                                                      kPlatFilterPixelArt };
 
-    PlatVideoSetScaling(kFilters[settings.scaleFilter], settings.wholePixelScaling);
+    PlatVideoSetScaling(kFilters[settings.scaleFilter]);
 }
 
 // FUNCTION: EVNOVA 0x004b42f0

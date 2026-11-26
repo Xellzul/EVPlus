@@ -5,7 +5,7 @@
 #include "uiscale.h"
 #include "screen.h"
 
-/* ScreenEndScene (mac @ScreenEndScene@0): the page has changed. It is shown at the next frame end or wait
+/* ScreenEndScene (mac @ScreenEndScene@0): the screen has changed. It is shown at the next frame end or wait
    (Screen::EndFrame, Screen::Idle), not here. */
 // FUNCTION: EVNOVA 0x004b6850
 void ScreenEndScene(void)

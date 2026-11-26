@@ -3,6 +3,7 @@
 #include "ships.h"
 #include "player.h"
 #include "render.h"
+#include "painter.h"
 
 ShipClassID lastTargetedShipClass;
 short lastTargetedShipShields;
@@ -32,17 +33,13 @@ void RedrawStatus(Boolean copyToScreen)
     SetRect(&box, GetCWindowPortRect(gWind)->right - kStatusBarWidth,
             GetCWindowPortRect(gWind)->top, GetCWindowPortRect(gWind)->right,
             GetCWindowPortRect(gWind)->bottom);
-    CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
-             &statusOffPort.bounds, &box, 0, 0);
+    UI::Painter(UI::Surface::Load()).Copy(UI::Surface(statusOffPort), statusOffPort.bounds, box);
     if (shipData->HasIFF()) {
-        SetGWorldContainer(&loadPort);
         box2 = statusOffRect[0];
         // BUG (all versions): offsets box, but paints the unshifted box2 (status-bar coordinates);
         // CE F14.04 keeps it
         OffsetRect(&box, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-        ForeColor(blackColor);
-        PaintRect(&box2);
-        SWSetPortToWindow(gSpriteWorld);
+        UI::Painter(UI::Surface::Load()).Fill(box2, UI::kBlack);
     }
     statusRedraw[kRedrawNav] = 1;
     statusRedraw[kRedrawShield] = 1;
@@ -60,15 +57,7 @@ void RedrawStatus(Boolean copyToScreen)
     if (copyToScreen) {
         box = *GetCWindowPortRect((WindowRef)gWind);
         box.left = box.right - kStatusBarWidth;
-        if (gSpriteWorld->fastBlit) {
-            CopyBits(GWorldContainerBits(&loadPort),
-                     GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                     &box, &box, 0, 0);
-        } else {
-            CopyBits(GWorldContainerBits(&loadPort),
-                     GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                     &box, &box, 0, NULL);
-        }
+        UI::Painter(UI::Surface::Screen()).Copy(UI::Surface::Load(), box, box);
     }
 }
 

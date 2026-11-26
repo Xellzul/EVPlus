@@ -10,6 +10,7 @@
 #include "gamedialog.h"
 #include "buttons.h"
 #include "scrolltext.h"
+#include "painter.h"
 #include "text.h"
 
 #define kWideDlogID               0x03fc
@@ -141,17 +142,14 @@ short SingleMissionDialog::Run(short offered)
     }
 
     MungeBriefing(1, mission);
-    SetDialogGWorld(missionDialog);
 
     GetDialogItem(missionDialog, kItemBriefText, &itemType, (Handle *)&itemHandle, &box);
     offerTextHandle = TENew(&box, &box);
     if (offerTextHandle != NULL) {
         (*offerTextHandle)->txFont = smallTextFont;
         (*offerTextHandle)->txSize = smallTextSize;
-        TextFont((*offerTextHandle)->txFont);
-        TextSize((*offerTextHandle)->txSize);
-        TESetLineMetrics(offerTextHandle);
-        TESetText(briefingTextPtr, strlen(briefingTextPtr), offerTextHandle);
+        UI::Painter(UI::Surface::Dialog(missionDialog))
+            .EditSetText(offerTextHandle, briefingTextPtr, strlen(briefingTextPtr), UI::Style::Small);
 
         shown = TETextHeight(offerTextHandle);
         itemHeight = box.bottom - box.top;
@@ -200,7 +198,7 @@ short SingleMissionDialog::Run(short offered)
                           (Handle *)&itemHandle, &(*offerTextHandle)->destRect);
             GetDialogItem(missionDialog, kItemBriefText, &itemType,
                           (Handle *)&itemHandle, &(*offerTextHandle)->viewRect);
-            TECalText(offerTextHandle);
+            UI::Painter(UI::Surface::Dialog(missionDialog)).EditMeasure(offerTextHandle, UI::Style::Small);
         }
     }
 
@@ -241,11 +239,11 @@ short SingleMissionDialog::Run(short offered)
     else
         CtoPstr((char *)missionButtonLabel[1]);
 
-    SetDialogGWorld(missionDialog);
-    TextFont(0);
-    TextSize(12);
-    widest = StringWidth(missionButtonLabel[0]);
-    otherWidth = StringWidth(missionButtonLabel[1]);
+    {
+        UI::Painter p(UI::Surface::Dialog(missionDialog));
+        widest = p.Measure(FromPascal(missionButtonLabel[0]), UI::Style::System);
+        otherWidth = p.Measure(FromPascal(missionButtonLabel[1]), UI::Style::System);
+    }
     if (widest > otherWidth)
         otherWidth = widest;
     otherWidth += kButtonPadding;
@@ -270,9 +268,7 @@ short SingleMissionDialog::Run(short offered)
     savedUp = canScrollTextUp;
     savedDown = canScrollTextDown;
 
-    SetDialogGWorld(missionDialog);
     FlushEvents(everyEvent - diskMask, 0);
-    ForeColor(blackColor);
     RedrawDialog(missionDialog);
     SingleMissionDialogUpdate();
 
@@ -310,11 +306,9 @@ short SingleMissionDialog::Run(short offered)
 static void RedrawOfferAfterSubDialog()
 {
     if (portDialog != NULL) {
-        SetDialogGWorld(portDialog);
         RedrawDialog(portDialog);
         PortDialogUpdate();
     }
-    SetDialogGWorld(missionDialog);
     RedrawDialog(missionDialog);
 }
 
@@ -331,7 +325,6 @@ void SingleMissionDialog::Hit(short item)
             SingleMissionDialogUpdate();
             LoadDescription(briefingTextPtr, mission + kMissionDescBase);
             MungeBriefing(1, mission);
-            SetDialogGWorld(missionDialog);
             done = 1;
         }
         if (item == kItemRefuse) {
@@ -468,28 +461,21 @@ void SingleMissionDialogUpdate(void)
     Rect r;
     short itemType;
     void *item;
+    UI::Painter p(UI::Surface::Load());
 
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(missionDialog));
-    DrawDialogBackground(missionBackgroundPic, *GetDialogPortRect(missionDialog),
+    p.Fill(*GetDialogPortRect(missionDialog), UI::kBlack);
+    DrawDialogBackground(p, missionBackgroundPic, *GetDialogPortRect(missionDialog),
                          descResourcePictId >= kFirstResourceID);
-    SingleMissionButtons().Draw(-1);
+    SingleMissionButtons().Draw(p, -1);
     if (descResourcePictId >= kFirstResourceID) {
         GetDialogItem(missionDialog, 8, &itemType, (Handle *)&item, &r);
         loaded = GetPicture(descResourcePictId);
         if (loaded != NULL) {
-            DrawPicHandle(loaded, &r);
+            p.Picture(loaded, r);
             QDReleaseResource(loaded);
         }
     }
     GetDialogItem(missionDialog, kItemBriefText, &itemType, (Handle *)&item, &r);
-    ForeColor(whiteColor);
-    BackColor(blackColor);
-    TEUpdate(&r, offerTextHandle);
-    ForeColor(blackColor);
-    BackColor(whiteColor);
-    CopyLoadPortToDialog(missionDialog);
+    p.EditDraw(offerTextHandle, r, { UI::Style::Small, UI::kWhite }, UI::kBlack);
+    LoadPageToDialog(missionDialog);
 }

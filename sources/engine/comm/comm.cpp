@@ -5,50 +5,33 @@
 #include "missions.h"
 #include "render.h"
 #include "text.h"
+#include "painter.h"
 
 #define kCommMsgMax     0xff
 #define kCommTextMax    0xfe
 
-/* the style of the message shown: white in the comm size, or a caller's own (DisplayCommStyled) */
-static struct {
-    short font;
-    short size;
-    RGBColor color;
-} gCommStyle = { 0, kCommTextSize, { 0xffff, 0xffff, 0xffff } };
+/* the style of the message shown: white in the comm style, or a caller's own (DisplayCommStyled) */
+static UI::TextSpec gCommSpec = { UI::Style::Comm, UI::kWhite };
 static bool gCommDrawn;                 /* CommOverlay's frame shows the message */
 static SWFrameRec *gCommFrame;          /* CommOverlay's */
 
-/* The comm message in its box on the current port, on black: added over the view, black adds nothing */
-static void DrawCommText(Rect *box)
+/* The comm message in its box, on black: added over the view, black adds nothing */
+static void DrawCommText(UI::Painter &p, const Rect &box)
 {
     unsigned char text[256];
 
     strncpy((char *)text, commMsg, kCommTextMax);
     text[kCommTextMax] = 0;
     PtoCstr(text);
-    RGBForeColor(&gCommStyle.color);
-    TextFont(gCommStyle.font);
-    TextSize(gCommStyle.size);
-    TextFace(0);
-    BackColor(blackColor);
-    TETextBox(text, strlen((char *)text), box, 0);
-    ForeColor(blackColor);
-    BackColor(whiteColor);
+    p.TextBox(box, text, strlen((char *)text), gCommSpec, UI::kBlack);
 }
 
-/* Grows commRect upwards to two lines of the comm font plus a 4-pixel gap, measured on the comm frame. */
+/* Grows commRect upwards to two lines of the comm style plus a 4-pixel gap, measured on the comm frame. */
 static void FitCommRect(SWFrameRec *frame)
 {
-    GrafPtr saved;
     short need;
 
-    GetPort(&saved);
-    SWSetPortToFrame(frame);
-    TextFont(0);
-    TextSize(kCommTextSize);
-    TextFace(0);
-    need = (short)View::ScaleInView(2 * TextLineHeight() + 4);
-    SetPort(saved);
+    need = (short)View::ScaleInView(2 * UI::Painter(UI::Surface(frame)).LineHeight(UI::Style::Comm) + 4);
     if (commRect.bottom - commRect.top < need)
         commRect.top = commRect.bottom - need;
 }
@@ -69,18 +52,15 @@ void ResetCommRect(void)
 // MAC: _DisplayComm i386 0x00090201 ppc 0x0009be7c
 void DisplayComm(PStrChar *msg, short count)
 {
-    DisplayCommStyled(msg, count, 0, kCommTextSize, &rgbWhite);
+    DisplayCommStyled(msg, count, { UI::Style::Comm, UI::kWhite });
 }
 
-void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const RGBColor *color)
+void DisplayCommStyled(PStrChar *msg, short count, const UI::TextSpec &spec)
 {
-    gCommStyle.font = font;
-    gCommStyle.size = size;
-    gCommStyle.color = *color;
+    gCommSpec = spec;
     commCount = count;
     strncpy(commMsg, (char *)msg, kCommMsgMax);
     gCommDrawn = false;
-    SWSetPortToWindow(gSpriteWorld);                /* callers draw on the window next */
 }
 
 void DisplayComm(const std::string &msg, short count)
@@ -91,12 +71,12 @@ void DisplayComm(const std::string &msg, short count)
     DisplayComm(text, count);
 }
 
-void DisplayCommStyled(const std::string &msg, short count, short font, short size, const RGBColor *color)
+void DisplayCommStyled(const std::string &msg, short count, const UI::TextSpec &spec)
 {
     Str255 text;
 
     ToPascal(msg, text);
-    DisplayCommStyled(text, count, font, size, color);
+    DisplayCommStyled(text, count, spec);
 }
 
 /* The comm message drawn in its own frame, at the screen's resolution, for Screen::ComposeView to lay over
@@ -126,11 +106,8 @@ SWFrameRec *CommOverlay(void)
         FitCommRect(frame);
     }
     if (!gCommDrawn) {
-        GrafPtr saved;
-        GetPort(&saved);
-        SWSetPortToFrame(frame);
-        DrawCommText(&bounds);
-        SetPort(saved);
+        UI::Painter p{UI::Surface(frame)};
+        DrawCommText(p, bounds);
         gCommDrawn = true;
     }
     return frame;

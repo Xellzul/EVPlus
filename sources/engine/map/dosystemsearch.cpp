@@ -61,7 +61,6 @@ void DoSystemSearch(void)
         return;
 
     SetDialogDefaultItem(dlg, 1);
-    SetDialogGWorld(dlg);
 
     GetDialogItem(dlg, kSearchTextItem, &itemType, &item, &box);
     SetControlText((ControlPtr)item, "");

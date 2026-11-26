@@ -57,18 +57,15 @@ void PlayerLandOnStellar(void)
     OSCursorReset();
     cursorHidden = 0;
     ShowTheCursor();
-    SWSetPortToWindow(gSpriteWorld);
     ship->targetShip = -1;
     absquatulateStr.clear();
     statusRedraw[kRedrawTarg] = 1;
     statusRedraw[kRedrawCargo] = 1;
     DrawStatus();
-    SWSetPortToWindow(gSpriteWorld);
     gSpriteWorld->fastBlit = 0;
     ShowTheCursor();
     DoPortDialog(&stellarData[ship->targetStellar], ship->targetStellar);
     gSpriteWorld->fastBlit = 1;
-    SWSetPortToWindow(gSpriteWorld);
     RedrawStatus(1);
     ship->vel.x = ship->vel.y = 0;
     if (!dontMovePlayerAfterLanding) {
@@ -223,7 +220,6 @@ short PlayerEnterHypergate(void)
             SWHideAllSprites(gSpriteWorld);
             HandleStellarSystemVisibility();
             PrepareAllSprites();
-            SWSetPortToWindow(gSpriteWorld);
             RefreshSAT();
             DisplayComm(msg, 0x168);
             killShots = 1;
@@ -388,7 +384,6 @@ short PlayerEnterWormhole(void)
     SWHideAllSprites(gSpriteWorld);
     HandleStellarSystemVisibility();
     PrepareAllSprites();
-    SWSetPortToWindow(gSpriteWorld);
     RefreshSAT();
     return destStellar;
 }
@@ -566,7 +561,6 @@ void HandlePlayerDockRequest(void)
                 if (systemData[ship->curSystem].murk < 0)
                     ClearStarfield();
                 LoadIntfResource();
-                SWSetPortToWindow(gSpriteWorld);
                 if (qtStellar != -1 || commResult != -1) {
                     MissionHandlePlayerEnteredNewSystem();
                     for (sVal = 0; sVal < kMaxActiveMissions; sVal++) {

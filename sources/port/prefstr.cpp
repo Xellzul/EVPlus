@@ -1,4 +1,4 @@
-/* prefstr.cpp -- the data-file records' globals and the pilot/prefs folder names (tu-map object O28). */
+/* prefstr.cpp -- the data-file record handles and the pilot/prefs folder names (tu-map object O28). */
 #include "player.h"
 #include "gameutil.h"
 

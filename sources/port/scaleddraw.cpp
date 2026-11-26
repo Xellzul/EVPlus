@@ -36,19 +36,18 @@ void FillDevice(const PixMap &pix, Rect device, unsigned short pixel)
 
 void PlotDevice(const PixMap &pix, int x, int y, unsigned short pixel)
 {
-    if (x >= 0 && y >= 0 && x < pix.width && y < pix.height)
+    if (pix.pixelSize == 16 && x >= 0 && y >= 0 && x < pix.width && y < pix.height)
         Pixel::Row(pix, y)[x] = pixel;
 }
 
-/* the pen's size in device pixels, at least one */
+} // namespace
+
 int DevicePen(int logical, double scale)
 {
     int device = (int)floor(logical * scale + 0.5);
 
     return device < 1 ? 1 : device;
 }
-
-} // namespace
 
 void FillRect(const Rect &r, const RGBColor &color)
 {
@@ -241,6 +240,8 @@ bool SameScale(double a, double b)
     return fabs(a / b - 1.0) < 0.01;
 }
 
+} // namespace
+
 /* The device rects of a copy. When both sides have the same scale and the copy the same logical size, it is
    only moved: the destination keeps its rect and the source is taken at the same device size, so nothing is
    resampled. */
@@ -261,8 +262,6 @@ void DeviceRects(const PixMap &src, const PixMap &dst, const Rect &srcRect, cons
     if (s.bottom > src.height)
         OffsetRect(&s, 0, src.height - s.bottom);
 }
-
-} // namespace
 
 void CopyBits(const PixMap &src, const PixMap &dst, const Rect &srcRect, const Rect &dstRect, int mode)
 {

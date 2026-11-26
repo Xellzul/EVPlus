@@ -3470,57 +3470,60 @@ void AILaunchFighter(ShipObj *ship)
 
 // FUNCTION: EVNOVA 0x0040db70
 // MAC: _DrawHighGoalAbbreviation i386 0x00081512 ppc 0x0008b420
-void DrawHighGoalAbbreviation(short goal)
+/* the readout's word for a ship's high-level goal */
+std::string HighGoalAbbreviation(short goal)
 {
+    std::string text;
     int state;
 
     state = goal;
     if (state == kAIStateHiJack)
-        DrawCString("HiJack");
+        text += "HiJack";
     if (state == kAIStateGoStel)
-        DrawCString("GoStel");
+        text += "GoStel";
     if (state == kAIStateHypOut)
-        DrawCString("HypOut");
+        text += "HypOut";
     if (state == kAIStateDefRet)
-        DrawCString("DefRet");
+        text += "DefRet";
     if (state == kAIStateFightSh)
-        DrawCString("FightSh");
+        text += "FightSh";
     if (state == kAIStateGoHome)
-        DrawCString("GoHome");
+        text += "GoHome";
     if (state == kAIStateWait)
-        DrawCString("Wait");
+        text += "Wait";
     if (state == kAIStateInspect)
-        DrawCString("Inspect");
+        text += "Inspect";
     if (state == kAIStateJumpIn)
-        DrawCString("JumpIn");
+        text += "JumpIn";
     if (state == kAIStateRefuel)
-        DrawCString("Refuel");
+        text += "Refuel";
     if (state == kAIStateFlyPr)
-        DrawCString("FlyPr");
+        text += "FlyPr";
     if (state == kAIStateHypPr)
-        DrawCString("HypPr");
+        text += "HypPr";
     if (state == kAIStateProtect)
-        DrawCString("Protect");
+        text += "Protect";
     if (state == kAIStatePlunder)
-        DrawCString("Plunder");
+        text += "Plunder";
     if (state == kAIStateRepair)
-        DrawCString("Repair");
+        text += "Repair";
     if (state == kAIStateUnPlunder)
-        DrawCString("UnPlunder");
+        text += "UnPlunder";
     if (state == kAIStateAtkAster)
-        DrawCString("AtkAster");
+        text += "AtkAster";
     if (state == kAIStateScoop)
-        DrawCString("Scoop");
+        text += "Scoop";
     if (state == kAIStateDestStel)
-        DrawCString("DestStel");
+        text += "DestStel";
     if (state == kAIStateConfused)
-        DrawCString("Confused");
+        text += "Confused";
     if (state == kAIStateGoHGate)
-        DrawCString("GoHGate");
+        text += "GoHGate";
     if (state == kAIStateEmerge)
-        DrawCString("Emerge");
+        text += "Emerge";
     if (state == kAIStateCountWait)
-        DrawCString("CountWait");
+        text += "CountWait";
+    return text;
 }
 
 /*
@@ -3532,59 +3535,62 @@ void DrawHighGoalAbbreviation(short goal)
 
 // FUNCTION: EVNOVA 0x0040ddc0
 // MAC: _DrawLowGoalAbbreviation i386 0x0008169e ppc 0x0008b5ec
-void DrawLowGoalAbbreviation(short goal)
+/* the readout's word for a ship's low-level goal */
+std::string LowGoalAbbreviation(short goal)
 {
+    std::string text;
     int state;
 
     state = goal;
     if (state == kSubLoJack)
-        DrawCString("LoJack");
+        text += "LoJack";
     if (state == kSubKillSpd)
-        DrawCString("KillSpd");
+        text += "KillSpd";
     if (state == kSubFlyStel)
-        DrawCString("FlyStel");
+        text += "FlyStel";
     if (state == kSubFlyHypD)
-        DrawCString("FlyHypD");
+        text += "FlyHypD";
     if (state == kSubHypJmp)
-        DrawCString("HypJmp");
+        text += "HypJmp";
     if (state == kSubRunAwy)
-        DrawCString("RunAwy");
+        text += "RunAwy";
     if (state == kSubTF)
-        DrawCString("T+F");
+        text += "T+F";
     if (state == kSubMissile)
-        DrawCString("Missle");
+        text += "Missle";
     if (state == kSubDock)
-        DrawCString("Dock");
+        text += "Dock";
     if (state == kSubChase)
-        DrawCString("Chase");
+        text += "Chase";
     if (state == kSubZoom)
-        DrawCString("Zoom");
+        text += "Zoom";
     if (state == kSubChasSlw)
-        DrawCString("ChasSlw");
+        text += "ChasSlw";
     if (state == kSubFormFly)
-        DrawCString("FormFly");
+        text += "FormFly";
     if (state == kSubJmpPar)
-        DrawCString("JmpPar");
+        text += "JmpPar";
     if (state == kSubWaitTarg)
-        DrawCString("WaitTarg");
+        text += "WaitTarg";
     if (state == kSubBoard)
-        DrawCString("Board");
+        text += "Board";
     if (state == kSubVeerOff)
-        DrawCString("VeerOff");
+        text += "VeerOff";
     if (state == kSubAfterBurn)
-        DrawCString("AfterBurn");
+        text += "AfterBurn";
     if (state == kSubChaseSwarm)
-        DrawCString("ChaseSwarm");
+        text += "ChaseSwarm";
     if (state == kSubChaseAst)
-        DrawCString("ChaseAst");
+        text += "ChaseAst";
     if (state == kSubKillAst)
-        DrawCString("KillAst");
+        text += "KillAst";
     if (state == kSubScoop)
-        DrawCString("Scoop");
+        text += "Scoop";
     if (state == kSubAttkStel)
-        DrawCString("AttkStel");
+        text += "AttkStel";
     if (state == kSubEnterHG)
-        DrawCString("EnterHG");
+        text += "EnterHG";
+    return text;
 }
 
 // FUNCTION: EVNOVA 0x0040e020

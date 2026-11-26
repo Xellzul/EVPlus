@@ -3,6 +3,8 @@
 #include "scaleddraw.h"
 #include "burger.h"
 
+void (*gArtGone)(const Image_t *art);
+
 // FUNCTION: EVNOVA 0x004b8ed0
 PicHandle LoadPictResource(int picID, char gamma)
 {
@@ -133,6 +135,8 @@ void DrawPicHandle(PicHandle pic, Rect *dstRect)
 // FUNCTION: EVNOVA 0x004b9130
 void QDReleaseResource(PicHandle pic)
 {
+    if (gArtGone != NULL)
+        (*gArtGone)(pic);
     ImageDelete(pic);
 }
 
@@ -182,6 +186,8 @@ void nv_BlitImageOr(Rect *dstRect, Image_t *icon)
 // FUNCTION: EVNOVA 0x004bbcb0
 void DisposeCIcon(Image_t *icon)
 {
+    if (gArtGone != NULL)
+        (*gArtGone)(icon);
     ImageDelete(icon);
 }
 
@@ -292,6 +298,8 @@ static int ImageParsePPat(Image_t *image, const void *ppat)
 // FUNCTION: EVNOVA 0x004bbd40
 void DisposePixPat(Image_t *pat)
 {
+    if (gArtGone != NULL)
+        (*gArtGone)(pat);
     ImageDelete(pat);
 }
 

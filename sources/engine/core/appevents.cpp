@@ -14,7 +14,6 @@
 void IterateInGameEventLoop(short tickCount)
 {
     Boolean exitLoop;
-    Boolean depthMismatch;
     short i;
     Str255 str;
 
@@ -26,27 +25,17 @@ void IterateInGameEventLoop(short tickCount)
         WaitTicks((gameLoaded && inBackground) ? 30 : 0);
         i++;
         if (gNeedUpdateFlag) {
-            depthMismatch = 0;
-            if (((Screen::Get().depth + 7) & ~7) != gSpriteWorld->pixelDepth)
-                depthMismatch = 1;
-            if (!depthMismatch) {
-                SWSetPortToWindow(gSpriteWorld);
-                if (!creatingPilotFile) {
-                    if (gameInProgress && gameLoaded) {
-                        if (onPlanet || inBackground) {
-                            RedrawStatus(1);
-                            RefreshSAT();
-                        }
-                    } else {
-                        CopyBits(GWorldContainerBits(&loadPort),
-                                 GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                                 GetCWindowPortRect(gWind), GetCWindowPortRect(gWind),
-                                 0, 0);
+            if (!creatingPilotFile) {
+                if (gameInProgress && gameLoaded) {
+                    if (onPlanet || inBackground) {
+                        RedrawStatus(1);
+                        RefreshSAT();
                     }
+                } else {
+                    ShowLoadPage();
                 }
-                SWSetPortToWindow(gSpriteWorld);
-                gNeedUpdateFlag = 0;
             }
+            gNeedUpdateFlag = 0;
         } else if (!closeRequested) {
             exitLoop = 1;
         } else {
@@ -83,7 +72,6 @@ void SwitchedIn(void)
 void SwitchedOut(void)
 {
     Sound *snd;
-    CGrafPtr savedPort;
 
     inBackground = 1;
     if (introMusicMovie != NULL)
@@ -96,11 +84,6 @@ void SwitchedOut(void)
     OSCursorReset();
     cursorHidden = 0;
     ShowTheCursor();
-    GetPort(&savedPort);
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    BackColor(whiteColor);
-    SetPort(savedPort);
 }
 
 // FUNCTION: EVNOVA 0x00497df0

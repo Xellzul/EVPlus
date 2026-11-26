@@ -12,6 +12,8 @@
 #define kAlpha1555          0x8000      /* bit 15 of a 1555 pixel */
 #define kAlpha1555High      0x80        /* the same bit, in the pixel's high byte */
 #define kOpaque             255
+#define kAlphaMask          1           /* a 16-bit source: bit 15 marks the opaque pixels, laid over the destination */
+#define kAlphaKept          2           /* 32-bit premultiplied ARGB in and out: the alpha goes with the colour */
 
 #define kWeightBits         14          /* a pixel's weights add up to 1 << kWeightBits */
 #define kWeightOne          (1 << kWeightBits)
@@ -56,6 +58,8 @@ static inline void ReadPixel(const unsigned char *p, int pixelSize, int alpha, C
         c->b = p[0];
         c->g = p[1];
         c->r = p[2];
+        if (alpha == kAlphaKept)
+            c->a = p[3];
         break;
     }
 }
@@ -377,6 +381,13 @@ static void CopyScaled(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const 
             for (int ch = 0; ch < channels; ch++)
                 c[ch] = ClampInt((sum[ch] + (1 << (kWeightBits + kRowBits - 1))) >> (kWeightBits + kRowBits),
                                  0, kOpaque);
+            if (alpha == kAlphaKept) {
+                out[0] = (unsigned char)c[2];
+                out[1] = (unsigned char)c[1];
+                out[2] = (unsigned char)c[0];
+                out[3] = (unsigned char)c[3];
+                continue;
+            }
             if (alpha) {
                 if (c[3] == 0)
                     continue;
@@ -420,6 +431,12 @@ void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
     Blit(src, dst, srcRect, dstRect, 0);
 }
 
+/* srcRect of SRC resampled into dstRect of DST with the same kernel, both 32-bit premultiplied ARGB */
+void BlitScaleArgb(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *dstRect)
+{
+    CopyScaled(src, dst, srcRect, dstRect, kAlphaKept);
+}
+
 /* A black mask pixel makes its source pixel opaque, marked in the source itself for the blit and cleared after
    it, so no other copy of the source carries the mark; maskRect is not read. */
 void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect,
@@ -443,7 +460,7 @@ void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRec
                 *high &= (unsigned char)~kAlpha1555High;
         }
     }
-    Blit(src, dst, srcRect, dstRect, 1);
+    Blit(src, dst, srcRect, dstRect, kAlphaMask);
     for (y = 0; y < src->height; y++) {
         for (x = 0; x < src->width; x++)
             pixels[y * src->rowBytes + x * 2 + 1] &= (unsigned char)~kAlpha1555High;

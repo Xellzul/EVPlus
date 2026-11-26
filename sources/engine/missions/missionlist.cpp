@@ -4,6 +4,7 @@
 #include "render.h"
 #include "dialog.h"
 #include "missionlist.h"
+#include "painter.h"
 
 static constexpr short kRowHeight = kListItemBaseHeight * 1.5;
 
@@ -25,12 +26,19 @@ void MissionList::Create(DialogPtr dlg, const Rect &box, short rows, bool scroll
     LockAHandle((Handle)list);
 }
 
+/* the dialog the list was created on */
+UI::Surface MissionList::Dialog() const
+{
+    return UI::Surface::Dialog((DialogPtr)(*list)->port);
+}
+
+/* drawing is off until the row is selected, so nothing is drawn here */
 void MissionList::SelectFirst() const
 {
     Point first;
 
     first.h = first.v = 0;
-    LSetSelect(1, first, list);
+    UI::Painter(Dialog()).ListSelect(list, true, first, UI::Style::Small);
     LSetDrawingMode(1, list);
     LAutoScroll(list);
 }
@@ -44,7 +52,7 @@ void MissionList::Leave(short row, short dir) const
         return;
     cell.h = 0;
     cell.v = row;
-    LSetSelect(0, cell, list);
+    UI::Painter(Dialog()).ListSelect(list, false, cell, UI::Style::Small);
     GetListCellRect(&box, cell, list);
     if (dir > 0 ? box.bottom >= (*list)->rView.bottom : box.top <= (*list)->rView.top)
         LScroll(0, dir, list);
@@ -56,7 +64,7 @@ void MissionList::Pick(short row) const
 
     cell.h = 0;
     cell.v = row;
-    LSetSelect(1, cell, list);
+    UI::Painter(Dialog()).ListSelect(list, true, cell, UI::Style::Small);
     LAutoScroll(list);
 }
 
@@ -72,17 +80,13 @@ short MissionList::Selected() const
     return -1;
 }
 
-void MissionList::Present(DialogPtr dlg) const
+void MissionList::Present(UI::Painter &load, DialogPtr dlg) const
 {
     if (list != NULL)
-        LUpdate(list);
-    CopyLoadPortToDialog(dlg);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    if (list != NULL) {
-        SetDialogGWorld(dlg);
-        LUpdate(list);
-    }
+        load.List(list, UI::Style::Small);
+    LoadPageToDialog(dlg);
+    if (list != NULL)
+        UI::Painter(UI::Surface::Dialog(dlg)).List(list, UI::Style::Small);
 }
 
 void MissionList::Dispose()
@@ -93,19 +97,13 @@ void MissionList::Dispose()
     }
 }
 
-void DrawMissionBriefing(DialogPtr dlg, bool selected)
+void DrawMissionBriefing(UI::Painter &p, DialogPtr dlg, bool selected)
 {
     Rect box;
 
     GetDialogItem(dlg, 4, NULL, NULL, &box);
-    if (selected) {
-        ForeColor(blackColor);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        TETextBox(briefingTextPtr, strlen(briefingTextPtr), &box, 0);
-        InvertRect(&box);
-    } else {
-        ForeColor(blackColor);
-        PaintRect(&box);
-    }
+    if (selected)
+        p.TextBox(box, briefingTextPtr, strlen(briefingTextPtr), { UI::Style::Small, UI::kWhite }, UI::kBlack);
+    else
+        p.Fill(box, UI::kBlack);
 }

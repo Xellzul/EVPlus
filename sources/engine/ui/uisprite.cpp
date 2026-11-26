@@ -9,8 +9,8 @@ namespace UI {
 
 namespace {
 
-constexpr unsigned short kBlack = 0x0000;
-constexpr unsigned short kWhite = 0x7fff;
+constexpr unsigned short kPixelBlack = 0x0000;
+constexpr unsigned short kPixelWhite = 0x7fff;
 
 /* A scratch frame at least of the sprite's size, its top-left part filled with one colour. The frame is kept
    for the next sprite and only made anew when a bigger one comes. */
@@ -78,8 +78,8 @@ void DrawSprite(DrawProcPtr draw, SWFrameRec *sprite, SWFrameRec *dst, Rect *src
 
     static SWFrameRec *blackFrame;
     static SWFrameRec *whiteFrame;
-    SWFrameRec *overBlack = Backdrop(blackFrame, width, height, kBlack);
-    SWFrameRec *overWhite = Backdrop(whiteFrame, width, height, kWhite);
+    SWFrameRec *overBlack = Backdrop(blackFrame, width, height, kPixelBlack);
+    SWFrameRec *overWhite = Backdrop(whiteFrame, width, height, kPixelWhite);
     if (overBlack == NULL || overWhite == NULL)
         return;
     Rect local;
@@ -112,8 +112,8 @@ void DrawSprite(DrawProcPtr draw, SWFrameRec *sprite, SWFrameRec *dst, Rect *src
             unsigned short white[4] = {
                 PixelAt(overWhite, tapX.first, tapY.first), PixelAt(overWhite, tapX.last, tapY.first),
                 PixelAt(overWhite, tapX.first, tapY.last), PixelAt(overWhite, tapX.last, tapY.last) };
-            if ((black[0] | black[1] | black[2] | black[3]) == kBlack
-                    && (white[0] & white[1] & white[2] & white[3]) == kWhite)
+            if ((black[0] | black[1] | black[2] | black[3]) == kPixelBlack
+                    && (white[0] & white[1] & white[2] & white[3]) == kPixelWhite)
                 continue;                       /* not drawn on */
             int weight[4] = {
                 (256 - tapX.weight) * (256 - tapY.weight), tapX.weight * (256 - tapY.weight),

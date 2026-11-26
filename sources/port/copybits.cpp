@@ -1,5 +1,6 @@
 /* copybits.cpp -- CopyBits and CopyMask: dispatch by transfer mode and depth, the 8- and 16-bit-source blitters */
 #include "pixel.h"
+#include "platform.h"
 #include "scaleddraw.h"
 #include "uiscale.h"
 
@@ -352,6 +353,18 @@ BlitProc copyBitsAdMaxProcs[5][5] = {        /* 0x00575c54 same-size adMax */
     { NULL, CopyBitsNone, CopyBitsNone, CopyBitsNone, CopyBitsNone },
     { NULL, CopyBitsNone, CopyBitsNone, CopyBitsNone, CopyBitsNone }
 };
+
+/* a pixel map without pixels (a port drawn through its GPU target): no copy, said once in the log */
+static bool NoPixels(const PixMap *pix)
+{
+    static int said;
+
+    if (pix->baseAddr != NULL)
+        return false;
+    PlatDebugLogOnce(&said, "CopyBits: a pixel map without pixels (a port with a GPU target) is not copied");
+    return true;
+}
+
 #define transfer_srcCopy 0
 #define transfer_srcOr   1
 #define transfer_addOver 34
@@ -377,6 +390,8 @@ void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits, const Rect *srcRect,
     yStep = 0;
     proc = NULL;
     if (srcBits == NULL || dstBits == NULL || srcRect == NULL || dstRect == NULL)
+        return;
+    if (NoPixels((PixMapPtr)srcBits) || NoPixels((PixMapPtr)dstBits))
         return;
     if (UI::ComposeCopy((PixMapPtr)srcBits, (PixMapPtr)dstBits, srcRect, dstRect, mode))
         return;
@@ -585,6 +600,8 @@ void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
     yFrac = 0;
     if (srcBits == NULL || maskBits == NULL || dstBits == NULL
             || srcRect == NULL || maskRect == NULL || dstRect == NULL)
+        return;
+    if (NoPixels((PixMapPtr)srcBits) || NoPixels((PixMapPtr)maskBits) || NoPixels((PixMapPtr)dstBits))
         return;
     if (UI::ComposeMask((PixMapPtr)srcBits, (PixMapPtr)maskBits, (PixMapPtr)dstBits, srcRect, maskRect, dstRect))
         return;

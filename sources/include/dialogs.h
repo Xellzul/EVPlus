@@ -7,6 +7,10 @@
 #include "shipobj.h"
 #include "soundtool.h"
 
+namespace UI {
+class Painter;
+}
+
 /* desc-resource display flags */
 #define kDescMovieAfter     0x0001
 #define kDescMovieDoubled   0x0002
@@ -53,8 +57,8 @@ void DoShipyardDescription(short ship);
 extern void DoShipyardDialog(void);
 extern void DoSystemSearch(void);
 extern void DoTradeDialog(void);
-extern void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
-                       short state, short selected, PicHandle pic);
+extern void DrawButton(UI::Painter &p, const Rect &bounds, const unsigned char *label, short state,
+                       short selected, PicHandle pic);
 extern Boolean EVTextInputDialog(const unsigned char *prompt, const unsigned char *initial, short maxLen);
 extern Boolean DoNewPilotNameDialog(Boolean *wantStrictPlay);
 void HaggleDialogUpdate(void);
@@ -68,7 +72,6 @@ extern void PrefsDialogUpdate(void);
 extern void RandomizeNewsDialog(void);
 extern void ScrollMapDisplay(short dh, short dv);
 extern void CueNextHyperRouteDest(void);
-extern void SetDialogGWorld(DialogPtr dlg);
 extern void DrawDialog(DialogPtr dlg);
 void SetPlunderValues(void);
 void SetupMissionInfoList(void);
@@ -270,6 +273,6 @@ extern void PlayQTMovie(unsigned char *name, unsigned char doubled,
 extern int32_t DoQuantityDialog(int32_t maxCount, short mode);
 extern ScrollRec **missionList;
 
-extern void DrawDialogBackground(PicHandle pics[3], const Rect &box, bool onePicture);  /* tradedlg.cpp */
+extern void DrawDialogBackground(UI::Painter &p, PicHandle pics[3], const Rect &box, bool onePicture);
 
 #endif

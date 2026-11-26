@@ -4,8 +4,7 @@
 
 #define kMaxShips               64      /* shipData slots; slot 0 is the player */
 
-/* ShipObj.aiState: the high-level goal, named as the game's own debug
-   readout (DrawHighGoalAbbreviation) prints it */
+/* ShipObj.aiState: the high-level goal, by its name in the debug readout (HighGoalAbbreviation) */
 enum {
     kAIStateHiJack,
     kAIStateGoStel,
@@ -38,8 +37,7 @@ enum {
 
 #define kMaxBoxes               64      /* boxData slots */
 
-/* ShipObj.aiSubstate: the low-level goal, named as DrawLowGoalAbbreviation
-   prints it */
+/* ShipObj.aiSubstate: the low-level goal, by its name in the debug readout (LowGoalAbbreviation) */
 enum {
     kSubLoJack,
     kSubKillSpd,

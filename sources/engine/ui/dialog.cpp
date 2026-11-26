@@ -1,7 +1,7 @@
-/* dialog.cpp -- Dialog, Picture and CopyLoadPortToDialog */
+/* dialog.cpp -- Dialog, Picture and LoadPageToDialog */
 #include "dialog.h"
 #include "dialogs.h"
-#include "spriteworld.h"
+#include "painter.h"
 
 void Picture::Release()
 {
@@ -11,18 +11,16 @@ void Picture::Release()
     }
 }
 
-void CopyLoadPortToDialog(DialogPtr dlg)
+void LoadPageToDialog(DialogPtr dlg)
 {
-    CopyLoadPortToDialog(dlg, *GetDialogPortRect(dlg));
+    LoadPageToDialog(dlg, *GetDialogPortRect(dlg));
 }
 
-void CopyLoadPortToDialog(DialogPtr dlg, const Rect &box)
+void LoadPageToDialog(DialogPtr dlg, const Rect &box)
 {
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(dlg);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(GetDialogPort(dlg)),
-             &box, &box, srcCopy, NULL);
+    UI::Painter p(UI::Surface::Dialog(dlg));
+
+    p.Copy(UI::Surface::Load(), box, box);
 }
 
 DialogPtr Dialog::Opened(DialogPtr opened, DialogPtr *to, DialogClose closeHow)

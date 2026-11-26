@@ -12,7 +12,7 @@
 extern int PlatInit(void);                                 /* 0 when the layer is up */
 extern void PlatQuit(void);
 
-/* -- video: one window showing the game's frame, 16-bit x1r5g5b5 pixels in host byte order ---------- */
+/* -- video: one window showing the game's frame: the interface's layer over the space view -------- */
 /* The frame is stretched to the window with its aspect kept (black bars), linear filter unless
    PlatVideoSetScaling says otherwise. Alt+Enter switches between a borderless full screen and a resizable
    window; the layer handles it itself. */
@@ -20,37 +20,80 @@ extern int PlatVideoCreateWindow(const char *title);      /* hidden until PlatVi
 extern int PlatVideoOpen(int width, int height, int fullScreen);   /* the frame's size; 0 = open */
 extern void PlatVideoClose(void);                          /* drops the frame, keeps the window */
 /* The frame made anew at another size, the mode kept (a window fitted to it as PlatVideoOpen fits it); 0 = done,
-   else the old frame stays. */
+   else the frame is unchanged. Nothing is shown from it until the next present. PlatVideoCanResize: 1 when
+   PlatVideoResize to that size will succeed. */
 extern int PlatVideoResize(int width, int height);
-/* A complete frame: the size given to PlatVideoOpen or PlatVideoResize, pitch bytes a row. It is shown at once, or -- when the
-   last one was shown too short a time ago for a display to tell them apart -- copied, and shown by the next
-   present or event poll after that time; a newer frame replaces one still waiting. The pixels must stay
-   readable until the next PlatVideoPresent or PlatVideoClose. */
-extern void PlatVideoPresent(const void *pixels, int pitch);
-/* An image for the GPU view, from x1r5g5b5 pixels and an alpha per pixel (0 = clear, else opaque). The layer
-   keeps them and makes its textures again after a brightness change or a lost device. An image destroyed
-   while the view shown still draws it is freed once another view replaces that one. */
+extern int PlatVideoCanResize(int width, int height);
+typedef struct PlatRect {
+    int x;
+    int y;
+    int w;
+    int h;
+} PlatRect;
+/* An image, from x1r5g5b5 pixels and an alpha per pixel (0 = clear, else opaque); without pixels black,
+   without alpha every pixel opaque. The layer keeps them and makes its textures again after a brightness change
+   or a lost device. An image destroyed while the view shown still draws it is freed once another view
+   replaces that one. */
 typedef struct PlatImage PlatImage;
 extern PlatImage *PlatImageCreate(int width, int height, const uint16_t *pixels, const uint8_t *alpha);
-extern void PlatImageUpdate(PlatImage *image, const uint16_t *pixels, const uint8_t *alpha);   /* same size */
+/* same size; an image made with an alpha */
+extern void PlatImageUpdate(PlatImage *image, const uint16_t *pixels, const uint8_t *alpha);
+/* The pixels of rect (it lies on the image) from `pixels', pitch bytes a row, which starts at the rect's first
+   pixel; the alpha stays. Only what differs from the image's own is taken and uploaded: 1 when something did. */
+extern int PlatImageUpdatePart(PlatImage *image, const PlatRect *rect, const uint16_t *pixels, int pitch);
 extern void PlatImageDestroy(PlatImage *image);
+/* An image from premultiplied ARGB pixels, pitch bytes a row, kept and drawn like the others; its shape is
+   white times its alpha. PlatImageCreate32 without argb makes it clear. PlatImageUpdate32 replaces the pixels
+   of rect (NULL: all of them; it lies on the image) from argb, which starts at the rect's first pixel; without
+   argb it changes nothing. A part drawn through a linear filter takes in the texels next to it: the parts of
+   an atlas lie a clear pixel apart. */
+extern PlatImage *PlatImageCreate32(int width, int height, const uint32_t *argb, int pitch);
+extern void PlatImageUpdate32(PlatImage *image, const PlatRect *rect, const uint32_t *argb, int pitch);
 
-/* What the GPU view draws, back to front, in view pixels:
-   - kPlatDrawImage: the image, each channel times mod[c] / 255; Mix keeps the view under it times
-     (255 - alpha) / 255, Add keeps it whole
-   - kPlatDrawSilhouette: the image's shape in `color' times mod[c] / 255, added
-   - kPlatDrawFill: the rect in `color', mixed by `alpha'
-   - kPlatDrawTriangles: `count' vertices from `first', each its own colour and alpha, mixed
-   - kPlatDrawOr: the image through the original renderer's 16-bit blend (PlatOrBlend); only while
-     PlatVideoOrBlend()
-   Colours are x1r5g5b5, shown through the brightness. */
+/* A canvas of the interface: width x height premultiplied ARGB pixels on the GPU, clear when made, drawn into
+   at once (PlatTargetDraw). NULL (logged) for one the renderer cannot make, as one larger than
+   PlatMaxTextureSize. One destroyed while the view shown still draws it is freed once another view replaces
+   that one, as an image.
+   Rule: after a PlatUIEpoch change (lost device, targets, brightness) every target, a layer's frame too, is lost:
+   redraw all, present; a new target is no layer until drawn into or cleared. */
+typedef struct PlatTarget PlatTarget;
+extern PlatTarget *PlatTargetCreate(int width, int height);
+extern void PlatTargetDestroy(PlatTarget *target);
+extern void PlatTargetClear(PlatTarget *target);           /* every pixel clear */
+extern unsigned PlatUIEpoch(void);
+
+/* What is drawn, back to front, in the pixels of what it is drawn into -- the GPU view, the frame (overlays), a
+   target:
+   - kPlatDrawImage: the image into the rect x, y, w, h, each channel times mod[c] / 255. Mix keeps what is
+     under it times 1 - the image's alpha times alpha / 255, Add keeps it whole, Copy keeps nothing of it and
+     writes the image times alpha / 255
+   - kPlatDrawSilhouette: the image's shape in the colour times mod[c] / 255, blended as an image
+   - kPlatDrawFill: the rect in the colour: mixed by `alpha', added times `alpha', or copied at that alpha
+   - kPlatDrawTriangles: `count' vertices from `first', each its own colour and alpha, blended as a fill
+   - kPlatDrawOr: the image through the original renderer's 16-bit blend (PlatOrBlend); only in the view while
+     PlatVideoOrBlend(), elsewhere the image mixed as it is. Always the whole image: mod, alpha, the part and
+     `source' are not read
+   - kPlatDrawTiled: as kPlatDrawImage, the image repeated over the rect: each tile tileScale times the
+     image's size, one of them with its corner at tileX, tileY
+   The colour is `color', x1r5g5b5, or with `deep' the 8-bit channels of `rgb' (a deep draw's vertices all take
+   it); colours and images are shown through the brightness. An image is drawn whole, or the part sx, sy, sw, sh
+   of it when that is not empty, scaled by `filter'. With `source' that target is drawn in place of an image;
+   it cannot be the target drawn into, and has no silhouette.
+   While PlatVideoOrBlend() and the brightness is not the default, the view's own draws are made in the colours
+   as drawn, the brightness after them: a `source' is not drawn there (it holds the brightness already).
+   Overlays and targets take everything. */
 #define kPlatDrawImage          0
 #define kPlatDrawSilhouette     1
 #define kPlatDrawFill           2
 #define kPlatDrawTriangles      3
 #define kPlatDrawOr             4
+#define kPlatDrawTiled          5
 #define kPlatBlendMix           0
 #define kPlatBlendAdd           1
+#define kPlatBlendCopy          2
+#define kPlatFilterNearest      0
+#define kPlatFilterLinear       1
+#define kPlatFilterPixelArt     2
 /* On 5-bit channels, each opaque pixel of the image (src) over the view (dst) becomes
        Scale(s, weight[c]) | over[c] | Scale(dst, keep)
    where s = Scale(src, own) | Scale(tint, 32 - own) when own < 32, else src, and Scale(v, k) = (v * k >> 5) & 31
@@ -77,6 +120,17 @@ typedef struct PlatDraw {
     float h;
     int first;
     int count;
+    unsigned char deep;
+    unsigned char rgb[3];
+    unsigned char filter;               /* kPlatFilter* */
+    PlatTarget *source;
+    float sx;
+    float sy;
+    float sw;
+    float sh;
+    float tileX;
+    float tileY;
+    float tileScale;                    /* 0 = 1 */
 } PlatDraw;
 typedef struct PlatVertex {
     float x;
@@ -85,11 +139,10 @@ typedef struct PlatVertex {
     unsigned char alpha;
 } PlatVertex;
 
-/* A frame with the space view under it: the view is drawn by the GPU at width x height from draws/vertices,
-   scaled into the frame's rect x, y, w, h (magnified zoom times about its centre) and shown wherever the frame's
-   pixel is kPlatSeeThrough. Overlays are draws over the view in the frame's pixels. Everything is copied; the
-   view is shown under every later frame until another view, PlatVideoDropView or PlatVideoClose. */
-#define kPlatSeeThrough         0x8000
+/* The space view under a frame: drawn by the GPU at width x height from draws/vertices, scaled into the frame's
+   rect x, y, w, h (magnified zoom times about its centre) and shown wherever the frame's layer is clear.
+   Overlays are draws over the view in the frame's pixels. Everything is copied; the view is shown under every
+   later frame until another view, PlatVideoDropView or PlatVideoClose. */
 typedef struct PlatVideoView {
     int width;
     int height;
@@ -105,16 +158,26 @@ typedef struct PlatVideoView {
     const PlatDraw *overlays;
     int overlayCount;
 } PlatVideoView;
-extern void PlatVideoPresentView(const void *pixels, int pitch, const PlatVideoView *view);
-extern void PlatVideoDropView(void);                       /* later frames alone, opaque */
+/* a draw of that kind and blend, opaque, its image's colours whole, everything else 0 */
+extern PlatDraw PlatDrawOf(int kind, int blend);
+/* The draws done at once into a target, in its pixels, kept to `clip' (NULL: the whole target). */
+extern void PlatTargetDraw(PlatTarget *target, const PlatDraw *draws, int drawCount, const PlatVertex *vertices,
+                           int vertexCount, const PlatRect *clip);
+/* The target's pixels in rect (NULL: all of them) as premultiplied ARGB, the rect's width a row; 0 = not read.
+   PlatTargetReadDrawn takes the brightness out of them again: the colours as they were drawn, exact at the
+   default brightness and the nearest ones otherwise. */
+extern int PlatTargetRead(PlatTarget *target, const PlatRect *rect, uint32_t *out);
+extern int PlatTargetReadDrawn(PlatTarget *target, const PlatRect *rect, uint32_t *out);
+/* A frame: the interface's layer as it is at the call, stretched over the frame and mixed over the view and
+   its overlays (`view' with it, NULL = the view of the frame before), the white-out over all of it. It is
+   shown at once, or -- when the last one was shown too short a time ago for a display to tell them apart --
+   by the next present or event poll after that time; a newer frame replaces one still waiting. */
+extern void PlatVideoPresentLayer(PlatTarget *layer, const PlatVideoView *view);
+extern void PlatVideoDropView(void);            /* later frames alone: black where the layer is clear */
 extern void PlatVideoSetFullScreen(int on);
-/* How the frame is stretched, kept for every later frame and window: the filter (kPlatFilter*), and
-   wholePixel = each frame pixel the same whole number of window pixels (the frame smaller in a window too
-   small for that). Can be called before PlatVideoOpen. */
-#define kPlatFilterNearest      0
-#define kPlatFilterLinear       1
-#define kPlatFilterPixelArt     2
-extern void PlatVideoSetScaling(int filter, int wholePixel);
+/* The filter (kPlatFilter*) the frame is stretched with, kept for every later frame. Can be called before
+   PlatVideoOpen. */
+extern void PlatVideoSetScaling(int filter);
 /* The frame's brightness: a colour channel c (0..1) is shown as c to the power `exponent'; 1 = as drawn.
    Can be called before PlatVideoOpen. */
 extern void PlatVideoSetBrightness(double exponent);
@@ -122,13 +185,13 @@ extern void PlatVideoSetBrightness(double exponent);
    PlatVideoOrBlend: 1 while kPlatDrawOr is drawn, 0 when it cannot be (no such renderer or shader). */
 extern void PlatVideoAskOrBlend(int on);
 extern int PlatVideoOrBlend(void);
-/* The frame blended toward white by level of 256 in each 5-bit channel, as CGDisplayFade's
-   kCGDisplayBlendSolidColor; 0 = as drawn. Shown from the next frame on. */
+/* The frame blended toward white by level of 256, as CGDisplayFade's kCGDisplayBlendSolidColor; 0 = as
+   drawn. Shown from the next frame on. */
 extern void PlatVideoSetWhite(unsigned level);
 extern int PlatVideoIsFullScreen(void);
 extern int PlatMaxTextureSize(void);                     /* the largest texture side; 0 = not known yet */
-/* Time spent showing frames since the last call, then zeroed: upload = frames into the texture, render =
-   the texture to the window and SDL's present. */
+/* Time spent showing frames since the last call, then zeroed: upload = the view's draws and the layer into
+   their textures, render = those to the window and SDL's present. */
 typedef struct PlatVideoTimes {
     uint64_t uploadNs;
     uint64_t renderNs;
@@ -258,5 +321,6 @@ extern uint32_t PlatLocalSeconds1904(void);               /* Mac clock: seconds 
 /* -- random numbers: a value in [0, n) for n > 0, the generator's state in *state -------------------- */
 extern int32_t PlatRand(uint64_t *state, int32_t n);
 extern void PlatDebugLog(const char *msg);
+extern void PlatDebugLogOnce(int *said, const char *msg);   /* logged while *said is 0, which it then sets */
 
 #endif

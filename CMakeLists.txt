@@ -261,7 +261,7 @@ endif()
 option(EVPLUS_TEST_PAGES "Build the developer test pages" OFF)
 if(NOT EVPLUS_TEST_PAGES)
   list(REMOVE_ITEM GAME_SRC ${SRC}/port/fonttest.cpp ${SRC}/port/scaletest.cpp ${SRC}/port/spritetest.cpp
-       ${SRC}/port/soundtest.cpp ${SRC}/lib/blitpixierect.cpp)
+       ${SRC}/port/soundtest.cpp ${SRC}/port/gputest.cpp ${SRC}/lib/blitpixierect.cpp)
 endif()
 
 # signed plain char (as MW), its FP evaluation in double; the decompile's pointer/aliasing habits;

@@ -1,4 +1,4 @@
-/* burgerunquote.cpp -- BurgerLib StStringManager: file extensions, number formatting, Pascal string copies. Notes: Research/notes/burgerunquote.md */
+/* burgerunquote.cpp -- string helpers: file extensions, number formatting, Pascal string copies. Notes: Research/notes/burgerunquote.md */
 
 #include "burger.h"
 

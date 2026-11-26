@@ -11,6 +11,7 @@
 #include "gamedialog.h"
 #include "buttons.h"
 #include "text.h"
+#include "painter.h"
 
 #define kFirstRowItem  4
 #define kLastRowItem   11
@@ -117,7 +118,6 @@ void TradeDialog::Run()
     backdrop.Load(kTradePictID);
     selTradeItem = 7;
     TradeDialogTabKey(0);
-    SetDialogGWorld(tradeDialog);
     TradeDialogUpdate();
     OfferMissionFromPort(kTradeVenue);
     RedrawDialog(tradeDialog);
@@ -183,7 +183,6 @@ void TradeDialog::Hit(short item)
             RedrawDialog(tradeDialog);
             statusRedraw[kRedrawCargo] = 1;
             DrawStatus();
-            SetDialogGWorld(tradeDialog);
         }
         RedrawDialog(tradeDialog);
     }
@@ -226,7 +225,6 @@ void TradeDialog::Hit(short item)
             RedrawDialog(tradeDialog);
             statusRedraw[kRedrawCargo] = 1;
             DrawStatus();
-            SetDialogGWorld(tradeDialog);
         }
         RedrawDialog(tradeDialog);
     }
@@ -251,7 +249,6 @@ Boolean TradeDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *item
     short i;
     EventChar c;
 
-    SetDialogGWorld(tradeDialog);
     if (LeaveRequested(1, itemHit))
         return 1;
     if (ev.what == DialogInput::Key) {
@@ -277,7 +274,6 @@ Boolean TradeDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *item
             return 1;
     }
     if (ev.what == DialogInput::Click) {
-        SetDialogGWorld(tradeDialog);
         where = ev.where;
         for (i = kFirstRowItem; i <= kLastRowItem; i++) {
             GetDialogItem(tradeDialog, i, &itemType, &item, &box);
@@ -307,7 +303,6 @@ Boolean TradeDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *item
                         }
                     }
                 }
-                SetDialogGWorld(tradeDialog);
                 InvalDialogItem(tradeDialog, selTradeItem + kFirstRowItem);
                 return 0;
             }
@@ -378,6 +373,8 @@ void TradeDialogUpdate(void)
     Rect insetBox;
     Rect box;
     std::string text;
+    std::string state;
+    RGBColor stateColour;
     Boolean found;
     short i;
     short j;
@@ -389,80 +386,53 @@ void TradeDialogUpdate(void)
     short available;
     short over;
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(tradeDialog));
-    if (tradeBackgroundPic != NULL)
-        DrawPicHandle(tradeBackgroundPic, GetDialogPortRect(tradeDialog));
+    UI::Painter load(UI::Surface::Load());
+    const UI::TextSpec heading = { UI::Style::Small, rgbLightGrey };
+    const UI::TextSpec plain = { UI::Style::Small, ldefColors[0] };
 
-    ForeColor(blackColor);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
+    load.Fill(*GetDialogPortRect(tradeDialog), UI::kBlack);
+    if (tradeBackgroundPic != NULL)
+        load.Picture(tradeBackgroundPic, *GetDialogPortRect(tradeDialog));
+
     GetDialogItem(tradeDialog, kHoldsItem, &itemType, (Handle *)&item, &box);
-    RGBForeColor(&rgbDarkGrey);
-    FrameRect(&box);
-    RGBForeColor(&rgbLightGrey);
-    MoveTo(box.left + 7, box.top + 12);
-    DrawIndString(kGameStrList, 0xc5);
-    MoveTo(box.right - 0x7b, box.top + 12);
-    if (TotalFleetHolds() > ShipTotalHolds())
-        DrawIndString(kGameStrList, 0xc6);
-    else
-        DrawIndString(kGameStrList, 0xc7);
-    MoveTo(box.right - 0x46, box.top + 12);
-    DrawIndString(kGameStrList, 0xc8);
-    ForeColor(blackColor);
+    load.Frame(box, rgbDarkGrey);
+    load.Text(box.left + 7, box.top + 12, IndStringRaw(kGameStrList, 0xc5), heading);
+    load.Text(box.right - 0x7b, box.top + 12,
+              IndStringRaw(kGameStrList, TotalFleetHolds() > ShipTotalHolds() ? 0xc6 : 0xc7), heading);
+    load.Text(box.right - 0x46, box.top + 12, IndStringRaw(kGameStrList, 0xc8), heading);
 
     for (i = 0; i <= kLastRow; i++) {
         GetDialogItem(tradeDialog, i + kFirstRowItem, &itemType, (Handle *)&item, &box);
         insetBox = box;
         InsetRect(&insetBox, 1, 1);
-        if (i == selTradeItem)
-            RGBForeColor((RGBColor *)&ldefColors[2]);
-        else
-            RGBForeColor((RGBColor *)&ldefColors[1]);
-        PaintRect(&insetBox);
-        ForeColor(blackColor);
+        load.Fill(insetBox, i == selTradeItem ? ldefColors[2] : ldefColors[1]);
 
-        RGBForeColor(&rgbDarkGrey);
-        MoveTo(box.left, box.top);
-        LineTo(box.left, (box.bottom - 1));
-        MoveTo((box.right - 1), box.top);
-        LineTo((box.right - 1), (box.bottom - 1));
-        if (i == 0) {
-            MoveTo(box.left, box.top);
-            LineTo((box.right - 1), box.top);
-        }
-        if (i == kLastRow) {
-            MoveTo(box.left, (box.bottom - 1));
-            LineTo((box.right - 1), (box.bottom - 1));
-        }
+        load.Line(box.left, box.top, box.left, (box.bottom - 1), rgbDarkGrey);
+        load.Line((box.right - 1), box.top, (box.right - 1), (box.bottom - 1), rgbDarkGrey);
+        if (i == 0)
+            load.Line(box.left, box.top, (box.right - 1), box.top, rgbDarkGrey);
+        if (i == kLastRow)
+            load.Line(box.left, (box.bottom - 1), (box.right - 1), (box.bottom - 1), rgbDarkGrey);
 
         if (tradePrice[i] != 0) {
-            RGBForeColor((RGBColor *)&ldefColors[0]);
             if (i <= kLastCommodity) {
-                MoveTo(box.left + 7, box.top + 10);
-                DrawCString(cargoName[i]);
+                load.Text(box.left + 7, box.top + 10, cargoName[i], plain);
                 qty = shipData->cargo[i];
                 if (qty > 0) {
                     text = NumText(qty);
-                    MoveTo(box.right - (MeasureCString(text) + 0x6e),
-                              box.top + 10);
-                    DrawCString(text);
+                    load.Text(box.right - (load.Measure(text, UI::Style::Small) + 0x6e), box.top + 10, text, plain);
                 }
             } else if (junkType[i - kFirstJunkItem] != -1) {
-                MoveTo(box.left + 6, box.top + 10);
-                DrawString(junkData[junkType[i - kFirstJunkItem]].name);
+                load.Text(box.left + 6, box.top + 10, FromPascal(junkData[junkType[i - kFirstJunkItem]].name), plain);
                 qty = junkData[junkType[i - kFirstJunkItem]].held;
                 if (qty > 0) {
                     text = NumText(qty);
-                    MoveTo(box.right - (MeasureCString(text) + 0x6e),
-                              box.top + 10);
-                    DrawCString(text);
+                    load.Text(box.right - (load.Measure(text, UI::Style::Small) + 0x6e), box.top + 10, text, plain);
                 }
             }
 
-            MoveTo(box.right - 0x46, box.top + 10);
+            state.clear();
+            stateColour = ldefColors[0];
             found = 0;
             for (k = 0; k < kMaxDisasters; k++) {
                 if (disasterData[k].loaded != 0 && disasterData[k].countdown > 0 &&
@@ -470,43 +440,39 @@ void TradeDialogUpdate(void)
                     i == disasterData[k].commodity) {
                     found = 1;
                     if (disasterData[k].amount > 0) {
-                        RGBForeColor(&betterRGB);
-                        DrawIndString(kGameStrList, 0xcc);
+                        stateColour = betterRGB;
+                        state = IndStringRaw(kGameStrList, 0xcc);
                     }
                     if (disasterData[k].amount < 0) {
-                        RGBForeColor(&worseRGB);
-                        DrawIndString(kGameStrList, 0xcd);
+                        stateColour = worseRGB;
+                        state = IndStringRaw(kGameStrList, 0xcd);
                     }
-                    RGBForeColor((RGBColor *)&ldefColors[0]);
                     break;
                 }
             }
             if (!found) {
                 if (i <= kLastCommodity) {
                     if (portDemand[i] == kPortShortage)
-                        DrawIndString(kGameStrList, 0xc9);
+                        state += IndStringRaw(kGameStrList, 0xc9);
                     if (portDemand[i] == kPortSurplus)
-                        DrawIndString(kGameStrList, 0xca);
+                        state += IndStringRaw(kGameStrList, 0xca);
                     if (portDemand[i] == kPortEmbargo)
-                        DrawIndString(kGameStrList, 0xcb);
+                        state += IndStringRaw(kGameStrList, 0xcb);
                 } else if (junkType[i - kFirstJunkItem] != -1) {
                     if (i == kFirstJunkItem)
-                        DrawIndString(kGameStrList, 0xcb);
+                        state += IndStringRaw(kGameStrList, 0xcb);
                     if (i == kLastRow)
-                        DrawIndString(kGameStrList, 0xc9);
+                        state += IndStringRaw(kGameStrList, 0xc9);
                 }
             }
+            load.Text(box.right - 0x46, box.top + 10, state, { UI::Style::Small, stateColour });
 
             text = NumText(tradePrice[i]);
-            MoveTo(box.right - (MeasureCString(text) + 10),
-                      box.top + 10);
-            DrawCString(text);
+            load.Text(box.right - (load.Measure(text, UI::Style::Small) + 10), box.top + 10, text, plain);
         }
-        ForeColor(blackColor);
     }
 
     GetDialogItem(tradeDialog, kCargoItem, &itemType, (Handle *)&item, &box);
-    ForeColor(blackColor);
     insetBox = box;
     InsetRect(&insetBox, 5, 3);
     text.clear();
@@ -594,12 +560,9 @@ void TradeDialogUpdate(void)
                       UpToNul(available == 1 ? tonString : tonsString).c_str());
     }
 
-    TETextBox(text.data(), text.size(), &insetBox, 0);
-    InvertRect(&insetBox);
-    RGBForeColor(&rgbDarkGrey);
-    FrameRect(&box);
-    ForeColor(blackColor);
-    TradeButtons().Draw(-1);
+    load.TextBox(insetBox, text, { UI::Style::Small, UI::kWhite }, UI::kBlack);
+    load.Frame(box, rgbDarkGrey);
+    TradeButtons().Draw(load, -1);
 
     GetDialogItem(tradeDialog, kNewsItem, &itemType, (Handle *)&item, &box);
     for (p = 0; p < kMaxDisasters; p++) {
@@ -613,14 +576,10 @@ void TradeDialogUpdate(void)
                           IndString(kGameStrList, disasterData[p].amount > 0 ? 0xc1 : 0xc2).c_str(),
                           IndString(kGameStrList, 0xb5).c_str(),
                           UpToNul(TableEntry(lcCargoName, disasterData[p].commodity), 0x3f).c_str());
-            ForeColor(blackColor);
-            TextFont(smallTextFont);
-            TextSize(smallTextSize);
-            TETextBox(text.data(), text.size(), &box, 0);
-            InvertRect(&box);
+            load.TextBox(box, text, { UI::Style::Small, UI::kWhite }, UI::kBlack);
             break;
         }
     }
 
-    CopyLoadPortToDialog(tradeDialog);
+    LoadPageToDialog(tradeDialog);
 }

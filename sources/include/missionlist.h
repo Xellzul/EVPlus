@@ -2,8 +2,12 @@
 #pragma once
 #include "macport.h"
 
-/* One column of rows drawn by MissionListDefinition, kept in the global handle it is built on. Reads and sets that
-   handle on every call, so build one where it is used. */
+namespace UI {
+class Painter;
+class Surface;
+}
+
+/* one column of rows (MissionListDefinition) in a global handle, read on every call: build one where it is used */
 class MissionList {
 public:
     explicit MissionList(ScrollRec **&list) : list(list) {}
@@ -15,13 +19,15 @@ public:
     void Leave(short row, short dir) const; /* deselect; scroll by dir if row is on the edge dir moves to */
     void Pick(short row) const;             /* select, scroll it into view */
     short Selected() const;                 /* the selected row; -1 if none, as after a click below the last row */
-    void Present(DialogPtr dlg) const;      /* end of an update proc: list into loadPort, that to dlg, list on dlg */
+    /* end of an update proc: the list drawn on the load page, that copied to dlg, the list drawn on dlg */
+    void Present(UI::Painter &load, DialogPtr dlg) const;
     void Dispose();                         /* if any: dispose it and clear the handle */
 
 private:
+    UI::Surface Dialog() const;
+
     ScrollRec **&list;
 };
 
-/* The briefing box (item 4) of either dialog, if visible: briefingTextPtr inverted when a mission is selected,
-   else black. */
-void DrawMissionBriefing(DialogPtr dlg, bool selected);
+/* the briefing box (item 4) of either dialog: briefingTextPtr white on black for a selected mission, else black */
+void DrawMissionBriefing(UI::Painter &p, DialogPtr dlg, bool selected);

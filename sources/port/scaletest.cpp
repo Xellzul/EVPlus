@@ -5,6 +5,7 @@
    file before and after a change; build/devtools/scaletest.sh runs it. */
 
 #include "render.h"
+#include "painter.h"
 #include "platform.h"
 #include "uiscale.h"
 #include "scaleddraw.h"
@@ -428,8 +429,7 @@ void DebugScaleTest(void)
         return;
 
     SWSetPortToWindow(gSpriteWorld);
-    CopyBits(GWorldContainerBits(&page), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-             &bounds, &bounds, 0, NULL);
+    UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(page), bounds, bounds);
     Screen::Changed();
     Screen::EndFrame();
     DisposeGWorldContainer(&page);

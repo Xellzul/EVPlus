@@ -2,6 +2,7 @@
 #include "buttonbar.h"
 #include "dialogs.h"
 #include "render.h"
+#include "painter.h"
 
 ButtonBar::Button &ButtonBar::Set(short slot, short item, unsigned char *label, ButtonLook look)
 {
@@ -23,29 +24,25 @@ void ButtonBar::SetPress(short slot, bool onDown, bool held)
     buttons[slot].pressHeld = held;
 }
 
-void ButtonBar::Draw(short hilited)
+void ButtonBar::Draw(UI::Painter &p, short hilited)
 {
-    CGrafPtr port;
-
-    ForeColor(blackColor);
     drawing = true;
     Update(hilited);
     drawing = false;
-    port = GetDialogPort(dialog);
     for (short slot = 0; slot < count; slot++) {
         Button &b = buttons[slot];
         switch (b.look) {
         case ButtonLook::Normal:
-            DrawButton(port, &b.box, b.label, 0, slot == hilited || b.latched, NULL);
+            DrawButton(p, b.box, b.label, 0, slot == hilited || b.latched, NULL);
             break;
         case ButtonLook::Dim:
-            DrawButton(port, &b.box, b.label, kButtonDim, 0, NULL);
+            DrawButton(p, b.box, b.label, kButtonDim, 0, NULL);
             break;
         case ButtonLook::Disabled:
-            DrawButton(port, &b.box, b.label, kButtonDisabled, 0, NULL);
+            DrawButton(p, b.box, b.label, kButtonDisabled, 0, NULL);
             break;
         case ButtonLook::Picture:
-            DrawButton(port, &b.box, b.label, kButtonPicture, slot == hilited, b.pic);
+            DrawButton(p, b.box, b.label, kButtonPicture, slot == hilited, b.pic);
             break;
         case ButtonLook::Hidden:
             break;
@@ -69,6 +66,13 @@ short ButtonBar::Hit(Point where, bool held) const
     return hit;
 }
 
+void ButtonBar::DrawOnDialog(short hilited)
+{
+    UI::Painter p(UI::Surface::Dialog(dialog));
+
+    Draw(p, hilited);
+}
+
 /* Hilites the button pressed while the mouse is over it; returns it if released there. */
 short ButtonBar::Track(Point where)
 {
@@ -77,12 +81,13 @@ short ButtonBar::Track(Point where)
     short over;
     Point mouse;
 
-    ForeColor(blackColor);
+    UI::Painter p(UI::Surface::Dialog(dialog));
+
     Update(-1);
     drawn = Hit(where, false);
     down = drawn;
     if (drawn != -1) {
-        Draw(drawn);
+        Draw(p, drawn);
         nv_UpdateDialogWindow(0);
         while (StillDown() != 0) {
             BusyIdle();
@@ -92,7 +97,7 @@ short ButtonBar::Track(Point where)
             if (over != drawn && over != down)
                 over = -1;
             if (over != drawn) {
-                Draw(over);
+                Draw(p, over);
                 nv_UpdateDialogWindow(0);
             }
             drawn = over;

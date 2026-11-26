@@ -32,6 +32,8 @@ typedef ControlPtr ControlRef;
 typedef Image_t *CIconHandle;
 typedef Image_t *PixPatHandle;
 
+struct PlatTarget;
+
 typedef struct PixMap {
     Rect bounds;
     int32_t pixelSize;
@@ -60,6 +62,7 @@ typedef struct CGrafPort {
     short txFace;
     short txSize;
     int32_t pnDeviceOffset;         /* text: the pen's device x minus pnLoc.h's; 0 after any pen move */
+    struct PlatTarget *target;      /* the Painter's GPU canvas for this port, pix its size; NULL: its pixels */
 } CGrafPort, *CGrafPtr;
 /* one port record serves every port, so these are Carbon's: a GrafPtr is a CGrafPtr */
 typedef CGrafPtr GrafPtr;
@@ -84,6 +87,7 @@ extern void DebugFontScreen(void);
 extern void DebugScaleTest(void);
 extern void DebugSpriteTest(void);
 extern void DebugSoundTest(void);
+extern void DebugGpuTest(void);                   /* port/gputest.cpp: runs when EVPLUS_GPUTEST is set */
 extern short FontFamilyCount(void);
 extern const char *FontFamilyName(short familyID);
 extern void FontRealName(short familyID, short size, short style, char *out, int outSize);
@@ -106,14 +110,8 @@ extern void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits,
 extern BitMapPtr GetPortBitMapForCopyBits(CGrafPtr port);
 extern void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
                      Rect *srcRect, Rect *maskRect, Rect *dstRect);
-/* the engine's older spelling of a port's bits, (BitMap *)*GetPortPixMap; the port has one call */
-#define GetPortPixMapBits(port) GetPortBitMapForCopyBits(port)
 /* a GWorldContainer's bits for CopyBits: the mac takes its GWorld's port, the win port the container */
 #define GWorldContainerBits(gwc) ((BitMapPtr)GetGWCPixMap(gwc))
-/* the same as a CopyBits source through the GWorld's pixmap (the status panels' spelling) */
-#define GWorldContainerPixMap(gwc) GWorldContainerBits(gwc)
-/* drawing into a GWorldContainer: the mac sets its GWorld's port, the win port the container */
-#define GWorldContainerSetPort(gwc) SetGWorldContainer(gwc)
 /* a Point in hand: the mac passes it whole, the win port's PtInRect takes h and v */
 #define PtInRectPoint(pt, r) PtInRect((pt).h, (pt).v, r)
 extern short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds,
@@ -121,6 +119,8 @@ extern short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds,
 extern PixMapPtr GetGWorldPixMap(CGrafPtr world);
 extern void QDGetCIconBounds(Image_t *icon, Rect *r);
 extern PicHandle GetPictureNoGamma(int picID);
+extern void (*gArtGone)(const Image_t *art);     /* set: told of each picture, icon and pattern released */
+extern void (*gPortGone)(CGrafPtr port);         /* set: told of each port disposed (DisposeGWorld) */
 
 extern void CopyBitsNone(PixMapPtr src, PixMapPtr dst,
         Rect *srcRect, Rect *dstRect,
@@ -155,6 +155,8 @@ extern void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstR
 extern void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect, Rect *maskRect,
                              Rect *dstRect,
                              int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
+/* the bicubic stretch on 32-bit premultiplied ARGB pixel maps, the alpha stretched with the colour */
+extern void BlitScaleArgb(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *dstRect);
 extern void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
         Rect *srcRect, Rect *maskRect, Rect *dstRect,
         int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
@@ -297,7 +299,6 @@ typedef struct TERec {
 } TERec, **TEHandle;
 
 #define TESetLineMetrics(te) ((void)0)
-#define TEMeasureText(te, width)     MeasureWrappedText((*(te))->text, (*(te))->textLength, (width))
 #define TETextHeight(te) ((*(te))->height)
 #define TEWrappedHeight(te) ((*(te))->height)
 
@@ -394,7 +395,6 @@ extern void Delay(uint32_t numTicks, uint32_t *finalTicks);
 extern void DisposeCIcon(Image_t *icon);
 extern void DrawCString(const char *text);
 extern void DrawPicHandle(PicHandle pic, Rect *dstRect);
-extern void DrawString(const unsigned char *str);
 extern void DrawText(const void *textBuf, int firstByte, int byteCount);
 extern void EraseRect(Rect *r);
 extern void ExitToShell(void);
@@ -507,7 +507,9 @@ extern void SetQDGlobalsRandomSeed(int32_t seed);
 extern void Microseconds(UnsignedWide *now);
 extern void StringToNum(const unsigned char *str, int32_t *value);
 extern void SetPort(CGrafPtr port);
-extern void SetPortWindowPort(CWindowPtr window);
+/* the Toolbox port's own drawing into a GWorldContainer: its port made current, the one before put back */
+extern void SetGWorldContainer(GWorldContainer *gwc);
+extern void UnsetGWorldContainer(GWorldContainer *gwc);
 extern void SetRect(Rect *r, int left, int top, int right, int bottom);
 extern void FatalStartupError(short index);
 extern Boolean StillDown(void);
@@ -523,7 +525,6 @@ extern void *GetGWorldDevice(CGrafPtr port);
 extern void DisposeGWorld(CGrafPtr port);
 extern void DebugStr(const char *message);
 extern void FillCRect(Rect *dstRect, Image_t *pat);
-extern short GetFrameBiggestSize(SWFrameRec *frame);
 extern void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text);
 extern void *GetGDevice(void);
 extern void BuildGammaRamp(float gamma);
@@ -602,7 +603,6 @@ extern void SizeDialogWindow(DialogPtr dlg, short width, short height,
 extern void OffsetDialogWindow(DialogPtr dlg, short dh, short dv, Boolean update);
 extern void CreateGameWindow(void);
 extern CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title);
-extern void AttachGamePort(void);
 extern int32_t GetControlValue(ControlPtr ctl);
 extern void InvalDialogRect(DialogPtr dlg, Rect *box);
 extern void ModalDialog(void *filterProc, short *itemHitPtr);

@@ -7,6 +7,10 @@
 #include "movie.h"
 #include "soundtool.h"
 
+namespace UI {
+class Surface;
+}
+
 static __inline void CopyRect(Rect *d, const Rect *s)
 {
     d->top = s->top;
@@ -35,11 +39,7 @@ extern void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short dep
                                   Rect *bounds);
 extern void DisposeGWorldContainer(GWorldContainer *gwc);
 extern void DoMainScreen(void);
-/* the menu icon cache draws into a port on mac, into the port's container on win */
-#define MenuIconPort(gwc) (gwc)
-extern Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest,
-                           Rect *destRect);
-extern void DrawIndString(short strListID, short index);
+extern Boolean RetrieveMenuIcon(short picID, const UI::Surface &dest, Rect *destRect);
 extern void DrawIntroProgressBar(void);
 extern void DrawStatus(void);
 extern void DrawStatusCargo(void);
@@ -49,8 +49,6 @@ extern void DrawStatusRadar(Boolean highlight);
 extern void DrawStatusShield(void);
 extern void DrawStatusTarg(void);
 extern void DrawStatusWeap(void);
-extern void DrawStringCentered(const unsigned char *str, short left,
-                               short right, short v);
 extern void EndLoopingMovie(void);
 extern SWFrameRec *CommOverlay(void);
 extern void ResetCommRect(void);
@@ -82,6 +80,7 @@ extern void MainScreenAppearStart(void);
 void MainScreenKey(char key, int32_t a, int32_t b);
 extern void MainScreenRolloverDraw(void);
 extern void MainScreenUpdate(short which);
+extern void ShowMainScreen(void);
 extern int MouseReadButtons(void);
 extern void MouseReadPosition(int32_t *h, int32_t *v);
 /* one wheel notch taken: 1 up, -1 down, 0 none */
@@ -89,7 +88,6 @@ extern int MouseTakeWheel(void);
 extern void MouseFlushWheel(void);
 extern void PlayMainScreenClickSound(void);
 extern void PrepareAllSprites(void);
-extern void SetGWorldContainer(GWorldContainer *gwc);
 extern void SetupInterfaceBackground(void);
 extern void ShowAmbrosiaLogo(void);
 extern void ShowIntroScreen(void);
@@ -98,7 +96,6 @@ extern void DisposeMainScreenSounds(void);
 extern void MainScreenAnimIdle(void);
 extern void MainScreenRolloverIdle(void);
 extern void TradeDialogTabKey(Boolean up);
-extern void UnsetGWorldContainer(GWorldContainer *gwc);
 extern RGBColor *armorStatusColor;
 extern Rect commRect;
 extern Rect escortMenuRect;

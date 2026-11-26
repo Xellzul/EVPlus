@@ -1,6 +1,5 @@
 /* textdlg.cpp -- the scrolling text dialog and the shared dialog backdrop */
 
-#include "scaleddraw.h"
 #include "dialogs.h"
 #include "game.h"
 #include "stellar.h"
@@ -10,6 +9,7 @@
 #include "dialog.h"
 #include "buttons.h"
 #include "scrolltext.h"
+#include "painter.h"
 
 DialogPtr textDialog;
 PicHandle textDialogBackgroundPic[3];
@@ -21,6 +21,13 @@ constexpr ScrollingText::Layout kTextLayout = { 3, 5, 6, 1, 2, 10, 250 };
 static ScrollingText DialogText()
 {
     return ScrollingText(textDialog, textDialogTextHandle, kTextLayout);
+}
+
+/* the load page and the screen black, under the intro text */
+static void PaintIntroBlack()
+{
+    UI::Painter(UI::Surface::Load()).Fill(loadPort.bounds, UI::kBlack);
+    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
 }
 
 /*
@@ -71,12 +78,7 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
         if (screenFaded) {
             if (gPause) {
                 if (showingIntroText) {
-                    SetGWorldContainer(&loadPort);
-                    ForeColor(blackColor);
-                    PaintRect(&loadPort.bounds);
-                    SWSetPortToWindow(gSpriteWorld);
-                    ForeColor(blackColor);
-                    PaintRect(GetCWindowPortRect((WindowRef)gWind));
+                    PaintIntroBlack();
                 } else {
                     mainScreenBackgroundDirty = 1;
                     MainScreenUpdate(1);
@@ -115,16 +117,16 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
         for (i = 0; i < 3; i++)
             backdrops[i].Load(kTextDlgBackdropPictID + i);
     }
-    SetDialogGWorld(textDialog);
     GetDialogItem(textDialog, 3, &itemType, &item, &box);
     textDialogTextHandle = TENew(&box, &box);
     (*textDialogTextHandle)->txFont = smallTextFont;
     (*textDialogTextHandle)->txSize = smallTextSize;
-    TextFont((*textDialogTextHandle)->txFont);
-    TextSize((*textDialogTextHandle)->txSize);
-    TESetLineMetrics(textDialogTextHandle);
-    TESetText(textShowString, strlen(textShowString), textDialogTextHandle);
-    textHeight = TEMeasureText(textDialogTextHandle, box.right - box.left);
+    {
+        UI::Painter p(UI::Surface::Dialog(textDialog));
+        p.EditSetText(textDialogTextHandle, textShowString, strlen(textShowString), UI::Style::Small);
+        textHeight = p.WrappedHeight((*textDialogTextHandle)->text, (*textDialogTextHandle)->textLength,
+                                     box.right - box.left, UI::Style::Small);
+    }
     GetDialogItem(textDialog, 3, &itemType, &item, &box);
     viewHeight = box.bottom - box.top;
     if (textHeight < viewHeight && descResourcePictId < kFirstResourceID) {
@@ -158,10 +160,9 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
                       &(*textDialogTextHandle)->destRect);
         GetDialogItem(textDialog, 3, &itemType, &item,
                       &(*textDialogTextHandle)->viewRect);
-        TECalText(textDialogTextHandle);
+        UI::Painter(UI::Surface::Dialog(textDialog)).EditMeasure(textDialogTextHandle, UI::Style::Small);
     }
     UpdateAllPortDialogs();
-    SetDialogGWorld(textDialog);
     lastTextScrollTime = ReadTick();
     FlushEvents(everyEvent - diskMask, 0);
     DialogText().ProbeRange();
@@ -172,12 +173,7 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
 
     if (gPause) {
         if (showingIntroText) {
-            SetGWorldContainer(&loadPort);
-            ForeColor(blackColor);
-            PaintRect(&loadPort.bounds);
-            SWSetPortToWindow(gSpriteWorld);
-            ForeColor(blackColor);
-            PaintRect(GetCWindowPortRect((WindowRef)gWind));
+            PaintIntroBlack();
         } else {
             mainScreenBackgroundDirty = 1;
             MainScreenUpdate(1);
@@ -186,12 +182,7 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
     if (screenFaded) {
         if (gPause) {
             if (showingIntroText) {
-                SetGWorldContainer(&loadPort);
-                ForeColor(blackColor);
-                PaintRect(&loadPort.bounds);
-                SWSetPortToWindow(gSpriteWorld);
-                ForeColor(blackColor);
-                PaintRect(GetCWindowPortRect((WindowRef)gWind));
+                PaintIntroBlack();
             } else {
                 mainScreenBackgroundDirty = 1;
                 MainScreenUpdate(1);
@@ -217,24 +208,17 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
         DialogText().Step(itemHit);
         if (itemHit == 4 && allowMap)
             MapFromDialog(textDialog);
-        SetDialogGWorld(textDialog);
         DialogText().InvalidateChanged(savedUp, savedDown);
     } while (done == 0);
 
     for (i = 0; i < 3; i++)
         backdrops[i].Release();
     TEDispose(textDialogTextHandle);
-    SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
 
     if (gPause) {
         if (showingIntroText) {
-            SetGWorldContainer(&loadPort);
-            ForeColor(blackColor);
-            PaintRect(&loadPort.bounds);
-            SWSetPortToWindow(gSpriteWorld);
-            ForeColor(blackColor);
-            PaintRect(GetCWindowPortRect((WindowRef)gWind));
+            PaintIntroBlack();
         } else {
             mainScreenBackgroundDirty = 1;
             MainScreenUpdate(1);
@@ -249,12 +233,7 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
         if (screenFaded) {
             if (gPause) {
                 if (showingIntroText) {
-                    SetGWorldContainer(&loadPort);
-                    ForeColor(blackColor);
-                    PaintRect(&loadPort.bounds);
-                    SWSetPortToWindow(gSpriteWorld);
-                    ForeColor(blackColor);
-                    PaintRect(GetCWindowPortRect((WindowRef)gWind));
+                    PaintIntroBlack();
                 } else {
                     mainScreenBackgroundDirty = 1;
                     MainScreenUpdate(1);
@@ -290,15 +269,13 @@ Boolean TextDialogFilter(DialogPtr unused, const DialogEvent &ev, short *itemHit
             return 1;
     }
     if (ev.what == DialogInput::Click) {
-        SetDialogGWorld(textDialog);
         where = ev.where;
         TextButtons buttons;
         if (DialogText().Press(where, itemHit, buttons))
             return 1;
         TextDialogUpdate();
         ButtonItemHit(buttons.Track(where), kTextSlotItems, itemHit);
-        SetDialogGWorld(textDialog);
-        buttons.Draw(-1);
+        buttons.DrawOnDialog(-1);
         return 1;
     }
     if (ev.what == DialogInput::Idle && DialogText().Wheel(itemHit))
@@ -306,17 +283,17 @@ Boolean TextDialogFilter(DialogPtr unused, const DialogEvent &ev, short *itemHit
     return 0;
 }
 
-/* A dialog's background, laid over `box' of the current port and stretched as one picture: pics[0] at the
-   top, pics[1] under it, pics[2] at the bottom -- or, with `onePicture', pics[0] over the whole box. */
-void DrawDialogBackground(PicHandle pics[3], const Rect &box, bool onePicture)
+/* A dialog's background, laid over `box' and stretched as one picture: pics[0] at the top, pics[1] under it,
+   pics[2] at the bottom -- or, with `onePicture', pics[0] over the whole box. */
+void DrawDialogBackground(UI::Painter &p, PicHandle pics[3], const Rect &box, bool onePicture)
 {
-    UI::ArtComposition background(CurrentGrafPort, box);
+    UI::Painter::Composition background(p, box);
     Rect r;
     Rect top;
 
     if (onePicture) {
         if (pics[0] != NULL)
-            DrawPicHandle(pics[0], (Rect *)&box);
+            p.Picture(pics[0], box);
         return;
     }
     if (pics[1] != NULL) {
@@ -328,19 +305,19 @@ void DrawDialogBackground(PicHandle pics[3], const Rect &box, bool onePicture)
             OffsetRect(&r, 0, top.bottom);
         }
         OffsetRect(&r, box.left, box.top);
-        DrawPicHandle(pics[1], &r);
+        p.Picture(pics[1], r);
     }
     if (pics[0] != NULL) {
         QDGetPictureBounds(pics[0], &r);
         OffsetRect(&r, -r.left, -r.top);
         OffsetRect(&r, box.left, box.top);
-        DrawPicHandle(pics[0], &r);
+        p.Picture(pics[0], r);
     }
     if (pics[2] != NULL) {
         QDGetPictureBounds(pics[2], &r);
         OffsetRect(&r, -r.left, -r.top);
         OffsetRect(&r, box.left, box.bottom - (r.bottom - r.top));
-        DrawPicHandle(pics[2], &r);
+        p.Picture(pics[2], r);
     }
 }
 
@@ -352,28 +329,21 @@ void TextDialogUpdate(void)
     Rect r;
     short itemType;
     Handle item;
+    UI::Painter p(UI::Surface::Load());
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(textDialog));
-    DrawDialogBackground(textDialogBackgroundPic, *GetDialogPortRect(textDialog),
+    p.Fill(*GetDialogPortRect(textDialog), UI::kBlack);
+    DrawDialogBackground(p, textDialogBackgroundPic, *GetDialogPortRect(textDialog),
                          descResourcePictId >= kFirstResourceID);
-    TextButtons().Draw(-1);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
+    TextButtons().Draw(p, -1);
     if (descResourcePictId >= kFirstResourceID) {
         loaded = GetPicture(descResourcePictId);
         if (loaded != NULL) {
             GetDialogItem(textDialog, 2, &itemType, &item, &r);
-            DrawPicHandle(loaded, &r);
+            p.Picture(loaded, r);
             QDReleaseResource(loaded);
         }
     }
     GetDialogItem(textDialog, 3, &itemType, &item, &r);
-    ForeColor(whiteColor);
-    BackColor(blackColor);
-    TEUpdate(&r, textDialogTextHandle);
-    ForeColor(blackColor);
-    BackColor(whiteColor);
-    CopyLoadPortToDialog(textDialog);
+    p.EditDraw(textDialogTextHandle, r, { UI::Style::Small, UI::kWhite }, UI::kBlack);
+    LoadPageToDialog(textDialog);
 }

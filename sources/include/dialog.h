@@ -21,10 +21,9 @@ private:
     PicHandle *slot = nullptr;
 };
 
-/* Copies what was drawn into loadPort onto the dialog (whole port or one box); leaves the dialog's port current
-   with a black fore colour. */
-void CopyLoadPortToDialog(DialogPtr dlg);
-void CopyLoadPortToDialog(DialogPtr dlg, const Rect &box);
+/* The end of an update proc: what was drawn on the load page copied onto the dialog (whole port or one box). */
+void LoadPageToDialog(DialogPtr dlg);
+void LoadPageToDialog(DialogPtr dlg, const Rect &box);
 
 /* the items of a dialog built in code, numbered from 1 as they are added */
 class ItemList {

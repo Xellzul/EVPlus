@@ -8,6 +8,10 @@
 #include "movie.h"
 #include "soundtool.h"
 
+namespace UI {
+struct TextSpec;
+}
+
 /* the registered name <REG> shows (mission text, the loading bar): EV Nova CE's unlicensed default */
 #define kRegisteredName "EV Nova Community"
 
@@ -41,7 +45,7 @@ extern Sound *klaxxonSnd;
 extern Sound *clickSnd;
 extern short lastShipAIDispatched;
 extern void DisplayComm(PStrChar *msg, short count);
-extern void DisplayCommStyled(PStrChar *msg, short count, short font, short size, const RGBColor *color);
+extern void DisplayCommStyled(PStrChar *msg, short count, const UI::TextSpec &spec);
 extern void DoNewPilot(void);
 extern void DoStellarTimePassage(void);
 extern Boolean DoesPilotExist(const char *path);
@@ -159,6 +163,7 @@ extern Boolean mBarHidden;
 extern Rect mainWindRect;
 extern GWorldContainer *MenuArt(void);
 extern void ShowMenuArt(const Rect &area, bool onlyChanged = false);
+extern void ShowLoadPage(void);
 extern void SetupMonitor(void);
 extern void ApplyUIScale(void);
 extern void ApplyDisplaySettings(void);

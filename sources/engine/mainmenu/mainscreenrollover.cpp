@@ -1,7 +1,7 @@
 /* mainscreenrollover.cpp -- MainScreenRolloverDraw; exe 0x0048c580..0x0048c720. Notes: Research/notes/mainscreen.md */
 
 #include "viewscale.h"
-#include "uisprite.h"
+#include "painter.h"
 #include "uiscale.h"
 #include "render.h"
 #include "game.h"
@@ -76,7 +76,7 @@ void MainScreenRolloverDraw(void)
         menuRolloverSprite->tintColor = 0;
         gSWCurrentSpriteBeingDrawn = menuRolloverSprite;
 
-        UI::DrawSprite(BlitPixieRLETranslucentDrawProc, menuRolloverSprite->frameArray[idx],
-            View::UIWork(), &srcRect, &rolloverDestRect);
+        UI::Painter(UI::Surface(View::UIWork()))
+            .Sprite(BlitPixieRLETranslucentDrawProc, menuRolloverSprite->frameArray[idx], srcRect, rolloverDestRect);
     }
 }

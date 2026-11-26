@@ -46,8 +46,8 @@ extern void DisasterHandler(void);                         /* 0x00424f90 */
 extern Boolean DoMissionAccept(short mission);                    /* 0x0043f100 */
 extern void DoMissionFailure(short slot);                   /* 0x00440930 */
 extern void DoMissionSuccess(short slot);                 /* 0x00440410 */
-extern void DrawHighGoalAbbreviation(short state);       /* 0x0040db70 */
-extern void DrawLowGoalAbbreviation(short state);        /* 0x0040ddc0 */
+extern std::string HighGoalAbbreviation(short state);        /* 0x0040db70 */
+extern std::string LowGoalAbbreviation(short state);         /* 0x0040ddc0 */
 extern void EvalCurrentMissionBitSetString(char *expr, short mission); /* 0x00448050 */
 extern void EvalSetExp(void);     /* 0x00449370 */
 extern short EvalTestExp(short *err);  /* 0x00449020 */

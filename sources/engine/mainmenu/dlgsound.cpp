@@ -9,6 +9,7 @@
 #include "sound.h"
 #include "crashlog.h"
 #include "dialogs.h"
+#include "painter.h"
 
 
 
@@ -170,20 +171,14 @@ void MainScreenAnimIdle(void)
     MainScreenAnimDraw();
     MainScreenUpdate(2);
 
-    SetPortWindowPort((WindowRef)gWind);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-             &logoDestRect, &logoDestRect, 0, NULL);
+    UI::Painter screen(UI::Surface::Screen());
 
-    CopyBits(GetPortBitMapForCopyBits(View::UIWork()->framePort),
-             GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-             &rolloverDestRect, &rolloverDestRect, 0, NULL);
+    screen.Copy(UI::Surface::Load(), logoDestRect, logoDestRect);
+    screen.Copy(UI::Surface(View::UIWork()), rolloverDestRect, rolloverDestRect);
 
     for (i = 0; i < 3; i++) {
         if (slidePort[i].world != NULL && slideIndex[i] < 0x7d00) {
-            CopyBits(GetPortBitMapForCopyBits(View::UIWork()->framePort),
-                     GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                     &slideDestRect[i], &slideDestRect[i], 0, NULL);
+            screen.Copy(UI::Surface(View::UIWork()), slideDestRect[i], slideDestRect[i]);
             if (slideIndex[i] >= slideFrameCount[i])
                 slideIndex[i] = 0x7d00;
         }

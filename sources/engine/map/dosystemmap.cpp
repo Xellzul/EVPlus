@@ -13,6 +13,7 @@
 #include "space.h"
 #include "buttons.h"
 #include "text.h"
+#include "painter.h"
 
 /* the mac plots the map arrows as colour icons */
 
@@ -37,6 +38,9 @@ double floatingMapZoom = 0.5625;                 /* 0x005759e0 (see mapZoom abov
 #define kPriceLevelStrings  0xc9    /* STR# kGameStrList: Low, Med, High */
 #define kDisasterStrings    0xcc    /* STR# kGameStrList: Higher, Lower */
 #define kGoodsHeight        0x48    /* room for Goods Traded above Services: six lines */
+
+static void DrawMap(UI::Painter &p, Rect box);
+static void DrawMapInfluence(UI::Painter &p, Rect bounds);
 
 
 namespace {
@@ -127,8 +131,6 @@ void MapDialog::Run()
     else
         selSystem = shipData->curSystem;
     backdrop.Load(kMapPictID);
-    SWSetPortToWindow(gSpriteWorld);
-    SetDialogGWorld(mapDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(mapDialog);
     MapDialogUpdate();
@@ -145,10 +147,8 @@ void MapDialog::Run()
     while (KeyCheck(keyPrefs.map))
         BusyIdle();
     dialog.Close();
-    SWSetPortToWindow(gSpriteWorld);
     found = (GetCWindowPortRect(gWind)->right - GetCWindowPortRect(gWind)->left) / 2;
     sys = (GetCWindowPortRect(gWind)->bottom - GetCWindowPortRect(gWind)->top) / 2;
-    ForeColor(blackColor);
     SetRect(&r, found - x, sys - y, found + x, sys + y);
     pr = GetCWindowPortRect(gWind);
     box2 = *pr;
@@ -417,14 +417,14 @@ void MapDialog::Hit(short itemHit)
                     InvalDialogItem(mapDialog, kMapPictItem);
                     InvalDialogItem(mapDialog, kMapRouteItem);
                     InvalDialogItem(mapDialog, kMapClearRouteItem);
-                    SetGWorldContainer(&loadPort);
-                    ForeColor(blackColor);
-                    PaintRect(GetDialogPortRect(mapDialog));
-                    if (mapBackgroundPic != NULL)
-                        DrawPicHandle(mapBackgroundPic, GetDialogPortRect(mapDialog));
-                    UnsetGWorldContainer(&loadPort);
-                    SetDialogGWorld(mapDialog);
-                    MapButtons().Draw(-1);
+                    {
+                        UI::Painter load(UI::Surface::Load());
+
+                        load.Fill(*GetDialogPortRect(mapDialog), UI::kBlack);
+                        if (mapBackgroundPic != NULL)
+                            load.Picture(mapBackgroundPic, *GetDialogPortRect(mapDialog));
+                    }
+                    MapButtons().DrawOnDialog(-1);
                     selSystem = found;
                 }
             } else {
@@ -453,12 +453,10 @@ void MapDialog::Hit(short itemHit)
                             shipData->targetStellar = s2;
                             statusRedraw[kRedrawNav] = 1;
                             DrawStatus();
-                            SetDialogGWorld(mapDialog);
                         } else {
                             shipData->targetStellar = -1;
                             statusRedraw[kRedrawNav] = 1;
                             DrawStatus();
-                            SetDialogGWorld(mapDialog);
                         }
                     }
                 }
@@ -567,7 +565,6 @@ Boolean MapDialog::Filter(DialogPtr dlg, const DialogEvent &event, short *itemHi
                     InvalDialogItem(mapDialog, kMapInfoItem);
                     InvalDialogItem(mapDialog, kMapPictItem);
                     InvalDialogItem(mapDialog, kMapRouteItem);
-                    SetDialogGWorld(mapDialog);
                 }
             } else {
                 shipData[0].navTargetKind = kNavTargetLink;
@@ -597,7 +594,6 @@ Boolean MapDialog::Filter(DialogPtr dlg, const DialogEvent &event, short *itemHi
                 InvalDialogItem(mapDialog, kMapPictItem);
                 InvalDialogItem(mapDialog, kMapRouteItem);
                 DrawStatus();
-                SetDialogGWorld(mapDialog);
                 if (shipData[0].navTargetKind == kNavTargetLink && shipData[0].targetStellar != -1)
                     selSystem = FindActiveCoLocatedSystem(
                         systemData[shipData[0].curSystem]
@@ -668,7 +664,6 @@ Boolean MapDialog::Filter(DialogPtr dlg, const DialogEvent &event, short *itemHi
             return 1;
         }
         MapDialogUpdate();
-        SetDialogGWorld(mapDialog);
         return ButtonItemHit(MapButtons().Track(pt), kMapSlotItems, itemHit);
     }
     if (event.what == DialogInput::Idle && settings.showMapBorders != 0
@@ -694,7 +689,6 @@ Boolean MapDialog::Filter(DialogPtr dlg, const DialogEvent &event, short *itemHi
             }
             if (nextInfluenceSyst == kMaxSystems) {
                 nextInfluenceSyst = kMaxSystems + 1;
-                SetDialogGWorld(mapDialog);
                 InvalDialogItem(mapDialog, kMapPictItem);
             }
         }
@@ -735,15 +729,14 @@ struct PriceLevels {
     short lowered;
 };
 
-void DrawPiece(const std::string &text, const RGBColor &color)
+void DrawPiece(UI::Painter &load, const std::string &text, const RGBColor &color)
 {
-    RGBForeColor(&color);
-    DrawCString(text);
+    load.Text(text, { UI::Style::Small, color });
 }
 
 /* A good's price levels after its name at (h, v), or indented on the next line when they do not fit the panel;
    a level under a disaster is followed by ": Higher" (green) or ": Lower" (red). The extra height used. */
-short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
+short DrawPriceLevels(UI::Painter &load, const PriceLevels &p, const Rect &panel, short h, short v)
 {
     static const short kLevels[] = { kDemandLow, kDemandMedium, kDemandHigh };
     std::string names[3];
@@ -776,46 +769,44 @@ short DrawPriceLevels(const PriceLevels &p, const Rect &panel, short h, short v)
     }
     text += ")";
     const char *open = " (";
-    if (h + MeasureCString(text) > panel.right - 5) {
+    if (h + load.Measure(text, UI::Style::Small) > panel.right - 5) {
         open = "(";
         h = panel.left + 0x19;
         v += 0xc;
         extra = 0xc;
     }
-    MoveTo(h, v);
-    DrawPiece(open, rgbLightGrey);
+    load.Pen(h, v);
+    DrawPiece(load, open, rgbLightGrey);
     bool first = true;
     for (short i = 0; i < 3; i++) {
         if (names[i].empty())
             continue;
         if (!first)
-            DrawPiece(", ", rgbLightGrey);
+            DrawPiece(load, ", ", rgbLightGrey);
         first = false;
-        DrawPiece(names[i], rgbLightGrey);
+        DrawPiece(load, names[i], rgbLightGrey);
         bool up = (p.raised & kLevels[i]) != 0;
         bool down = (p.lowered & kLevels[i]) != 0;
         if (up || down)
-            DrawPiece(": ", rgbLightGrey);
+            DrawPiece(load, ": ", rgbLightGrey);
         if (up)
-            DrawPiece(higher, betterRGB);
+            DrawPiece(load, higher, betterRGB);
         if (up && down)
-            DrawPiece("/", rgbLightGrey);
+            DrawPiece(load, "/", rgbLightGrey);
         if (down)
-            DrawPiece(lower, worseRGB);
+            DrawPiece(load, lower, worseRGB);
     }
-    DrawPiece(")", rgbLightGrey);
-    ForeColor(whiteColor);
+    DrawPiece(load, ")", rgbLightGrey);
     return extra;
 }
 
 /* one line of Goods Traded: the name and its price levels (none: 0); the height used */
-short DrawGoodsLine(const std::string &name, const PriceLevels &p, const Rect &panel, short v)
+short DrawGoodsLine(UI::Painter &load, const std::string &name, const PriceLevels &p, const Rect &panel, short v)
 {
-    MoveTo(panel.left + 0xf, v);
-    DrawCString(name);
+    load.Text(panel.left + 0xf, v, name, { UI::Style::Small, UI::kWhite });
     if (p.levels == 0)
         return 0xc;
-    return 0xc + DrawPriceLevels(p, panel, panel.left + 0xf + MeasureCString(UpToNul(name)), v);
+    return 0xc + DrawPriceLevels(load, p, panel, panel.left + 0xf + load.Measure(UpToNul(name), UI::Style::Small), v);
 }
 
 /* a commodity's levels as the preferences show them on the map */
@@ -863,17 +854,23 @@ void MapDialogUpdate(void)
     short n;
     short sw;
     short goodsExtra = 0;           /* the goods list's height past its room */
+    const UI::TextSpec light = { UI::Style::Small, rgbLightGrey };
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
 
     for (i = 0; i < kMaxSystems; i++)
         doneFlag[i] = 0;
     temp = mapScroll.h;
     savedY = mapScroll.v;
-    SetGWorldContainer(&loadPort);
-    PenSize(1, 1);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(mapDialog));
+
+    /* the map is put together on the work page; a partial update draws it straight on the load page */
+    UI::Painter load(UI::Surface::Load());
+    UI::Painter work{UI::Surface(View::UIWork())};
+    UI::Painter back{UI::Surface(View::UIBack())};
+    UI::Painter &map = partialMapDialogUpdate != 0 ? load : work;
+
+    load.Fill(*GetDialogPortRect(mapDialog), UI::kBlack);
     if (partialMapDialogUpdate == 0 && mapBackgroundPic != NULL)
-        DrawPicHandle(mapBackgroundPic, GetDialogPortRect(mapDialog));
+        load.Picture(mapBackgroundPic, *GetDialogPortRect(mapDialog));
     if (partialMapDialogUpdate == 0) {
         if (mapZoom > 0.5)
             canZoomIn = 1;
@@ -883,33 +880,16 @@ void MapDialogUpdate(void)
             canZoomOut = 1;
         else
             canZoomOut = 0;
-        MapButtons().Draw(-1);
+        MapButtons().Draw(load, -1);
     }
-    if (partialMapDialogUpdate != 0) {
-        SetGWorldContainer(&loadPort);
-        GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
-    } else {
-        View::SetPortToUIWork();
-        PenSize(1, 1);
-        GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
-    }
+    GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
     w = box.right - box.left;
     h = box.bottom - box.top;
-    ForeColor(blackColor);
-    PaintRect(&box);
+    map.Fill(box, UI::kBlack);
     if (partialMapDialogUpdate == 0 && settings.showMapBorders != 0) {
-        View::SetPortToUIWork();
         GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &r2);
-        DrawMapInfluence(r2);
+        DrawMapInfluence(work, r2);
     }
-    TextFont(smallTextFont);
-    TextSize(smallTextSize - 2);
-    if (mapZoom >= 1.1)
-        TextSize(smallTextSize - 2);
-    else if (mapZoom >= 0.9)
-        TextSize(smallTextSize);
-    else
-        TextSize(smallTextSize);
     for (i = 0; i < kMaxNebulae; i++) {
         if (nebulaData[i].loaded != 0 && nebulaData[i].explored != 0) {
             nebR.left = (box.left + w / 2
@@ -936,32 +916,17 @@ void MapDialogUpdate(void)
                 if (nebulaPic[i][fit] != 0) {
                     SectRect(&box, &nebR, &r2);
                     if (partialMapDialogUpdate != 0) {
-                        View::SetPortToUIWork();
-                        ForeColor(blackColor);
-                        DrawPicHandle(nebulaPic[i][fit], &nebR);
-                        SetGWorldContainer(&loadPort);
-                        ForeColor(blackColor);
-                        CopyBits(GetPortPixMapBits(
-                                     View::UIWork()->framePort),
-                                 (BitMapPtr)GWorldContainerBits(&loadPort),
-                                 &r2, &r2, 0, 0);
+                        work.Picture(nebulaPic[i][fit], nebR);
+                        load.Copy(UI::Surface(View::UIWork()), r2, r2);
                     } else {
-                        View::SetPortToUIBack();
-                        ForeColor(blackColor);
-                        DrawPicHandle(nebulaPic[i][fit], &nebR);
-                        CopyBits(GetPortPixMapBits(
-                                     View::UIBack()->framePort),
-                                 GetPortPixMapBits(
-                                     View::UIWork()->framePort),
-                                 &r2, &r2, 0x25, 0);
-                        View::SetPortToUIWork();
-                        ForeColor(blackColor);
+                        back.Picture(nebulaPic[i][fit], nebR);
+                        work.Copy(UI::Surface(View::UIBack()), r2, r2, UI::Blit::AdMax);
                     }
                 }
             }
         }
     }
-    DrawMap(box);
+    DrawMap(map, box);
     if (selSystem != -1) {
         sy = systemData[selSystem].pos.v;
         r2.left = (box.left + w / 2
@@ -976,71 +941,46 @@ void MapDialogUpdate(void)
             InsetRect(&r2, -8, -8);
         else
             InsetRect(&r2, -6, -6);
-        RGBForeColor(&brightGreen);
-        PenSize(1, 1);
-        MoveTo(r2.left + 1, r2.top);
-        LineTo(r2.left + 4, r2.top);
-        MoveTo(r2.left + 1, r2.bottom);
-        LineTo(r2.left + 4, r2.bottom);
-        MoveTo(r2.right - 1, r2.top);
-        LineTo(r2.right - 4, r2.top);
-        MoveTo(r2.right - 1, r2.bottom);
-        LineTo(r2.right - 4, r2.bottom);
-        MoveTo(r2.left, r2.top + 1);
-        LineTo(r2.left, r2.top + 4);
-        MoveTo(r2.left, r2.bottom - 1);
-        LineTo(r2.left, r2.bottom - 4);
-        MoveTo(r2.right, r2.top + 1);
-        LineTo(r2.right, r2.top + 4);
-        MoveTo(r2.right, r2.bottom - 1);
-        LineTo(r2.right, r2.bottom - 4);
-        ForeColor(blackColor);
+        map.Line(r2.left + 1, r2.top, r2.left + 4, r2.top, brightGreen);
+        map.Line(r2.left + 1, r2.bottom, r2.left + 4, r2.bottom, brightGreen);
+        map.Line(r2.right - 1, r2.top, r2.right - 4, r2.top, brightGreen);
+        map.Line(r2.right - 1, r2.bottom, r2.right - 4, r2.bottom, brightGreen);
+        map.Line(r2.left, r2.top + 1, r2.left, r2.top + 4, brightGreen);
+        map.Line(r2.left, r2.bottom - 1, r2.left, r2.bottom - 4, brightGreen);
+        map.Line(r2.right, r2.top + 1, r2.right, r2.top + 4, brightGreen);
+        map.Line(r2.right, r2.bottom - 1, r2.right, r2.bottom - 4, brightGreen);
     }
-    ForeColor(whiteColor);
+    /* the names once more over DrawMap's */
     for (i = 0; i < kMaxSystems; i++) {
         if (systemData[i].loaded != 0 && systemData[i].exploreLevel > 0
             && (mapZoom <= 1.1 || i == selSystem)) {
-            MoveTo((box.left + w / 2 + systemData[i].pos.h / mapZoom
-                           - temp / mapZoom + 7.0),
-                   (box.top + h / 2 + systemData[i].pos.v / mapZoom
-                           - savedY / mapZoom + 4.0));
-            DrawCString(SystName(i));
+            map.Text((box.left + w / 2 + systemData[i].pos.h / mapZoom
+                             - temp / mapZoom + 7.0),
+                     (box.top + h / 2 + systemData[i].pos.v / mapZoom
+                             - savedY / mapZoom + 4.0),
+                     SystName(i), white);
         }
     }
-    ForeColor(blackColor);
     didUpdateMap = 1;
-    if (partialMapDialogUpdate != 0) {
-        CopyLoadPortToDialog(mapDialog, box);
-    } else {
-        SetGWorldContainer(&loadPort);
-        ForeColor(blackColor);
-        CopyBits(GetPortPixMapBits(
-                     View::UIWork()->framePort),
-                 (BitMapPtr)GWorldContainerBits(&loadPort),
-                 &box, &box, 0, 0);
-    }
+    if (partialMapDialogUpdate != 0)
+        LoadPageToDialog(mapDialog, box);
+    else
+        load.Copy(UI::Surface(View::UIWork()), box, box);
     if (partialMapDialogUpdate == 0) {
         GetDialogItem(mapDialog, kMapInfoItem,&itemType, &item, &box);
         GetDialogItem(mapDialog, kMapRouteItem,&itemType, &item, &box6);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        MoveTo(box6.left + 1, box.top);
-        LineTo(box6.right - 2, box.top);
+        load.Line(box6.left + 1, box.top, box6.right - 2, box.top, UI::kBlack);
         sel = selSystem;
         if (hypergateMapMode != 0
             && (selSystem == shipData->curSystem
                 || selSystem == -1)) {
-            RGBForeColor(&rgbLightGrey);
             text = IndString(kGameStrList, 0x134);
-            MoveTo(box.left + box.right / 2 - MeasureCString(text) / 2,
-                   box.top + 0x18);
-            DrawCString(text);
+            // BUG (all versions): box.left + box.right / 2 is not the box's middle; the text sits right of it
+            load.Text(box.left + box.right / 2 - load.Measure(text, UI::Style::Small) / 2, box.top + 0x18, text,
+                      light);
         } else {
-            RGBForeColor(&rgbLightGrey);
-            MoveTo(box.left + 10, box.top + 0xc);
-            DrawIndString(kGameStrList, 0x135);
-            ForeColor(whiteColor);
-            MoveTo(box.left + 0x2d, box.top + 0xc);
+            load.Text(box.left + 10, box.top + 0xc, IndStringRaw(kGameStrList, 0x135), light);
+            load.Pen(box.left + 0x2d, box.top + 0xc);
             if (systemData[sel].exploreLevel > 0) {
                 short xoff;
                 count = 0;
@@ -1058,36 +998,33 @@ void MapDialogUpdate(void)
                             && (stellarData[systemData[sel].navDefault[i]].flags & kSpobUninhabited) == 0
                             && StellarIsLandable(&stellarData[systemData[sel].navDefault[i]]) != 0) {
                             text = SpobName(systemData[sel].navDefault[i]);
-                            sw = MeasureCString(text);
+                            sw = load.Measure(text, UI::Style::Small);
                             if (box.left + 0x2d + sw + xoff > box6.right - 0x14) {
-                                MoveTo(box.left + 0x2d, box.top + 0x18);
+                                load.Pen(box.left + 0x2d, box.top + 0x18);
                                 xoff = 0;
                             } else {
                                 xoff += sw;
                             }
-                            DrawCString(text);
+                            load.Text(text, white);
                             drawn++;
                             if (count > drawn) {
-                                DrawCString(", ");
-                                xoff += MeasureCString(", ");
+                                load.Text(", ", white);
+                                xoff += load.Measure(", ", UI::Style::Small);
                             }
                         }
                     }
                 } else {
-                    DrawIndString(kGameStrList, 0x14f);
+                    load.Text(IndStringRaw(kGameStrList, 0x14f), white);
                 }
             } else {
                 if (cheatsActive != 0) {
-                    DrawCString(NumText(sel + kFirstResourceID));
+                    load.Text(NumText(sel + kFirstResourceID), white);
                 } else {
-                    DrawIndString(kGameStrList, 0x136);
+                    load.Text(IndStringRaw(kGameStrList, 0x136), white);
                 }
             }
-            RGBForeColor(&rgbLightGrey);
-            MoveTo(box.left + 10, box.top + 0x24);
-            DrawIndString(kGameStrList, 0x137);
-            ForeColor(whiteColor);
-            MoveTo(box.left + 0x6e, box.top + 0x24);
+            load.Text(box.left + 10, box.top + 0x24, IndStringRaw(kGameStrList, 0x137), light);
+            load.Pen(box.left + 0x6e, box.top + 0x24);
             if (systemData[sel].exploreLevel > 0) {
                 line.clear();
                 for (j = 0; j < kNavSlots; j++) {
@@ -1142,42 +1079,35 @@ void MapDialogUpdate(void)
                     line = IndString(kGameStrList, 0x14f);
                 if (!line.empty())
                     line[0] = (char)toupper((unsigned char)line[0]);
-                DrawCString(line);
+                load.Text(line, white);
             } else {
                 if (cheatsActive != 0) {
-                    DrawCString(NumText(sel + kFirstResourceID));
+                    load.Text(NumText(sel + kFirstResourceID), white);
                 } else {
-                    DrawIndString(kGameStrList, 0x136);
+                    load.Text(IndStringRaw(kGameStrList, 0x136), white);
                 }
             }
         }
-        RGBForeColor(&rgbDarkGrey);
         if (cheatsActive != 0)
             line = NumText(1.0 / mapZoom * 1000.0);
         else
             line = DateMedText(gameTime);
-        MoveTo(box.right - MeasureCString(line) - 5, box.top + 0x24);
-        DrawCString(line);
-        ForeColor(blackColor);
+        load.Text(box.right - load.Measure(line, UI::Style::Small) - 5, box.top + 0x24, line,
+                  { UI::Style::Small, rgbDarkGrey });
         didUpdateMap = 1;
         GetDialogItem(mapDialog, kMapRouteItem,&itemType, &item, &r2);
-        ForeColor(blackColor);
-        MoveTo(r2.left + 1, r2.bottom - 1);
-        LineTo(r2.right - 2, r2.bottom - 1);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        MoveTo(r2.left + 10, r2.top + 0xc);
-        RGBForeColor(&rgbLightGrey);
+        load.Line(r2.left + 1, r2.bottom - 1, r2.right - 2, r2.bottom - 1, UI::kBlack);
+        load.Pen(r2.left + 10, r2.top + 0xc);
         linked = 0;
         if (shipData->navTargetKind == kNavTargetLink) {
             if (shipData->targetStellar == -1) {
                 if (selSystem == shipData->curSystem) {
-                    DrawIndString(kGameStrList, 0x151);
+                    load.Text(IndStringRaw(kGameStrList, 0x151), light);
                 } else {
-                    DrawIndString(kGameStrList, 0x152);
+                    load.Text(IndStringRaw(kGameStrList, 0x152), light);
                 }
             } else {
-                DrawIndString(kGameStrList, 0x153);
+                load.Text(IndStringRaw(kGameStrList, 0x153), light);
             }
         } else {
             if (hypergateMapMode != 0 && hypergateMapModeStellar >= 0
@@ -1197,126 +1127,105 @@ void MapDialogUpdate(void)
                 }
             }
             if (selSystem == shipData->curSystem) {
-                DrawIndString(kGameStrList, 0x151);
+                load.Text(IndStringRaw(kGameStrList, 0x151), light);
             } else if (linked != 0) {
-                DrawIndString(kGameStrList, 0x154);
+                load.Text(IndStringRaw(kGameStrList, 0x154), light);
             } else {
-                DrawIndString(kGameStrList, 0x152);
+                load.Text(IndStringRaw(kGameStrList, 0x152), light);
             }
         }
-        MoveTo(r2.left + 0xf, r2.top + 0x1a);
-        ForeColor(whiteColor);
+        load.Pen(r2.left + 0xf, r2.top + 0x1a);
         if (systemData[sel].exploreLevel <= 0) {
             if (cheatsActive != 0) {
-                DrawCString(NumText(sel + kFirstResourceID));
+                load.Text(NumText(sel + kFirstResourceID), white);
             } else {
-                DrawIndString(kGameStrList, 0x136);
+                load.Text(IndStringRaw(kGameStrList, 0x136), white);
             }
         } else {
             if (cheatsActive != 0) {
-                DrawCString(NumText(sel + kFirstResourceID));
+                load.Text(NumText(sel + kFirstResourceID), white);
             } else {
-                DrawCString(SystName(sel));
+                load.Text(SystName(sel), white);
             }
             if (SystemIsInhabited(sel) != 0) {
-                RGBForeColor(&rgbLightGrey);
-                MoveTo(r2.left + 10, r2.top + 0x4b);
-                DrawIndString(kGameStrList, 0x145);
-                ForeColor(whiteColor);
-                MoveTo(r2.left + 0xf, r2.top + 0x58);
+                load.Text(r2.left + 10, r2.top + 0x4b, IndStringRaw(kGameStrList, 0x145), light);
+                load.Pen(r2.left + 0xf, r2.top + 0x58);
                 count = systemData[sel].govt;
                 if (count == -1) {
-                    DrawIndString(kGameStrList, 0x14d);
+                    load.Text(IndStringRaw(kGameStrList, 0x14d), white);
                 } else if (cheatsActive != 0) {
-                    DrawCString("ID ");
-                    DrawCString(NumText(count + kFirstResourceID));
+                    load.Text("ID ", white);
+                    load.Text(NumText(count + kFirstResourceID), white);
                 } else {
-                    DrawCString(GovtName(count));
+                    load.Text(GovtName(count), white);
                 }
-                MoveTo(r2.left + 10, r2.top + 0x77);
-                RGBForeColor(&rgbLightGrey);
-                DrawIndString(kGameStrList, 0x146);
-                ForeColor(whiteColor);
-                MoveTo(r2.left + 0xf, r2.top + 0x84);
+                load.Text(r2.left + 10, r2.top + 0x77, IndStringRaw(kGameStrList, 0x146), light);
+                load.Pen(r2.left + 0xf, r2.top + 0x84);
                 if (cheatsActive != 0) {
-                    DrawCString(NumText(playerRecord[sel]));
+                    load.Text(NumText(playerRecord[sel]), white);
                 } else {
-                    DrawLegalStatusString(sel);
+                    load.Text(LegalStatusText(sel), white);
                 }
-                RGBForeColor(&rgbLightGrey);
-                MoveTo(r2.left + 10, r2.top + 0x9b);
-                DrawIndString(kGameStrList, 0x147);
-                ForeColor(whiteColor);
+                load.Text(r2.left + 10, r2.top + 0x9b, IndStringRaw(kGameStrList, 0x147), light);
                 if (systemData[sel].exploreLevel < 2) {
-                    MoveTo(r2.left + 0xf, r2.top + 0xa8);
-                    DrawIndString(kGameStrList, 0x136);
+                    load.Text(r2.left + 0xf, r2.top + 0xa8, IndStringRaw(kGameStrList, 0x136), white);
                 } else {
                     xoff = 0;
                     for (k = 0; k <= 5; k++) {
                         if (SystemTradesGoods(sel, k) != 0)
-                            xoff += DrawGoodsLine(cargoName[k], CommodityLevels(sel, k), r2, r2.top + 0xa8 + xoff);
+                            xoff += DrawGoodsLine(load, cargoName[k], CommodityLevels(sel, k), r2,
+                                                  r2.top + 0xa8 + xoff);
                     }
                     if (settings.mapPrices != 0) {
                         short junkLevels[kMaxJunks];
                         SystemJunkLevels(sel, junkLevels);
                         for (k = 0; k < kMaxJunks; k++) {
                             if (junkLevels[k] != 0)
-                                xoff += DrawGoodsLine(JunkName(k), { junkLevels[k], 0, 0 }, r2,
+                                xoff += DrawGoodsLine(load, JunkName(k), { junkLevels[k], 0, 0 }, r2,
                                                       r2.top + 0xa8 + xoff);
                         }
                     }
                     if (xoff > kGoodsHeight)
                         goodsExtra = xoff - kGoodsHeight;
-                    if (xoff == 0) {
-                        MoveTo(r2.left + 0xf, r2.top + 0xa8);
-                        DrawIndString(kGameStrList, 0x14f);
-                    }
+                    if (xoff == 0)
+                        load.Text(r2.left + 0xf, r2.top + 0xa8, IndStringRaw(kGameStrList, 0x14f), white);
                 }
-                RGBForeColor(&rgbLightGrey);
-                MoveTo(r2.left + 10, r2.top + 0xfa + goodsExtra);
-                DrawIndString(kGameStrList, 0x148);
+                load.Text(r2.left + 10, r2.top + 0xfa + goodsExtra, IndStringRaw(kGameStrList, 0x148), light);
                 temp = 0;
                 for (n = 0; n <= 2; n++) {
                     if (SystemHasService(sel, n) != 0)
                         temp++;
                 }
                 if (temp > 0) {
-                    ForeColor(whiteColor);
                     if (systemData[sel].exploreLevel < 2) {
-                        MoveTo(r2.left + 0xf, r2.top + 0x107 + goodsExtra);
-                        DrawIndString(kGameStrList, 0x136);
+                        load.Text(r2.left + 0xf, r2.top + 0x107 + goodsExtra, IndStringRaw(kGameStrList, 0x136),
+                                  white);
                     } else {
                         xoff = 0;
                         for (j = 0; j <= 2; j++) {
                             if (SystemHasService(sel, j) != 0) {
-                                MoveTo(r2.left + 0xf, r2.top + 0x107 + goodsExtra + xoff);
-                                DrawIndString(kGameStrList, j + 0x149);
+                                load.Text(r2.left + 0xf, r2.top + 0x107 + goodsExtra + xoff,
+                                          IndStringRaw(kGameStrList, j + 0x149), white);
                                 xoff += 0xc;
                             }
                         }
                     }
                 } else {
                     if (systemData[sel].exploreLevel >= 2) {
-                        MoveTo(r2.left + 0xf, r2.top + 0x106 + goodsExtra);
-                        ForeColor(whiteColor);
-                        DrawIndString(kGameStrList, 0x14c);
+                        load.Text(r2.left + 0xf, r2.top + 0x106 + goodsExtra, IndStringRaw(kGameStrList, 0x14c),
+                                  white);
                     } else if (systemData[sel].exploreLevel >= 1) {
-                        MoveTo(r2.left + 0xf, r2.top + 0x106 + goodsExtra);
-                        ForeColor(whiteColor);
-                        DrawIndString(kGameStrList, 0x136);
+                        load.Text(r2.left + 0xf, r2.top + 0x106 + goodsExtra, IndStringRaw(kGameStrList, 0x136),
+                                  white);
                     }
                 }
             } else {
-                MoveTo(r2.left + 10, r2.top + 0x4b);
-                ForeColor(whiteColor);
-                DrawIndString(kGameStrList, 0x14e);
+                load.Text(r2.left + 10, r2.top + 0x4b, IndStringRaw(kGameStrList, 0x14e), white);
             }
         }
         didUpdateMap = 1;
-        SetGWorldContainer(&loadPort);
-        MapButtons().Draw(-1);
-        UnsetGWorldContainer(&loadPort);
-        CopyLoadPortToDialog(mapDialog);
+        MapButtons().Draw(load, -1);
+        LoadPageToDialog(mapDialog);
     }
 }
 
@@ -1325,18 +1234,8 @@ void MapDialogUpdate(void)
 // MAC: _ScrollMapDisplay i386 0x0001128d ppc 0x00014b8c
 void ScrollMapDisplay(short dh, short dv)
 {
-    short itemType;
-    Handle item;
-    Rect box;
-
     if (dh == 0 && dv == 0)
         return;
-    SetDialogGWorld(mapDialog);
-    GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &box);
-    box.left += 1;
-    box.top += 1;
-    box.right -= 1;
-    box.bottom -= 1;
     partialMapDialogUpdate = 1;
     MapDialogUpdate();
     partialMapDialogUpdate = 0;
@@ -1412,7 +1311,7 @@ void CueNextHyperRouteDest(void)
 
 // FUNCTION: EVNOVA 0x004a8100
 // MAC: _DrawMap i386 0x0000e568 ppc 0x00011df8
-void DrawMap(Rect box)
+void DrawMap(UI::Painter &p, Rect box)
 {
     FloatPoint destPt;
     FloatPoint curPt;
@@ -1436,6 +1335,7 @@ void DrawMap(Rect box)
     Boolean show;
     Boolean redArrow;
     Boolean greenArrow;
+    short pen;
 
     w = box.right - box.left;
     h = box.bottom - box.top;
@@ -1450,17 +1350,15 @@ void DrawMap(Rect box)
                 from.v = systemData[hyperRoute[i]].pos.v;
                 to.h = systemData[hyperRoute[i + 1]].pos.h;
                 to.v = systemData[hyperRoute[i + 1]].pos.v;
-                PenSize(2, 2);
-                RGBForeColor(&brightGreen);
-                MoveTo((box.left + w / 2 + from.h / mapZoom
+                p.Line((box.left + w / 2 + from.h / mapZoom
                                - savedX / mapZoom),
                        (box.top + h / 2 + from.v / mapZoom
-                               - savedY / mapZoom));
-                LineTo((box.left + w / 2 + to.h / mapZoom
+                               - savedY / mapZoom),
+                       (box.left + w / 2 + to.h / mapZoom
                                - savedX / mapZoom),
                        (box.top + h / 2 + to.v / mapZoom
-                               - savedY / mapZoom));
-                PenSize(1, 1);
+                               - savedY / mapZoom),
+                       brightGreen, 2);
             }
         }
     }
@@ -1469,22 +1367,19 @@ void DrawMap(Rect box)
         if (systemData[i].links[j] != -1) {
             dest = FindActiveCoLocatedSystem(systemData[i].links[j]);
             if (dest != -1) {
-                if (hypergateMapMode != 0)
-                    RGBForeColor(&rgbRealDarkGrey);
-                else
-                    RGBForeColor(&rgbLessDarkGrey);
                 from.h = systemData[i].pos.h;
                 from.v = systemData[i].pos.v;
                 to.h = systemData[dest].pos.h;
                 to.v = systemData[dest].pos.v;
-                MoveTo((box.left + w / 2 + from.h / mapZoom
+                p.Line((box.left + w / 2 + from.h / mapZoom
                                - savedX / mapZoom),
                        (box.top + h / 2 + from.v / mapZoom
-                               - savedY / mapZoom));
-                LineTo((box.left + w / 2 + to.h / mapZoom
+                               - savedY / mapZoom),
+                       (box.left + w / 2 + to.h / mapZoom
                                - savedX / mapZoom),
                        (box.top + h / 2 + to.v / mapZoom
-                               - savedY / mapZoom));
+                               - savedY / mapZoom),
+                       hypergateMapMode != 0 ? rgbRealDarkGrey : rgbLessDarkGrey);
             }
         }
     }
@@ -1498,25 +1393,26 @@ void DrawMap(Rect box)
                     if (dest != -1 && doneFlag[dest] == 0) {
                         if (i == shipData->curSystem && shipData->navTargetKind == kNavTargetLink
                             && j == shipData->targetStellar)
-                            RGBForeColor(&dimGreen);
+                            color = dimGreen;
                         else if (hypergateMapMode != 0)
-                            RGBForeColor(&rgbRealDarkGrey);
+                            color = rgbRealDarkGrey;
                         else
-                            RGBForeColor(&rgbLessDarkGrey);
+                            color = rgbLessDarkGrey;
                         from.h = systemData[i].pos.h;
                         from.v = systemData[i].pos.v;
                         to.h = systemData[dest].pos.h;
                         to.v = systemData[dest].pos.v;
-                        MoveTo((box.left + w / 2
+                        p.Line((box.left + w / 2
                                        + from.h / mapZoom
                                        - savedX / mapZoom),
                                (box.top + h / 2
                                        + from.v / mapZoom
-                                       - savedY / mapZoom));
-                        LineTo((box.left + w / 2 + to.h / mapZoom
+                                       - savedY / mapZoom),
+                               (box.left + w / 2 + to.h / mapZoom
                                        - savedX / mapZoom),
                                (box.top + h / 2 + to.v / mapZoom
-                                       - savedY / mapZoom));
+                                       - savedY / mapZoom),
+                               color);
                     }
                 }
             }
@@ -1529,19 +1425,19 @@ void DrawMap(Rect box)
         if (j >= 0 && j < kMaxSystemLinks && systemData[i].links[j] != -1) {
             dest = FindActiveCoLocatedSystem(systemData[i].links[j]);
             if (dest != -1) {
-                RGBForeColor(&dimGreen);
                 from.h = systemData[i].pos.h;
                 from.v = systemData[i].pos.v;
                 to.h = systemData[dest].pos.h;
                 to.v = systemData[dest].pos.v;
-                MoveTo((box.left + w / 2 + from.h / mapZoom
+                p.Line((box.left + w / 2 + from.h / mapZoom
                                - savedX / mapZoom),
                        (box.top + h / 2 + from.v / mapZoom
-                               - savedY / mapZoom));
-                LineTo((box.left + w / 2 + to.h / mapZoom
+                               - savedY / mapZoom),
+                       (box.left + w / 2 + to.h / mapZoom
                                - savedX / mapZoom),
                        (box.top + h / 2 + to.v / mapZoom
-                               - savedY / mapZoom));
+                               - savedY / mapZoom),
+                       dimGreen);
             }
         }
     }
@@ -1585,34 +1481,30 @@ void DrawMap(Rect box)
                 sysBox.right = sysBox.left;
                 sysBox.bottom = sysBox.top;
                 if (mapZoom <= 0.5) {
-                    PenSize(2, 2);
+                    pen = 2;
                     InsetRect(&sysBox, -6, -6);
                 } else {
-                    PenSize(1, 1);
+                    pen = 1;
                     InsetRect(&sysBox, -4, -4);
                 }
-                ForeColor(blackColor);
-                PaintOval(&sysBox);
+                p.FillOval(sysBox, UI::kBlack);
                 ColorCodeSystem(i, &color);
-                RGBForeColor(&color);
-                FrameOval(&sysBox);
-                ForeColor(blackColor);
+                p.Oval(sysBox, color, pen);
                 if (redArrow != 0) {
                     SetRect(&arrowBox, sysBox.left - 0x10, sysBox.top - 0x10,
                             sysBox.left, sysBox.top);
                     if (redMapArrow != NULL)
-                        nv_BlitImageOr(&arrowBox, redMapArrow);
+                        p.Icon(redMapArrow, arrowBox);
                 }
                 if (greenArrow != 0) {
                     SetRect(&arrowBox, sysBox.right, sysBox.top - 0x10,
                             sysBox.right + 0x10, sysBox.top);
                     if (greenMapArrow != NULL)
-                        nv_BlitImageOr(&arrowBox, greenMapArrow);
+                        p.Icon(greenMapArrow, arrowBox);
                 }
             }
         }
     }
-    PenSize(1, 1);
     cur = shipData->curSystem;
     if (cur >= 0 && cur < kMaxSystems) {
         from.h = systemData[cur].pos.h;
@@ -1627,10 +1519,8 @@ void DrawMap(Rect box)
             InsetRect(&sysBox, -3, -3);
         else
             InsetRect(&sysBox, -2, -2);
-        ForeColor(cyanColor);
-        PaintOval(&sysBox);
-        FrameOval(&sysBox);
-        ForeColor(blackColor);
+        p.FillOval(sysBox, *cyanColor);
+        p.Oval(sysBox, *cyanColor);
     }
     /* BUG: the upper bound tests hypergateMapMode, not the stellar, and can never fail
        (exe 0x004a921e) */
@@ -1646,11 +1536,11 @@ void DrawMap(Rect box)
                 dest = FindActiveCoLocatedSystem(st);
                 if (dest >= 0 && dest < kMaxSystems) {
                     if (dest == selSystem) {
-                        ForeColor(whiteColor);
-                        PenSize(3, 3);
+                        color = UI::kWhite;
+                        pen = 3;
                     } else {
-                        ForeColor(cyanColor);
-                        PenSize(2, 2);
+                        color = *cyanColor;
+                        pen = 2;
                     }
                     from.h = systemData[shipData->curSystem].pos.h;
                     from.v = systemData[shipData->curSystem].pos.v;
@@ -1665,35 +1555,27 @@ void DrawMap(Rect box)
                                        - savedX / mapZoom);
                     destPt.y = (box.top + h / 2 + to.v / mapZoom
                                        - savedY / mapZoom);
-                    MoveTo(destPt.x, destPt.y);
-                    LineTo(curPt.x, curPt.y);
+                    p.Line(destPt.x, destPt.y, curPt.x, curPt.y, color, pen);
                     angle = CalcInterceptAngle(&destPt, &curPt);
                     curPt = destPt;
                     Accel(angle + 45, 8.0f, &curPt);
-                    MoveTo(destPt.x, destPt.y);
-                    LineTo(curPt.x, curPt.y);
+                    p.Line(destPt.x, destPt.y, curPt.x, curPt.y, color, pen);
                     curPt = destPt;
                     Accel((angle + 315) % kFullCircle, 8.0f, &curPt);
-                    MoveTo(destPt.x, destPt.y);
-                    LineTo(curPt.x, curPt.y);
+                    p.Line(destPt.x, destPt.y, curPt.x, curPt.y, color, pen);
                     systemData[dest].known = 1;
                 }
             }
         }
-        PenSize(1, 1);
-        ForeColor(blackColor);
     }
-    ForeColor(whiteColor);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
     for (i = 0; i < kMaxSystems; i++) {
         if (systemData[i].loaded != 0 && systemData[i].exploreLevel > 0
             && (mapZoom <= 1.1 || i == selSystem)) {
-            MoveTo((box.left + w / 2 + systemData[i].pos.h / mapZoom
+            p.Text((box.left + w / 2 + systemData[i].pos.h / mapZoom
                            - savedX / mapZoom + 7.0),
                    (box.top + h / 2 + systemData[i].pos.v / mapZoom
-                           - savedY / mapZoom + 4.0));
-            DrawString(systemData[i].name);
+                           - savedY / mapZoom + 4.0),
+                   FromPascal(systemData[i].name), { UI::Style::Small, UI::kWhite });
         }
     }
 }
@@ -1706,23 +1588,19 @@ void DrawMapInFloatingFrame(void)
 {
     double savedZoom;
 
-    SWSetPortToFrame(floatingMapFrame);
+    UI::Painter p{UI::Surface(floatingMapFrame)};
+
     mapScroll.h = systemData[shipData[0].curSystem].pos.h;
     mapScroll.v = systemData[shipData[0].curSystem].pos.v;
 
     savedZoom = mapZoom;
     mapZoom = floatingMapZoom;
 
-    ForeColor(blackColor);
-    PaintRect(&floatingMapFrame->frameRect);
-
-    RGBForeColor(&floatingBorderColor);
-    FrameRect(&floatingMapFrame->frameRect);
-    ForeColor(blackColor);
-    DrawMap(floatingMapFrame->frameRect);
+    p.Fill(floatingMapFrame->frameRect, UI::kBlack);
+    p.Frame(floatingMapFrame->frameRect, floatingBorderColor);
+    DrawMap(p, floatingMapFrame->frameRect);
 
     mapZoom = savedZoom;
-    SWSetPortToWindow(gSpriteWorld);
 }
 
 /*
@@ -2000,7 +1878,7 @@ Boolean AddSystemInfluenceToMap(short sys, Rect *r)
 
 // FUNCTION: EVNOVA 0x004aa620
 // MAC: _DrawMapInfluence i386 0x0000e360 ppc 0x00011b5c
-void DrawMapInfluence(Rect bounds)
+void DrawMapInfluence(UI::Painter &p, Rect bounds)
 {
     Rect cell;
     short x;
@@ -2055,9 +1933,7 @@ void DrawMapInfluence(Rect bounds)
                 }
             }
 
-            RGBForeColor(&color);
-            PaintRect(&cell);
+            p.Fill(cell, color);
         }
     }
-    ForeColor(blackColor);
 }

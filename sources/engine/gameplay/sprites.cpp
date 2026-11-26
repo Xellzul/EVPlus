@@ -13,25 +13,6 @@
 
 #define kDefaultSpriteSize 0x20
 
-/* the larger of the frame rect's two dimensions */
-// FUNCTION: EVNOVA 0x00462340
-// MAC: _GetFrameBiggestSize i386 0x000026a3 ppc 0x000030b8
-short GetFrameBiggestSize(SWFrameRec *frame)
-{
-    short width;
-    short height;
-
-    if (frame == NULL)
-        return kDefaultSpriteSize;
-    if (frame == NULL)
-        SWAssertFail("Util.c", SW_LINE(0x143));
-    width = frame->frameRect.right - frame->frameRect.left;
-    height = frame->frameRect.bottom - frame->frameRect.top;
-    if (width > height)
-        return width;
-    return height;
-}
-
 /* the current cel's width, but only while the frame index is in range */
 // FUNCTION: EVNOVA 0x00462390
 // MAC: _GetSpriteXSize i386 0x000026d4 ppc 0x000030f8

@@ -75,7 +75,6 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
 
     SetDialogDefaultItem(dlg, 1);
     FrontWindow(dlg);
-    SetDialogGWorld(dlg);
     DrawDialog(dlg);
 
     GetDialogItem(dlg, kItemStrictPlay, &type, (Handle *)&h, &box);
@@ -173,8 +172,6 @@ Boolean DoNewPilotNameDialog(char *strictPlay)
         GetDialogItem(dlg, kItemGenderPopup, NULL, (Handle *)&ctl, NULL);
         GetMenuItemText(ctl, GetControlValue(ctl), newPilotPopupChoice[1]);
     }
-    SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
-    SWSetPortToWindow(gSpriteWorld);
     return result;
 }

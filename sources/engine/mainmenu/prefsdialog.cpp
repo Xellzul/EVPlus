@@ -10,6 +10,8 @@
 #include "prefsdisplay.h"
 #include "dialog.h"
 #include "crashlog.h"
+#include "painter.h"
+#include "text.h"
 
 namespace {
 
@@ -234,7 +236,6 @@ PrefsDialog::PrefsDialog()
     check(gameplay.check("Map Shows Disasters"), Flag(settings.mapDisasters));
 
     windowedItem = display.check("Run in a window");
-    check(display.check("Whole-pixel scaling"), Flag(settings.wholePixelScaling), false, ApplyDisplayScaling);
     stepper(display.stepper("Resolution:", true),
         [](PrefsDialog &dialog, int direction) {
             Resolution r = dialog.resolutions.step({ settings.gameWidth, settings.gameHeight }, direction);
@@ -290,14 +291,11 @@ PrefsDialog::PrefsDialog()
 
     savedSprites = SpriteSettings::Now();
     dialog.Open(kWidth, kHeight, items.data(), items.size(), PrefsDialogUpdate, NULL, &prefsDialog);
-    SetDialogGWorld(prefsDialog);
     RedrawDialog(prefsDialog);
 }
 
 PrefsDialog::~PrefsDialog()
 {
-    if (gWind != NULL)
-        SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
 }
 
@@ -320,10 +318,6 @@ void PrefsDialog::show()
     char value[kDisplayTextMax];
     char extra[kDisplayTextMax];
 
-    SetDialogGWorld(prefsDialog);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
     for (int i = 0; i < checkCount; i++)
         setCheck(checks[i].item, (*checks[i].setting != 0) != checks[i].inverted);
     setCheck(windowedItem, PlatVideoIsFullScreen() == 0);
@@ -395,31 +389,20 @@ void PrefsDialog::run()
 // FUNCTION: EVNOVA 0x004884f0
 void PrefsDialogUpdate(void)
 {
+    const UI::TextSpec title = { UI::Style::System, UI::kBlack, true };     /* bold, as the dialog's own items */
+    const UI::TextSpec notice = { UI::Style::Small, UI::kBlack, true };
     Rect box;
+    UI::Painter p(UI::Surface::Dialog(prefsDialog));
 
-    SetDialogGWorld(prefsDialog);
     GetDialogItem(prefsDialog, gTitleItem, NULL, NULL, &box);
-    RGBForeColor(&rgbBlack);
-    EraseRect(&box);
-    MoveTo(box.left, (box.bottom - 10));
-    if (gameLoaded == 0 && gWind != NULL) {
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-    } else {
-        TextFont(0);
-        TextSize(12);
-        DrawIndString(kGameStrList, kPlainStrIdx);
-    }
-    PenSize(1, 1);
-    MoveTo(box.left, box.bottom);
-    LineTo(box.right, box.bottom);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
+    p.Fill(box, UI::kWhite);
+    if (gameLoaded != 0 || gWind == NULL)
+        p.Text(box.left, box.bottom - 10, IndStringRaw(kGameStrList, kPlainStrIdx), title);
+    p.Line(box.left, box.bottom, box.right, box.bottom, UI::kBlack);
     if (majorPrefsChange != 0 && gWind != NULL) {
         GetDialogItem(prefsDialog, gNoticeItem, NULL, NULL, &box);
-        EraseRect(&box);
-        MoveTo(box.left, (box.bottom - 5));
-        DrawIndString(kAlertStrList, kRestartStrIdx);
+        p.Fill(box, UI::kWhite);
+        p.Text(box.left, box.bottom - 5, IndStringRaw(kAlertStrList, kRestartStrIdx), notice);
     }
 }
 

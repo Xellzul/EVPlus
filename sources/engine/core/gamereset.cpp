@@ -659,7 +659,6 @@ void SetDefaultPrefs(void)
     settings.gameSize = kDefaultGameSize;
     settings.wheelZoom = 1;
     settings.scaleFilter = kScaleFilterLinear;
-    settings.wholePixelScaling = 0;
     settings.stereoPan = 1;
     settings.asteroidScaling = 1;
     settings.mapPrices = 0;

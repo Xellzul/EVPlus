@@ -302,7 +302,6 @@ typedef struct Settings {
     short gameSize;                 /* the space seen: times the original 1024 x 768 in area, k*GameSize */
     Boolean wheelZoom;              /* the mouse wheel magnifies the space view in flight */
     short scaleFilter;              /* kScaleFilter* */
-    Boolean wholePixelScaling;
     Boolean stereoPan;              /* Positional Stereo: distant sounds panned left/right */
     Boolean asteroidScaling;        /* asteroid count follows the view size */
     Boolean mapPrices;              /* the map's Goods Traded show each commodity's price levels */
@@ -340,7 +339,6 @@ typedef struct PrefsRecord {
     short gameWidth;
     short gameHeight;
     short scaleFilter;
-    short wholePixelScaling;
     short stereoPan;
     short asteroidScaling;
     short mapPrices;

@@ -1,7 +1,6 @@
-/* qdports.cpp -- QuickDraw ports: the current port, the screen port, GWorlds, pixel-map and window accessors */
+/* qdports.cpp -- QuickDraw ports: the current port, the screen port, GWorlds, GWorldContainer port switching, pixel-map and window accessors */
 #include "burger.h"
 #include "macport.h"
-#include "screen.h"
 #include "spriteworld.h"
 
 // FUNCTION: EVNOVA 0x004b8a70
@@ -28,35 +27,39 @@ void GetPort(CGrafPtr *port)
     *port = CurrentGrafPort;
 }
 
+/* the port SetGWorldContainer left, for UnsetGWorldContainer */
+static CGrafPtr savedPort;
 
-CGrafPort gGamePort;
+// FUNCTION: EVNOVA 0x0046f8e0
+// MAC: _SetGWorldContainer i386 0x000a4613 ppc 0x000b0120
+void SetGWorldContainer(GWorldContainer *gwc)
+{
+    GetPort(&savedPort);
+    if (gwc->world != NULL)
+        SetPort(gwc->world);
+}
+
+// FUNCTION: EVNOVA 0x0046f910
+// MAC: _UnsetGWorldContainer i386 0x000a464a ppc 0x000b0180
+void UnsetGWorldContainer(GWorldContainer *gwc)
+{
+    if (savedPort != NULL)
+        SetPort(savedPort);
+}
+
+CGrafPort gGamePort;                    /* its device pixels are the screen's layer (Screen::Open) */
 
 // FUNCTION: EVNOVA 0x004b8ae0
 CGrafPtr OpenGamePort(Rect *bounds, const unsigned char *title)
 {
-    memset(&gGamePort, 0, sizeof(gGamePort));
     gGamePort.pnSize.v = 1;
     gGamePort.pnSize.h = gGamePort.pnSize.v;
     gGamePort.pix.bounds.top = bounds->top;
     gGamePort.pix.bounds.left = bounds->left;
     gGamePort.pix.bounds.bottom = bounds->bottom;
     gGamePort.pix.bounds.right = bounds->right;
-    AttachGamePort();
     CurrentGrafPort = &gGamePort;
     return &gGamePort;
-}
-
-/* The game port onto the screen page as it is now (after it was opened or resized). */
-void AttachGamePort(void)
-{
-    const Screen::Page &page = Screen::Get();
-
-    gGamePort.pix.pixelSize = (page.depth + 7) & ~7;
-    gGamePort.pix.baseAddr = page.pixels;
-    gGamePort.pix.width = page.width;
-    gGamePort.pix.height = page.height;
-    gGamePort.pix.rowBytes = page.pitch;
-    gGamePort.depth = page.depth;
 }
 
 /* The DIB is created top-down (negative biHeight) so row 0 is the top, and its rowBytes
@@ -120,11 +123,15 @@ short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
     return 0;
 }
 
+void (*gPortGone)(CGrafPtr port);
+
 // FUNCTION: EVNOVA 0x004bba00
 void DisposeGWorld(CGrafPtr port)
 {
     if (port == NULL)
         return;
+    if (gPortGone != NULL)
+        (*gPortGone)(port);
     if (port->offscreen != 0)
         free(port->pixels);
     DeallocAPointer(port);
@@ -171,12 +178,6 @@ Rect *GetCWindowPortRect(CWindowPtr window)
 CGrafPtr GetCWindowGrafPort(CWindowPtr window)
 {
     return window;
-}
-
-// FUNCTION: EVNOVA 0x004bbab0
-void SetPortWindowPort(CWindowPtr window)
-{
-    SetPort(GetCWindowGrafPort(window));
 }
 
 // FUNCTION: EVNOVA 0x004bbad0

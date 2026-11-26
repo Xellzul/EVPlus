@@ -13,6 +13,7 @@
 #include "gamedialog.h"
 #include "buttons.h"
 #include "text.h"
+#include "painter.h"
 
 #include <math.h>
 #include <stdarg.h>
@@ -670,9 +671,7 @@ void OutfitDialog::Run()
     GetDialogItem(outfitDialog, kGridItem, &itemType, (Handle *)&item, &box);
     SetupListRects((Point *)&box);
     strncpy(dialogDescTextPtr, "", 3);
-    SetDialogGWorld(outfitDialog);
     FlushEvents(everyEvent - diskMask, 0);
-    ForeColor(blackColor);
     OutfitDialogUpdate();
     OfferMissionFromPort(kOutfitVenue);
     RedrawDialog(outfitDialog);
@@ -703,7 +702,6 @@ void OutfitDialog::Run()
     backdrop.Release();
     preview.Release();
     RedrawStatus(0);
-    SWSetPortToWindow(gSpriteWorld);
     shipData->targetStellar = savedUnk6C;
     shipData->navTargetKind = savedUnk6A;
     statusRedraw[kRedrawNav] = 1;
@@ -838,8 +836,7 @@ void OutfitDialog::Hit(short item)
                 canSell = 0;
             statusRedraw[kRedrawCargo] = 1;
             DrawStatus();
-            SetDialogGWorld(outfitDialog);
-            OutfitButtons().Draw(-1);
+            OutfitButtons().DrawOnDialog(-1);
         }
     }
     if (item == 4 && canSell) {
@@ -1056,8 +1053,7 @@ void OutfitDialog::Hit(short item)
         didOutfit = 1;
         statusRedraw[kRedrawCargo] = 1;
         DrawStatus();
-        SetDialogGWorld(outfitDialog);
-        OutfitButtons().Draw(-1);
+        OutfitButtons().DrawOnDialog(-1);
     }
     if (item == 10 && outfitScroll >= kGridCols) {
         outfitScroll -= kGridCols;
@@ -1070,7 +1066,6 @@ void OutfitDialog::Hit(short item)
             selOutfitItem = selOutfitListItem = -1;
             strncpy(dialogDescTextPtr, "", 3);
         }
-        SetDialogGWorld(outfitDialog);
         RedrawDialog(outfitDialog);
     }
     if (item == 11) {
@@ -1090,7 +1085,6 @@ void OutfitDialog::Hit(short item)
                 selOutfitItem = selOutfitListItem = -1;
                 strncpy(dialogDescTextPtr, "", 3);
             }
-            SetDialogGWorld(outfitDialog);
             RedrawDialog(outfitDialog);
         }
     }
@@ -1226,7 +1220,6 @@ Boolean OutfitDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *ite
         }
     }
     if (ev.what == DialogInput::Click) {
-        SetDialogGWorld(outfitDialog);
         RedrawDialog(outfitDialog);
         where = ev.where;
         GetDialogItem(outfitDialog, kGridItem, &itemType, &item, &box);
@@ -1244,7 +1237,6 @@ Boolean OutfitDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *ite
                         dockedPortItems[selOutfitListItem + outfitScroll];
                 }
                 if (selOutfitListItem != oldPos) {
-                    SetDialogGWorld(outfitDialog);
                     InvalDialogItem(outfitDialog, 1);
                     InvalDialogItem(outfitDialog, 4);
                     InvalDialogItem(outfitDialog, 7);
@@ -1342,17 +1334,15 @@ void OutfitDialogUpdate(void)
     int32_t mass;
     int32_t freeMass;
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(outfitDialog));
+    UI::Painter load(UI::Surface::Load());
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
+    const UI::TextSpec grey = { UI::Style::Small, rgbLessDarkGrey };
+
+    load.Fill(*GetDialogPortRect(outfitDialog), UI::kBlack);
     if (outfitBackgroundPic != NULL)
-        DrawPicHandle(outfitBackgroundPic, GetDialogPortRect(outfitDialog));
-    ForeColor(blackColor);
+        load.Picture(outfitBackgroundPic, *GetDialogPortRect(outfitDialog));
     skipped = 0;
     GetDialogItem(outfitDialog, kGridItem, &itemType, &item, &box);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
     drawn = 0;
     for (i = outfitScroll; i < kMaxOutfits; i++) {
         if (drawn < kGridCells && (i >= 0 && dockedPortItems[i] != -1)) {
@@ -1360,7 +1350,7 @@ void OutfitDialogUpdate(void)
                 if (i - outfitScroll >= 0 &&
                     i - outfitScroll < kGridCells) {
                     if (!RetrieveMenuIcon(dockedPortItems[i] + kOutfitPictBase,
-                                        MenuIconPort(&loadPort),
+                                        UI::Surface::Load(),
                                         &listPicScreenRect[i - outfitScroll]))
                         skipped++;
                 } else {
@@ -1372,66 +1362,38 @@ void OutfitDialogUpdate(void)
             }
             if (shipSystems[dockedPortItems[i]] > 0) {
                 num = NumText(shipSystems[dockedPortItems[i]]);
-                ForeColor(whiteColor);
-                MoveTo(listScreenRect[i - outfitScroll].right
-                              - (MeasureCString(num) + 3),
-                          listScreenRect[i - outfitScroll].top + 12);
-                DrawCString(num);
-                ForeColor(blackColor);
+                load.Text(listScreenRect[i - outfitScroll].left, listScreenRect[i - outfitScroll].right - 3,
+                          listScreenRect[i - outfitScroll].top + 12, num, white, UI::Align::Right);
             }
             if (cheatsActive) {
                 num = NumText(dockedPortItems[i] + kFirstResourceID);
-                ForeColor(whiteColor);
-                MoveTo(((listScreenRect[i - outfitScroll].left
-                                + listScreenRect[i - outfitScroll].right
-                                - MeasureCString(num)) / 2),
-                       (listScreenRect[i - outfitScroll].top + 24));
-                DrawCString(num);
-                ForeColor(blackColor);
+                load.Text(((listScreenRect[i - outfitScroll].left
+                                   + listScreenRect[i - outfitScroll].right
+                                   - load.Measure(num, UI::Style::Small)) / 2),
+                          (listScreenRect[i - outfitScroll].top + 24), num, white);
             }
             if (SplitTwoLineString(outfitShortNames[dockedPortItems[i]],
                                    line1, line2)) {
                 c = (unsigned char)line1[0];
-                if (isalpha(HeldChar(c, line1[0])) || isdigit(HeldChar(c, line1[0])))
-                    ForeColor(whiteColor);
-                else
-                    RGBForeColor(&rgbLessDarkGrey);
-                MoveTo((listScreenRect[i - outfitScroll].left
-                               + listScreenRect[i - outfitScroll].right) / 2
-                              - MeasureCString(line1) / 2,
-                          listScreenRect[i - outfitScroll].bottom - 14);
-                DrawCString(line1);
+                load.Text(listScreenRect[i - outfitScroll].left, listScreenRect[i - outfitScroll].right,
+                          listScreenRect[i - outfitScroll].bottom - 14, line1,
+                          isalpha(HeldChar(c, line1[0])) || isdigit(HeldChar(c, line1[0])) ? white : grey,
+                          UI::Align::Center);
                 c = (unsigned char)line2[0];
-                if (isalpha(HeldChar(c, line2[0])) || isdigit(HeldChar(c, line2[0])))
-                    ForeColor(whiteColor);
-                else
-                    RGBForeColor(&rgbLessDarkGrey);
-                MoveTo((listScreenRect[i - outfitScroll].left
-                               + listScreenRect[i - outfitScroll].right) / 2
-                              - MeasureCString(line2) / 2,
-                          listScreenRect[i - outfitScroll].bottom - 3);
-                DrawCString(line2);
-                ForeColor(blackColor);
+                load.Text(listScreenRect[i - outfitScroll].left, listScreenRect[i - outfitScroll].right,
+                          listScreenRect[i - outfitScroll].bottom - 3, line2,
+                          isalpha(HeldChar(c, line2[0])) || isdigit(HeldChar(c, line2[0])) ? white : grey,
+                          UI::Align::Center);
             } else {
-                MoveTo((listScreenRect[i - outfitScroll].left
-                               + listScreenRect[i - outfitScroll].right) / 2
-                              - MeasureCString(line1) / 2,
-                          listScreenRect[i - outfitScroll].bottom - 6);
-                ForeColor(whiteColor);
-                DrawCString(line1);
-                ForeColor(blackColor);
+                load.Text(listScreenRect[i - outfitScroll].left, listScreenRect[i - outfitScroll].right,
+                          listScreenRect[i - outfitScroll].bottom - 6, line1, white, UI::Align::Center);
             }
-            RGBForeColor(&shopGridColor[1]);
-            FrameRect(&listScreenRect[i - outfitScroll]);
-            ForeColor(blackColor);
+            load.Frame(listScreenRect[i - outfitScroll], shopGridColor[1]);
             drawn++;
         }
     }
-    if (selOutfitListItem != -1) {
-        RGBForeColor(&shopGridColor[0]);
-        FrameRect(&listScreenRect[selOutfitListItem]);
-        ForeColor(blackColor);
-    }
+    if (selOutfitListItem != -1)
+        load.Frame(listScreenRect[selOutfitListItem], shopGridColor[0]);
     if (selOutfitListItem != -1) {
         GetDialogItem(outfitDialog, 8, &itemType, &item, &box);
         if (previewPicID != selOutfitItem + kOutfitPictBase) {
@@ -1444,80 +1406,62 @@ void OutfitDialogUpdate(void)
                 previewPic = GetPicture(previewPicID);
         }
         if (previewPic != NULL) {
-            ForeColor(blackColor);
-            DrawPicHandle(previewPic, &box);
+            load.Picture(previewPic, box);
         } else {
-            ForeColor(whiteColor);
-            TextFont(smallTextFont);
-            TextSize(smallTextSize);
-            DrawStringCentered(IndString(kGameStrList, 0xd5), box.left, box.right,
-                               ((box.bottom + box.top) / 2 - 6));
-            DrawStringCentered(IndString(kGameStrList, 0xd6), box.left, box.right,
-                               ((box.bottom + box.top) / 2 + 6));
-            ForeColor(blackColor);
+            load.Text(box.left, box.right, ((box.bottom + box.top) / 2 - 6), IndString(kGameStrList, 0xd5), white,
+                      UI::Align::Center);
+            load.Text(box.left, box.right, ((box.bottom + box.top) / 2 + 6), IndString(kGameStrList, 0xd6), white,
+                      UI::Align::Center);
         }
         GetDialogItem(outfitDialog, 9, &itemType, &item, &box);
-        TextFont(smallTextFont);
-        TextSize(smallTextSize);
-        ForeColor(whiteColor);
-        MoveTo(box.left, (box.top + 12));
-        DrawIndString(kGameStrList, 0xd7);
-        MoveTo((box.left + 0x46), (box.top + 12));
+        load.Text(box.left, (box.top + 12), IndStringRaw(kGameStrList, 0xd7), white);
         ApplyPriceAndTechnologyFlux(outfitSystem[selOutfitItem].cost, priceFluxMult[0],
                         outfitSystem[selOutfitItem].techLevel,
                         stellarData[shipData->targetStellar].techLevel);
-        DrawCommaNumber(AdjustedItemCost(&outfitSystem[selOutfitItem],
-                                         &shipClass[shipData->type]));
-        DrawCString(" ");
-        DrawIndString(kGameStrList, 0x22);
-        MoveTo(box.left, (box.top + 0x18));
-        DrawIndString(kGameStrList, 0xd9);
-        MoveTo((box.left + 0x46), (box.top + 0x18));
-        DrawCommaNumber(shipData->credits);
-        DrawCString(" ");
-        DrawIndString(kGameStrList, 0x22);
+        load.Text((box.left + 0x46), (box.top + 12),
+                  CommaNumber(AdjustedItemCost(&outfitSystem[selOutfitItem], &shipClass[shipData->type])), white);
+        load.Text(" ", white);
+        load.Text(IndStringRaw(kGameStrList, 0x22), white);
+        load.Text(box.left, (box.top + 0x18), IndStringRaw(kGameStrList, 0xd9), white);
+        load.Text((box.left + 0x46), (box.top + 0x18), CommaNumber(shipData->credits), white);
+        load.Text(" ", white);
+        load.Text(IndStringRaw(kGameStrList, 0x22), white);
         if (outfitSystem[selOutfitItem].mass > 0) {
-            MoveTo(box.left, (box.top + 0x30));
-            DrawIndString(kGameStrList, 0xd8);
-            MoveTo((box.left + 0x46), (box.top + 0x30));
+            load.Text(box.left, (box.top + 0x30), IndStringRaw(kGameStrList, 0xd8), white);
             mass = AdjustedItemMass(&outfitSystem[selOutfitItem],
                                     &shipClass[shipData->type]);
-            DrawCommaNumber(mass);
-            DrawCString(" ");
+            load.Text((box.left + 0x46), (box.top + 0x30), CommaNumber(mass), white);
+            load.Text(" ", white);
             if (mass == 1)
-                DrawCString(tonString);
+                load.Text(tonString, white);
             else
-                DrawCString(tonsString);
-            MoveTo(box.left, (box.top + 0x3c));
-            DrawIndString(kGameStrList, 0xda);
-            MoveTo((box.left + 0x46), (box.top + 0x3c));
+                load.Text(tonsString, white);
+            load.Text(box.left, (box.top + 0x3c), IndStringRaw(kGameStrList, 0xda), white);
             freeMass = ShipFreeMass();
             if (freeMass < 0)
                 freeMass = 0;
-            DrawCommaNumber(freeMass);
-            DrawCString(" ");
+            load.Text((box.left + 0x46), (box.top + 0x3c), CommaNumber(freeMass), white);
+            load.Text(" ", white);
             if (freeMass == 1)
-                DrawCString(tonString);
+                load.Text(tonString, white);
             else
-                DrawCString(tonsString);
+                load.Text(tonsString, white);
         }
-        MoveTo(box.left, (box.top + 0x5d));
         if (HasMaxOfItem(selOutfitItem, NULL, NULL)) {
             if (shipSystems[selOutfitItem] > 0)
-                DrawIndString(kGameStrList, 0xdb);
+                load.Text(box.left, (box.top + 0x5d), IndStringRaw(kGameStrList, 0xdb), white);
             else
-                DrawIndString(kGameStrList, 0xdc);
+                load.Text(box.left, (box.top + 0x5d), IndStringRaw(kGameStrList, 0xdc), white);
         } else {
             mass = AdjustedItemMass(&outfitSystem[selOutfitItem],
                                     &shipClass[shipData->type]);
             if (mass > 0 && mass > ShipFreeMass()) {
                 if (shipSystems[selOutfitItem] > 0)
-                    DrawIndString(kGameStrList, 0xdd);
+                    load.Text(box.left, (box.top + 0x5d), IndStringRaw(kGameStrList, 0xdd), white);
                 else
-                    DrawIndString(kGameStrList, 0xde);
+                    load.Text(box.left, (box.top + 0x5d), IndStringRaw(kGameStrList, 0xde), white);
             }
         }
-        ForeColor(blackColor);
     }
     GetDialogItem(outfitDialog, 6, &itemType, &item, &box);
     if (selOutfitItem != descScrollOutfit) {
@@ -1526,27 +1470,23 @@ void OutfitDialogUpdate(void)
     }
     static OutfitDetails details;
 
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
     if (selOutfitListItem != -1 && selOutfitItem >= 0 && selOutfitItem < kMaxOutfits)
         details.Build(selOutfitItem);
     else
         details.Plain(dialogDescTextPtr);
-    descLineHeight = TextLineHeight();
-    descMaxScroll = MeasureTextSpans(details.Text(), details.Length(), &box) - (box.bottom - box.top);
+    descLineHeight = load.LineHeight(UI::Style::Small);
+    descMaxScroll = load.SpansHeight(box, details.Text(), details.Length(), UI::Style::Small)
+        - (box.bottom - box.top);
     if (descMaxScroll < 0)
         descMaxScroll = 0;
     else if (descLineHeight > 0)
         descMaxScroll = (descMaxScroll + descLineHeight - 1) / descLineHeight * descLineHeight;
     if (descScroll > descMaxScroll)
         descScroll = descMaxScroll;
-    ForeColor(blackColor);
-    PaintRect(&box);
-    ForeColor(whiteColor);
-    DrawTextSpans(details.Text(), details.Length(), &box, descScroll, details.Spans(), details.SpanCount());
-    ForeColor(blackColor);
-    OutfitButtons().Draw(-1);
-    CopyLoadPortToDialog(outfitDialog);
+    load.Fill(box, UI::kBlack);
+    load.TextSpans(box, details.Text(), details.Length(), white, descScroll, details.Spans(), details.SpanCount());
+    OutfitButtons().Draw(load, -1);
+    LoadPageToDialog(outfitDialog);
 }
 
 #define kSpecialTechCount  8

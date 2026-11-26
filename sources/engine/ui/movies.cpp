@@ -7,6 +7,9 @@
 #include "render.h"
 #include "uiscale.h"
 #include "screen.h"
+#include "painter.h"
+
+#define kMovieDepth     16              /* a movie's frames are decoded as 16-bit pixels */
 
 Movie loopingMovie = NULL;
 
@@ -83,7 +86,7 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
     Rect movieBox;
     Rect box;
     Movie movie;
-    CGrafPtr port;
+    GWorldContainer frame;
     float ratio;
 
     if (settings.noMovies != 0)
@@ -126,13 +129,15 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
     SetRect(&box, 0, 0, dw, dh);
     SetRect(&movieBox, 0, 0, w, h);
     CenterRect(&box, &movieBox);
-    port = GetCWindowGrafPort(gWind);
-    Rect device = UI::Mapping(port->pix).DeviceRect(box);
-    MovieSetTarget(movie, (char *)port->pix.baseAddr + device.top * port->pix.rowBytes +
-                              (port->pix.pixelSize >> 3) * device.left,
-                   port->pix.rowBytes, device.right - device.left, device.bottom - device.top, 0);
+    /* the movie's frames are decoded into a world of the box's device pixels, each copied onto the screen */
+    Rect device = UI::Mapping(GetCWindowGrafPort(gWind)->pix).DeviceRect(box);
+    OffsetRect(&device, -device.left, -device.top);
+    CreateGWorldContainer(&frame, 0, kMovieDepth, &device);
+    frame.world->pix.bounds = frame.bounds = box;
+    MovieSetTarget(movie, frame.world->pix.baseAddr, frame.world->pix.rowBytes, frame.world->pix.width,
+                   frame.world->pix.height, 0);
     InsetRect(&box, -1, -1);
-    FrameRect(&box);
+    UI::Painter(UI::Surface::Screen()).Frame(box, UI::kBlack);
     MovieRewind(movie);
     if (fade != 0)
         FadeScreenIn();
@@ -143,6 +148,7 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
     held = MovieSkipInputs();
     while (MovieDone(movie) == 0) {
         if (MovieDraw(movie)) {
+            UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(frame), frame.bounds, frame.bounds);
             Screen::Changed();
             Screen::EndFrame();
         }
@@ -162,8 +168,7 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
         ShowTheCursor();
     }
     MovieClose(movie);
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
+    DisposeGWorldContainer(&frame);
     RedrawDialogs(1);
 }
 

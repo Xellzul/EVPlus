@@ -22,6 +22,7 @@
 #include "prototypes.h"
 #include "outfitmods.h"
 #include "text.h"
+#include "painter.h"
 
 #define kMaxGamma     6
 #define kDefaultGamma 3
@@ -590,7 +591,7 @@ void PlayGame(void)
                 if (frameCounter > 1024) {
                     frameCounter = 0;
                     if (d.day == 30 && d.month == 6 && commCount <= 0)
-                        DisplayCommStyled(std::string("Happy birthday Matt"), 5, 3, 9, &rgbDarkGrey);
+                        DisplayCommStyled(std::string("Happy birthday Matt"), 5, { UI::Style::Small, rgbDarkGrey });
                 }
                 if (missionSoundID != -1 && missionSnd == 0) {
                     missionSnd = ST_LoadSndResource(missionSoundID);
@@ -661,9 +662,7 @@ void PlayGame(void)
     FadeScreenOut();
     ShowTheCursor();
     FlushEvents(everyEvent - diskMask, 0);
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    PaintRect(GetCWindowPortRect((WindowRef)gWind));
+    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
 }
 
 #define kMaxNavDefaults 0x10

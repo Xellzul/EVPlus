@@ -4,6 +4,7 @@
 #include "stellar.h"
 #include "render.h"
 #include "sound.h"
+#include "painter.h"
 
 #define kPictCacheSlots 128
 
@@ -17,12 +18,11 @@ short nagCount;
 
 // FUNCTION: EVNOVA 0x00497b70
 // MAC: _RetrieveMenuIcon i386 0x0004f425 ppc 0x000580cc
-Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
+Boolean RetrieveMenuIcon(short picID, const UI::Surface &dest, Rect *destRect)
 {
     int slot;
     int i;
     PicHandle pic;
-    CGrafPtr savedPort;
     Boolean missed;
     uint32_t oldest;
     int32_t j;
@@ -36,8 +36,7 @@ Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
         if (id == -1)
             slot = i;
         if (picID == id) {
-            CopyBits((BitMapPtr)GetGWCPixMap(&iconsPort), (BitMapPtr)GetGWCPixMap(dest),
-                     &listPicOffRect[(short)i], destRect, 0, 0);
+            UI::Painter(dest).Copy(UI::Surface(iconsPort), listPicOffRect[(short)i], *destRect);
             iconCache[(short)i].stamp = ReadTick();
             return 1;
         }
@@ -56,25 +55,24 @@ Boolean RetrieveMenuIcon(short picID, GWorldContainer *dest, Rect *destRect)
     }
     if ((short)slot < 0 || kPictCacheSlots <= (short)slot)
         slot = 0;
-    GetPort(&savedPort);
-    SetPort(iconsPort.world);
-    ForeColor(blackColor);
-    pic = GetPicture(picID);
-    if (pic != 0) {
-        r = &listPicOffRect[(short)slot];
-        DrawPicHandle(pic, r);
-        QDReleaseResource(pic);
-        iconCache[(short)slot].picID = picID;
-        iconCache[(short)slot].stamp = ReadTick();
-        missed = 0;
-    } else {
-        r = &listPicOffRect[(short)slot];
-        PaintRect(r);
-        missed = 1;
+    {
+        UI::Painter icons{UI::Surface(iconsPort)};
+
+        pic = GetPicture(picID);
+        if (pic != 0) {
+            r = &listPicOffRect[(short)slot];
+            icons.Picture(pic, *r);
+            QDReleaseResource(pic);
+            iconCache[(short)slot].picID = picID;
+            iconCache[(short)slot].stamp = ReadTick();
+            missed = 0;
+        } else {
+            r = &listPicOffRect[(short)slot];
+            icons.Fill(*r, UI::kBlack);
+            missed = 1;
+        }
     }
-    SetPort(savedPort);
-    CopyBits((BitMapPtr)GetGWCPixMap(&iconsPort), (BitMapPtr)GetGWCPixMap(dest),
-             r, destRect, 0, 0);
+    UI::Painter(dest).Copy(UI::Surface(iconsPort), *r, *destRect);
     return missed;
 }
 

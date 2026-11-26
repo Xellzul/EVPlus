@@ -19,6 +19,7 @@
 #include "outfitmods.h"
 #include "profiler.h"
 #include "text.h"
+#include "painter.h"
 
 /* the cheat keys HandlePlayer reads by code */
 #define kScanExploreCheat   kScanLang1
@@ -343,20 +344,14 @@ static bool PlayerEscapePod(ShipObj *player)
             ClearStarfield();
             ClearParticles(0);
             SWHideAllSprites(gSpriteWorld);
-            SWSetPortToWindow(gSpriteWorld);
-            ForeColor(blackColor);
-            PaintRect(GetCWindowPortRect((WindowRef)gWind));
+            UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
             FadeScreenIn();
             ShowTheCursor();
-            SWSetPortToWindow(gSpriteWorld);
-            ForeColor(blackColor);
-            PaintRect(GetCWindowPortRect((WindowRef)gWind));
+            UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
             ShowTheCursor();
             LoadDescription(textShowString, 0x36af);
             ShowTextDialog(0, 1);
-            SWSetPortToWindow(gSpriteWorld);
-            ForeColor(blackColor);
-            PaintRect(GetCWindowPortRect((WindowRef)gWind));
+            UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
             FadeScreenOut();
             for (i = 0; i < kMaxActiveMissions; i++) {
                 if (currentMissionObjectives[i].active) {
@@ -414,8 +409,7 @@ static bool PlayerEscapePod(ShipObj *player)
                 strcat((char *)shipName, NumText(Rand(9) + 1).c_str());
             }
             CtoPstr((char *)shipName);
-            ForeColor(blackColor);
-            PaintRect(GetCWindowPortRect((WindowRef)gWind));
+            UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
             RefreshSAT();
             RedrawStatus(1);
             statusRedraw[kRedrawTarg] = statusRedraw[kRedrawNav] = statusRedraw[kRedrawWeap] =
@@ -689,7 +683,6 @@ static void PlayerTargetSelect(ShipObj *player, short &n)
         if (!weapTargetSelectFlag) {
             weapTargetSelectFlag = 1;
             n = player->targetShip;
-            SWSetPortToWindow(gSpriteWorld);
             GetGlobalMouse(&pt);
             View::ToView(&pt);
             SetRect(&box, 0, 0, View::width, View::height);
@@ -852,7 +845,6 @@ static void PlayerMapLandBoardKeys(ShipObj *player, short &n)
             hypergateMapMode = 0;
             DoSystemMap();
             PlaySound(beepSnd[0], 1, gSoundVolume, gSoundVolume);
-            SWSetPortToWindow(gSpriteWorld);
             RedrawStatus(1);
             SetAllKeyCmdFlags();
         } else {
@@ -1431,7 +1423,6 @@ static bool PlayerJumpSequence(ShipObj *player, Boolean jumping, Boolean disable
             SWHideAllSprites(gSpriteWorld);
             HandleStellarSystemVisibility();
             PrepareAllSprites();
-            SWSetPortToWindow(gSpriteWorld);
             RefreshSAT();
             DoEscortPayment(days);
             return true;

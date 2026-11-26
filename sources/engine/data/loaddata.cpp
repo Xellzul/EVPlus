@@ -2179,7 +2179,6 @@ void LoadObjectData(void)
 
     if (EVBugResourceFieldTest(0))
         return;
-    SWSetPortToWindow(gSpriteWorld);
 
     LoadStellars(name);
     LoadSystems(name);
@@ -2446,7 +2445,6 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->gameWidth = settings.gameWidth;
     rec->gameHeight = settings.gameHeight;
     rec->scaleFilter = settings.scaleFilter;
-    rec->wholePixelScaling = settings.wholePixelScaling != 0;
     rec->stereoPan = settings.stereoPan != 0;
     rec->asteroidScaling = settings.asteroidScaling != 0;
     rec->mapPrices = settings.mapPrices != 0;
@@ -2492,7 +2490,6 @@ static void RecordToPrefs(const PrefsRecord *rec)
     settings.scaleFilter = rec->scaleFilter;
     if (settings.scaleFilter < 0 || settings.scaleFilter >= kScaleFilterCount)
         settings.scaleFilter = kScaleFilterLinear;
-    settings.wholePixelScaling = rec->wholePixelScaling != 0;
     settings.stereoPan = rec->stereoPan != 0;
     settings.asteroidScaling = rec->asteroidScaling != 0;
     settings.mapPrices = rec->mapPrices != 0;
@@ -3688,16 +3685,6 @@ void GetRandomIndString(unsigned char *str, short strListID)
 void StrcatIndCString(char *dst, short strListID, short index)
 {
     strcat(dst, IndString(strListID, index).c_str());
-}
-
-// FUNCTION: EVNOVA 0x004cd1f0
-// MAC: _DrawIndString i386 0x00072fd8 ppc 0x0007be50
-void DrawIndString(short strListID, short index)
-{
-    unsigned char str[256];
-
-    GetIndString(str, strListID, index);
-    DrawString(str);
 }
 
 

@@ -35,7 +35,7 @@ int BarDeviceLeft()
     return UI::Mapping(gGamePort.pix).X(UI::ScreenWidth() - kStatusBarWidth);
 }
 
-/* the size the view is shown at on a page (enlarged or reduced), from its top left corner */
+/* the size the view is shown at on the screen (enlarged or reduced), from its top left corner */
 struct Enlargement {
     int width;
     int height;
@@ -71,6 +71,14 @@ Rect OnPage(const Screen::Page &page)
     Rect r;
 
     SetRect(&r, 0, 0, to.width, to.height);
+    return r;
+}
+
+Rect OnScreen()
+{
+    Rect r;
+
+    SetRect(&r, 0, 0, UI::ScreenWidth() - kStatusBarWidth, UI::ScreenHeight());
     return r;
 }
 
@@ -214,16 +222,6 @@ SWFrameRec *UIWork()
 SWFrameRec *UIBack()
 {
     return UI::InMenuScale() ? menuBack : uiBack;
-}
-
-void SetPortToUIWork()
-{
-    SWSetPortToFrame(UIWork());
-}
-
-void SetPortToUIBack()
-{
-    SWSetPortToFrame(UIBack());
 }
 
 int ScaleInView(int value)

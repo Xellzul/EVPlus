@@ -12,6 +12,7 @@
 #include "missions.h"
 #include "uiscale.h"
 #include "screen.h"
+#include "painter.h"
 
 #define kIntroPictSlots 4
 
@@ -48,29 +49,28 @@ void ShowIntroScreen(void)
             else
                 picHandle = NULL;
 
-            SetGWorldContainer(&loadPort);
-            ForeColor(blackColor);
-            PaintRect(&loadPort.bounds);
+            {
+                UI::Painter load(UI::Surface::Load());
 
-            rect = loadPort.bounds;
+                load.Fill(loadPort.bounds, UI::kBlack);
 
-            if (picHandle != NULL) {
-                CenterPict(picHandle, &rect);
-                DrawPicHandle(picHandle, &rect);
-                QDReleaseResource(picHandle);
+                rect = loadPort.bounds;
+
+                if (picHandle != NULL) {
+                    CenterPict(picHandle, &rect);
+                    load.Picture(picHandle, rect);
+                    QDReleaseResource(picHandle);
+                }
             }
 
-            UnsetGWorldContainer(&loadPort);
+            {
+                UI::Painter screen(UI::Surface::Screen());
 
-            SWSetPortToWindow(gSpriteWorld);
-            ForeColor(blackColor);
-            PaintRect(GetCWindowPortRect((WindowRef)gWind));
-            CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                     &rect, &rect, 0, NULL);
+                screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+                screen.Copy(UI::Surface::Load(), rect, rect);
+            }
             Screen::Changed();
             Screen::EndFrame();
-
-            SWSetPortToWindow(gSpriteWorld);
 
             if (introPictID[i] > 0) {
                 snd = ST_LoadSndResource(0x7533);
@@ -149,9 +149,6 @@ void ShowIntroScreen(void)
     FlushEvents(5, 0);
     FlushEvents(1, 0);
     FlushEvents(2, 0);
-    ForeColor(blackColor);
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
 }
 
 /* the main screen's idle tick */

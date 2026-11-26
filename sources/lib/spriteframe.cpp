@@ -271,21 +271,6 @@ Boolean SWDisposeFrame(SWFrameRec **oldFramePP)
     return frameDisposed;
 }
 
-// FUNCTION: EVNOVA 0x00476cb0
-// MAC: _SWSetPortToFrame i386 0x000ad1dc ppc 0x000b85dc
-void SWSetPortToFrame(SWFrameRec *dstFrameP)
-{
-    if (dstFrameP == NULL)
-        SW_ASSERT_FAIL("SpriteFrame.c", 818, 786);
-    if (dstFrameP->framePort == NULL)
-        SW_ASSERT_FAIL("SpriteFrame.c", 819, 787);
-    if (!dstFrameP->isFrameLocked)
-        SW_ASSERT_FAIL("SpriteFrame.c", 820, 788);
-
-    SetPort(dstFrameP->framePort);
-}
-
-
 // FUNCTION: EVNOVA 0x00476d10
 // MAC: _SWInitializeFrame i386 0x000ad25d ppc 0x000b8678
 void SWInitializeFrame(SWFrameRec *tempFrameP)

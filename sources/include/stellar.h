@@ -25,8 +25,6 @@ extern void DisplayMessage(short id);
 extern void DisposeDialogs(void);
 extern void DoSystemMap(void);
 extern void DrawEscortMenuInFrame(void);
-extern void DrawMap(Rect r);
-extern void DrawMapInfluence(Rect r);
 extern short EscapeStellarSearch(short system);
 extern void FadeScreenIn(void);
 extern void FadeScreenOut(void);

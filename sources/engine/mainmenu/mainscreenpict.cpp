@@ -4,6 +4,7 @@
 #include "render.h"
 #include "game.h"
 #include "uiscale.h"
+#include "painter.h"
 
 // FUNCTION: EVNOVA 0x0048c3c0
 // MAC: _MainScreenAnimDraw i386 0x00016146 ppc 0x00019eb4
@@ -13,7 +14,8 @@ void MainScreenAnimDraw(void)
     Rect rect;
     short i;
 
-    SetGWorldContainer(MenuArt());
+    UI::Painter art{UI::Surface(*MenuArt())};
+
     if (logoPort.world != NULL) {
         rect.left = logoPort.bounds.left;
         rect.top = logoPort.bounds.top + gMainPicHeightDelta * logoIndex;
@@ -23,9 +25,7 @@ void MainScreenAnimDraw(void)
         logoDestRect.right = (rect.right - rect.left) + logoDestRect.left;
         logoDestRect.bottom = (rect.bottom - rect.top) + logoDestRect.top;
 
-        ForeColor(blackColor);
-        CopyBits(GWorldContainerBits(&logoPort), (BitMapPtr)GWorldContainerBits(MenuArt()),
-                 &rect, &logoDestRect, 0, NULL);
+        art.Copy(UI::Surface(logoPort), rect, logoDestRect);
         ShowMenuArt(logoDestRect, true);
     }
 
@@ -40,9 +40,7 @@ void MainScreenAnimDraw(void)
                 slideDestRect[i].right = slideDestRect[i].left + (rect.right - rect.left);
                 slideDestRect[i].bottom = slideDestRect[i].top + (rect.bottom - rect.top);
 
-                ForeColor(blackColor);
-                CopyBits(GetPortBitMapForCopyBits(slidePort[i].world), (BitMapPtr)GWorldContainerBits(MenuArt()),
-                         &rect, &slideDestRect[i], 0, NULL);
+                art.Copy(UI::Surface(slidePort[i]), rect, slideDestRect[i]);
                 ShowMenuArt(slideDestRect[i], true);
             }
         }

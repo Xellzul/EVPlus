@@ -39,7 +39,6 @@ extern void SWCollideSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *s
 extern short SWCreateFrame(void *theGDH, SWFrameRec **newFrameP, Rect *frameRect,
         short depth, unsigned char createGWorld);        /* 0x00476400 */
 extern Boolean SWDisposeFrame(SWFrameRec **oldFramePP);     /* 0x00476bd0 */
-extern void SWSetPortToFrame(SWFrameRec *dstFrameP);     /* 0x00476cb0 */
 extern void SWInitializeFrame(SWFrameRec *tempFrameP);   /* 0x00476d10 */
 extern void SWLockFrame(SWFrameRec *srcFrameP);          /* 0x00476e10 */
 extern void SWUnlockFrame(SWFrameRec *srcFrameP);        /* 0x00476f10 */
@@ -88,8 +87,10 @@ extern Boolean SWIsSpriteInRect(SpritePtr srcSpriteP,
 /* --- draw procs --- */
 extern void BlitPixieRLEDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
                                  Rect *srcRect, Rect *dstRect);        /* 0x00470ee0 */
+#if EVPLUS_TEST_PAGES
 extern void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
                                  Rect *srcRect, Rect *dstRect);        /* 0x004703e0 */
+#endif
 extern void BlitPixieRLETranslucentDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
                                  Rect *srcRect, Rect *dstRect);        /* 0x004711e0 */
 extern Boolean BlitPixieRLECollisionProc(SpritePtr srcSpriteP, SpritePtr dstSpriteP,
@@ -131,9 +132,11 @@ struct SpriteBlend {
 };
 
 /* --- the rect blitters: whole-rect copies, src first --- */
+#if EVPLUS_TEST_PAGES
 extern void BlitPixieRect(unsigned char *srcPixels, unsigned char *dstPixels,
         int32_t srcRowBytes, int32_t dstRowBytes, unsigned short byteWidth,
         unsigned short numRows);                         /* 0x00471cf0 */
+#endif
 extern Boolean BlitPixieRLECollision(unsigned char *srcTokens, unsigned char *dstTokens,
         Rect *srcRect, Rect *dstRect);                   /* 0x00472190 */
 extern Boolean BlitPixieRLECollisionWithPoint(unsigned char *rleData, Point *pt,

@@ -8,6 +8,10 @@
 #include <string>
 #include "macport.h"
 
+namespace UI {
+struct TextSpec;
+}
+
 /* -- conversion: text enters and leaves std::string only through these -- */
 
 /* the p[0] bytes after the length byte; NULL gives "" */
@@ -68,6 +72,8 @@ void PascalToCBuffer(char *dst, size_t dstSize, const unsigned char *src);
 
 /* entry `index' of STR# `list' up to an embedded NUL; empty when the list or entry is missing */
 std::string IndString(int list, int index);
+/* the whole entry, a NUL in it and the bytes after it too: what the entry is drawn as */
+std::string IndStringRaw(int list, int index);
 /* NumToString's digits, '-' first when negative */
 std::string NumText(int32_t value);
 /* 12,345 below a million, 1.23M (two decimals, cut) from a million; a negative value is plain digits */
@@ -109,19 +115,14 @@ std::string MissionShipSubtitle(int slot);
 bool MissionHasShipName(int slot);
 bool MissionHasShipSubtitle(int slot);
 
-/* -- the text calls on std::string, by length: embedded NULs are passed on -- */
+/* -- the text calls on std::string -- */
 
-void DrawCString(const std::string &text);
-/* MeasureCString's measurer (the bytes as ANSI, '&' an accelerator mark) */
-short MeasureCString(const std::string &text);
-/* DrawStringCentered's centring over the same measurer (width up to a NUL, all bytes drawn) */
-void DrawStringCentered(const std::string &text, short left, short right, short v);
 /* textShowString (ShowTextDialog's text) set to the text up to a NUL, cut to the buffer */
 void SetShowText(const std::string &text);
 /* up to the first NUL, as the control keeps a C string */
 void SetControlText(ControlPtr ctl, const std::string &text);
 /* cut to 255 bytes; a char buffer must be passed as std::string or cast to its Pascal type */
 void DisplayComm(const std::string &msg, short count);
-void DisplayCommStyled(const std::string &msg, short count, short font, short size, const RGBColor *color);
+void DisplayCommStyled(const std::string &msg, short count, const UI::TextSpec &spec);
 void DisplayComm(const char *msg, short count) = delete;
-void DisplayCommStyled(const char *msg, short count, short font, short size, const RGBColor *color) = delete;
+void DisplayCommStyled(const char *msg, short count, const UI::TextSpec &spec) = delete;

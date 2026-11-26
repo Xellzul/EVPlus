@@ -4,6 +4,7 @@
 #include "sound.h"
 #include "uiscale.h"
 #include "screen.h"
+#include "painter.h"
 
 /* the bar's rect comes out of the colr resource */
 
@@ -41,15 +42,16 @@ void InitIntroProgressBar(void)
     if (line.bottom <= progressRect.bottom) {
         barColor = &progressColor[2];
         do {
-        RGBForeColor(barColor);
-        FrameRect(&line);
-        ForeColor(blackColor);
         fill.top = line.top;
         fill.left = line.left;
         fill.bottom = line.bottom;
         fill.right = line.right;
         InsetRect(&fill, 1, 1);
-        PaintRect(&fill);
+        {
+            UI::Painter screen(UI::Surface::Screen());
+            screen.Frame(line, *barColor);
+            screen.Fill(fill, UI::kBlack);
+        }
         Screen::Changed();                  /* each step shown by the Delay's wait */
         InsetRect(&line, 0, -1);
         HandleIntroMusic(0);
@@ -79,34 +81,28 @@ void DrawIntroProgressBar(void)
     box.right = gLoadBarBase.right;
     box.right = box.left + 30;
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    RGBForeColor(&progressColor[2]);
-    FrameRect(&progressRect);
+    {
+        UI::Painter load(UI::Surface::Load());
 
-    box = progressRect;
-    InsetRect(&box, 1, 1);
+        load.Frame(progressRect, progressColor[2]);
 
-    box.right = (box.left + progressCount / progressMax * 198.0);
-    if (box.right >= progressRect.right)
+        box = progressRect;
+        InsetRect(&box, 1, 1);
+
+        box.right = (box.left + progressCount / progressMax * 198.0);
+        if (box.right >= progressRect.right)
+            box.right = progressRect.right - 1;
+
+        InsetRect(&box, 1, 1);
+        load.Fill(box, progressColor[0]);
+        InsetRect(&box, -1, -1);
+        load.Frame(box, progressColor[1]);
+        box.left = box.right;
         box.right = progressRect.right - 1;
+        load.Fill(box, UI::kBlack);
+    }
 
-    RGBForeColor(&progressColor[0]);
-    InsetRect(&box, 1, 1);
-    PaintRect(&box);
-    RGBForeColor(&progressColor[1]);
-    InsetRect(&box, -1, -1);
-    FrameRect(&box);
-    ForeColor(blackColor);
-    box.left = box.right;
-    box.right = progressRect.right - 1;
-    PaintRect(&box);
-
-    SWSetPortToWindow(gSpriteWorld);
-    ForeColor(blackColor);
-    CopyBits(GWorldContainerBits(&loadPort),
-             GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-             &progressRect, &progressRect, 0, 0);
+    UI::Painter(UI::Surface::Screen()).Copy(UI::Surface::Load(), progressRect, progressRect);
     Screen::Changed();
     Screen::EndFrame();                     /* loading has no other frame end */
 }

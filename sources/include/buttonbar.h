@@ -3,14 +3,19 @@
 #include <array>
 #include "macport.h"
 
+namespace UI {
+class Painter;
+}
+
 enum class ButtonLook : unsigned char { Normal, Dim, Disabled, Hidden, Picture };
 
 enum class HitRule : unsigned char { FirstWins, LastWins };
 
 class ButtonBar {
 public:
-    void Draw(short hilited);
-    short Track(Point where);       /* the slot pressed and released, or -1 */
+    void Draw(UI::Painter &p, short hilited);
+    void DrawOnDialog(short hilited);   /* Draw straight onto the bar's dialog */
+    short Track(Point where);       /* the slot pressed and released, or -1; hilites drawn on the dialog */
 
 protected:
     struct Button {

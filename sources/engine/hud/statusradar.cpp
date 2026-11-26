@@ -7,6 +7,7 @@
 #include "stellar.h"
 #include "space.h"
 #include "game.h"
+#include "painter.h"
 
 /* the radar is statusOffRect[0] */
 #define kRadarRect          0
@@ -24,17 +25,18 @@ void DrawStatusRadar(Boolean highlight)
     FloatPoint tip;
     FloatPoint barb;
     RGBColor color;
+    RGBColor ink;
     int32_t cx;
     int32_t cy;
     Boolean hasIFF;
     Boolean hasDensity;
     Boolean visible;
+    Boolean isStatic;
     int32_t i;
     int32_t stellar;
     int32_t size;
     int32_t angle;
     int32_t links;
-    int32_t half;
 
     if (statusOffRect[kRadarRect].left >= statusOffRect[kRadarRect].right ||
         statusOffRect[kRadarRect].top >= statusOffRect[kRadarRect].bottom)
@@ -43,21 +45,21 @@ void DrawStatusRadar(Boolean highlight)
         highlight = 1;
     hasIFF = shipData->HasIFF();
     hasDensity = shipData->HasDensityScanner();
-    SetGWorldContainer(&loadPort);
+    UI::Painter load(UI::Surface::Load());
+
     srcRect = statusOffRect[kRadarRect];
     dstRect = srcRect;
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-    if (highlight == 0 && interferenceThisFrame != 0) {
+    isStatic = highlight == 0 && interferenceThisFrame != 0;
+    if (isStatic) {
         cx = Rand(kRadarStaticFrames);
         if (staticPat[cx] != NULL)
-            FillCRect(&dstRect, (PixPatHandle)staticPat[cx]);
+            load.Pattern(dstRect, (PixPatHandle)staticPat[cx]);
     } else {
-        ForeColor(blackColor);
         if (hasIFF != 0)
-            PaintRect(&dstRect);
+            load.Fill(dstRect, UI::kBlack);
         else
-            CopyBits(GWorldContainerPixMap(&statusOffPort), (BitMapPtr)GWorldContainerBits(&loadPort),
-                     &srcRect, &dstRect, 0, 0);
+            load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
         cx = (dstRect.left + dstRect.right) * 0.5;
         cy = (dstRect.top + dstRect.bottom) * 0.5;
         if (highlight == 0) {
@@ -74,21 +76,21 @@ void DrawStatusRadar(Boolean highlight)
                         (stellarData[stellar].flags2 & kSpobGateOrWormhole) != 0) {
                         if (hasIFF != 0) {
                             ColorCodeStellar(&stellarData[stellar], &color);
-                            RGBForeColor(&color);
+                            ink = color;
                         } else {
-                            RGBForeColor(radarStatusColor[0]);
+                            ink = *radarStatusColor[0];
                         }
                         InsetRect(&blipRect, -1, -1);
                         SectRect(&blipRect, &dstRect, &blipRect);
                         if (blipRect.left != 0 || blipRect.top != 0 ||
                             blipRect.left != 0 || blipRect.right != 0)
-                            FrameRect(&blipRect);
+                            load.Frame(blipRect, ink);
                     } else {
                         if (hasIFF != 0) {
                             ColorCodeStellar(&stellarData[stellar], &color);
-                            RGBForeColor(&color);
+                            ink = color;
                         } else {
-                            RGBForeColor(radarStatusColor[0]);
+                            ink = *radarStatusColor[0];
                         }
                         size = 0x20;
                         if (masterStellarSprite[stellarData[stellar].type] != NULL &&
@@ -103,8 +105,7 @@ void DrawStatusRadar(Boolean highlight)
                         SectRect(&blipRect, &dstRect, &blipRect);
                         if (blipRect.left != 0 || blipRect.top != 0 ||
                             blipRect.left != 0 || blipRect.right != 0)
-                            FrameOval(&blipRect);
-                        half = size / 2;
+                            load.Oval(blipRect, ink);
                     }
                 }
             }
@@ -129,21 +130,21 @@ void DrawStatusRadar(Boolean highlight)
                         if (shipData[0].targetShip == i) {
                             if (radarCount != 0) {
                                 if (hasIFF != 0) {
-                                    RGBForeColor(&rgbLightGrey);
+                                    ink = rgbLightGrey;
                                 } else {
-                                    RGBForeColor(radarStatusColor[1]);
+                                    ink = *radarStatusColor[1];
                                 }
                             } else if (hasIFF != 0) {
                                 ColorCodeShip(&shipData[i], &color);
-                                RGBForeColor(&color);
+                                ink = color;
                             } else {
-                                RGBForeColor(radarStatusColor[0]);
+                                ink = *radarStatusColor[0];
                             }
                         } else if (hasIFF != 0) {
                             ColorCodeShip(&shipData[i], &color);
-                            RGBForeColor(&color);
+                            ink = color;
                         } else {
-                            RGBForeColor(radarStatusColor[0]);
+                            ink = *radarStatusColor[0];
                         }
                         if (hasDensity != 0 &&
                             shipClass[shipData[i].type].mass >= 100) {
@@ -151,14 +152,13 @@ void DrawStatusRadar(Boolean highlight)
                             SectRect(&blipRect, &dstRect, &blipRect);
                             if (blipRect.left != 0 || blipRect.top != 0 ||
                                 blipRect.left != 0 || blipRect.right != 0)
-                                FrameRect(&blipRect);
+                                load.Frame(blipRect, ink);
                         } else {
                             if (blipRect.left >= dstRect.left &&
                                 blipRect.left <= dstRect.right &&
                                 blipRect.top >= dstRect.top &&
                                 blipRect.top <= dstRect.bottom) {
-                                MoveTo(blipRect.left, blipRect.top);
-                                Line(0, 0);
+                                load.Line(blipRect.left, blipRect.top, blipRect.left, blipRect.top, ink);
                             }
                         }
                     }
@@ -166,49 +166,43 @@ void DrawStatusRadar(Boolean highlight)
             }
         }
     }
-    if (hasIFF != 0) {
-        ColorCodeShip(shipData, &color);
-        RGBForeColor(&color);
-    } else {
-        RGBForeColor(radarStatusColor[1]);
-    }
-    MoveTo(cx, cy);
-    Line(0, 0);
-    if (radarCount != 0 && shipData[0].navTargetKind != 3) {
-        links = 0;
-        for (i = 0; i < kNavSlots; i++) {
-            if (systemData[shipData[0].curSystem].navDefault[i] != -1)
-                links++;
+    // BUG (all versions): static leaves cy unset, cx the pattern index; dot and arrow skipped (exe draws them off the radar)
+    if (!isStatic) {
+        if (hasIFF != 0) {
+            ColorCodeShip(shipData, &color);
+            ink = color;
+        } else {
+            ink = *radarStatusColor[1];
         }
-        if (links > 0) {
-            tip.x = tip.y = 0.0f;
-            if (XYFloatSquaredDist(&shipData[0].pos, &tip) > kRadarArrowDist) {
-                angle = CalcInterceptAngle(&shipData[0].pos, &tip);
-                tip.x = barb.x = cx;
-                tip.y = barb.y = cy;
-                Accel(angle, 25.0f, &tip);
-                Accel(angle, 50.0f, &barb);
-                RGBForeColor(radarStatusColor[0]);
-                MoveTo(tip.x, tip.y);
-                LineTo(barb.x, barb.y);
-                tip.x = barb.x;
-                tip.y = barb.y;
-                Accel((angle + 0x87), 6.0f, &tip);
-                MoveTo(barb.x, barb.y);
-                LineTo(tip.x, tip.y);
-                tip.x = barb.x;
-                tip.y = barb.y;
-                Accel((angle - 0x87), 6.0f, &tip);
-                MoveTo(barb.x, barb.y);
-                LineTo(tip.x, tip.y);
-                ForeColor(blackColor);
+        load.Line(cx, cy, cx, cy, ink);
+        if (radarCount != 0 && shipData[0].navTargetKind != 3) {
+            links = 0;
+            for (i = 0; i < kNavSlots; i++) {
+                if (systemData[shipData[0].curSystem].navDefault[i] != -1)
+                    links++;
+            }
+            if (links > 0) {
+                tip.x = tip.y = 0.0f;
+                if (XYFloatSquaredDist(&shipData[0].pos, &tip) > kRadarArrowDist) {
+                    angle = CalcInterceptAngle(&shipData[0].pos, &tip);
+                    tip.x = barb.x = cx;
+                    tip.y = barb.y = cy;
+                    Accel(angle, 25.0f, &tip);
+                    Accel(angle, 50.0f, &barb);
+                    ink = *radarStatusColor[0];
+                    load.Line(tip.x, tip.y, barb.x, barb.y, ink);
+                    tip.x = barb.x;
+                    tip.y = barb.y;
+                    Accel((angle + 0x87), 6.0f, &tip);
+                    load.Line(barb.x, barb.y, tip.x, tip.y, ink);
+                    tip.x = barb.x;
+                    tip.y = barb.y;
+                    Accel((angle - 0x87), 6.0f, &tip);
+                    load.Line(barb.x, barb.y, tip.x, tip.y, ink);
+                }
             }
         }
     }
-    ForeColor(blackColor);
-    SWSetPortToWindow(gSpriteWorld);
     if (preventStatusCopy == 0)
-        CopyBits(GWorldContainerBits(&loadPort),
-                 GetPortBitMapForCopyBits(GetCWindowGrafPort((WindowRef)gWind)),
-                 &dstRect, &dstRect, 0, 0);
+        UI::Painter(UI::Surface::Screen()).Copy(UI::Surface::Load(), dstRect, dstRect);
 }

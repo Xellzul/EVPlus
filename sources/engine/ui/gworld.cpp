@@ -1,8 +1,6 @@
-/* gworld.cpp -- the GWorldContainer wrapper around an offscreen drawing world (win TU region 0x0046f740..0x0046f95a). Notes: Research/notes/gworld.md */
+/* gworld.cpp -- the GWorldContainer wrapper around an offscreen drawing world (win 0x0046f740, 0x0046f850, 0x0046f920, 0x0046f940). Notes: Research/notes/gworld.md */
 #include "render.h"
-
-static CGrafPtr savedPort;
-static void *savedDevice;
+#include "painter.h"
 
 
 // FUNCTION: EVNOVA 0x0046f740
@@ -11,11 +9,8 @@ void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
                            Rect *bounds)
 {
     if (gwc != 0) {
-        RGBColor fore = { 0, 0, 0 };
-        RGBColor back = { 0xffff, 0xffff, 0xffff };
         short useDepth;
 
-        GetPort(&savedPort);
         // BUG: depth 0 and below already match `depth < 8', so the next two branches never run and 1-bit masks
         // are made 16-bit
         if (depth < 8)
@@ -34,13 +29,7 @@ void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
         gwc->bounds.left = bounds->left;
         gwc->bounds.bottom = bounds->bottom;
         gwc->bounds.right = bounds->right;
-        SetPort(gwc->world);
-        RGBForeColor(&fore);
-        RGBBackColor(&back);
-        TextFont(smallTextFont);
-        TextFace(0);
-        TextSize(smallTextSize);
-        SetPort(savedPort);
+        UI::Surface(*gwc).Prepare();
     }
 }
 
@@ -57,30 +46,11 @@ void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
         QDGetPictureBounds(pic, &bounds);
         OffsetRect(&bounds, -bounds.left, -bounds.top);
         CreateGWorldContainer(gwc, flags, depth, &bounds);
-        SetGWorldContainer(gwc);
-        DrawPicHandle(pic, &gwc->bounds);
-        UnsetGWorldContainer(gwc);
+        UI::Painter(UI::Surface(*gwc)).Picture(pic, gwc->bounds);
         QDReleaseResource(pic);
     } else {
         gwc->world = 0;
     }
-}
-
-// FUNCTION: EVNOVA 0x0046f8e0
-// MAC: _SetGWorldContainer i386 0x000a4613 ppc 0x000b0120
-void SetGWorldContainer(GWorldContainer *gwc)
-{
-    GetPort(&savedPort);
-    savedDevice = GetGWorldDevice(savedPort);
-    if (gwc->world != 0)
-        SetPort(gwc->world);
-}
-
-// FUNCTION: EVNOVA 0x0046f910
-// MAC: _UnsetGWorldContainer i386 0x000a464a ppc 0x000b0180
-void UnsetGWorldContainer(GWorldContainer *gwc)
-{
-    SetPort(savedPort);
 }
 
 // FUNCTION: EVNOVA 0x0046f920

@@ -5,6 +5,7 @@
 #include "dialog.h"
 #include "buttonbar.h"
 #include "scrolltext.h"
+#include "painter.h"
 
 Boolean canScrollTextUp;
 Boolean canScrollTextDown;
@@ -30,16 +31,9 @@ void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean
             return;
     }
 
-    SetGWorldContainer(&loadPort);
     savedTop = (*hTE)->destRect.top;
-    (*hTE)->inPort = (GrafPtr)loadPort.world;
-    ForeColor(whiteColor);
-    BackColor(blackColor);
-    TEPinScroll(0, dv, hTE);
-    ForeColor(blackColor);
-    BackColor(whiteColor);
+    UI::Painter(UI::Surface::Load()).EditScroll(hTE, dv, { UI::Style::Small, UI::kWhite }, UI::kBlack);
     lastTextScrollTime = ReadTick();
-    SetDialogGWorld(dlg);
 
     if ((*hTE)->viewRect.top > (*hTE)->destRect.top)
         canScrollTextUp = 1;
@@ -52,7 +46,7 @@ void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean
         canScrollTextDown = 1;
 
     GetDialogItem(dlg, item, &type, (Handle *)&handle, &box);
-    CopyLoadPortToDialog(dlg, box);
+    LoadPageToDialog(dlg, box);
 }
 
 /* TEPinScroll draws nothing here: the TE has no port until the first scroll */
@@ -119,14 +113,12 @@ void ScrollingText::Hold(short dv, short slot, ButtonBar &buttons) const
     while (StillDown()) {
         BusyIdle();
         Scroll(dv);
-        SetDialogGWorld(dlg);
-        buttons.Draw(slot);
+        buttons.DrawOnDialog(slot);
         while (lastTextScrollTime == ReadTick() && StillDown())
             BusyIdle();
     }
     MouseFlushWheel();                  /* notches turned while held do not scroll on after the release */
-    SetDialogGWorld(dlg);
-    buttons.Draw(-1);
+    buttons.DrawOnDialog(-1);
 }
 
 bool ScrollingText::Press(Point where, short *itemHit, ButtonBar &buttons) const

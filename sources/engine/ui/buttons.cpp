@@ -8,6 +8,8 @@
 #include "render.h"
 #include "prototypes.h"
 #include "buttons.h"
+#include "painter.h"
+#include "text.h"
 
 #define kButtonPictID         7500
 #define kButtonMaskPictID     7600
@@ -265,25 +267,25 @@ void InitButtons(void)
                      bounds.bottom : buttonPieceRect[8].bottom;
     CreateGWorldContainer(&buttonImagePort, kButtonDevice, gSpriteWorld->pixelDepth, &bounds);
     CreateGWorldContainer(&buttonMaskPort, kButtonDevice, 1, &bounds);
-    SetGWorldContainer(&buttonImagePort);
-    ForeColor(blackColor);
     mask = buttonPieceRect;
-    for (n = 0, piece = buttonPieceRect; n < kButtonPieceCount; n++) {
-        PaintRect(piece);
-        if (buttonPic[n] != 0)
-            DrawPicHandle(buttonPic[n], piece);
-        piece++;
+    {
+        UI::Painter image{UI::Surface(buttonImagePort)};
+        for (n = 0, piece = buttonPieceRect; n < kButtonPieceCount; n++) {
+            image.Fill(*piece, UI::kBlack);
+            if (buttonPic[n] != 0)
+                image.Picture(buttonPic[n], *piece);
+            piece++;
+        }
     }
-    UnsetGWorldContainer(&buttonImagePort);
-    SetGWorldContainer(&buttonMaskPort);
-    ForeColor(blackColor);
-    for (n = 0; n < kButtonPieceCount; n++) {
-        PaintRect(mask);
-        if (buttonMaskPic[n] != 0)
-            DrawPicHandle(buttonMaskPic[n], mask);
-        mask++;
+    {
+        UI::Painter maskPainter{UI::Surface(buttonMaskPort)};
+        for (n = 0; n < kButtonPieceCount; n++) {
+            maskPainter.Fill(*mask, UI::kBlack);
+            if (buttonMaskPic[n] != 0)
+                maskPainter.Picture(buttonMaskPic[n], *mask);
+            mask++;
+        }
     }
-    UnsetGWorldContainer(&buttonMaskPort);
     for (n = 0; n < kButtonPieceCount; n++) {
         if (buttonPic[n] != 0)
             QDReleaseResource(buttonPic[n]);
@@ -331,11 +333,13 @@ void DisposeButtons(void)
 #define kGlyphPlus  0x2b
 #define kGlyphMinus 0x2d
 
-/* A button's face in buttonPort over `box': its left and right ends masked, the middle stretched between
-   them, put together and stretched as one picture. */
-static void DrawButtonFace(short mode, const Rect &box)
+/* A button's face over `box': its left and right ends masked, the middle stretched between them, put together
+   and stretched as one picture. */
+static void DrawButtonFace(UI::Painter &face, short mode, const Rect &box)
 {
-    UI::ArtComposition art(buttonPort.world, box);
+    UI::Painter::Composition art(face, box);
+    UI::Surface image(buttonImagePort);
+    UI::Surface mask(buttonMaskPort);
     Rect piece;
     Rect mid = box;
 
@@ -343,31 +347,28 @@ static void DrawButtonFace(short mode, const Rect &box)
     OffsetRect(&piece, -piece.left, -piece.top);
     OffsetRect(&piece, box.left, box.top);
     piece.bottom = box.bottom;
-    CopyMask(GWorldContainerBits(&buttonImagePort), GWorldContainerBits(&buttonMaskPort),
-             GWorldContainerBits(&buttonPort), &buttonPieceRect[mode * 3],
-             &buttonPieceRect[mode * 3], &piece);
+    face.CopyMasked(image, mask, buttonPieceRect[mode * 3], buttonPieceRect[mode * 3], piece);
     mid.left = piece.right;
     piece = buttonPieceRect[mode * 3 + 2];
     OffsetRect(&piece, -piece.left, -piece.top);
     OffsetRect(&piece, box.right - piece.right, box.top);
     piece.bottom = box.bottom;
-    CopyMask(GWorldContainerBits(&buttonImagePort), GWorldContainerBits(&buttonMaskPort),
-             GWorldContainerBits(&buttonPort), &buttonPieceRect[mode * 3 + 2],
-             &buttonPieceRect[mode * 3 + 2], &piece);
+    face.CopyMasked(image, mask, buttonPieceRect[mode * 3 + 2], buttonPieceRect[mode * 3 + 2], piece);
     mid.right = piece.left;
-    CopyBits(GWorldContainerBits(&buttonImagePort), (BitMapPtr)GWorldContainerBits(&buttonPort),
-             &buttonPieceRect[mode * 3 + 1], &mid, 0, 0);
+    face.Copy(image, buttonPieceRect[mode * 3 + 1], mid);
 }
 
+/* one picture button: built in buttonPort over the load page's backdrop; a label ^ & + - is drawn as its sign */
 // FUNCTION: EVNOVA 0x004a3340
 // MAC: _DrawButton i386 0x00025ea8 ppc 0x0002a5dc
-void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
-                short state, short selected, PicHandle pic)
+void DrawButton(UI::Painter &p, const Rect &bounds, const unsigned char *label, short state, short selected,
+                PicHandle pic)
 {
     Rect box;
-    CGrafPtr savedPort;
     short mode;
     short size;
+    short midH;
+    short midV;
     uint32_t glyph;
 
     if (state == 0) {
@@ -377,68 +378,45 @@ void DrawButton(CGrafPtr port, Rect *bounds, unsigned char *label,
             mode = 1;
     } else
         mode = 2;
-    GetPort((GrafPtr *)&savedPort);
     if (state == kButtonPicture) {
-        GWorldContainerSetPort(&loadPort);
-        ForeColor(blackColor);
-        DrawPicHandle(pic, bounds);
-        SetPort((GrafPtr)savedPort);
-        ForeColor(blackColor);
-        CopyBits(GWorldContainerBits(&loadPort), GetPortBitMapForCopyBits(savedPort),
-                 bounds, bounds, 0, NULL);
-    } else {
-        GWorldContainerSetPort(&buttonPort);
-        ForeColor(blackColor);
-        box = *bounds;
-        if (!UI::Enabled())
-            OffsetRect(&box, -box.left, -box.top);
-        CopyBits(GWorldContainerBits(&loadPort), (BitMapPtr)GWorldContainerBits(&buttonPort),
-                 bounds, &box, 0, 0);
-        if (state == 0 || state == kButtonDim) {
-            DrawButtonFace(mode, box);
-            RGBForeColor(&buttonColor[mode]);
-            glyph = label[1];
-            if (glyph == kGlyphCaret) {
-                size = (box.bottom - box.top) / 10;
-                PenSize(2, 2);
-                MoveTo((box.left + box.right) / 2, (box.bottom + box.top) / 2 - size);
-                Line(size * -2, size * 2);
-                MoveTo((box.left + box.right) / 2, (box.bottom + box.top) / 2 - size);
-                Line(size * 2, size * 2);
-                PenSize(1, 1);
-            } else if (glyph == kGlyphAmp) {
-                size = (box.bottom - box.top) / 10;
-                PenSize(2, 2);
-                MoveTo((box.left + box.right) / 2, (box.bottom + box.top) / 2 + size);
-                Line(size * -2, size * -2);
-                MoveTo((box.left + box.right) / 2, (box.bottom + box.top) / 2 + size);
-                Line(size * 2, size * -2);
-                PenSize(1, 1);
-            } else if (glyph == kGlyphPlus) {
-                size = (box.bottom - box.top) / 8;
-                PenSize(2, 2);
-                MoveTo((box.left + box.right) / 2 - size, (box.bottom + box.top) / 2);
-                Line(size * 2, 0);
-                MoveTo((box.left + box.right) / 2, (box.bottom + box.top) / 2 - size);
-                Line(0, size * 2);
-                PenSize(1, 1);
-            } else if (glyph == kGlyphMinus) {
-                size = (box.bottom - box.top) / 9;
-                PenSize(2, 2);
-                MoveTo((box.left + box.right) / 2 - size, (box.bottom + box.top) / 2);
-                Line(size * 2, 0);
-                PenSize(1, 1);
-            } else {
-                TextFont(buttonFontID);
-                TextSize(buttonFontSize);
-                MoveTo((box.left + box.right) / 2 - StringWidth(label) / 2,
-                          (box.top + box.bottom) / 2 + 5);
-                DrawString(label);
-            }
+        {
+            UI::Painter load(UI::Surface::Load());
+            load.Picture(pic, bounds);
         }
-        SetPort((GrafPtr)savedPort);
-        ForeColor(blackColor);
-        CopyBits(GWorldContainerBits(&buttonPort), GetPortBitMapForCopyBits(savedPort),
-                 &box, bounds, 0, NULL);
+        p.Copy(UI::Surface::Load(), bounds, bounds);
+        return;
     }
+    UI::Painter face{UI::Surface(buttonPort)};
+    box = bounds;
+    if (!UI::Enabled())
+        OffsetRect(&box, -box.left, -box.top);
+    face.Copy(UI::Surface::Load(), bounds, box);
+    if (state == 0 || state == kButtonDim) {
+        const RGBColor &colour = buttonColor[mode];
+
+        DrawButtonFace(face, mode, box);
+        midH = (box.left + box.right) / 2;
+        midV = (box.bottom + box.top) / 2;
+        glyph = label[1];
+        if (glyph == kGlyphCaret) {
+            size = (box.bottom - box.top) / 10;
+            face.Line(midH, midV - size, midH - size * 2, midV - size + size * 2, colour, 2);
+            face.Line(midH, midV - size, midH + size * 2, midV - size + size * 2, colour, 2);
+        } else if (glyph == kGlyphAmp) {
+            size = (box.bottom - box.top) / 10;
+            face.Line(midH, midV + size, midH - size * 2, midV + size - size * 2, colour, 2);
+            face.Line(midH, midV + size, midH + size * 2, midV + size - size * 2, colour, 2);
+        } else if (glyph == kGlyphPlus) {
+            size = (box.bottom - box.top) / 8;
+            face.Line(midH - size, midV, midH - size + size * 2, midV, colour, 2);
+            face.Line(midH, midV - size, midH, midV - size + size * 2, colour, 2);
+        } else if (glyph == kGlyphMinus) {
+            size = (box.bottom - box.top) / 9;
+            face.Line(midH - size, midV, midH - size + size * 2, midV, colour, 2);
+        } else {
+            face.Text(box.left, box.right, (box.top + box.bottom) / 2 + 5, FromPascal(label),
+                      { UI::Style::Button, colour }, UI::Align::Center);
+        }
+    }
+    p.Copy(UI::Surface(buttonPort), box, bounds);
 }

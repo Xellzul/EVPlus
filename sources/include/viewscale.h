@@ -10,6 +10,8 @@ struct Page;
 
 /* engine/gameloop.cpp: the comm line, floating map and escort menu laid over the screen after the view */
 void DrawOverlays();
+/* engine/core/setup.cpp: the screen put together again, as it stands */
+void RedrawInterface();
 
 namespace View {
 
@@ -21,7 +23,8 @@ extern short height;
 /* uiScale: the UI's device pixels per logical one */
 void SetSizes(short gameW, short gameH, short drawH, double uiScale);
 double Scale();                     /* screen pixels per game pixel: above 1 enlarged, below 1 reduced */
-Rect OnPage(const Screen::Page &page);      /* where the view shows on a page */
+Rect OnPage(const Screen::Page &page);      /* where the view shows on the screen, in device pixels */
+Rect OnScreen();                    /* the same place in the screen's logical pixels */
 void ToView(Point *pt);             /* a screen point in view coordinates (the overlays' too) */
 
 /* Mouse Wheel Zoom: the view shown magnified about its centre, 1 to 4 times in steps of 2^(1/3); space and the
@@ -53,7 +56,5 @@ int ScaleInView(int value);         /* a length of the interface in view pixels 
 void CreateUIFrames(Rect bounds);
 SWFrameRec *UIWork();
 SWFrameRec *UIBack();
-void SetPortToUIWork();
-void SetPortToUIBack();
 
 } // namespace View

@@ -9,6 +9,7 @@
 #include "render.h"
 #include "spriteworld.h"
 #include "viewdraw.h"
+#include "uiart.h"
 #include <initializer_list>
 #include "viewscale.h"
 #include "uiscale.h"
@@ -20,10 +21,9 @@ namespace {
 std::vector<PlatDraw> draws;
 std::vector<PlatVertex> vertices;
 std::vector<PlatDraw> overlays;
-std::vector<PlatDraw> interfaceDraws;   /* the interface layer's sprites, in page pixels over the overlays */
+std::vector<PlatDraw> interfaceDraws;   /* the interface layer's sprites, in screen pixels over the overlays */
 std::vector<PlatDraw> shownOverlays;    /* overlays + interfaceDraws, as Take hands them over */
 std::vector<PlatDraw> *building = &draws;   /* where NewDraw adds */
-std::unordered_map<const SWFrameRec *, PlatImage *> spriteImages;
 struct OverlayImage {
     PlatImage *image;
     int width;
@@ -62,75 +62,24 @@ int Clamp32(int v)
 
 /* -- images ---------------------------------------------------------------------------------------- */
 
-/* A sprite frame's RLE tokens as pixels and an alpha: a line start begins the next row, pixel runs are byte
-   counts padded to 4, a single-colour run repeats a pixel pair. */
-PlatImage *DecodeFrame(const SWFrameRec *frame)
-{
-    int width = frame->frameRect.right - frame->frameRect.left;
-    int height = frame->frameRect.bottom - frame->frameRect.top;
-    const unsigned char *tokens = (const unsigned char *)frame->rleTokenStart;
-
-    if (width <= 0 || height <= 0 || tokens == NULL)
-        return NULL;
-    scratchPixels.assign((size_t)width * height, 0);
-    scratchAlpha.assign((size_t)width * height, 0);
-    int row = -1;
-    int x = 0;
-    for (;;) {
-        uint32_t token = *(const uint32_t *)tokens;
-        uint32_t opcode = token >> kTokenShift;
-        int32_t bytes = (int32_t)(token & kCountMask);
-        tokens += 4;
-        if (opcode == kEndShapeToken)
-            break;
-        if (opcode == kLineStartToken) {
-            row++;
-            x = 0;
-            if (row >= height)
-                break;
-            continue;
-        }
-        int count = bytes / Pixel::kBytes;
-        if (opcode == kDrawPixelsToken || opcode == kSingleColorToken) {
-            const uint16_t *run = (const uint16_t *)tokens;
-            for (int i = 0; i < count; i++) {
-                if (row < 0 || x + i < 0 || x + i >= width)
-                    continue;
-                size_t at = (size_t)row * width + x + i;
-                scratchPixels[at] = opcode == kDrawPixelsToken ? run[i] : run[i & 1];
-                scratchAlpha[at] = 1;
-            }
-            tokens += opcode == kDrawPixelsToken ? (bytes + 3) & ~3 : 4;
-        } else if (opcode != kSkipPixelsToken) {
-            break;
-        }
-        x += count;
-    }
-    return PlatImageCreate(width, height, scratchPixels.data(), scratchAlpha.data());
-}
-
+/* a sprite frame's image: its RLE shape */
 PlatImage *SpriteImage(const SWFrameRec *frame)
 {
-    auto found = spriteImages.find(frame);
-    if (found != spriteImages.end())
-        return found->second;
-    PlatImage *image = DecodeFrame(frame);
-    spriteImages[frame] = image;
-    return image;
+    return frame->rleTokenStart != NULL ? UI::Art::Sprite(frame) : NULL;
 }
 
 /* -- draws ----------------------------------------------------------------------------------------- */
 
+PlatDraw &AddDraw(std::vector<PlatDraw> &list, unsigned char kind, unsigned char blend, PlatImage *image)
+{
+    list.push_back(PlatDrawOf(kind, blend));
+    list.back().image = image;
+    return list.back();
+}
+
 PlatDraw &NewDraw(unsigned char kind, unsigned char blend, PlatImage *image = NULL)
 {
-    building->push_back(PlatDraw());
-    PlatDraw &d = building->back();
-    d.kind = kind;
-    d.blend = blend;
-    d.alpha = 255;
-    d.mod[0] = d.mod[1] = d.mod[2] = 255;
-    d.image = image;
-    return d;
+    return AddDraw(*building, kind, blend, image);
 }
 
 void Place(PlatDraw &d, const Rect &r)
@@ -186,10 +135,7 @@ void OrSprite(PlatImage *image, const SpriteBlend &blend, const Rect &place)
     o.keep = (unsigned short)blend.alpha;
 }
 
-/* A sprite as SpriteBlend::Of says. Through the original blend when the platform draws it, else added: its
-   pixels times each channel's weight -- after the tint (murk, ions, gate white) has taken its share -- over the
-   view kept times the translucency; the tint and a weight over 32 come as the sprite's silhouette in their
-   colour. */
+/* A sprite as SpriteBlend::Of says: through the original blend when the platform draws it, else added. */
 void Sprite(const SpriteRec &sprite, const Rect &place)
 {
     PlatImage *image = SpriteImage(sprite.curFrameP);
@@ -201,8 +147,20 @@ void Sprite(const SpriteRec &sprite, const Rect &place)
         OrSprite(image, blend, place);
         return;
     }
-    PlatDraw &d = NewDraw(kPlatDrawImage, blend.kind == SpriteBlend::Kind::AddOver ? kPlatBlendAdd : kPlatBlendMix,
-                          image);
+    BlendDraws(image, blend, place, *building);
+}
+
+} // namespace
+
+/* The sprite's pixels times each channel's weight -- after the tint (murk, ions, gate white) has taken its
+   share -- over what is under it kept times the translucency; the tint and a weight over 32 come as the sprite's
+   silhouette in their colour. */
+void BlendDraws(PlatImage *image, const SpriteBlend &blend, const Rect &place, std::vector<PlatDraw> &list)
+{
+    if (image == NULL || blend.kind == SpriteBlend::Kind::Hidden)
+        return;
+    PlatDraw &d = AddDraw(list, kPlatDrawImage,
+                          blend.kind == SpriteBlend::Kind::AddOver ? kPlatBlendAdd : kPlatBlendMix, image);
     Place(d, place);
     if (blend.kind != SpriteBlend::Kind::Translucent)
         return;
@@ -215,7 +173,7 @@ void Sprite(const SpriteRec &sprite, const Rect &place)
         d.mod[c] = own <= 1 ? 0 : Weight2(weights[c] * own);
     d.alpha = Weight(kLevels - keep);
     if (own < kLevels) {
-        PlatDraw &tint = NewDraw(kPlatDrawSilhouette, kPlatBlendAdd, image);
+        PlatDraw &tint = AddDraw(list, kPlatDrawSilhouette, kPlatBlendAdd, image);
         Place(tint, place);
         /* the tint colour scaled and rounded down per channel as in the 16-bit blend, so at full tint it
            matches the system's background exactly */
@@ -225,13 +183,15 @@ void Sprite(const SpriteRec &sprite, const Rect &place)
     }
     uint32_t over[3] = { Field(blend.overR, 10), Field(blend.overG, 5), Field(blend.overB, 0) };
     if (over[0] != 0 || over[1] != 0 || over[2] != 0) {
-        PlatDraw &boost = NewDraw(kPlatDrawSilhouette, kPlatBlendAdd, image);
+        PlatDraw &boost = AddDraw(list, kPlatDrawSilhouette, kPlatBlendAdd, image);
         Place(boost, place);
         boost.color = 0x7fff;
         for (int c = 0; c < 3; c++)
             boost.mod[c] = (unsigned char)(over[c] * 255 / 31);
     }
 }
+
+namespace {
 
 /* -- lines and dots -------------------------------------------------------------------------------- */
 
@@ -362,7 +322,7 @@ void Dot(void *, int x, int y, int32_t color, int level)
 
 /* -- the world ------------------------------------------------------------------------------------- */
 
-/* An interface sprite's rect (screen coordinates, as dialogs use) in the page's pixels. */
+/* An interface sprite's rect (screen coordinates, as dialogs use) in the screen's device pixels. */
 Rect OnScreen(const Rect &r)
 {
     Rect device;
@@ -421,8 +381,8 @@ void DrawWorld(SpriteWorldRec *world)
     FloaterDrawCallback(world);
 }
 
-/* a freed image taken out of the draws still kept, so none is drawn after it is gone */
-void Forget(PlatImage *image)
+/* an image about to be freed taken out of the draws still kept, so none is drawn after it is gone */
+void Unlist(PlatImage *image)
 {
     for (PlatDraw &d : draws)
         if (d.image == image)
@@ -431,6 +391,11 @@ void Forget(PlatImage *image)
         for (PlatDraw &d : *list)
             if (d.image == image)
                 d.image = NULL;
+}
+
+void Forget(PlatImage *image)
+{
+    Unlist(image);
     PlatImageDestroy(image);
 }
 
@@ -529,18 +494,16 @@ void Take(PlatVideoView &view)
 
 void FrameGone(SWFrameRec *frame)
 {
-    auto sprite = spriteImages.find(frame);
-    if (sprite != spriteImages.end()) {
-        if (sprite->second != NULL)
-            Forget(sprite->second);
-        spriteImages.erase(sprite);
-    }
+    PlatImage *sprite = UI::Art::SpriteMade(frame);
+    if (sprite != NULL)
+        Unlist(sprite);
     auto overlay = overlayImages.find(frame);
     if (overlay != overlayImages.end()) {
         if (overlay->second.image != NULL)
             Forget(overlay->second.image);
         overlayImages.erase(overlay);
     }
+    UI::Art::FrameGone(frame);
 }
 
 } // namespace ViewDraw

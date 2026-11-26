@@ -1,6 +1,5 @@
 /* playerinfodlg.cpp -- the player info dialog */
 
-#include "scaleddraw.h"
 #include "game.h"
 #include "stellar.h"
 #include "prototypes.h"
@@ -12,6 +11,7 @@
 #include "gamedialog.h"
 #include "buttons.h"
 #include "text.h"
+#include "painter.h"
 
 DialogPtr infoDialog;
 short selPlayerInfoMode;
@@ -21,13 +21,13 @@ std::string playerInfoText[3];
 /* The player info dialog's background, stretched as one picture: the middle picture fills what the top
    and bottom ones leave (at least its own height). */
 /* "  (current / maximum)" after a percentage, current kept to 0 or more */
-static void DrawRawValue(double current, double maximum)
+static void DrawRawValue(UI::Painter &p, const UI::TextSpec &spec, double current, double maximum)
 {
-    DrawCString("  (");
-    DrawCString(NumText((int32_t)(current > 0.0 ? current : 0.0)));
-    DrawCString(" / ");
-    DrawCString(NumText((int32_t)maximum));
-    DrawCString(")");
+    p.Text("  (", spec);
+    p.Text(NumText((int32_t)(current > 0.0 ? current : 0.0)), spec);
+    p.Text(" / ", spec);
+    p.Text(NumText((int32_t)maximum), spec);
+    p.Text(")", spec);
 }
 
 /* days a jump takes: the slowest of the player's ship and its active escorts */
@@ -45,15 +45,15 @@ static short FleetJumpDays(void)
     return days;
 }
 
-static void DrawDays(short days)
+static void DrawDays(UI::Painter &p, const UI::TextSpec &spec, short days)
 {
-    DrawCString(NumText(days));
-    DrawCString(days == 1 ? " day" : " days");
+    p.Text(NumText(days), spec);
+    p.Text(days == 1 ? " day" : " days", spec);
 }
 
-static void DrawPlayerInfoBackground(const Rect &port)
+static void DrawPlayerInfoBackground(UI::Painter &p, const Rect &port)
 {
-    UI::ArtComposition background(CurrentGrafPort, port);
+    UI::Painter::Composition background(p, port);
     Rect box;
     Rect box2;
 
@@ -73,21 +73,21 @@ static void DrawPlayerInfoBackground(const Rect &port)
         if (box.bottom - box.top < box2.bottom - box2.top)
             box.bottom = box.top + (box2.bottom - box2.top);
         OffsetRect(&box, port.left, port.top);
-        DrawPicHandle(playerInfoBackgroundPic[1], &box);
+        p.Picture(playerInfoBackgroundPic[1], box);
     }
 
     if (playerInfoBackgroundPic[0] != NULL) {
         QDGetPictureBounds(playerInfoBackgroundPic[0], &box);
         OffsetRect(&box, -box.left, -box.top);
         OffsetRect(&box, port.left, port.top);
-        DrawPicHandle(playerInfoBackgroundPic[0], &box);
+        p.Picture(playerInfoBackgroundPic[0], box);
     }
 
     if (playerInfoBackgroundPic[2] != NULL) {
         QDGetPictureBounds(playerInfoBackgroundPic[2], &box);
         OffsetRect(&box, -box.left, -box.top);
         OffsetRect(&box, port.left, port.bottom - (box.bottom - box.top));
-        DrawPicHandle(playerInfoBackgroundPic[2], &box);
+        p.Picture(playerInfoBackgroundPic[2], box);
     }
 }
 
@@ -172,7 +172,6 @@ void PlayerInfoDialog::Run()
         backdrops[i].Bind(playerInfoBackgroundPic[i]);
         backdrops[i].Load(kPlayerInfoFirstPictID + i);
     }
-    SetDialogGWorld(infoDialog);
     SetupPlayerInfoText();
     saved = *GetDialogPortRect(infoDialog);
     GetDialogItem(infoDialog, 6, &itemType, &item, &box6);
@@ -181,16 +180,19 @@ void PlayerInfoDialog::Run()
     textDialogTextHandle = TENew(&box6, &box6);
     (*textDialogTextHandle)->txFont = smallTextFont;
     (*textDialogTextHandle)->txSize = smallTextSize;
-    TextFont((*textDialogTextHandle)->txFont);
-    TextSize((*textDialogTextHandle)->txSize);
     TESetLineMetrics(textDialogTextHandle);
     tallest = -1;
-    for (i = 0; i < 3; i++) {
-        TESetText(playerInfoText[i].data(), playerInfoText[i].size(), textDialogTextHandle);
-        TECalText(textDialogTextHandle);
-        height = TEWrappedHeight(textDialogTextHandle);
-        if (height > tallest || tallest <= 0)
-            tallest = height;
+    {
+        UI::Painter measure(UI::Surface::Dialog(infoDialog));
+
+        for (i = 0; i < 3; i++) {
+            measure.EditSetText(textDialogTextHandle, playerInfoText[i].data(), playerInfoText[i].size(),
+                                UI::Style::Small);
+            measure.EditMeasure(textDialogTextHandle, UI::Style::Small);
+            height = TEWrappedHeight(textDialogTextHandle);
+            if (height > tallest || tallest <= 0)
+                tallest = height;
+        }
     }
     TEDispose(textDialogTextHandle);
     boxHeight = box6.bottom - box6.top;
@@ -216,18 +218,15 @@ void PlayerInfoDialog::Run()
         GetDialogItem(infoDialog, 6, &itemType, &item, &box6);
         SetDialogItem(infoDialog, 6, itemType, item, &r);
     }
-    SetDialogGWorld(infoDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(infoDialog);
     PlayerInfoDialogUpdate();
     Loop();
-    SWSetPortToWindow(gSpriteWorld);
     while (KeyCheck(keyPrefs.playerInfo))
         BusyIdle();
     dialog.Close();
     for (i = 0; i < 3; i++)
         backdrops[i].Release();
-    SWSetPortToWindow(gSpriteWorld);
     RefreshSAT();
     FlushEvents(7, 0);
 }
@@ -314,217 +313,162 @@ void PlayerInfoDialogUpdate(void)
     short jumps;
     short count;
     Boolean onMission;
+    const UI::TextSpec light = { UI::Style::Small, rgbLightGrey };
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
 
-    SetGWorldContainer(&loadPort);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(infoDialog));
+    UI::Painter p(UI::Surface::Load());
 
-    DrawPlayerInfoBackground(*GetDialogPortRect(infoDialog));
+    p.Fill(*GetDialogPortRect(infoDialog), UI::kBlack);
 
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
+    DrawPlayerInfoBackground(p, *GetDialogPortRect(infoDialog));
+
     GetDialogItem(infoDialog, 6, &itemType, (Handle *)&itemHandle, &box);
 
     if (selPlayerInfoMode == 1) {
         /* --- left column --- */
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 5), (box.top + 0xc));
-        DrawIndString(kGameStrList, 0xfb);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x50), (box.top + 0xc));
-        DrawString(playerName);
+        p.Text((box.left + 5), (box.top + 0xc), IndStringRaw(kGameStrList, 0xfb), light);
+        p.Text((box.left + 0x50), (box.top + 0xc), FromPascal(playerName), white);
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 5), (box.top + 0x1c));
-        DrawIndString(kGameStrList, 0xfc);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x50), (box.top + 0x1c));
-        DrawCString(DateMedText(gameTime));
+        p.Text((box.left + 5), (box.top + 0x1c), IndStringRaw(kGameStrList, 0xfc), light);
+        p.Text((box.left + 0x50), (box.top + 0x1c), DateMedText(gameTime), white);
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 5), (box.top + 0x2c));
-        DrawIndString(kGameStrList, 0xfd);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x50), (box.top + 0x2c));
-        DrawCString(SystName(shipData->curSystem));
+        p.Text((box.left + 5), (box.top + 0x2c), IndStringRaw(kGameStrList, 0xfd), light);
+        p.Text((box.left + 0x50), (box.top + 0x2c), SystName(shipData->curSystem), white);
         if (cheatsActive) {
-            DrawCString(" (");
-            DrawCString(NumText(shipData->curSystem + 128));
-            DrawCString(")");
+            p.Text(" (", white);
+            p.Text(NumText(shipData->curSystem + 128), white);
+            p.Text(")", white);
         }
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 5), (box.top + 0x3c));
-        DrawIndString(kGameStrList, 0x146);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x50), (box.top + 0x3c));
+        p.Text((box.left + 5), (box.top + 0x3c), IndStringRaw(kGameStrList, 0x146), light);
         if (SystemIsInhabited(shipData->curSystem)) {
-            DrawLegalStatusString(shipData->curSystem);
+            p.Text((box.left + 0x50), (box.top + 0x3c), LegalStatusText(shipData->curSystem), white);
             if (cheatsActive) {
-                DrawCString(" (");
-                DrawCString(NumText(playerRecord[shipData->curSystem]));
-                DrawCString(")");
+                p.Text(" (", white);
+                p.Text(NumText(playerRecord[shipData->curSystem]), white);
+                p.Text(")", white);
             }
         } else {
-            DrawIndString(kGameStrList, 0x18c);
+            p.Text((box.left + 0x50), (box.top + 0x3c), IndStringRaw(kGameStrList, 0x18c), white);
         }
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 5), (box.top + 0x4c));
-        DrawIndString(kGameStrList, 0xfe);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x50), (box.top + 0x4c));
-        DrawCombatRatingString();
+        p.Text((box.left + 5), (box.top + 0x4c), IndStringRaw(kGameStrList, 0xfe), light);
+        p.Text((box.left + 0x50), (box.top + 0x4c), CombatRatingText(), white);
         if (cheatsActive) {
-            DrawCString(" (");
-            DrawCString(NumText(playerKills));
-            DrawCString(")");
+            p.Text(" (", white);
+            p.Text(NumText(playerKills), white);
+            p.Text(")", white);
         }
 
         /* --- right column --- */
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 0xcd), (box.top + 0xc));
-        DrawIndString(kGameStrList, 0xff);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x118), (box.top + 0xc));
-        DrawString(shipName);
+        p.Text((box.left + 0xcd), (box.top + 0xc), IndStringRaw(kGameStrList, 0xff), light);
+        p.Text((box.left + 0x118), (box.top + 0xc), FromPascal(shipName), white);
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 0xcd), (box.top + 0x1c));
-        DrawIndString(kGameStrList, 0x100);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x118), (box.top + 0x1c));
-        DrawCString(ShipClassName(shipData->type));
+        p.Text((box.left + 0xcd), (box.top + 0x1c), IndStringRaw(kGameStrList, 0x100), light);
+        p.Text((box.left + 0x118), (box.top + 0x1c), ShipClassName(shipData->type), white);
         if (cheatsActive) {
-            DrawCString(" (");
-            DrawCString(NumText(shipData->type + 128));
-            DrawCString(")");
+            p.Text(" (", white);
+            p.Text(NumText(shipData->type + 128), white);
+            p.Text(")", white);
         }
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 0xcd), (box.top + 0x2c));
-        DrawIndString(kGameStrList, 0x101);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x118), (box.top + 0x2c));
-        DrawCString(NumText(TruncF32(shipData->TurnRate() * 30.0f)));
-        DrawIndString(kGameStrList, 0x102);
+        p.Text((box.left + 0xcd), (box.top + 0x2c), IndStringRaw(kGameStrList, 0x101), light);
+        p.Text((box.left + 0x118), (box.top + 0x2c), NumText(TruncF32(shipData->TurnRate() * 30.0f)), white);
+        p.Text(IndStringRaw(kGameStrList, 0x102), white);
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 0xcd), (box.top + 0x3c));
-        DrawIndString(kGameStrList, 0x103);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x118), (box.top + 0x3c));
-        DrawCString(NumText(TruncF32(shipData->AccelRate() * 2500.0)));
+        p.Text((box.left + 0xcd), (box.top + 0x3c), IndStringRaw(kGameStrList, 0x103), light);
+        p.Text((box.left + 0x118), (box.top + 0x3c), NumText(TruncF32(shipData->AccelRate() * 2500.0)), white);
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 0xcd), (box.top + 0x4c));
-        DrawIndString(kGameStrList, 0x104);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x118), (box.top + 0x4c));
+        p.Text((box.left + 0xcd), (box.top + 0x4c), IndStringRaw(kGameStrList, 0x104), light);
         if (strictPlay)
-            DrawCString(NumText(TruncF32(shipData->MaxSpeed() * 100.0f)));
+            p.Text((box.left + 0x118), (box.top + 0x4c), NumText(TruncF32(shipData->MaxSpeed() * 100.0f)), white);
         else
-            DrawCString(NumText(TruncF32(shipData->MaxSpeed() * 100.0f * 0.6666666666666666)));
+            p.Text((box.left + 0x118), (box.top + 0x4c),
+                   NumText(TruncF32(shipData->MaxSpeed() * 100.0f * 0.6666666666666666)), white);
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 0xcd), (box.top + 0x5c));
         text = creditsString;
         /* 128..255 bytes stay as they are (a signed length test) */
         if (!text.empty() && text.size() < 128)
             text[0] = (char)toupper((unsigned char)text[0]);
-        DrawCString(text);
-        DrawCString(":");
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x118), (box.top + 0x5c));
-        DrawCommaNumber(shipData->credits);
+        p.Text((box.left + 0xcd), (box.top + 0x5c), text, light);
+        p.Text(":", light);
+        p.Text((box.left + 0x118), (box.top + 0x5c), CommaNumber(shipData->credits), white);
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 0xcd), (box.top + 0x6c));
-        DrawCString("Jump Time:");
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x118), (box.top + 0x6c));
+        p.Text((box.left + 0xcd), (box.top + 0x6c), "Jump Time:", light);
         short ownDays = shipData->HyperTransitTime();
         short fleetDays = FleetJumpDays();
-        DrawDays(ownDays);
+        p.Pen((box.left + 0x118), (box.top + 0x6c));
+        DrawDays(p, white, ownDays);
         if (fleetDays > ownDays) {
-            DrawCString(" (");
-            DrawDays(fleetDays);
-            DrawCString(" with escorts)");
+            p.Text(" (", white);
+            DrawDays(p, white, fleetDays);
+            p.Text(" with escorts)", white);
         }
 
         /* --- shields / armor / fuel, left column continued --- */
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 5), (box.top + 0x5c));
-        DrawCString(shieldString[1]);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x50), (box.top + 0x5c));
+        p.Text((box.left + 5), (box.top + 0x5c), shieldString[1], light);
+        p.Pen((box.left + 0x50), (box.top + 0x5c));
         if (shipData->ShieldCapacity() > 0.0) {
             if (shipData->shield >= 0.0f) {
                 if (shipData->shield <= shipData->ShieldCapacity()) {
-                    DrawCString(NumText(shipData->shield / shipData->ShieldCapacity() * 100.0));
-                    DrawCString("%");
+                    p.Text(NumText(shipData->shield / shipData->ShieldCapacity() * 100.0), white);
+                    p.Text("%", white);
                 } else {
-                    DrawCString("100%");
+                    p.Text("100%", white);
                 }
             } else {
-                DrawCString("0%");
+                p.Text("0%", white);
             }
-            DrawRawValue(shipData->shield, shipData->ShieldCapacity());
+            DrawRawValue(p, white, shipData->shield, shipData->ShieldCapacity());
         } else {
-            DrawIndString(kGameStrList, 0x18c);
+            p.Text(IndStringRaw(kGameStrList, 0x18c), white);
         }
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 5), (box.top + 0x6c));
-        DrawCString(armorString[1]);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x50), (box.top + 0x6c));
+        p.Text((box.left + 5), (box.top + 0x6c), armorString[1], light);
+        p.Pen((box.left + 0x50), (box.top + 0x6c));
         if (shipData->IsDying()) {
-            DrawIndString(kGameStrList, 0x105);
+            p.Text(IndStringRaw(kGameStrList, 0x105), white);
         } else if (shipData->ArmorCapacity() > 0.0) {
             if (shipData->armor <= shipData->ArmorCapacity()) {
-                DrawCString(NumText(shipData->armor / shipData->ArmorCapacity() * 100.0));
-                DrawCString("%");
+                p.Text(NumText(shipData->armor / shipData->ArmorCapacity() * 100.0), white);
+                p.Text("%", white);
             } else {
-                DrawCString("100%");
+                p.Text("100%", white);
             }
-            DrawRawValue(shipData->armor, shipData->ArmorCapacity());
+            DrawRawValue(p, white, shipData->armor, shipData->ArmorCapacity());
         } else {
-            DrawIndString(kGameStrList, 0x18c);
+            p.Text(IndStringRaw(kGameStrList, 0x18c), white);
         }
 
-        RGBForeColor(&rgbLightGrey);
-        MoveTo((box.left + 5), (box.top + 0x7c));
-        DrawCString(fuelString[5]);
-        ForeColor(whiteColor);
-        MoveTo((box.left + 0x50), (box.top + 0x7c));
+        p.Text((box.left + 5), (box.top + 0x7c), fuelString[5], light);
+        p.Pen((box.left + 0x50), (box.top + 0x7c));
         if (shipData->FuelCapacity() <= 0.0) {
-            DrawIndString(kGameStrList, 0x14f);
+            p.Text(IndStringRaw(kGameStrList, 0x14f), white);
         } else {
-            DrawCString(NumText(shipData->fuel / shipData->FuelCapacity() * 100.0));
-            DrawCString("%");
+            p.Text(NumText(shipData->fuel / shipData->FuelCapacity() * 100.0), white);
+            p.Text("%", white);
             jumps = (shipData->fuel / 100.0);
             if (jumps > 0) {
-                DrawCString("  (");
-                DrawCString(NumText(jumps));
-                DrawCString(" ");
+                p.Text("  (", white);
+                p.Text(NumText(jumps), white);
+                p.Text(" ", white);
                 if (jumps > 1)
-                    DrawIndString(kGameStrList, 0xf0);
+                    p.Text(IndStringRaw(kGameStrList, 0xf0), white);
                 else
-                    DrawIndString(kGameStrList, 0xef);
+                    p.Text(IndStringRaw(kGameStrList, 0xef), white);
                 if ((short)shipData->fuel % 100 > 0) {
-                    DrawCString(" ");
-                    DrawIndString(kGameStrList, 0x106);
-                    DrawCString(" ");
-                    DrawCString(fuelString[6]);
+                    p.Text(" ", white);
+                    p.Text(IndStringRaw(kGameStrList, 0x106), white);
+                    p.Text(" ", white);
+                    p.Text(fuelString[6], white);
                 }
-                DrawCString(")");
+                p.Text(")", white);
             } else if (shipData->fuel > 0.0f) {
-                DrawCString("  (");
-                DrawCString(fuelString[6]);
-                DrawCString(" ");
-                DrawIndString(kGameStrList, 0x107);
-                DrawCString(")");
+                p.Text("  (", white);
+                p.Text(fuelString[6], white);
+                p.Text(" ", white);
+                p.Text(IndStringRaw(kGameStrList, 0x107), white);
+                p.Text(")", white);
             }
         }
 
@@ -573,46 +517,39 @@ void PlayerInfoDialogUpdate(void)
             stellarWorth = 0;
         }
         if (escortWorth > 0 || stellarWorth > 0) {
-            RGBForeColor(&rgbLightGrey);
-            MoveTo((box.left + 5), (box.top + 0x8c));
+            p.Pen((box.left + 5), (box.top + 0x8c));
             if (escortWorth > stellarWorth) {
-                DrawIndString(kGameStrList, 0x108);
-                DrawCString("  ");
-                ForeColor(whiteColor);
-                DrawCommaNumber(escortWorth - stellarWorth);
+                p.Text(IndStringRaw(kGameStrList, 0x108), light);
+                p.Text("  ", light);
+                p.Text(CommaNumber(escortWorth - stellarWorth), white);
             } else if (escortWorth != 0) {
-                DrawIndString(kGameStrList, 0x10a);
-                DrawCString(" ");
-                DrawIndString(kGameStrList, 0x109);
-                DrawCString("  ");
-                ForeColor(whiteColor);
-                DrawCommaNumber(stellarWorth - escortWorth);
+                p.Text(IndStringRaw(kGameStrList, 0x10a), light);
+                p.Text(" ", light);
+                p.Text(IndStringRaw(kGameStrList, 0x109), light);
+                p.Text("  ", light);
+                p.Text(CommaNumber(stellarWorth - escortWorth), white);
             } else {
-                DrawIndString(kGameStrList, 0x109);
-                DrawCString("  ");
-                ForeColor(whiteColor);
-                DrawCommaNumber(stellarWorth);
+                p.Text(IndStringRaw(kGameStrList, 0x109), light);
+                p.Text("  ", light);
+                p.Text(CommaNumber(stellarWorth), white);
             }
-            DrawCString(" ");
-            DrawCString(creditsString);
-            RGBForeColor(&rgbLightGrey);
-            DrawCString(" ");
-            DrawIndString(kGameStrList, 0x10b);
+            p.Text(" ", white);
+            p.Text(creditsString, white);
+            p.Text(" ", light);
+            p.Text(IndStringRaw(kGameStrList, 0x10b), light);
         }
     } else if (selPlayerInfoMode == 2) {
         if (PlayerHasAnyCargo()) {
-            ForeColor(blackColor);
             box2 = box;
             box2.bottom -= 10;
             box2.right -= 5;
             box2.left += 5;
             box2.top += 5;
-            TETextBox(playerInfoText[0].data(), playerInfoText[0].size(), &box2, 0);
-            InvertRect(&box2);
+            p.TextBox(box2, playerInfoText[0], white, UI::kBlack);
         } else {
-            RGBForeColor(&rgbLightGrey);
-            DrawStringCentered(IndString(kGameStrList, TotalFleetHolds() > ShipTotalHolds() ? 0x10c : 0x10d),
-                               box.left, box.right, box.top + 0x37);
+            p.Text(box.left, box.right, box.top + 0x37,
+                   IndString(kGameStrList, TotalFleetHolds() > ShipTotalHolds() ? 0x10c : 0x10d), light,
+                   UI::Align::Center);
         }
     } else if (selPlayerInfoMode == 3) {
         count = 0;
@@ -624,17 +561,14 @@ void PlayerInfoDialogUpdate(void)
             }
         }
         if (count > 0) {
-            ForeColor(blackColor);
             box2 = box;
             box2.bottom -= 10;
             box2.right -= 5;
             box2.left += 5;
             box2.top += 5;
-            TETextBox(playerInfoText[1].data(), playerInfoText[1].size(), &box2, 0);
-            InvertRect(&box2);
+            p.TextBox(box2, playerInfoText[1], white, UI::kBlack);
         } else {
-            RGBForeColor(&rgbLightGrey);
-            DrawStringCentered(IndString(kGameStrList, 0x10e), box.left, box.right, box.top + 0x37);
+            p.Text(box.left, box.right, box.top + 0x37, IndString(kGameStrList, 0x10e), light, UI::Align::Center);
         }
     } else if (selPlayerInfoMode == 4) {
         count = 0;
@@ -650,22 +584,19 @@ void PlayerInfoDialogUpdate(void)
                 count++;
         }
         if (count > 0) {
-            ForeColor(blackColor);
             box2 = box;
             box2.bottom -= 10;
             box2.right -= 5;
             box2.left += 5;
             box2.top += 5;
-            TETextBox(playerInfoText[2].data(), playerInfoText[2].size(), &box2, 0);
-            InvertRect(&box2);
+            p.TextBox(box2, playerInfoText[2], white, UI::kBlack);
         } else {
-            RGBForeColor(&rgbLightGrey);
-            DrawStringCentered(IndString(kGameStrList, 0x10f), box.left, box.right, box.top + 0x37);
+            p.Text(box.left, box.right, box.top + 0x37, IndString(kGameStrList, 0x10f), light, UI::Align::Center);
         }
     }
 
-    PlayerInfoButtons(selPlayerInfoMode).Draw(-1);
-    CopyLoadPortToDialog(infoDialog);
+    PlayerInfoButtons(selPlayerInfoMode).Draw(p, -1);
+    LoadPageToDialog(infoDialog);
 }
 
 #define kStrCargoHeader    0x16a

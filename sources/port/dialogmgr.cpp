@@ -4,6 +4,7 @@
 #include "render.h"
 #include "sound.h"
 #include "dialogs.h"
+#include "painter.h"
 #include "uiscale.h"
 #include "scaleddraw.h"
 #include "platform.h"
@@ -591,9 +592,7 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
                     }
                 }
                 DrawBevel(&box, NULL, &bevelGray1, &bevelGray4);
-                CopyBits((BitMapPtr)GetGWCPixMap(&gw),
-                         GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                         &box, &box, 0, NULL);
+                UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(gw), box, box);
                 SetPort(savedPort);
                 ScreenEndScene();
                 lastV = pt.v;
@@ -1199,6 +1198,22 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                 dlg->needsUpdate = 1;
             } else if (clickKind == 3) {
                 if (rec->data != NULL) {
+                    CGrafPtr current;
+                    short font = 0;
+                    short face = 0;
+                    short size = 0;
+
+                    /* measured on the dialog's port, at its scale, in the font DrawDialog draws edit text in */
+                    GetPort(&current);
+                    if (dlg->port != NULL) {
+                        SetPort(dlg->port);
+                        font = dlg->port->txFont;
+                        face = dlg->port->txFace;
+                        size = dlg->port->txSize;
+                        TextFace(1);
+                        TextSize(0xc);
+                        TextFont(0);
+                    }
                     keyChar = DeviceX(localH) - DeviceX(rec->box.left + 2);
                     localH = strlen((char *)rec->data);
                     located = 0;
@@ -1221,6 +1236,12 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
                             rec->minValue = rec->maxValue;
                         }
                     }
+                    if (dlg->port != NULL) {
+                        TextFace(face);
+                        TextSize(size);
+                        TextFont(font);
+                    }
+                    SetPort(current);
                 }
             }
             if (itemHit != 0) {
@@ -1574,6 +1595,12 @@ void DrawDottedFrame(Rect *r)
     LineTo(((Point *) r)[1].h, ((Point *) r)[1].v);
 }
 
+/* a dialog's world, as it is drawn now, onto the screen at the dialog's place */
+static void ShowDialogOnScreen(DialogPtr dlg)
+{
+    UI::Painter(UI::Surface::Screen()).Copy(UI::Surface::Dialog(dlg), dlg->portRect, dlg->bounds);
+}
+
 // FUNCTION: EVNOVA 0x004d0d00
 void DrawDialog(DialogPtr dlg)
 {
@@ -1824,9 +1851,7 @@ void DrawDialog(DialogPtr dlg)
         if (updateProc != NULL)
             updateProc();
 
-        CopyBits((BitMapPtr)GetGWCPixMap((GWorldContainer *)dlg),
-                 GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                 &dlg->portRect, &dlg->bounds, 0, 0);
+        ShowDialogOnScreen(dlg);
         SetPort(savedPort);
         ScreenEndScene();
     }
@@ -1843,24 +1868,14 @@ void nv_UpdateDialogWindow(int all)
         for (i = 0; i < gDialogCount; i++) {
             dlg = gDialogStack[i];
             if (dlg->visible != 0)
-                CopyBits((BitMapPtr)GetGWCPixMap((GWorldContainer *)dlg),
-                         GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                         &dlg->portRect, &dlg->bounds, 0, 0);
+                ShowDialogOnScreen(dlg);
         }
     } else {
         cur = gCurDialog;
         if (cur->visible != 0)
-            CopyBits((BitMapPtr)GetGWCPixMap((GWorldContainer *)cur),
-                     GetPortBitMapForCopyBits(GetCWindowGrafPort(gWind)),
-                     &cur->portRect, &cur->bounds, 0, 0);
+            ShowDialogOnScreen(cur);
     }
     ScreenEndScene();
-}
-
-// FUNCTION: EVNOVA 0x004d17a0
-void SetDialogGWorld(DialogPtr dlg)
-{
-    SetGWorldContainer((GWorldContainer *)dlg);
 }
 
 // FUNCTION: EVNOVA 0x004d17b0
@@ -2290,13 +2305,10 @@ void WinGameInputSeen(void)
 // FUNCTION: EVNOVA 0x004d28b0
 void ShutdownWinGame(void)
 {
-    const Screen::Page &page = Screen::Get();
-
-    if (page.pixels != NULL) {
-        memset(page.pixels, 0, (size_t)page.pitch * page.height);
+    if (Screen::Get().width != 0) {
+        UI::Painter(UI::Surface::Screen()).Fill(gGamePort.pix.bounds, UI::kBlack);
         UpdateAndPageFlip();
         ReleaseVideo();
-        gGamePort.pix.baseAddr = NULL;
     }
 }
 

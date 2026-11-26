@@ -12,6 +12,7 @@
 #include "buttons.h"
 #include "text.h"
 #include "missionlist.h"
+#include "painter.h"
 
 #define kDateCaptionIdx     0x168
 
@@ -44,11 +45,7 @@ void SetupMissionInfoList(void)
         }
     }
 
-    SetDialogGWorld(missionInfoDialog);
     GetDialogItem(missionInfoDialog, 2, &itemType, (Handle *)&itemHandle, &box);
-
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
 
     bool scrollBar = !MissionList::Fits(box, count);
     if (scrollBar)
@@ -113,7 +110,6 @@ void MissionInfoDialog::Run()
         return;
     Picture backdrop(missionInfoBackgroundPic);
     backdrop.Load(kMissionInfoPictID);
-    SetDialogGWorld(missionInfoDialog);
     FlushEvents(everyEvent - diskMask, 0);
     RedrawDialog(missionInfoDialog);
     SetupMissionInfoList();
@@ -164,7 +160,7 @@ void MissionInfoDialog::Hit(short item)
     if (item == 5) {
         if (selMissionInfoListItem == -1) {
             PlaySound(beepSnd[3], 1, gSoundVolume, gSoundVolume);
-            MissionInfoButtons().Draw(-1);
+            MissionInfoButtons().DrawOnDialog(-1);
         } else {
             if (currentMissions[activeMissions[selMissionInfoListItem]].canAbort != 0) {
                 if ((currentMissions[activeMissions[selMissionInfoListItem]].flags & kMissionAbortPenalty) != 0
@@ -182,9 +178,12 @@ void MissionInfoDialog::Hit(short item)
                     selMissionInfoListItem = -1;
                     RedrawDialog(missionInfoDialog);
                     cell.h = cell.v = 0;
-                    while (cell.v < (*missionInfoList)->dataBounds.bottom) {
-                        LSetSelect(0, cell, missionInfoList);
-                        cell.v++;
+                    {
+                        UI::Painter p(UI::Surface::Dialog(missionInfoDialog));
+                        while (cell.v < (*missionInfoList)->dataBounds.bottom) {
+                            p.ListSelect(missionInfoList, false, cell, UI::Style::Small);
+                            cell.v++;
+                        }
                     }
                     LAutoScroll(missionInfoList);
                     for (i = 0; i < kMaxActiveMissions; i++)
@@ -201,7 +200,6 @@ void MissionInfoDialog::Hit(short item)
                     done = 1;
                 }
                 DrawStatusCargo();
-                SetDialogGWorld(missionInfoDialog);
             }
         }
     }
@@ -315,26 +313,17 @@ void MissionInfoDialogUpdate(void)
     std::string date;
     Rect box;
 
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(missionInfoDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(missionInfoDialog), UI::kBlack);
     if (missionInfoBackgroundPic != NULL)
-        DrawPicHandle(missionInfoBackgroundPic, GetDialogPortRect(missionInfoDialog));
-    ForeColor(blackColor);
+        p.Picture(missionInfoBackgroundPic, *GetDialogPortRect(missionInfoDialog));
     GetDialogItem(missionInfoDialog, 3, &itemType, (Handle *)&item, &box);
-    RGBForeColor(&rgbMedGrey);
-    MoveTo(box.left, box.bottom);
-    DrawIndString(kGameStrList, kDateCaptionIdx);
-    ForeColor(blackColor);
-    RGBForeColor(&rgbDarkGrey);
+    p.Text(box.left, box.bottom, IndStringRaw(kGameStrList, kDateCaptionIdx), { UI::Style::Small, rgbMedGrey });
     date = DateMedText(gameTime);
     GetDialogItem(missionInfoDialog, 7, &itemType, (Handle *)&item, &box);
-    MoveTo((box.right + box.left) / 2 - MeasureCString(date) / 2, box.top + smallTextSize);
-    DrawCString(date);
-    ForeColor(blackColor);
-    DrawMissionBriefing(missionInfoDialog, selMissionInfoListItem != -1);
-    MissionInfoButtons().Draw(-1);
-    MissionList(missionInfoList).Present(missionInfoDialog);
+    p.Text(box.left, box.right, box.top + smallTextSize, date, { UI::Style::Small, rgbDarkGrey }, UI::Align::Center);
+    DrawMissionBriefing(p, missionInfoDialog, selMissionInfoListItem != -1);
+    MissionInfoButtons().Draw(p, -1);
+    MissionList(missionInfoList).Present(p, missionInfoDialog);
 }

@@ -33,10 +33,7 @@ void EVNoteAlert(const unsigned char *text)
         PlatAlert("EV Nova", message);
         return;
     }
-    SetDialogGWorld(alertDialog);
     SetDialogDefaultItem(alertDialog, 1);
-    SetDialogGWorld(alertDialog);
-    SetDialogGWorld(alertDialog);
     DrawDialog(alertDialog);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
     SetDialogItemText((Handle)item,text);
@@ -67,7 +64,6 @@ Boolean EVYesNoDialog(unsigned char *text)
     if (!dialog.IsOpen())
         return 0;
     SetDialogDefaultItem(alertDialog, 1);
-    SetDialogGWorld(alertDialog);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
     SetDialogItemText((Handle)item,text);
     FlushEvents(everyEvent - diskMask, 0);
@@ -83,9 +79,7 @@ Boolean EVYesNoDialog(unsigned char *text)
             done = 1;
         }
     } while (done == 0);
-    SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
-    SWSetPortToWindow(gSpriteWorld);
     return result;
 }
 
@@ -107,7 +101,6 @@ Boolean EVTextInputDialog(const unsigned char *prompt, const unsigned char *init
     if (!dialog.IsOpen())
         return 0;
     SetDialogDefaultItem(alertDialog, 1);
-    SetDialogGWorld(alertDialog);
     GetDialogItem(alertDialog, 3, &itemType, &item, &box);
     SetDialogItemText((Handle)item,prompt);
     GetDialogItem(alertDialog, 5, &itemType, &item, &box);
@@ -135,9 +128,7 @@ Boolean EVTextInputDialog(const unsigned char *prompt, const unsigned char *init
     } while (done == 0);
     GetDialogItem(alertDialog, 5, &itemType, &item, &box);
     GetDialogItemText((Handle)item,textInputString);
-    SWSetPortToWindow(gSpriteWorld);
     dialog.Close();
-    SWSetPortToWindow(gSpriteWorld);
     return result;
 }
 
@@ -168,7 +159,6 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
     if (!dialog.IsOpen())
         return 0;
 
-    SetDialogGWorld(qtyDialog);
     SelectDialogItemText(qtyDialog, kQtyTextItem, 0, 0x7fff);
 
     GetDialogItem(qtyDialog, kQtyPromptItem, &itemType, &item, &box);

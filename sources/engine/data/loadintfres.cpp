@@ -4,6 +4,7 @@
 #include "resources.h"
 #include "gameconst.h"
 #include "render.h"
+#include "painter.h"
 
 
 #define kIntfRec ((IntfRec *)*intfFileHand)
@@ -98,15 +99,16 @@ void LoadIntfResource(void)
 
     pict = GetPicture(picID);
     if (pict != NULL) {
-        SetGWorldContainer(&statusOffPort);
-        RGBForeColor(&rgbBlack);
-        PaintRect(&statusOffPort.bounds);
-        QDGetPictureBounds(pict, &pictRect);
-        OffsetRect(&pictRect, -pictRect.left, -pictRect.top);
-        OffsetRect(&pictRect, -statusOffPort.bounds.left, -statusOffPort.bounds.top);
-        DrawPicHandle(pict, &pictRect);
+        {
+            UI::Painter status{UI::Surface(statusOffPort)};
+
+            status.Fill(statusOffPort.bounds, rgbBlack);
+            QDGetPictureBounds(pict, &pictRect);
+            OffsetRect(&pictRect, -pictRect.left, -pictRect.top);
+            OffsetRect(&pictRect, -statusOffPort.bounds.left, -statusOffPort.bounds.top);
+            status.Picture(pict, pictRect);
+        }
         QDReleaseResource(pict);
-        UnsetGWorldContainer(&statusOffPort);
         RedrawStatus(1);
     }
     lastIntfResourceID = id;

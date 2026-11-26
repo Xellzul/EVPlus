@@ -12,6 +12,7 @@
 #include "gamedialog.h"
 #include "buttons.h"
 #include "text.h"
+#include "painter.h"
 
 #define kBarDlogID          0x3fd   /* DLOG 1021, with portrait */
 #define kPlainBarDlogID     0x3f5   /* DLOG 1013 */
@@ -91,7 +92,6 @@ void BarDialog::Run()
     Picture backdrop(barBackgroundPic);
     backdrop.Load(barPic != NULL ? kBarPictID : kPlainBarPictID);
     FlushEvents(everyEvent - diskMask, 0);
-    SetDialogGWorld(barDialog);
     RedrawDialog(barDialog);
     BarDialogUpdate();
     Loop();
@@ -113,21 +113,17 @@ void BarDialog::Hit(short item)
             ShowTextDialog(0, 0);
         }
         PortDialogUpdate();
-        SetDialogGWorld(barDialog);
         BarDialogUpdate();
     }
     if (item == kBarNewsItem) {
-        SetDialogGWorld(barDialog);
-        BarButtons().Draw(-1);
+        BarButtons().DrawOnDialog(-1);
         DoNewsDialog();
         PortDialogUpdate();
-        SetDialogGWorld(barDialog);
         BarDialogUpdate();
     }
     if (item == kBarHireItem) {
         if (CanHireEscorts()) {
-            SetDialogGWorld(barDialog);
-            BarButtons().Draw(-1);
+            BarButtons().DrawOnDialog(-1);
             shipBuyMode = 1;
             DoShipyardDialog();
             ShipStatsToSystemInfo();
@@ -201,27 +197,19 @@ void BarDialogUpdate(void)
     short itemType;
     Handle item;
 
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(barDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(barDialog), UI::kBlack);
     if (barBackgroundPic != NULL)
-        DrawPicHandle(barBackgroundPic, GetDialogPortRect(barDialog));
+        p.Picture(barBackgroundPic, *GetDialogPortRect(barDialog));
     if (barPic != NULL) {
         GetDialogItem(barDialog, kBarPortraitItem, &itemType, &item, &box);
-        ForeColor(blackColor);
-        DrawPicHandle(barPic, &box);
+        p.Picture(barPic, box);
     }
     GetDialogItem(barDialog, kBarDescItem, &itemType, &item, &box);
-    ForeColor(blackColor);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    TETextBox(barDescText, strlen(barDescText), &box, 0);
-    InvertRect(&box);
-    ForeColor(blackColor);
-    BarButtons().Draw(-1);
-    CopyLoadPortToDialog(barDialog);
+    p.TextBox(box, barDescText, strlen(barDescText), { UI::Style::Small, UI::kWhite }, UI::kBlack);
+    BarButtons().Draw(p, -1);
+    LoadPageToDialog(barDialog);
 }
 
 #define kSponsorStrList      0x1fa4  /* STR# 8100, the sponsor lines */
@@ -287,7 +275,6 @@ void NewsDialog::Run()
     dialog.Open(kDlg1014ID, NewsDialogUpdate, Filter, &newsDialog, DialogClose::NoFlash);
     if (!dialog.IsOpen())
         return;
-    SetDialogGWorld(newsDialog);
     FlushEvents(everyEvent - diskMask, 0);
     NewsDialogUpdate();
     Loop();
@@ -322,7 +309,6 @@ Boolean NewsDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *itemH
     }
     if (ev.what == DialogInput::Click) {
         where = ev.where;
-        SetDialogGWorld(newsDialog);
         if (PtInRectPoint(where, GetDialogPortRect(newsDialog)) != 0) {
             *itemHit = kNewsDoneItem;
             return 1;
@@ -344,25 +330,21 @@ void NewsDialogUpdate(void)
 {
     Rect box;
 
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(newsDialog));
-    DrawPicHandle(newsPic, GetDialogPortRect(newsDialog));
+    UI::Painter p(UI::Surface::Load());
+
+    p.Fill(*GetDialogPortRect(newsDialog), UI::kBlack);
+    p.Picture(newsPic, *GetDialogPortRect(newsDialog));
     SetRect(&box, GetDialogPortRect(newsDialog)->left + kTextInset,
             GetDialogPortRect(newsDialog)->top + kTitleTop,
             GetDialogPortRect(newsDialog)->right - kTextInset,
             GetDialogPortRect(newsDialog)->top + kTitleBottom);
-    TETextBox(sponsorString.data(), sponsorString.size(), &box, 0);
-    InvertRect(&box);
+    p.TextBox(box, sponsorString, { UI::Style::Small, UI::kWhite }, UI::kBlack);
     SetRect(&box, GetDialogPortRect(newsDialog)->left + kTextInset,
             GetDialogPortRect(newsDialog)->top + kBodyTop,
             GetDialogPortRect(newsDialog)->right - kTextInset,
             GetDialogPortRect(newsDialog)->bottom - kBodyMargin);
-    TETextBox(newsString.data(), newsString.size(), &box, 0);
-    InvertRect(&box);
-    CopyLoadPortToDialog(newsDialog);
+    p.TextBox(box, newsString, { UI::Style::Small, UI::kWhite }, UI::kBlack);
+    LoadPageToDialog(newsDialog);
 }
 
 // FUNCTION: EVNOVA 0x0047d600
@@ -505,7 +487,6 @@ void RaceDialog::Run()
         }
     }
     FlushEvents(everyEvent - diskMask, 0);
-    SetDialogGWorld(raceDialog);
     RedrawDialog(raceDialog);
     RaceDialogUpdate();
     Loop();
@@ -528,7 +509,6 @@ void RaceDialog::Hit(short item)
     if (item == kRaceHelpItem) {
         LoadDescription(textShowString, kRaceHelpDesc);
         ShowTextDialog(0, 0);
-        SetDialogGWorld(raceDialog);
         RaceDialogUpdate();
     }
     if (item >= kRaceFirstButton &&
@@ -581,7 +561,6 @@ void RaceDialog::Hit(short item)
             raceWinner = -1;
             racePick = -1;
         }
-        SetDialogGWorld(raceDialog);
         RedrawDialog(raceDialog);
         RaceDialogUpdate();
     }
@@ -618,15 +597,11 @@ void DoRaceDialog(void)
 // MAC: _RaceDialogUpdate i386 0x0004879d ppc 0x0005115c
 void RaceDialogUpdate(void)
 {
-    SetGWorldContainer(&loadPort);
-    TextFont(smallTextFont);
-    TextSize(smallTextSize);
-    ForeColor(blackColor);
-    PaintRect(GetDialogPortRect(raceDialog));
-    if (raceBackgroundPic != NULL)
-        DrawPicHandle(raceBackgroundPic, GetDialogPortRect(raceDialog));
-    ForeColor(blackColor);
-    RaceButtons().Draw(-1);
-    CopyLoadPortToDialog(raceDialog);
-}
+    UI::Painter p(UI::Surface::Load());
 
+    p.Fill(*GetDialogPortRect(raceDialog), UI::kBlack);
+    if (raceBackgroundPic != NULL)
+        p.Picture(raceBackgroundPic, *GetDialogPortRect(raceDialog));
+    RaceButtons().Draw(p, -1);
+    LoadPageToDialog(raceDialog);
+}
