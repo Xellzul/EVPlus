@@ -1,4 +1,5 @@
-/* textedit.cpp -- the port's TextEdit, over Win32 DrawText (win TU region 0x004bcd30-0x004bcf80). Notes: Research/notes/textedit.md */
+/* textedit.cpp -- the port's TextEdit, over Win32 DrawText (win TU region 0x004bcd30-0x004bcf80; its TEUpdate,
+   0x004bcf30, is Painter::EditDraw). Notes: Research/notes/textedit.md */
 
 #include "macport.h"
 #include "burger.h"
@@ -66,7 +67,7 @@ void TESetText(const void *text, int32_t length, TEHandle hTE)
 
 /*
  * Scrolls the text within its view, clamped so the last line cannot rise
- * above the bottom of the view nor the first fall below its top.
+ * above the bottom of the view nor the first fall below its top. Nothing is drawn.
  */
 // FUNCTION: EVNOVA 0x004bce90
 void TEPinScroll(int dh, int dv, TEHandle hTE)
@@ -75,7 +76,6 @@ void TEPinScroll(int dh, int dv, TEHandle hTE)
     int bottom;
     int viewBottom;
     int viewTop;
-    CGrafPtr savePort;
 
     top = (*hTE)->destRect.top;
     bottom = top + (*hTE)->height;
@@ -90,24 +90,6 @@ void TEPinScroll(int dh, int dv, TEHandle hTE)
             dv = viewTop - top;
     }
     OffsetRect(&(*hTE)->destRect, dh, dv);
-
-    if ((*hTE)->inPort) {
-        GetPort(&savePort);
-        SetPort((*hTE)->inPort);
-        TEUpdate(&(*hTE)->viewRect, hTE);
-        SetPort(savePort);
-        nv_UpdateDialogWindow(0);
-    }
-}
-
-// FUNCTION: EVNOVA 0x004bcf30
-void TEUpdate(Rect *rUpdate, TEHandle hTE)
-{
-    EraseRect(rUpdate);
-    MoveTo(rUpdate->left, rUpdate->top);
-    DrawTextRun((*hTE)->text, (*hTE)->textLength, rUpdate, 1,
-                (*hTE)->viewRect.top - (*hTE)->destRect.top);
-    ScreenEndScene();
 }
 
 // FUNCTION: EVNOVA 0x004bcf80

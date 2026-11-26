@@ -153,6 +153,7 @@ void PlayerInfoDialog::Run()
     short height;
     short boxHeight;
     short dv;
+    TEHandle measured;
 
     if (screenFaded != 0)
         return;
@@ -177,24 +178,23 @@ void PlayerInfoDialog::Run()
     GetDialogItem(infoDialog, 6, &itemType, &item, &box6);
     GetDialogItem(infoDialog, 1, &itemType, &item, &buttonBox[0]);
     GetDialogItem(infoDialog, 7, &itemType, &item, &buttonBox[1]);
-    textDialogTextHandle = TENew(&box6, &box6);
-    (*textDialogTextHandle)->txFont = smallTextFont;
-    (*textDialogTextHandle)->txSize = smallTextSize;
-    TESetLineMetrics(textDialogTextHandle);
+    measured = TENew(&box6, &box6);
+    (*measured)->txFont = smallTextFont;
+    (*measured)->txSize = smallTextSize;
+    TESetLineMetrics(measured);
     tallest = -1;
     {
         UI::Painter measure(UI::Surface::Dialog(infoDialog));
 
         for (i = 0; i < 3; i++) {
-            measure.EditSetText(textDialogTextHandle, playerInfoText[i].data(), playerInfoText[i].size(),
-                                UI::Style::Small);
-            measure.EditMeasure(textDialogTextHandle, UI::Style::Small);
-            height = TEWrappedHeight(textDialogTextHandle);
+            measure.EditSetText(measured, playerInfoText[i].data(), playerInfoText[i].size(), UI::Style::Small);
+            measure.EditMeasure(measured, UI::Style::Small);
+            height = TEWrappedHeight(measured);
             if (height > tallest || tallest <= 0)
                 tallest = height;
         }
     }
-    TEDispose(textDialogTextHandle);
+    TEDispose(measured);
     boxHeight = box6.bottom - box6.top;
     if (tallest > boxHeight) {
         delta = tallest - boxHeight + 4;

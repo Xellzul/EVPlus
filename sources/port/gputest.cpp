@@ -1,11 +1,14 @@
-/* gputest.cpp -- EVPLUS_GPUTEST: every Painter drawing on pixels and on a GPU target, compared (gputest.txt) */
+/* gputest.cpp -- EVPLUS_GPUTEST: every Painter drawing, and a dialog, on pixels and on a GPU target, compared
+   (gputest.txt) */
 
 #include <math.h>
 #include <string>
 #include <vector>
 #include "canvas.h"
+#include "dialogs.h"
 #include "game.h"
 #include "painter.h"
+#include "pixel.h"
 #include "platform.h"
 #include "render.h"
 #include "spriteworld.h"
@@ -748,6 +751,302 @@ void CheckCopies(FILE *log, int *bad)
     to.Drop();
 }
 
+/* Copies from GPU targets onto a port's pixels: each target read back as drawn, at its own scale, and a mask's
+   black half copied through; at the default brightness and another. Looked at away from where a stretch blends. */
+void CheckReadBack(FILE *log, int *bad)
+{
+    TestPort from;
+    TestPort flat;
+    TestPort mask;
+    TestPort to;
+    const unsigned short kRed = Pixel::Pack(31, 0, 0);
+    const unsigned short kBlue = Pixel::Pack(0, 0, 31);
+    int failed = 0;
+    int checks = 0;
+    Rect r;
+    Rect part;
+
+    if (!from.Make(16, 16, 2.0, true) || !flat.Make(16, 16, 1.0, true) || !mask.Make(16, 16, 1.0, true)
+            || !to.Make(96, 32, 1.0, false)) {
+        if (log != NULL)
+            fprintf(log, "read back: no ports\n");
+        (*bad)++;
+        from.Drop();
+        flat.Drop();
+        mask.Drop();
+        to.Drop();
+        return;
+    }
+    for (const TestPort *each : { &from, &flat }) {
+        UI::Painter p(each->Surface());
+        SetRect(&r, 0, 0, 8, 16);
+        p.Fill(r, Colour(0xffff, 0, 0));
+        SetRect(&r, 8, 0, 16, 16);
+        p.Fill(r, Colour(0, 0, 0xffff));
+    }
+    {
+        UI::Painter p(mask.Surface());
+        SetRect(&r, 0, 0, 16, 16);
+        p.Fill(r, UI::kWhite);
+        SetRect(&r, 0, 0, 16, 8);
+        p.Fill(r, UI::kBlack);
+    }
+    const PixMap &pix = to.frame->framePort->pix;
+    auto expect = [&](const char *what, double brightness, int x, int y, unsigned short want) {
+        unsigned short got = Pixel::Row(pix, y)[x];
+        checks++;
+        if (got == want)
+            return;
+        failed++;
+        if (log != NULL)
+            fprintf(log, "read back, brightness %g: %s at %d,%d is %04x, not %04x\n", brightness, what, x, y, got,
+                    want);
+    };
+    for (double brightness : { 1.0, kTestBrightness }) {
+        if (brightness != 1.0)
+            PlatVideoSetBrightness(brightness);
+        {
+            UI::Painter p(to.Surface());
+            SetRect(&r, 0, 0, 96, 32);
+            p.Fill(r, UI::kBlack);
+            SetRect(&part, 0, 0, 16, 16);
+            SetRect(&r, 0, 0, 16, 16);
+            p.Copy(from.Surface(), part, r);                        /* a target at twice the scale */
+            SetRect(&r, 20, 0, 52, 32);
+            p.Copy(flat.Surface(), part, r);                        /* stretched */
+            SetRect(&r, 60, 0, 76, 16);
+            p.CopyMasked(flat.Surface(), mask.Surface(), part, part, r);
+        }
+        if (brightness != 1.0)
+            ApplyBrightness();
+        for (int y = 2; y < 14; y += 5) {
+            expect("a target at twice the scale, left", brightness, 2, y, kRed);
+            expect("a target at twice the scale, right", brightness, 13, y, kBlue);
+        }
+        for (int y = 4; y < 28; y += 7) {
+            expect("a stretched target, left", brightness, 24, y, kRed);
+            expect("a stretched target, right", brightness, 47, y, kBlue);
+        }
+        expect("through a mask, left", brightness, 62, 2, kRed);
+        expect("through a mask, right", brightness, 73, 5, kBlue);
+        expect("outside a mask", brightness, 62, 10, 0);
+        expect("outside a mask", brightness, 73, 13, 0);
+        expect("beside the copies", brightness, 18, 8, 0);
+    }
+    if (log != NULL)
+        fprintf(log, "read back: %d checks, %d failed\n", checks, failed);
+    *bad += failed;
+    from.Drop();
+    flat.Drop();
+    mask.Drop();
+    to.Drop();
+}
+
+/* -- a dialog: its controls from its pixels under what its update proc draws, edit records and a list -- */
+
+constexpr short kDialogWidth = 420;
+constexpr short kDialogHeight = 260;
+constexpr short kEditItem = 5;
+constexpr short kListRows = 8;
+constexpr short kListRowHeight = 18;
+
+const DialogItemSpec kDialogSpecs[] = {
+    { kDitlButton, 8, 10, 30, 130, "Button", 0 },
+    { kDitlCheckBox, 40, 10, 58, 130, "Checked", 0 },
+    { kDitlCheckBox, 62, 10, 80, 130, "Not checked", 0 },
+    { kDitlStaticText, 86, 10, 130, 130, "Static text of the dialog, wrapped into its box.", 0 },
+    { kDitlEditText, 138, 10, 158, 130, "Edit field", 0 },
+    { kDitlPicture, 166, 10, 182, 30, NULL, kPictArrow },
+};
+
+/* the update proc's fill lies over the button's right part; the controls' other pixels show as they are */
+const Item kDialogItems[] = {
+    { "dialog controls", kSame, { 30, 0, 222, 138 } },
+    { "dialog button, its part shown", kSame, { 0, 0, 30, 70 } },
+    { "dialog fill over a control", kSame, { 8, 70, 30, 140 } },
+    { "dialog update text", kText, { 8, 140, 30, 412 } },
+    { "dialog edit", kText, { 40, 140, 100, 412 } },
+    { "dialog edit scrolled", kText, { 104, 140, 140, 412 } },
+    { "dialog list", kText, { 146, 140, 218, 397 } },
+    { "dialog list scroll bar", kSame, { 146, 397, 218, 412 } },
+    { "dialog frame", kSame, { 222, 0, 260, 420 } },
+};
+
+struct TestDialog {
+    DialogPtr dlg = NULL;
+    TEHandle edit = NULL;
+    TEHandle scrolled = NULL;
+    ScrollRec **list = NULL;
+};
+
+TestDialog *gDrawnDialog;               /* the one whose update proc runs */
+
+void TestListRow(short message, Boolean selected, Rect *box, Point *cell, short offset, short length,
+                 ScrollRec **list)
+{
+    UI::Painter p(UI::Painter::ListSurface());
+
+    p.Fill(*box, selected ? Colour(0x8000, 0x2000, 0x2000) : Colour(0x1000, 0x1000, 0x3000));
+    p.Text(box->left + 4, box->top + 13, std::string(*(*list)->cells + offset, length),
+           { UI::Style::Small, UI::kWhite });
+}
+
+void TestDialogUpdate(void)
+{
+    static const char kLong[] =
+        "An edit record on a dialog: its text wrapped into the box in the small style, with enough words to "
+        "fill more rows than the box holds, so that the scrolled one starts at another line than this one.";
+    const UI::TextSpec white = { UI::Style::Small, UI::kWhite };
+    const TestDialog &test = *gDrawnDialog;
+    UI::Painter p(UI::Surface::Dialog(test.dlg));
+    Point cell;
+    Rect r;
+
+    SetRect(&r, 70, 8, 412, 30);
+    p.Fill(r, Colour(0x2000, 0x2000, 0x6000));
+    p.Text(150, 24, "Drawn by the update proc", { UI::Style::System, UI::kWhite });
+    p.EditSetText(test.edit, kLong, (int32_t)strlen(kLong), UI::Style::Small);
+    p.EditDraw(test.edit, (*test.edit)->viewRect, white, Colour(0x2000, 0x2000, 0x4000));
+    p.EditSetText(test.scrolled, kLong, (int32_t)strlen(kLong), UI::Style::Small);
+    (*test.scrolled)->destRect = (*test.scrolled)->viewRect;
+    p.EditScroll(test.scrolled, -14, white, Colour(0x1000, 0x3000, 0x1000));
+    p.List(test.list, UI::Style::Small);
+    cell.h = 0;
+    cell.v = 2;
+    p.ListSelect(test.list, true, cell, UI::Style::Small);
+}
+
+/* the dialog with its port at the scale, drawn through a GPU canvas or, without one, on its pixels */
+bool MakeTestDialog(TestDialog &test, double scale, bool gpu)
+{
+    Handle item;
+    Rect box;
+    Rect rows;
+    Point cellSize;
+    Point cell;
+
+    test.dlg = NewDialogFromItems(kDialogWidth, kDialogHeight, kDialogSpecs,
+                                  (short)(sizeof(kDialogSpecs) / sizeof(kDialogSpecs[0])), TestDialogUpdate, NULL);
+    if (test.dlg == NULL)
+        return false;
+    CGrafPtr port = GetDialogPort(test.dlg);
+    UI::ScalePortPixels(port, scale);
+    if (!gpu)
+        UI::Canvas::DropTarget(port);
+    else if (!UI::Canvas::MakeTarget(port))
+        return false;
+    GetDialogItem(test.dlg, 2, NULL, &item, NULL);
+    SetControlValue((ControlPtr)item, 1);
+    SelectDialogItemText(test.dlg, kEditItem, 0, 4);
+    SetRect(&box, 140, 40, 412, 100);
+    test.edit = TENew(&box, &box);
+    SetRect(&box, 140, 104, 412, 140);
+    test.scrolled = TENew(&box, &box);
+    SetRect(&box, 140, 146, 397, 146 + 4 * kListRowHeight);
+    SetRect(&rows, 0, 0, 1, kListRows);
+    cellSize.h = box.right - box.left;
+    cellSize.v = kListRowHeight;
+    test.list = nv_NewDialog(&box, &rows, cellSize, TestListRow, (CGrafPtr)test.dlg, 1);
+    cell.h = 0;
+    for (cell.v = 0; cell.v < kListRows; cell.v++) {
+        std::string row = "List row " + std::to_string(cell.v + 1) + ", drawn by its draw proc";
+        LSetCell((void *)row.data(), (int32_t)row.size(), cell, test.list);
+    }
+    LSetDrawingMode(1, test.list);
+    LScroll(0, 1, test.list);
+    return true;
+}
+
+/* closed without the redraw of what lies under it: the menu is not up yet */
+void DropTestDialog(TestDialog &test)
+{
+    Boolean paused = gPause;
+    SpriteWorldPtr world = gSpriteWorld;
+
+    if (test.dlg != NULL) {
+        gPause = 0;
+        gSpriteWorld = NULL;
+        DisposeDialog(test.dlg);
+        gPause = paused;
+        gSpriteWorld = world;
+    }
+    if (test.edit != NULL)
+        TEDispose(test.edit);
+    if (test.scrolled != NULL)
+        TEDispose(test.scrolled);
+    if (test.list != NULL)
+        LDispose(test.list);
+    test = TestDialog();
+}
+
+void DrawTestDialog(TestDialog &test)
+{
+    gDrawnDialog = &test;
+    DrawDialog(test.dlg);
+    gDrawnDialog = NULL;
+}
+
+/* One scale's dialog drawn on a canvas and on pixels and compared. The canvas is opaque all over, and at the
+   screen's own scale the screen holds the dialog as its canvas does. */
+void RunDialog(FILE *log, double scale, int *bad)
+{
+    TestDialog gpu;
+    TestDialog cpu;
+
+    if (MakeTestDialog(gpu, scale, true)) {
+        CGrafPtr port = GetDialogPort(gpu.dlg);
+        int width = port->pix.width;
+        int height = port->pix.height;
+        std::vector<uint32_t> read((size_t)width * height);
+        std::vector<uint32_t> shown;
+        Rect place = UI::Mapping(gGamePort.pix).DeviceRect(gpu.dlg->bounds);
+        PlatRect onScreen = { place.left, place.top, place.right - place.left, place.bottom - place.top };
+        bool sameScale = onScreen.w == width && onScreen.h == height;
+        int clear = 0;
+        int moved = 0;
+
+        DrawTestDialog(gpu);
+        UI::Canvas::FlushAll();
+        bool got = PlatTargetRead(port->target, NULL, read.data()) != 0;
+        if (got && sameScale) {
+            shown.resize(read.size());
+            got = PlatTargetRead(gGamePort.target, &onScreen, shown.data()) != 0;
+        }
+        DropTestDialog(gpu);
+        if (got && MakeTestDialog(cpu, scale, false)) {
+            DrawTestDialog(cpu);
+            const PixMap &pix = GetDialogPort(cpu.dlg)->pix;
+            for (const Item &item : kDialogItems)
+                Compare(log, scale, " dialog", 0, item, pix, read, bad);
+            WriteRaw("dialog_cpu", scale, width, height, pix.baseAddr, pix.rowBytes, 2);
+            WriteRaw("dialog_gpu", scale, width, height, read.data(), (size_t)width * 4, 4);
+            for (size_t i = 0; i < read.size(); i++) {
+                clear += read[i] >> 24 != 0xff ? 1 : 0;
+                moved += sameScale && shown[i] != read[i] ? 1 : 0;
+            }
+            *bad += (clear != 0 ? 1 : 0) + (moved != 0 ? 1 : 0);
+            if (log != NULL) {
+                fprintf(log, "scale %-5g dialog: %d of %d x %d pixels of its canvas are not opaque%s\n", scale, clear,
+                        width, height, clear != 0 ? "  MISMATCH" : "");
+                if (sameScale)
+                    fprintf(log, "scale %-5g dialog: %d pixels differ between its canvas and the screen%s\n", scale,
+                            moved, moved != 0 ? "  MISMATCH" : "");
+            }
+        } else {
+            (*bad)++;
+            if (log != NULL)
+                fprintf(log, "scale %g dialog: %s\n", scale,
+                        got ? "no dialog on pixels" : "the canvas could not be read");
+        }
+    } else {
+        (*bad)++;
+        if (log != NULL)
+            fprintf(log, "scale %g dialog: no dialog on a canvas\n", scale);
+    }
+    DropTestDialog(gpu);
+    DropTestDialog(cpu);
+}
+
 } // namespace
 
 void DebugGpuTest(void)
@@ -782,6 +1081,9 @@ void DebugGpuTest(void)
         RunScale(log, scale, 1.0, art, &bad);
     RunScale(log, 1.0, kTestBrightness, art, &bad);
     CheckCopies(log, &bad);
+    CheckReadBack(log, &bad);
+    for (double scale : kTestScales)
+        RunDialog(log, scale, &bad);
     if (log != NULL) {
         fprintf(log, "items that must match and do not: %d\n", bad);
         fclose(log);

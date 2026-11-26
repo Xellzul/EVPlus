@@ -105,9 +105,9 @@ void MissionDialog::Run()
     }
     MissionDialogUpdate();
     Loop();
+    dialog.Close();
     backdrop.Release();
     MissionList(missionList).Dispose();
-    dialog.Close();
     return;
 }
 

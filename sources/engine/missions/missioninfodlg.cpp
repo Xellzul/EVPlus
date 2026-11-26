@@ -121,8 +121,8 @@ void MissionInfoDialog::Run()
         currentMissions[activeMissions[selMissionInfoListItem]].canAbort;
     MissionInfoDialogUpdate();
     Loop();
-    MissionList(missionInfoList).Dispose();
     dialog.Close();
+    MissionList(missionInfoList).Dispose();
     backdrop.Release();
     RedrawDialogs(1);
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);

@@ -242,8 +242,6 @@ void CommDialog::Run(short shipIndex)
 
     Loop();
 
-    backdrop.Release();
-    shipPic.Release();
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
     if (releaseCommEscort) {
         DestroyPartialFleetCargo(commShip->index);
@@ -256,6 +254,8 @@ void CommDialog::Run(short shipIndex)
         statusRedraw[kRedrawCargo] = 1;
     }
     dialog.Close();
+    backdrop.Release();
+    shipPic.Release();
     gSpeedMult = 0;
     commShip->hailed = 1;
     commShip = NULL;
@@ -689,9 +689,9 @@ void PlanetCommDialog::Run()
 
     Loop();
 
-    backdrop.Release();
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
     dialog.Close();
+    backdrop.Release();
     gSpeedMult = 0;
     RedrawStatus(1);
 }
@@ -1262,8 +1262,8 @@ short HaggleDialog::Run(Boolean raise, short chance)
     FlushEvents(everyEvent - diskMask, 0);
     Loop();
 
-    backdrop.Release();
     dialog.Close();
+    backdrop.Release();
     return result;
 }
 
@@ -1512,8 +1512,8 @@ void PlunderDialog::Run()
     PlunderDialogUpdate();
     FlushEvents(everyEvent - diskMask, 0);
     Loop();
-    backdrop.Release();
     dialog.Close();
+    backdrop.Release();
     ResetPlayerPrecalcedValues();
 }
 
@@ -2075,8 +2075,6 @@ void EscortDialog::Run(ShipObj *ship)
 
     Loop();
 
-    shipPic.Release();
-
     PlaySound(beepSnd[2], 1, gSoundVolume, gSoundVolume);
 
     if (releaseCommEscort) {
@@ -2089,6 +2087,7 @@ void EscortDialog::Run(ShipObj *ship)
     }
 
     dialog.Close();
+    shipPic.Release();
     commShip = NULL;
     gSpeedMult = 0;
     backdrop.Release();

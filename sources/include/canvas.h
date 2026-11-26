@@ -21,9 +21,12 @@ public:
 
     /* a port's target made at the size of its pixels, clear; false = not made, the target it had is kept */
     static bool MakeTarget(CGrafPtr port);
-    static void DropTarget(CGrafPtr port);      /* a Painter still open on the port then draws nothing */
+    /* a Painter still open on the port then draws nothing; a port disposed drops its own */
+    static void DropTarget(CGrafPtr port);
     /* what is kept between draws -- the images of ports' pixels, scratch images and targets -- freed */
     static void Release();
+    /* a port's target as drawn, in 16-bit pixels: `into' is the port's pixel map over them; false = not read */
+    static bool ReadBack(CGrafPtr port, PixMap &into, std::vector<unsigned short> &pixels);
 
     void Fill(const Rect &r, const RGBColor &colour);
     void Clear(const Rect &r);          /* see-through: what lies under the target shows there */
@@ -38,6 +41,7 @@ public:
     /* a target's own alpha is its mask; pixels are copied where the mask port's are black */
     void CopyMasked(CGrafPtr from, CGrafPtr mask, const Rect &src, const Rect &maskRect, const Rect &dst);
     void Sprite(DrawProcPtr draw, const SWFrameRec *sprite, const Rect &src, const Rect &dst);
+    void OwnPixels();                   /* the port's 16-bit pixels, whole and opaque, onto its target */
 
     /* between the two, on a scaled port: pictures, patterns and copies into area put together, stretched as one */
     bool BeginComposition(const Rect &area);    /* false = nothing to end: one is open, or the port is not scaled */
@@ -55,7 +59,7 @@ private:
     static bool Waiting(const void *used);
     static void SendUsing(const void *used);
     static void PortGone(CGrafPtr port);
-    static PlatImage *Mirror(const PixMap &pix, const Rect &part);
+    PlatImage *Mirror(const PixMap &pix, Rect &part);
     static PlatImage *ScratchImage(int width, int height);
     static PlatTarget *ScratchTarget(int width, int height);
     static PlatTarget *CopyOfPart(PlatTarget *from, const Rect &part, int pad);

@@ -22,11 +22,13 @@ std::vector<uint32_t> work;
 std::vector<uint32_t> whole;
 std::vector<PlatDraw> clipped;          /* draws sent on their own, kept to a clip */
 
-/* a port's 16-bit pixels kept as an image: where a copy reads them, the rows that changed are taken over */
+/* the 16-bit pixels one port's canvas copies from a pixel map, kept as an image: changed rows are taken over */
 struct PortImage {
     const PixMap *pix;
-    int width;
+    CGrafPtr to;                        /* the port copied onto: each keeps what it last took */
+    int width;                          /* the pixel map's size */
     int height;
+    Rect region;                        /* the map's device pixels the image holds: every part copied so far */
     PlatImage *image;
     unsigned used;                      /* `frames' when it was last copied from */
 };
@@ -342,6 +344,7 @@ bool Canvas::MakeTarget(CGrafPtr port)
     if (made == NULL)
         return false;
     DropTarget(port);
+    gPortGone = PortGone;
     port->target = made;
     for (Canvas *each : open)
         if (each->port == port)
@@ -407,43 +410,56 @@ void Canvas::SendUsing(const void *used)
             each->Flush();
 }
 
-/* a port is disposed: the image of its pixels goes */
+/* a port is disposed: its target and the images of its pixels and of what it copied go */
 void Canvas::PortGone(CGrafPtr port)
 {
-    for (size_t i = 0; i < mirrors.size(); i++) {
-        if (mirrors[i].pix != &port->pix)
+    DropTarget(port);
+    for (size_t i = mirrors.size(); i-- > 0;) {
+        if (mirrors[i].pix != &port->pix && mirrors[i].to != port)
             continue;
         SendUsing(mirrors[i].image);
         PlatImageDestroy(mirrors[i].image);
         mirrors.erase(mirrors.begin() + i);
-        return;
     }
 }
 
-/* the image of a port's pixels, up to date in `part' (device pixels, within the port) */
-PlatImage *Canvas::Mirror(const PixMap &pix, const Rect &part)
+/* the image of what this port copies from a pixel map, up to date in `part': the map's pixels in, the image's out */
+PlatImage *Canvas::Mirror(const PixMap &pix, Rect &part)
 {
-    PlatRect rows = { part.left, part.top, Width(part), Height(part) };
+    Rect region = part;
     size_t at = 0;
 
-    while (at < mirrors.size() && mirrors[at].pix != &pix)
+    while (at < mirrors.size() && (mirrors[at].pix != &pix || mirrors[at].to != port))
         at++;
-    if (at < mirrors.size() && (mirrors[at].width != pix.width || mirrors[at].height != pix.height)) {
-        SendUsing(mirrors[at].image);
-        PlatImageDestroy(mirrors[at].image);
-        mirrors.erase(mirrors.begin() + at);
-        at = mirrors.size();
+    if (at < mirrors.size()) {
+        const PortImage &kept = mirrors[at];
+        bool sized = kept.width == pix.width && kept.height == pix.height;
+        bool held = part.left >= kept.region.left && part.top >= kept.region.top && part.right <= kept.region.right
+                    && part.bottom <= kept.region.bottom;
+        if (!sized || !held) {
+            /* made again over the parts copied so far and this one */
+            if (sized)
+                SetRect(&region, std::min(part.left, kept.region.left), std::min(part.top, kept.region.top),
+                        std::max(part.right, kept.region.right), std::max(part.bottom, kept.region.bottom));
+            SendUsing(kept.image);
+            PlatImageDestroy(kept.image);
+            mirrors.erase(mirrors.begin() + at);
+            at = mirrors.size();
+        }
     }
     if (at == mirrors.size()) {
-        PlatImage *image = PlatImageCreate(pix.width, pix.height, NULL, NULL);
+        PlatImage *image = PlatImageCreate(Width(region), Height(region), NULL, NULL);
         if (image == NULL)
             return NULL;
         gPortGone = PortGone;
-        mirrors.push_back({ &pix, pix.width, pix.height, image, frames });
+        mirrors.push_back({ &pix, port, pix.width, pix.height, region, image, frames });
     }
     PortImage &mirror = mirrors[at];
+    const uint16_t *pixels = Pixel::Row(pix, part.top) + part.left;
+    OffsetRect(&part, -mirror.region.left, -mirror.region.top);
+    PlatRect rows = { part.left, part.top, Width(part), Height(part) };
     SendUsing(mirror.image);
-    PlatImageUpdatePart(mirror.image, &rows, Pixel::Row(pix, part.top) + part.left, pix.rowBytes);
+    PlatImageUpdatePart(mirror.image, &rows, pixels, pix.rowBytes);
     mirror.used = frames;
     return mirror.image;
 }
@@ -878,6 +894,30 @@ void Canvas::ComposeTarget(CGrafPtr from, const Rect &src, const Rect &dst)
     work.resize((size_t)Width(d) * Height(d));
     Art::Stretch(whole.data(), rows.w, rows.h, all, work.data(), Width(d), Height(d));
     Compose(work.data(), Width(d), d);
+}
+
+bool Canvas::ReadBack(CGrafPtr port, PixMap &into, std::vector<unsigned short> &pixels)
+{
+    const PixMap &pix = port->pix;
+    PlatRect all = { 0, 0, pix.width, pix.height };
+
+    FlushAll();
+    whole.resize((size_t)pix.width * pix.height);
+    if (whole.empty() || PlatTargetReadDrawn(port->target, &all, whole.data()) == 0)
+        return false;
+    pixels.resize(whole.size());
+    for (size_t i = 0; i < whole.size(); i++)
+        pixels[i] = Pixel::FromRGB24(whole[i]);
+    into = pix;
+    into.pixelSize = 16;
+    into.baseAddr = pixels.data();
+    into.rowBytes = pix.width * Pixel::kBytes;
+    return true;
+}
+
+void Canvas::OwnPixels()
+{
+    CopyPixels(port->pix, NULL, port->pix.bounds, port->pix.bounds, port->pix.bounds, kPlatBlendCopy);
 }
 
 /* a port's 16-bit pixels brought to the logical size and laid into the composition */

@@ -140,16 +140,8 @@ void PortDialog::Run(SpobRecord *spob, short stellar)
     OfferMissionFromPort(kPortVenue);
     Loop();
     DoEscortLand();
-    if (planetPicContainer.world != NULL)
-        DisposeGWorldContainer(&planetPicContainer);
-    if (portBackgroundPic != NULL) {
-        QDReleaseResource(portBackgroundPic);
-        portBackgroundPic = NULL;
-    }
-    if (planetSnd != NULL) {
+    if (planetSnd != NULL)
         ST_HaltSound(planetSnd);
-        ST_DisposeSound(planetSnd);
-    }
     if (didOutfit != 0)
         IncrementGameTime();
     if (didBuyShip != 0) {
@@ -161,6 +153,16 @@ void PortDialog::Run(SpobRecord *spob, short stellar)
         statusRedraw[kRedrawWeap] = 1;
     }
     dialog.Close();
+    if (planetPicContainer.world != NULL)
+        DisposeGWorldContainer(&planetPicContainer);
+    if (portBackgroundPic != NULL) {
+        QDReleaseResource(portBackgroundPic);
+        portBackgroundPic = NULL;
+    }
+    if (planetSnd != NULL) {
+        ST_DisposeSound(planetSnd);
+        planetSnd = NULL;
+    }
     onPlanet = 0;
 }
 

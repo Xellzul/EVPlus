@@ -295,7 +295,6 @@ typedef struct TERec {
     Rect                   destRect;
     Rect                   viewRect;
     int32_t                   height;
-    CGrafPtr               inPort;
 } TERec, **TEHandle;
 
 #define TESetLineMetrics(te) ((void)0)
@@ -452,6 +451,7 @@ extern DialogPtr GetNewDialog(short dlogID, DialogUpdateProc updateProc,
 #define kDitlButton         4
 #define kDitlCheckBox       5
 #define kDitlStaticText     8
+#define kDitlEditText       0x10
 #define kDitlPicture        0x40
 
 typedef struct DialogItemSpec {
@@ -646,7 +646,6 @@ extern TEHandle TENew(const Rect *destRect, const Rect *viewRect);
 extern void TESetText(const void *text, int32_t length, TEHandle hTE);
 extern void TECalText(TEHandle hTE);
 extern void TEPinScroll(int dh, int dv, TEHandle hTE);
-extern void TEUpdate(Rect *rUpdate, TEHandle hTE);
 extern void TEDispose(TEHandle hTE);
 extern CWindowPtr gWind;
 extern GWorldContainer loadPort;

@@ -87,6 +87,8 @@ public:
                     const Rect &dst);
     /* a sprite frame through its draw proc; on a sprite-frame surface only */
     void Sprite(DrawProcPtr draw, SWFrameRec *sprite, const Rect &src, const Rect &dst);
+    /* what QuickDraw drew on the surface's own pixels (a dialog's controls) put on its GPU canvas, when it has one */
+    void OwnPixels();
 
     /* while it lives, pieces drawn into area are put together and stretched onto a scaled surface as one */
     class Composition {
@@ -130,11 +132,11 @@ public:
     int SpansHeight(const Rect &box, const void *text, uint32_t length, Style style);
     int LineHeight(Style style);
 
-    /* -- Toolbox controls that draw themselves: a TextEdit record, a List Manager list -- */
+    /* -- Toolbox records: a TextEdit record's text, a List Manager list's rows and scroll bar -- */
     void EditSetText(TEHandle te, const void *text, int32_t length, Style style);  /* wrapped in the style */
     void EditMeasure(TEHandle te, Style style);                                    /* wrapped again */
     void EditDraw(TEHandle te, const Rect &area, const TextSpec &spec, const RGBColor &background);
-    /* scrolled by dv rows, pinned to its ends, and drawn */
+    /* scrolled by dv rows, pinned to its ends, drawn, and the current dialog's window shown */
     void EditScroll(TEHandle te, short dv, const TextSpec &spec, const RGBColor &background);
     void List(ScrollRec **list, Style style);
     void ListSelect(ScrollRec **list, bool on, Point cell, Style style);           /* a row (de)selected, drawn */

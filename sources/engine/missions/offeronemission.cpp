@@ -279,14 +279,16 @@ short SingleMissionDialog::Run(short offered)
         PlayQTMovie(descMovieName, descFlags & kDescMovieDoubled,
                     descFlags & kDescMovieFade);
 
-    for (i = 0; i < kMissionPictCount; i++)
-        backdrops[i].Release();
-    if (offerTextHandle != NULL)
-        TEDispose(offerTextHandle);
     while (KeyCheck(keyPrefs.missions))
         BusyIdle();
 
     dialog.Close();
+    for (i = 0; i < kMissionPictCount; i++)
+        backdrops[i].Release();
+    if (offerTextHandle != NULL) {
+        TEDispose(offerTextHandle);
+        offerTextHandle = NULL;
+    }
     if (screenFaded != 0) {
         if (playerIsLanded != 0)
             UpdateAllPortDialogs();

@@ -935,7 +935,7 @@ void ShowLoadPage(void)
         .Copy(UI::Surface::Load(), *GetCWindowPortRect(gWind), *GetCWindowPortRect(gWind));
 }
 
-/* the screen put together again: the menu, the view with its status bar or the load page, then the dialogs' ports */
+/* the screen put together again: the menu, the view with its status bar or the load page, then the dialogs drawn */
 void RedrawInterface(void)
 {
     if (gWind == NULL)
@@ -950,7 +950,7 @@ void RedrawInterface(void)
         RefreshSAT();
     else
         ShowLoadPage();
-    nv_UpdateDialogWindow(1);
+    DrawDialogs();
 }
 
 /* The Preferences' display settings after the dialog closes; a game size waits for the next pilot while one

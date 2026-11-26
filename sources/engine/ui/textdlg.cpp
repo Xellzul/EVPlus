@@ -211,10 +211,11 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
         DialogText().InvalidateChanged(savedUp, savedDown);
     } while (done == 0);
 
+    dialog.Close();
     for (i = 0; i < 3; i++)
         backdrops[i].Release();
     TEDispose(textDialogTextHandle);
-    dialog.Close();
+    textDialogTextHandle = NULL;
 
     if (gPause) {
         if (showingIntroText) {

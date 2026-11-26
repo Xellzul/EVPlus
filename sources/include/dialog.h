@@ -45,7 +45,8 @@ private:
 enum class DialogClose : unsigned char { Plain, NoFlash };
 
 /* A dialog from its DLOG/DITL (or an item list). Open sets `global` if given; Close disposes the dialog once
-   and clears it. Dialogs are a stack: close them in reverse order of opening. */
+   and clears it. Dialogs are a stack: close them in reverse order of opening. Any idle may run the update proc
+   while the dialog is open, so what it draws from (pictures, edit records, lists) is freed after Close. */
 class Dialog {
 public:
     Dialog() = default;

@@ -5,6 +5,7 @@
 #include "sound.h"
 #include "dialogs.h"
 #include "painter.h"
+#include "canvas.h"
 #include "uiscale.h"
 #include "scaleddraw.h"
 #include "platform.h"
@@ -624,6 +625,15 @@ static void SetDialogBounds(DialogPtr dlg, const unsigned short *dlogTemplate)
     dlg->bounds.right = dlg->bounds.left + width;
 }
 
+/* the dialog's port gets a GPU canvas that starts as its pixels are; without one the Painter draws on the pixels */
+static void MakeDialogCanvas(DialogPtr dlg)
+{
+    if (UI::Canvas::MakeTarget(dlg->port))
+        UI::Painter(UI::Surface::Dialog(dlg)).OwnPixels();
+    else
+        UI::Canvas::DropTarget(dlg->port);
+}
+
 /* A dialog from a DLOG template and its DITL, both as they come off a rez file (big-endian). */
 static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsigned char *ditl,
                                        DialogUpdateProc updateProc, DialogEventProc eventProc)
@@ -651,6 +661,7 @@ static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsig
     SetGWorldContainer((GWorldContainer *)dlg);
     EraseRect(&dlg->portRect);
     UnsetGWorldContainer((GWorldContainer *)dlg);
+    MakeDialogCanvas(dlg);
     gDialogStack[gDialogCount] = dlg;
     gDialogCount += 1;
     gCurDialog = dlg;
@@ -1063,7 +1074,6 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     int32_t found;
     int32_t j;
     int32_t w;
-    int32_t n;
     int32_t clickKind;
     int32_t pos;
     int32_t located;
@@ -1385,10 +1395,8 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     found = 0;
     for (i = 0; i < gDialogCount; i++)
         found = found || gDialogStack[i]->needsUpdate;
-    if (found != 0) {
-        for (n = 0; n < gDialogCount; n++)
-            DrawDialog(gDialogStack[n]);
-    }
+    if (found != 0)
+        DrawDialogs();
     Screen::Idle();
 }
 
@@ -1847,6 +1855,8 @@ void DrawDialog(DialogPtr dlg)
             }
         }
 
+        /* the controls, drawn on the port's pixels, lie under what the update proc draws */
+        UI::Painter(UI::Surface::Dialog(dlg)).OwnPixels();
         updateProc = (void (*)(void))dlg->updateProc;
         if (updateProc != NULL)
             updateProc();
@@ -1855,6 +1865,18 @@ void DrawDialog(DialogPtr dlg)
         SetPort(savedPort);
         ScreenEndScene();
     }
+}
+
+/* the first `count' dialogs of the stack drawn and shown, the first opened first; invisible ones skipped */
+static void DrawStack(int count)
+{
+    for (int i = 0; i < count; i++)
+        DrawDialog(gDialogStack[i]);
+}
+
+void DrawDialogs(void)
+{
+    DrawStack(gDialogCount);
 }
 
 // FUNCTION: EVNOVA 0x004d16f0
@@ -1907,20 +1929,11 @@ void GetMouse(Point *pt)
 // FUNCTION: EVNOVA 0x004d1810
 void RedrawDialogs(int all)
 {
-    int i;
-    int n;
-
     if (gPause != 0)
         MainScreenUpdate(1);
     else if (gSpriteWorld != NULL)
         RefreshSAT();
-    n = gDialogCount;
-    if (n > 0) {
-        if (all == 0)
-            n -= 1;
-        for (i = 0; i < n; i++)
-            DrawDialog(gDialogStack[i]);
-    }
+    DrawStack(all != 0 ? gDialogCount : gDialogCount - 1);
 }
 
 // FUNCTION: EVNOVA 0x004d1890
@@ -1959,6 +1972,7 @@ void SizeDialogWindow(DialogPtr dlg, short width, short height, char update)
     dlg->gwBounds.right = dlg->gwBounds.left + width;
     dlg->gwBounds.bottom = dlg->gwBounds.top + height;
     UI::ScaleUIPort(dlg->port);
+    MakeDialogCanvas(dlg);
     if (update)
         dlg->needsUpdate = 1;
 }
@@ -2174,10 +2188,8 @@ void LUpdate(void *list)
 {
     Rect *vr;
     int32_t i;
-    short penV;
     int32_t t;
-    Point *pen;
-    short penH;
+    short mid;
     ScrollRec **h;
     int32_t last;
     int32_t line;
@@ -2186,7 +2198,6 @@ void LUpdate(void *list)
     int32_t cellH;
     short start;
     Point cell;
-    CGrafPtr port;
     Rect r;
     Rect r2;
     short len;
@@ -2216,43 +2227,36 @@ void LUpdate(void *list)
         OffsetRect(&r, 0, (*h)->cellSize.v);
     }
     if ((*h)->hasScrollBar != 0) {
+        UI::Painter p(UI::Painter::ListSurface());
+
         vr = &(*h)->rView;
         CopyRect(&r, vr);
         r.left = r.right;
         r.right = r.left + 15;
-        GetPort(&port);
-        pen = &port->pnSize;
-        penV = pen->v;
-        penH = pen->h;
-        PenSize(1, 1);
-        RGBForeColor(&redRGB);
-        FrameRect(&r);
+        p.Frame(r, redRGB);
         CopyRect(&r2, &r);
         r2.top += 15;
         r2.bottom -= 15;
-        FrameRect(&r2);
+        p.Frame(r2, redRGB);
         scale = (r2.bottom - r2.top - 15) / (float)((*h)->dataBounds.bottom - t);
         r2.bottom = r2.top + 15;
         InsetRect(&r2, 1, 1);
         OffsetRect(&r2, 0, ((*h)->scroll * scale));
-        FrameRect(&r2);
-        for (i = 0, j = 0; i < 4; i++, j += 2) {
-            MoveTo(r2.left + 3, r2.top + 3 + j);
-            Line(7, 0);
-        }
+        p.Frame(r2, redRGB);
+        for (i = 0, j = 0; i < 4; i++, j += 2)
+            p.Line(r2.left + 3, r2.top + 3 + j, r2.left + 10, r2.top + 3 + j, redRGB);
         CopyRect(&r2, &r);
         r2.bottom = r2.top + 15;
         InsetRect(&r2, 1, 1);
-        MoveTo(r2.left, r2.bottom);
-        LineTo((r2.left + r2.right) / 2, r2.top);
-        LineTo(r2.right, r2.bottom);
+        mid = (r2.left + r2.right) / 2;
+        p.Line(r2.left, r2.bottom, mid, r2.top, redRGB);
+        p.Line(mid, r2.top, r2.right, r2.bottom, redRGB);
         CopyRect(&r2, &r);
         r2.top = r2.bottom - 15;
         InsetRect(&r2, 1, 1);
-        MoveTo(r2.left, r2.top);
-        LineTo((r2.left + r2.right) / 2, r2.bottom);
-        LineTo(r2.right, r2.top);
-        PenSize(penH, penV);
+        mid = (r2.left + r2.right) / 2;
+        p.Line(r2.left, r2.top, mid, r2.bottom, redRGB);
+        p.Line(mid, r2.bottom, r2.right, r2.top, redRGB);
     }
 }
 

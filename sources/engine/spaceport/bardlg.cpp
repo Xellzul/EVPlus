@@ -95,9 +95,9 @@ void BarDialog::Run()
     RedrawDialog(barDialog);
     BarDialogUpdate();
     Loop();
+    dialog.Close();
     backdrop.Release();
     portrait.Release();
-    dialog.Close();
     ResetMissionOfferVenue();
 }
 
@@ -278,8 +278,8 @@ void NewsDialog::Run()
     FlushEvents(everyEvent - diskMask, 0);
     NewsDialogUpdate();
     Loop();
-    backdrop.Release();
     dialog.Close();
+    backdrop.Release();
     FlushEvents(1, 0); /* BUG: event kinds passed as masks: the Mac flushes no key events */
     FlushEvents(2, 0);
     FlushEvents(3, 0);
@@ -490,11 +490,11 @@ void RaceDialog::Run()
     RedrawDialog(raceDialog);
     RaceDialogUpdate();
     Loop();
+    dialog.Close();
     backdrop.Release();
     for (i = 0; i < kRacerCount; i++)
         for (j = 0; j <= kLastRaceFrame; j++)
             racers[i][j].Release();
-    dialog.Close();
 }
 
 void RaceDialog::Hit(short item)

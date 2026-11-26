@@ -49,7 +49,6 @@ void ScrollDialogText(DialogPtr dlg, short item, TEHandle hTE, short dv, Boolean
     LoadPageToDialog(dlg, box);
 }
 
-/* TEPinScroll draws nothing here: the TE has no port until the first scroll */
 void ScrollingText::ProbeRange() const
 {
     short savedBottom;

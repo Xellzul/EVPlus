@@ -80,12 +80,20 @@ int TransferMode(Blit mode)
     return 0;
 }
 
-/* a copy that cannot be made, said once in the log */
-void RefuseTargetSource()
+std::vector<unsigned short> sourcePixels;   /* a source's and a mask's GPU targets read back for a CPU copy */
+std::vector<unsigned short> maskPixels;
+
+/* the pixels a copy onto a port's pixels reads: the port's own or, with a GPU target, the target's read back */
+const PixMap *CopySource(CGrafPtr port, PixMap &read, std::vector<unsigned short> &pixels)
 {
     static int said;
 
-    PlatDebugLogOnce(&said, "painter: a copy from a GPU target onto a port's pixels is not drawn");
+    if (port->target == NULL)
+        return &port->pix;
+    if (Canvas::ReadBack(port, read, pixels))
+        return &read;
+    PlatDebugLogOnce(&said, "painter: a GPU target could not be read back, the copy is not drawn");
+    return NULL;
 }
 
 } // namespace
@@ -309,12 +317,10 @@ void Painter::Copy(const Surface &from, const Rect &src, const Rect &dst, Blit m
         canvas->Copy(from.port, src, dst, mode);
         return;
     }
-    if (from.port->target != NULL) {
-        RefuseTargetSource();
-        return;
-    }
-    CopyBits(GetPortBitMapForCopyBits(from.port), GetPortBitMapForCopyBits(port), &src, &dst, TransferMode(mode),
-             NULL);
+    PixMap read;
+    const PixMap *source = CopySource(from.port, read, sourcePixels);
+    if (source != NULL)
+        CopyBits((BitMapPtr)source, GetPortBitMapForCopyBits(port), &src, &dst, TransferMode(mode), NULL);
 }
 
 void Painter::CopyMasked(const Surface &from, const Surface &mask, const Rect &src, const Rect &maskRect,
@@ -330,12 +336,12 @@ void Painter::CopyMasked(const Surface &from, const Surface &mask, const Rect &s
         canvas->CopyMasked(from.port, mask.port, src, maskRect, dst);
         return;
     }
-    if (from.port->target != NULL || mask.port->target != NULL) {
-        RefuseTargetSource();
-        return;
-    }
-    CopyMask(GetPortBitMapForCopyBits(from.port), GetPortBitMapForCopyBits(mask.port),
-             GetPortBitMapForCopyBits(port), &srcBox, &maskBox, &dstBox);
+    PixMap read;
+    PixMap readMask;
+    const PixMap *source = CopySource(from.port, read, sourcePixels);
+    const PixMap *through = CopySource(mask.port, readMask, maskPixels);
+    if (source != NULL && through != NULL)
+        CopyMask((BitMapPtr)source, (BitMapPtr)through, GetPortBitMapForCopyBits(port), &srcBox, &maskBox, &dstBox);
 }
 
 void Painter::Sprite(DrawProcPtr draw, SWFrameRec *sprite, const Rect &src, const Rect &dst)
@@ -347,6 +353,12 @@ void Painter::Sprite(DrawProcPtr draw, SWFrameRec *sprite, const Rect &src, cons
         canvas->Sprite(draw, sprite, src, dst);
     else if (frame != nullptr)
         DrawSprite(draw, sprite, frame, &srcBox, &dstBox);
+}
+
+void Painter::OwnPixels()
+{
+    if (canvas != nullptr)
+        canvas->OwnPixels();
 }
 
 Painter::Composition::Composition(Painter &painter, const Rect &area)
@@ -522,7 +534,7 @@ int Painter::LineHeight(Style style)
     return TextLineHeight();
 }
 
-/* -- Toolbox controls: they draw and measure through the current port -- */
+/* -- Toolbox records: measured through the current port, drawn here -- */
 
 void Painter::EditSetText(TEHandle te, const void *text, int32_t length, Style style)
 {
@@ -540,46 +552,24 @@ void Painter::EditMeasure(TEHandle te, Style style)
     TECalText(te);
 }
 
+// FUNCTION: EVNOVA 0x004bcf30
 void Painter::EditDraw(TEHandle te, const Rect &area, const TextSpec &spec, const RGBColor &background)
 {
-    Rect r = area;
-
     if (!Bind())
         return;
-    Apply(spec);
-    if (canvas != nullptr) {
-        canvas->Fill(r, background);
-        CanvasWrapped(r, (*te)->text, (uint32_t)(*te)->textLength, spec.colour,
-                      (*te)->viewRect.top - (*te)->destRect.top, NULL, 0);
-        canvas->Flush();
-        ScreenEndScene();
-        return;
-    }
-    RGBColor savedBack = port->backColor;
-    BackColor(&background);
-    TEUpdate(&r, te);
-    BackColor(&savedBack);
+    Fill(area, background);
+    TextSpans(area, (*te)->text, (uint32_t)(*te)->textLength, spec, (*te)->viewRect.top - (*te)->destRect.top,
+              NULL, 0);
+    ScreenEndScene();
 }
 
 void Painter::EditScroll(TEHandle te, short dv, const TextSpec &spec, const RGBColor &background)
 {
     if (!Bind())
         return;
-    if (canvas != nullptr) {
-        /* the record only moved, then drawn here as EditDraw draws it and sent, for the window's update */
-        (*te)->inPort = NULL;
-        TEPinScroll(0, dv, te);
-        (*te)->inPort = port;
-        EditDraw(te, (*te)->viewRect, spec, background);
-        nv_UpdateDialogWindow(0);
-        return;
-    }
-    RGBColor savedBack = port->backColor;
-    (*te)->inPort = port;
-    Apply(spec);
-    BackColor(&background);
     TEPinScroll(0, dv, te);
-    BackColor(&savedBack);
+    EditDraw(te, (*te)->viewRect, spec, background);
+    nv_UpdateDialogWindow(0);
 }
 
 void Painter::List(ScrollRec **list, Style style)

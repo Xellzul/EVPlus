@@ -138,15 +138,15 @@ void MapDialog::Run()
     if (settings.showMapBorders != 0)
         RecalcAllMapInfluence(&box);
     Loop();
-    for (x = 0; x < kMaxNebulae; x++)
-        for (j = 0; j < 7; j++)
-            nebulae[x][j].Release();
-    backdrop.Release();
     x = (GetDialogPortRect(mapDialog)->right - GetDialogPortRect(mapDialog)->left) / 2;
     y = (GetDialogPortRect(mapDialog)->bottom - GetDialogPortRect(mapDialog)->top) / 2;
     while (KeyCheck(keyPrefs.map))
         BusyIdle();
     dialog.Close();
+    for (i = 0; i < kMaxNebulae; i++)
+        for (j = 0; j < 7; j++)
+            nebulae[i][j].Release();
+    backdrop.Release();
     found = (GetCWindowPortRect(gWind)->right - GetCWindowPortRect(gWind)->left) / 2;
     sys = (GetCWindowPortRect(gWind)->bottom - GetCWindowPortRect(gWind)->top) / 2;
     SetRect(&r, found - x, sys - y, found + x, sys + y);
