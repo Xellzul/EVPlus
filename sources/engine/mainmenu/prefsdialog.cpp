@@ -16,7 +16,7 @@
 namespace {
 
 constexpr short kWidth = 500;
-constexpr short kHeight = 379;
+constexpr short kHeight = 423;
 constexpr short kMusicVolStrList = 0x88;
 constexpr short kMaxMusicVol = 8;
 const char *const kGammaNames[kMaxGamma + 1] = {
@@ -169,10 +169,10 @@ private:
 
 PrefsDialog::PrefsDialog()
 {
-    doneItem = items.add(kDitlButton, 346, 389, 366, 459, "OK");
+    doneItem = items.add(kDitlButton, 390, 389, 410, 459, "OK");
     gTitleItem = items.add(kDitlUserItem, 5, 12, 28, 489);
-    gNoticeItem = items.add(kDitlUserItem, 321, 69, 338, 431);
-    keysItem = items.add(kDitlButton, 346, 49, 366, 184, "Key Settings");
+    gNoticeItem = items.add(kDitlUserItem, 365, 69, 382, 431);
+    keysItem = items.add(kDitlButton, 390, 49, 410, 184, "Key Settings");
 
     Column graphics(items, kColGraphics, "Graphics");
     Column sound(items, kColSound, "Sound");
@@ -240,6 +240,8 @@ PrefsDialog::PrefsDialog()
     check(gameplay.check("Asteroid Scaling"), Flag(settings.asteroidScaling));
     check(gameplay.check("Map Shows Prices"), Flag(settings.mapPrices));
     check(gameplay.check("Map Shows Disasters"), Flag(settings.mapDisasters));
+    check(gameplay.check("Map Special Goods"), Flag(settings.mapSpecialGoods));
+    check(gameplay.check("Outfit Stats"), Flag(settings.outfitStats));
 
     windowedItem = display.check("Run in a window");
     stepper(display.stepper("Resolution:", true),

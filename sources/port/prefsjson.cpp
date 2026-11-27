@@ -33,6 +33,8 @@ static const PrefsJsonField kPrefsJsonFields[] = {
     { "asteroidScaling", offsetof(PrefsRecord, asteroidScaling) },
     { "mapPrices",      offsetof(PrefsRecord, mapPrices) },
     { "mapDisasters",   offsetof(PrefsRecord, mapDisasters) },
+    { "mapSpecialGoods", offsetof(PrefsRecord, mapSpecialGoods) },
+    { "outfitStats",    offsetof(PrefsRecord, outfitStats) },
     { "runInWindow",    offsetof(PrefsRecord, runInWindow) },
     { "gameSize",       offsetof(PrefsRecord, gameSize) },
     { "wheelZoom",      offsetof(PrefsRecord, wheelZoom) },

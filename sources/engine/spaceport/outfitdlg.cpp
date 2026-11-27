@@ -250,6 +250,8 @@ void OutfitDetails::Build(short outfit)
     short slot;
 
     Plain(dialogDescTextPtr);
+    if (settings.outfitStats == 0)
+        return;
     while (length > 0 && (text[length - 1] == '\r' || text[length - 1] == '\n' || text[length - 1] == ' '))
         text[--length] = 0;
     ColorRequires(outfit);

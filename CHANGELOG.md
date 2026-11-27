@@ -20,10 +20,11 @@
 - Shipyard: used ships show their stats against the new ship
 - Shipyard: Total Space shows the space with all standard equipment sold
 - Galaxy map: Goods Traded and special cargo can show each commodity's price levels, including disaster modifiers
+- Galaxy map: special goods can be listed (Preferences: Map Special Goods)
 - Player Info: shield and armor show their raw values
 - Escort hiring: shows the daily pay under the hiring price
 - Player Info: Jump Time in days
-- Outfitter: description lists the outfit's effects and weapon stats
+- Outfitter: description lists the outfit's effects and weapon stats (Preferences: Outfit Stats)
 - AI ships count the marines among their default outfits when boarding
 - Asteroid field and particles stay in place when flying far from the system centre
 - Plug-in mission texts: <PAY> in active-mission briefings shows 0 instead of a garbage number for missions without pay

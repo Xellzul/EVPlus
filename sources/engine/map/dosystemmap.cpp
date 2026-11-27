@@ -1166,13 +1166,15 @@ void MapDialogUpdate(void)
                             xoff += DrawGoodsLine(load, cargoName[k], CommodityLevels(sel, k), r2,
                                                   r2.top + 0xa8 + xoff);
                     }
-                    if (settings.mapPrices != 0) {
+                    if (settings.mapSpecialGoods != 0) {
                         short junkLevels[kMaxJunks];
                         SystemJunkLevels(sel, junkLevels);
                         for (k = 0; k < kMaxJunks; k++) {
+                            short levels = settings.mapPrices != 0 ? junkLevels[k] : 0;
+                            PriceLevels p = { levels, 0, 0 };
+
                             if (junkLevels[k] != 0)
-                                xoff += DrawGoodsLine(load, JunkName(k), { junkLevels[k], 0, 0 }, r2,
-                                                      r2.top + 0xa8 + xoff);
+                                xoff += DrawGoodsLine(load, JunkName(k), p, r2, r2.top + 0xa8 + xoff);
                         }
                     }
                     if (xoff > kGoodsHeight)

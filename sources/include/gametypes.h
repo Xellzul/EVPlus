@@ -306,6 +306,8 @@ typedef struct Settings {
     Boolean asteroidScaling;        /* asteroid count follows the view size */
     Boolean mapPrices;              /* the map's Goods Traded show each commodity's price levels */
     Boolean mapDisasters;           /* with mapPrices: a level under an active disaster gets Higher/Lower */
+    Boolean mapSpecialGoods;        /* the map lists the special goods; with mapPrices, their levels too */
+    Boolean outfitStats;            /* the outfitter's description adds the stats, free space and licence colours */
     Boolean orBlend;                /* the view's sprites through the original 16-bit blends (GPU renderer) */
     double uiScale;                 /* dialogs and status bar, 1.0 = as designed */
 } Settings;
@@ -343,6 +345,8 @@ typedef struct PrefsRecord {
     short asteroidScaling;
     short mapPrices;
     short mapDisasters;
+    short mapSpecialGoods;
+    short outfitStats;
     short runInWindow;
     short gameSize;
     short wheelZoom;

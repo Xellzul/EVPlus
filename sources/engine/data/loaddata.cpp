@@ -2449,6 +2449,8 @@ static void PrefsToRecord(PrefsRecord *rec)
     rec->asteroidScaling = settings.asteroidScaling != 0;
     rec->mapPrices = settings.mapPrices != 0;
     rec->mapDisasters = settings.mapDisasters != 0;
+    rec->mapSpecialGoods = settings.mapSpecialGoods != 0;
+    rec->outfitStats = settings.outfitStats != 0;
     rec->runInWindow = settings.runInWindow != 0;
     rec->gameSize = settings.gameSize;
     rec->wheelZoom = settings.wheelZoom != 0;
@@ -2494,6 +2496,8 @@ static void RecordToPrefs(const PrefsRecord *rec)
     settings.asteroidScaling = rec->asteroidScaling != 0;
     settings.mapPrices = rec->mapPrices != 0;
     settings.mapDisasters = rec->mapDisasters != 0;
+    settings.mapSpecialGoods = rec->mapSpecialGoods != 0;
+    settings.outfitStats = rec->outfitStats != 0;
     settings.runInWindow = rec->runInWindow != 0;
     settings.gameSize = rec->gameSize;
     if (settings.gameSize < kMinGameSize || settings.gameSize > kMaxGameSize)
