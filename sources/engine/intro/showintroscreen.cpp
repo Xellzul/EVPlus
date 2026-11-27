@@ -49,19 +49,9 @@ void ShowIntroScreen(void)
             else
                 picHandle = NULL;
 
-            {
-                UI::Painter load(UI::Surface::Load());
-
-                load.Fill(loadPort.bounds, UI::kBlack);
-
-                rect = loadPort.bounds;
-
-                if (picHandle != NULL) {
-                    CenterPict(picHandle, &rect);
-                    load.Picture(picHandle, rect);
-                    QDReleaseResource(picHandle);
-                }
-            }
+            rect = PaintLoadPagePicture(picHandle, introPictID[i]);
+            if (picHandle != NULL)
+                QDReleaseResource(picHandle);
 
             {
                 UI::Painter screen(UI::Surface::Screen());
@@ -131,6 +121,7 @@ void ShowIntroScreen(void)
         }
     }
 
+    ForgetLoadPagePicture();
     HandleIntroMusic(1);
     if (!pictSkipped) {
         StopIntroMusic(1);

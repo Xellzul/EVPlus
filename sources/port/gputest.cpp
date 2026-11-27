@@ -17,7 +17,7 @@
 namespace {
 
 constexpr short kPageWidth = 640;
-constexpr short kPageHeight = 600;
+constexpr short kPageHeight = 670;
 constexpr double kTestBrightness = 0.8;     /* the exponent of the page's second drawing at scale 1 */
 constexpr int kBrightSlack = 12;            /* levels of 255 an item that must match may be off under it */
 constexpr double kTestScales[] = { 1.0, 1.25, 1.875, 2.0 };
@@ -97,11 +97,14 @@ struct TestPort {
     UI::Surface Surface() const { return UI::Surface(frame); }
 };
 
-/* what the page copies from: a gradient at the page's scale, and a piece with its mask at their own size */
+/* what the page copies from: gradient, status and button at its scale (GPU targets there), the rest at theirs */
 struct Sources {
     TestPort gradient;
     TestPort piece;
     TestPort mask;
+    TestPort status;
+    TestPort button;
+    TestPort icons;
 };
 
 void DrawSources(const Sources &sources)
@@ -134,6 +137,18 @@ void DrawSources(const Sources &sources)
         p.FillOval(band, UI::kBlack);
         SetRect(&band, 0, 0, 30, 30);
         p.Fill(band, UI::kBlack);
+    }
+    {
+        UI::Painter p(sources.status.Surface());
+        p.Fill(all, Colour(0x1000, 0x1800, 0x3000));
+        for (short x = 0; x < 120; x += 15) {
+            SetRect(&band, x, 0, x + 7, 60);
+            p.Fill(band, Colour(0x2000 + x * 300, 0x3000, 0x5000));
+        }
+        SetRect(&band, 4, 4, 116, 56);
+        p.Frame(band, Colour(0x8000, 0x8000, 0xc000));
+        SetRect(&band, 40, 14, 80, 46);
+        p.Oval(band, Colour(0, 0xc000, 0), 1);
     }
 }
 
@@ -401,7 +416,7 @@ void DrawCopies(UI::Painter &p, const UI::Surface &self, const Sources &sources)
     SetRect(&r, 392, 336, 512, 396);
     p.Fill(r, Colour(0x3000, 0x3000, 0x3000));
     p.Copy(sources.gradient.Surface(), area, r, UI::Blit::AddOver);
-    Mark("max over grey", kLook, 520, 336, 636, 396);
+    Mark("max over grey", kSame, 520, 336, 636, 396);
     SetRect(&r, 520, 336, 636, 396);
     p.Fill(r, Colour(0x3000, 0x3000, 0x3000));
     SetRect(&half, 0, 0, 116, 60);
@@ -515,6 +530,82 @@ void DrawPieces(UI::Painter &p, const UI::Surface &self, const Sources &sources)
     p.Fill(band, Colour(0xffff, 0, 0));
 }
 
+/* the game's drawing on its GPU-target ports: status bar parts, an icon cell, a button, the map's nebulae */
+void DrawTargets(UI::Painter &p, const UI::Surface &self, const Sources &sources, const TestArt &art)
+{
+    Rect area;
+    Rect piece;
+    Rect box;
+    Rect r;
+
+    Mark("status part", kSame, 8, 600, 128, 660);
+    SetRect(&area, 0, 0, 120, 60);
+    SetRect(&r, 8, 600, 128, 660);
+    p.Copy(sources.status.Surface(), area, r);
+
+    Mark("status text", kText, 136, 600, 256, 660);
+    SetRect(&area, 30, 0, 90, 60);
+    SetRect(&r, 136, 600, 196, 660);
+    p.Copy(sources.status.Surface(), area, r);
+    SetRect(&r, 196, 600, 256, 660);
+    p.Fill(r, UI::kBlack);
+    SetRect(&r, 140, 640, 230, 646);
+    p.Fill(r, Colour(0, 0x8000, 0xffff));
+    p.Frame(r, Colour(0x8000, 0xc000, 0xffff));
+    p.Text(140, 614, "Shields", { UI::Style::Status, Colour(0x8000, 0xffff, 0x8000) });
+    p.Text(140, 632, "Nav 88%", { UI::Style::StatusLarge, UI::kWhite });
+
+    Mark("icon cell", kSameAtOne, 264, 600, 328, 664);
+    SetRect(&piece, 32, 0, 64, 32);
+    {
+        UI::Painter icons(sources.icons.Surface());
+        icons.Fill(piece, UI::kBlack);
+        if (art.big != NULL)
+            icons.Picture(art.big, piece);
+    }
+    SetRect(&r, 264, 600, 296, 632);
+    p.Copy(sources.icons.Surface(), piece, r);
+    SetRect(&r, 296, 632, 328, 664);
+    p.Copy(sources.icons.Surface(), piece, r);
+
+    Mark("button on its port", kSameAtOne, 336, 600, 456, 640);
+    SetRect(&r, 336, 600, 456, 640);
+    p.Fill(r, Colour(0x3000, 0x2000, 0x1000));
+    SetRect(&box, 0, 0, 120, 40);
+    {
+        UI::Painter face(sources.button.Surface());
+        face.Copy(self, r, box);
+        {
+            UI::Painter::Composition parts(face, box);
+            SetRect(&piece, 0, 10, 30, 50);
+            SetRect(&area, 0, 0, 30, 40);
+            face.CopyMasked(sources.piece.Surface(), sources.mask.Surface(), piece, piece, area);
+            SetRect(&piece, 90, 10, 120, 50);
+            SetRect(&area, 90, 0, 120, 40);
+            face.CopyMasked(sources.piece.Surface(), sources.mask.Surface(), piece, piece, area);
+            SetRect(&piece, 30, 10, 60, 50);
+            SetRect(&area, 30, 0, 90, 40);
+            face.Copy(sources.piece.Surface(), piece, area);
+        }
+        face.Line(50, 20, 70, 20, UI::kWhite, 2);
+        face.Line(60, 10, 60, 30, UI::kWhite, 2);
+    }
+    p.Copy(sources.button.Surface(), box, r);
+
+    Mark("max over borders", kSame, 464, 600, 584, 660);
+    const RGBColor borders[] = { Colour(0x8000, 0, 0), Colour(0, 0x6000, 0x1000), Colour(0x2000, 0x2000, 0xa000),
+                                 Colour(0x7000, 0x7000, 0) };
+    for (short i = 0; i < 4; i++) {
+        SetRect(&r, 464 + i * 30, 600, 494 + i * 30, 630);
+        p.Fill(r, borders[i]);
+        SetRect(&r, 464 + i * 30, 630, 494 + i * 30, 660);
+        p.Fill(r, borders[3 - i]);
+    }
+    SetRect(&area, 0, 0, 120, 60);
+    SetRect(&r, 464, 600, 584, 660);
+    p.Copy(sources.gradient.Surface(), area, r, UI::Blit::AdMax);
+}
+
 void DrawPage(const TestPort &page, const Sources &sources, const TestArt &art)
 {
     Rect all;
@@ -530,6 +621,7 @@ void DrawPage(const TestPort &page, const Sources &sources, const TestArt &art)
     DrawCopies(p, page.Surface(), sources);
     DrawEdits(p);
     DrawPieces(p, page.Surface(), sources);
+    DrawTargets(p, page.Surface(), sources, art);
 }
 
 int Expand5(int v)
@@ -599,14 +691,15 @@ void WriteRaw(const char *kind, double scale, int width, int height, const void 
 bool MakeSources(Sources &sources, double scale, bool gpu)
 {
     return sources.gradient.Make(120, 60, scale, gpu) && sources.piece.Make(120, 60, 1.0, false)
-           && sources.mask.Make(120, 60, 1.0, false);
+           && sources.mask.Make(120, 60, 1.0, false) && sources.status.Make(120, 60, scale, gpu)
+           && sources.button.Make(120, 40, scale, gpu) && sources.icons.Make(128, 32, 1.0, false);
 }
 
 void DropSources(Sources &sources)
 {
-    sources.gradient.Drop();
-    sources.piece.Drop();
-    sources.mask.Drop();
+    for (TestPort *each : { &sources.gradient, &sources.piece, &sources.mask, &sources.status, &sources.button,
+                            &sources.icons })
+        each->Drop();
 }
 
 /* One scale's pages drawn and compared. With a brightness the GPU page is drawn under it: one of its pixels is
@@ -869,11 +962,15 @@ const Item kDialogItems[] = {
     { "dialog edit scrolled", kText, { 104, 140, 140, 412 } },
     { "dialog list", kText, { 146, 140, 218, 397 } },
     { "dialog list scroll bar", kSame, { 146, 397, 218, 412 } },
-    { "dialog frame", kSame, { 222, 0, 260, 420 } },
+    { "dialog frame", kSame, { 222, 0, 260, 140 } },
+    { "dialog from the load page", kText, { 222, 140, 258, 412 } },
+    { "dialog frame, below", kSame, { 258, 140, 260, 412 } },
+    { "dialog frame, right", kSame, { 222, 412, 260, 420 } },
 };
 
 struct TestDialog {
     DialogPtr dlg = NULL;
+    TestPort load;                      /* its load page: drawn on, then copied onto the dialog */
     TEHandle edit = NULL;
     TEHandle scrolled = NULL;
     ScrollRec **list = NULL;
@@ -914,47 +1011,20 @@ void TestDialogUpdate(void)
     cell.h = 0;
     cell.v = 2;
     p.ListSelect(test.list, true, cell, UI::Style::Small);
-}
 
-/* the dialog with its port at the scale, drawn through a GPU canvas or, without one, on its pixels */
-bool MakeTestDialog(TestDialog &test, double scale, bool gpu)
-{
-    Handle item;
-    Rect box;
-    Rect rows;
-    Point cellSize;
-    Point cell;
-
-    test.dlg = NewDialogFromItems(kDialogWidth, kDialogHeight, kDialogSpecs,
-                                  (short)(sizeof(kDialogSpecs) / sizeof(kDialogSpecs[0])), TestDialogUpdate, NULL);
-    if (test.dlg == NULL)
-        return false;
-    CGrafPtr port = GetDialogPort(test.dlg);
-    UI::ScalePortPixels(port, scale);
-    if (!gpu)
-        UI::Canvas::DropTarget(port);
-    else if (!UI::Canvas::MakeTarget(port))
-        return false;
-    GetDialogItem(test.dlg, 2, NULL, &item, NULL);
-    SetControlValue((ControlPtr)item, 1);
-    SelectDialogItemText(test.dlg, kEditItem, 0, 4);
-    SetRect(&box, 140, 40, 412, 100);
-    test.edit = TENew(&box, &box);
-    SetRect(&box, 140, 104, 412, 140);
-    test.scrolled = TENew(&box, &box);
-    SetRect(&box, 140, 146, 397, 146 + 4 * kListRowHeight);
-    SetRect(&rows, 0, 0, 1, kListRows);
-    cellSize.h = box.right - box.left;
-    cellSize.v = kListRowHeight;
-    test.list = nv_NewDialog(&box, &rows, cellSize, TestListRow, (CGrafPtr)test.dlg, 1);
-    cell.h = 0;
-    for (cell.v = 0; cell.v < kListRows; cell.v++) {
-        std::string row = "List row " + std::to_string(cell.v + 1) + ", drawn by its draw proc";
-        LSetCell((void *)row.data(), (int32_t)row.size(), cell, test.list);
+    SetRect(&r, 140, 222, 412, 258);
+    {
+        UI::Painter load(test.load.Surface());
+        Rect band;
+        load.Fill(r, Colour(0x1000, 0x1000, 0x2000));
+        for (short x = 140; x < 412; x += 34) {
+            SetRect(&band, x, 222, x + 17, 228);
+            load.Fill(band, Colour(0x4000, 0x2000 + x * 60, 0x6000));
+        }
+        load.Line(140, 256, 411, 230, Colour(0xffff, 0xc000, 0));
+        load.Text(146, 248, "Drawn on the load page", { UI::Style::Small, UI::kWhite });
     }
-    LSetDrawingMode(1, test.list);
-    LScroll(0, 1, test.list);
-    return true;
+    p.Copy(test.load.Surface(), r, r);
 }
 
 /* closed without the redraw of what lies under it: the menu is not up yet */
@@ -976,7 +1046,53 @@ void DropTestDialog(TestDialog &test)
         TEDispose(test.scrolled);
     if (test.list != NULL)
         LDispose(test.list);
+    test.load.Drop();
     test = TestDialog();
+}
+
+/* the dialog with its port at the scale, drawn through a GPU canvas or, without one, on its pixels */
+bool MakeTestDialog(TestDialog &test, double scale, bool gpu)
+{
+    Handle item;
+    Rect box;
+    Rect rows;
+    Point cellSize;
+    Point cell;
+
+    test.dlg = NewDialogFromItems(kDialogWidth, kDialogHeight, kDialogSpecs,
+                                  (short)(sizeof(kDialogSpecs) / sizeof(kDialogSpecs[0])), TestDialogUpdate, NULL);
+    if (test.dlg == NULL || !test.load.Make(kDialogWidth, kDialogHeight, scale, gpu)) {
+        DropTestDialog(test);
+        return false;
+    }
+    CGrafPtr port = GetDialogPort(test.dlg);
+    UI::ScalePortPixels(port, scale);
+    if (!gpu) {
+        UI::Canvas::DropTarget(port);
+    } else if (!UI::Canvas::MakeTarget(port)) {
+        DropTestDialog(test);
+        return false;
+    }
+    GetDialogItem(test.dlg, 2, NULL, &item, NULL);
+    SetControlValue((ControlPtr)item, 1);
+    SelectDialogItemText(test.dlg, kEditItem, 0, 4);
+    SetRect(&box, 140, 40, 412, 100);
+    test.edit = TENew(&box, &box);
+    SetRect(&box, 140, 104, 412, 140);
+    test.scrolled = TENew(&box, &box);
+    SetRect(&box, 140, 146, 397, 146 + 4 * kListRowHeight);
+    SetRect(&rows, 0, 0, 1, kListRows);
+    cellSize.h = box.right - box.left;
+    cellSize.v = kListRowHeight;
+    test.list = nv_NewDialog(&box, &rows, cellSize, TestListRow, (CGrafPtr)test.dlg, 1);
+    cell.h = 0;
+    for (cell.v = 0; cell.v < kListRows; cell.v++) {
+        std::string row = "List row " + std::to_string(cell.v + 1) + ", drawn by its draw proc";
+        LSetCell((void *)row.data(), (int32_t)row.size(), cell, test.list);
+    }
+    LSetDrawingMode(1, test.list);
+    LScroll(0, 1, test.list);
+    return true;
 }
 
 void DrawTestDialog(TestDialog &test)

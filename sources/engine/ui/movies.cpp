@@ -12,15 +12,30 @@
 #define kMovieDepth     16              /* a movie's frames are decoded as 16-bit pixels */
 
 Movie loopingMovie = NULL;
+static GWorldContainer loopingFrame;    /* the looping movie's frames */
+static DialogPtr loopingDialog;         /* the dialog it plays in */
+
+/* the movie's frames decoded into a world of the box's device pixels on `port', the world's bounds the box */
+static bool DecodeInto(GWorldContainer &frame, Movie movie, CGrafPtr port, const Rect &box)
+{
+    Rect device = UI::Mapping(port->pix).DeviceRect(box);
+
+    OffsetRect(&device, -device.left, -device.top);
+    CreateGWorldContainer(&frame, 0, kMovieDepth, &device);
+    if (frame.world == NULL)
+        return false;
+    frame.world->pix.bounds = frame.bounds = box;
+    MovieSetTarget(movie, frame.world->pix.baseAddr, frame.world->pix.rowBytes, frame.world->pix.width,
+                   frame.world->pix.height, 0);
+    return true;
+}
 
 // FUNCTION: EVNOVA 0x0049d7c0
 // MAC: _StartLoopingMovie i386 0x00060266 ppc 0x00067fb8
-void StartLoopingMovie(const std::string &name, void *window, Rect *box)
+void StartLoopingMovie(const std::string &name, DialogPtr dlg, const Rect &box)
 {
-    CGrafPtr port;
     char path[kMoviePathMax];
     const char *names[1];
-    CGrafPtr *windowPort = (CGrafPtr *)window;
 
     if (settings.noMovies != 0)
         return;
@@ -28,20 +43,26 @@ void StartLoopingMovie(const std::string &name, void *window, Rect *box)
     if (loopingMovie != NULL)
         EndLoopingMovie();
 
-    port = *windowPort;
     names[0] = name.c_str();
     if (!MovieFindFile(names, 1, path, sizeof path))
         return;
     loopingMovie = MovieOpen(path);
     if (loopingMovie == NULL)
         return;
-
-    Rect device = UI::Mapping(port->pix).DeviceRect(*box);
-    MovieSetTarget(loopingMovie, port->pix.baseAddr, port->pix.rowBytes, device.right - device.left,
-                   device.bottom - device.top, 1);
+    if (!DecodeInto(loopingFrame, loopingMovie, GetDialogPort(dlg), box)) {
+        EndLoopingMovie();
+        return;
+    }
+    loopingDialog = dlg;
     MovieSetLoop(loopingMovie, 1);
     MovieRewind(loopingMovie);
     MovieStart(loopingMovie);
+}
+
+void DrawLoopingMovie(UI::Painter &p)
+{
+    if (loopingMovie != NULL)
+        p.Copy(UI::Surface(loopingFrame), loopingFrame.bounds, loopingFrame.bounds);
 }
 
 // FUNCTION: EVNOVA 0x0049da80
@@ -49,7 +70,10 @@ void StartLoopingMovie(const std::string &name, void *window, Rect *box)
 void LoopingMovieIdle(void)
 {
     if (loopingMovie != NULL) {
-        MovieDraw(loopingMovie);
+        if (MovieDraw(loopingMovie)) {
+            UI::Painter p(UI::Surface::Dialog(loopingDialog));
+            DrawLoopingMovie(p);
+        }
         nv_UpdateDialogWindow(0);
     }
 }
@@ -62,6 +86,8 @@ void EndLoopingMovie(void)
         MovieClose(loopingMovie);
         loopingMovie = NULL;
     }
+    DisposeGWorldContainer(&loopingFrame);
+    loopingDialog = NULL;
 }
 
 /* The inputs that skip a movie, a bit each: any mouse button, Space, Return, keypad Enter. */
@@ -129,13 +155,8 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
     SetRect(&box, 0, 0, dw, dh);
     SetRect(&movieBox, 0, 0, w, h);
     CenterRect(&box, &movieBox);
-    /* the movie's frames are decoded into a world of the box's device pixels, each copied onto the screen */
-    Rect device = UI::Mapping(GetCWindowGrafPort(gWind)->pix).DeviceRect(box);
-    OffsetRect(&device, -device.left, -device.top);
-    CreateGWorldContainer(&frame, 0, kMovieDepth, &device);
-    frame.world->pix.bounds = frame.bounds = box;
-    MovieSetTarget(movie, frame.world->pix.baseAddr, frame.world->pix.rowBytes, frame.world->pix.width,
-                   frame.world->pix.height, 0);
+    /* each frame decoded is copied onto the screen */
+    DecodeInto(frame, movie, GetCWindowGrafPort(gWind), box);
     InsetRect(&box, -1, -1);
     UI::Painter(UI::Surface::Screen()).Frame(box, UI::kBlack);
     MovieRewind(movie);

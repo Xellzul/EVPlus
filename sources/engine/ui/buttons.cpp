@@ -8,6 +8,7 @@
 #include "render.h"
 #include "prototypes.h"
 #include "buttons.h"
+#include "canvas.h"
 #include "painter.h"
 #include "text.h"
 
@@ -309,8 +310,10 @@ void CreateButtonPort(void)
     if (UI::Enabled())
         SetRect(&bounds, 0, 0, UI::ScreenWidth(), UI::ScreenHeight());     /* buttons drawn where they lie */
     CreateGWorldContainer(&buttonPort, kButtonDevice, gSpriteWorld->pixelDepth, &bounds);
-    if (buttonPort.world != 0)
+    if (buttonPort.world != 0) {
         UI::ScaleUIPort(buttonPort.world);
+        UI::Canvas::MakeNewTarget(buttonPort.world);
+    }
 }
 
 // FUNCTION: EVNOVA 0x004a3300

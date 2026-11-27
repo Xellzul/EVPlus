@@ -25,7 +25,6 @@ unsigned char fireOffRect[144];
 Rect progressDefRect;
 double progressCount;
 double progressMax;
-Rect gLoadBarBase;
 RGBColor progressColor[3];
 uint32_t lastMoviesTaskTime;
 Movie introMusicMovie;

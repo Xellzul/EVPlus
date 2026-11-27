@@ -21,6 +21,8 @@ public:
 
     /* a port's target made at the size of its pixels, clear; false = not made, the target it had is kept */
     static bool MakeTarget(CGrafPtr port);
+    /* a port just made gets a target, black as its new pixels are; without one the Painter draws on the pixels */
+    static void MakeNewTarget(CGrafPtr port);
     /* a Painter still open on the port then draws nothing; a port disposed drops its own */
     static void DropTarget(CGrafPtr port);
     /* what is kept between draws -- the images of ports' pixels, scratch images and targets -- freed */

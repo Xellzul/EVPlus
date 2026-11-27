@@ -9,28 +9,58 @@
 #define kSplashPictID       0x83
 #define kAmbrosiaLogoPictID 0x1fa4
 
+static bool loadPageShown;           /* the load page shows a picture of the startup or the intro */
+static short loadPagePictID;        /* which one; 0 = black alone */
+
+Rect PaintLoadPagePicture(PicHandle pic, short id)
+{
+    UI::Painter load(UI::Surface::Load());
+    Rect box = loadPort.bounds;
+
+    load.Fill(loadPort.bounds, UI::kBlack);
+    if (pic != NULL) {
+        CenterPict(pic, &box);
+        load.Picture(pic, box);
+    }
+    loadPageShown = true;
+    loadPagePictID = pic != NULL ? id : 0;
+    return box;
+}
+
+void ForgetLoadPagePicture(void)
+{
+    loadPageShown = false;
+}
+
+bool RedrawLoadPagePicture(void)
+{
+    UI::MenuScale menu;
+    PicHandle pic;
+
+    if (!loadPageShown)
+        return false;
+    pic = loadPagePictID != 0 ? GetPicture(loadPagePictID) : NULL;
+    PaintLoadPagePicture(pic, loadPagePictID);
+    if (pic != NULL)
+        QDReleaseResource(pic);
+    if (gameLoaded == 0 && progressMax > 0)
+        PaintIntroProgressBar();
+    return true;
+}
+
 // FUNCTION: EVNOVA 0x004aaf60
 // MAC: _ShowSplashScreen i386 0x00060e68 ppc 0x00068bfc
 void ShowSplashScreen(void)
 {
     UI::MenuScale menu;
-    void *pic;
+    PicHandle pic;
     Rect *rect;
-    Rect box;
 
     pic = GetPicture(kSplashPictID);
     rect = &loadPort.bounds;
-    {
-        UI::Painter load(UI::Surface::Load());
-
-        load.Fill(*rect, UI::kBlack);
-        box = loadPort.bounds;
-        if (pic != 0) {
-            CenterPict(pic, &box);
-            load.Picture((PicHandle)pic, box);
-            QDReleaseResource((PicHandle)pic);
-        }
-    }
+    PaintLoadPagePicture(pic, kSplashPictID);
+    if (pic != NULL)
+        QDReleaseResource(pic);
     UI::Painter screen(UI::Surface::Screen());
     screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
     screen.Copy(UI::Surface::Load(), *rect, *GetCWindowPortRect(gWind));
@@ -44,28 +74,21 @@ void ShowSplashScreen(void)
 void ShowAmbrosiaLogo(void)
 {
     UI::MenuScale menu;
-    void *pic;
+    PicHandle pic;
     Rect box;
 
     pic = GetPicture(kAmbrosiaLogoPictID);
-    box = loadPort.bounds;
-    CenterPict(pic, &box);
-    {
-        UI::Painter load(UI::Surface::Load());
-
-        load.Fill(loadPort.bounds, UI::kBlack);
-        load.Picture((PicHandle)pic, box);
-    }
+    PaintLoadPagePicture(pic, kAmbrosiaLogoPictID);
     box = *GetCWindowPortRect((WindowRef)gWind);
     CenterPict(pic, &box);
     {
         UI::Painter screen(UI::Surface::Screen());
 
         screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
-        screen.Picture((PicHandle)pic, box);
+        screen.Picture(pic, box);
     }
-    if (pic != 0)
-        QDReleaseResource((PicHandle)pic);
+    if (pic != NULL)
+        QDReleaseResource(pic);
     FadeScreenIn();
     Screen::EndFrame();                     /* shown while loading runs, which has no frame end of its own */
 }

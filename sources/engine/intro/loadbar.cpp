@@ -69,39 +69,37 @@ void DeltaIntroProgressBar(double amount)
     DrawIntroProgressBar();
 }
 
+void PaintIntroProgressBar(void)
+{
+    UI::MenuScale menu;
+    UI::Painter load(UI::Surface::Load());
+    Rect box;
+
+    load.Frame(progressRect, progressColor[2]);
+
+    box = progressRect;
+    InsetRect(&box, 1, 1);
+
+    box.right = (box.left + progressCount / progressMax * 198.0);
+    if (box.right >= progressRect.right)
+        box.right = progressRect.right - 1;
+
+    InsetRect(&box, 1, 1);
+    load.Fill(box, progressColor[0]);
+    InsetRect(&box, -1, -1);
+    load.Frame(box, progressColor[1]);
+    box.left = box.right;
+    box.right = progressRect.right - 1;
+    load.Fill(box, UI::kBlack);
+}
+
 // FUNCTION: EVNOVA 0x004ab3d0
 // MAC: _DrawIntroProgressBar i386 0x000610ba ppc 0x00068e7c
 void DrawIntroProgressBar(void)
 {
     UI::MenuScale menu;
-    Rect box;
-    box.left = gLoadBarBase.left;
-    box.top = gLoadBarBase.top;
-    box.bottom = gLoadBarBase.bottom;
-    box.right = gLoadBarBase.right;
-    box.right = box.left + 30;
 
-    {
-        UI::Painter load(UI::Surface::Load());
-
-        load.Frame(progressRect, progressColor[2]);
-
-        box = progressRect;
-        InsetRect(&box, 1, 1);
-
-        box.right = (box.left + progressCount / progressMax * 198.0);
-        if (box.right >= progressRect.right)
-            box.right = progressRect.right - 1;
-
-        InsetRect(&box, 1, 1);
-        load.Fill(box, progressColor[0]);
-        InsetRect(&box, -1, -1);
-        load.Frame(box, progressColor[1]);
-        box.left = box.right;
-        box.right = progressRect.right - 1;
-        load.Fill(box, UI::kBlack);
-    }
-
+    PaintIntroProgressBar();
     UI::Painter(UI::Surface::Screen()).Copy(UI::Surface::Load(), progressRect, progressRect);
     Screen::Changed();
     Screen::EndFrame();                     /* loading has no other frame end */

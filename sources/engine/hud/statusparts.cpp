@@ -37,7 +37,7 @@ void DrawStatusNav(void)
     srcRect = statusOffRect[kNavRect];
     dstRect = srcRect;
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-    load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
+    load.Copy(StatusPicture(), srcRect, dstRect);
 
     if (shipData[0].navTargetKind == -1) {
         load.Text(dstRect.left, dstRect.right, dstRect.top + 0x16, IndString(kGameStrList, kNavNoDestination), dim,
@@ -114,7 +114,7 @@ void DrawStatusShield(void)
         CopyRect(&srcRect, &statusOffRect[kShieldRect]);
         CopyRect(&dstRect, &srcRect);
         OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-        load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
+        load.Copy(StatusPicture(), srcRect, dstRect);
         if (shipData[0].shield > 0.0f) {
             float cap;
             float level;
@@ -145,7 +145,7 @@ void DrawStatusShield(void)
         CopyRect(&srcRect, &statusOffRect[kArmorRect]);
         CopyRect(&dstRect, &srcRect);
         OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-        load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
+        load.Copy(StatusPicture(), srcRect, dstRect);
         if (shipData[0].armor > 0.0f) {
             CopyRect(&barRect, &dstRect);
             cap = shipData->ArmorCapacity();
@@ -189,7 +189,7 @@ void DrawStatusFuel(void)
     CopyRect(&srcRect, &statusOffRect[kFuelRect]);
     CopyRect(&dstRect, &srcRect);
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-    load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
+    load.Copy(StatusPicture(), srcRect, dstRect);
     if (shipData[0].fuel > 0.0f && shipData->IsDisabled() == 0) {
         CopyRect(&barRect, &dstRect);
         if (srcRect.right - srcRect.left > srcRect.bottom - srcRect.top) {
@@ -261,7 +261,7 @@ void DrawStatusTarg(void)
     srcRect = statusOffRect[kTargRect];
     dstRect = srcRect;
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-    load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
+    load.Copy(StatusPicture(), srcRect, dstRect);
 
     if (targKeyOnNow != 0 && cheatsActive != 0) {
         const UI::TextSpec dimSmall = { UI::Style::Small, *statusDimColor };
@@ -520,7 +520,7 @@ void DrawStatusWeap(void)
     srcRect = statusOffRect[kWeapRect];
     dstRect = srcRect;
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-    load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
+    load.Copy(StatusPicture(), srcRect, dstRect);
     if (shipData[0].selectedWeapon == -1) {
         load.Text(dstRect.left, dstRect.right, dstRect.top + 0xc, IndString(kGameStrList, kStatusNoWeapon), dim,
                   UI::Align::Center);
@@ -573,7 +573,7 @@ void DrawStatusCargo(void)
     srcRect = statusOffRect[kCargoRect];
     dstRect = srcRect;
     OffsetRect(&dstRect, GetCWindowPortRect(gWind)->right - kStatusBarWidth, 0);
-    load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
+    load.Copy(StatusPicture(), srcRect, dstRect);
     for (i = 0; i <= 5; i++) {
         if (shipData[0].cargo[i] > 0) {
             load.Text(dstRect.left + 3, dstRect.top + (i + 1) * 14 - 2, statusCargoName[i], dim);

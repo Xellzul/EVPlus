@@ -150,6 +150,12 @@ bool Drawable(const PixMap &pix)
     return pix.pixelSize == 16 && pix.baseAddr != NULL;
 }
 
+/* a copy that goes into an open composition; an added or maxed one is drawn onto the target as it comes */
+bool Composed(unsigned char blend)
+{
+    return blend != kPlatBlendAdd && blend != kPlatBlendMax;
+}
+
 /* a premultiplied pixel over another */
 uint32_t Over(uint32_t top, uint32_t under)
 {
@@ -350,6 +356,15 @@ bool Canvas::MakeTarget(CGrafPtr port)
         if (each->port == port)
             each->target = made;
     return true;
+}
+
+void Canvas::MakeNewTarget(CGrafPtr port)
+{
+    if (port == NULL || !MakeTarget(port))
+        return;
+    Canvas *canvas = Open(port);
+    canvas->AddFill(0, 0, port->pix.width, port->pix.height, kBlack, 255);
+    canvas->Close();
 }
 
 void Canvas::DropTarget(CGrafPtr port)
@@ -822,7 +837,7 @@ void Canvas::Icon(const Image_t *icon, const Rect &dst)
 
 void Canvas::Copy(CGrafPtr from, const Rect &src, const Rect &dst, Blit mode)
 {
-    unsigned char blend = mode == Blit::Copy ? kPlatBlendCopy : kPlatBlendAdd;
+    unsigned char blend = mode == Blit::Copy ? kPlatBlendCopy : mode == Blit::AdMax ? kPlatBlendMax : kPlatBlendAdd;
 
     if (from == NULL)
         return;
@@ -849,7 +864,7 @@ void Canvas::CopyTarget(CGrafPtr from, const Rect &src, const Rect &dst, unsigne
     Rect s;
     Rect d;
 
-    if (composing && blend != kPlatBlendAdd) {
+    if (composing && Composed(blend)) {
         ComposeTarget(from, src, dst);
         return;
     }
@@ -950,7 +965,7 @@ void Canvas::CopyPixels(const PixMap &from, const PixMap *mask, const Rect &src,
         PlatDebugLogOnce(&said, "canvas: a copy from pixels that are not 16-bit is not drawn");
         return;
     }
-    if (composing && blend != kPlatBlendAdd) {
+    if (composing && Composed(blend)) {
         ComposePixels(from, mask, src, maskRect, dst);
         return;
     }

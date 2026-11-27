@@ -66,9 +66,9 @@ extern unsigned PlatUIEpoch(void);
    target:
    - kPlatDrawImage: the image into the rect x, y, w, h, each channel times mod[c] / 255. Mix keeps what is
      under it times 1 - the image's alpha times alpha / 255, Add keeps it whole, Copy keeps nothing of it and
-     writes the image times alpha / 255
+     writes the image times alpha / 255; Max keeps in each channel, alpha too, the greater of that and what is there
    - kPlatDrawSilhouette: the image's shape in the colour times mod[c] / 255, blended as an image
-   - kPlatDrawFill: the rect in the colour: mixed by `alpha', added times `alpha', or copied at that alpha
+   - kPlatDrawFill: the rect in the colour: mixed by `alpha', added times `alpha', or copied or maxed at that alpha
    - kPlatDrawTriangles: `count' vertices from `first', each its own colour and alpha, blended as a fill
    - kPlatDrawOr: the image through the original renderer's 16-bit blend (PlatOrBlend); only in the view while
      PlatVideoOrBlend(), elsewhere the image mixed as it is. Always the whole image: mod, alpha, the part and
@@ -81,7 +81,7 @@ extern unsigned PlatUIEpoch(void);
    it cannot be the target drawn into, and has no silhouette.
    While PlatVideoOrBlend() and the brightness is not the default, the view's own draws are made in the colours
    as drawn, the brightness after them: a `source' is not drawn there (it holds the brightness already).
-   Overlays and targets take everything. */
+   Overlays and targets take everything, except a max where the renderer has none: only targets take that. */
 #define kPlatDrawImage          0
 #define kPlatDrawSilhouette     1
 #define kPlatDrawFill           2
@@ -91,6 +91,7 @@ extern unsigned PlatUIEpoch(void);
 #define kPlatBlendMix           0
 #define kPlatBlendAdd           1
 #define kPlatBlendCopy          2
+#define kPlatBlendMax           3
 #define kPlatFilterNearest      0
 #define kPlatFilterLinear       1
 #define kPlatFilterPixelArt     2

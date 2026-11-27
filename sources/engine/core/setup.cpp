@@ -259,8 +259,10 @@ static void CreateStatusOffPort(Rect screen)
 
     screen.right = screen.left + kStatusBarWidth;
     CreateGWorldContainer(&statusOffPort, GetMainDevice(), 0, &screen);
-    if (statusOffPort.world != NULL)
+    if (statusOffPort.world != NULL) {
         UI::ScaleUIPort(statusOffPort.world);
+        UI::Canvas::MakeNewTarget(statusOffPort.world);
+    }
     if (statusOffPort.world == NULL) {
         ShowTheCursor();
         FadeScreenIn();
@@ -283,8 +285,10 @@ void InitOffscreen(void)
     r = *bounds;
     OffsetRect(&r, -r.left, -r.top);
     CreateGWorldContainer(&loadPort, GetMainDevice(), 0, &r);
-    if (loadPort.world != NULL)
+    if (loadPort.world != NULL) {
         UI::ScaleUIPort(loadPort.world);
+        UI::Canvas::MakeNewTarget(loadPort.world);
+    }
     {
         UI::MenuScale menu;
         if (UI::Enabled()) {
@@ -935,21 +939,23 @@ void ShowLoadPage(void)
         .Copy(UI::Surface::Load(), *GetCWindowPortRect(gWind), *GetCWindowPortRect(gWind));
 }
 
-/* the screen put together again: the menu, the view with its status bar or the load page, then the dialogs drawn */
+/* the screen put together again: the load page's or menu's art redrawn, the menu, view or load page, dialogs */
 void RedrawInterface(void)
 {
     if (gWind == NULL)
         return;
-    if (showingIntroText != 0)
+    bool picture = RedrawLoadPagePicture();
+    if (showingIntroText != 0) {
         UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect(gWind), UI::kBlack);
-    else if (gPause != 0 && textDialog != NULL)
-        ShowMainScreen();               /* a text dialog draws on the load page: the menu as composed before it */
-    else if (gPause != 0)
+    } else if (gPause != 0) {
+        if (!picture)
+            RedrawMainScreenArt();
         MainScreenUpdate(1);
-    else if (gameInProgress != 0 && gameLoaded != 0)
+    } else if (gameInProgress != 0 && gameLoaded != 0) {
         RefreshSAT();
-    else
+    } else {
         ShowLoadPage();
+    }
     DrawDialogs();
 }
 

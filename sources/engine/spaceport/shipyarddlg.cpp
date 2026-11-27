@@ -434,9 +434,7 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
                         !shipMovieFilenames[selShipyardItem].empty()) {
                         GetDialogItem(shipyardDialog, kMovieItem, &itemType,
                                       &item, &movieBox);
-                        StartLoopingMovie(shipMovieFilenames[selShipyardItem],
-                                          FrontWindow(shipyardDialog),
-                                          &movieBox);
+                        StartLoopingMovie(shipMovieFilenames[selShipyardItem], shipyardDialog, movieBox);
                     }
                 } else {
                     canBuy = 0;
@@ -489,9 +487,7 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
                         !shipMovieFilenames[selShipyardItem].empty()) {
                         GetDialogItem(shipyardDialog, kMovieItem, &itemType,
                                       &item, &movieBox);
-                        StartLoopingMovie(shipMovieFilenames[selShipyardItem],
-                                          FrontWindow(shipyardDialog),
-                                          &movieBox);
+                        StartLoopingMovie(shipMovieFilenames[selShipyardItem], shipyardDialog, movieBox);
                     }
                 }
                 if (selShipListItem == lastClickItem && selShipListItem != -1 &&
@@ -626,10 +622,10 @@ void ShipyardDialogUpdate(void)
     if (selShipListItem != -1)
         load.Frame(listScreenRect[selShipListItem], shopGridColor[0]);
     if (selShipyardItem != -1) {
-        GetDialogItem(shipyardDialog, kMovieItem, &itemType, &item, &box);
         if (loopingMovie != NULL) {
-            load.Copy(UI::Surface::Dialog(shipyardDialog), box, box);
+            DrawLoopingMovie(load);
         } else {
+            GetDialogItem(shipyardDialog, kMovieItem, &itemType, &item, &box);
             if (previewPicID != shipClass[selShipyardItem].shipyardPictID) {
                 if (previewPic != NULL) {
                     QDReleaseResource(previewPic);

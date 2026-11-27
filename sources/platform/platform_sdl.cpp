@@ -97,9 +97,12 @@ struct PlatTarget {
 };
 static PlatTarget *gTargets;            /* every target, for a lost device */
 static int gDeadTargets;
+static SDL_BlendMode gMaxBlend = SDL_BLENDMODE_INVALID;    /* kPlatBlendMax's; invalid: made by hand */
+static PlatTarget *gMaxScratch;         /* where a hand-made kPlatBlendMax draw is drawn first */
 static unsigned gUIEpoch;               /* PlatUIEpoch */
 static void DropTargetTextures(void);
 static void FreeDeadTargets(void);
+static void FreeTarget(PlatTarget *target);
 
 static int gButtons;                    /* mouse buttons held, a bit each */
 static SDL_Scancode gSwallowedKey;      /* the Enter of Alt+Enter: the game sees neither its press nor its release */
@@ -178,6 +181,9 @@ void PlatQuit(void)
     PlatVideoClose();
     for (PlatImage *image = gImages; image != NULL; image = image->next)
         DropImageTextures(image);
+    if (gMaxScratch != NULL)
+        FreeTarget(gMaxScratch);
+    gMaxScratch = NULL;
     DropTargetTextures();
     DropOrBlend();
     if (gRenderer != NULL)
@@ -925,6 +931,19 @@ static SDL_Renderer *MakeRenderer(void)
     return SDL_CreateRenderer(gWindow, NULL);
 }
 
+/* kPlatBlendMax as the renderer's per-channel max, or made by hand where it has none (software, GLES2 w/o minmax) */
+static void FindMaxBlend(void)
+{
+    const SDL_BlendFactor one = SDL_BLENDFACTOR_ONE;
+    SDL_BlendMode max = SDL_ComposeCustomBlendMode(one, one, SDL_BLENDOPERATION_MAXIMUM, one, one,
+                                                   SDL_BLENDOPERATION_MAXIMUM);
+
+    gMaxBlend = SDL_SetRenderDrawBlendMode(gRenderer, max) ? max : SDL_BLENDMODE_INVALID;
+    SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_NONE);
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "max blend: %s",
+                gMaxBlend != SDL_BLENDMODE_INVALID ? "the renderer's" : "made by hand");
+}
+
 void PlatVideoAskOrBlend(int on)
 {
     gOrAsked = on != 0;
@@ -966,22 +985,23 @@ static bool MakeViewTextures(void)
     return true;
 }
 
-/* a draw's place in the view, in whole pixels, within the view (empty for none) */
-static SDL_Rect DrawBox(const PlatDraw &d)
+/* a draw's place in whole pixels within width x height, its vertices from `vertices' (empty for none) */
+static SDL_Rect DrawBoxWithin(const PlatDraw &d, const PlatVertex *vertices, size_t vertexCount, int width,
+                              int height)
 {
     SDL_FRect place = { d.x, d.y, d.w, d.h };
-    SDL_FRect view = { 0, 0, (float)gViewWidth, (float)gViewHeight };
+    SDL_FRect within = { 0, 0, (float)width, (float)height };
     SDL_Rect box = { 0, 0, 0, 0 };
 
     if (d.kind == kPlatDrawTriangles) {
-        if (d.first < 0 || d.count <= 0 || (size_t)d.first + d.count > gVertices.size())
+        if (d.first < 0 || d.count <= 0 || (size_t)d.first + d.count > vertexCount)
             return box;
-        float left = gVertices[(size_t)d.first].x;
-        float top = gVertices[(size_t)d.first].y;
+        float left = vertices[(size_t)d.first].x;
+        float top = vertices[(size_t)d.first].y;
         float right = left;
         float bottom = top;
         for (int i = 1; i < d.count; i++) {
-            const PlatVertex &v = gVertices[(size_t)d.first + i];
+            const PlatVertex &v = vertices[(size_t)d.first + i];
             left = SDL_min(left, v.x);
             top = SDL_min(top, v.y);
             right = SDL_max(right, v.x);
@@ -989,13 +1009,19 @@ static SDL_Rect DrawBox(const PlatDraw &d)
         }
         place = { left, top, right - left, bottom - top };
     }
-    if (!SDL_GetRectIntersectionFloat(&place, &view, &place))
+    if (!SDL_GetRectIntersectionFloat(&place, &within, &place))
         return box;
     box.x = (int)SDL_floorf(place.x);
     box.y = (int)SDL_floorf(place.y);
     box.w = (int)SDL_ceilf(place.x + place.w) - box.x;
     box.h = (int)SDL_ceilf(place.y + place.h) - box.y;
     return box;
+}
+
+/* a draw's place in the view, in whole pixels, within the view (empty for none) */
+static SDL_Rect DrawBox(const PlatDraw &d)
+{
+    return DrawBoxWithin(d, gVertices.data(), gVertices.size(), gViewWidth, gViewHeight);
 }
 
 /* Before a draw that reads the view at `box': the copy brought up to date where the view changed since it was
@@ -1232,26 +1258,42 @@ static SDL_Texture *DrawTexture(const PlatDraw &d, const DrawSink &sink, Texels 
         SDL_SetTextureBlendMode(texture, deep ? SDL_BLENDMODE_ADD_PREMULTIPLIED : SDL_BLENDMODE_ADD);
     } else {
         SDL_SetTextureAlphaMod(texture, d.alpha);
-        SDL_SetTextureBlendMode(texture, d.blend == kPlatBlendCopy ? SDL_BLENDMODE_NONE
-                                                                   : SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+        if (d.blend == kPlatBlendCopy)
+            SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
+        else if (d.blend == kPlatBlendMax)
+            SDL_SetTextureBlendMode(texture, gMaxBlend);
+        else
+            SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
     }
     return texture;
 }
 
-/* the texture's colour for a draw: a copy at an alpha takes the alpha into the colour, staying premultiplied */
+/* a copy and a max are not blended by the alpha: their colour takes it in, staying premultiplied */
+static bool AlphaInColor(int blend)
+{
+    return blend == kPlatBlendCopy || blend == kPlatBlendMax;
+}
+
+static Uint32 ColorShare(const PlatDraw &d)
+{
+    return AlphaInColor(d.blend) ? d.alpha : 255;
+}
+
 static void SetDrawColorMod(SDL_Texture *texture, const PlatDraw &d, Uint32 r, Uint32 g, Uint32 b)
 {
-    Uint32 share = d.blend == kPlatBlendCopy ? d.alpha : 255;
+    Uint32 share = ColorShare(d);
 
     SDL_SetTextureColorMod(texture, (Uint8)((r * share + 127) / 255), (Uint8)((g * share + 127) / 255),
                            (Uint8)((b * share + 127) / 255));
 }
 
-/* a fill's or a triangle's blend: its colour comes plain, and is premultiplied by the draw for a copy */
+/* a fill's or a triangle's blend: its colour comes plain, and is premultiplied by the draw for a copy or a max */
 static SDL_BlendMode PlainBlend(int blend)
 {
     if (blend == kPlatBlendAdd)
         return SDL_BLENDMODE_ADD;
+    if (blend == kPlatBlendMax)
+        return gMaxBlend;
     return blend == kPlatBlendCopy ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND;
 }
 
@@ -1287,6 +1329,8 @@ static void RenderTiled(SDL_Texture *texture, const PlatDraw &d, const DrawSink 
     SDL_SetRenderClipRect(gRenderer, sink.clip);
 }
 
+static void RenderMaxByHand(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_Vertex> &scratch);
+
 static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_Vertex> &scratch)
 {
     SDL_FRect rect = { d.x, d.y, d.w, d.h };
@@ -1297,6 +1341,10 @@ static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_
     Uint32 share;
     int i;
 
+    if (d.blend == kPlatBlendMax && gMaxBlend == SDL_BLENDMODE_INVALID && d.kind != kPlatDrawOr) {
+        RenderMaxByHand(d, sink, scratch);
+        return;
+    }
     switch (d.kind) {
     case kPlatDrawOr:
         texture = d.image != NULL ? ImageTexture(d.image, sink.orState != NULL ? kTexelsCodes : kTexelsShown) : NULL;
@@ -1339,7 +1387,7 @@ static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_
         break;
     case kPlatDrawFill:
         argb = DrawColor(d, sink);
-        share = d.blend == kPlatBlendCopy ? d.alpha : 255;
+        share = ColorShare(d);
         SDL_SetRenderDrawBlendMode(gRenderer, PlainBlend(d.blend));
         SDL_SetRenderDrawColor(gRenderer, (Uint8)((((argb >> 16) & 0xff) * share + 127) / 255),
                                (Uint8)((((argb >> 8) & 0xff) * share + 127) / 255),
@@ -1352,7 +1400,7 @@ static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_
         scratch.resize((size_t)d.count);
         for (i = 0; i < d.count; i++) {
             const PlatVertex &v = sink.vertices[(size_t)d.first + i];
-            float held = d.blend == kPlatBlendCopy ? v.alpha / 255.0f : 1.0f;
+            float held = AlphaInColor(d.blend) ? v.alpha / 255.0f : 1.0f;
             argb = d.deep ? DrawColor(d, sink) : SinkColor(v.color, sink);
             scratch[i].position.x = v.x;
             scratch[i].position.y = v.y;
@@ -1367,6 +1415,98 @@ static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_
         SDL_RenderGeometry(gRenderer, NULL, scratch.data(), d.count, NULL, 0);
         break;
     }
+}
+
+/* the render target's pixels in box as ARGB, or NULL */
+static SDL_Surface *ReadRendered(const SDL_Rect &box)
+{
+    SDL_Surface *read = SDL_RenderReadPixels(gRenderer, &box);
+    SDL_Surface *argb = read != NULL ? SDL_ConvertSurface(read, SDL_PIXELFORMAT_ARGB8888) : NULL;
+
+    SDL_DestroySurface(read);
+    if (argb != NULL && (argb->w != box.w || argb->h != box.h)) {
+        SDL_DestroySurface(argb);
+        argb = NULL;
+    }
+    return argb;
+}
+
+/* the hand-made max's scratch target, at least width x height */
+static SDL_Texture *MaxScratch(int width, int height)
+{
+    if (gMaxScratch != NULL && (gMaxScratch->width < width || gMaxScratch->height < height)) {
+        width = SDL_max(width, gMaxScratch->width);
+        height = SDL_max(height, gMaxScratch->height);
+        FreeTarget(gMaxScratch);
+        gMaxScratch = NULL;
+    }
+    if (gMaxScratch == NULL)
+        gMaxScratch = PlatTargetCreate(width, height);
+    return gMaxScratch != NULL ? TargetTexture(gMaxScratch) : NULL;
+}
+
+/* kPlatBlendMax without the renderer's: the draw copied onto clear scratch, each channel's greater worked out here */
+static void RenderMaxByHand(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_Vertex> &scratch)
+{
+    static int said;
+    static int saidWindow;
+    SDL_Texture *into = SDL_GetRenderTarget(gRenderer);
+    SDL_Texture *held;
+    SDL_Surface *drawn;
+    SDL_Surface *under;
+    PlatDraw copy = d;
+    DrawSink onto = sink;
+    SDL_FRect area;
+    SDL_Rect box;
+    int width;
+    int height;
+
+    if (into == NULL) {
+        PlatDebugLogOnce(&saidWindow, "platform: a max blend made by hand needs a target, it is not drawn");
+        return;
+    }
+    if (!SDL_GetCurrentRenderOutputSize(gRenderer, &width, &height))
+        return;
+    box = DrawBoxWithin(d, sink.vertices, sink.vertexCount, width, height);
+    if (sink.clip != NULL && !SDL_GetRectIntersection(&box, sink.clip, &box))
+        return;
+    if (box.w <= 0 || box.h <= 0)
+        return;
+    held = MaxScratch(width, height);
+    if (held == NULL || !SDL_SetRenderTarget(gRenderer, held)) {
+        PlatDebugLogOnce(&said, "platform: no scratch target for a max blend, it is not drawn");
+        SDL_SetRenderTarget(gRenderer, into);
+        return;
+    }
+    area = { (float)box.x, (float)box.y, (float)box.w, (float)box.h };
+    SDL_SetRenderClipRect(gRenderer, &box);
+    SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_NONE);
+    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, SDL_ALPHA_TRANSPARENT);
+    SDL_RenderFillRect(gRenderer, &area);
+    copy.blend = kPlatBlendCopy;
+    onto.clip = &box;
+    RenderDraw(copy, onto, scratch);
+    drawn = ReadRendered(box);
+    SDL_SetRenderClipRect(gRenderer, NULL);
+    SDL_SetRenderTarget(gRenderer, into);
+    SDL_SetRenderClipRect(gRenderer, sink.clip);
+    under = drawn != NULL ? ReadRendered(box) : NULL;
+    if (under != NULL) {
+        for (int y = 0; y < box.h; y++) {
+            Uint8 *mine = (Uint8 *)drawn->pixels + (size_t)y * drawn->pitch;
+            const Uint8 *there = (const Uint8 *)under->pixels + (size_t)y * under->pitch;
+            for (int x = 0; x < box.w * 4; x++)
+                mine[x] = SDL_max(mine[x], there[x]);
+        }
+        SDL_UpdateTexture(held, &box, drawn->pixels, drawn->pitch);
+        SDL_SetTextureBlendMode(held, SDL_BLENDMODE_NONE);
+        SDL_SetTextureColorMod(held, 255, 255, 255);
+        SDL_SetTextureAlphaMod(held, 255);
+        SDL_SetTextureScaleMode(held, SDL_SCALEMODE_NEAREST);
+        SDL_RenderTexture(gRenderer, held, &area, &area);
+    }
+    SDL_DestroySurface(drawn);
+    SDL_DestroySurface(under);
 }
 
 void PlatTargetDraw(PlatTarget *target, const PlatDraw *draws, int drawCount, const PlatVertex *vertices,
@@ -1397,7 +1537,6 @@ void PlatTargetDraw(PlatTarget *target, const PlatDraw *draws, int drawCount, co
 int PlatTargetRead(PlatTarget *target, const PlatRect *rect, uint32_t *out)
 {
     SDL_Texture *texture = target != NULL ? TargetTexture(target) : NULL;
-    SDL_Surface *read;
     SDL_Surface *argb;
     SDL_Rect box;
 
@@ -1412,10 +1551,8 @@ int PlatTargetRead(PlatTarget *target, const PlatRect *rect, uint32_t *out)
     }
     if (!SDL_SetRenderTarget(gRenderer, texture))
         return 0;
-    read = SDL_RenderReadPixels(gRenderer, &box);
+    argb = ReadRendered(box);
     SDL_SetRenderTarget(gRenderer, NULL);
-    argb = read != NULL ? SDL_ConvertSurface(read, SDL_PIXELFORMAT_ARGB8888) : NULL;
-    SDL_DestroySurface(read);
     if (argb == NULL)
         return 0;
     for (int y = 0; y < box.h; y++)
@@ -2087,6 +2224,7 @@ int PlatVideoOpen(int width, int height, int fullScreen)
         if (gRenderer == NULL)
             return -1;
         SDL_SetRenderVSync(gRenderer, 0);       /* the game paces itself */
+        FindMaxBlend();
     }
     MakeFrame(width, height);
     FitWindow(width, height);

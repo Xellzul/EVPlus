@@ -241,6 +241,8 @@ void SetupInterfaceBackground(void)
         DrawVersion();
         QDReleaseResource((PicHandle)pic);
     }
+    ForgetLoadPagePicture();
+    ForgetMainScreenAnim();
     PlaceMainScreenAnim();
 }
 

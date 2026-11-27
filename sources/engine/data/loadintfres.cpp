@@ -5,6 +5,7 @@
 #include "gameconst.h"
 #include "render.h"
 #include "painter.h"
+#include "platform.h"
 
 
 #define kIntfRec ((IntfRec *)*intfFileHand)
@@ -17,6 +18,38 @@
     p = &((IntfRec *)*rec)->area; \
     statusOffRect[n] = *p
 
+static short statusPictID;          /* the picture last drawn into statusOffPort; 0 = none */
+static unsigned statusPictEpoch;    /* PlatUIEpoch when it was drawn */
+
+/* the status bar's picture into statusOffPort, over black */
+static void DrawStatusPicture(PicHandle pict)
+{
+    UI::Painter status{UI::Surface(statusOffPort)};
+    Rect pictRect;
+
+    status.Fill(statusOffPort.bounds, rgbBlack);
+    QDGetPictureBounds(pict, &pictRect);
+    OffsetRect(&pictRect, -pictRect.left, -pictRect.top);
+    OffsetRect(&pictRect, -statusOffPort.bounds.left, -statusOffPort.bounds.top);
+    status.Picture(pict, pictRect);
+    statusPictEpoch = PlatUIEpoch();
+}
+
+UI::Surface StatusPicture(void)
+{
+    PicHandle pict;
+
+    if (statusPictID != 0 && statusPictEpoch != PlatUIEpoch()) {
+        statusPictEpoch = PlatUIEpoch();
+        pict = GetPicture(statusPictID);
+        if (pict != NULL) {
+            DrawStatusPicture(pict);
+            QDReleaseResource(pict);
+        }
+    }
+    return UI::Surface(statusOffPort);
+}
+
 // FUNCTION: EVNOVA 0x004cda50
 // MAC: _LoadIntfResource i386 0x000735f2 ppc 0x0007c470
 void LoadIntfResource(void)
@@ -28,7 +61,6 @@ void LoadIntfResource(void)
     Rect *p;
     Handle rec;
     IntfRec **rec2;
-    Rect pictRect;
     char fontName[256];
 
     id = kFirstResourceID;
@@ -99,15 +131,8 @@ void LoadIntfResource(void)
 
     pict = GetPicture(picID);
     if (pict != NULL) {
-        {
-            UI::Painter status{UI::Surface(statusOffPort)};
-
-            status.Fill(statusOffPort.bounds, rgbBlack);
-            QDGetPictureBounds(pict, &pictRect);
-            OffsetRect(&pictRect, -pictRect.left, -pictRect.top);
-            OffsetRect(&pictRect, -statusOffPort.bounds.left, -statusOffPort.bounds.top);
-            status.Picture(pict, pictRect);
-        }
+        DrawStatusPicture(pict);
+        statusPictID = picID;
         QDReleaseResource(pict);
         RedrawStatus(1);
     }

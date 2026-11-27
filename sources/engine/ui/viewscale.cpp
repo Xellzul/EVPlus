@@ -3,6 +3,7 @@
 #include <math.h>
 #include <initializer_list>
 #include "burger.h"
+#include "canvas.h"
 #include "player.h"
 #include "render.h"
 #include "spriteworld.h"
@@ -195,6 +196,7 @@ static void CreateFramePair(Rect bounds, SWFrameRec **work, SWFrameRec **back)
     for (SWFrameRec *frame : { *work, *back }) {
         UI::ScaleUIPort(frame->framePort);
         SWInitializeFrame(frame);
+        UI::Canvas::MakeNewTarget(frame->framePort);
     }
     SWLockFrame(*work);
     SWLockFrame(*back);

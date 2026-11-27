@@ -8,6 +8,7 @@
 #include "soundtool.h"
 
 namespace UI {
+class Painter;
 class Surface;
 }
 
@@ -41,6 +42,7 @@ extern void DisposeGWorldContainer(GWorldContainer *gwc);
 extern void DoMainScreen(void);
 extern Boolean RetrieveMenuIcon(short picID, const UI::Surface &dest, Rect *destRect);
 extern void DrawIntroProgressBar(void);
+extern void PaintIntroProgressBar(void);        /* the bar as far as loading has come, on the load page */
 extern void DrawStatus(void);
 extern void DrawStatusCargo(void);
 extern void DrawStatusFuel(void);
@@ -66,6 +68,8 @@ extern void InitIntroProgressBar(void);
 extern int KeyboardGet(void);
 extern short LoadExtendedShipSprites(short shipType);
 extern void LoadIntfResource(void);
+/* statusOffPort, its picture drawn again first when the GPU lost it or the brightness changed */
+extern UI::Surface StatusPicture(void);
 extern void LoadMainScreenAnim(void);
 extern void PlaceMainScreenAnim(void);
 extern void MainScreenAppear(void);
@@ -75,6 +79,8 @@ extern void LoadSprites(void);
 extern void PlaceAlertSprite(void);
 extern void LoopingMovieIdle(void);
 extern void MainScreenAnimDraw(void);
+extern void RedrawMainScreenArt(void);        /* the menu's art drawn again as it stood, with its frames */
+extern void ForgetMainScreenAnim(void);       /* a new background: no frames drawn on it yet */
 extern void MainScreenChoice(short which);
 extern void MainScreenAppearStart(void);
 void MainScreenKey(char key, int32_t a, int32_t b);
@@ -92,6 +98,11 @@ extern void SetupInterfaceBackground(void);
 extern void ShowAmbrosiaLogo(void);
 extern void ShowIntroScreen(void);
 extern void ShowSplashScreen(void);
+/* the load page black with the picture (NULL: none) centred, kept to draw again; returns where it lies */
+extern Rect PaintLoadPagePicture(PicHandle pic, short id);
+extern void ForgetLoadPagePicture(void);      /* the load page's picture is not drawn again */
+/* that picture drawn again, with the loading bar while the game loads; false = the page shows none */
+extern bool RedrawLoadPagePicture(void);
 extern void DisposeMainScreenSounds(void);
 extern void MainScreenAnimIdle(void);
 extern void MainScreenRolloverIdle(void);
@@ -112,7 +123,6 @@ extern short rolloverIndex;
 extern Handle intfFileHand;
 extern uint32_t lastLogoAnimTime;
 extern uint32_t lastSlideAnimTime;
-extern Rect gLoadBarBase;
 extern short logoFrameCount;
 extern short logoIndex;
 extern short gMainPicHeightDelta;
@@ -171,7 +181,9 @@ extern short statusFontSize[2];
 extern void DoPlayGameWork(unsigned char advance);
 extern void HandleSpriteMurkiness(short x, short y, SpriteRec *sprite);
 extern void FloaterDrawCallback(SpriteWorldPtr world);
-extern void StartLoopingMovie(const std::string &name, void *window, Rect *box);
+extern void StartLoopingMovie(const std::string &name, DialogPtr dlg, const Rect &box);
+/* the looping movie's frame as last decoded, at its box */
+extern void DrawLoopingMovie(UI::Painter &p);
 extern void PreloadPortDialog(SpobRecord *spob, short stellar);
 
 #endif
