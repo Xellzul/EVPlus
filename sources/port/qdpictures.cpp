@@ -1,21 +1,15 @@
-/* qdpictures.cpp -- PICT, cicn and ppat: loading (PICTs through the gamma ramp, the ppat decoder) and drawing */
+/* qdpictures.cpp -- PICT, cicn and ppat: loading (the ppat decoder) and drawing */
 #include "pixel.h"
 #include "burger.h"
 
 void (*gArtGone)(const Image_t *art);
 
 // FUNCTION: EVNOVA 0x004b8ed0
-PicHandle LoadPictResource(int picID, char gamma)
+PicHandle LoadPictResource(int picID)
 {
     char **h;
     PicHandle img;
     int32_t err;
-    int32_t advance;
-    unsigned char *p;
-    unsigned short pix;
-    int32_t bytes;
-    int32_t pixels;
-    int32_t rows;
 
     h = GetResource(kPictType, picID);
     if (h != NULL) {
@@ -27,47 +21,6 @@ PicHandle LoadPictResource(int picID, char gamma)
             DeallocAPointer(img);
             return NULL;
         }
-        if (gamma != 0 && img->Width != 0 && img->Height != 0) {
-            switch ((img->DataType + 7) & 0xfffffff8) {
-            case 8:
-                p = img->PalettePtr;
-                if (p != NULL) {
-                    bytes = 256 * 3;
-                    do {
-                        *p = (gGammaRamp[(*p >> 3) & 0x1f] << 3);
-                        p++;
-                    } while (--bytes != 0);
-                }
-                break;
-            case 16:
-                p = img->ImagePtr;
-                advance = img->RowBytes - img->Width * 2;
-                rows = img->Height;
-                do {
-                    pixels = img->Width;
-                    do {
-                        pix = *(unsigned short *)p;
-                        *(unsigned short *)p = Pixel::Map(pix, gGammaRamp);
-                        p += 2;
-                    } while (--pixels != 0);
-                    p += advance;
-                } while (--rows != 0);
-                break;
-            case 24:
-                p = img->ImagePtr;
-                advance = img->RowBytes - img->Width * 3;
-                rows = img->Height;
-                do {
-                    bytes = img->Width * 3;
-                    do {
-                        *p = (gGammaRamp[(*p >> 3) & 0x1f] << 3);
-                        p++;
-                    } while (--bytes != 0);
-                    p += advance;
-                } while (--rows != 0);
-                break;
-            }
-        }
         return img;
     }
     return NULL;
@@ -76,18 +29,14 @@ PicHandle LoadPictResource(int picID, char gamma)
 // FUNCTION: EVNOVA 0x004b9050
 PicHandle GetPicture(int picID)
 {
-    return LoadPictResource(picID, 0);
+    return LoadPictResource(picID);
 }
 
-/*
- * The same one-line wrapper at the next address, passing 0 where GetPicture
- * passes 1. Ghidra's decompilation prints both immediates as 0; the exe bytes
- * say otherwise, which is why this pair is worth the note.
- */
+/* the same as GetPicture */
 // FUNCTION: EVNOVA 0x004b9060
 PicHandle GetPictureNoGamma(int picID)
 {
-    return LoadPictResource(picID, 0);
+    return LoadPictResource(picID);
 }
 
 /* A decoded picture as a CopyBits source. The exe passed a record of its own (bounds, then the bit depth

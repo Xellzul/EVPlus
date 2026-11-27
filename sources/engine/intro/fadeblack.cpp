@@ -10,11 +10,7 @@
 #define kSplashPictID       0x83
 #define kAmbrosiaLogoPictID 0x1fa4
 
-static short loadPagePictID;        /* the picture on the load page; 0 = black alone */
-static Rect loadPageFrom;           /* the load page's part shown on the screen, and where, in the menu's scale */
-static Rect loadPageTo;
-
-Rect PaintLoadPagePicture(PicHandle pic, short id)
+Rect PaintLoadPagePicture(PicHandle pic)
 {
     UI::Painter load(UI::Surface::Load());
     Rect box = loadPort.bounds;
@@ -24,29 +20,7 @@ Rect PaintLoadPagePicture(PicHandle pic, short id)
         CenterPict(pic, &box);
         load.Picture(pic, box);
     }
-    loadPagePictID = pic != NULL ? id : 0;
     return box;
-}
-
-/* the load page's picture painted again, with the bar while loading */
-static void RedrawLoadPagePicture(void)
-{
-    UI::MenuScale menu;
-    PicHandle pic;
-
-    pic = loadPagePictID != 0 ? GetPicture(loadPagePictID) : NULL;
-    PaintLoadPagePicture(pic, loadPagePictID);
-    if (pic != NULL)
-        QDReleaseResource(pic);
-    if (gameLoaded == 0 && progressMax > 0)
-        PaintIntroProgressBar();
-}
-
-/* the scene of the load page: its picture, the part shown, black around it */
-static void DrawLoadPage(void)
-{
-    RedrawLoadPagePicture();
-    ShowLoadPage(loadPageFrom, loadPageTo);
 }
 
 void ShowLoadPage(const Rect &from, const Rect &to)
@@ -56,9 +30,6 @@ void ShowLoadPage(const Rect &from, const Rect &to)
 
     screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
     screen.Copy(UI::Surface::Load(), from, to);
-    loadPageFrom = from;
-    loadPageTo = to;
-    Screen::SetScene(DrawLoadPage);
 }
 
 // FUNCTION: EVNOVA 0x004aaf60
@@ -69,7 +40,7 @@ void ShowSplashScreen(void)
     PicHandle pic;
 
     pic = GetPicture(kSplashPictID);
-    PaintLoadPagePicture(pic, kSplashPictID);
+    PaintLoadPagePicture(pic);
     if (pic != NULL)
         QDReleaseResource(pic);
     ShowLoadPage(loadPort.bounds, *GetCWindowPortRect(gWind));
@@ -87,7 +58,7 @@ void ShowAmbrosiaLogo(void)
     Rect box;
 
     pic = GetPicture(kAmbrosiaLogoPictID);
-    box = PaintLoadPagePicture(pic, kAmbrosiaLogoPictID);
+    box = PaintLoadPagePicture(pic);
     ShowLoadPage(box, box);
     if (pic != NULL)
         QDReleaseResource(pic);

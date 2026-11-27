@@ -490,14 +490,6 @@ void ParseDITL(DialogPtr dlg, unsigned char *p)
     }
 }
 
-static GWorldContainer *trackedPopup;   /* the popup menu PopUpListSelect tracks, and its place on the screen */
-static Rect trackedPopupBox;
-
-static void DrawTrackedPopup(void)
-{
-    UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(*trackedPopup), trackedPopupBox, trackedPopupBox);
-}
-
 // FUNCTION: EVNOVA 0x004cf1c0
 int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
 {
@@ -559,63 +551,58 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
         EraseRect(&box);
         UnsetGWorldContainer(&gw);
         lastH = lastV = -1;
-        trackedPopup = &gw;
-        trackedPopupBox = box;
-        {
-            Screen::Above tracked(DrawTrackedPopup);
-            do {
-                GetGlobalMouse(&pt);
-                h = pt.h;
-                x = h;
-                v = pt.v;
-                if (maxScroll != 0 && scroll > 0 && pt.v < 20) {
-                    scroll -= 20;
-                    if (scroll < 0)
-                        scroll = 0;
-                    lastH = lastV = -1;
-                } else if (maxScroll != 0 && scroll < maxScroll &&
-                           pt.v > portRect->bottom - portRect->top - 20) {
-                    scroll += 20;
-                    if (scroll > maxScroll)
-                        scroll = maxScroll;
-                    lastH = lastV = -1;
-                }
-                if (h != lastH || pt.v != lastV) {
-                    if (PtInRect(x, v, &box))
-                        result = (v - (box.top - scroll)) / 20 + 1;
-                    else
-                        result = 0;
-                    GetPort(&savedPort);
-                    SetPort(gw.world);
-                    DrawBevel(&box, &bevelGray2, &bevelGray1,
-                                 &bevelGray4);
-                    RGBForeColor(&rgbBlack);
-                    for (i = 0; i < list->count; i++) {
-                        w = MeasureCString(list->item[i].text) + 4;
-                        MoveTo(box.right - w,
-                               box.top - scroll + i * 20 +
-                                   (CurrentGrafPort->txSize + 20) / 2 - 1);
-                        DrawCString((char *)&list->item[i]);
-                        if (i == result - 1) {
-                            hilite.left = box.left + 2;
-                            hilite.right = box.right - 2;
-                            hilite.top = box.top - scroll + i * 20 + 2;
-                            hilite.bottom = hilite.top + 0x12;
-                            InvertRect(&hilite);
-                        }
+        do {
+            GetGlobalMouse(&pt);
+            h = pt.h;
+            x = h;
+            v = pt.v;
+            if (maxScroll != 0 && scroll > 0 && pt.v < 20) {
+                scroll -= 20;
+                if (scroll < 0)
+                    scroll = 0;
+                lastH = lastV = -1;
+            } else if (maxScroll != 0 && scroll < maxScroll &&
+                       pt.v > portRect->bottom - portRect->top - 20) {
+                scroll += 20;
+                if (scroll > maxScroll)
+                    scroll = maxScroll;
+                lastH = lastV = -1;
+            }
+            if (h != lastH || pt.v != lastV) {
+                if (PtInRect(x, v, &box))
+                    result = (v - (box.top - scroll)) / 20 + 1;
+                else
+                    result = 0;
+                GetPort(&savedPort);
+                SetPort(gw.world);
+                DrawBevel(&box, &bevelGray2, &bevelGray1,
+                             &bevelGray4);
+                RGBForeColor(&rgbBlack);
+                for (i = 0; i < list->count; i++) {
+                    w = MeasureCString(list->item[i].text) + 4;
+                    MoveTo(box.right - w,
+                           box.top - scroll + i * 20 +
+                               (CurrentGrafPort->txSize + 20) / 2 - 1);
+                    DrawCString((char *)&list->item[i]);
+                    if (i == result - 1) {
+                        hilite.left = box.left + 2;
+                        hilite.right = box.right - 2;
+                        hilite.top = box.top - scroll + i * 20 + 2;
+                        hilite.bottom = hilite.top + 0x12;
+                        InvertRect(&hilite);
                     }
-                    DrawBevel(&box, NULL, &bevelGray1, &bevelGray4);
-                    DrawTrackedPopup();
-                    SetPort(savedPort);
-                    ScreenEndScene();
-                    lastV = pt.v;
-                    lastH = pt.h;
                 }
-                HandleIntroMusic(0);
-                Screen::Idle();
-                KeyboardKbhit();
-            } while (MouseReadButtons() != 0);
-        }
+                DrawBevel(&box, NULL, &bevelGray1, &bevelGray4);
+                UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(gw), box, box);
+                SetPort(savedPort);
+                ScreenEndScene();
+                lastV = pt.v;
+                lastH = pt.h;
+            }
+            HandleIntroMusic(0);
+            Screen::Idle();
+            KeyboardKbhit();
+        } while (MouseReadButtons() != 0);
         DisposeGWorldContainer(&gw);
         dlg->needsUpdate = 1;
         RedrawDialogs(1);
@@ -1619,7 +1606,6 @@ void DrawDottedFrame(Rect *r)
 static void ShowDialogOnScreen(DialogPtr dlg)
 {
     UI::Painter(UI::Surface::Screen()).Copy(UI::Surface::Dialog(dlg), dlg->portRect, dlg->bounds);
-    dlg->shown = 1;
 }
 
 // FUNCTION: EVNOVA 0x004d0d00
@@ -1890,13 +1876,6 @@ static void DrawStack(int count)
 void DrawDialogs(void)
 {
     DrawStack(gDialogCount);
-}
-
-void DrawShownDialogs(void)
-{
-    for (int i = 0; i < gDialogCount; i++)
-        if (gDialogStack[i]->shown != 0)
-            DrawDialog(gDialogStack[i]);
 }
 
 // FUNCTION: EVNOVA 0x004d16f0

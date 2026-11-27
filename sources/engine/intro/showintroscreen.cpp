@@ -49,7 +49,7 @@ void ShowIntroScreen(void)
             else
                 picHandle = NULL;
 
-            rect = PaintLoadPagePicture(picHandle, introPictID[i]);
+            rect = PaintLoadPagePicture(picHandle);
             if (picHandle != NULL)
                 QDReleaseResource(picHandle);
 

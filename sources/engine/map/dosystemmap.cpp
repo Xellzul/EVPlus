@@ -42,8 +42,6 @@ double floatingMapZoom = 0.5625;                 /* 0x005759e0 (see mapZoom abov
 static void DrawMap(UI::Painter &p, Rect box);
 static void DrawMapInfluence(UI::Painter &p, Rect bounds);
 
-static bool mapDragged;             /* the map follows a drag: drawn as ScrollMapDisplay draws it, without borders */
-
 
 namespace {
 
@@ -467,7 +465,6 @@ void MapDialog::Hit(short itemHit)
             if (StillDown()) {
                 GetMouse(&anchor);
                 savedScroll = mapScroll;
-                mapDragged = true;
                 while (StillDown()) {
                     BusyIdle();
                     prevV = mouse.v;
@@ -480,7 +477,6 @@ void MapDialog::Hit(short itemHit)
                     ScrollMapDisplay(mouse.h - prevH, mouse.v - prevV);
                     nv_UpdateDialogWindow(0);
                 }
-                mapDragged = false;
                 MouseFlushWheel();      /* no zoom from notches turned during the drag */
                 if (settings.showMapBorders != 0)
                     RecalcAllMapInfluence(&box);
@@ -871,7 +867,6 @@ void MapDialogUpdate(void)
     UI::Painter work{UI::Surface(View::UIWork())};
     UI::Painter back{UI::Surface(View::UIBack())};
     UI::Painter &map = partialMapDialogUpdate != 0 ? load : work;
-    bool quick = partialMapDialogUpdate != 0 || mapDragged;
 
     load.Fill(*GetDialogPortRect(mapDialog), UI::kBlack);
     if (partialMapDialogUpdate == 0 && mapBackgroundPic != NULL)
@@ -891,7 +886,7 @@ void MapDialogUpdate(void)
     w = box.right - box.left;
     h = box.bottom - box.top;
     map.Fill(box, UI::kBlack);
-    if (!quick && settings.showMapBorders != 0) {
+    if (partialMapDialogUpdate == 0 && settings.showMapBorders != 0) {
         GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &r2);
         DrawMapInfluence(work, r2);
     }
@@ -921,7 +916,7 @@ void MapDialogUpdate(void)
                 if (nebulaPic[i][fit] != 0) {
                     SectRect(&box, &nebR, &r2);
                     back.Picture(nebulaPic[i][fit], nebR);
-                    map.Copy(UI::Surface(View::UIBack()), r2, r2, quick ? UI::Blit::Copy : UI::Blit::AdMax);
+                    map.Copy(UI::Surface(View::UIBack()), r2, r2, partialMapDialogUpdate != 0 ? UI::Blit::Copy : UI::Blit::AdMax);
                 }
             }
         }
@@ -1581,61 +1576,6 @@ void DrawMap(UI::Painter &p, Rect box)
 }
 
 
-namespace {
-
-/* what DrawMap shows that the map dialogs change: the selection, gate links, arrows, route, nav target, scroll */
-struct MapMarks {
-    short sel;
-    unsigned char gateMode;
-    short gateStellar;
-    short mission[32];          /* missionSyst */
-    short green;
-    Boolean multiArrows;
-    short route[kMaxHyperRoute];
-    short navKind;
-    short navTarget;
-    MapScroll scroll;
-
-    static MapMarks Now();
-    void Set() const;
-};
-
-MapMarks MapMarks::Now()
-{
-    MapMarks m;
-
-    m.sel = selSystem;
-    m.gateMode = hypergateMapMode;
-    m.gateStellar = hypergateMapModeStellar;
-    memcpy(m.mission, missionSyst, sizeof m.mission);
-    m.green = greenMissionSyst;
-    m.multiArrows = multiArrowsOnSingleSystem;
-    memcpy(m.route, hyperRoute, sizeof m.route);
-    m.navKind = shipData->navTargetKind;
-    m.navTarget = shipData->targetStellar;
-    m.scroll = mapScroll;
-    return m;
-}
-
-void MapMarks::Set() const
-{
-    selSystem = sel;
-    hypergateMapMode = gateMode;
-    hypergateMapModeStellar = gateStellar;
-    memcpy(missionSyst, mission, sizeof mission);
-    greenMissionSyst = green;
-    multiArrowsOnSingleSystem = multiArrows;
-    memcpy(hyperRoute, route, sizeof route);
-    shipData->navTargetKind = navKind;
-    shipData->targetStellar = navTarget;
-    mapScroll = scroll;
-}
-
-MapMarks floatingMarks;         /* what the floating map was last drawn with */
-bool floatingDrawn;             /* floatingMarks holds them */
-
-} // namespace
-
 /* DrawMapInFloatingFrame (mac _DrawMapInFloatingFrame; was named ClearStarfield). */
 // FUNCTION: EVNOVA 0x004a99f0
 // MAC: _DrawMapInFloatingFrame i386 0x00011304 ppc 0x00014c38
@@ -1656,19 +1596,6 @@ void DrawMapInFloatingFrame(void)
     DrawMap(p, floatingMapFrame->frameRect);
 
     mapZoom = savedZoom;
-    floatingMarks = MapMarks::Now();
-    floatingDrawn = true;
-}
-
-/* the floating map drawn again with what it was last drawn with; the map dialogs' own put back after */
-void RedrawFloatingMap(void)
-{
-    MapMarks kept = MapMarks::Now();
-
-    if (floatingDrawn)
-        floatingMarks.Set();
-    DrawMapInFloatingFrame();
-    kept.Set();
 }
 
 /*

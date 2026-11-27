@@ -319,6 +319,13 @@ static void Win95ProcessEvent(const SDL_Event *e)
     case SDL_EVENT_QUIT:
         WinGameClose();
         return;
+    case SDL_EVENT_RENDER_TARGETS_RESET:
+    case SDL_EVENT_RENDER_DEVICE_RESET:
+    case SDL_EVENT_RENDER_DEVICE_LOST:
+        PlatDebugLog(e->type == SDL_EVENT_RENDER_TARGETS_RESET ? "render targets lost"
+                     : e->type == SDL_EVENT_RENDER_DEVICE_RESET ? "render device reset" : "render device lost");
+        Fatal("The graphics device was reset (SDL's %s renderer).", PlatRendererName());
+        return;
     case SDL_EVENT_MOUSE_WHEEL:
         /* integer_y: SDL's whole notches, trackpad fractions summed, in the system's scroll direction; a few
            kept at most, so a flicked wheel does not keep scrolling after it stops */

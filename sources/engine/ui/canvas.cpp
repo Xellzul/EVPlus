@@ -44,15 +44,8 @@ struct Scratch {
     const void *Made() const { return image != NULL ? (const void *)image : target; }
 };
 
-/* a target MakeNewTarget made, and what draws it again */
-struct Made {
-    CGrafPtr port;
-    Canvas::Redraw redraw;
-};
-
 std::vector<PortImage> mirrors;
 std::vector<Scratch> scratch;
-std::vector<Made> made;
 unsigned frames;                        /* FrameDone's count: the mirrors' clock */
 
 constexpr int kScratchStep = 64;                /* scratch sizes are multiples of this, to fit more draws */
@@ -366,47 +359,22 @@ bool Canvas::MakeTarget(CGrafPtr port)
     return true;
 }
 
-void Canvas::MakeNewTarget(CGrafPtr port, Redraw redraw)
+void Canvas::MakeNewTarget(CGrafPtr port)
 {
     if (port == NULL)
         return;
     if (!MakeTarget(port))
         Fatal("No GPU target of %d x %d pixels for the interface.", port->pix.width, port->pix.height);
     DropPortPixels(port);
-    made.push_back({ port, redraw });
     Canvas *canvas = Open(port);
     canvas->AddFill(0, 0, port->pix.width, port->pix.height, kBlack, 255);
     canvas->Close();
-}
-
-void Canvas::RedrawTargets()
-{
-    FlushAll();
-    for (size_t i = 0; i < made.size(); i++) {
-        CGrafPtr port = made[i].port;
-        Canvas *canvas = Open(port);
-        canvas->AddFill(0, 0, port->pix.width, port->pix.height, kBlack, 255);
-        canvas->Close();
-    }
-    std::vector<Made> drawn = made;             /* a redraw may make or drop targets */
-    for (const Made &each : drawn)
-        if (each.redraw != NULL)
-            each.redraw();
-}
-
-/* a port's target goes: it is no longer drawn again */
-void Canvas::Forget(CGrafPtr port)
-{
-    for (size_t i = made.size(); i-- > 0;)
-        if (made[i].port == port)
-            made.erase(made.begin() + i);
 }
 
 void Canvas::DropTarget(CGrafPtr port)
 {
     if (port == NULL || port->target == NULL)
         return;
-    Forget(port);
     FlushAll();
     for (Canvas *each : open)
         if (each->port == port)
@@ -935,7 +903,7 @@ void Canvas::ComposeTarget(CGrafPtr from, const Rect &src, const Rect &dst)
     PlatRect rows = { s.left, s.top, Width(s), Height(s) };
     FlushAll();
     whole.resize((size_t)rows.w * rows.h);
-    if (PlatTargetReadDrawn(from->target, &rows, whole.data()) == 0)
+    if (PlatTargetRead(from->target, &rows, whole.data()) == 0)
         return;
     if (rows.w == Width(d) && rows.h == Height(d)) {
         Compose(whole.data(), rows.w, d);

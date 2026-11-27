@@ -164,7 +164,7 @@ extern Boolean mBarHidden;
 extern Rect mainWindRect;
 extern GWorldContainer *MenuArt(void);
 extern void ShowMenuArt(const Rect &area, bool onlyChanged = false);
-extern void BlackScreen(void);              /* the whole screen black: the scene until another */
+extern void BlackScreen(void);              /* the whole screen black */
 extern void SetupMonitor(void);
 extern void ApplyUIScale(void);
 extern void ApplyDisplaySettings(void);
@@ -172,6 +172,8 @@ extern void ApplyPilotGameSize(void);
 extern short GameSizeInUse(void);           /* the game size the view has (Preferences may hold a later one) */
 extern Boolean OrBlendInUse(void);          /* the blending the renderer was made for (a change needs a restart) */
 extern void ApplyDisplayScaling(void);
+#define kMaxGamma     6             /* the Brightness settings 0..kMaxGamma, kDefaultGamma Normal */
+#define kDefaultGamma 3
 extern void ApplyBrightness(void);
 extern short menuFontID;
 extern RGBColor menuTextColor[2];

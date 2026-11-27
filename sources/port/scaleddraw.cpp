@@ -53,12 +53,12 @@ void FillRect(const Rect &r, const RGBColor &color)
 {
     const PixMap &pix = CurrentGrafPort->pix;
 
-    FillDevice(pix, UI::Mapping(pix).DeviceRect(r), Pixel::FromColorGamma(color));
+    FillDevice(pix, UI::Mapping(pix).DeviceRect(r), Pixel::FromColor(color));
 }
 
 void FillDeviceRect(const Rect &device, const RGBColor &color)
 {
-    FillDevice(CurrentGrafPort->pix, device, Pixel::FromColorGamma(color));
+    FillDevice(CurrentGrafPort->pix, device, Pixel::FromColor(color));
 }
 
 void InvertRect(const Rect &r)
@@ -128,7 +128,7 @@ void LineTo(short h, short v)
         return;
     }
 
-    unsigned short pixel = Pixel::FromColorGamma(port.foreColor);
+    unsigned short pixel = Pixel::FromColor(port.foreColor);
     int blockW = DevicePen(penW, map.ScaleX());
     int blockH = DevicePen(penH, map.ScaleY());
     int dx0 = map.X(x0);
@@ -167,7 +167,7 @@ Circle DeviceCircle(const Rect &r)
 void DrawCircle(const Circle &c, double inner)
 {
     const PixMap &pix = CurrentGrafPort->pix;
-    unsigned short pixel = Pixel::FromColorGamma(CurrentGrafPort->foreColor);
+    unsigned short pixel = Pixel::FromColor(CurrentGrafPort->foreColor);
 
     for (int y = (int)floor(c.cy - c.radius); y <= (int)ceil(c.cy + c.radius); y++) {
         for (int x = (int)floor(c.cx - c.radius); x <= (int)ceil(c.cx + c.radius); x++) {

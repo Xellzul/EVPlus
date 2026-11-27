@@ -30,24 +30,7 @@ void Drawn(int left, int top, int right, int bottom);
 void ComposeView();
 void DropView();                    /* flight is over: the layer alone from now on */
 
-/* what the layer shows under the dialogs, drawn whole again when the GPU lost the targets (PlatUIEpoch) */
-typedef void (*Scene)(void);
-void SetScene(Scene scene);
-void DrawScene();                   /* the scene drawn again now */
-
-/* while it lives, drawn over the dialogs when the layer is drawn again (a popup menu tracked, a movie playing) */
-class Above {
-public:
-    explicit Above(Scene draw);
-    ~Above();
-    Above(const Above &) = delete;
-    Above &operator=(const Above &) = delete;
-
-private:
-    Scene under;
-};
-
-/* shown only at a frame's end (EndFrame, Idle); a layer the GPU lost (PlatUIEpoch) is put together again first */
+/* shown only at a frame's end (EndFrame, Idle) */
 void Changed();                     /* the screen has something new to show */
 void EndFrame();                    /* a frame is finished: shown, if anything changed */
 void Idle();                        /* a wait loop's turn: EndFrame, then a sleep until an event or 1 ms */

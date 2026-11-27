@@ -42,7 +42,6 @@ extern void DisposeGWorldContainer(GWorldContainer *gwc);
 extern void DoMainScreen(void);
 extern Boolean RetrieveMenuIcon(short picID, const UI::Surface &dest, Rect *destRect);
 extern void DrawIntroProgressBar(void);
-extern void PaintIntroProgressBar(void);        /* the bar as far as loading has come, on the load page */
 extern void DrawStatus(void);
 extern void DrawStatusCargo(void);
 extern void DrawStatusFuel(void);
@@ -53,7 +52,6 @@ extern void DrawStatusTarg(void);
 extern void DrawStatusWeap(void);
 extern void EndLoopingMovie(void);
 extern SWFrameRec *CommOverlay(void);
-extern void RedrawCommOverlay(void);      /* its frame drawn again with the message last shown */
 extern void ResetCommRect(void);
 extern void SetupListRects(Point *where);
 extern void InitOffscreen(void);
@@ -69,7 +67,6 @@ extern void InitIntroProgressBar(void);
 extern int KeyboardGet(void);
 extern short LoadExtendedShipSprites(short shipType);
 extern void LoadIntfResource(void);
-extern void RedrawStatusPicture(void);          /* statusOffPort's picture drawn again, the GPU having lost it */
 extern void LoadMainScreenAnim(void);
 extern void PlaceMainScreenAnim(void);
 extern void MainScreenAppear(void);
@@ -79,8 +76,6 @@ extern void LoadSprites(void);
 extern void PlaceAlertSprite(void);
 extern void LoopingMovieIdle(void);
 extern void MainScreenAnimDraw(void);
-extern void RedrawMainScreenArt(void);        /* the menu's art drawn again as it stood, with its frames */
-extern void ForgetMainScreenAnim(void);       /* a new background: no frames drawn on it yet */
 extern void MainScreenChoice(short which);
 extern void MainScreenAppearStart(void);
 void MainScreenKey(char key, int32_t a, int32_t b);
@@ -98,9 +93,9 @@ extern void SetupInterfaceBackground(void);
 extern void ShowAmbrosiaLogo(void);
 extern void ShowIntroScreen(void);
 extern void ShowSplashScreen(void);
-/* the load page black with the picture (NULL: none) centred, kept to draw again; returns where it lies */
-extern Rect PaintLoadPagePicture(PicHandle pic, short id);
-/* the screen black with the load page's part `from' at `to' (the menu's scale): the scene until another */
+/* the load page black with the picture (NULL: none) centred; returns where it lies */
+extern Rect PaintLoadPagePicture(PicHandle pic);
+/* the screen black with the load page's part `from' at `to' (the menu's scale) */
 extern void ShowLoadPage(const Rect &from, const Rect &to);
 extern void DisposeMainScreenSounds(void);
 extern void MainScreenAnimIdle(void);

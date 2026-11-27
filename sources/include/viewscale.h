@@ -45,8 +45,8 @@ float ExactY(float spaceY);
 Rect OverlayFrameRect(const Rect &viewRect);    /* an overlay frame's logical rect for a rect in the view */
 Rect OverlayLocalRect(const Rect &viewRect);    /* the same, from 0, 0: the frame's own coordinates */
 Point ToOverlay(Point pt, const Rect &viewRect); /* a view point in the coordinates of the overlay at viewRect */
-/* bounds logical, from 0, 0; redraw draws it again when the GPU lost it; false = none */
-bool MakeOverlayFrame(SWFrameRec **frame, const Rect &bounds, void (*redraw)(void));
+/* bounds logical, from 0, 0; false = none */
+bool MakeOverlayFrame(SWFrameRec **frame, const Rect &bounds);
 Rect ScreenRectOfView(const Rect &viewRect);    /* a rect in the view, in device pixels on the screen */
 int ScaleInView(int value);         /* a length of the interface in view pixels (the UI scale applied) */
 

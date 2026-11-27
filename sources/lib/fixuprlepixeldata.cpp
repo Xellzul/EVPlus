@@ -11,7 +11,6 @@ void FixupRLEPixelData(unsigned char *tokens, RLEPixelData *header)
     uint32_t token, opcode, count;
     uint32_t depth;
     uint32_t frames;
-    unsigned short pixel;
 
     depth = header->depth;
     frames = header->frames;
@@ -40,10 +39,7 @@ void FixupRLEPixelData(unsigned char *tokens, RLEPixelData *header)
                 count >>= 1;
                 do {
                     token = *(unsigned short *)tokens;
-                    token = (((int32_t)token >> 8) & 0xff) | ((token & 0xff) << 8);
-                    pixel = token;
-
-                    *(unsigned short *)tokens = Pixel::Map(pixel, gGammaRamp);
+                    *(unsigned short *)tokens = (unsigned short)((((token >> 8) & 0xff) | ((token & 0xff) << 8)) & 0x7fff);
 
                     tokens += 2;
                 } while (--count);

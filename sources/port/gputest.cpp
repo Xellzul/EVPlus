@@ -22,7 +22,6 @@ namespace {
 constexpr short kPageWidth = 640;
 constexpr short kPageHeight = 670;
 constexpr double kTestBrightness = 0.8;     /* the exponent of the page's second drawing at scale 1 */
-constexpr int kBrightSlack = 12;            /* levels of 255 an item that must match may be off under it */
 constexpr double kTestScales[] = { 1.0, 1.25, 1.875, 2.0 };
 
 constexpr short kPictBig = 133;
@@ -635,9 +634,8 @@ int Expand5(int v)
     return v << 3 | v >> 2;
 }
 
-/* an item's device pixels on both pages: how many differ at 5 bits, and how far in 8-bit levels; with a slack
-   an item that must match may be that many levels off (a page read back from under a brightness) */
-void Compare(FILE *log, double scale, const char *pass, int slack, const Item &item, const PixMap &cpu,
+/* an item's device pixels on both pages: how many differ at 5 bits, and how far in 8-bit levels */
+void Compare(FILE *log, double scale, const char *pass, const Item &item, const PixMap &cpu,
              const std::vector<uint32_t> &gpu, int *bad)
 {
     Rect d = UI::Mapping(cpu).DeviceRect(item.r);
@@ -670,7 +668,7 @@ void Compare(FILE *log, double scale, const char *pass, int slack, const Item &i
         }
     }
     bool must = item.kind == kSame || (item.kind == kSameAtOne && scale == 1.0);
-    bool off = must && (slack > 0 ? largest > slack : differ != 0);
+    bool off = must && differ != 0;
     if (off)
         (*bad)++;
     if (log != NULL)
@@ -746,7 +744,7 @@ void CompareGpu(FILE *log, double scale, const char *pass, const Item &item, con
 }
 
 /* the GPU's drawing of `kind' against both of the reference's; written to the game folder, as a new one's */
-void CompareAll(FILE *log, double scale, const char *pass, int slack, const char *kind, const Item *list, size_t count,
+void CompareAll(FILE *log, double scale, const char *pass, const char *kind, const Item *list, size_t count,
                 const PixMap &like, const std::vector<uint32_t> &gpu, int *bad)
 {
     std::vector<unsigned char> cpuPixels;
@@ -761,10 +759,8 @@ void CompareAll(FILE *log, double scale, const char *pass, int slack, const char
             fprintf(log, "scale %g%s: no reference CPU drawing %s  MISMATCH\n", scale, pass, cpuKind.c_str());
     } else {
         for (size_t i = 0; i < count; i++)
-            Compare(log, scale, pass, slack, list[i], cpu, gpu, bad);
+            Compare(log, scale, pass, list[i], cpu, gpu, bad);
     }
-    if (slack != 0)
-        return;
     if (!ReadRaw(gpuKind.c_str(), scale, true, like.width, like.height, 4, gpuRef)) {
         (*bad)++;
         if (log != NULL)
@@ -791,7 +787,7 @@ void DropSources(Sources &sources)
         each->Drop();
 }
 
-/* one scale's page on a GPU target vs. the reference; under a brightness, read back without it, with a slack */
+/* one scale's page on a GPU target vs. the reference; under a brightness too, which targets do not take in */
 void RunScale(FILE *log, double scale, double brightness, const TestArt &art, int *bad)
 {
     TestPort gpu;
@@ -809,22 +805,8 @@ void RunScale(FILE *log, double scale, double brightness, const TestArt &art, in
         DrawPage(gpu, sources, art);
         recording = false;
         got = gpu.Read(read.data());
-        if (got && bright) {
-            /* the third of the fills, 0x12 0x56 0xff, as it is shown */
-            Rect at = UI::Mapping(pix).DeviceRect({ 20, 120, 21, 121 });
-            uint32_t shown = read[(size_t)at.top * pix.width + at.left];
-            int want = (int)(pow(0x56 / 255.0, brightness) * 255.0 + 0.5);
-            int green = (int)(shown >> 8 & 0xff);
-            if (abs(green - want) > 1)
-                (*bad)++;
-            if (log != NULL)
-                fprintf(log, "brightness %g: a fill's green 0x56 is shown as %d, expected %d%s\n", brightness, green,
-                        want, abs(green - want) > 1 ? "  MISMATCH" : "");
-            got = PlatTargetReadDrawn(gpu.frame->framePort->target, NULL, read.data()) != 0;
-        }
         if (got)
-            CompareAll(log, scale, bright ? " bright" : "", bright ? kBrightSlack : 0, "", items.data(), items.size(),
-                       pix, read, bad);
+            CompareAll(log, scale, bright ? " bright" : "", "", items.data(), items.size(), pix, read, bad);
         else if (log != NULL)
             fprintf(log, "scale %g: the target could not be read\n", scale);
     } else if (log != NULL) {
@@ -1123,7 +1105,7 @@ void RunDialog(FILE *log, double scale, int *bad)
     }
     /* a dialog's pixels at a scale depend on the screen's: its size names it */
     std::string kind = "dialog_" + std::to_string(pix.width) + "x" + std::to_string(pix.height) + "_";
-    CompareAll(log, scale, " dialog", 0, kind.c_str(), kDialogItems, sizeof(kDialogItems) / sizeof(kDialogItems[0]),
+    CompareAll(log, scale, " dialog", kind.c_str(), kDialogItems, sizeof(kDialogItems) / sizeof(kDialogItems[0]),
                pix, read, bad);
     for (size_t i = 0; i < read.size(); i++) {
         clear += read[i] >> 24 != 0xff ? 1 : 0;
@@ -1139,7 +1121,8 @@ void RunDialog(FILE *log, double scale, int *bad)
     }
 }
 
-/* an overlay frame as the game draws it vs. the reference; black again after, as it is made */
+/* an overlay frame as the game draws it (draw; NULL: already drawn) vs. the reference; black again after, as
+   it is made */
 void RunOverlay(FILE *log, const char *name, SWFrameRec *frame, void (*draw)(void), int *bad)
 {
     if (frame == NULL || frame->framePort->target == NULL) {
@@ -1153,9 +1136,10 @@ void RunOverlay(FILE *log, const char *name, SWFrameRec *frame, void (*draw)(voi
     std::vector<uint32_t> read((size_t)pix.width * pix.height);
     Rect border = frame->frameRect;
 
-    draw();
+    if (draw != NULL)
+        draw();
     UI::Canvas::FlushAll();
-    bool got = PlatTargetReadDrawn(port->target, NULL, read.data()) != 0;
+    bool got = PlatTargetRead(port->target, NULL, read.data()) != 0;
     UI::Painter(UI::Surface(frame)).Fill(frame->frameRect, UI::kBlack);
     if (!got) {
         (*bad)++;
@@ -1166,7 +1150,7 @@ void RunOverlay(FILE *log, const char *name, SWFrameRec *frame, void (*draw)(voi
     border.bottom = border.top + 1;
     const Item checks[] = { { name, kText, frame->frameRect }, { "  its top row", kSame, border } };
     std::string kind = std::string("overlay_") + name + "_";
-    CompareAll(log, UI::Mapping(pix).ScaleX(), " overlay", 0, kind.c_str(), checks, 2, pix, read, bad);
+    CompareAll(log, UI::Mapping(pix).ScaleX(), " overlay", kind.c_str(), checks, 2, pix, read, bad);
 }
 
 /* the comm line, escort menu and floating map, each on its target; the game's state put back */
@@ -1180,11 +1164,15 @@ void RunOverlays(FILE *log, int *bad)
     DisplayComm(std::string("The comm line of the GPU test: a message long enough to be wrapped onto the second of "
                             "its two lines in the comm style, as a long hail or a mission's message would be, and "
                             "then some more words to be sure of it."), 30);
-    RunOverlay(log, "comm", CommOverlay(), RedrawCommOverlay, bad);
+    RunOverlay(log, "comm", CommOverlay(), NULL, bad);
     DisplayCommStyled(msg, count, spec);
     ResetCommRect();
     RunOverlay(log, "escorts", floatingEscortMenuFrame, DrawEscortMenuInFrame, bad);
-    RunOverlay(log, "map", floatingMapFrame, RedrawFloatingMap, bad);
+    RunOverlay(log, "map", floatingMapFrame, [] {
+        MapScroll scroll = mapScroll;
+        DrawMapInFloatingFrame();
+        mapScroll = scroll;
+    }, bad);
 }
 
 } // namespace

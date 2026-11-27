@@ -24,9 +24,6 @@
 #include "text.h"
 #include "painter.h"
 
-#define kMaxGamma     6
-#define kDefaultGamma 3
-
 #define kEventLoopTicks     10
 
 short pluginCount;
@@ -350,7 +347,6 @@ void InitEVNova(void)
     BuildTrigTable();
     if (settings.gamma > kMaxGamma)
         settings.gamma = kDefaultGamma;
-    BuildGammaRamp(100.0);                      /* neutral: the brightness is the whole frame's */
     ApplyBrightness();
     gWind = 0;
 

@@ -414,8 +414,6 @@ void RefreshSAT(void)
     DrawStatusRadar(0);
     UI::Painter(UI::Surface::Screen()).Copy(UI::Surface::Load(), box, box);
     QDFlushPortBuffer(GetCWindowGrafPort(gWind), NULL);
-    if (gameInProgress != 0 && gameLoaded != 0)     /* while loading, the load page stays the scene */
-        Screen::SetScene(RefreshSAT);
 }
 
 // FUNCTION: EVNOVA 0x0046aad0

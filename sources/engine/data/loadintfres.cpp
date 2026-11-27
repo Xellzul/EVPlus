@@ -17,8 +17,6 @@
     p = &((IntfRec *)*rec)->area; \
     statusOffRect[n] = *p
 
-static short statusPictID;          /* the picture last drawn into statusOffPort; 0 = none */
-
 /* the status bar's picture into statusOffPort, over black */
 static void DrawStatusPicture(PicHandle pict)
 {
@@ -30,19 +28,6 @@ static void DrawStatusPicture(PicHandle pict)
     OffsetRect(&pictRect, -pictRect.left, -pictRect.top);
     OffsetRect(&pictRect, -statusOffPort.bounds.left, -statusOffPort.bounds.top);
     status.Picture(pict, pictRect);
-}
-
-void RedrawStatusPicture(void)
-{
-    PicHandle pict;
-
-    if (statusPictID == 0)
-        return;
-    pict = GetPicture(statusPictID);
-    if (pict != NULL) {
-        DrawStatusPicture(pict);
-        QDReleaseResource(pict);
-    }
 }
 
 // FUNCTION: EVNOVA 0x004cda50
@@ -127,7 +112,6 @@ void LoadIntfResource(void)
     pict = GetPicture(picID);
     if (pict != NULL) {
         DrawStatusPicture(pict);
-        statusPictID = picID;
         QDReleaseResource(pict);
         RedrawStatus(1);
     }

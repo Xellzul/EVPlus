@@ -8,7 +8,7 @@ namespace {
 
 double gScale = 1.0;
 double gMenuScale = 1.0;
-MenuScale *gMenu;                  /* the MenuScale in effect; NULL = none */
+bool gMenuActive;
 short gScreenWidth;
 short gScreenHeight;
 short gMenuWidth;
@@ -187,7 +187,7 @@ void SetMenuScale(double scale)
 
 bool InMenuScale()
 {
-    return gMenu != NULL;
+    return gMenuActive;
 }
 
 namespace {
@@ -202,18 +202,8 @@ void SetLogicalSize(Rect &bounds, short width, short height)
 
 MenuScale::MenuScale() : switched(false)
 {
-    if (gMenu != NULL || gMenuScale == gScale || gMenuWidth <= 0 || gMenuHeight <= 0)
+    if (gMenuActive || gMenuScale == gScale || gMenuWidth <= 0 || gMenuHeight <= 0)
         return;
-    Enter();
-}
-
-MenuScale::~MenuScale()
-{
-    Leave();
-}
-
-void MenuScale::Enter()
-{
     switched = true;
     scale = gScale;
     screenWidth = gScreenWidth;
@@ -223,7 +213,7 @@ void MenuScale::Enter()
     gScale = gMenuScale;
     gScreenWidth = gMenuWidth;
     gScreenHeight = gMenuHeight;
-    gMenu = this;
+    gMenuActive = true;
     SetLogicalSize(gGamePort.pix.bounds, gMenuWidth, gMenuHeight);
     gGamePort.pnDeviceOffset = 0;
     if (loadWorld != NULL) {
@@ -235,15 +225,14 @@ void MenuScale::Enter()
     }
 }
 
-void MenuScale::Leave()
+MenuScale::~MenuScale()
 {
     if (!switched)
         return;
-    switched = false;
     gScale = scale;
     gScreenWidth = screenWidth;
     gScreenHeight = screenHeight;
-    gMenu = NULL;
+    gMenuActive = false;
     gGamePort.pix.bounds = windowBounds;
     gGamePort.pnDeviceOffset = 0;
     if (loadWorld != NULL && loadPort.world == loadWorld) {
@@ -251,18 +240,6 @@ void MenuScale::Leave()
         loadWorld->pix.bounds = loadPixBounds;
         loadWorld->pnDeviceOffset = 0;
     }
-}
-
-GameScale::GameScale() : menu(gMenu)
-{
-    if (menu != NULL)
-        menu->Leave();
-}
-
-GameScale::~GameScale()
-{
-    if (menu != NULL)
-        menu->Enter();
 }
 
 } // namespace UI

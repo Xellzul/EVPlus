@@ -14,18 +14,6 @@
 Movie loopingMovie = NULL;
 static GWorldContainer loopingFrame;    /* the looping movie's frames */
 static DialogPtr loopingDialog;         /* the dialog it plays in */
-static GWorldContainer *playingFrame;   /* PlayQTMovie's frames, once one is decoded */
-static Rect playingBorder;              /* the black line around them on the screen */
-
-/* what PlayQTMovie shows over the screen: the border and the frame last decoded */
-static void DrawPlayingMovie(void)
-{
-    UI::Painter screen(UI::Surface::Screen());
-
-    screen.Frame(playingBorder, UI::kBlack);
-    if (playingFrame != NULL)
-        screen.Copy(UI::Surface(*playingFrame), playingFrame->bounds, playingFrame->bounds);
-}
 
 /* the movie's frames decoded into a world of the box's device pixels on `port', the world's bounds the box */
 static bool DecodeInto(GWorldContainer &frame, Movie movie, CGrafPtr port, const Rect &box)
@@ -170,43 +158,36 @@ void PlayQTMovie(unsigned char *name, unsigned char doubled, unsigned char fade)
     /* each frame decoded is copied onto the screen */
     DecodeInto(frame, movie, GetCWindowGrafPort(gWind), box);
     InsetRect(&box, -1, -1);
-    playingBorder = box;
-    playingFrame = NULL;
-    {
-        Screen::Above playing(DrawPlayingMovie);
-        DrawPlayingMovie();
-        MovieRewind(movie);
-        if (fade != 0)
-            FadeScreenIn();
-        MovieStart(movie);
-        /* only a new press skips: an input still down from before (the Return that confirmed a jump,
-           the click on OK) counts once it has been let go */
+    UI::Painter(UI::Surface::Screen()).Frame(box, UI::kBlack);
+    MovieRewind(movie);
+    if (fade != 0)
+        FadeScreenIn();
+    MovieStart(movie);
+    /* only a new press skips: an input still down from before (the Return that confirmed a jump,
+       the click on OK) counts once it has been let go */
+    KeyboardKbhit();
+    held = MovieSkipInputs();
+    while (MovieDone(movie) == 0) {
+        if (MovieDraw(movie)) {
+            UI::Painter(UI::Surface::Screen()).Copy(UI::Surface(frame), frame.bounds, frame.bounds);
+            Screen::Changed();
+            Screen::EndFrame();
+        }
         KeyboardKbhit();
-        held = MovieSkipInputs();
-        while (MovieDone(movie) == 0) {
-            if (MovieDraw(movie)) {
-                playingFrame = &frame;
-                DrawPlayingMovie();
-                Screen::Changed();
-                Screen::EndFrame();
-            }
-            KeyboardKbhit();
-            down = MovieSkipInputs();
-            held &= down;
-            if ((down & ~held) != 0) {
-                FlushEvents(0xf, 0);
-                break;
-            }
-            LastTick = ReadTick();
-            WaitTicks(2);
+        down = MovieSkipInputs();
+        held &= down;
+        if ((down & ~held) != 0) {
+            FlushEvents(0xf, 0);
+            break;
         }
-        MovieStop(movie);
-        if (fade != 0) {
-            FadeScreenOut();
-            ShowTheCursor();
-        }
+        LastTick = ReadTick();
+        WaitTicks(2);
     }
-    playingFrame = NULL;
+    MovieStop(movie);
+    if (fade != 0) {
+        FadeScreenOut();
+        ShowTheCursor();
+    }
     MovieClose(movie);
     DisposeGWorldContainer(&frame);
     RedrawDialogs(1);

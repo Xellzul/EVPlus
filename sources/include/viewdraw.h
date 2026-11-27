@@ -21,8 +21,7 @@ void Overlay(SWFrameRec *frame, const Rect &place, short level);
 void Flash(const RGBColor &color);  /* the whole view one colour for 50 ms of frames from the next taken (jump flashes) */
 
 /* The frame built last: draws in view pixels; overlays, then the interface layer's sprites, in screen pixels.
-   Brightness is applied to each image and colour before blending (exact at the default brightness; with the
-   original blending, to the whole view after it); the white-out is laid over the overlays too. */
+   The platform shows the finished frame through the brightness, the white-out over the overlays too. */
 void Take(PlatVideoView &view);
 
 void FrameGone(SWFrameRec *frame);  /* a sprite frame is freed: its image goes with it */

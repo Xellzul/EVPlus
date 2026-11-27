@@ -15,7 +15,8 @@ extern void PlatQuit(void);
 /* -- video: one window showing the game's frame: the interface's layer over the space view -------- */
 /* The frame is stretched to the window with its aspect kept (black bars), linear filter unless
    PlatVideoSetScaling says otherwise. Alt+Enter switches between a borderless full screen and a resizable
-   window; the layer handles it itself. */
+   window; the layer handles it itself. The renderer is SDL's GPU renderer where it can be made, else another
+   of SDL's (SDL_RENDER_DRIVER chooses, as in SDL); only the GPU renderer shows a brightness and kPlatDrawOr. */
 extern int PlatVideoCreateWindow(const char *title);      /* hidden until PlatVideoOpen; 0 = made */
 extern int PlatVideoOpen(int width, int height, int fullScreen);   /* the frame's size; 0 = open */
 extern void PlatVideoClose(void);                          /* drops the frame, keeps the window */
@@ -31,9 +32,8 @@ typedef struct PlatRect {
     int h;
 } PlatRect;
 /* An image, from x1r5g5b5 pixels and an alpha per pixel (0 = clear, else opaque); without pixels black,
-   without alpha every pixel opaque. The layer keeps them and makes its textures again after a brightness change
-   or a lost device. An image destroyed while the view shown still draws it is freed once another view
-   replaces that one. */
+   without alpha every pixel opaque. The layer keeps them and makes their textures when first drawn. An image
+   destroyed while the view shown still draws it is freed once another view replaces that one. */
 typedef struct PlatImage PlatImage;
 extern PlatImage *PlatImageCreate(int width, int height, const uint16_t *pixels, const uint8_t *alpha);
 /* The pixels of rect (it lies on the image) from `pixels', pitch bytes a row, which starts at the rect's first
@@ -50,16 +50,15 @@ extern void PlatImageUpdate32(PlatImage *image, const PlatRect *rect, const uint
 
 /* A canvas of the interface: width x height premultiplied ARGB pixels on the GPU, clear when made, drawn into
    at once (PlatTargetDraw). NULL for a zero size, and (logged) for one larger than PlatMaxTextureSize, out of
-   memory or whose texture the renderer cannot make. A texture lost is made again, clear, on use; while it cannot
-   be, the target is not drawn into, from or read. One destroyed while the view shown still draws it is freed
-   once another view replaces that one, as an image.
-   Rule: after a PlatUIEpoch change (lost device, targets, brightness) every target, a layer's frame too, is lost:
-   redraw all, present; a new target is no layer until drawn into or cleared. */
+   memory or whose texture the renderer cannot make. One made before the renderer gets its texture when first
+   used; while it cannot, the target is not drawn into, from or read. One destroyed while the view shown still
+   draws it is freed once another view replaces that one, as an image. A new target is no layer until drawn
+   into or cleared. Targets keep their pixels: a renderer that loses them sends the game a render reset event
+   (PlatPollEvent). */
 typedef struct PlatTarget PlatTarget;
 extern PlatTarget *PlatTargetCreate(int width, int height);
 extern void PlatTargetDestroy(PlatTarget *target);
 extern void PlatTargetClear(PlatTarget *target);           /* every pixel clear */
-extern unsigned PlatUIEpoch(void);
 extern const char *PlatRendererName(void);         /* SDL's name of the renderer; "none" before one */
 
 /* What is drawn, back to front, in the pixels of what it is drawn into -- the GPU view, the frame (overlays), a
@@ -76,12 +75,10 @@ extern const char *PlatRendererName(void);         /* SDL's name of the renderer
    - kPlatDrawTiled: as kPlatDrawImage, the image repeated over the rect: each tile tileScale times the
      image's size, one of them with its corner at tileX, tileY
    The colour is `color', x1r5g5b5, or with `deep' the 8-bit channels of `rgb' (a deep draw's vertices all take
-   it); colours and images are shown through the brightness. An image is drawn whole, or the part sx, sy, sw, sh
-   of it when that is not empty, scaled by `filter'. With `source' that target is drawn in place of an image;
-   it cannot be the target drawn into, and has no silhouette.
-   While PlatVideoOrBlend() and the brightness is not the default, the view's own draws are made in the colours
-   as drawn, the brightness after them: a `source' is not drawn there (it holds the brightness already).
-   Overlays and targets take everything, except a max where the renderer has none: only targets take that. */
+   it). An image is drawn whole, or the part sx, sy, sw, sh of it when that is not empty, scaled by `filter'.
+   With `source' that target is drawn in place of an image; it cannot be the target drawn into, and has no
+   silhouette. Overlays and targets take everything, except a max where the renderer has none: only targets
+   take that. */
 #define kPlatDrawImage          0
 #define kPlatDrawSilhouette     1
 #define kPlatDrawFill           2
@@ -164,26 +161,26 @@ extern PlatDraw PlatDrawOf(int kind, int blend);
 /* The draws done at once into a target, in its pixels, kept to `clip' (NULL: the whole target). */
 extern void PlatTargetDraw(PlatTarget *target, const PlatDraw *draws, int drawCount, const PlatVertex *vertices,
                            int vertexCount, const PlatRect *clip);
-/* The target's pixels in rect (NULL: all of them) as premultiplied ARGB, the rect's width a row; 0 = not read.
-   PlatTargetReadDrawn takes the brightness out of them again: the colours as they were drawn, exact at the
-   default brightness and the nearest ones otherwise. */
+/* The target's pixels in rect (NULL: all of them) as premultiplied ARGB, the rect's width a row; 0 = not read. */
 extern int PlatTargetRead(PlatTarget *target, const PlatRect *rect, uint32_t *out);
-extern int PlatTargetReadDrawn(PlatTarget *target, const PlatRect *rect, uint32_t *out);
 /* A frame: the interface's layer as it is at the call, stretched over the frame and mixed over the view and
-   its overlays (`view' with it, NULL = the view of the frame before), the white-out over all of it. It is
-   shown at once, or -- when the last one was shown too short a time ago for a display to tell them apart --
-   by the next present or event poll after that time; a newer frame replaces one still waiting. */
+   its overlays (`view' with it, NULL = the view of the frame before), all of it through the brightness, the
+   white-out over that. It is shown at once, or -- when the last one was shown too short a time ago for a
+   display to tell them apart -- by the next present or event poll after that time; a newer frame replaces
+   one still waiting. */
 extern void PlatVideoPresentLayer(PlatTarget *layer, const PlatVideoView *view);
 extern void PlatVideoDropView(void);            /* later frames alone: black where the layer is clear */
 extern void PlatVideoSetFullScreen(int on);
 /* The filter (kPlatFilter*) the frame is stretched with, kept for every later frame. Can be called before
    PlatVideoOpen. */
 extern void PlatVideoSetScaling(int filter);
-/* The frame's brightness: a colour channel c (0..1) is shown as c to the power `exponent'; 1 = as drawn.
-   Can be called before PlatVideoOpen. */
+/* The frame's brightness: a colour channel c (0..1) of the finished frame is shown as c to the power
+   `exponent'; 1 = as drawn. Can be called before PlatVideoOpen. PlatVideoBrightness: 1 while the renderer
+   can show it (SDL's GPU renderer), 0 when frames are shown as drawn whatever it is. */
 extern void PlatVideoSetBrightness(double exponent);
-/* kPlatDrawOr asked for, before the first PlatVideoOpen: that makes the renderer, SDL's GPU renderer for it.
-   PlatVideoOrBlend: 1 while kPlatDrawOr is drawn, 0 when it cannot be (no such renderer or shader). */
+extern int PlatVideoBrightness(void);
+/* kPlatDrawOr asked for, before the first PlatVideoOpen, which makes the renderer. PlatVideoOrBlend: 1 while
+   kPlatDrawOr is drawn, 0 when it cannot be (not SDL's GPU renderer, or its shader fails). */
 extern void PlatVideoAskOrBlend(int on);
 extern int PlatVideoOrBlend(void);
 /* The frame blended toward white by level of 256, as CGDisplayFade's kCGDisplayBlendSolidColor; 0 = as
@@ -215,11 +212,12 @@ extern void PlatAlert(const char *title, const char *message);
 /* -- events --------------------------------------------------------------------------------------- */
 union SDL_Event;
 /* The next SDL event for the game, after the platform's own part: 0 when none waits. Some events never
-   reach the game: Alt+Enter (full screen; neither the Enter's press nor its release), redraws and render
-   resets, a second focus gain or loss in a row, and on Windows a focus loss to another window of this
-   program (a Win32 dialog the game opened) with the gain after it. Mouse motion arrives in frame pixels
-   (outside 0..size-1 when over the bars); an ISO keyboard's key left of Enter as the backslash key. Also
-   shows a frame that is waiting. */
+   reach the game: Alt+Enter (full screen; neither the Enter's press nor its release), redraws, a second focus
+   gain or loss in a row, and on Windows a focus loss to another window of this program (a Win32 dialog the
+   game opened) with the gain after it. A render reset (SDL_EVENT_RENDER_TARGETS_RESET, _DEVICE_RESET,
+   _DEVICE_LOST) does: what the renderer held, every target's pixels with it, is gone. Mouse motion arrives
+   in frame pixels (outside 0..size-1 when over the bars); an ISO keyboard's key left of Enter as the
+   backslash key. Also shows a frame that is waiting. */
 extern int PlatPollEvent(union SDL_Event *e);
 extern void PlatWaitEvent(int ms);                         /* returns once an event waits, or after ms */
 /* 1 while the key with this scan code (kScan*) is held, as of the events read so far */

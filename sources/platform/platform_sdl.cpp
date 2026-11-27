@@ -28,6 +28,9 @@
 
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
+/* SDL's GPU renderer made without a window (offscreen video driver): the frame is shown into gWindowFrame */
+static bool gWindowless;
+static SDL_Texture *gWindowFrame;
 static int gFrameWidth;                 /* the frame's size; 0 while no frame is open */
 static int gFrameHeight;
 static bool gFrameDrawn;                /* gLayerTexture has a frame to show */
@@ -48,18 +51,16 @@ static float gViewZoom = 1.0f;          /* the view shown magnified about its ce
 static std::vector<PlatDraw> gDraws;    /* the GPU view's, as last given */
 static std::vector<PlatVertex> gVertices;
 static std::vector<PlatDraw> gOverlays;
-/* kPlatDrawOr, on SDL's GPU renderer only: the shaders (NULL: not drawn), and with a view the state that reads
-   gViewCopy -- the view as copied last, brought up to date before a draw that reads the view where it changed
-   since (gChanged). With a brightness the view is drawn in 5-bit codes into gViewCodes, then shown into
-   gViewTexture through it. */
+/* SDL's GPU renderer's shaders (shaders/viewshaders.h): the brightness, and kPlatDrawOr when asked for */
+static SDL_GPUShader *gBrightShader;
+static SDL_GPURenderState *gBrightState;
+static SDL_Texture *gUnlit;             /* the frame, shown through the brightness */
+static bool gUnlitFailed;               /* gUnlit could not be made: no brightness is shown */
 static bool gOrAsked;
 static SDL_GPUShader *gOrShader;
-static SDL_GPUShader *gBrightShader;
 static SDL_GPUSampler *gNearest;
-static SDL_GPURenderState *gBrightState;
 static SDL_GPURenderState *gOrState;
-static SDL_Texture *gViewCopy;
-static SDL_Texture *gViewCodes;
+static SDL_Texture *gViewCopy;          /* the view as drawn so far, read by the OR shader */
 static std::vector<SDL_Rect> gChanged;
 /* the frame: a copy of the layer last given (PlatVideoPresentLayer), shown over the view */
 static SDL_Texture *gLayerTexture;
@@ -67,8 +68,8 @@ static int gLayerWidth;
 static int gLayerHeight;
 static bool gLayerWaiting;              /* gLayerTexture holds a frame not yet shown */
 
-/* an image's textures: as shown (through the brightness), in 5-bit codes (for kPlatDrawOr), white where opaque */
-enum Texels { kTexelsShown, kTexelsCodes, kTexelsSilhouette, kTexelKinds };
+/* an image's textures: its colours, white where opaque */
+enum Texels { kTexelsColours, kTexelsSilhouette, kTexelKinds };
 
 struct PlatImage {
     int width;
@@ -76,30 +77,29 @@ struct PlatImage {
     Uint16 *pixels;                     /* 5-5-5 with an alpha each (no alpha: all opaque), or */
     Uint8 *alpha;
     Uint32 *argb;                       /* premultiplied ARGB, the other two NULL */
-    SDL_Texture *textures[kTexelKinds]; /* NULL: to be made (again), when first drawn */
+    SDL_Texture *textures[kTexelKinds]; /* NULL: to be made, when first drawn */
     bool dead;                          /* destroyed by the game: freed once no kept view draws it */
     PlatImage *prev;
     PlatImage *next;
 };
-static PlatImage *gImages;              /* every image, for a brightness change or a lost device */
+static PlatImage *gImages;              /* every image */
 static int gDeadImages;
 static void DropImageTextures(PlatImage *image);
-static void DropOrBlend(void);
+static void DropShaders(void);
 
 struct PlatTarget {
     int width;
     int height;
-    SDL_Texture *texture;               /* NULL: to be made (again), clear, when first used */
-    bool drawn;                         /* holds the game's drawing: not when new or after its pixels' loss */
+    SDL_Texture *texture;               /* NULL: to be made, clear, when first used */
+    bool drawn;                         /* drawn into or cleared since it was made */
     bool dead;                          /* destroyed by the game: freed once no kept view draws it */
     PlatTarget *prev;
     PlatTarget *next;
 };
-static PlatTarget *gTargets;            /* every target, for a lost device */
+static PlatTarget *gTargets;            /* every target */
 static int gDeadTargets;
 static SDL_BlendMode gMaxBlend = SDL_BLENDMODE_INVALID;    /* kPlatBlendMax's; invalid: made by hand */
 static PlatTarget *gMaxScratch;         /* where a hand-made kPlatBlendMax draw is drawn first */
-static unsigned gUIEpoch;               /* PlatUIEpoch */
 static void DropTargetTextures(void);
 static void FreeDeadTargets(void);
 static void FreeTarget(PlatTarget *target);
@@ -185,7 +185,7 @@ void PlatQuit(void)
         FreeTarget(gMaxScratch);
     gMaxScratch = NULL;
     DropTargetTextures();
-    DropOrBlend();
+    DropShaders();
     if (gRenderer != NULL)
         SDL_DestroyRenderer(gRenderer);
     if (gWindow != NULL)
@@ -200,47 +200,109 @@ void PlatQuit(void)
 static void DrawOverlays(void);
 
 static Uint32 WhiteAlpha(void);
+static bool Brightened(void);
+static void SetLetterbox(void);
 
-/* the frame last shown, as the window is now: the view, its overlays, the layer, the white-out */
-static void Compose(void)
+/* the frame as drawn, into the render target: the view, its overlays, the layer */
+static void DrawFrame(void)
 {
     SDL_Texture *frame = gLayerTexture;
-    SDL_FRect all = { 0, 0, (float)gFrameWidth, (float)gFrameHeight };
     SDL_FRect edgeFrom;
     SDL_FRect edgeTo;
 
     SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(gRenderer);
-    if (frame != NULL && gFrameDrawn) {
-        /* over black alone the layer's colours are the frame's as they are */
-        SDL_SetTextureBlendMode(frame, SDL_BLENDMODE_NONE);
-        if (gViewOn && gViewTexture != NULL) {
-            SDL_FRect shown;
-            shown.w = gViewWidth / gViewZoom;
-            shown.h = gViewHeight / gViewZoom;
-            shown.x = (gViewWidth - shown.w) / 2;
-            shown.y = (gViewHeight - shown.h) / 2;
-            SDL_RenderTexture(gRenderer, gViewTexture, &shown, &gViewRect);
-            /* the view's last column a little past its edge: where the window scales the frame, the frame's
-               edge beside the view is blended over this, not over black */
-            edgeFrom.x = shown.x + shown.w - 1;
-            edgeFrom.y = shown.y;
-            edgeFrom.w = 1;
-            edgeFrom.h = shown.h;
-            edgeTo.x = gViewRect.x + gViewRect.w;
-            edgeTo.y = gViewRect.y;
-            edgeTo.w = kViewEdge;
-            edgeTo.h = gViewRect.h;
-            SDL_RenderTexture(gRenderer, gViewTexture, &edgeFrom, &edgeTo);
-            DrawOverlays();
-            SDL_SetTextureBlendMode(frame, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    if (frame == NULL || !gFrameDrawn)
+        return;
+    /* over black alone the layer's colours are the frame's as they are */
+    SDL_SetTextureBlendMode(frame, SDL_BLENDMODE_NONE);
+    if (gViewOn && gViewTexture != NULL) {
+        SDL_FRect shown;
+        shown.w = gViewWidth / gViewZoom;
+        shown.h = gViewHeight / gViewZoom;
+        shown.x = (gViewWidth - shown.w) / 2;
+        shown.y = (gViewHeight - shown.h) / 2;
+        SDL_RenderTexture(gRenderer, gViewTexture, &shown, &gViewRect);
+        /* the view's last column past its edge, for the frame's edge beside the view to blend over */
+        edgeFrom.x = shown.x + shown.w - 1;
+        edgeFrom.y = shown.y;
+        edgeFrom.w = 1;
+        edgeFrom.h = shown.h;
+        edgeTo.x = gViewRect.x + gViewRect.w;
+        edgeTo.y = gViewRect.y;
+        edgeTo.w = kViewEdge;
+        edgeTo.h = gViewRect.h;
+        SDL_RenderTexture(gRenderer, gViewTexture, &edgeFrom, &edgeTo);
+        DrawOverlays();
+        SDL_SetTextureBlendMode(frame, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    }
+    SDL_RenderTexture(gRenderer, frame, NULL, NULL);
+}
+
+static void DropUnlit(void)
+{
+    if (gUnlit != NULL)
+        SDL_DestroyTexture(gUnlit);
+    gUnlit = NULL;
+    gUnlitFailed = false;
+}
+
+/* gUnlit at the size of what the frame is shown into, the frame letterboxed in it; NULL if it cannot be made */
+static SDL_Texture *Unlit(int width, int height)
+{
+    static int said;
+
+    if (gUnlit != NULL && (gUnlit->w != width || gUnlit->h != height))
+        DropUnlit();
+    if (gUnlit == NULL) {
+        gUnlit = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
+        if (gUnlit == NULL) {
+            PlatDebugLogOnce(&said, "platform: no texture for the brightness, frames are shown without it");
+            gUnlitFailed = true;
+            return NULL;
         }
-        SDL_RenderTexture(gRenderer, frame, NULL, NULL);
-        if (WhiteAlpha() > 0) {
-            SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, (Uint8)WhiteAlpha());
-            SDL_RenderFillRect(gRenderer, &all);
+        gUnlitFailed = false;
+        SDL_SetTextureBlendMode(gUnlit, SDL_BLENDMODE_NONE);
+        SDL_SetTextureScaleMode(gUnlit, SDL_SCALEMODE_NEAREST);
+        SDL_SetRenderTarget(gRenderer, gUnlit);
+        SetLetterbox();
+    }
+    return gUnlit;
+}
+
+/* The frame last shown into `out' (NULL: the window), through the brightness, the white-out over it */
+static void Compose(SDL_Texture *out)
+{
+    SDL_FRect all = { 0, 0, (float)gFrameWidth, (float)gFrameHeight };
+    SDL_Texture *unlit = NULL;
+    int width = 0;
+    int height = 0;
+
+    if (Brightened()) {
+        if (out != NULL) {
+            width = out->w;
+            height = out->h;
+        } else {
+            SDL_GetRenderOutputSize(gRenderer, &width, &height);
         }
+        unlit = width > 0 && height > 0 ? Unlit(width, height) : NULL;
+    }
+    SDL_SetRenderTarget(gRenderer, unlit != NULL ? unlit : out);
+    DrawFrame();
+    if (unlit != NULL) {
+        /* pixel for pixel over the whole of `out', its letterbox too */
+        SDL_SetRenderTarget(gRenderer, out);
+        SDL_SetRenderLogicalPresentation(gRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+        SDL_SetGPURenderState(gRenderer, gBrightState);
+        SDL_RenderTexture(gRenderer, unlit, NULL, NULL);
+        SDL_SetGPURenderState(gRenderer, NULL);
+        if (out == NULL)
+            SetLetterbox();
+    }
+    if (gLayerTexture != NULL && gFrameDrawn && WhiteAlpha() > 0) {
+        SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, (Uint8)WhiteAlpha());
+        SDL_RenderFillRect(gRenderer, &all);
     }
 }
 
@@ -248,11 +310,12 @@ static void Redraw(void)
 {
     Uint64 start;
 
-    if (gRenderer == NULL)
+    if (gRenderer == NULL || (gWindowless && gWindowFrame == NULL))
         return;
     start = SDL_GetTicksNS();
-    Compose();
+    Compose(gWindowFrame);
     SDL_RenderPresent(gRenderer);
+    SDL_SetRenderTarget(gRenderer, NULL);
     gTimes.renderNs += SDL_GetTicksNS() - start;
 }
 
@@ -271,30 +334,9 @@ static Uint64 FrameDueIn(void)
     return due > now ? due - now : 0;
 }
 
-/* the brightness: a channel shown as its value to the power gExponent */
-#define kChannelSteps   32
-#define kChannelTop     31
-
-static bool gChannelsMade;
+/* the brightness: a channel c of the finished frame shown as c to the power gExponent */
 static double gExponent = 1.0;
-static Uint32 gPlainChannel[kChannelSteps];     /* 5-bit channels through the brightness, as 8 bits */
-static Uint8 gDeepChannel[256];         /* likewise 8-bit channels */
-static Uint8 gDrawnChannel[256];        /* and back: the channel drawn that is shown nearest to a value */
 static unsigned gWhite;
-
-/* a 5-bit channel value as 8 bits, the top bits repeated, as a GPU widens 5 bits */
-static Uint32 CodeOf(Uint32 v)
-{
-    return (v << 3) | (v >> 2);
-}
-
-/* a 5-bit channel value as 8 bits through the brightness */
-static Uint32 ChannelOf(Uint32 v)
-{
-    if (gExponent == 1.0)
-        return CodeOf(v);
-    return (Uint32)(SDL_pow((double)v / kChannelTop, gExponent) * 255.0 + 0.5);
-}
 
 /* the white-out as the alpha of white laid over everything, 8 bits */
 static Uint32 WhiteAlpha(void)
@@ -302,25 +344,10 @@ static Uint32 WhiteAlpha(void)
     return gWhite >= 256 ? 255 : gWhite;
 }
 
-static void MakeChannels(void)
+/* the frames go through the brightness shader */
+static bool Brightened(void)
 {
-    Uint32 c;
-    Uint32 drawn = 0;
-
-    for (c = 0; c < kChannelSteps; c++)
-        gPlainChannel[c] = ChannelOf(c);
-    for (c = 0; c < 256; c++)
-        gDeepChannel[c] = gExponent == 1.0 ? (Uint8)c : (Uint8)(SDL_pow(c / 255.0, gExponent) * 255.0 + 0.5);
-    /* the table rises: for each shown value the drawn one whose own is nearest */
-    for (c = 0; c < 256; c++) {
-        while (drawn < 255
-               && SDL_abs((int)gDeepChannel[drawn + 1] - (int)c) <= SDL_abs((int)gDeepChannel[drawn] - (int)c))
-            drawn++;
-        gDrawnChannel[c] = (Uint8)drawn;
-    }
-    gChannelsMade = true;
-    /* what the view's texture holds is in the old brightness */
-    gViewFresh = gViewOn;
+    return gBrightState != NULL && gExponent != 1.0;
 }
 
 static void DropImageTextures(PlatImage *image)
@@ -332,19 +359,24 @@ static void DropImageTextures(PlatImage *image)
     }
 }
 
-static void SetBrightRamp(void);
+/* the exponent into the brightness shader */
+static void SetBrightness(double exponent)
+{
+    float uniform[4] = { (float)exponent, 0, 0, 0 };
+
+    SDL_SetGPURenderStateFragmentUniforms(gBrightState, 0, uniform, sizeof uniform);
+}
 
 void PlatVideoSetBrightness(double exponent)
 {
-    PlatImage *image;
+    gExponent = exponent > 0 ? exponent : 1.0;
+    if (gBrightState != NULL)
+        SetBrightness(gExponent);
+}
 
-    if (exponent != gExponent)
-        gUIEpoch++;                     /* the targets hold another brightness */
-    gExponent = exponent;
-    MakeChannels();
-    for (image = gImages; image != NULL; image = image->next)
-        DropImageTextures(image);
-    SetBrightRamp();
+int PlatVideoBrightness(void)
+{
+    return gBrightState != NULL && !gUnlitFailed;
 }
 
 void PlatVideoSetWhite(unsigned level)
@@ -354,52 +386,16 @@ void PlatVideoSetWhite(unsigned level)
 
 /* -- the GPU view: images, and the draws rendered into gViewTexture ---------------------------------- */
 
-/* a 5-5-5 colour as ARGB through the brightness alone: the white-out is laid over the view whole */
-static Uint32 PlainColor(Uint16 color)
+/* a 5-bit channel value as 8 bits, the top bits repeated, as a GPU widens 5 bits */
+static Uint32 CodeOf(Uint32 v)
 {
-    return 0xff000000u | gPlainChannel[(color >> 10) & 0x1f] << 16 | gPlainChannel[(color >> 5) & 0x1f] << 8
-           | gPlainChannel[color & 0x1f];
+    return (v << 3) | (v >> 2);
 }
 
-static Uint32 CodeColor(Uint16 color)
+/* a 5-5-5 colour as opaque ARGB */
+static Uint32 ColorOf(Uint16 color)
 {
     return 0xff000000u | CodeOf((color >> 10) & 0x1f) << 16 | CodeOf((color >> 5) & 0x1f) << 8 | CodeOf(color & 0x1f);
-}
-
-/* The view is drawn in 5-bit codes and shown through the brightness after it (kPlatDrawOr reads codes); at
-   the default brightness the two are the same. */
-static bool ViewInCodes(void)
-{
-    return gOrShader != NULL && gExponent != 1.0;
-}
-
-/* a premultiplied texel through a channel table: its colour at its alpha, what is over the alpha as added light */
-static Uint32 MapTexel(Uint32 texel, const Uint8 *channel)
-{
-    Uint32 a = texel >> 24;
-    Uint32 out = texel & 0xff000000u;
-
-    for (int shift = 0; shift <= 16; shift += 8) {
-        Uint32 c = texel >> shift & 0xff;
-        if (c >= a)
-            c = SDL_min(a + channel[c - a], 255u);
-        else
-            c = (channel[(c * 255 + a / 2) / a] * a + 127) / 255;
-        out |= c << shift;
-    }
-    return out;
-}
-
-/* a premultiplied texel through the brightness */
-static Uint32 DeepTexel(Uint32 texel)
-{
-    return gExponent == 1.0 ? texel : MapTexel(texel, gDeepChannel);
-}
-
-/* an image's texels of one kind are its kept pixels as they are */
-static bool TexelsAsKept(const PlatImage *image, Texels kind)
-{
-    return image->argb != NULL && (kind == kTexelsCodes || (kind == kTexelsShown && gExponent == 1.0));
 }
 
 /* an image's texels of one kind in rect, row after row */
@@ -412,9 +408,7 @@ static void ImageTexels(const PlatImage *image, Texels kind, const SDL_Rect &rec
         size_t at = (size_t)(rect.y + y) * image->width + rect.x;
         for (int x = 0; x < rect.w; x++, at++, out++) {
             if (image->argb != NULL) {
-                Uint32 texel = image->argb[at];
-                *out = kind == kTexelsSilhouette ? (texel >> 24) * 0x01010101u
-                       : kind == kTexelsCodes ? texel : DeepTexel(texel);
+                *out = kind == kTexelsSilhouette ? (image->argb[at] >> 24) * 0x01010101u : image->argb[at];
             } else if (image->alpha != NULL && image->alpha[at] == 0) {
                 *out = 0;
             } else if (kind == kTexelsSilhouette) {
@@ -422,7 +416,7 @@ static void ImageTexels(const PlatImage *image, Texels kind, const SDL_Rect &rec
             } else {
                 if (image->pixels[at] != last) {
                     last = image->pixels[at];
-                    lastColor = kind == kTexelsCodes ? CodeColor((Uint16)last) : PlainColor((Uint16)last);
+                    lastColor = ColorOf((Uint16)last);
                 }
                 *out = lastColor;
             }
@@ -435,7 +429,7 @@ static void UploadTexels(const PlatImage *image, Texels kind, const SDL_Rect &re
 {
     static std::vector<Uint32> texels;
 
-    if (TexelsAsKept(image, kind)) {
+    if (image->argb != NULL && kind == kTexelsColours) {
         SDL_UpdateTexture(image->textures[kind], &rect, image->argb + (size_t)rect.y * image->width + rect.x,
                           image->width * 4);
         return;
@@ -637,7 +631,7 @@ static void FreeDeadImages(void)
     }
 }
 
-/* -- the GPU view's OR blend (kPlatDrawOr), on SDL's GPU renderer ---------------------------------------- */
+/* -- SDL's GPU renderer: its shaders, the GPU view's OR blend (kPlatDrawOr) -------------------------------- */
 
 /* a shader in one of the formats shipped (shaders/build-shaders.sh) */
 struct ShaderBlob {
@@ -686,18 +680,6 @@ static void SetOrBlend(SDL_Texture *texture, const PlatOrBlend &blend)
     SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
 }
 
-/* the brightness's 8-bit levels into the brightness shader */
-static void SetBrightRamp(void)
-{
-    float level[kChannelSteps];
-
-    if (gBrightState == NULL)
-        return;
-    for (Uint32 c = 0; c < kChannelSteps; c++)
-        level[c] = ChannelOf(c) / 255.0f;
-    SDL_SetGPURenderStateFragmentUniforms(gBrightState, 0, level, sizeof level);
-}
-
 static SDL_Texture *MakeTarget(int width, int height, SDL_ScaleMode mode)
 {
     SDL_Texture *texture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width,
@@ -731,7 +713,7 @@ static SDL_GPURenderState *MakeOrState(SDL_Texture *copy)
     return SDL_CreateGPURenderState(gRenderer, &info);
 }
 
-/* the view's copy and the codes target dropped, made again by the next RenderView */
+/* the view's copy dropped, made again by the next RenderView */
 static void DropOrTargets(void)
 {
     if (gOrState != NULL)
@@ -740,31 +722,37 @@ static void DropOrTargets(void)
     if (gViewCopy != NULL)
         SDL_DestroyTexture(gViewCopy);
     gViewCopy = NULL;
-    if (gViewCodes != NULL)
-        SDL_DestroyTexture(gViewCodes);
-    gViewCodes = NULL;
 }
 
 /* kPlatDrawOr off: what it was drawn with released */
-static void DropOrBlend(void)
+static void DropOr(void)
 {
     SDL_GPUDevice *device = gRenderer != NULL ? SDL_GetGPURendererDevice(gRenderer) : NULL;
 
     DropOrTargets();
-    if (gBrightState != NULL)
-        SDL_DestroyGPURenderState(gBrightState);
-    gBrightState = NULL;
     if (device != NULL) {
         if (gOrShader != NULL)
             SDL_ReleaseGPUShader(device, gOrShader);
-        if (gBrightShader != NULL)
-            SDL_ReleaseGPUShader(device, gBrightShader);
         if (gNearest != NULL)
             SDL_ReleaseGPUSampler(device, gNearest);
     }
     gOrShader = NULL;
-    gBrightShader = NULL;
     gNearest = NULL;
+}
+
+/* every shader released: kPlatDrawOr's and the brightness */
+static void DropShaders(void)
+{
+    SDL_GPUDevice *device = gRenderer != NULL ? SDL_GetGPURendererDevice(gRenderer) : NULL;
+
+    DropOr();
+    DropUnlit();
+    if (gBrightState != NULL)
+        SDL_DestroyGPURenderState(gBrightState);
+    gBrightState = NULL;
+    if (device != NULL && gBrightShader != NULL)
+        SDL_ReleaseGPUShader(device, gBrightShader);
+    gBrightShader = NULL;
 }
 
 /* the shader from its first blob the device takes */
@@ -791,27 +779,71 @@ static SDL_GPUShader *MakeShader(SDL_GPUDevice *device, const ShaderBlob *blobs,
     return NULL;
 }
 
-/* One pixel through both shaders and read back: false when it is not OrPixel's (a draw whose pipeline cannot
-   be made is left out without an error). */
+/* the pixel of a 1 x 1 target as 0x00RRGGBB, or -1 */
+static Sint64 ReadPixel(SDL_Texture *target)
+{
+    SDL_Surface *pixel;
+    Uint8 r = 0, g = 0, b = 0, a = 0;
+    bool read;
+
+    SDL_SetRenderTarget(gRenderer, target);
+    pixel = SDL_RenderReadPixels(gRenderer, NULL);
+    read = pixel != NULL && SDL_ReadSurfacePixel(pixel, 0, 0, &r, &g, &b, &a);
+    SDL_DestroySurface(pixel);
+    SDL_SetRenderTarget(gRenderer, NULL);
+    return read ? (Sint64)((Uint32)r << 16 | (Uint32)g << 8 | b) : -1;
+}
+
+/* A grey of each step through the brightness at a test exponent and read back: false when one is more than a
+   level off (or a pipeline cannot be made, which leaves a draw out without an error). */
+static bool BrightSelfTest(void)
+{
+    const double exponent = 0.6;
+    const Uint8 steps[] = { 0, 1, 40, 128, 200, 255 };
+    SDL_Texture *from = MakeTarget(1, 1, SDL_SCALEMODE_NEAREST);
+    SDL_Texture *shown = MakeTarget(1, 1, SDL_SCALEMODE_NEAREST);
+    bool passed = from != NULL && shown != NULL;
+
+    SetBrightness(exponent);
+    for (Uint8 step : steps) {
+        if (!passed)
+            break;
+        int want = (int)(SDL_pow(step / 255.0, exponent) * 255.0 + 0.5);
+        SDL_SetRenderTarget(gRenderer, from);
+        SDL_SetRenderDrawColor(gRenderer, step, step, step, SDL_ALPHA_OPAQUE);
+        SDL_RenderClear(gRenderer);
+        SDL_SetRenderTarget(gRenderer, shown);
+        SDL_SetGPURenderState(gRenderer, gBrightState);
+        SDL_RenderTexture(gRenderer, from, NULL, NULL);
+        SDL_SetGPURenderState(gRenderer, NULL);
+        Sint64 got = ReadPixel(shown);
+        passed = got >= 0 && SDL_abs((int)(got & 0xff) - want) <= 1 && (got >> 16) == (got & 0xff);
+        if (!passed)
+            SDL_SetError("the brightness shader shows %d as %06llx, not %d", step, (long long)got, want);
+    }
+    SetBrightness(gExponent);
+    for (SDL_Texture *texture : { from, shown })
+        if (texture != NULL)
+            SDL_DestroyTexture(texture);
+    return passed;
+}
+
+/* One pixel through the OR shader and read back: false when it is not OrPixel's. */
 static bool OrSelfTest(void)
 {
     const Uint16 dst = 20 << 10 | 9 << 5 | 31;
     const Uint16 src = 7 << 10 | 30 << 5 | 1;
     const PlatOrBlend blend = { { 32, 20, 32 }, { 0, 0, 5 }, 20, 3 << 10 | 17 << 5 | 25, 24 };
-    Uint16 want = OrPixel(src, dst, blend);
+    Uint32 want = ColorOf(OrPixel(src, dst, blend)) & 0xffffff;
     SDL_Texture *view = MakeTarget(1, 1, SDL_SCALEMODE_NEAREST);
     SDL_Texture *copy = MakeTarget(1, 1, SDL_SCALEMODE_NEAREST);
-    SDL_Texture *shown = MakeTarget(1, 1, SDL_SCALEMODE_NEAREST);
     SDL_Texture *image = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, 1, 1);
     SDL_GPURenderState *state = copy != NULL ? MakeOrState(copy) : NULL;
     bool passed = false;
 
-    if (view != NULL && shown != NULL && image != NULL && state != NULL) {
-        Uint32 texel = CodeColor(src);
-        Uint32 under = CodeColor(dst);
-        float level[kChannelSteps];
-        SDL_Surface *pixel;
-        Uint8 r = 0, g = 0, b = 0, a = 0;
+    if (view != NULL && image != NULL && state != NULL) {
+        Uint32 texel = ColorOf(src);
+        Uint32 under = ColorOf(dst);
 
         SDL_UpdateTexture(image, NULL, &texel, 4);
         SDL_SetTextureScaleMode(image, SDL_SCALEMODE_NEAREST);
@@ -825,43 +857,46 @@ static bool OrSelfTest(void)
         SDL_SetGPURenderState(gRenderer, state);
         SDL_RenderTexture(gRenderer, image, NULL, NULL);
         SDL_SetGPURenderState(gRenderer, NULL);
-        /* through the brightness shader with each level at 8 times its value */
-        for (Uint32 c = 0; c < kChannelSteps; c++)
-            level[c] = c * 8 / 255.0f;
-        SDL_SetGPURenderStateFragmentUniforms(gBrightState, 0, level, sizeof level);
-        SDL_SetRenderTarget(gRenderer, shown);
-        SDL_SetGPURenderState(gRenderer, gBrightState);
-        SDL_RenderTexture(gRenderer, view, NULL, NULL);
-        SDL_SetGPURenderState(gRenderer, NULL);
-        pixel = SDL_RenderReadPixels(gRenderer, NULL);
-        passed = pixel != NULL && SDL_ReadSurfacePixel(pixel, 0, 0, &r, &g, &b, &a)
-                 && r == (want >> 10 & 0x1f) * 8 && g == (want >> 5 & 0x1f) * 8 && b == (want & 0x1f) * 8;
-        if (pixel != NULL && !passed)
-            SDL_SetError("the shaders' test pixel came out %02x%02x%02x", r, g, b);
-        SDL_DestroySurface(pixel);
-        SDL_SetRenderTarget(gRenderer, NULL);
+        Sint64 got = ReadPixel(view);
+        passed = got == (Sint64)want;
+        if (!passed)
+            SDL_SetError("the OR shader's test pixel came out %06llx, not %06x", (long long)got, want);
     }
     if (state != NULL)
         SDL_DestroyGPURenderState(state);
-    for (SDL_Texture *texture : { view, copy, shown, image })
+    for (SDL_Texture *texture : { view, copy, image })
         if (texture != NULL)
             SDL_DestroyTexture(texture);
     return passed;
 }
 
-/* SDL's GPU renderer for the window, its device asked only for the shader formats shipped, with the shaders
-   and a passed self-test; NULL when any of it fails, the reason in SDL_GetError */
-static SDL_Renderer *MakeOrRenderer(void)
+/* kPlatDrawOr's shader and sampler, tested; false (with nothing kept) when any of it fails */
+static bool MakeOr(SDL_GPUDevice *device)
+{
+    SDL_GPUSamplerCreateInfo nearest;
+
+    SDL_zero(nearest);
+    nearest.min_filter = nearest.mag_filter = SDL_GPU_FILTER_NEAREST;
+    nearest.address_mode_u = nearest.address_mode_v = nearest.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    gNearest = SDL_CreateGPUSampler(device, &nearest);
+    gOrShader = gNearest != NULL ? MakeShader(device, kOrBlendShader, SDL_arraysize(kOrBlendShader), 2, 0) : NULL;
+    if (gOrShader != NULL && OrSelfTest())
+        return true;
+    DropOr();
+    return false;
+}
+
+/* SDL's GPU renderer with the brightness shader passing its self-test; NULL (reason in SDL_GetError) when not */
+static SDL_Renderer *MakeGpuRenderer(void)
 {
     SDL_PropertiesID props = SDL_CreateProperties();
     SDL_GPURenderStateCreateInfo info;
-    SDL_GPUSamplerCreateInfo nearest;
     SDL_GPUDevice *device;
     char why[256];
 
     SDL_SetPointerProperty(props, SDL_PROP_RENDERER_CREATE_WINDOW_POINTER, gWindow);
     SDL_SetStringProperty(props, SDL_PROP_RENDERER_CREATE_NAME_STRING, "gpu");
-    for (const ShaderBlob &blob : kOrBlendShader) {
+    for (const ShaderBlob &blob : kBrightnessShader) {
         if (blob.format == SDL_GPU_SHADERFORMAT_SPIRV)
             SDL_SetBooleanProperty(props, SDL_PROP_RENDERER_CREATE_GPU_SHADERS_SPIRV_BOOLEAN, true);
         else if (blob.format == SDL_GPU_SHADERFORMAT_DXIL)
@@ -870,45 +905,71 @@ static SDL_Renderer *MakeOrRenderer(void)
             SDL_SetBooleanProperty(props, SDL_PROP_RENDERER_CREATE_GPU_SHADERS_MSL_BOOLEAN, true);
     }
     gRenderer = SDL_CreateRendererWithProperties(props);
+    if (gRenderer == NULL && SDL_strcmp(SDL_GetCurrentVideoDriver(), "offscreen") == 0) {
+        SDL_ClearProperty(props, SDL_PROP_RENDERER_CREATE_WINDOW_POINTER);
+        gRenderer = SDL_CreateRendererWithProperties(props);
+        gWindowless = gRenderer != NULL;
+    }
     SDL_DestroyProperties(props);
     if (gRenderer == NULL)
         return NULL;
     device = SDL_GetGPURendererDevice(gRenderer);
-    SDL_zero(nearest);
-    nearest.min_filter = nearest.mag_filter = SDL_GPU_FILTER_NEAREST;
-    nearest.address_mode_u = nearest.address_mode_v = nearest.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
-    gNearest = device != NULL ? SDL_CreateGPUSampler(device, &nearest) : NULL;
-    gOrShader = gNearest != NULL ? MakeShader(device, kOrBlendShader, SDL_arraysize(kOrBlendShader), 2, 0) : NULL;
-    gBrightShader = gOrShader != NULL ? MakeShader(device, kBrightnessShader, SDL_arraysize(kBrightnessShader), 1, 1)
-                                      : NULL;
+    gBrightShader = device != NULL ? MakeShader(device, kBrightnessShader, SDL_arraysize(kBrightnessShader), 1, 1)
+                                   : NULL;
     if (gBrightShader != NULL) {
         SDL_zero(info);
         info.fragment_shader = gBrightShader;
         gBrightState = SDL_CreateGPURenderState(gRenderer, &info);
     }
-    if (gBrightState != NULL && OrSelfTest()) {
-        SetBrightRamp();
+    if (gBrightState != NULL && BrightSelfTest()) {
+        if (gOrAsked && !MakeOr(device))
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "original blending not available, sprites added instead: %s",
+                        SDL_GetError());
         return gRenderer;
     }
     SDL_strlcpy(why, SDL_GetError(), sizeof why);
-    DropOrBlend();
+    DropShaders();
     SDL_DestroyRenderer(gRenderer);
     gRenderer = NULL;
+    gWindowless = false;
     SDL_SetError("%s", why);
     return NULL;
 }
 
-/* the renderer: for kPlatDrawOr SDL's GPU renderer, else (or when that cannot be made) SDL's default */
+/* SDL's renderers in its own order, without "gpu" and "direct3d" */
+static const char *FallbackDrivers(void)
+{
+    static char list[256];
+
+    list[0] = 0;
+    for (int i = 0; i < SDL_GetNumRenderDrivers(); i++) {
+        const char *name = SDL_GetRenderDriver(i);
+        if (name == NULL || SDL_strcmp(name, "gpu") == 0 || SDL_strcmp(name, "direct3d") == 0)
+            continue;
+        if (list[0] != 0)
+            SDL_strlcat(list, ",", sizeof list);
+        SDL_strlcat(list, name, sizeof list);
+    }
+    return list;
+}
+
+/* The renderer: SDL's GPU renderer, else the first of FallbackDrivers that can be made; with SDL_RENDER_DRIVER
+   set the renderers it names, as SDL takes them ("gpu" alone: the GPU renderer as above). */
 static SDL_Renderer *MakeRenderer(void)
 {
-    if (gOrAsked) {
-        if (MakeOrRenderer() != NULL) {
-            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "original blending on: SDL's GPU renderer, %s",
-                        SDL_GetGPUDeviceDriver(SDL_GetGPURendererDevice(gRenderer)));
+    const char *named = SDL_GetHint(SDL_HINT_RENDER_DRIVER);
+    bool asked = named != NULL && named[0] != 0;
+
+    if (!asked || SDL_strcasecmp(named, "gpu") == 0) {
+        if (MakeGpuRenderer() != NULL) {
+            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "SDL's GPU renderer, %s%s%s",
+                        SDL_GetGPUDeviceDriver(SDL_GetGPURendererDevice(gRenderer)),
+                        gWindowless ? ", without a window" : "", gOrShader != NULL ? ", original blending" : "");
             return gRenderer;
         }
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "original blending not available, sprites added instead: %s",
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SDL's GPU renderer not available, no brightness: %s",
                     SDL_GetError());
+        return SDL_CreateRenderer(gWindow, FallbackDrivers());
     }
     return SDL_CreateRenderer(gWindow, NULL);
 }
@@ -945,8 +1006,7 @@ static void DropViewTextures(void)
     DropOrTargets();
 }
 
-/* The view's render targets that are missing; false when the view's own cannot be made. When the OR blend's
-   cannot, kPlatDrawOr stops (logged once) and the view is drawn without it. */
+/* The view's render targets that are missing; false when the view's own cannot be made */
 static bool MakeViewTextures(void)
 {
     if (gViewTexture == NULL && (gViewTexture = MakeTarget(gViewWidth, gViewHeight, gScaleMode)) == NULL)
@@ -957,12 +1017,10 @@ static bool MakeViewTextures(void)
         gViewCopy = MakeTarget(gViewWidth, gViewHeight, SDL_SCALEMODE_NEAREST);
     if (gOrState == NULL && gViewCopy != NULL)
         gOrState = MakeOrState(gViewCopy);
-    if (ViewInCodes() && gViewCodes == NULL)
-        gViewCodes = MakeTarget(gViewWidth, gViewHeight, SDL_SCALEMODE_NEAREST);
-    if (gOrState == NULL || (ViewInCodes() && gViewCodes == NULL)) {
+    if (gOrState == NULL) {
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "original blending stopped, sprites added instead: %s",
                     SDL_GetError());
-        DropOrBlend();
+        DropOr();
     }
     return true;
 }
@@ -1049,24 +1107,13 @@ static SDL_Texture *TargetTexture(PlatTarget *target)
     return target->texture;
 }
 
-/* every target's texture dropped, made again clear when the target is next used */
+/* every target's texture dropped (at quit) */
 static void DropTargetTextures(void)
 {
     for (PlatTarget *target = gTargets; target != NULL; target = target->next) {
         if (target->texture != NULL)
             SDL_DestroyTexture(target->texture);
         target->texture = NULL;
-        target->drawn = false;
-    }
-}
-
-/* the render targets lost their pixels: every target clear, as after a lost device */
-static void ClearTargetTextures(void)
-{
-    for (PlatTarget *target = gTargets; target != NULL; target = target->next) {
-        if (target->texture != NULL)
-            ClearTexture(target->texture);
-        target->drawn = false;
     }
 }
 
@@ -1165,11 +1212,6 @@ void PlatTargetClear(PlatTarget *target)
     target->drawn = true;
 }
 
-unsigned PlatUIEpoch(void)
-{
-    return gUIEpoch;
-}
-
 const char *PlatRendererName(void)
 {
     const char *name = gRenderer != NULL ? SDL_GetRendererName(gRenderer) : NULL;
@@ -1190,30 +1232,21 @@ PlatDraw PlatDrawOf(int kind, int blend)
     return d;
 }
 
-/* where draws go: the vertices they index, how colours and images are shown there, what they are kept to */
+/* where draws go: the vertices they index, what kPlatDrawOr draws with, what they are kept to */
 struct DrawSink {
     const PlatVertex *vertices;
     size_t vertexCount;
-    bool codes;                         /* in 5-bit codes, the brightness after them: the view under the OR blend */
     SDL_GPURenderState *orState;        /* kPlatDrawOr's; NULL: such a draw is a plain image */
     const PlatTarget *target;           /* the target drawn into; NULL: the view or the window */
     const SDL_Rect *clip;               /* NULL: none */
 };
 
-static Uint32 SinkColor(Uint16 color, const DrawSink &sink)
-{
-    return sink.codes ? CodeColor(color) : PlainColor(color);
-}
-
 /* a draw's colour as ARGB */
-static Uint32 DrawColor(const PlatDraw &d, const DrawSink &sink)
+static Uint32 DrawColor(const PlatDraw &d)
 {
     if (!d.deep)
-        return SinkColor(d.color, sink);
-    if (sink.codes)
-        return 0xff000000u | (Uint32)d.rgb[0] << 16 | (Uint32)d.rgb[1] << 8 | d.rgb[2];
-    return 0xff000000u | (Uint32)gDeepChannel[d.rgb[0]] << 16 | (Uint32)gDeepChannel[d.rgb[1]] << 8
-           | gDeepChannel[d.rgb[2]];
+        return ColorOf(d.color);
+    return 0xff000000u | (Uint32)d.rgb[0] << 16 | (Uint32)d.rgb[1] << 8 | d.rgb[2];
 }
 
 static SDL_ScaleMode ScaleModeOf(int filter)
@@ -1231,8 +1264,7 @@ static SDL_Texture *DrawTexture(const PlatDraw &d, const DrawSink &sink, Texels 
 
     if (d.source != NULL) {
         SDL_assert(d.source != sink.target);
-        /* a target holds the brightness already: not for the view in codes, which is shown through it */
-        if (d.source == sink.target || kind == kTexelsSilhouette || sink.codes)
+        if (d.source == sink.target || kind == kTexelsSilhouette)
             return NULL;
         texture = TargetTexture(d.source);
         deep = true;
@@ -1338,7 +1370,7 @@ static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_
     }
     switch (d.kind) {
     case kPlatDrawOr:
-        texture = d.image != NULL ? ImageTexture(d.image, sink.orState != NULL ? kTexelsCodes : kTexelsShown) : NULL;
+        texture = d.image != NULL ? ImageTexture(d.image, kTexelsColours) : NULL;
         if (texture == NULL)
             return;
         if (sink.orState == NULL) {
@@ -1358,7 +1390,7 @@ static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_
         break;
     case kPlatDrawImage:
     case kPlatDrawTiled:
-        texture = DrawTexture(d, sink, sink.codes ? kTexelsCodes : kTexelsShown);
+        texture = DrawTexture(d, sink, kTexelsColours);
         if (texture == NULL)
             return;
         SetDrawColorMod(texture, d, d.mod[0], d.mod[1], d.mod[2]);
@@ -1371,13 +1403,13 @@ static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_
         texture = DrawTexture(d, sink, kTexelsSilhouette);
         if (texture == NULL)
             return;
-        argb = DrawColor(d, sink);
+        argb = DrawColor(d);
         SetDrawColorMod(texture, d, ((argb >> 16) & 0xff) * d.mod[0] / 255, ((argb >> 8) & 0xff) * d.mod[1] / 255,
                         (argb & 0xff) * d.mod[2] / 255);
         SDL_RenderTexture(gRenderer, texture, from, &rect);
         break;
     case kPlatDrawFill:
-        argb = DrawColor(d, sink);
+        argb = DrawColor(d);
         share = ColorShare(d);
         SDL_SetRenderDrawBlendMode(gRenderer, PlainBlend(d.blend));
         SDL_SetRenderDrawColor(gRenderer, (Uint8)((((argb >> 16) & 0xff) * share + 127) / 255),
@@ -1392,7 +1424,7 @@ static void RenderDraw(const PlatDraw &d, const DrawSink &sink, std::vector<SDL_
         for (i = 0; i < d.count; i++) {
             const PlatVertex &v = sink.vertices[(size_t)d.first + i];
             float held = AlphaInColor(d.blend) ? v.alpha / 255.0f : 1.0f;
-            argb = d.deep ? DrawColor(d, sink) : SinkColor(v.color, sink);
+            argb = d.deep ? DrawColor(d) : ColorOf(v.color);
             scratch[i].position.x = v.x;
             scratch[i].position.y = v.y;
             scratch[i].color.r = ((argb >> 16) & 0xff) / 255.0f * held;
@@ -1507,12 +1539,10 @@ void PlatTargetDraw(PlatTarget *target, const PlatDraw *draws, int drawCount, co
     SDL_Texture *texture = target != NULL ? TargetTexture(target) : NULL;
     SDL_Rect box = { 0, 0, 0, 0 };
     size_t given = vertices != NULL && vertexCount > 0 ? (size_t)vertexCount : 0;
-    DrawSink sink = { vertices, given, false, NULL, target, NULL };
+    DrawSink sink = { vertices, given, NULL, target, NULL };
 
     if (texture == NULL || draws == NULL || !SDL_SetRenderTarget(gRenderer, texture))
         return;
-    if (!gChannelsMade)
-        MakeChannels();
     if (clip != NULL) {
         box = { clip->x, clip->y, SDL_max(clip->w, 0), SDL_max(clip->h, 0) };
         sink.clip = &box;
@@ -1553,24 +1583,7 @@ int PlatTargetRead(PlatTarget *target, const PlatRect *rect, uint32_t *out)
     return 1;
 }
 
-int PlatTargetReadDrawn(PlatTarget *target, const PlatRect *rect, uint32_t *out)
-{
-    size_t count;
-
-    if (PlatTargetRead(target, rect, out) == 0)
-        return 0;
-    if (gExponent == 1.0)
-        return 1;
-    if (!gChannelsMade)
-        MakeChannels();
-    count = rect != NULL ? (size_t)rect->w * rect->h : (size_t)target->width * target->height;
-    for (size_t i = 0; i < count; i++)
-        if (out[i] >> 24 != 0)
-            out[i] = MapTexel(out[i], gDrawnChannel);
-    return 1;
-}
-
-/* the GPU view's draws into its render target (in codes first when ViewInCodes) */
+/* the GPU view's draws into its render target */
 static bool RenderView(void)
 {
     static std::vector<SDL_Vertex> scratch;
@@ -1579,8 +1592,8 @@ static bool RenderView(void)
 
     if (!MakeViewTextures())
         return false;
-    DrawSink sink = { gVertices.data(), gVertices.size(), ViewInCodes(), gOrState, NULL, NULL };
-    view = ViewInCodes() ? gViewCodes : gViewTexture;
+    DrawSink sink = { gVertices.data(), gVertices.size(), gOrState, NULL, NULL };
+    view = gViewTexture;
     levelled = gOrState != NULL;
     if (!SDL_SetRenderTarget(gRenderer, view))
         return false;
@@ -1600,12 +1613,7 @@ static bool RenderView(void)
         }
         RenderDraw(d, sink, scratch);
     }
-    if (view != gViewTexture) {
-        SDL_SetRenderTarget(gRenderer, gViewTexture);
-        SDL_SetGPURenderState(gRenderer, gBrightState);
-        SDL_RenderTexture(gRenderer, view, NULL, NULL);
-        SDL_SetGPURenderState(gRenderer, NULL);
-    } else if (levelled && !SDL_SetTextureScaleMode(gViewTexture, gScaleMode)) {
+    if (levelled && !SDL_SetTextureScaleMode(gViewTexture, gScaleMode)) {
         SDL_SetTextureScaleMode(gViewTexture, SDL_SCALEMODE_LINEAR);
     }
     SDL_SetRenderTarget(gRenderer, NULL);
@@ -1613,11 +1621,11 @@ static bool RenderView(void)
     return true;
 }
 
-/* the overlays over the view, in the frame's pixels, as they are shown: the brightness in them */
+/* the overlays over the view, in the frame's pixels */
 static void DrawOverlays(void)
 {
     std::vector<SDL_Vertex> scratch;
-    DrawSink sink = { gVertices.data(), gVertices.size(), false, NULL, NULL, NULL };
+    DrawSink sink = { gVertices.data(), gVertices.size(), NULL, NULL, NULL };
 
     for (const PlatDraw &d : gOverlays)
         RenderDraw(d, sink, scratch);
@@ -1675,8 +1683,6 @@ static bool KeepLayer(PlatTarget *layer)
 static void ShowLayer(void)
 {
     gShowStart = SDL_GetTicksNS();
-    if (!gChannelsMade)
-        MakeChannels();
     if (gViewFresh && !RenderView())
         DropView();
     gTimes.uploadNs += SDL_GetTicksNS() - gShowStart;
@@ -1745,17 +1751,6 @@ static bool SDLCALL EventWatch(void *userdata, SDL_Event *event)
     return true;
 }
 
-/* the renderer's textures are gone (a lost device): each is made again when next needed */
-static void DropFrameTextures(void)
-{
-    DropViewTextures();
-    DropLayerTexture();
-    gViewFresh = gViewOn;
-    for (PlatImage *image = gImages; image != NULL; image = image->next)
-        DropImageTextures(image);
-    gFrameDrawn = false;
-}
-
 int PlatVideoCreateWindow(const char *title)
 {
     gWindow = SDL_CreateWindow(title, 640, 480,
@@ -1805,8 +1800,22 @@ static void MakeFrame(int width, int height)
     gFrameWidth = width;
     gFrameHeight = height;
     DropLayerTexture();
+    DropUnlit();
     gFrameDrawn = false;
-    SDL_SetRenderLogicalPresentation(gRenderer, width, height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    if (gWindowless) {
+        if (gWindowFrame != NULL)
+            SDL_DestroyTexture(gWindowFrame);
+        gWindowFrame = MakeTarget(width, height, SDL_SCALEMODE_NEAREST);
+        return;
+    }
+    SDL_SetRenderTarget(gRenderer, NULL);
+    SetLetterbox();
+}
+
+/* the frame stretched to the render target with its aspect kept */
+static void SetLetterbox(void)
+{
+    SDL_SetRenderLogicalPresentation(gRenderer, gFrameWidth, gFrameHeight, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 }
 
 #if EVPLUS_TEST_PAGES
@@ -1857,8 +1866,8 @@ static void ExpectShown(UITest &test, SDL_Texture *shown, const char *what, int 
     Uint8 r = 0, g = 0, b = 0;
     Uint32 got;
 
+    Compose(shown);
     SDL_SetRenderTarget(gRenderer, shown);
-    Compose();
     read = SDL_RenderReadPixels(gRenderer, &at);
     SDL_SetRenderTarget(gRenderer, NULL);
     if (read != NULL)
@@ -1870,6 +1879,21 @@ static void ExpectShown(UITest &test, SDL_Texture *shown, const char *what, int 
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "uitest: %s at %d,%d is %08x, not %08x", what, x, y, got, want);
     }
     SDL_DestroySurface(read);
+}
+
+/* a colour of the frame as shown: through the brightness where the renderer has one, then the white-out */
+static Uint32 Shown(Uint32 rgb, double exponent, unsigned white)
+{
+    Uint32 out = 0;
+
+    for (int shift = 0; shift <= 16; shift += 8) {
+        double c = (rgb >> shift & 0xff) / 255.0;
+        double a = (white >= 256 ? 255 : white) / 255.0;
+        if (PlatVideoBrightness())
+            c = SDL_pow(c, exponent);
+        out |= (Uint32)((c * (1 - a) + a) * 255.0 + 0.5) << shift;
+    }
+    return out;
 }
 
 static PlatDraw TestDraw(int kind, int blend, float x, float y, float w, float h)
@@ -1918,7 +1942,6 @@ static void TestTargets(UITest &test)
     PlatVertex vertices[6] = { { 0, 24, 0, 255 }, { 8, 24, 0, 255 }, { 8, 32, 0, 255 },
                                { 0, 24, 0, 255 }, { 8, 32, 0, 255 }, { 0, 32, 0, 255 } };
     std::vector<Uint32> all((size_t)64 * 48);
-    unsigned epoch;
     SDL_Event lost;
     PlatDraw d;
 
@@ -2070,47 +2093,26 @@ static void TestTargets(UITest &test)
     ExpectPixel(test, "an image's updated part, the pixel beside", target, 51, 44, 0xff0000ffu, 0);
     PlatImageDestroy(plain);
 
-    /* the brightness: in colours and images, and counted */
-    epoch = PlatUIEpoch();
+    /* a brightness set leaves what targets hold as drawn */
     PlatVideoSetBrightness(0.5);
-    Expect(test, "the epoch after a brightness change", PlatUIEpoch() != epoch);
     PlatDraw bright[] = { TestFill(kPlatBlendCopy, 0, 16, 2, 2, 64, 64, 64, 255),
                           TestDraw(kPlatDrawImage, kPlatBlendCopy, 2, 16, 2, 1),
                           TestDraw(kPlatDrawImage, kPlatBlendCopy, 10, 16, 1, 1) };
     bright[1].image = dark;
     bright[2].image = over;
     PlatTargetDraw(target, bright, 3, NULL, 0, NULL);
-    ExpectPixel(test, "a bright colour", target, 0, 16, 0xff808080u, 0);
-    PlatRect litAt = { 0, 16, 1, 1 };
-    Uint32 drawn = 0;
-    Expect(test, "a bright colour read as drawn",
-           PlatTargetReadDrawn(target, &litAt, &drawn) != 0 && Alike(drawn, 0xff404040u, 1));
-    ExpectPixel(test, "a bright image", target, 2, 16, 0xff800000u, 0);
-    ExpectPixel(test, "a bright image's alpha", target, 3, 16, 0x80400000u, 0);
-    ExpectPixel(test, "a bright texel with light over its alpha", target, 10, 16, 0x40802000u, 0);
-    epoch = PlatUIEpoch();
     PlatVideoSetBrightness(1.0);
-    Expect(test, "the epoch after the brightness is back", PlatUIEpoch() != epoch);
-    PlatTargetDraw(target, bright, 2, NULL, 0, NULL);
-    ExpectPixel(test, "a colour as it is", target, 0, 16, 0xff404040u, 0);
-    ExpectPixel(test, "an image as it is", target, 3, 16, dim[1], 0);
+    ExpectPixel(test, "a colour drawn with a brightness set", target, 0, 16, 0xff404040u, 0);
+    ExpectPixel(test, "an image drawn with a brightness set", target, 2, 16, dim[0], 0);
+    ExpectPixel(test, "an image's alpha drawn with a brightness set", target, 3, 16, dim[1], 0);
+    ExpectPixel(test, "a texel with light over its alpha drawn with a brightness set", target, 10, 16, lit, 0);
 
-    /* lost render targets, then a lost device: the target is there, clear */
-    epoch = PlatUIEpoch();
-    SDL_zero(lost);
-    lost.type = SDL_EVENT_RENDER_TARGETS_RESET;
-    OwnPart(&lost);
-    Expect(test, "the epoch after lost render targets", PlatUIEpoch() == epoch + 1);
-    ExpectPixel(test, "a target after lost render targets", target, 40, 40, 0, 0);
-    Expect(test, "a target that lost its pixels is no frame", !KeepLayer(target));
-    PlatTargetDraw(target, images, 1, NULL, 0, NULL);
-    ExpectPixel(test, "an image after lost render targets", target, 30, 30, texels[0], 0);
-    lost.type = SDL_EVENT_RENDER_DEVICE_RESET;
-    OwnPart(&lost);
-    Expect(test, "the epoch after a lost device", PlatUIEpoch() == epoch + 2);
-    ExpectPixel(test, "a target after a lost device", target, 40, 40, 0, 0);
-    PlatTargetDraw(target, images, 1, NULL, 0, NULL);
-    ExpectPixel(test, "an image after a lost device", target, 30, 30, texels[0], 0);
+    /* the render resets reach the game, which cannot go on without the targets' pixels */
+    for (Uint32 type : { SDL_EVENT_RENDER_TARGETS_RESET, SDL_EVENT_RENDER_DEVICE_RESET, SDL_EVENT_RENDER_DEVICE_LOST }) {
+        SDL_zero(lost);
+        lost.type = type;
+        Expect(test, "a render reset for the game", OwnPart(&lost));
+    }
     PlatTargetClear(target);
     ExpectPixel(test, "a cleared target", target, 30, 30, 0, 0);
 
@@ -2182,8 +2184,23 @@ static void TestLayerFrame(UITest &test)
     if (gLayerWaiting)
         ShowLayer();
     ExpectShown(test, shown, "the white-out over the layer", 5, 5, 0x8080e4u);
+    /* the whole frame through the brightness, where the renderer shows one; the white-out over that */
+    PlatVideoSetBrightness(0.5);
+    ExpectShown(test, shown, "the white-out over the layer through a brightness", 5, 5, Shown(0x0000c8u, 0.5, 128));
+    PlatVideoSetWhite(0);
+    ExpectShown(test, shown, "the layer through a brightness", 5, 5, Shown(0x0000c8u, 0.5, 0));
+    ExpectShown(test, shown, "a target's part added over the view through a brightness", 5, 55,
+                Shown(0x00ff64u, 0.5, 0));
+    PlatVideoSetBrightness(1.0);
+    PlatVideoSetWhite(128);
     PlatVideoDropView();
     ExpectShown(test, shown, "the layer alone", 5, 25, 0x808080u);
+    /* a frame made again at the same size drops gUnlit, so its letterbox is set again */
+    if (PlatVideoBrightness()) {
+        Expect(test, "the brightness frame after a brightness", gUnlit != NULL);
+        MakeFrame(gFrameWidth, gFrameHeight);
+        Expect(test, "the brightness frame after the frame is made again", gUnlit == NULL);
+    }
     /* the test's frame goes: nothing of it is shown again */
     gFrameDrawn = false;
     PlatVideoSetWhite(white);
@@ -2202,8 +2219,8 @@ static void UISelfTest(void)
     TestTargets(test);
     TestLayerFrame(test);
     PlatVideoSetBrightness(exponent);
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "uitest: %d checks, %d failed, on SDL's %s renderer", test.checks,
-                test.failed, SDL_GetRendererName(gRenderer));
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "uitest: %d checks, %d failed, on SDL's %s renderer%s", test.checks,
+                test.failed, SDL_GetRendererName(gRenderer), PlatVideoBrightness() ? " with a brightness" : "");
 }
 #endif
 
@@ -2269,6 +2286,10 @@ void PlatVideoClose(void)
     gShowRest = 0;
     DropViewTextures();
     DropLayerTexture();
+    if (gWindowFrame != NULL)
+        SDL_DestroyTexture(gWindowFrame);
+    gWindowFrame = NULL;
+    DropUnlit();
     gDraws.clear();
     gVertices.clear();
     gOverlays.clear();
@@ -2406,6 +2427,23 @@ static int ButtonBit(Uint8 button)
     }
 }
 
+/* a window point as a frame point, the frame letterboxed in the window (a renderer without a window converts none) */
+static void WindowlessMouse(float *x, float *y)
+{
+    int width = 0;
+    int height = 0;
+    float scale;
+
+    if (gWindow == NULL || gFrameWidth <= 0 || gFrameHeight <= 0)
+        return;
+    SDL_GetWindowSize(gWindow, &width, &height);
+    if (width <= 0 || height <= 0)
+        return;
+    scale = SDL_min((float)width / gFrameWidth, (float)height / gFrameHeight);
+    *x = (*x - (width - gFrameWidth * scale) / 2) / scale;
+    *y = (*y - (height - gFrameHeight * scale) / 2) / scale;
+}
+
 /* The platform's own part of an event; 0 when the event is the platform's alone. */
 static bool OwnPart(SDL_Event *e)
 {
@@ -2439,7 +2477,10 @@ static bool OwnPart(SDL_Event *e)
     case SDL_EVENT_MOUSE_MOTION:
         if (gRenderer == NULL)
             return false;
-        SDL_ConvertEventToRenderCoordinates(gRenderer, e);
+        if (gWindowless)
+            WindowlessMouse(&e->motion.x, &e->motion.y);
+        else
+            SDL_ConvertEventToRenderCoordinates(gRenderer, e);
         return true;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -2468,22 +2509,6 @@ static bool OwnPart(SDL_Event *e)
         return true;
     case SDL_EVENT_WINDOW_EXPOSED:
         Redraw();
-        return false;
-    case SDL_EVENT_RENDER_DEVICE_RESET:
-        /* the textures are gone */
-        if (gRenderer != NULL)
-            DropFrameTextures();
-        DropTargetTextures();
-        gUIEpoch++;
-        return false;
-    case SDL_EVENT_RENDER_TARGETS_RESET:
-        /* the render targets' contents are gone: the GPU view is drawn again, the interface by the game */
-        gViewFresh = gViewOn;
-        gLayerWaiting = false;
-        gFrameDrawn = false;
-        if (gRenderer != NULL)
-            ClearTargetTextures();
-        gUIEpoch++;
         return false;
     default:
         return true;

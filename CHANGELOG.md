@@ -1,30 +1,26 @@
 # Changelog
 
-- Mac, Win, Linux 64bit builds
-- No quicktime dependency
+- Mac, Win, Linux 64-bit builds
+- No QuickTime dependency
 - Hyperspace white-out from the Mac 1.1.1 release
 - Jump flash is always shown
-- Preferences dialog redone and moved to JSON
-- The interface is scaled
-- Mouse wheel zoom
+- Preferences dialog redone and moved to JSON, EVNova.ini no longer needed
+- The interface is scaled; resolution and UI scale change without a restart
+- Mouse wheel: zoom in flight and on the galaxy map, scroll for shops and mission texts
 - Preferences: Game size (how much space you see)
-- Brightness slider works live, on the whole screen
-- Key settings `[` and `]` fixed orientation 
-- Unintended keypresses wont skip movies / launch figters
+- Brightness setting fixed, the slider works live on the whole screen
+- Key settings: keys bound twice are shown in red, double-speed key can be changed
+- Unintended keypresses won't skip movies / launch fighters
 - Mission computer and bar: available missions are listed correctly by their display weight
-- Rendering in SDL
-- Brightness setting fixed
-- Positional Audio
-- Mouse wheel scroll for shops / galaxy map / mission texts
-- Shipyard: double-click opens it description
+- Rendering in SDL, on the GPU
+- Positional audio (stereo panning)
+- Shipyard: double-click opens its description
 - Asteroid Scaling based on screen size, asteroid cap increased from 16 to 1024
 - Starfield density matches the 1024x768 game on any screen size
 - Shipyard: used ships show their stats against the new ship
 - Shipyard: Total Space shows the space with all standard equipment sold
-- Galaxy map: Goods Traded can show each commodity's price levels
-- Galaxy map: special cargo prices, and active disasters coloured
+- Galaxy map: Goods Traded and special cargo can show each commodity's price levels, including disaster modifiers
 - Player Info: shield and armor show their raw values
-- Key settings: keys bound twice are shown in red
 - Escort hiring: shows the daily pay under the hiring price
 - Player Info: Jump Time in days
 - Outfitter: description lists the outfit's effects and weapon stats
@@ -33,15 +29,30 @@
 - Plug-in mission texts: <PAY> in active-mission briefings shows 0 instead of a garbage number for missions without pay
 - NPC quadrant turrets now fire across north
 - Revive cheat (Home) only works with cheats turned on
-- Lower CPU use in flight: the frame limiter sleeps instead of busy-waiting
-- nplay, ddraw support removed
+- Lower CPU use: busy-waiting removed from the frame limiter
+- Removed: nplay, ddraw, registration, version check and the Captain Hector ship
 - Two copies of the game can run at the same time
 - Ship colours (`gövt` and `përs` ShipColor) now tint ships correctly
 - Main screen: pressing E (Enter Ship) no longer carries the key press into flight
-- plug-ins and data files are loaded in the order of their names
-- native open-pilot dialog
+- Plug-ins and data files are loaded in the order of their names
+- Native open-pilot dialog
 - Alt+Enter switches between full screen and a resizable window
-- Double-speed key can be changed in preferences
 - Modern text rendering
 - 8-bit sound effects play at full quality
 - Plug-in PICT sprites whose mask ID is their own picture load, with white as transparent, as on the Mac
+- Glow and explosion effects are clearer; Preferences: Original Blending option
+- Profiler: Shift + framerate key shows live timings, Ctrl + framerate key writes profile.txt
+
+## Other fixes
+
+- Sound: no crash when every channel is busy, distant sounds no longer play at full volume
+- Asteroid field is in place after take-off and pilot load, not drifting in from the screen edges
+- Beams hit the first asteroid in their path
+- Defense ships drop a target that turns invisible
+- Fleet ships without cargo space no longer carry random cargo
+- Main menu art is always centred (was shifted up and left on small screens)
+- Mission dialog: long mission names are cut with an ellipsis, as on the Mac
+- Haggle: A and L work with Shift or Caps Lock
+- Outfitter and shipyard: clicking the grid at a large UI scale no longer crashes
+- Plug-ins: over-long names and texts are cut instead of overflowing, a trade centre without goods no longer freezes the game, PICT sprites with too few frames no longer crash
+- Key settings: `[` and `]` fixed orientation

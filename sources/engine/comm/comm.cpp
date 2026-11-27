@@ -101,22 +101,15 @@ SWFrameRec *CommOverlay(void)
         if (frame != NULL)
             SWDisposeFrame(&frame);
         bounds = wanted;
-        if (!View::MakeOverlayFrame(&frame, bounds, RedrawCommOverlay))
+        if (!View::MakeOverlayFrame(&frame, bounds))
             return NULL;
         gCommDrawn = false;
         FitCommRect(frame);
     }
-    if (!gCommDrawn)
-        RedrawCommOverlay();
+    if (!gCommDrawn) {
+        UI::Painter p{UI::Surface(frame)};
+        DrawCommText(p, frame->frameRect);
+        gCommDrawn = true;
+    }
     return frame;
-}
-
-/* the comm frame drawn again with the message last shown, in its style */
-void RedrawCommOverlay(void)
-{
-    if (gCommFrame == NULL)
-        return;
-    UI::Painter p{UI::Surface(gCommFrame)};
-    DrawCommText(p, gCommFrame->frameRect);
-    gCommDrawn = true;
 }

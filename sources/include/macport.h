@@ -335,7 +335,6 @@ typedef struct DialogRecord {
     void *eventProc;
     int32_t needsUpdate;
     int32_t visible;
-    int32_t shown;                  /* copied onto the screen once */
 } DialogRecord;
 
 typedef struct Particle {
@@ -526,7 +525,6 @@ extern void DisposeGWorld(CGrafPtr port);
 extern void DebugStr(const char *message);
 extern void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text);
 extern void *GetGDevice(void);
-extern void BuildGammaRamp(float gamma);
 extern void GetListCellRect(Rect *box, Point cell, ScrollRec **h);
 extern Boolean LClick(Point where, short modifiers, ScrollRec **h);
 extern void ParamText(const unsigned char *p0, const unsigned char *p1,
@@ -559,7 +557,6 @@ extern void *gClickItem;
 extern uint32_t gClickTime;
 extern int32_t gDialogCount;
 extern DialogPtr gCurDialog;
-extern unsigned char gGammaRamp[32];
 extern SpriteWorldPtr gSpriteWorld;
 
 extern SpriteRec *masterShipSprite[768];

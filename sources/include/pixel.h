@@ -50,18 +50,6 @@ constexpr uint32_t ToArgb(unsigned p)
            | (Blue(p) << 3 | Blue(p) >> 2);
 }
 
-/* each channel through a 32-entry table */
-inline unsigned short Map(unsigned p, const unsigned char *table)
-{
-    return Pack(table[Red(p)], table[Green(p)], table[Blue(p)]);
-}
-
-/* from 16-bit channels through the gamma ramp */
-inline unsigned short FromColorGamma(const RGBColor &c)
-{
-    return Pack(gGammaRamp[c.red >> 11], gGammaRamp[c.green >> 11], gGammaRamp[c.blue >> 11]);
-}
-
 /* Two pixels in one 32-bit word: one channel of both scaled by k/32, rounded down. */
 constexpr uint32_t kRedPair = 0x7c007c00;
 constexpr uint32_t kGreenPair = 0x03e003e0;

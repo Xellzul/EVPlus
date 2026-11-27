@@ -1,7 +1,6 @@
 /* swcreategworldfrompictresource.cpp -- SWCreateGWorldFromPictResource (win 0x00478f30, donor SpriteWorldUtils.c line 356). Notes: Research/notes/swcreategworldfrompictresource.md */
-/* The fork's fourth parameter is a byte flag choosing between 0x004b9050 and 0x004b9060
-   -- both print as `LoadPictResource(id, 0)' in a decompiler export and the exe bytes
-   say one passes gamma 1. The error arm is a flat resNotFound, -192. */
+/* The fork's fourth parameter is a byte flag choosing between GetPicture and GetPictureNoGamma, which load
+   the same picture here. The error arm is a flat resNotFound, -192. */
 #include "spriteworld.h"
 
 

@@ -16,7 +16,6 @@ extern void AutoSetExploration(short sys, short maxDepth, short level);
 extern short CalcPortDemand(short commodity, uint32_t flags);
 extern void SpoolNextHyperRouteDest(void);
 extern void DrawMapInFloatingFrame(void);
-extern void RedrawFloatingMap(void);          /* drawn again as last drawn, the map dialogs' state kept */
 extern void ColorCodeShip(ShipObj *ship, RGBColor *color);
 extern void ColorCodeStellar(SpobRecord *spob, RGBColor *color);
 extern void ColorCodeSystem(short sys, RGBColor *color);

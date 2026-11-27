@@ -78,9 +78,8 @@ void SetMenuScale(double scale);
 /* a MenuScale is in effect and the menu scale differs from the interface's */
 bool InMenuScale();
 
-/* While it lives and no GameScale steps out of it, the menu scale is in use: Scale(), the logical screen and the
-   logical bounds of the window and loadPort are the menu's; device pixels stay. Nests with MenuScale and GameScale;
-   does nothing when both scales are the same. */
+/* While it lives, the menu scale is in use: Scale(), the logical screen and the logical bounds of the window
+   and loadPort are the menu's; device pixels stay. Nests; does nothing when both scales are the same. */
 class MenuScale {
 public:
     MenuScale();
@@ -89,10 +88,6 @@ public:
     MenuScale &operator=(const MenuScale &) = delete;
 
 private:
-    friend class GameScale;
-    void Enter();       /* the menu's scale put in use, what it replaces kept */
-    void Leave();       /* what Enter replaced put back */
-
     bool switched;
     double scale;
     short screenWidth;
@@ -101,18 +96,6 @@ private:
     CGrafPtr loadWorld;
     Rect loadBounds;
     Rect loadPixBounds;
-};
-
-/* While it lives, the interface's scale is in use, also inside a MenuScale (whose scale comes back after). */
-class GameScale {
-public:
-    GameScale();
-    ~GameScale();
-    GameScale(const GameScale &) = delete;
-    GameScale &operator=(const GameScale &) = delete;
-
-private:
-    MenuScale *menu;    /* the MenuScale stepped out of; NULL = none */
 };
 
 } // namespace UI

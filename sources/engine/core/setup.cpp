@@ -36,19 +36,6 @@ static void SpriteWorldFailed(void)
     ExitToShell();
 }
 
-/* the floating map's and escort menu's frames drawn again while a game shows them */
-static void RedrawMapFrame(void)
-{
-    if (gameInProgress != 0 && gameLoaded != 0 && showFloatingMap > 0)
-        RedrawFloatingMap();
-}
-
-static void RedrawEscortFrame(void)
-{
-    if (gameInProgress != 0 && gameLoaded != 0 && escortMenuOnscreen > 0)
-        DrawEscortMenuInFrame();
-}
-
 /* the floating map's and escort menu's frames and places, for the view's size and the UI scale */
 static void CreateOverlayFrames(void)
 {
@@ -61,10 +48,10 @@ static void CreateOverlayFrames(void)
         windRect.right = 200;
     windRect.bottom = windRect.right;
     floatingMapRect = windRect;
-    View::MakeOverlayFrame(&floatingMapFrame, View::OverlayFrameRect(windRect), RedrawMapFrame);
+    View::MakeOverlayFrame(&floatingMapFrame, View::OverlayFrameRect(windRect));
     OffsetRect(&floatingMapRect, View::width - (floatingMapRect.right + View::ScaleInView(16)), View::ScaleInView(150));
     SetRect(&windRect, 0, 0, 160, 120);
-    View::MakeOverlayFrame(&floatingEscortMenuFrame, windRect, RedrawEscortFrame);
+    View::MakeOverlayFrame(&floatingEscortMenuFrame, windRect);
     SetRect(&escortMenuRect, View::ScaleInView(15), View::ScaleInView(150), View::ScaleInView(15 + 160),
             View::ScaleInView(150 + 120));
 }
@@ -260,17 +247,6 @@ int32_t fullScreenRestore;
 GWorldContainer menuArtPort;            /* MenuArt() */
 GWorldContainer menuShownPort;          /* the menu art last stretched into loadPort */
 
-/* loadPort went black, as did the menu art it showed: the menu puts its art together again */
-static void LoadPortLost(void)
-{
-    if (menuShownPort.world != NULL) {
-        const PixMap &shown = menuShownPort.world->pix;
-        for (int y = 0; y < shown.height; y++)
-            memset(Pixel::Row(shown, y), 0, (size_t)shown.width * Pixel::kBytes);
-    }
-    mainScreenBackgroundDirty = 1;
-}
-
 /* the status bar's picture, as high as `screen' */
 static void CreateStatusOffPort(Rect screen)
 {
@@ -280,7 +256,7 @@ static void CreateStatusOffPort(Rect screen)
     CreateGWorldContainer(&statusOffPort, GetMainDevice(), 0, &screen);
     if (statusOffPort.world != NULL) {
         UI::ScaleUIPort(statusOffPort.world);
-        UI::Canvas::MakeNewTarget(statusOffPort.world, RedrawStatusPicture);
+        UI::Canvas::MakeNewTarget(statusOffPort.world);
     }
     if (statusOffPort.world == NULL) {
         ShowTheCursor();
@@ -306,7 +282,7 @@ void InitOffscreen(void)
     CreateGWorldContainer(&loadPort, GetMainDevice(), 0, &r);
     if (loadPort.world != NULL) {
         UI::ScaleUIPort(loadPort.world);
-        UI::Canvas::MakeNewTarget(loadPort.world, LoadPortLost);
+        UI::Canvas::MakeNewTarget(loadPort.world);
     }
     {
         UI::MenuScale menu;
@@ -811,7 +787,7 @@ static struct {
 
 /* The game is drawn at the preferences' resolution (0 = the desktop's) and shows the game size's space. The
    UI is scaled to look as on a 1024 x 768 screen, times the UI scale; the main menu without the UI scale. The
-   renderer is made here, for the original blending when it is on. */
+   renderer is made here, with the original blending when it is on and the renderer has it. */
 // FUNCTION: EVNOVA 0x004b45e0
 void SetupMonitor(void)
 {
@@ -951,11 +927,10 @@ static void ApplyDisplay(Resolution chosen, short gameSize)
     mainScreenBackgroundDirty = 1;
 }
 
-/* the scene of a black screen */
+/* the whole screen black */
 void BlackScreen(void)
 {
     UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect(gWind), UI::kBlack);
-    Screen::SetScene(BlackScreen);
 }
 
 /* The Preferences' display settings after the dialog closes; a game size waits for the next pilot while one

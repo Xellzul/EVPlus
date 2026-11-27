@@ -67,7 +67,7 @@ static int Blend(int old, int target, int a)
     return old + (moved >= 0 ? moved + kFull / 2 : moved - kFull / 2) / kFull;
 }
 
-/* a text colour through the gamma ramp, a channel in 8 bits, as the exe hands it to GDI */
+/* a text colour, a channel in 8 bits, as the exe hands it to GDI */
 typedef struct TextColor {
     int r;
     int g;
@@ -124,21 +124,21 @@ static void DrawGlyph(PixMap *pix, const RasterGlyph *glyph, int x, int baseline
     }
 }
 
-/* `rgb' as a TextColor */
-static TextColor GammaColor(const RGBColor &rgb)
+/* `rgb' as a TextColor, at 5 bits a channel */
+static TextColor ColorOf(const RGBColor &rgb)
 {
     TextColor color;
 
-    color.r = (unsigned char)(gGammaRamp[rgb.red >> 11] * 8);
-    color.g = (unsigned char)(gGammaRamp[rgb.green >> 11] * 8);
-    color.b = (unsigned char)(gGammaRamp[rgb.blue >> 11] * 8);
+    color.r = (unsigned char)((rgb.red >> 11) * 8);
+    color.g = (unsigned char)((rgb.green >> 11) * 8);
+    color.b = (unsigned char)((rgb.blue >> 11) * 8);
     return color;
 }
 
 /* the layout's glyphs blended into a pixel map */
 class PixelSink : public TextLayout::Sink {
 public:
-    PixelSink(PixMap *pix, const RGBColor &ink) : pix(pix), color(GammaColor(ink)) {}
+    PixelSink(PixMap *pix, const RGBColor &ink) : pix(pix), color(ColorOf(ink)) {}
 
     void Glyph(const RasterGlyph &glyph, int x, int baseline, const RGBColor *colour,
                const TextLayout::Clip &clip) override
@@ -147,7 +147,7 @@ public:
             DrawGlyph(pix, &glyph, x, baseline, &clip, &color);
             return;
         }
-        TextColor span = GammaColor(*colour);
+        TextColor span = ColorOf(*colour);
         DrawGlyph(pix, &glyph, x, baseline, &clip, &span);
     }
 

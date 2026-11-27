@@ -19,10 +19,10 @@ constexpr short kWidth = 500;
 constexpr short kHeight = 379;
 constexpr short kMusicVolStrList = 0x88;
 constexpr short kMaxMusicVol = 8;
-constexpr short kMaxGamma = 6;
 const char *const kGammaNames[kMaxGamma + 1] = {
     "Black Hole", "Darker", "Dark", "Normal", "Bright", "Brighter", "Burn Out Your Retinas"
 };
+const RGBColor kGreyed = { 0x8888, 0x8888, 0x8888 };
 constexpr short kBeepChannel = 1;
 constexpr short kUpArrowPict = 134;
 constexpr short kDownArrowPict = 135;
@@ -40,16 +40,18 @@ constexpr short kRow = 22;
 
 const char *const kFilterNames[kScaleFilterCount] = { "Nearest", "Linear", "Pixel art" };
 
-short gTitleItem;                           /* the dialog's user items, for PrefsDialogUpdate */
-short gNoticeItem;
-
-/* an up/down control's items: its value, the line below it (or 0), and the two arrows */
+/* an up/down control's items: its label, its value, the line below it (or 0), and the two arrows */
 struct StepperItems {
+    short label;
     short value;
     short extra;
     short down;
     short up;
 };
+
+short gTitleItem;                           /* the dialog's user items, for PrefsDialogUpdate */
+short gNoticeItem;
+StepperItems gBrightnessItems;              /* greyed by PrefsDialogUpdate where the renderer has no brightness */
 
 /* One group: a heading, then its items top down, placed as DITL 4003 placed its own. A check box takes a
    row; an up/down control two (its label, then the arrows beside its value), three with a line below. */
@@ -72,7 +74,7 @@ public:
     {
         StepperItems s;
 
-        items.add(kDitlStaticText, top, left, top + 16, left + 106, label);
+        s.label = items.add(kDitlStaticText, top, left, top + 16, left + 106, label);
         s.value = items.add(kDitlStaticText, top + 19, left + 18, top + 35, left + 140, "");
         s.extra = extraLine ? items.add(kDitlStaticText, top + 35, left + 18, top + 51, left + kColWidth, "") : 0;
         s.down = items.add(kDitlPicture, top + 27, left + 1, top + 36, left + 12, NULL, kDownArrowPict);
@@ -199,15 +201,19 @@ PrefsDialog::PrefsDialog()
     check(graphics.check("Parallax Starfield"), Flag(settings.parallaxStars));
     check(graphics.check("Hyperspace Effects"), Flag(settings.noHyperGamma), true);
     check(graphics.check("Original Blending"), Flag(settings.orBlend));
-    stepper(graphics.stepper("Brightness:"),
+    /* greyed at Normal where the renderer shows no brightness */
+    gBrightnessItems = graphics.stepper("Brightness:");
+    stepper(gBrightnessItems,
         [](PrefsDialog &, int direction) {
+            if (PlatVideoBrightness() == 0)
+                return;
             short gamma = settings.gamma + direction;
             settings.gamma = gamma < 0 ? 0 : gamma > kMaxGamma ? kMaxGamma : gamma;
             ApplyBrightness();
         },
         [](const PrefsDialog &, char *value, char *) {
-            snprintf(value, kDisplayTextMax, "%s",
-                     settings.gamma >= 0 && settings.gamma <= kMaxGamma ? kGammaNames[settings.gamma] : "???");
+            short gamma = PlatVideoBrightness() != 0 ? settings.gamma : kDefaultGamma;
+            snprintf(value, kDisplayTextMax, "%s", gamma >= 0 && gamma <= kMaxGamma ? kGammaNames[gamma] : "???");
         });
 
     check(sound.check("Intro Music"), Flag(settings.introMusic), false, [] {
@@ -399,6 +405,22 @@ void PrefsDialogUpdate(void)
     if (gameLoaded != 0 || gWind == NULL)
         p.Text(box.left, box.bottom - 10, IndStringRaw(kGameStrList, kPlainStrIdx), title);
     p.Line(box.left, box.bottom, box.right, box.bottom, UI::kBlack);
+    if (PlatVideoBrightness() == 0) {
+        const UI::TextSpec greyed = { UI::Style::System, kGreyed, true };     /* as the dialog's static text */
+        for (short item : { gBrightnessItems.label, gBrightnessItems.value }) {
+            Handle control = NULL;
+            char text[kDisplayTextMax];
+            GetDialogItem(prefsDialog, item, NULL, &control, &box);
+            if (control == NULL)
+                continue;
+            GetControlText((ControlPtr)control, text);
+            p.TextBox(box, std::string(text), greyed, UI::kWhite);
+        }
+        for (short item : { gBrightnessItems.down, gBrightnessItems.up }) {
+            GetDialogItem(prefsDialog, item, NULL, NULL, &box);
+            p.Fill(box, UI::kWhite);
+        }
+    }
     if (majorPrefsChange != 0 && gWind != NULL) {
         GetDialogItem(prefsDialog, gNoticeItem, NULL, NULL, &box);
         p.Fill(box, UI::kWhite);

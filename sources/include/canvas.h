@@ -19,15 +19,10 @@ public:
     /* before a frame is shown: every canvas' sent; ports' images no frame copied from for long are freed */
     static void FrameDone();
 
-    /* draws a port's target whole again, from what it shows, after the GPU lost the targets (PlatUIEpoch) */
-    typedef void (*Redraw)(void);
-
     /* a port's target made at the size of its pixels, clear; false = not made, the target it had is kept */
     static bool MakeTarget(CGrafPtr port);
-    /* a port just made gets a black target for its pixels, which go (none made: fatal); redraw draws it again */
-    static void MakeNewTarget(CGrafPtr port, Redraw redraw = nullptr);
-    /* every target MakeNewTarget made black again, then drawn again by its redraw, the first made first */
-    static void RedrawTargets();
+    /* a port just made gets a black target for its pixels, which go (none made: fatal) */
+    static void MakeNewTarget(CGrafPtr port);
     /* a Painter still open on the port then draws nothing; a port disposed drops its own */
     static void DropTarget(CGrafPtr port);
     /* what is kept between draws -- the images of ports' pixels, scratch images and targets -- freed */
@@ -64,7 +59,6 @@ private:
     static bool Waiting(const void *used);
     static void SendUsing(const void *used);
     static void PortGone(CGrafPtr port);
-    static void Forget(CGrafPtr port);
     PlatImage *Mirror(const PixMap &pix, Rect &part);
     static PlatImage *ScratchImage(int width, int height);
     static PlatTarget *ScratchTarget(int width, int height);
