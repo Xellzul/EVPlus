@@ -53,6 +53,7 @@ extern void DrawStatusTarg(void);
 extern void DrawStatusWeap(void);
 extern void EndLoopingMovie(void);
 extern SWFrameRec *CommOverlay(void);
+extern void RedrawCommOverlay(void);      /* its frame drawn again with the message last shown */
 extern void ResetCommRect(void);
 extern void SetupListRects(Point *where);
 extern void InitOffscreen(void);

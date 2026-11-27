@@ -1,5 +1,5 @@
-/* gputest.cpp -- EVPLUS_GPUTEST: every Painter drawing, and a dialog, on pixels and on a GPU target, compared
-   (gputest.txt) */
+/* gputest.cpp -- EVPLUS_GPUTEST: every Painter drawing, a dialog and the overlays, on pixels and on a GPU target,
+   compared (gputest.txt) */
 
 #include <math.h>
 #include <string>
@@ -7,11 +7,14 @@
 #include "canvas.h"
 #include "dialogs.h"
 #include "game.h"
+#include "missions.h"
 #include "painter.h"
 #include "pixel.h"
 #include "platform.h"
 #include "render.h"
 #include "spriteworld.h"
+#include "stellar.h"
+#include "text.h"
 #include "uiscale.h"
 
 namespace {
@@ -1163,6 +1166,60 @@ void RunDialog(FILE *log, double scale, int *bad)
     DropTestDialog(cpu);
 }
 
+/* An overlay frame drawn by the game on its GPU target and on its pixels, compared; its target black again after,
+   as it is made (the game draws a frame again before it shows it). */
+void RunOverlay(FILE *log, const char *name, SWFrameRec *frame, void (*draw)(void), int *bad)
+{
+    if (frame == NULL || frame->framePort->target == NULL) {
+        (*bad)++;
+        if (log != NULL)
+            fprintf(log, "overlay %s: no frame with a target\n", name);
+        return;
+    }
+    CGrafPtr port = frame->framePort;
+    const PixMap &pix = port->pix;
+    std::vector<uint32_t> read((size_t)pix.width * pix.height);
+    Rect border = frame->frameRect;
+
+    draw();
+    UI::Canvas::FlushAll();
+    bool got = PlatTargetReadDrawn(port->target, NULL, read.data()) != 0;
+    UI::Canvas::DropTarget(port);
+    draw();
+    UI::Canvas::MakeNewTarget(port);
+    if (!got) {
+        (*bad)++;
+        if (log != NULL)
+            fprintf(log, "overlay %s: the target could not be read\n", name);
+        return;
+    }
+    double scale = UI::Mapping(pix).ScaleX();
+    border.bottom = border.top + 1;
+    Compare(log, scale, " overlay", 0, { name, kText, frame->frameRect }, pix, read, bad);
+    Compare(log, scale, " overlay", 0, { "  its top row", kSame, border }, pix, read, bad);
+    std::string kind = std::string("overlay_") + name;
+    WriteRaw((kind + "_cpu").c_str(), scale, pix.width, pix.height, pix.baseAddr, pix.rowBytes, 2);
+    WriteRaw((kind + "_gpu").c_str(), scale, pix.width, pix.height, read.data(), (size_t)pix.width * 4, 4);
+}
+
+/* the comm line, escort menu and floating map, each on its target and on pixels; the game's state put back */
+void RunOverlays(FILE *log, int *bad)
+{
+    short count = commCount;
+    UI::TextSpec spec = CommStyle();
+    Str255 msg;
+
+    memcpy(msg, commMsg, sizeof msg);
+    DisplayComm(std::string("The comm line of the GPU test: a message long enough to be wrapped onto the second of "
+                            "its two lines in the comm style, as a long hail or a mission's message would be, and "
+                            "then some more words to be sure of it."), 30);
+    RunOverlay(log, "comm", CommOverlay(), RedrawCommOverlay, bad);
+    DisplayCommStyled(msg, count, spec);
+    ResetCommRect();
+    RunOverlay(log, "escorts", floatingEscortMenuFrame, DrawEscortMenuInFrame, bad);
+    RunOverlay(log, "map", floatingMapFrame, RedrawFloatingMap, bad);
+}
+
 } // namespace
 
 void DebugGpuTest(void)
@@ -1200,6 +1257,7 @@ void DebugGpuTest(void)
     CheckReadBack(log, &bad);
     for (double scale : kTestScales)
         RunDialog(log, scale, &bad);
+    RunOverlays(log, &bad);
     if (log != NULL) {
         fprintf(log, "items that must match and do not: %d\n", bad);
         fclose(log);

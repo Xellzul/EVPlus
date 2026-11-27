@@ -46,6 +46,7 @@ extern Sound *clickSnd;
 extern short lastShipAIDispatched;
 extern void DisplayComm(PStrChar *msg, short count);
 extern void DisplayCommStyled(PStrChar *msg, short count, const UI::TextSpec &spec);
+extern const UI::TextSpec &CommStyle(void);    /* the style of the comm message shown */
 extern void DoNewPilot(void);
 extern void DoStellarTimePassage(void);
 extern Boolean DoesPilotExist(const char *path);

@@ -1581,6 +1581,61 @@ void DrawMap(UI::Painter &p, Rect box)
 }
 
 
+namespace {
+
+/* what DrawMap shows that the map dialogs change: the selection, gate links, arrows, route, nav target, scroll */
+struct MapMarks {
+    short sel;
+    unsigned char gateMode;
+    short gateStellar;
+    short mission[32];          /* missionSyst */
+    short green;
+    Boolean multiArrows;
+    short route[kMaxHyperRoute];
+    short navKind;
+    short navTarget;
+    MapScroll scroll;
+
+    static MapMarks Now();
+    void Set() const;
+};
+
+MapMarks MapMarks::Now()
+{
+    MapMarks m;
+
+    m.sel = selSystem;
+    m.gateMode = hypergateMapMode;
+    m.gateStellar = hypergateMapModeStellar;
+    memcpy(m.mission, missionSyst, sizeof m.mission);
+    m.green = greenMissionSyst;
+    m.multiArrows = multiArrowsOnSingleSystem;
+    memcpy(m.route, hyperRoute, sizeof m.route);
+    m.navKind = shipData->navTargetKind;
+    m.navTarget = shipData->targetStellar;
+    m.scroll = mapScroll;
+    return m;
+}
+
+void MapMarks::Set() const
+{
+    selSystem = sel;
+    hypergateMapMode = gateMode;
+    hypergateMapModeStellar = gateStellar;
+    memcpy(missionSyst, mission, sizeof mission);
+    greenMissionSyst = green;
+    multiArrowsOnSingleSystem = multiArrows;
+    memcpy(hyperRoute, route, sizeof route);
+    shipData->navTargetKind = navKind;
+    shipData->targetStellar = navTarget;
+    mapScroll = scroll;
+}
+
+MapMarks floatingMarks;         /* what the floating map was last drawn with */
+bool floatingDrawn;             /* floatingMarks holds them */
+
+} // namespace
+
 /* DrawMapInFloatingFrame (mac _DrawMapInFloatingFrame; was named ClearStarfield). */
 // FUNCTION: EVNOVA 0x004a99f0
 // MAC: _DrawMapInFloatingFrame i386 0x00011304 ppc 0x00014c38
@@ -1601,6 +1656,19 @@ void DrawMapInFloatingFrame(void)
     DrawMap(p, floatingMapFrame->frameRect);
 
     mapZoom = savedZoom;
+    floatingMarks = MapMarks::Now();
+    floatingDrawn = true;
+}
+
+/* the floating map drawn again with what it was last drawn with; the map dialogs' own put back after */
+void RedrawFloatingMap(void)
+{
+    MapMarks kept = MapMarks::Now();
+
+    if (floatingDrawn)
+        floatingMarks.Set();
+    DrawMapInFloatingFrame();
+    kept.Set();
 }
 
 /*

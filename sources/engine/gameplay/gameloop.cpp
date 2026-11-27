@@ -4500,6 +4500,16 @@ void DrawOverlays()
         ViewDraw::Overlay(floatingEscortMenuFrame, place, 0x20 - escortMenuOnscreen);
 }
 
+/* the map and the escort menu while shown, and the comm line, drawn as they stand */
+void RedrawOverlays()
+{
+    RedrawCommOverlay();
+    if (showFloatingMap > 0)
+        RedrawFloatingMap();
+    if (escortMenuOnscreen > 0)
+        DrawEscortMenuInFrame();
+}
+
 // FUNCTION: EVNOVA 0x00439bb0
 // MAC: _FloaterDrawCallback i386 0x00038b2d ppc 0x0003eb98
 void FloaterDrawCallback(SpriteWorldPtr world)

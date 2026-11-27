@@ -63,6 +63,11 @@ void DisplayCommStyled(PStrChar *msg, short count, const UI::TextSpec &spec)
     gCommDrawn = false;
 }
 
+const UI::TextSpec &CommStyle(void)
+{
+    return gCommSpec;
+}
+
 void DisplayComm(const std::string &msg, short count)
 {
     Str255 text;
@@ -96,19 +101,22 @@ SWFrameRec *CommOverlay(void)
         if (frame != NULL)
             SWDisposeFrame(&frame);
         bounds = wanted;
-        if (SWCreateFrame(GetGDevice(), &frame, &bounds, gSpriteWorld->pixelDepth, 1) != 0 || frame == NULL) {
-            frame = NULL;
+        if (!View::MakeOverlayFrame(&frame, bounds))
             return NULL;
-        }
-        View::ScaleOverlayFrame(frame);
-        SWLockFrame(frame);
         gCommDrawn = false;
         FitCommRect(frame);
     }
-    if (!gCommDrawn) {
-        UI::Painter p{UI::Surface(frame)};
-        DrawCommText(p, bounds);
-        gCommDrawn = true;
-    }
+    if (!gCommDrawn)
+        RedrawCommOverlay();
     return frame;
+}
+
+/* the comm frame drawn again with the message last shown, in its style */
+void RedrawCommOverlay(void)
+{
+    if (gCommFrame == NULL)
+        return;
+    UI::Painter p{UI::Surface(gCommFrame)};
+    DrawCommText(p, gCommFrame->frameRect);
+    gCommDrawn = true;
 }

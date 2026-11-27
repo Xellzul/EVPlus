@@ -13,8 +13,9 @@ namespace ViewDraw {
 void Install();                     /* hooks the sprite world to draw through this */
 void Clear();                       /* the view plain, the system's colour, no flash (landed, a refresh, dropped) */
 
-/* Added to the frame being built: an overlay frame (comm line, floating map, escort menu) laid over the view
-   at `place' on the screen, faded by `level' of 32 (after BeginOverlays, where a frame's overlays start). */
+/* Added to the frame being built: an overlay frame (comm line, floating map, escort menu) added over the view
+   at `place' on the screen from its GPU target (without one, its pixels), faded by `level' of 32 (after
+   BeginOverlays, where a frame's overlays start). */
 void BeginOverlays();
 void Overlay(SWFrameRec *frame, const Rect &place, short level);
 void Flash(const RGBColor &color);  /* the whole view one colour for 50 ms of frames from the next taken (jump flashes) */

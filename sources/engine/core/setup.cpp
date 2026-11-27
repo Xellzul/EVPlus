@@ -48,15 +48,10 @@ static void CreateOverlayFrames(void)
         windRect.right = 200;
     windRect.bottom = windRect.right;
     floatingMapRect = windRect;
-    windRect = View::OverlayFrameRect(windRect);
-    SWCreateFrame(GetGDevice(), &floatingMapFrame, &windRect, gSpriteWorld->pixelDepth, 1);
-    View::ScaleOverlayFrame(floatingMapFrame);
-    SWLockFrame(floatingMapFrame);
+    View::MakeOverlayFrame(&floatingMapFrame, View::OverlayFrameRect(windRect));
     OffsetRect(&floatingMapRect, View::width - (floatingMapRect.right + View::ScaleInView(16)), View::ScaleInView(150));
     SetRect(&windRect, 0, 0, 160, 120);
-    SWCreateFrame(GetGDevice(), &floatingEscortMenuFrame, &windRect, gSpriteWorld->pixelDepth, 1);
-    View::ScaleOverlayFrame(floatingEscortMenuFrame);
-    SWLockFrame(floatingEscortMenuFrame);
+    View::MakeOverlayFrame(&floatingEscortMenuFrame, windRect);
     SetRect(&escortMenuRect, View::ScaleInView(15), View::ScaleInView(150), View::ScaleInView(15 + 160),
             View::ScaleInView(150 + 120));
 }
@@ -939,9 +934,11 @@ void ShowLoadPage(void)
         .Copy(UI::Surface::Load(), *GetCWindowPortRect(gWind), *GetCWindowPortRect(gWind));
 }
 
-/* the screen put together again: the load page's or menu's art redrawn, the menu, view or load page, dialogs */
+/* the screen put together again, as it stands */
 void RedrawInterface(void)
 {
+    UI::GameScale game;                 /* also from a frame end inside a MenuScale; menu parts take theirs */
+
     if (gWind == NULL)
         return;
     bool picture = RedrawLoadPagePicture();
@@ -956,6 +953,8 @@ void RedrawInterface(void)
     } else {
         ShowLoadPage();
     }
+    if (gameInProgress != 0 && gameLoaded != 0)
+        RedrawOverlays();
     DrawDialogs();
 }
 

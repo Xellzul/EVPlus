@@ -109,12 +109,21 @@ Point ToOverlay(Point pt, const Rect &viewRect)
     return local;
 }
 
-void ScaleOverlayFrame(SWFrameRec *frame)
+bool MakeOverlayFrame(SWFrameRec **frame, const Rect &bounds)
 {
-    if (!UI::Enabled())
-        return;
-    UI::ScaleUIPort(frame->framePort);
-    SWInitializeFrame(frame);
+    Rect r = bounds;
+
+    if (SWCreateFrame(GetGDevice(), frame, &r, gSpriteWorld->pixelDepth, 1) != 0 || *frame == NULL) {
+        *frame = NULL;
+        return false;
+    }
+    if (UI::Enabled()) {
+        UI::ScaleUIPort((*frame)->framePort);
+        SWInitializeFrame(*frame);
+    }
+    UI::Canvas::MakeNewTarget((*frame)->framePort);
+    SWLockFrame(*frame);
+    return true;
 }
 
 Rect ScreenRectOfView(const Rect &viewRect)

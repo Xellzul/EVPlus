@@ -2143,7 +2143,8 @@ static void TestLayerFrame(UITest &test)
                         TestFill(kPlatBlendCopy, 0, 10, (float)gFrameWidth, 10, 200, 0, 0, 128) };
     PlatDraw sky = TestDraw(kPlatDrawFill, kPlatBlendMix, 0, 0, 16, 16);
     PlatDraw over[] = { TestDraw(kPlatDrawFill, kPlatBlendAdd, 0, 30, (float)gFrameWidth, 10),
-                        TestDraw(kPlatDrawImage, kPlatBlendCopy, 0, 40, (float)gFrameWidth, 10) };
+                        TestDraw(kPlatDrawImage, kPlatBlendCopy, 0, 40, (float)gFrameWidth, 10),
+                        TestDraw(kPlatDrawImage, kPlatBlendAdd, 0, 50, (float)gFrameWidth, 10) };
     PlatDraw lit = TestFill(kPlatBlendCopy, 0, 0, 4, 4, 0, 0, 200, 255);
     PlatVideoView view = {};
     unsigned white = gWhite;
@@ -2151,6 +2152,9 @@ static void TestLayerFrame(UITest &test)
     sky.color = 0x03e0;
     over[0].color = 0x7c00;
     over[1].source = lamp;
+    over[2].source = lamp;
+    over[2].sw = over[2].sh = 2;
+    over[2].mod[0] = over[2].mod[1] = over[2].mod[2] = 128;
     PlatTargetDraw(lamp, &lit, 1, NULL, 0, NULL);
     view.width = 16;
     view.height = 16;
@@ -2160,7 +2164,7 @@ static void TestLayerFrame(UITest &test)
     view.draws = &sky;
     view.drawCount = 1;
     view.overlays = over;
-    view.overlayCount = 2;
+    view.overlayCount = 3;
     PlatTargetDraw(layer, bars, 2, NULL, 0, NULL);
     PlatVideoSetWhite(0);
     PlatVideoPresentLayer(layer, &view);
@@ -2175,6 +2179,7 @@ static void TestLayerFrame(UITest &test)
     ExpectShown(test, shown, "the layer mixed over the view", 5, 15, 0x647f00u);
     ExpectShown(test, shown, "the view under the layer", 5, 25, 0x00ff00u);
     ExpectShown(test, shown, "an overlay under the layer", 5, 35, 0xffff00u);
+    ExpectShown(test, shown, "a target's part added over the view, faded", 5, 55, 0x00ff64u);
     PlatVideoSetWhite(128);
     PlatVideoPresentLayer(layer, NULL);
     if (gLayerWaiting)

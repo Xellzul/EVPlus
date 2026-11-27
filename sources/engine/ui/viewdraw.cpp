@@ -381,16 +381,17 @@ void DrawWorld(SpriteWorldRec *world)
     FloaterDrawCallback(world);
 }
 
-/* an image about to be freed taken out of the draws still kept, so none is drawn after it is gone */
-void Unlist(PlatImage *image)
+/* an image or a target about to be freed taken out of the draws still kept, so none is drawn after it is gone */
+void Unlist(const void *gone)
 {
-    for (PlatDraw &d : draws)
-        if (d.image == image)
-            d.image = NULL;
-    for (std::vector<PlatDraw> *list : { &overlays, &interfaceDraws, &shownOverlays })
-        for (PlatDraw &d : *list)
-            if (d.image == image)
+    for (std::vector<PlatDraw> *list : { &draws, &overlays, &interfaceDraws, &shownOverlays }) {
+        for (PlatDraw &d : *list) {
+            if (d.image == gone)
                 d.image = NULL;
+            if (d.source == gone)
+                d.source = NULL;
+        }
+    }
 }
 
 void Forget(PlatImage *image)
@@ -423,14 +424,13 @@ void BeginOverlays()
     overlays.clear();
 }
 
-void Overlay(SWFrameRec *frame, const Rect &place, short level)
+namespace {
+
+/* the top left width x height of a frame without a target, from its pixels, kept as an image */
+PlatImage *PixelsImage(SWFrameRec *frame, int width, int height)
 {
     const PixMap &pix = frame->framePort->pix;
-    int width = place.right - place.left;
-    int height = place.bottom - place.top;
 
-    if (width <= 0 || height <= 0 || width > pix.width || height > pix.height)
-        return;
     scratchPixels.resize((size_t)width * height);
     scratchAlpha.assign((size_t)width * height, 1);
     for (int y = 0; y < height; y++)
@@ -447,16 +447,31 @@ void Overlay(SWFrameRec *frame, const Rect &place, short level)
         kept.width = width;
         kept.height = height;
     }
-    if (kept.image == NULL)
+    return kept.image;
+}
+
+} // namespace
+
+void Overlay(SWFrameRec *frame, const Rect &place, short level)
+{
+    const PixMap &pix = frame->framePort->pix;
+    PlatTarget *target = frame->framePort->target;
+    int width = place.right - place.left;
+    int height = place.bottom - place.top;
+
+    if (width <= 0 || height <= 0 || width > pix.width || height > pix.height)
         return;
-    overlays.push_back(PlatDraw());
-    PlatDraw &d = overlays.back();
-    d.kind = kPlatDrawImage;
-    d.blend = kPlatBlendAdd;
-    d.image = kept.image;
+    PlatDraw d = PlatDrawOf(kPlatDrawImage, kPlatBlendAdd);
+    if (target != NULL) {
+        d.source = target;
+        d.sw = (float)width;
+        d.sh = (float)height;
+    } else if ((d.image = PixelsImage(frame, width, height)) == NULL) {
+        return;
+    }
     Place(d, place);
     d.mod[0] = d.mod[1] = d.mod[2] = Weight((uint32_t)(kLevels - level));
-    d.alpha = 255;
+    overlays.push_back(d);
 }
 
 void Flash(const RGBColor &color)
@@ -497,6 +512,8 @@ void FrameGone(SWFrameRec *frame)
     PlatImage *sprite = UI::Art::SpriteMade(frame);
     if (sprite != NULL)
         Unlist(sprite);
+    if (frame->framePort != NULL && frame->framePort->target != NULL)
+        Unlist(frame->framePort->target);
     auto overlay = overlayImages.find(frame);
     if (overlay != overlayImages.end()) {
         if (overlay->second.image != NULL)
