@@ -1,4 +1,4 @@
-/* blitdirect.cpp -- CopyBits and CopyMask with a direct-colour (16, 24 or 32-bit) source: at the same size
+/* blitdirect.cpp -- CopyBits with a direct-colour (16, 24 or 32-bit) source: at the same size
    converted pixel by pixel, stretched with a bicubic kernel (the one GDI+'s HighQualityBicubic uses). A
    picture's edge is made from its edge pixels only. Rectangles are relative to the first pixel
    of each pixel map, bounds not applied. */
@@ -9,7 +9,6 @@
 #include "macport.h"
 #include "pixel.h"
 
-#define kAlpha1555          0x8000      /* bit 15 of a 1555 pixel */
 #define kOpaque             255
 #define kAlphaKept          2           /* 32-bit premultiplied ARGB in and out: the alpha goes with the colour */
 
@@ -19,7 +18,7 @@
 #define kKernelReach        2.0         /* the cubic's half width, in source pixels at full size */
 #define kPixelHalf          0.5
 
-/* -- pixels: 16-bit x1r5g5b5 (bit 15 = opaque where a mask was applied), 24-bit R G B, 32-bit B G R x ------ */
+/* -- pixels: 16-bit x1r5g5b5, 24-bit R G B, 32-bit B G R x ------------------------------------------------- */
 
 typedef struct Color {
     int r;
@@ -44,8 +43,6 @@ static inline void ReadPixel(const unsigned char *p, int pixelSize, int alpha, C
         c->r = Expand5((v >> 10) & 31);
         c->g = Expand5((v >> 5) & 31);
         c->b = Expand5(v & 31);
-        if (alpha && (v & kAlpha1555) == 0)
-            c->r = c->g = c->b = c->a = 0;
         break;
     case 24:
         c->r = p[0];
@@ -81,7 +78,7 @@ static inline unsigned char *PixelAt(PixMapPtr pix, int x, int y)
 
 /* -- the same size ----------------------------------------------------------------------------------------- */
 
-static void CopySameSize(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *dstRect, int alpha)
+static void CopySameSize(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *dstRect)
 {
     const unsigned char *in;
     unsigned char *out;
@@ -140,10 +137,8 @@ static void CopySameSize(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, cons
         if (src->pixelSize == 16 && dst->pixelSize == 16) {
             const unsigned short *from = (const unsigned short *)in;
             unsigned short *to = (unsigned short *)out;
-            for (x = 0; x < width; x++) {
-                if (!alpha || (from[x] & kAlpha1555) != 0)
-                    to[x] = from[x] & 0x7fff;
-            }
+            for (x = 0; x < width; x++)
+                to[x] = from[x] & 0x7fff;
         } else if (src->pixelSize == 24 && dst->pixelSize == 16) {
             for (x = 0; x < width; x++) {
                 *(unsigned short *)out = Pixel::From8(in[0], in[1], in[2]);
@@ -158,9 +153,8 @@ static void CopySameSize(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, cons
             }
         } else {
             for (x = 0; x < width; x++) {
-                ReadPixel(in, src->pixelSize, alpha, &c);
-                if (c.a != 0)
-                    WritePixel(out, dst->pixelSize, c.r, c.g, c.b);
+                ReadPixel(in, src->pixelSize, 0, &c);
+                WritePixel(out, dst->pixelSize, c.r, c.g, c.b);
                 in += srcStep;
                 out += dstStep;
             }
@@ -294,9 +288,7 @@ static void Pack16(const int *sum, int count, unsigned short *out)
     }
 }
 
-/* srcRect of SRC resampled into dstRect of DST. With `alpha' a source pixel without bit 15 is transparent:
-   the picture is resampled with its coverage and laid over what DST holds. Only the part of dstRect inside
-   DST is worked out. */
+/* srcRect of SRC resampled into the part of dstRect inside DST; kAlphaKept: both are 32-bit premultiplied ARGB */
 static void CopyScaled(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *dstRect, int alpha)
 {
     int dstWidth = dstRect->right - dstRect->left;
@@ -386,35 +378,19 @@ static void CopyScaled(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const 
                 out[3] = (unsigned char)c[3];
                 continue;
             }
-            if (alpha) {
-                if (c[3] == 0)
-                    continue;
-                if (c[3] < kOpaque) {
-                    Color old;
-                    ReadPixel(out, dst->pixelSize, 0, &old);
-                    c[0] = ClampInt(c[0] + old.r * (kOpaque - c[3]) / kOpaque, 0, kOpaque);
-                    c[1] = ClampInt(c[1] + old.g * (kOpaque - c[3]) / kOpaque, 0, kOpaque);
-                    c[2] = ClampInt(c[2] + old.b * (kOpaque - c[3]) / kOpaque, 0, kOpaque);
-                }
-            }
             WritePixel(out, dst->pixelSize, c[0], c[1], c[2]);
         }
     }
 }
 
-static void Blit(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *dstRect, int alpha)
-{
-    if (dstRect->right - dstRect->left == srcRect->right - srcRect->left
-            && dstRect->bottom - dstRect->top == srcRect->bottom - srcRect->top)
-        CopySameSize(src, dst, srcRect, dstRect, alpha);
-    else
-        CopyScaled(src, dst, srcRect, dstRect, alpha);
-}
-
 void BlitDirect(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
                 int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
-    Blit(src, dst, srcRect, dstRect, 0);
+    if (dstRect->right - dstRect->left == srcRect->right - srcRect->left
+            && dstRect->bottom - dstRect->top == srcRect->bottom - srcRect->top)
+        CopySameSize(src, dst, srcRect, dstRect);
+    else
+        CopyScaled(src, dst, srcRect, dstRect, 0);
 }
 
 /* srcRect of SRC resampled into dstRect of DST with the same kernel, both 32-bit premultiplied ARGB */
@@ -422,38 +398,3 @@ void BlitScaleArgb(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect
 {
     CopyScaled(src, dst, srcRect, dstRect, kAlphaKept);
 }
-
-#if EVPLUS_TEST_PAGES
-#define kAlpha1555High      0x80        /* bit 15 of a 1555 pixel, in its high byte */
-#define kAlphaMask          1           /* a 16-bit source: bit 15 marks the opaque pixels, laid over the destination */
-
-/* A black mask pixel makes its source pixel opaque, marked in the source itself for the blit and cleared after
-   it, so no other copy of the source carries the mark; maskRect is not read. */
-void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect,
-                   Rect *maskRect, Rect *dstRect,
-                   int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
-{
-    unsigned char *pixels;
-    unsigned char *maskPixels;
-    unsigned char *high;
-    int32_t x;
-    int32_t y;
-
-    pixels = (unsigned char *)src->baseAddr;
-    maskPixels = (unsigned char *)mask->baseAddr;
-    for (y = 0; y < src->height; y++) {
-        for (x = 0; x < src->width; x++) {
-            high = &pixels[y * src->rowBytes + x * 2 + 1];
-            if (maskPixels[y * mask->rowBytes + x * 2] == 0)
-                *high |= kAlpha1555High;
-            else
-                *high &= (unsigned char)~kAlpha1555High;
-        }
-    }
-    Blit(src, dst, srcRect, dstRect, kAlphaMask);
-    for (y = 0; y < src->height; y++) {
-        for (x = 0; x < src->width; x++)
-            pixels[y * src->rowBytes + x * 2 + 1] &= (unsigned char)~kAlpha1555High;
-    }
-}
-#endif

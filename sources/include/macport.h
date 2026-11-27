@@ -77,36 +77,9 @@ extern void SelectDialogItemText(DialogPtr dlg, int32_t item, int32_t start, int
 extern void FrameRect(const Rect *r);
 extern void GetFNum(const unsigned char *name, short *familyID);
 #if EVPLUS_TEST_PAGES
-/* the test pages (port/fonttest.cpp, scaletest.cpp, spritetest.cpp, soundtest.cpp) and what the font page asks
-   the font cache */
-extern void DebugFontScreen(void);
-extern void DebugScaleTest(void);
-extern void DebugSpriteTest(void);
-extern void DebugSoundTest(void);
+extern void DebugSoundTest(void);                 /* port/soundtest.cpp: the mixer capture */
 extern void DebugGpuTest(void);                   /* port/gputest.cpp: runs when EVPLUS_GPUTEST is set */
-extern short FontFamilyCount(void);
-extern const char *FontFamilyName(short familyID);
-extern void FontRealName(short familyID, short size, short style, char *out, int outSize);
-/* QuickDraw calls only the test pages make */
-extern void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
-                     Rect *srcRect, Rect *maskRect, Rect *dstRect);
-extern void CopyMaskNone(PixMapPtr src, PixMapPtr mask, PixMapPtr dst,
-        Rect *srcRect, Rect *maskRect, Rect *dstRect,
-        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
-extern void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
-        Rect *srcRect, Rect *maskRect, Rect *dstRect,
-        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
-extern void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect, Rect *maskRect,
-                             Rect *dstRect,
-                             int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
-extern PixMapPtr GetGWCPixMap(struct GWorldContainer *gwc);
-/* a GWorldContainer's bits for CopyBits */
-#define GWorldContainerBits(gwc) ((BitMapPtr)GetGWCPixMap(gwc))
-extern void DrawText(const void *textBuf, int firstByte, int byteCount);
-extern short StringWidth(const unsigned char *str);
-extern void FrameOval(Rect *r);
-extern void PaintOval(Rect *r);
-extern void PenSize(short width, short height);
+extern void PaintOval(Rect *r);                   /* the GPU test's mask */
 #endif
 extern void DrawTextRun(const void *text, uint32_t byteCount, Rect *box,
                         Boolean clipped, int height);
@@ -196,7 +169,7 @@ typedef struct SpriteWorldRec {
     struct SpriteLayerRec *headSpriteLayerP;
     struct SpriteLayerRec *tailSpriteLayerP;
     Rect windRect;                  /* the space view, at 0,0 */
-    struct CGrafPort *windowPort;   /* the game window: SWSetPortToWindow's port */
+    struct CGrafPort *windowPort;   /* the game window's port */
     short pixelDepth;
     Boolean frameHasOccurred;
     Boolean fastBlit;
@@ -625,9 +598,7 @@ extern char *GetPixBaseAddr(PixMapPtr pm);
 extern short GetPixRowBytes(PixMapPtr pm);
 extern short GetPixDepth(PixMapPtr pm);
 
-/* the port's blackColor and whiteColor are RGBColor globals, so its ForeColor(c) is RGBForeColor and its
-   BackColor takes the RGBColor */
-#define ForeColor(c) RGBForeColor(c)
+/* the port's BackColor takes the RGBColor */
 #define RGBBackColor(c) BackColor(c)
 
 #endif

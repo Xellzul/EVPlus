@@ -1,4 +1,4 @@
-/* gworld.cpp -- the GWorldContainer wrapper around an offscreen drawing world (win 0x0046f740, 0x0046f850, 0x0046f920, 0x0046f940). Notes: Research/notes/gworld.md */
+/* gworld.cpp -- the GWorldContainer wrapper around an offscreen drawing world (win 0x0046f740, 0x0046f850, 0x0046f920). Notes: Research/notes/gworld.md */
 #include "render.h"
 #include "painter.h"
 
@@ -60,14 +60,3 @@ void DisposeGWorldContainer(GWorldContainer *gwc)
         gwc->world = NULL;
     }
 }
-
-#if EVPLUS_TEST_PAGES
-// FUNCTION: EVNOVA 0x0046f940
-// MAC: _GetGWCPixMap i386 0x000a469e ppc 0x000b01f0
-PixMapPtr GetGWCPixMap(GWorldContainer *gwc)
-{
-    if (gwc != 0 && gwc->world != 0)
-        return GetCWindowPixMap(gwc->world);
-    return 0;
-}
-#endif

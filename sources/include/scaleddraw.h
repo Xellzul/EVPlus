@@ -18,16 +18,11 @@ void FrameRect(const Rect &r, const RGBColor &color);
 int DevicePen(int logical, double scale);
 void LineTo(short h, short v);
 #if EVPLUS_TEST_PAGES
-void FrameOval(const Rect &r);
 void PaintOval(const Rect &r);
 #endif
 /* a copy's rects in the two pixel maps' device pixels */
 void DeviceRects(const PixMap &src, const PixMap &dst, const Rect &srcRect, const Rect &dstRect, Rect &s, Rect &d);
 void CopyBits(const PixMap &src, const PixMap &dst, const Rect &srcRect, const Rect &dstRect, int mode);
-#if EVPLUS_TEST_PAGES
-void CopyMask(const PixMap &src, const PixMap &mask, const PixMap &dst, const Rect &srcRect, const Rect &maskRect,
-              const Rect &dstRect);
-#endif
 
 } // namespace Scaled
 

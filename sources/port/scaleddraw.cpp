@@ -164,8 +164,8 @@ Circle DeviceCircle(const Rect &r)
     return { (d.left + d.right) / 2.0, (d.top + d.bottom) / 2.0, (d.bottom - d.top) / 2.0 };
 }
 
-/* the pixels whose centres lie within the circle and, for a ring, outside the inner one */
-void DrawCircle(const Circle &c, double inner)
+/* the pixels whose centres lie within the circle */
+void DrawCircle(const Circle &c)
 {
     const PixMap &pix = CurrentGrafPort->pix;
     unsigned short pixel = Pixel::FromColor(CurrentGrafPort->foreColor);
@@ -175,7 +175,7 @@ void DrawCircle(const Circle &c, double inner)
             double dx = x + 0.5 - c.cx;
             double dy = y + 0.5 - c.cy;
             double d2 = dx * dx + dy * dy;
-            if (d2 <= c.radius * c.radius && (inner < 0 || d2 > inner * inner))
+            if (d2 <= c.radius * c.radius)
                 PlotDevice(pix, x, y, pixel);
         }
     }
@@ -183,17 +183,9 @@ void DrawCircle(const Circle &c, double inner)
 
 } // namespace
 
-void FrameOval(const Rect &r)
-{
-    Circle c = DeviceCircle(r);
-    int pen = DevicePen(CurrentGrafPort->pnSize.v, UI::Mapping(CurrentGrafPort->pix).ScaleY());
-
-    DrawCircle(c, c.radius - pen);
-}
-
 void PaintOval(const Rect &r)
 {
-    DrawCircle(DeviceCircle(r), -1);
+    DrawCircle(DeviceCircle(r));
 }
 #endif
 
@@ -292,21 +284,5 @@ void CopyBits(const PixMap &src, const PixMap &dst, const Rect &srcRect, const R
     ::CopyBits((BitMapPtr)&scratch->pix, (BitMapPtr)&to, &area, &d, mode, NULL);
     DisposeGWorld(scratch);
 }
-
-#if EVPLUS_TEST_PAGES
-void CopyMask(const PixMap &src, const PixMap &mask, const PixMap &dst, const Rect &srcRect, const Rect &maskRect,
-              const Rect &dstRect)
-{
-    PixMap from = DeviceView(src);
-    PixMap through = DeviceView(mask);
-    PixMap to = DeviceView(dst);
-    Rect s;
-    Rect d;
-    Rect m = UI::Mapping(mask).DeviceRect(maskRect);
-
-    DeviceRects(src, dst, srcRect, dstRect, s, d);
-    ::CopyMask((BitMapPtr)&from, (BitMapPtr)&through, (BitMapPtr)&to, &s, &m, &d);
-}
-#endif
 
 } // namespace Scaled

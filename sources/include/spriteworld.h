@@ -19,9 +19,6 @@ extern short SWCreateSpriteWorld(SpriteWorldRec **spriteWorldP, CGrafPtr windowP
                                  const Rect &viewRect);  /* 0x00477640 */
 extern void SWResizeSpriteWorld(SpriteWorldPtr spriteWorldP, const Rect &viewRect);
 extern void SWDisposeSpriteWorld(SpriteWorldPtr *spriteWorldP);
-#if EVPLUS_TEST_PAGES
-extern void SWSetPortToWindow(SpriteWorldPtr spriteWorld);  /* the game window's port */
-#endif
 extern void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x00478480 */
 extern void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x004781f0 */
 extern void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x00477fa0 */
@@ -89,10 +86,6 @@ extern Boolean SWIsSpriteInRect(SpritePtr srcSpriteP,
 /* --- draw procs --- */
 extern void BlitPixieRLEDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
                                  Rect *srcRect, Rect *dstRect);        /* 0x00470ee0 */
-#if EVPLUS_TEST_PAGES
-extern void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
-                                 Rect *srcRect, Rect *dstRect);        /* 0x004703e0 */
-#endif
 extern void BlitPixieRLETranslucentDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
                                  Rect *srcRect, Rect *dstRect);        /* 0x004711e0 */
 extern Boolean BlitPixieRLECollisionProc(SpritePtr srcSpriteP, SpritePtr dstSpriteP,
@@ -133,12 +126,7 @@ struct SpriteBlend {
     static SpriteBlend Of(const SpriteRec &sprite);
 };
 
-/* --- the rect blitters: whole-rect copies, src first --- */
-#if EVPLUS_TEST_PAGES
-extern void BlitPixieRect(unsigned char *srcPixels, unsigned char *dstPixels,
-        int32_t srcRowBytes, int32_t dstRowBytes, unsigned short byteWidth,
-        unsigned short numRows);                         /* 0x00471cf0 */
-#endif
+/* --- RLE collisions and the RLE parser --- */
 extern Boolean BlitPixieRLECollision(unsigned char *srcTokens, unsigned char *dstTokens,
         Rect *srcRect, Rect *dstRect);                   /* 0x00472190 */
 extern Boolean BlitPixieRLECollisionWithPoint(unsigned char *rleData, Point *pt,

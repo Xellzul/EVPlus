@@ -8,8 +8,7 @@
    the ids playing after each pull.
    soundtest_fight_sdl.wav: a busy fight (panned shots, explosions, a looping sound started again, the alert),
    soundtest_warp_sdl.wav: the warp-up at mobility 1.0, 0.7 and 1.5, both at the top volume;
-   soundtest_wav.txt: their peak voices, peak before clamping and clipped samples, also at the default volume.
-   build/devtools/scaletest.sh runs it. */
+   soundtest_wav.txt: their peak voices, peak before clamping and clipped samples, also at the default volume. */
 
 #include <math.h>
 #include <algorithm>

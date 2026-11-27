@@ -219,14 +219,6 @@ int MeasureTextSpans(const void *text, uint32_t byteCount, Rect *box)
     return DrawTextCore(text, byteCount, box, 1, 0, 0);
 }
 
-#if EVPLUS_TEST_PAGES
-// FUNCTION: EVNOVA 0x004bca70
-void DrawText(const void *textBuf, int firstByte, int byteCount)
-{
-    DrawTextRun((char *)textBuf + firstByte, byteCount, NULL, 0, 0);
-}
-#endif
-
 // FUNCTION: EVNOVA 0x004bcab0
 void DrawCString(const char *text)
 {
@@ -245,9 +237,9 @@ static int DeviceWidthOf(const UI::Mapping &map, const Unit *units, int count)
     return TextLayout::Width(glyphs, units, count);
 }
 
-/* BUG (exe, all Windows versions): StringWidth, MeasureCString and MeasureWrappedText take the
-   bytes as ANSI text with `&' as an accelerator mark, while DrawTextRun draws them as Mac Roman with `&'
-   shown: text with characters above 0x7f or with an `&' is measured at another width than it is drawn. */
+/* BUG (exe, all Windows versions): MeasureCString and MeasureWrappedText take the bytes as ANSI text
+   with `&' as an accelerator mark, while DrawTextRun draws them as Mac Roman with `&' shown: text with
+   characters above 0x7f or with an `&' is measured at another width than it is drawn. */
 static int AnsiDeviceWidth(const UI::Mapping &map, const char *text, int byteCount)
 {
     Unit *units;
@@ -269,18 +261,6 @@ static short MeasureAnsi(const char *text, int byteCount)
 
     return TextLayout::ClampShort(map.LogicalLength(AnsiDeviceWidth(map, text, byteCount)));
 }
-
-#if EVPLUS_TEST_PAGES
-/* the same measurer over a Pascal string */
-// FUNCTION: EVNOVA 0x004bcad0
-short StringWidth(const unsigned char *str)
-{
-    char text[256];
-
-    PStr2CStr(text, str);
-    return MeasureCString(text);
-}
-#endif
 
 // FUNCTION: EVNOVA 0x004bcb00
 short MeasureCString(const char *text)

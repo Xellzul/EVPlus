@@ -11,12 +11,9 @@
 #define kMainScreenQuit     2
 #define kMainScreenEnter    3
 #define kMainScreenPrefs    4
-/* the test pages: built with the CMake option EVPLUS_TEST_PAGES, each shown when its switch is 1 */
-#define kDebugFonts         0       /* 1: the font test page (fonttest.cpp) before the main screen */
-#define kScaleTest          0       /* 1: the drawing test pages (scaletest.cpp, spritetest.cpp) before the main screen */
 #define kSoundTest          0       /* 1: the mixer capture (soundtest.cpp) before the main screen */
-#if !EVPLUS_TEST_PAGES && (kDebugFonts || kScaleTest || kSoundTest)
-#error "the test pages need the CMake option EVPLUS_TEST_PAGES"
+#if !EVPLUS_TEST_PAGES && kSoundTest
+#error "the mixer capture needs the CMake option EVPLUS_TEST_PAGES"
 #endif
 #define kMainScreenAbout    5
 
@@ -103,12 +100,6 @@ void DoMainScreen(void)
     SetupInterfaceBackground();
     ShowTheCursor();
 #if EVPLUS_TEST_PAGES
-    if (kDebugFonts)
-        DebugFontScreen();
-    if (kScaleTest) {
-        DebugScaleTest();
-        DebugSpriteTest();
-    }
     if (kSoundTest)
         DebugSoundTest();
     DebugGpuTest();

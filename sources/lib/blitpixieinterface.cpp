@@ -27,47 +27,6 @@ bool ClipToFrame(const Rect &frame, Rect &src, Rect &dst)
     return dst.right > dst.left;
 }
 
-#if EVPLUS_TEST_PAGES
-/* a rect copy between two frames */
-struct RectBlit {
-    Rect src;
-    Rect dst;
-    int32_t srcRowBytes;
-    int32_t dstRowBytes;
-    int width;      /* pixels per row */
-    int rows;
-};
-
-/* Asserts the frames (BlitPixieInterface.c from `line' on) and clips the rects to the destination frame;
-   false when nothing is left. */
-bool PrepareRectBlit(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, const Rect *srcRect, const Rect *dstRect,
-                     int line, RectBlit &blit)
-{
-    if (srcFrameP->framePort == 0)
-        SW_ASSERT_FAIL("BlitPixieInterface.c", line, line + 2);
-    if (dstFrameP->framePort == 0)
-        SW_ASSERT_FAIL("BlitPixieInterface.c", line + 1, line + 3);
-    if (!(srcFrameP->isFrameLocked && dstFrameP->isFrameLocked))
-        SW_ASSERT_FAIL("BlitPixieInterface.c", line + 2, line + 4);
-    if (!(dstFrameP->frameDepth >= 8))
-        SW_ASSERT_FAIL("BlitPixieInterface.c", line + 3, line + 5);
-    if (!(srcFrameP->frameDepth == dstFrameP->frameDepth))
-        SW_ASSERT_FAIL("BlitPixieInterface.c", line + 4, line + 6);
-
-    const Rect &frame = dstFrameP->frameRect;
-    blit.src = *srcRect;
-    blit.dst = *dstRect;
-    blit.srcRowBytes = srcFrameP->frameRowBytes;
-    blit.dstRowBytes = dstFrameP->frameRowBytes;
-    if (!ClipToFrame(frame, blit.src, blit.dst))
-        return false;
-
-    blit.width = blit.dst.right - blit.dst.left;
-    blit.rows = blit.dst.bottom - blit.dst.top;
-    return blit.width > 0 && blit.rows > 0;
-}
-#endif
-
 /* an RLE frame drawn into a frame */
 struct RLEBlit {
     unsigned char *tokens;
@@ -120,26 +79,6 @@ bool PrepareRLEBlit(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP, const Rect *sr
 }
 
 } // namespace
-
-#if EVPLUS_TEST_PAGES
-// FUNCTION: EVNOVA 0x004703e0
-// MAC: _BlitPixieRectDrawProc i386 0x000ba16f ppc 0x000c6154
-void BlitPixieRectDrawProc(SWFrameRec *srcFrameP, SWFrameRec *dstFrameP,
-                           Rect *srcRect, Rect *dstRect)
-{
-    RectBlit blit;
-    if (!PrepareRectBlit(srcFrameP, dstFrameP, srcRect, dstRect, 155, blit))
-        return;
-
-    BlitPixieRect(
-        (unsigned char *)SW_PIXELPTR(srcFrameP, blit.src.left, blit.src.top),
-        (unsigned char *)SW_PIXELPTR(dstFrameP, blit.dst.left, blit.dst.top),
-        blit.srcRowBytes,
-        blit.dstRowBytes,
-        SW_PIXELBYTES(dstFrameP, blit.width),
-        blit.rows);
-}
-#endif
 
 // FUNCTION: EVNOVA 0x00470ee0
 // MAC: _BlitPixieRLEDrawProc i386 0x000bb12d ppc 0x000c6fc4

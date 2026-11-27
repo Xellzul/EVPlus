@@ -18,17 +18,6 @@ void SWAddSpriteLayer(SpriteWorldRec *spriteWorldP, SpriteLayerRec *newSpriteLay
     spriteWorldP->tailSpriteLayerP = newSpriteLayerP;
 }
 
-#if EVPLUS_TEST_PAGES
-// FUNCTION: EVNOVA 0x00477c70
-// MAC: _SWSetPortToWindow i386 0x000b74e4 ppc 0x000c3098
-void SWSetPortToWindow(SpriteWorldPtr spriteWorld)
-{
-    if (spriteWorld != NULL && spriteWorld->windowPort != NULL)
-        SetPort(spriteWorld->windowPort);
-}
-#endif
-
-
 /* The game's drawing of the world, called by Animate and Update. */
 void (*gSWDraw)(SpriteWorldRec *spriteWorldP);
 

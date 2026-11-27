@@ -9,16 +9,15 @@
 #include "platform.h"
 #include "fontraster.h"
 #include "text.h"
+#include "crashlog.h"
 
 #define kStyleCount     4               /* plain, bold, italic, bold italic: kFontBold | kFontItalic */
-#define kSourceMax      32
 
 typedef struct FontFamily {
     char name[0x100];           /* +0x000 the Mac name the game asked for; GetFNum compares it */
     RasterFont *faces[kStyleCount];     /* the font file each style is drawn with */
     char looked[kStyleCount];           /* that style has been looked up (it may have found nothing) */
     char heavy;                 /* the font already has a bold's weight: bold is not added to it */
-    char source[kSourceMax];    /* where the plain face came from, for the font test page */
 } FontFamily;
 
 /* a font file from beside the exe */
@@ -191,8 +190,17 @@ static RasterFont *FamilyFace(FontFamily *family, int style)
         source = "installed look-alike";
     }
     family->faces[style] = font;
-    if (style == 0)
-        strcpy(family->source, source);
+    if (style == 0 && crashlog_isactive()) {
+        /* the debug log: what each family is drawn with */
+        char text[0x180];
+
+        if (font != NULL)
+            snprintf(text, sizeof text, "font: asked for \"%s\", drawn with \"%s\" (%s)", family->name,
+                     RasterFamily(font), source);
+        else
+            snprintf(text, sizeof text, "font: asked for \"%s\", no font", family->name);
+        crashlog(text);
+    }
     return font;
 }
 
@@ -242,40 +250,6 @@ int GetFont(short familyID, short size, short style, FontSpec *spec)
         spec->flags |= kRasterItalic;
     return 1;
 }
-
-#if EVPLUS_TEST_PAGES
-/* -- for the font test page (port/fonttest.cpp) -- */
-
-short FontFamilyCount(void)
-{
-    return gFontFamilies.count;
-}
-
-/* the name the game asked for, NULL past the last family */
-const char *FontFamilyName(short familyID)
-{
-    FontFamily *family;
-
-    family = GetFontFamily(familyID);
-    return family != NULL ? family->name : NULL;
-}
-
-/* the font that family is really drawn with, and where its file comes from */
-void FontRealName(short familyID, short size, short style, char *out, int outSize)
-{
-    FontFamily *family;
-    FontSpec spec;
-
-    out[0] = 0;
-    family = GetFontFamily(familyID);
-    if (family == NULL || !GetFont(familyID, size, style, &spec)) {
-        strncpy(out, "no font", outSize - 1);
-        out[outSize - 1] = 0;
-        return;
-    }
-    snprintf(out, outSize, "%s (%s)", RasterFamily(spec.font), family->source);
-}
-#endif
 
 // FUNCTION: EVNOVA 0x004bc6e0
 void GetFNum(const unsigned char *name, short *familyID)
