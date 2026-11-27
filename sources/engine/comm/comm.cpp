@@ -101,7 +101,7 @@ SWFrameRec *CommOverlay(void)
         if (frame != NULL)
             SWDisposeFrame(&frame);
         bounds = wanted;
-        if (!View::MakeOverlayFrame(&frame, bounds))
+        if (!View::MakeOverlayFrame(&frame, bounds, RedrawCommOverlay))
             return NULL;
         gCommDrawn = false;
         FitCommRect(frame);

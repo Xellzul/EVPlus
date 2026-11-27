@@ -53,12 +53,7 @@ void ShowIntroScreen(void)
             if (picHandle != NULL)
                 QDReleaseResource(picHandle);
 
-            {
-                UI::Painter screen(UI::Surface::Screen());
-
-                screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
-                screen.Copy(UI::Surface::Load(), rect, rect);
-            }
+            ShowLoadPage(rect, rect);
             Screen::Changed();
             Screen::EndFrame();
 
@@ -121,7 +116,6 @@ void ShowIntroScreen(void)
         }
     }
 
-    ForgetLoadPagePicture();
     HandleIntroMusic(1);
     if (!pictSkipped) {
         StopIntroMusic(1);

@@ -109,7 +109,7 @@ Point ToOverlay(Point pt, const Rect &viewRect)
     return local;
 }
 
-bool MakeOverlayFrame(SWFrameRec **frame, const Rect &bounds)
+bool MakeOverlayFrame(SWFrameRec **frame, const Rect &bounds, void (*redraw)(void))
 {
     Rect r = bounds;
 
@@ -121,7 +121,7 @@ bool MakeOverlayFrame(SWFrameRec **frame, const Rect &bounds)
         UI::ScaleUIPort((*frame)->framePort);
         SWInitializeFrame(*frame);
     }
-    UI::Canvas::MakeNewTarget((*frame)->framePort);
+    UI::Canvas::MakeNewTarget((*frame)->framePort, redraw);
     SWLockFrame(*frame);
     return true;
 }

@@ -2,8 +2,10 @@
    platform's window, with the space view the GPU draws under it. */
 #include "burger.h"
 #include "canvas.h"
+#include "dialogs.h"
 #include "platform.h"
 #include "profiler.h"
+#include "uiscale.h"
 #include "viewdraw.h"
 #include "viewscale.h"
 #include "screen.h"
@@ -21,6 +23,8 @@ bool changed;                       /* something to show since the last frame en
 bool redrawing;                     /* inside Redraw */
 unsigned shownWhite;                /* the white-out level of the frame last shown */
 unsigned drawnEpoch;                /* PlatUIEpoch when the layer was made, or last drawn whole again */
+Scene scene;                        /* SetScene */
+Scene above;                        /* the innermost Above's */
 
 /* 1.1.1's hyperspace white-out: 1.1.1 has CGDisplayFade blend the whole display to and from solid white over
    1.5 s while the game runs on; here the platform shows the frame blended toward white by the fade's position
@@ -39,15 +43,21 @@ unsigned CurrentWhite()
     return whiteFrom + ((int32_t)whiteTo - (int32_t)whiteFrom) * (int32_t)elapsed / (int32_t)whiteTicks;
 }
 
-/* the GPU lost what the layer held: it is put together again from nothing */
+/* the GPU lost what the targets held: each drawn again, the layer from its scene up */
 void Redraw()
 {
+    UI::GameScale game;                 /* also from a frame end inside a MenuScale: each part takes its own */
+
     redrawing = true;
     drawnEpoch = PlatUIEpoch();
-    UI::Canvas::FlushAll();
+    UI::Canvas::RedrawTargets();
     PlatTargetClear(gGamePort.target);
     viewCovered = false;
-    RedrawInterface();
+    if (scene != NULL)
+        scene();
+    DrawShownDialogs();
+    if (above != NULL)
+        above();
     changed = true;
     redrawing = false;
 }
@@ -105,6 +115,27 @@ void Close()
     gGamePort.pix.width = 0;
     gGamePort.pix.height = 0;
     page = Page();
+}
+
+void SetScene(Scene shown)
+{
+    scene = shown;
+}
+
+void DrawScene()
+{
+    if (scene != NULL)
+        scene();
+}
+
+Above::Above(Scene draw) : under(above)
+{
+    above = draw;
+}
+
+Above::~Above()
+{
+    above = under;
 }
 
 void Drawn(int left, int top, int right, int bottom)

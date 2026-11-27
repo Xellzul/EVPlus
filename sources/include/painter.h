@@ -55,13 +55,12 @@ public:
 private:
     friend class Painter;
 
-    Surface(CGrafPtr port, SWFrameRec *frame) : port(port), frame(frame) {}
+    explicit Surface(CGrafPtr port) : port(port) {}
 
     CGrafPtr port;
-    SWFrameRec *frame;
 };
 
-/* draws on one surface; Painters nest; a surface of a null world, dialog or frame draws nothing */
+/* draws on one surface; Painters nest; a null one draws nothing, one without a GPU target only Fill, Picture, Copy */
 class Painter {
 public:
     explicit Painter(const Surface &target);
@@ -85,7 +84,7 @@ public:
     void Copy(const Surface &from, const Rect &src, const Rect &dst, Blit mode = Blit::Copy);
     void CopyMasked(const Surface &from, const Surface &mask, const Rect &src, const Rect &maskRect,
                     const Rect &dst);
-    /* a sprite frame through its draw proc; on a sprite-frame surface only */
+    /* a sprite frame, blended as its draw proc blends it */
     void Sprite(DrawProcPtr draw, SWFrameRec *sprite, const Rect &src, const Rect &dst);
     /* what QuickDraw drew on the surface's own pixels (a dialog's controls) put on its GPU canvas, when it has one */
     void OwnPixels();
@@ -99,7 +98,6 @@ public:
         Composition &operator=(const Composition &) = delete;
 
     private:
-        ArtComposition art;
         Canvas *canvas;
         bool began;                 /* the canvas began one for this: ended with it */
     };
@@ -145,6 +143,7 @@ public:
 
 private:
     bool Bind();
+    bool Drawn();                   /* bound, with a canvas: what only the GPU draws is drawn */
     void Ink(const RGBColor &colour);
     void Font(Style style, bool bold);
     void Apply(const TextSpec &spec);
@@ -154,7 +153,6 @@ private:
                       const TextSpan *spans, int spanCount);
 
     CGrafPtr port;
-    SWFrameRec *frame;
     Canvas *canvas;                 /* the port's, when it has a GPU target: drawn when its last Painter is done */
     CGrafPtr previous;
     Point pen;                      /* where the next continued Text starts */

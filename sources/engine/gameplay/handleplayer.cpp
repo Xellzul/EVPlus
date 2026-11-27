@@ -344,14 +344,14 @@ static bool PlayerEscapePod(ShipObj *player)
             ClearStarfield();
             ClearParticles(0);
             SWHideAllSprites(gSpriteWorld);
-            UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+            BlackScreen();
             FadeScreenIn();
             ShowTheCursor();
-            UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+            BlackScreen();
             ShowTheCursor();
             LoadDescription(textShowString, 0x36af);
             ShowTextDialog(0, 1);
-            UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+            BlackScreen();
             FadeScreenOut();
             for (i = 0; i < kMaxActiveMissions; i++) {
                 if (currentMissionObjectives[i].active) {
@@ -409,7 +409,7 @@ static bool PlayerEscapePod(ShipObj *player)
                 strcat((char *)shipName, NumText(Rand(9) + 1).c_str());
             }
             CtoPstr((char *)shipName);
-            UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+            BlackScreen();
             RefreshSAT();
             RedrawStatus(1);
             statusRedraw[kRedrawTarg] = statusRedraw[kRedrawNav] = statusRedraw[kRedrawWeap] =

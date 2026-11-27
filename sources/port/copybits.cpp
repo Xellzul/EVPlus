@@ -393,8 +393,6 @@ void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits, const Rect *srcRect,
         return;
     if (NoPixels((PixMapPtr)srcBits) || NoPixels((PixMapPtr)dstBits))
         return;
-    if (UI::ComposeCopy((PixMapPtr)srcBits, (PixMapPtr)dstBits, srcRect, dstRect, mode))
-        return;
     if (UI::Mapping(*(PixMapPtr)srcBits).Scaled() || UI::Mapping(*(PixMapPtr)dstBits).Scaled()) {
         Scaled::CopyBits(*(PixMapPtr)srcBits, *(PixMapPtr)dstBits, *srcRect, *dstRect, mode);
         return;
@@ -602,8 +600,6 @@ void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
             || srcRect == NULL || maskRect == NULL || dstRect == NULL)
         return;
     if (NoPixels((PixMapPtr)srcBits) || NoPixels((PixMapPtr)maskBits) || NoPixels((PixMapPtr)dstBits))
-        return;
-    if (UI::ComposeMask((PixMapPtr)srcBits, (PixMapPtr)maskBits, (PixMapPtr)dstBits, srcRect, maskRect, dstRect))
         return;
     if (UI::Mapping(*(PixMapPtr)srcBits).Scaled() || UI::Mapping(*(PixMapPtr)maskBits).Scaled()
             || UI::Mapping(*(PixMapPtr)dstBits).Scaled()) {

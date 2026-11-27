@@ -36,8 +36,6 @@ typedef struct PlatRect {
    replaces that one. */
 typedef struct PlatImage PlatImage;
 extern PlatImage *PlatImageCreate(int width, int height, const uint16_t *pixels, const uint8_t *alpha);
-/* same size; an image made with an alpha */
-extern void PlatImageUpdate(PlatImage *image, const uint16_t *pixels, const uint8_t *alpha);
 /* The pixels of rect (it lies on the image) from `pixels', pitch bytes a row, which starts at the rect's first
    pixel; the alpha stays. Only what differs from the image's own is taken and uploaded: 1 when something did. */
 extern int PlatImageUpdatePart(PlatImage *image, const PlatRect *rect, const uint16_t *pixels, int pitch);
@@ -51,9 +49,10 @@ extern PlatImage *PlatImageCreate32(int width, int height, const uint32_t *argb,
 extern void PlatImageUpdate32(PlatImage *image, const PlatRect *rect, const uint32_t *argb, int pitch);
 
 /* A canvas of the interface: width x height premultiplied ARGB pixels on the GPU, clear when made, drawn into
-   at once (PlatTargetDraw). NULL (logged) for one the renderer cannot make, as one larger than
-   PlatMaxTextureSize. One destroyed while the view shown still draws it is freed once another view replaces
-   that one, as an image.
+   at once (PlatTargetDraw). NULL for a zero size, and (logged) for one larger than PlatMaxTextureSize, out of
+   memory or whose texture the renderer cannot make. A texture lost is made again, clear, on use; while it cannot
+   be, the target is not drawn into, from or read. One destroyed while the view shown still draws it is freed
+   once another view replaces that one, as an image.
    Rule: after a PlatUIEpoch change (lost device, targets, brightness) every target, a layer's frame too, is lost:
    redraw all, present; a new target is no layer until drawn into or cleared. */
 typedef struct PlatTarget PlatTarget;
@@ -61,6 +60,7 @@ extern PlatTarget *PlatTargetCreate(int width, int height);
 extern void PlatTargetDestroy(PlatTarget *target);
 extern void PlatTargetClear(PlatTarget *target);           /* every pixel clear */
 extern unsigned PlatUIEpoch(void);
+extern const char *PlatRendererName(void);         /* SDL's name of the renderer; "none" before one */
 
 /* What is drawn, back to front, in the pixels of what it is drawn into -- the GPU view, the frame (overlays), a
    target:

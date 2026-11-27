@@ -100,8 +100,6 @@ struct TextSpan {
     uint32_t end;
     RGBColor color;
 };
-extern int DrawTextSpans(const void *text, uint32_t byteCount, Rect *box, int scroll,
-                         const TextSpan *spans, int spanCount);
 extern int MeasureTextSpans(const void *text, uint32_t byteCount, Rect *box);
 extern CGrafPtr CurrentGrafPort;
 extern void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits,
@@ -337,6 +335,7 @@ typedef struct DialogRecord {
     void *eventProc;
     int32_t needsUpdate;
     int32_t visible;
+    int32_t shown;                  /* copied onto the screen once */
 } DialogRecord;
 
 typedef struct Particle {
@@ -385,6 +384,7 @@ typedef int EventChar;
 #define kRLEDResType 0x726c9144UL
 
 extern void *NewPortPixels(int width, int rows, int bits);
+extern void DropPortPixels(CGrafPtr port);       /* an offscreen port drawn through its GPU target alone */
 extern short Alert(short alertID, void *filterProc);
 #define StopAlert(id, filter) Alert(id, filter)
 extern void BackColor(const RGBColor *color);
@@ -524,7 +524,6 @@ extern void QDGetPictureBounds(PicHandle pic, Rect *r);
 extern void *GetGWorldDevice(CGrafPtr port);
 extern void DisposeGWorld(CGrafPtr port);
 extern void DebugStr(const char *message);
-extern void FillCRect(Rect *dstRect, Image_t *pat);
 extern void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text);
 extern void *GetGDevice(void);
 extern void BuildGammaRamp(float gamma);

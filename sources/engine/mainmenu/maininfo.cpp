@@ -18,6 +18,13 @@
 #include "text.h"
 #include "painter.h"
 
+/* the scene of the main menu: its art on the load page, the menu put together over it */
+static void DrawMainScreen(void)
+{
+    RedrawMainScreenArt();
+    MainScreenUpdate(1);
+}
+
 // FUNCTION: EVNOVA 0x004873b0
 // MAC: _MainScreenUpdate i386 0x00017c0d ppc 0x0001b8e8
 void MainScreenUpdate(short which)
@@ -144,8 +151,10 @@ void MainScreenUpdate(short which)
         }
     }
     MainScreenRolloverDraw();
-    if (which == 1)
+    if (which == 1) {
         ShowMainScreen();
+        Screen::SetScene(DrawMainScreen);
+    }
 }
 
 /* the main screen as composed: the work page, and the load page's strip at the window's right edge */
@@ -241,7 +250,6 @@ void SetupInterfaceBackground(void)
         DrawVersion();
         QDReleaseResource((PicHandle)pic);
     }
-    ForgetLoadPagePicture();
     ForgetMainScreenAnim();
     PlaceMainScreenAnim();
 }
@@ -253,8 +261,6 @@ void SetupInterfaceBackground(void)
 // MAC: _EnterGameFromMainScreen i386 0x00019ca7 ppc 0x0001d988
 void EnterGameFromMainScreen(void)
 {
-    Rect box;
-
     crashlog("---");
     crashlog("entering game");
     playerIsLanded = 0;
@@ -321,13 +327,7 @@ void EnterGameFromMainScreen(void)
     }
     crashlog("restoring stuff");
     KillVoiceSound();
-    {
-        UI::Painter screen(UI::Surface::Screen());
-
-        screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
-        SetRect(&box, 0, 0, GetCWindowPortRect((WindowRef)gWind)->right, 20);
-        screen.Fill(box, UI::kBlack);
-    }
+    BlackScreen();
     InvalWindowPortRect((WindowRef)gWind);
     if (!gQuit) {
         SetupInterfaceBackground();
@@ -340,7 +340,7 @@ void EnterGameFromMainScreen(void)
         FlushEvents(2, 0);
     }
     ShowTheCursor();
-    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+    BlackScreen();
     if (!gQuit) {
         crashlog("showing main screen again");
         InvalWindowPortRect((WindowRef)gWind);

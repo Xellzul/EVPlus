@@ -32,7 +32,7 @@ void IterateInGameEventLoop(short tickCount)
                         RefreshSAT();
                     }
                 } else {
-                    ShowLoadPage();
+                    Screen::DrawScene();
                 }
             }
             gNeedUpdateFlag = 0;

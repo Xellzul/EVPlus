@@ -69,8 +69,7 @@ extern void InitIntroProgressBar(void);
 extern int KeyboardGet(void);
 extern short LoadExtendedShipSprites(short shipType);
 extern void LoadIntfResource(void);
-/* statusOffPort, its picture drawn again first when the GPU lost it or the brightness changed */
-extern UI::Surface StatusPicture(void);
+extern void RedrawStatusPicture(void);          /* statusOffPort's picture drawn again, the GPU having lost it */
 extern void LoadMainScreenAnim(void);
 extern void PlaceMainScreenAnim(void);
 extern void MainScreenAppear(void);
@@ -101,9 +100,8 @@ extern void ShowIntroScreen(void);
 extern void ShowSplashScreen(void);
 /* the load page black with the picture (NULL: none) centred, kept to draw again; returns where it lies */
 extern Rect PaintLoadPagePicture(PicHandle pic, short id);
-extern void ForgetLoadPagePicture(void);      /* the load page's picture is not drawn again */
-/* that picture drawn again, with the loading bar while the game loads; false = the page shows none */
-extern bool RedrawLoadPagePicture(void);
+/* the screen black with the load page's part `from' at `to' (the menu's scale): the scene until another */
+extern void ShowLoadPage(const Rect &from, const Rect &to);
 extern void DisposeMainScreenSounds(void);
 extern void MainScreenAnimIdle(void);
 extern void MainScreenRolloverIdle(void);

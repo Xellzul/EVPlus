@@ -4,7 +4,6 @@
 #include "game.h"
 #include "missions.h"
 #include "viewscale.h"
-#include "uisprite.h"
 #include "uiscale.h"
 #include "gameutil.h"
 #include "render.h"

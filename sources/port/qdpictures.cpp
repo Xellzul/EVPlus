@@ -1,6 +1,5 @@
 /* qdpictures.cpp -- PICT, cicn and ppat: loading (PICTs through the gamma ramp, the ppat decoder) and drawing */
 #include "pixel.h"
-#include "scaleddraw.h"
 #include "burger.h"
 
 void (*gArtGone)(const Image_t *art);
@@ -323,61 +322,4 @@ Image_t *GetPixPat(short id)
         return pat;
     }
     return NULL;
-}
-
-// FUNCTION: EVNOVA 0x004bbdc0
-void FillCRect(Rect *dstRect, Image_t *pat)
-{
-    Rect srcR;
-    Rect dstR;
-    int x;
-    PixMap src;
-    unsigned int cols;
-    unsigned int rows;
-    unsigned int tileW;
-    unsigned int tileH;
-    int y;
-    unsigned int col;
-
-    if (CurrentGrafPort == NULL)
-        return;
-    tileW = pat->Width;
-    cols = dstRect->right - dstRect->left;
-    cols = cols + tileW;
-    cols = cols - 1;
-    cols = cols / tileW;
-    tileH = pat->Height;
-    rows = dstRect->bottom - dstRect->top;
-    rows = rows + tileH;
-    rows = rows - 1;
-    rows = rows / tileH;
-    if (cols == 0 || rows == 0)
-        return;
-
-    ImageAsPixMap(&src, pat);
-    UI::ArtComposition tiles(CurrentGrafPort, *dstRect);    /* the tiles stretched as one */
-    y = 0;
-    do {
-        col = cols;
-        x = 0;
-        do {
-            dstR.left = dstRect->left + x;
-            dstR.right = dstR.left + pat->Width;
-            dstR.top = dstRect->top + y;
-            dstR.bottom = dstR.top + pat->Height;
-            if (dstR.right > dstRect->right)
-                dstR.right = dstRect->right;
-            if (dstR.bottom > dstRect->bottom)
-                dstR.bottom = dstRect->bottom;
-            srcR.left = srcR.top = 0;
-            srcR.right = dstR.right - dstR.left;
-            srcR.bottom = dstR.bottom - dstR.top;
-            CopyBits((BitMapPtr)&src, GetPortBitMapForCopyBits(CurrentGrafPort),
-                     &srcR, &dstR, 0, NULL);
-            x = x + pat->Width;
-            col -= 1;
-        } while (col != 0);
-        y += pat->Height;
-        rows -= 1;
-    } while (rows != 0);
 }

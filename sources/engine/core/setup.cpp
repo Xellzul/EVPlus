@@ -36,6 +36,19 @@ static void SpriteWorldFailed(void)
     ExitToShell();
 }
 
+/* the floating map's and escort menu's frames drawn again while a game shows them */
+static void RedrawMapFrame(void)
+{
+    if (gameInProgress != 0 && gameLoaded != 0 && showFloatingMap > 0)
+        RedrawFloatingMap();
+}
+
+static void RedrawEscortFrame(void)
+{
+    if (gameInProgress != 0 && gameLoaded != 0 && escortMenuOnscreen > 0)
+        DrawEscortMenuInFrame();
+}
+
 /* the floating map's and escort menu's frames and places, for the view's size and the UI scale */
 static void CreateOverlayFrames(void)
 {
@@ -48,10 +61,10 @@ static void CreateOverlayFrames(void)
         windRect.right = 200;
     windRect.bottom = windRect.right;
     floatingMapRect = windRect;
-    View::MakeOverlayFrame(&floatingMapFrame, View::OverlayFrameRect(windRect));
+    View::MakeOverlayFrame(&floatingMapFrame, View::OverlayFrameRect(windRect), RedrawMapFrame);
     OffsetRect(&floatingMapRect, View::width - (floatingMapRect.right + View::ScaleInView(16)), View::ScaleInView(150));
     SetRect(&windRect, 0, 0, 160, 120);
-    View::MakeOverlayFrame(&floatingEscortMenuFrame, windRect);
+    View::MakeOverlayFrame(&floatingEscortMenuFrame, windRect, RedrawEscortFrame);
     SetRect(&escortMenuRect, View::ScaleInView(15), View::ScaleInView(150), View::ScaleInView(15 + 160),
             View::ScaleInView(150 + 120));
 }
@@ -116,7 +129,7 @@ void SetupSpriteWorld(void)
     crashlog("creating scratch frames");
     CreateOverlayFrames();
 
-    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+    BlackScreen();
 
     spriteClipRect = floatingEscortMenuFrame->frameRect;
     spriteClipRect.top -= 75;
@@ -172,7 +185,7 @@ void SetupWind(void)
     crashlog_print(", ");
     crashlog_print_num(bottom);
     crashlog_print(")\n");
-    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect(gWind), UI::kBlack);
+    BlackScreen();
     if (settings.windowed == 0) {
         mBarHidden = 1;
     }
@@ -247,6 +260,17 @@ int32_t fullScreenRestore;
 GWorldContainer menuArtPort;            /* MenuArt() */
 GWorldContainer menuShownPort;          /* the menu art last stretched into loadPort */
 
+/* loadPort went black, as did the menu art it showed: the menu puts its art together again */
+static void LoadPortLost(void)
+{
+    if (menuShownPort.world != NULL) {
+        const PixMap &shown = menuShownPort.world->pix;
+        for (int y = 0; y < shown.height; y++)
+            memset(Pixel::Row(shown, y), 0, (size_t)shown.width * Pixel::kBytes);
+    }
+    mainScreenBackgroundDirty = 1;
+}
+
 /* the status bar's picture, as high as `screen' */
 static void CreateStatusOffPort(Rect screen)
 {
@@ -256,7 +280,7 @@ static void CreateStatusOffPort(Rect screen)
     CreateGWorldContainer(&statusOffPort, GetMainDevice(), 0, &screen);
     if (statusOffPort.world != NULL) {
         UI::ScaleUIPort(statusOffPort.world);
-        UI::Canvas::MakeNewTarget(statusOffPort.world);
+        UI::Canvas::MakeNewTarget(statusOffPort.world, RedrawStatusPicture);
     }
     if (statusOffPort.world == NULL) {
         ShowTheCursor();
@@ -282,7 +306,7 @@ void InitOffscreen(void)
     CreateGWorldContainer(&loadPort, GetMainDevice(), 0, &r);
     if (loadPort.world != NULL) {
         UI::ScaleUIPort(loadPort.world);
-        UI::Canvas::MakeNewTarget(loadPort.world);
+        UI::Canvas::MakeNewTarget(loadPort.world, LoadPortLost);
     }
     {
         UI::MenuScale menu;
@@ -927,35 +951,11 @@ static void ApplyDisplay(Resolution chosen, short gameSize)
     mainScreenBackgroundDirty = 1;
 }
 
-/* the load page whole onto the screen: while loading and in the intro it holds the picture shown */
-void ShowLoadPage(void)
+/* the scene of a black screen */
+void BlackScreen(void)
 {
-    UI::Painter(UI::Surface::Screen())
-        .Copy(UI::Surface::Load(), *GetCWindowPortRect(gWind), *GetCWindowPortRect(gWind));
-}
-
-/* the screen put together again, as it stands */
-void RedrawInterface(void)
-{
-    UI::GameScale game;                 /* also from a frame end inside a MenuScale; menu parts take theirs */
-
-    if (gWind == NULL)
-        return;
-    bool picture = RedrawLoadPagePicture();
-    if (showingIntroText != 0) {
-        UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect(gWind), UI::kBlack);
-    } else if (gPause != 0) {
-        if (!picture)
-            RedrawMainScreenArt();
-        MainScreenUpdate(1);
-    } else if (gameInProgress != 0 && gameLoaded != 0) {
-        RefreshSAT();
-    } else {
-        ShowLoadPage();
-    }
-    if (gameInProgress != 0 && gameLoaded != 0)
-        RedrawOverlays();
-    DrawDialogs();
+    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect(gWind), UI::kBlack);
+    Screen::SetScene(BlackScreen);
 }
 
 /* The Preferences' display settings after the dialog closes; a game size waits for the next pilot while one

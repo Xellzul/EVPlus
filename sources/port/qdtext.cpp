@@ -185,8 +185,7 @@ int PortTextSetup(TextLayout::Setup *setup, TextLayout::Pen *pen)
    the device advances of the glyphs drawn. Unclipped text starts at the pen's device x and leaves the pen at
    the logical pixel nearest its end, the rest in pnDeviceOffset, so the next run continues exactly. clipped != 0
    wraps into `box' and needs one; then the height of the wrapped lines is returned. draw 0 only measures. */
-static int DrawTextCore(const void *text, uint32_t byteCount, Rect *box, char clipped, int height,
-                        const TextSpan *spans, int spanCount, char draw)
+static int DrawTextCore(const void *text, uint32_t byteCount, Rect *box, char clipped, int height, char draw)
 {
     CGrafPtr port;
     TextLayout::Setup setup;
@@ -203,7 +202,7 @@ static int DrawTextCore(const void *text, uint32_t byteCount, Rect *box, char cl
     PixelSink pixels(&port->pix, port->foreColor);
     bool drawn = draw != 0 && port->offscreen != 0 && (port->pix.pixelSize == 16 || port->pix.pixelSize == 32);
     wrapped = TextLayout::Draw(drawn ? &pixels : NULL, UI::Mapping(port->pix), setup, text, byteCount, box,
-                               clipped != 0, height, spans, spanCount, pen);
+                               clipped != 0, height, NULL, 0, pen);
     port->pnLoc.h = pen.h;
     port->pnDeviceOffset = pen.deviceOffset;
     return wrapped;
@@ -212,21 +211,13 @@ static int DrawTextCore(const void *text, uint32_t byteCount, Rect *box, char cl
 // FUNCTION: EVNOVA 0x004bc760
 void DrawTextRun(const void *text, uint32_t byteCount, Rect *box, char clipped, int height)
 {
-    DrawTextCore(text, byteCount, box, clipped, height, NULL, 0, 1);
+    DrawTextCore(text, byteCount, box, clipped, height, 1);
 }
 
-/* DrawTextRun wrapped into `box', scrolled up by `scroll' rows, with the bytes of each span (sorted, not
-   overlapping) in its colour and the rest in the foreground colour. Returns the height of all lines. */
-int DrawTextSpans(const void *text, uint32_t byteCount, Rect *box, int scroll, const TextSpan *spans,
-                  int spanCount)
-{
-    return DrawTextCore(text, byteCount, box, 1, scroll, spans, spanCount, 1);
-}
-
-/* the height DrawTextSpans wraps the text into `box' */
+/* the height of the text wrapped into `box' as the Painter's TextSpans wraps it */
 int MeasureTextSpans(const void *text, uint32_t byteCount, Rect *box)
 {
-    return DrawTextCore(text, byteCount, box, 1, 0, NULL, 0, 0);
+    return DrawTextCore(text, byteCount, box, 1, 0, 0);
 }
 
 // FUNCTION: EVNOVA 0x004bca70

@@ -74,6 +74,7 @@ extern void ScrollMapDisplay(short dh, short dv);
 extern void CueNextHyperRouteDest(void);
 extern void DrawDialog(DialogPtr dlg);
 extern void DrawDialogs(void);                  /* every visible dialog drawn and shown, the first opened first */
+extern void DrawShownDialogs(void);             /* the same, of those shown on the screen before */
 void SetPlunderValues(void);
 void SetupMissionInfoList(void);
 extern void SetupPlayerInfoText(void);

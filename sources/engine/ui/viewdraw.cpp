@@ -1,6 +1,5 @@
 /* viewdraw.cpp -- the space view drawn by the GPU (viewdraw.h). */
 #include <stdlib.h>
-#include <unordered_map>
 #include <vector>
 #include "burger.h"
 #include "game.h"
@@ -24,14 +23,6 @@ std::vector<PlatDraw> overlays;
 std::vector<PlatDraw> interfaceDraws;   /* the interface layer's sprites, in screen pixels over the overlays */
 std::vector<PlatDraw> shownOverlays;    /* overlays + interfaceDraws, as Take hands them over */
 std::vector<PlatDraw> *building = &draws;   /* where NewDraw adds */
-struct OverlayImage {
-    PlatImage *image;
-    int width;
-    int height;
-};
-std::unordered_map<const SWFrameRec *, OverlayImage> overlayImages;
-std::vector<uint16_t> scratchPixels;
-std::vector<uint8_t> scratchAlpha;
 /* A flash covers every frame taken for kFlashMicros from the first: a single frame can be gone before the
    display shows it. Its fill is laid over the draws at Take and lifted again at the next Take. */
 constexpr uint64_t kFlashMicros = 50000;
@@ -394,12 +385,6 @@ void Unlist(const void *gone)
     }
 }
 
-void Forget(PlatImage *image)
-{
-    Unlist(image);
-    PlatImageDestroy(image);
-}
-
 } // namespace
 
 void Install()
@@ -424,51 +409,18 @@ void BeginOverlays()
     overlays.clear();
 }
 
-namespace {
-
-/* the top left width x height of a frame without a target, from its pixels, kept as an image */
-PlatImage *PixelsImage(SWFrameRec *frame, int width, int height)
-{
-    const PixMap &pix = frame->framePort->pix;
-
-    scratchPixels.resize((size_t)width * height);
-    scratchAlpha.assign((size_t)width * height, 1);
-    for (int y = 0; y < height; y++)
-        memcpy(&scratchPixels[(size_t)y * width], Pixel::Row(pix, y), (size_t)width * Pixel::kBytes);
-    OverlayImage &kept = overlayImages[frame];
-    if (kept.image != NULL && (kept.width != width || kept.height != height)) {
-        PlatImageDestroy(kept.image);
-        kept.image = NULL;
-    }
-    if (kept.image != NULL) {
-        PlatImageUpdate(kept.image, scratchPixels.data(), scratchAlpha.data());
-    } else {
-        kept.image = PlatImageCreate(width, height, scratchPixels.data(), scratchAlpha.data());
-        kept.width = width;
-        kept.height = height;
-    }
-    return kept.image;
-}
-
-} // namespace
-
 void Overlay(SWFrameRec *frame, const Rect &place, short level)
 {
     const PixMap &pix = frame->framePort->pix;
-    PlatTarget *target = frame->framePort->target;
     int width = place.right - place.left;
     int height = place.bottom - place.top;
 
-    if (width <= 0 || height <= 0 || width > pix.width || height > pix.height)
+    if (width <= 0 || height <= 0 || width > pix.width || height > pix.height || frame->framePort->target == NULL)
         return;
     PlatDraw d = PlatDrawOf(kPlatDrawImage, kPlatBlendAdd);
-    if (target != NULL) {
-        d.source = target;
-        d.sw = (float)width;
-        d.sh = (float)height;
-    } else if ((d.image = PixelsImage(frame, width, height)) == NULL) {
-        return;
-    }
+    d.source = frame->framePort->target;
+    d.sw = (float)width;
+    d.sh = (float)height;
     Place(d, place);
     d.mod[0] = d.mod[1] = d.mod[2] = Weight((uint32_t)(kLevels - level));
     overlays.push_back(d);
@@ -514,12 +466,6 @@ void FrameGone(SWFrameRec *frame)
         Unlist(sprite);
     if (frame->framePort != NULL && frame->framePort->target != NULL)
         Unlist(frame->framePort->target);
-    auto overlay = overlayImages.find(frame);
-    if (overlay != overlayImages.end()) {
-        if (overlay->second.image != NULL)
-            Forget(overlay->second.image);
-        overlayImages.erase(overlay);
-    }
     UI::Art::FrameGone(frame);
 }
 

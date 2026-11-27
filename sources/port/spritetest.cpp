@@ -2,7 +2,6 @@
    (kScaleTest, mainscreen.cpp):
    scaletest_sprites.raw: game sprites through each draw proc and blend (plain, translucent, tinted, add-over,
    murk), whole and clipped at the frame's edges, and the rect copies, over a fixed background.
-   scaletest_uisprite.raw: UI::DrawSprite on a frame at UI scale 1.875.
    Which sprites were used is logged to spritetest.txt. Each file must stay the same before and after a
    change; build/devtools/scaletest.sh runs it. */
 
@@ -11,8 +10,6 @@
 #include "platform.h"
 #include "player.h"
 #include "render.h"
-#include "uiscale.h"
-#include "uisprite.h"
 
 namespace {
 
@@ -137,8 +134,7 @@ SpritePtr FirstSprite(SpriteRec **sprites, int count)
 }
 
 /* a sprite frame centred on cx, cy, drawn as SpriteWorld draws a sprite: with the sprite being drawn set */
-void DrawCentred(DrawProcPtr proc, SWFrameRec *sprite, SWFrameRec *dst, int cx, int cy, const Blend &blend,
-                 bool throughUI = false)
+void DrawCentred(DrawProcPtr proc, SWFrameRec *sprite, SWFrameRec *dst, int cx, int cy, const Blend &blend)
 {
     if (sprite == NULL)
         return;
@@ -157,10 +153,7 @@ void DrawCentred(DrawProcPtr proc, SWFrameRec *sprite, SWFrameRec *dst, int cx, 
     gTestSprite.tintColor = blend.tintColor;
     SpriteRec *saved = gSWCurrentSpriteBeingDrawn;
     gSWCurrentSpriteBeingDrawn = &gTestSprite;
-    if (throughUI)
-        UI::DrawSprite(proc, sprite, dst, &src, &where);
-    else
-        proc(sprite, dst, &src, &where);
+    proc(sprite, dst, &src, &where);
     gSWCurrentSpriteBeingDrawn = saved;
 }
 
@@ -217,34 +210,6 @@ void DrawRects(SWFrameRec *page, SWFrameRec *stripes)
     BlitPixieRectDrawProc(stripes, page, &src, &dst);
 }
 
-/* the scaled UI sprite path: the sprites whole, clipped at the edges, and with a rollover-like blend */
-void DrawUISprites(SWFrameRec *const *sprites, int spriteCount)
-{
-    constexpr Blend kRollover = { 32, 20, 20, 20, 0, 0 };
-    SWFrameRec *frame = NULL;
-    Rect bounds;
-
-    SetRect(&bounds, 0, 0, 200, 120);
-    if (SWCreateFrame(GetGDevice(), &frame, &bounds, 16, 1) != 0 || frame == NULL)
-        return;
-    UI::ScalePortPixels(frame->framePort, 1.875);
-    SWInitializeFrame(frame);
-    SWLockFrame(frame);
-    FillBackground(frame);
-    for (int s = 0; s < spriteCount; s++) {
-        int cx = 30 + s * 50;
-        DrawCentred(BlitPixieRLEDrawProc, sprites[s], frame, cx, 30, kBlends[0], true);
-        DrawCentred(BlitPixieRLETranslucentDrawProc, sprites[s], frame, cx, 85, s % 2 ? kRollover : kBlends[2],
-                    true);
-    }
-    DrawCentred(BlitPixieRLEDrawProc, sprites[0], frame, 0, 60, kBlends[0], true);
-    DrawCentred(BlitPixieRLETranslucentDrawProc, sprites[0], frame, 200, 60, kRollover, true);
-    DrawCentred(BlitPixieRLEDrawProc, sprites[0], frame, 100, 0, kBlends[0], true);
-    DrawCentred(BlitPixieRLEDrawProc, sprites[0], frame, 100, 120, kBlends[0], true);
-    WriteFrame("scaletest_uisprite.raw", frame);
-    SWDisposeFrame(&frame);
-}
-
 } // namespace
 
 void DebugSpriteTest(void)
@@ -274,8 +239,6 @@ void DebugSpriteTest(void)
             DrawSprites(page, sprites, count);
         DrawRects(page, stripes);
         WriteFrame("scaletest_sprites.raw", page);
-        if (count > 0)
-            DrawUISprites(sprites, count);
     }
     for (SWFrameRec *frame : { page, stripes }) {
         if (frame != NULL)

@@ -27,7 +27,7 @@ static ScrollingText DialogText()
 static void PaintIntroBlack()
 {
     UI::Painter(UI::Surface::Load()).Fill(loadPort.bounds, UI::kBlack);
-    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+    BlackScreen();
 }
 
 /*

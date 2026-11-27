@@ -1,5 +1,5 @@
 /* scaletest.cpp -- a test page for the drawing code: every kind of drawing the UI uses (rects, lines, ovals,
-   text, pictures, icons, patterns, copy modes, masks) on one fixed 640 x 480 page, drawn at UI scale 1 into
+   text, pictures, icons, copy modes, masks) on one fixed 640 x 480 page, drawn at UI scale 1 into
    scaletest.raw and at the other test scales into scaletest_<scale>.raw, shown before the main screen when
    kScaleTest (mainscreen.cpp) is 1. The text checks are logged to scaletest.txt. Scale 1 must give the same
    file before and after a change; build/devtools/scaletest.sh runs it. */
@@ -20,7 +20,6 @@ constexpr double kTestScales[] = { 1.25, 1.875, 2.0, 1.0 };     /* 1 last: that 
 constexpr short kPictBig = 133;             /* "new key background", a large picture */
 constexpr short kPictArrow = 134;           /* "Up arrow", a tiny one */
 constexpr short kIconMapArrow = 15000;      /* a cicn: drawn with srcOr */
-constexpr short kPatternStatic = 128;       /* the radar static ppat */
 
 constexpr short kModeAddOver = 0x22;
 constexpr short kModeAdMax = 0x25;
@@ -277,13 +276,12 @@ void DrawCaretRow(GWorldContainer *page, short left, short top, short size, cons
                 end - map.X(left), penEnd - map.X(left), ink - map.X(left), gap, ok ? "" : "  FAIL");
 }
 
-/* pictures at their size and stretched, a cicn, a tiled pattern */
+/* pictures at their size and stretched, a cicn */
 void DrawPictures()
 {
     PicHandle big = GetPicture(kPictBig);
     PicHandle arrow = GetPicture(kPictArrow);
     Image_t *icon = GetCIcon(kIconMapArrow);
-    Image_t *pattern = GetPixPat(kPatternStatic);
     Rect r;
 
     if (big != NULL) {
@@ -305,10 +303,6 @@ void DrawPictures()
         QDGetCIconBounds(icon, &r);
         OffsetRect(&r, 520 - r.left, 170 - r.top);
         nv_BlitImageOr(&r, icon);
-    }
-    if (pattern != NULL) {
-        SetRect(&r, 450, 210, 630, 260);
-        FillCRect(&r, pattern);
     }
 }
 

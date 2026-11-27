@@ -164,7 +164,7 @@ extern Boolean mBarHidden;
 extern Rect mainWindRect;
 extern GWorldContainer *MenuArt(void);
 extern void ShowMenuArt(const Rect &area, bool onlyChanged = false);
-extern void ShowLoadPage(void);
+extern void BlackScreen(void);              /* the whole screen black: the scene until another */
 extern void SetupMonitor(void);
 extern void ApplyUIScale(void);
 extern void ApplyDisplaySettings(void);

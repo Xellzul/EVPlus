@@ -1,5 +1,4 @@
-/* painter.cpp -- UI::Painter over the port's QuickDraw: each call sets the port, colour, font and pen it needs.
-   A port with a GPU target is drawn through its Canvas instead. */
+/* painter.cpp -- UI::Painter through the port's GPU canvas; a port of pixels alone takes fills, pictures, copies */
 #include "painter.h"
 
 #include <vector>
@@ -12,7 +11,6 @@
 #include "spriteworld.h"
 #include "textlayout.h"
 #include "uiscale.h"
-#include "uisprite.h"
 
 namespace UI {
 
@@ -67,46 +65,31 @@ FontChoice Resolve(Style style, short face)
 /* the port of the list List or ListSelect is drawing */
 CGrafPtr listPort;
 
-int TransferMode(Blit mode)
+/* the port has pixels to draw on: one without a GPU target */
+bool OnPixels(CGrafPtr port)
 {
-    switch (mode) {
-    case Blit::Copy:
-        break;
-    case Blit::AddOver:
-        return 34;
-    case Blit::AdMax:
-        return 37;
-    }
-    return 0;
+    return port->pix.baseAddr != NULL;
 }
 
-std::vector<unsigned short> sourcePixels;   /* a source's and a mask's GPU targets read back for a CPU copy */
-std::vector<unsigned short> maskPixels;
-
-/* the pixels a copy onto a port's pixels reads: the port's own or, with a GPU target, the target's read back */
-const PixMap *CopySource(CGrafPtr port, PixMap &read, std::vector<unsigned short> &pixels)
+/* a drawing the pixels of a port without a GPU target do not take */
+void NotDrawn()
 {
     static int said;
 
-    if (port->target == NULL)
-        return &port->pix;
-    if (Canvas::ReadBack(port, read, pixels))
-        return &read;
-    PlatDebugLogOnce(&said, "painter: a GPU target could not be read back, the copy is not drawn");
-    return NULL;
+    PlatDebugLogOnce(&said, "painter: only fills, pictures and plain copies are drawn on a port without a GPU target");
 }
 
 } // namespace
 
 /* -- Surface -- */
 
-Surface::Surface(const GWorldContainer &world) : port(world.world), frame(nullptr) {}
+Surface::Surface(const GWorldContainer &world) : port(world.world) {}
 
-Surface::Surface(SWFrameRec *frame) : port(frame != nullptr ? frame->framePort : nullptr), frame(frame) {}
+Surface::Surface(SWFrameRec *frame) : port(frame != nullptr ? frame->framePort : nullptr) {}
 
 Surface Surface::Screen()
 {
-    return Surface(gWind != NULL ? GetCWindowGrafPort(gWind) : nullptr, nullptr);
+    return Surface(gWind != NULL ? GetCWindowGrafPort(gWind) : nullptr);
 }
 
 Surface Surface::Load()
@@ -117,7 +100,7 @@ Surface Surface::Load()
 // FUNCTION: EVNOVA 0x004d17a0
 Surface Surface::Dialog(DialogPtr dlg)
 {
-    return Surface(dlg != NULL ? GetDialogPort(dlg) : nullptr, nullptr);
+    return Surface(dlg != NULL ? GetDialogPort(dlg) : nullptr);
 }
 
 void Surface::Prepare() const
@@ -138,7 +121,7 @@ void Surface::Prepare() const
 
 /* -- Painter -- */
 
-Painter::Painter(const Surface &target) : port(target.port), frame(target.frame), canvas(Canvas::Open(target.port))
+Painter::Painter(const Surface &target) : port(target.port), canvas(Canvas::Open(target.port))
 {
     GetPort(&previous);
     pen.h = pen.v = 0;
@@ -202,6 +185,8 @@ void Painter::Fill(const Rect &r, const RGBColor &colour)
         canvas->Fill(r, colour);
         return;
     }
+    if (!OnPixels(port))
+        return;
     Ink(colour);
     PaintRect(&box);
 }
@@ -212,75 +197,44 @@ void Painter::Clear(const Rect &r)
         canvas->Clear(r);
 }
 
-void Painter::Frame(const Rect &r, const RGBColor &colour)
+bool Painter::Drawn()
 {
     if (!Bind())
-        return;
-    if (canvas != nullptr) {
+        return false;
+    if (canvas != nullptr)
+        return true;
+    NotDrawn();
+    return false;
+}
+
+void Painter::Frame(const Rect &r, const RGBColor &colour)
+{
+    if (Drawn())
         canvas->Frame(r, colour);
-        return;
-    }
-    Ink(colour);
-    FrameRect(&r);
 }
 
 void Painter::Line(short h0, short v0, short h1, short v1, const RGBColor &colour, short width)
 {
-    if (!Bind())
-        return;
-    if (canvas != nullptr) {
+    if (Drawn())
         canvas->Line(h0, v0, h1, v1, colour, width);
-        return;
-    }
-    Point saved = port->pnSize;
-    Ink(colour);
-    PenSize(width, width);
-    MoveTo(h0, v0);
-    LineTo(h1, v1);
-    PenSize(saved.h, saved.v);
 }
 
 void Painter::Oval(const Rect &r, const RGBColor &colour, short width)
 {
-    Rect box = r;
-
-    if (!Bind())
-        return;
-    if (canvas != nullptr) {
+    if (Drawn())
         canvas->Oval(r, colour, width);
-        return;
-    }
-    Point saved = port->pnSize;
-    Ink(colour);
-    PenSize(width, width);
-    ::FrameOval(&box);
-    PenSize(saved.h, saved.v);
 }
 
 void Painter::FillOval(const Rect &r, const RGBColor &colour)
 {
-    Rect box = r;
-
-    if (!Bind())
-        return;
-    if (canvas != nullptr) {
+    if (Drawn())
         canvas->Oval(r, colour, -1);
-        return;
-    }
-    Ink(colour);
-    PaintOval(&box);
 }
 
 void Painter::Pattern(const Rect &r, PixPatHandle pattern)
 {
-    Rect box = r;
-
-    if (!Bind())
-        return;
-    if (canvas != nullptr)
+    if (Drawn())
         canvas->Pattern(r, pattern);
-    else
-        FillCRect(&box, pattern);
 }
 
 /* -- pictures and copies -- */
@@ -293,20 +247,14 @@ void Painter::Picture(PicHandle pic, const Rect &dst)
         return;
     if (canvas != nullptr)
         canvas->Picture(pic, dst);
-    else
+    else if (OnPixels(port))
         DrawPicHandle(pic, &box);
 }
 
 void Painter::Icon(CIconHandle icon, const Rect &dst)
 {
-    Rect box = dst;
-
-    if (!Bind())
-        return;
-    if (canvas != nullptr)
+    if (Drawn())
         canvas->Icon(icon, dst);
-    else
-        nv_BlitImageOr(&box, icon);
 }
 
 void Painter::Copy(const Surface &from, const Rect &src, const Rect &dst, Blit mode)
@@ -317,42 +265,24 @@ void Painter::Copy(const Surface &from, const Rect &src, const Rect &dst, Blit m
         canvas->Copy(from.port, src, dst, mode);
         return;
     }
-    PixMap read;
-    const PixMap *source = CopySource(from.port, read, sourcePixels);
-    if (source != NULL)
-        CopyBits((BitMapPtr)source, GetPortBitMapForCopyBits(port), &src, &dst, TransferMode(mode), NULL);
+    if (mode != Blit::Copy || from.port->target != NULL || !OnPixels(from.port) || !OnPixels(port)) {
+        NotDrawn();
+        return;
+    }
+    CopyBits(GetPortBitMapForCopyBits(from.port), GetPortBitMapForCopyBits(port), &src, &dst, 0, NULL);
 }
 
 void Painter::CopyMasked(const Surface &from, const Surface &mask, const Rect &src, const Rect &maskRect,
                          const Rect &dst)
 {
-    Rect srcBox = src;
-    Rect maskBox = maskRect;
-    Rect dstBox = dst;
-
-    if (port == nullptr || from.port == nullptr || mask.port == nullptr)
-        return;
-    if (canvas != nullptr) {
+    if (from.port != nullptr && mask.port != nullptr && Drawn())
         canvas->CopyMasked(from.port, mask.port, src, maskRect, dst);
-        return;
-    }
-    PixMap read;
-    PixMap readMask;
-    const PixMap *source = CopySource(from.port, read, sourcePixels);
-    const PixMap *through = CopySource(mask.port, readMask, maskPixels);
-    if (source != NULL && through != NULL)
-        CopyMask((BitMapPtr)source, (BitMapPtr)through, GetPortBitMapForCopyBits(port), &srcBox, &maskBox, &dstBox);
 }
 
 void Painter::Sprite(DrawProcPtr draw, SWFrameRec *sprite, const Rect &src, const Rect &dst)
 {
-    Rect srcBox = src;
-    Rect dstBox = dst;
-
-    if (canvas != nullptr)
+    if (Drawn())
         canvas->Sprite(draw, sprite, src, dst);
-    else if (frame != nullptr)
-        DrawSprite(draw, sprite, frame, &srcBox, &dstBox);
 }
 
 void Painter::OwnPixels()
@@ -361,8 +291,7 @@ void Painter::OwnPixels()
         canvas->OwnPixels();
 }
 
-Painter::Composition::Composition(Painter &painter, const Rect &area)
-    : art(painter.canvas == nullptr ? painter.port : nullptr, area), canvas(painter.canvas), began(false)
+Painter::Composition::Composition(Painter &painter, const Rect &area) : canvas(painter.canvas), began(false)
 {
     if (canvas != nullptr)
         began = canvas->BeginComposition(area);
@@ -402,14 +331,11 @@ int Painter::CanvasWrapped(const Rect &box, const void *text, uint32_t length, c
 
 short Painter::Text(short h, short v, const std::string &text, const TextSpec &spec)
 {
-    if (!Bind())
+    if (!Drawn())
         return h;
     Apply(spec);
     MoveTo(h, v);
-    if (canvas != nullptr)
-        CanvasText(text, spec.colour);
-    else
-        DrawTextRun(text.data(), (uint32_t)text.size(), NULL, 0, 0);
+    CanvasText(text, spec.colour);
     KeepPen();
     return pen.h;
 }
@@ -418,15 +344,12 @@ short Painter::Text(short h, short v, const std::string &text, const TextSpec &s
 // MAC: _DrawIndString i386 0x00072fd8 ppc 0x0007be50
 short Painter::Text(const std::string &text, const TextSpec &spec)
 {
-    if (!penSet || !Bind())
+    if (!penSet || !Drawn())
         return pen.h;
     Apply(spec);
     port->pnLoc = pen;
     port->pnDeviceOffset = penOffset;
-    if (canvas != nullptr)
-        CanvasText(text, spec.colour);
-    else
-        DrawTextRun(text.data(), (uint32_t)text.size(), NULL, 0, 0);
+    CanvasText(text, spec.colour);
     KeepPen();
     return pen.h;
 }
@@ -444,7 +367,7 @@ short Painter::Text(short left, short right, short v, const std::string &text, c
 {
     short h = left;
 
-    if (!Bind())
+    if (!Drawn())
         return h;
     Apply(spec);
     if (align == Align::Center)
@@ -452,10 +375,7 @@ short Painter::Text(short left, short right, short v, const std::string &text, c
     else
         h = (short)(right - MeasureCString(text.c_str()));
     MoveTo(h, v);
-    if (canvas != nullptr)
-        CanvasText(text, spec.colour);
-    else
-        DrawTextRun(text.data(), (uint32_t)text.size(), NULL, 0, 0);
+    CanvasText(text, spec.colour);
     KeepPen();
     return pen.h;
 }
@@ -463,33 +383,20 @@ short Painter::Text(short left, short right, short v, const std::string &text, c
 void Painter::TextBox(const Rect &box, const void *text, int32_t length, const TextSpec &spec,
                       const RGBColor &background)
 {
-    Rect r = box;
-
-    if (!Bind())
+    if (!Drawn())
         return;
     Apply(spec);
-    if (canvas != nullptr) {
-        canvas->Fill(r, background);
-        CanvasWrapped(r, text, (uint32_t)length, spec.colour, 0, NULL, 0);
-        return;
-    }
-    RGBColor savedBack = port->backColor;
-    BackColor(&background);
-    TETextBox(text, length, &r, 0);
-    BackColor(&savedBack);
+    canvas->Fill(box, background);
+    CanvasWrapped(box, text, (uint32_t)length, spec.colour, 0, NULL, 0);
 }
 
 int Painter::TextSpans(const Rect &box, const void *text, uint32_t length, const TextSpec &spec, int scroll,
                        const TextSpan *spans, int spanCount)
 {
-    Rect r = box;
-
-    if (!Bind())
+    if (!Drawn())
         return 0;
     Apply(spec);
-    if (canvas != nullptr)
-        return CanvasWrapped(r, text, length, spec.colour, scroll, spans, spanCount);
-    return DrawTextSpans(text, length, &r, scroll, spans, spanCount);
+    return CanvasWrapped(box, text, length, spec.colour, scroll, spans, spanCount);
 }
 
 short Painter::Measure(const std::string &text, Style style)
@@ -594,7 +501,7 @@ void Painter::ListSelect(ScrollRec **list, bool on, Point cell, Style style)
 
 Surface Painter::ListSurface()
 {
-    return Surface(listPort, nullptr);
+    return Surface(listPort);
 }
 
 } // namespace UI

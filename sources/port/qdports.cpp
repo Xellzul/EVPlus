@@ -123,6 +123,18 @@ short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
     return 0;
 }
 
+/* its pixels freed, its depth 0: no QuickDraw call draws on it; its size and bounds stay */
+void DropPortPixels(CGrafPtr port)
+{
+    if (port == NULL || port->offscreen == 0)
+        return;
+    free(port->pixels);
+    port->pixels = NULL;
+    port->pix.baseAddr = NULL;
+    port->pix.rowBytes = 0;
+    port->pix.pixelSize = 0;
+}
+
 void (*gPortGone)(CGrafPtr port);
 
 // FUNCTION: EVNOVA 0x004bba00

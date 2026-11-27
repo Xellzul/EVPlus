@@ -1,7 +1,7 @@
-/* gputest.cpp -- EVPLUS_GPUTEST: every Painter drawing, a dialog and the overlays, on pixels and on a GPU target,
-   compared (gputest.txt) */
+/* gputest.cpp -- EVPLUS_GPUTEST: Painter drawings, a dialog and the overlays on GPU targets vs. a reference */
 
 #include <math.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include "canvas.h"
@@ -49,6 +49,7 @@ struct Item {
 
 std::vector<Item> items;
 bool recording;
+char refFolder[kPlatPathMax];           /* EVPLUS_GPUTEST_REF: 16-bit drawings, a renderer's GPU ones in its folder */
 
 void Mark(const char *name, char kind, short left, short top, short right, short bottom)
 {
@@ -134,10 +135,12 @@ void DrawSources(const Sources &sources)
         }
     }
     {
+        /* a mask as a decoded picture's pixels: its oval painted by QuickDraw */
         UI::Painter p(sources.mask.Surface());
         p.Fill(all, UI::kWhite);
         SetRect(&band, 10, 10, 110, 50);
-        p.FillOval(band, UI::kBlack);
+        RGBForeColor(&UI::kBlack);
+        PaintOval(&band);
         SetRect(&band, 0, 0, 30, 30);
         p.Fill(band, UI::kBlack);
     }
@@ -691,6 +694,89 @@ void WriteRaw(const char *kind, double scale, int width, int height, const void 
     fclose(file);
 }
 
+/* a raw file of the reference, width x height pixels of `bytes'; false = none of that size */
+bool ReadRaw(const char *kind, double scale, bool ofRenderer, int width, int height, size_t bytes,
+             std::vector<unsigned char> &out)
+{
+    char name[kPlatPathMax];
+    int32_t size[2] = { 0, 0 };
+
+    if (ofRenderer)
+        snprintf(name, sizeof(name), "%s/%s/gputest_%g_%s.raw", refFolder, PlatRendererName(), scale, kind);
+    else
+        snprintf(name, sizeof(name), "%s/gputest_%g_%s.raw", refFolder, scale, kind);
+    FILE *file = PlatFileOpen(name, "rb");
+    if (file == NULL)
+        return false;
+    out.resize((size_t)width * height * bytes);
+    bool got = fread(size, sizeof(size), 1, file) == 1 && size[0] == width && size[1] == height
+               && fread(out.data(), 1, out.size(), file) == out.size();
+    fclose(file);
+    return got;
+}
+
+/* the reference's CPU drawing of a port's size, as that port's pixel map over it */
+bool ReadCpu(const char *kind, double scale, const PixMap &like, PixMap &cpu, std::vector<unsigned char> &pixels)
+{
+    if (!ReadRaw(kind, scale, false, like.width, like.height, 2, pixels))
+        return false;
+    cpu = like;
+    cpu.pixelSize = 16;
+    cpu.baseAddr = pixels.data();
+    cpu.rowBytes = like.width * 2;
+    return true;
+}
+
+/* an item's device pixels against the reference's GPU drawing: equal to the byte */
+void CompareGpu(FILE *log, double scale, const char *pass, const Item &item, const PixMap &like,
+                const std::vector<uint32_t> &gpu, const std::vector<unsigned char> &ref, int *bad)
+{
+    Rect d = UI::Mapping(like).DeviceRect(item.r);
+    const uint32_t *was = (const uint32_t *)ref.data();
+    int differ = 0;
+
+    for (int y = std::max((int)d.top, 0); y < d.bottom && y < like.height; y++)
+        for (int x = std::max((int)d.left, 0); x < d.right && x < like.width; x++)
+            differ += gpu[(size_t)y * like.width + x] != was[(size_t)y * like.width + x] ? 1 : 0;
+    if (differ != 0)
+        (*bad)++;
+    if (log != NULL && differ != 0)
+        fprintf(log, "scale %-5g%s %-31s %6d px differ from the reference GPU drawing  MISMATCH\n", scale, pass,
+                item.name, differ);
+}
+
+/* the GPU's drawing of `kind' against both of the reference's; written to the game folder, as a new one's */
+void CompareAll(FILE *log, double scale, const char *pass, int slack, const char *kind, const Item *list, size_t count,
+                const PixMap &like, const std::vector<uint32_t> &gpu, int *bad)
+{
+    std::vector<unsigned char> cpuPixels;
+    std::vector<unsigned char> gpuRef;
+    std::string gpuKind = std::string(kind) + "gpu";
+    std::string cpuKind = std::string(kind) + "cpu";
+    PixMap cpu;
+
+    if (!ReadCpu(cpuKind.c_str(), scale, like, cpu, cpuPixels)) {
+        (*bad)++;
+        if (log != NULL)
+            fprintf(log, "scale %g%s: no reference CPU drawing %s  MISMATCH\n", scale, pass, cpuKind.c_str());
+    } else {
+        for (size_t i = 0; i < count; i++)
+            Compare(log, scale, pass, slack, list[i], cpu, gpu, bad);
+    }
+    if (slack != 0)
+        return;
+    if (!ReadRaw(gpuKind.c_str(), scale, true, like.width, like.height, 4, gpuRef)) {
+        (*bad)++;
+        if (log != NULL)
+            fprintf(log, "scale %g%s: no reference GPU drawing %s for %s  MISMATCH\n", scale, pass, gpuKind.c_str(),
+                    PlatRendererName());
+    } else {
+        for (size_t i = 0; i < count; i++)
+            CompareGpu(log, scale, pass, list[i], like, gpu, gpuRef, bad);
+    }
+    WriteRaw(gpuKind.c_str(), scale, like.width, like.height, gpu.data(), (size_t)like.width * 4, 4);
+}
+
 bool MakeSources(Sources &sources, double scale, bool gpu)
 {
     return sources.gradient.Make(120, 60, scale, gpu) && sources.piece.Make(120, 60, 1.0, false)
@@ -705,28 +791,23 @@ void DropSources(Sources &sources)
         each->Drop();
 }
 
-/* One scale's pages drawn and compared. With a brightness the GPU page is drawn under it: one of its pixels is
-   checked as shown, and the page compared as read back with the brightness taken out again. */
+/* one scale's page on a GPU target vs. the reference; under a brightness, read back without it, with a slack */
 void RunScale(FILE *log, double scale, double brightness, const TestArt &art, int *bad)
 {
-    TestPort cpu;
     TestPort gpu;
-    Sources cpuSources;
-    Sources gpuSources;
+    Sources sources;
     bool bright = brightness != 1.0;
 
     if (bright)
         PlatVideoSetBrightness(brightness);
-    if (cpu.Make(kPageWidth, kPageHeight, scale, false) && gpu.Make(kPageWidth, kPageHeight, scale, true)
-            && MakeSources(cpuSources, scale, false) && MakeSources(gpuSources, scale, true)) {
-        const PixMap &pix = cpu.frame->framePort->pix;
+    if (gpu.Make(kPageWidth, kPageHeight, scale, true) && MakeSources(sources, scale, true)) {
+        const PixMap &pix = gpu.frame->framePort->pix;
         std::vector<uint32_t> read((size_t)pix.width * pix.height);
         bool got;
 
         recording = items.empty();
-        DrawPage(cpu, cpuSources, art);
+        DrawPage(gpu, sources, art);
         recording = false;
-        DrawPage(gpu, gpuSources, art);
         got = gpu.Read(read.data());
         if (got && bright) {
             /* the third of the fills, 0x12 0x56 0xff, as it is shown */
@@ -741,22 +822,15 @@ void RunScale(FILE *log, double scale, double brightness, const TestArt &art, in
                         want, abs(green - want) > 1 ? "  MISMATCH" : "");
             got = PlatTargetReadDrawn(gpu.frame->framePort->target, NULL, read.data()) != 0;
         }
-        if (got) {
-            for (const Item &item : items)
-                Compare(log, scale, bright ? " bright" : "", bright ? kBrightSlack : 0, item, pix, read, bad);
-            if (!bright) {
-                WriteRaw("cpu", scale, pix.width, pix.height, pix.baseAddr, pix.rowBytes, 2);
-                WriteRaw("gpu", scale, pix.width, pix.height, read.data(), (size_t)pix.width * 4, 4);
-            }
-        } else if (log != NULL) {
+        if (got)
+            CompareAll(log, scale, bright ? " bright" : "", bright ? kBrightSlack : 0, "", items.data(), items.size(),
+                       pix, read, bad);
+        else if (log != NULL)
             fprintf(log, "scale %g: the target could not be read\n", scale);
-        }
     } else if (log != NULL) {
         fprintf(log, "scale %g: no pages\n", scale);
     }
-    DropSources(cpuSources);
-    DropSources(gpuSources);
-    cpu.Drop();
+    DropSources(sources);
     gpu.Drop();
     if (bright)
         ApplyBrightness();
@@ -844,97 +918,6 @@ void CheckCopies(FILE *log, int *bad)
         fprintf(log, "copies: %d checks, %d failed\n", checks, failed);
     *bad += failed;
     from.Drop();
-    to.Drop();
-}
-
-/* Copies from GPU targets onto a port's pixels: each target read back as drawn, at its own scale, and a mask's
-   black half copied through; at the default brightness and another. Looked at away from where a stretch blends. */
-void CheckReadBack(FILE *log, int *bad)
-{
-    TestPort from;
-    TestPort flat;
-    TestPort mask;
-    TestPort to;
-    const unsigned short kRed = Pixel::Pack(31, 0, 0);
-    const unsigned short kBlue = Pixel::Pack(0, 0, 31);
-    int failed = 0;
-    int checks = 0;
-    Rect r;
-    Rect part;
-
-    if (!from.Make(16, 16, 2.0, true) || !flat.Make(16, 16, 1.0, true) || !mask.Make(16, 16, 1.0, true)
-            || !to.Make(96, 32, 1.0, false)) {
-        if (log != NULL)
-            fprintf(log, "read back: no ports\n");
-        (*bad)++;
-        from.Drop();
-        flat.Drop();
-        mask.Drop();
-        to.Drop();
-        return;
-    }
-    for (const TestPort *each : { &from, &flat }) {
-        UI::Painter p(each->Surface());
-        SetRect(&r, 0, 0, 8, 16);
-        p.Fill(r, Colour(0xffff, 0, 0));
-        SetRect(&r, 8, 0, 16, 16);
-        p.Fill(r, Colour(0, 0, 0xffff));
-    }
-    {
-        UI::Painter p(mask.Surface());
-        SetRect(&r, 0, 0, 16, 16);
-        p.Fill(r, UI::kWhite);
-        SetRect(&r, 0, 0, 16, 8);
-        p.Fill(r, UI::kBlack);
-    }
-    const PixMap &pix = to.frame->framePort->pix;
-    auto expect = [&](const char *what, double brightness, int x, int y, unsigned short want) {
-        unsigned short got = Pixel::Row(pix, y)[x];
-        checks++;
-        if (got == want)
-            return;
-        failed++;
-        if (log != NULL)
-            fprintf(log, "read back, brightness %g: %s at %d,%d is %04x, not %04x\n", brightness, what, x, y, got,
-                    want);
-    };
-    for (double brightness : { 1.0, kTestBrightness }) {
-        if (brightness != 1.0)
-            PlatVideoSetBrightness(brightness);
-        {
-            UI::Painter p(to.Surface());
-            SetRect(&r, 0, 0, 96, 32);
-            p.Fill(r, UI::kBlack);
-            SetRect(&part, 0, 0, 16, 16);
-            SetRect(&r, 0, 0, 16, 16);
-            p.Copy(from.Surface(), part, r);                        /* a target at twice the scale */
-            SetRect(&r, 20, 0, 52, 32);
-            p.Copy(flat.Surface(), part, r);                        /* stretched */
-            SetRect(&r, 60, 0, 76, 16);
-            p.CopyMasked(flat.Surface(), mask.Surface(), part, part, r);
-        }
-        if (brightness != 1.0)
-            ApplyBrightness();
-        for (int y = 2; y < 14; y += 5) {
-            expect("a target at twice the scale, left", brightness, 2, y, kRed);
-            expect("a target at twice the scale, right", brightness, 13, y, kBlue);
-        }
-        for (int y = 4; y < 28; y += 7) {
-            expect("a stretched target, left", brightness, 24, y, kRed);
-            expect("a stretched target, right", brightness, 47, y, kBlue);
-        }
-        expect("through a mask, left", brightness, 62, 2, kRed);
-        expect("through a mask, right", brightness, 73, 5, kBlue);
-        expect("outside a mask", brightness, 62, 10, 0);
-        expect("outside a mask", brightness, 73, 13, 0);
-        expect("beside the copies", brightness, 18, 8, 0);
-    }
-    if (log != NULL)
-        fprintf(log, "read back: %d checks, %d failed\n", checks, failed);
-    *bad += failed;
-    from.Drop();
-    flat.Drop();
-    mask.Drop();
     to.Drop();
 }
 
@@ -1053,8 +1036,8 @@ void DropTestDialog(TestDialog &test)
     test = TestDialog();
 }
 
-/* the dialog with its port at the scale, drawn through a GPU canvas or, without one, on its pixels */
-bool MakeTestDialog(TestDialog &test, double scale, bool gpu)
+/* the dialog with its port at the scale, drawn through its GPU canvas */
+bool MakeTestDialog(TestDialog &test, double scale)
 {
     Handle item;
     Rect box;
@@ -1064,15 +1047,13 @@ bool MakeTestDialog(TestDialog &test, double scale, bool gpu)
 
     test.dlg = NewDialogFromItems(kDialogWidth, kDialogHeight, kDialogSpecs,
                                   (short)(sizeof(kDialogSpecs) / sizeof(kDialogSpecs[0])), TestDialogUpdate, NULL);
-    if (test.dlg == NULL || !test.load.Make(kDialogWidth, kDialogHeight, scale, gpu)) {
+    if (test.dlg == NULL || !test.load.Make(kDialogWidth, kDialogHeight, scale, true)) {
         DropTestDialog(test);
         return false;
     }
     CGrafPtr port = GetDialogPort(test.dlg);
     UI::ScalePortPixels(port, scale);
-    if (!gpu) {
-        UI::Canvas::DropTarget(port);
-    } else if (!UI::Canvas::MakeTarget(port)) {
+    if (!UI::Canvas::MakeTarget(port)) {
         DropTestDialog(test);
         return false;
     }
@@ -1105,69 +1086,60 @@ void DrawTestDialog(TestDialog &test)
     gDrawnDialog = NULL;
 }
 
-/* One scale's dialog drawn on a canvas and on pixels and compared. The canvas is opaque all over, and at the
-   screen's own scale the screen holds the dialog as its canvas does. */
+/* one scale's dialog canvas vs. the reference: opaque, and at the screen's scale the same as the screen */
 void RunDialog(FILE *log, double scale, int *bad)
 {
-    TestDialog gpu;
-    TestDialog cpu;
+    TestDialog test;
 
-    if (MakeTestDialog(gpu, scale, true)) {
-        CGrafPtr port = GetDialogPort(gpu.dlg);
-        int width = port->pix.width;
-        int height = port->pix.height;
-        std::vector<uint32_t> read((size_t)width * height);
-        std::vector<uint32_t> shown;
-        Rect place = UI::Mapping(gGamePort.pix).DeviceRect(gpu.dlg->bounds);
-        PlatRect onScreen = { place.left, place.top, place.right - place.left, place.bottom - place.top };
-        bool sameScale = onScreen.w == width && onScreen.h == height;
-        int clear = 0;
-        int moved = 0;
-
-        DrawTestDialog(gpu);
-        UI::Canvas::FlushAll();
-        bool got = PlatTargetRead(port->target, NULL, read.data()) != 0;
-        if (got && sameScale) {
-            shown.resize(read.size());
-            got = PlatTargetRead(gGamePort.target, &onScreen, shown.data()) != 0;
-        }
-        DropTestDialog(gpu);
-        if (got && MakeTestDialog(cpu, scale, false)) {
-            DrawTestDialog(cpu);
-            const PixMap &pix = GetDialogPort(cpu.dlg)->pix;
-            for (const Item &item : kDialogItems)
-                Compare(log, scale, " dialog", 0, item, pix, read, bad);
-            WriteRaw("dialog_cpu", scale, width, height, pix.baseAddr, pix.rowBytes, 2);
-            WriteRaw("dialog_gpu", scale, width, height, read.data(), (size_t)width * 4, 4);
-            for (size_t i = 0; i < read.size(); i++) {
-                clear += read[i] >> 24 != 0xff ? 1 : 0;
-                moved += sameScale && shown[i] != read[i] ? 1 : 0;
-            }
-            *bad += (clear != 0 ? 1 : 0) + (moved != 0 ? 1 : 0);
-            if (log != NULL) {
-                fprintf(log, "scale %-5g dialog: %d of %d x %d pixels of its canvas are not opaque%s\n", scale, clear,
-                        width, height, clear != 0 ? "  MISMATCH" : "");
-                if (sameScale)
-                    fprintf(log, "scale %-5g dialog: %d pixels differ between its canvas and the screen%s\n", scale,
-                            moved, moved != 0 ? "  MISMATCH" : "");
-            }
-        } else {
-            (*bad)++;
-            if (log != NULL)
-                fprintf(log, "scale %g dialog: %s\n", scale,
-                        got ? "no dialog on pixels" : "the canvas could not be read");
-        }
-    } else {
+    if (!MakeTestDialog(test, scale)) {
         (*bad)++;
         if (log != NULL)
             fprintf(log, "scale %g dialog: no dialog on a canvas\n", scale);
+        return;
     }
-    DropTestDialog(gpu);
-    DropTestDialog(cpu);
+    CGrafPtr port = GetDialogPort(test.dlg);
+    const PixMap pix = port->pix;
+    std::vector<uint32_t> read((size_t)pix.width * pix.height);
+    std::vector<uint32_t> shown;
+    Rect place = UI::Mapping(gGamePort.pix).DeviceRect(test.dlg->bounds);
+    PlatRect onScreen = { place.left, place.top, place.right - place.left, place.bottom - place.top };
+    bool sameScale = onScreen.w == pix.width && onScreen.h == pix.height;
+    int clear = 0;
+    int moved = 0;
+
+    DrawTestDialog(test);
+    UI::Canvas::FlushAll();
+    bool got = PlatTargetRead(port->target, NULL, read.data()) != 0;
+    if (got && sameScale) {
+        shown.resize(read.size());
+        got = PlatTargetRead(gGamePort.target, &onScreen, shown.data()) != 0;
+    }
+    DropTestDialog(test);
+    if (!got) {
+        (*bad)++;
+        if (log != NULL)
+            fprintf(log, "scale %g dialog: the canvas could not be read\n", scale);
+        return;
+    }
+    /* a dialog's pixels at a scale depend on the screen's: its size names it */
+    std::string kind = "dialog_" + std::to_string(pix.width) + "x" + std::to_string(pix.height) + "_";
+    CompareAll(log, scale, " dialog", 0, kind.c_str(), kDialogItems, sizeof(kDialogItems) / sizeof(kDialogItems[0]),
+               pix, read, bad);
+    for (size_t i = 0; i < read.size(); i++) {
+        clear += read[i] >> 24 != 0xff ? 1 : 0;
+        moved += sameScale && shown[i] != read[i] ? 1 : 0;
+    }
+    *bad += (clear != 0 ? 1 : 0) + (moved != 0 ? 1 : 0);
+    if (log != NULL) {
+        fprintf(log, "scale %-5g dialog: %d of %d x %d pixels of its canvas are not opaque%s\n", scale, clear,
+                pix.width, pix.height, clear != 0 ? "  MISMATCH" : "");
+        if (sameScale)
+            fprintf(log, "scale %-5g dialog: %d pixels differ between its canvas and the screen%s\n", scale, moved,
+                    moved != 0 ? "  MISMATCH" : "");
+    }
 }
 
-/* An overlay frame drawn by the game on its GPU target and on its pixels, compared; its target black again after,
-   as it is made (the game draws a frame again before it shows it). */
+/* an overlay frame as the game draws it vs. the reference; black again after, as it is made */
 void RunOverlay(FILE *log, const char *name, SWFrameRec *frame, void (*draw)(void), int *bad)
 {
     if (frame == NULL || frame->framePort->target == NULL) {
@@ -1184,25 +1156,20 @@ void RunOverlay(FILE *log, const char *name, SWFrameRec *frame, void (*draw)(voi
     draw();
     UI::Canvas::FlushAll();
     bool got = PlatTargetReadDrawn(port->target, NULL, read.data()) != 0;
-    UI::Canvas::DropTarget(port);
-    draw();
-    UI::Canvas::MakeNewTarget(port);
+    UI::Painter(UI::Surface(frame)).Fill(frame->frameRect, UI::kBlack);
     if (!got) {
         (*bad)++;
         if (log != NULL)
             fprintf(log, "overlay %s: the target could not be read\n", name);
         return;
     }
-    double scale = UI::Mapping(pix).ScaleX();
     border.bottom = border.top + 1;
-    Compare(log, scale, " overlay", 0, { name, kText, frame->frameRect }, pix, read, bad);
-    Compare(log, scale, " overlay", 0, { "  its top row", kSame, border }, pix, read, bad);
-    std::string kind = std::string("overlay_") + name;
-    WriteRaw((kind + "_cpu").c_str(), scale, pix.width, pix.height, pix.baseAddr, pix.rowBytes, 2);
-    WriteRaw((kind + "_gpu").c_str(), scale, pix.width, pix.height, read.data(), (size_t)pix.width * 4, 4);
+    const Item checks[] = { { name, kText, frame->frameRect }, { "  its top row", kSame, border } };
+    std::string kind = std::string("overlay_") + name + "_";
+    CompareAll(log, UI::Mapping(pix).ScaleX(), " overlay", 0, kind.c_str(), checks, 2, pix, read, bad);
 }
 
-/* the comm line, escort menu and floating map, each on its target and on pixels; the game's state put back */
+/* the comm line, escort menu and floating map, each on its target; the game's state put back */
 void RunOverlays(FILE *log, int *bad)
 {
     short count = commCount;
@@ -1228,6 +1195,8 @@ void DebugGpuTest(void)
 
     if (PlatEnv("EVPLUS_GPUTEST", asked, sizeof asked) == 0)
         return;
+    if (PlatEnv("EVPLUS_GPUTEST_REF", refFolder, sizeof refFolder) == 0)
+        snprintf(refFolder, sizeof refFolder, "gputest-ref");
     FILE *log = PlatFileOpen("gputest.txt", "wb");
     TestArt art = { GetPicture(kPictBig), GetPicture(kPictArrow), NULL, GetCIcon(kIconMapArrow),
                     GetPixPat(kPatternStatic), SpriteFrame(masterShipSprite[0], 9), SpriteFrame(masterStarSprite, 0) };
@@ -1254,7 +1223,6 @@ void DebugGpuTest(void)
         RunScale(log, scale, 1.0, art, &bad);
     RunScale(log, 1.0, kTestBrightness, art, &bad);
     CheckCopies(log, &bad);
-    CheckReadBack(log, &bad);
     for (double scale : kTestScales)
         RunDialog(log, scale, &bad);
     RunOverlays(log, &bad);

@@ -33,7 +33,7 @@ void RedrawStatus(Boolean copyToScreen)
     SetRect(&box, GetCWindowPortRect(gWind)->right - kStatusBarWidth,
             GetCWindowPortRect(gWind)->top, GetCWindowPortRect(gWind)->right,
             GetCWindowPortRect(gWind)->bottom);
-    UI::Painter(UI::Surface::Load()).Copy(StatusPicture(), statusOffPort.bounds, box);
+    UI::Painter(UI::Surface::Load()).Copy(UI::Surface(statusOffPort), statusOffPort.bounds, box);
     if (shipData->HasIFF()) {
         box2 = statusOffRect[0];
         // BUG (all versions): offsets box, but paints the unshifted box2 (status-bar coordinates);

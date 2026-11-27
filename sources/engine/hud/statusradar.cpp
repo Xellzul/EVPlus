@@ -59,7 +59,7 @@ void DrawStatusRadar(Boolean highlight)
         if (hasIFF != 0)
             load.Fill(dstRect, UI::kBlack);
         else
-            load.Copy(StatusPicture(), srcRect, dstRect);
+            load.Copy(UI::Surface(statusOffPort), srcRect, dstRect);
         cx = (dstRect.left + dstRect.right) * 0.5;
         cy = (dstRect.top + dstRect.bottom) * 0.5;
         if (highlight == 0) {

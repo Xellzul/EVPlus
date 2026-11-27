@@ -42,6 +42,8 @@ double floatingMapZoom = 0.5625;                 /* 0x005759e0 (see mapZoom abov
 static void DrawMap(UI::Painter &p, Rect box);
 static void DrawMapInfluence(UI::Painter &p, Rect bounds);
 
+static bool mapDragged;             /* the map follows a drag: drawn as ScrollMapDisplay draws it, without borders */
+
 
 namespace {
 
@@ -465,6 +467,7 @@ void MapDialog::Hit(short itemHit)
             if (StillDown()) {
                 GetMouse(&anchor);
                 savedScroll = mapScroll;
+                mapDragged = true;
                 while (StillDown()) {
                     BusyIdle();
                     prevV = mouse.v;
@@ -477,6 +480,7 @@ void MapDialog::Hit(short itemHit)
                     ScrollMapDisplay(mouse.h - prevH, mouse.v - prevV);
                     nv_UpdateDialogWindow(0);
                 }
+                mapDragged = false;
                 MouseFlushWheel();      /* no zoom from notches turned during the drag */
                 if (settings.showMapBorders != 0)
                     RecalcAllMapInfluence(&box);
@@ -867,6 +871,7 @@ void MapDialogUpdate(void)
     UI::Painter work{UI::Surface(View::UIWork())};
     UI::Painter back{UI::Surface(View::UIBack())};
     UI::Painter &map = partialMapDialogUpdate != 0 ? load : work;
+    bool quick = partialMapDialogUpdate != 0 || mapDragged;
 
     load.Fill(*GetDialogPortRect(mapDialog), UI::kBlack);
     if (partialMapDialogUpdate == 0 && mapBackgroundPic != NULL)
@@ -886,7 +891,7 @@ void MapDialogUpdate(void)
     w = box.right - box.left;
     h = box.bottom - box.top;
     map.Fill(box, UI::kBlack);
-    if (partialMapDialogUpdate == 0 && settings.showMapBorders != 0) {
+    if (!quick && settings.showMapBorders != 0) {
         GetDialogItem(mapDialog, kMapPictItem, &itemType, &item, &r2);
         DrawMapInfluence(work, r2);
     }
@@ -915,13 +920,8 @@ void MapDialogUpdate(void)
                 }
                 if (nebulaPic[i][fit] != 0) {
                     SectRect(&box, &nebR, &r2);
-                    if (partialMapDialogUpdate != 0) {
-                        work.Picture(nebulaPic[i][fit], nebR);
-                        load.Copy(UI::Surface(View::UIWork()), r2, r2);
-                    } else {
-                        back.Picture(nebulaPic[i][fit], nebR);
-                        work.Copy(UI::Surface(View::UIBack()), r2, r2, UI::Blit::AdMax);
-                    }
+                    back.Picture(nebulaPic[i][fit], nebR);
+                    map.Copy(UI::Surface(View::UIBack()), r2, r2, quick ? UI::Blit::Copy : UI::Blit::AdMax);
                 }
             }
         }

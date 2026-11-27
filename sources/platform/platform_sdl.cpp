@@ -541,24 +541,6 @@ void PlatImageUpdate32(PlatImage *image, const PlatRect *rect, const uint32_t *a
     }
 }
 
-void PlatImageUpdate(PlatImage *image, const uint16_t *pixels, const uint8_t *alpha)
-{
-    size_t count;
-
-    if (image == NULL || image->pixels == NULL || image->alpha == NULL)
-        return;
-    count = (size_t)image->width * image->height;
-    bool made = false;
-    for (SDL_Texture *texture : image->textures)
-        made = made || texture != NULL;
-    if (made && SDL_memcmp(image->pixels, pixels, count * sizeof(Uint16)) == 0
-            && SDL_memcmp(image->alpha, alpha, count) == 0)
-        return;
-    SDL_memcpy(image->pixels, pixels, count * sizeof(Uint16));
-    SDL_memcpy(image->alpha, alpha, count);
-    DropImageTextures(image);
-}
-
 /* the rows of the rect that differ taken over, and their span uploaded into the textures that show colours */
 int PlatImageUpdatePart(PlatImage *image, const PlatRect *rect, const uint16_t *pixels, int pitch)
 {
@@ -1127,8 +1109,10 @@ PlatTarget *PlatTargetCreate(int width, int height)
         return NULL;
     }
     target = (PlatTarget *)SDL_calloc(1, sizeof(PlatTarget));
-    if (target == NULL)
+    if (target == NULL) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "no %d x %d target: out of memory", width, height);
         return NULL;
+    }
     target->width = width;
     target->height = height;
     target->next = gTargets;
@@ -1184,6 +1168,13 @@ void PlatTargetClear(PlatTarget *target)
 unsigned PlatUIEpoch(void)
 {
     return gUIEpoch;
+}
+
+const char *PlatRendererName(void)
+{
+    const char *name = gRenderer != NULL ? SDL_GetRendererName(gRenderer) : NULL;
+
+    return name != NULL ? name : "none";
 }
 
 /* -- draws ------------------------------------------------------------------------------------------------ */

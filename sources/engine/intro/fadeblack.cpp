@@ -1,4 +1,5 @@
 /* fadeblack.cpp -- fade out and paint the window black (win 0x004ab180), and the two startup splash screens that ride the same GWorldContainer/CopyBits plumbing as gworld.cpp. Notes: Research/notes/fadeblack.md */
+#include "game.h"
 #include "gameutil.h"
 #include "render.h"
 #include "stellar.h"
@@ -9,8 +10,9 @@
 #define kSplashPictID       0x83
 #define kAmbrosiaLogoPictID 0x1fa4
 
-static bool loadPageShown;           /* the load page shows a picture of the startup or the intro */
-static short loadPagePictID;        /* which one; 0 = black alone */
+static short loadPagePictID;        /* the picture on the load page; 0 = black alone */
+static Rect loadPageFrom;           /* the load page's part shown on the screen, and where, in the menu's scale */
+static Rect loadPageTo;
 
 Rect PaintLoadPagePicture(PicHandle pic, short id)
 {
@@ -22,30 +24,41 @@ Rect PaintLoadPagePicture(PicHandle pic, short id)
         CenterPict(pic, &box);
         load.Picture(pic, box);
     }
-    loadPageShown = true;
     loadPagePictID = pic != NULL ? id : 0;
     return box;
 }
 
-void ForgetLoadPagePicture(void)
-{
-    loadPageShown = false;
-}
-
-bool RedrawLoadPagePicture(void)
+/* the load page's picture painted again, with the bar while loading */
+static void RedrawLoadPagePicture(void)
 {
     UI::MenuScale menu;
     PicHandle pic;
 
-    if (!loadPageShown)
-        return false;
     pic = loadPagePictID != 0 ? GetPicture(loadPagePictID) : NULL;
     PaintLoadPagePicture(pic, loadPagePictID);
     if (pic != NULL)
         QDReleaseResource(pic);
     if (gameLoaded == 0 && progressMax > 0)
         PaintIntroProgressBar();
-    return true;
+}
+
+/* the scene of the load page: its picture, the part shown, black around it */
+static void DrawLoadPage(void)
+{
+    RedrawLoadPagePicture();
+    ShowLoadPage(loadPageFrom, loadPageTo);
+}
+
+void ShowLoadPage(const Rect &from, const Rect &to)
+{
+    UI::MenuScale menu;
+    UI::Painter screen(UI::Surface::Screen());
+
+    screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+    screen.Copy(UI::Surface::Load(), from, to);
+    loadPageFrom = from;
+    loadPageTo = to;
+    Screen::SetScene(DrawLoadPage);
 }
 
 // FUNCTION: EVNOVA 0x004aaf60
@@ -54,16 +67,12 @@ void ShowSplashScreen(void)
 {
     UI::MenuScale menu;
     PicHandle pic;
-    Rect *rect;
 
     pic = GetPicture(kSplashPictID);
-    rect = &loadPort.bounds;
     PaintLoadPagePicture(pic, kSplashPictID);
     if (pic != NULL)
         QDReleaseResource(pic);
-    UI::Painter screen(UI::Surface::Screen());
-    screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
-    screen.Copy(UI::Surface::Load(), *rect, *GetCWindowPortRect(gWind));
+    ShowLoadPage(loadPort.bounds, *GetCWindowPortRect(gWind));
     Screen::Changed();
     Screen::EndFrame();
 }
@@ -78,15 +87,8 @@ void ShowAmbrosiaLogo(void)
     Rect box;
 
     pic = GetPicture(kAmbrosiaLogoPictID);
-    PaintLoadPagePicture(pic, kAmbrosiaLogoPictID);
-    box = *GetCWindowPortRect((WindowRef)gWind);
-    CenterPict(pic, &box);
-    {
-        UI::Painter screen(UI::Surface::Screen());
-
-        screen.Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
-        screen.Picture(pic, box);
-    }
+    box = PaintLoadPagePicture(pic, kAmbrosiaLogoPictID);
+    ShowLoadPage(box, box);
     if (pic != NULL)
         QDReleaseResource(pic);
     FadeScreenIn();
@@ -98,5 +100,5 @@ void ShowAmbrosiaLogo(void)
 void HideAmbrosiaLogo(void)
 {
     FadeScreenOut();
-    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+    BlackScreen();
 }

@@ -662,7 +662,7 @@ void PlayGame(void)
     FadeScreenOut();
     ShowTheCursor();
     FlushEvents(everyEvent - diskMask, 0);
-    UI::Painter(UI::Surface::Screen()).Fill(*GetCWindowPortRect((WindowRef)gWind), UI::kBlack);
+    BlackScreen();
 }
 
 #define kMaxNavDefaults 0x10

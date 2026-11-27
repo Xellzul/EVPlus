@@ -2,6 +2,7 @@
    text as images, one PlatTargetDraw for all a target's Painters gathered. */
 #include <math.h>
 #include <algorithm>
+#include "burger.h"
 #include "canvas.h"
 #include "glyphatlas.h"
 #include "pixel.h"
@@ -43,8 +44,15 @@ struct Scratch {
     const void *Made() const { return image != NULL ? (const void *)image : target; }
 };
 
+/* a target MakeNewTarget made, and what draws it again */
+struct Made {
+    CGrafPtr port;
+    Canvas::Redraw redraw;
+};
+
 std::vector<PortImage> mirrors;
 std::vector<Scratch> scratch;
+std::vector<Made> made;
 unsigned frames;                        /* FrameDone's count: the mirrors' clock */
 
 constexpr int kScratchStep = 64;                /* scratch sizes are multiples of this, to fit more draws */
@@ -358,19 +366,47 @@ bool Canvas::MakeTarget(CGrafPtr port)
     return true;
 }
 
-void Canvas::MakeNewTarget(CGrafPtr port)
+void Canvas::MakeNewTarget(CGrafPtr port, Redraw redraw)
 {
-    if (port == NULL || !MakeTarget(port))
+    if (port == NULL)
         return;
+    if (!MakeTarget(port))
+        Fatal("No GPU target of %d x %d pixels for the interface.", port->pix.width, port->pix.height);
+    DropPortPixels(port);
+    made.push_back({ port, redraw });
     Canvas *canvas = Open(port);
     canvas->AddFill(0, 0, port->pix.width, port->pix.height, kBlack, 255);
     canvas->Close();
+}
+
+void Canvas::RedrawTargets()
+{
+    FlushAll();
+    for (size_t i = 0; i < made.size(); i++) {
+        CGrafPtr port = made[i].port;
+        Canvas *canvas = Open(port);
+        canvas->AddFill(0, 0, port->pix.width, port->pix.height, kBlack, 255);
+        canvas->Close();
+    }
+    std::vector<Made> drawn = made;             /* a redraw may make or drop targets */
+    for (const Made &each : drawn)
+        if (each.redraw != NULL)
+            each.redraw();
+}
+
+/* a port's target goes: it is no longer drawn again */
+void Canvas::Forget(CGrafPtr port)
+{
+    for (size_t i = made.size(); i-- > 0;)
+        if (made[i].port == port)
+            made.erase(made.begin() + i);
 }
 
 void Canvas::DropTarget(CGrafPtr port)
 {
     if (port == NULL || port->target == NULL)
         return;
+    Forget(port);
     FlushAll();
     for (Canvas *each : open)
         if (each->port == port)
@@ -909,25 +945,6 @@ void Canvas::ComposeTarget(CGrafPtr from, const Rect &src, const Rect &dst)
     work.resize((size_t)Width(d) * Height(d));
     Art::Stretch(whole.data(), rows.w, rows.h, all, work.data(), Width(d), Height(d));
     Compose(work.data(), Width(d), d);
-}
-
-bool Canvas::ReadBack(CGrafPtr port, PixMap &into, std::vector<unsigned short> &pixels)
-{
-    const PixMap &pix = port->pix;
-    PlatRect all = { 0, 0, pix.width, pix.height };
-
-    FlushAll();
-    whole.resize((size_t)pix.width * pix.height);
-    if (whole.empty() || PlatTargetReadDrawn(port->target, &all, whole.data()) == 0)
-        return false;
-    pixels.resize(whole.size());
-    for (size_t i = 0; i < whole.size(); i++)
-        pixels[i] = Pixel::FromRGB24(whole[i]);
-    into = pix;
-    into.pixelSize = 16;
-    into.baseAddr = pixels.data();
-    into.rowBytes = pix.width * Pixel::kBytes;
-    return true;
 }
 
 void Canvas::OwnPixels()

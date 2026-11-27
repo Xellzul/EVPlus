@@ -10,10 +10,6 @@ struct Page;
 
 /* engine/gameloop.cpp: the comm line, floating map and escort menu laid over the screen after the view */
 void DrawOverlays();
-/* engine/gameloop.cpp: their frames drawn again, the GPU having lost them */
-void RedrawOverlays();
-/* engine/core/setup.cpp: the screen put together again, as it stands */
-void RedrawInterface();
 
 namespace View {
 
@@ -49,7 +45,8 @@ float ExactY(float spaceY);
 Rect OverlayFrameRect(const Rect &viewRect);    /* an overlay frame's logical rect for a rect in the view */
 Rect OverlayLocalRect(const Rect &viewRect);    /* the same, from 0, 0: the frame's own coordinates */
 Point ToOverlay(Point pt, const Rect &viewRect); /* a view point in the coordinates of the overlay at viewRect */
-bool MakeOverlayFrame(SWFrameRec **frame, const Rect &bounds);   /* bounds logical, from 0, 0; false = none */
+/* bounds logical, from 0, 0; redraw draws it again when the GPU lost it; false = none */
+bool MakeOverlayFrame(SWFrameRec **frame, const Rect &bounds, void (*redraw)(void));
 Rect ScreenRectOfView(const Rect &viewRect);    /* a rect in the view, in device pixels on the screen */
 int ScaleInView(int value);         /* a length of the interface in view pixels (the UI scale applied) */
 
