@@ -826,7 +826,7 @@ void SetMissionDeadline(DateTimeRec *out, short days)
     if (days <= 0)
         return;
     for (i = 0; i < days; i++)
-        IncrementDate(&d, 0);
+        IncrementDate(&d);
     out->month = d.month;
     out->day = d.day;
     out->year = d.year;

@@ -1,6 +1,5 @@
 /* qdshims.cpp -- small QuickDraw and Event Manager calls: page flip, mouse and buttons, text and colour state */
 
-#include "pixel.h"
 #include "render.h"
 #include "uiscale.h"
 #include "screen.h"
@@ -66,12 +65,6 @@ void TextFace(short face)
     if (CurrentGrafPort == NULL)
         return;
     CurrentGrafPort->txFace = face;
-}
-
-// FUNCTION: EVNOVA 0x004b6960
-uint32_t Color2Index(RGBColor *color)
-{
-    return Pixel::FromColor(*color);
 }
 
 // FUNCTION: EVNOVA 0x004b6990

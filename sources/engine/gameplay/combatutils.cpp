@@ -465,7 +465,7 @@ Boolean AIHasAfterburner(ShipObj *ship)
 /* true for all but the top few hundred of the 0x540 range */
 // FUNCTION: EVNOVA 0x0046b330
 // MAC: _AIPerformsComplexManeuvers i386 0x0000659a ppc 0x00007e78
-Boolean AIPerformsComplexManeuvers(ShipObj *ship)
+Boolean AIPerformsComplexManeuvers(void)
 {
     if (playerKills >= Rand(0x540) + 0x100)
         return 1;
@@ -705,7 +705,6 @@ Boolean WeaponDisableOnly(short weap)
 short ModifyShotStartPosition(ShipObj *ship, FloatPoint *base, short weapType, FloatPoint *target)
 {
     short group;
-    short divisor;
     short angle;
     short result;
 

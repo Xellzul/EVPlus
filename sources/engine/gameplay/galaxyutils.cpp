@@ -151,7 +151,7 @@ void ColorCodeSystem(short sys, RGBColor *color)
 
 // FUNCTION: EVNOVA 0x00466c40
 // MAC: _IncrementDate i386 0x00004da6 ppc 0x000062cc
-void IncrementDate(DateTimeRec *date, int32_t daysToAdd)
+void IncrementDate(DateTimeRec *date)
 {
     short days;
 
@@ -193,7 +193,7 @@ void IncrementGameTime(void)
     short i;
     short j;
     short wave;
-    IncrementDate(&gameTime, 0);
+    IncrementDate(&gameTime);
     CronEventHandler();
 
     for (i = 0; i < kMaxActiveMissions; i++) {

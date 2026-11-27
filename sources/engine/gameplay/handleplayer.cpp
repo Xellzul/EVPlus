@@ -19,7 +19,6 @@
 #include "outfitmods.h"
 #include "profiler.h"
 #include "text.h"
-#include "painter.h"
 
 /* the cheat keys HandlePlayer reads by code */
 #define kScanExploreCheat   kScanLang1
@@ -2040,10 +2039,10 @@ static void PlayerToggleAndCheatKeys(ShipObj *player)
         if (QuickKeyCheck(kScanBackspace)) {
             if (ST_IsSoundPlaying(warpUpSnd[0])) {
                 ST_HaltSound(warpUpSnd[0]);
-                WarpUpCallback(1, 0, 0);
+                WarpUpCallback();
             } else if (ST_IsSoundPlaying(warpUpSnd[1])) {
                 ST_HaltSound(warpUpSnd[1]);
-                WarpUpCallback(1, 0, 0);
+                WarpUpCallback();
             }
         }
 

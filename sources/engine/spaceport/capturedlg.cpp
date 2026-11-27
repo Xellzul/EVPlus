@@ -1,7 +1,6 @@
 /* capturedlg.cpp -- the captured-ship assignment dialog */
 
 #include "game.h"
-#include "prototypes.h"
 #include "render.h"
 #include "sound.h"
 #include "gamedialog.h"
@@ -35,7 +34,7 @@ private:
 
 CaptureUse CapturedAssignmentDialog::Run()
 {
-    dialog.Open(kCaptureDlogID, CapturedAssignmentDialogUpdate, Filter, &captureDialog, DialogClose::NoFlash);
+    dialog.Open(kCaptureDlogID, CapturedAssignmentDialogUpdate, Filter, &captureDialog);
     if (!dialog.IsOpen())
         return CaptureUse::Escort;
     Picture backdrop(captureBackgroundPic);

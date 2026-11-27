@@ -31,7 +31,7 @@ short SWFixImageGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld, Rect *rectP)
         SWAssertFail("SpriteWorldUtils.c", 1212);
 
     if (rectP == 0)
-        rectP = GetWindowPortRect(pictureGWorld);
+        rectP = GetCWindowPortRect(pictureGWorld);
 
     width = rectP->right - rectP->left;
     height = rectP->bottom - rectP->top;

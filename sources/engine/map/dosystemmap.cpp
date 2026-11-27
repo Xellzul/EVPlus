@@ -1,6 +1,5 @@
 /* dosystemmap.cpp -- tu-map object O25: the galaxy map dialog, its drawing, filters and jump routes. Notes: Research/notes/dosystemmap.md */
 
-#include "prototypes.h"
 #include "ships.h"
 #include "game.h"
 #include "gameutil.h"
@@ -81,7 +80,7 @@ void MapDialog::Run()
     if (screenFaded != 0)
         return;
     ShowTheCursor();
-    dialog.Open(kMapDlogID, MapDialogUpdate, Filter, &mapDialog, DialogClose::NoFlash);
+    dialog.Open(kMapDlogID, MapDialogUpdate, Filter, &mapDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(mapBackgroundPic);
@@ -113,7 +112,6 @@ void MapDialog::Run()
             }
         }
     }
-    mapCursorSwitchRgn = 0;
     partialMapDialogUpdate = 0;
     y = 0;
     do {
@@ -520,7 +518,6 @@ Boolean MapDialog::Filter(DialogPtr dlg, const DialogEvent &event, short *itemHi
         canZoomOut = 1;
     else
         canZoomOut = 0;
-    didUpdateMap = 0;
     what = event.what;
     if (what == DialogInput::Key) {
         key = tolower(event.ch);
@@ -956,7 +953,6 @@ void MapDialogUpdate(void)
                      SystName(i), white);
         }
     }
-    didUpdateMap = 1;
     if (partialMapDialogUpdate != 0)
         LoadPageToDialog(mapDialog, box);
     else
@@ -1089,7 +1085,6 @@ void MapDialogUpdate(void)
             line = DateMedText(gameTime);
         load.Text(box.right - load.Measure(line, UI::Style::Small) - 5, box.top + 0x24, line,
                   { UI::Style::Small, rgbDarkGrey });
-        didUpdateMap = 1;
         GetDialogItem(mapDialog, kMapRouteItem,&itemType, &item, &r2);
         load.Line(r2.left + 1, r2.bottom - 1, r2.right - 2, r2.bottom - 1, UI::kBlack);
         load.Pen(r2.left + 10, r2.top + 0xc);
@@ -1218,7 +1213,6 @@ void MapDialogUpdate(void)
                 load.Text(r2.left + 10, r2.top + 0x4b, IndStringRaw(kGameStrList, 0x14e), white);
             }
         }
-        didUpdateMap = 1;
         MapButtons().Draw(load, -1);
         LoadPageToDialog(mapDialog);
     }
@@ -1880,7 +1874,6 @@ void DrawMapInfluence(UI::Painter &p, Rect bounds)
     short k;
     unsigned char best;
     unsigned char v;
-    unsigned char govt;
     RGBColor color;
     short y;
 

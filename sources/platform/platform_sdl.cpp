@@ -1202,6 +1202,7 @@ static void FreeDeadTargets(void)
     }
 }
 
+#if EVPLUS_TEST_PAGES
 void PlatTargetClear(PlatTarget *target)
 {
     SDL_Texture *texture = target != NULL ? TargetTexture(target) : NULL;
@@ -1211,6 +1212,7 @@ void PlatTargetClear(PlatTarget *target)
     ClearTexture(texture);
     target->drawn = true;
 }
+#endif
 
 const char *PlatRendererName(void)
 {
@@ -2828,6 +2830,7 @@ int PlatVoicesEnded(PlatVoices *v, int index)
     return v->device != 0 && SDL_GetTicksNS() >= v->deadlines[index];
 }
 
+#if EVPLUS_TEST_PAGES
 void PlatVoicesRender(PlatVoices *v, float *out, float *unclamped, int frames)
 {
     int bytes = frames * kVoiceChannels * (int)sizeof *out;
@@ -2860,6 +2863,7 @@ void PlatVoicesRender(PlatVoices *v, float *out, float *unclamped, int frames)
         }
     }
 }
+#endif
 
 /* -- the program's entry and its arguments, which SDL hands over as UTF-8 ------------------------- */
 

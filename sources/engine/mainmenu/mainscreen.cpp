@@ -127,12 +127,8 @@ void DoMainScreen(void)
     AdjustSoundVolume();
     ShowTheCursor();
     IterateInGameEventLoop(kStartupIterations);
-    gUpdateFlag = 0;
 
     while (gQuit == 0) {
-        if (gUpdateFlag != 0)
-            MainScreenUpdate(1);
-
         delay = (slideIndex[0] < kAnimDone || slideIndex[1] < kAnimDone
                  || slideIndex[2] < kAnimDone)
                 ? 0
@@ -173,7 +169,7 @@ void DoMainScreen(void)
             }
             MainScreenChoice(TrackMainScreenButtons(where));
         } else if (key != 0) {
-            MainScreenKey(upper, 0, 0);
+            MainScreenKey(upper);
         }
 
         if (gNeedUpdateFlag != 0) {
@@ -315,7 +311,7 @@ void MainScreenChoice(short which)
 
 // FUNCTION: EVNOVA 0x004872a0
 // MAC: _MainScreenKey i386 0x0001aba0 ppc 0x0001eabc
-void MainScreenKey(char key, int32_t a, int32_t b)
+void MainScreenKey(char key)
 {
     key = tolower(key);
     if (key == 'n') {

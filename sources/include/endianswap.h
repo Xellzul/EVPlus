@@ -3,8 +3,7 @@
 #ifndef ENDIANSWAP_H
 #define ENDIANSWAP_H
 
-/* BurgerLib's SwapEndian written out; `static __inline' is the only spelling that inlines an
-   asm block in C */
+/* BurgerLib's SwapEndian */
 static __inline short SwapEndianShort(const unsigned short *p)
 {
     unsigned short t;

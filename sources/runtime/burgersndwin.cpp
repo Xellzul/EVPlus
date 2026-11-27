@@ -81,9 +81,7 @@ double ConvertAiffExtended(const void *Input)
 #define kMinOgg    0x2c
 #define kVocSound  9
 
-/* `static __inline' is the only spelling that inlines an asm block in C, and this pair is
-   taken BY VALUE rather than through a pointer because the exe swaps a constant search
-   key as well as a load. */
+/* by value: a constant search key is swapped as well as a load */
 static __inline ULong SwapLong(ULong v)
 {
     ULong t;

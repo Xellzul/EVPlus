@@ -25,7 +25,6 @@ int GameMain(void)
     InitPaths();
     atexit(ShutdownWinGame);
     OSCursorReset();
-    gRezOpenPending = 1;
     if (EVOpenResourceFile(JoinPath(paths.exe, "Nova.rez").c_str()) != 0) {
         char message[kPlatPathMax + 256];
 

@@ -76,7 +76,6 @@ void LoadShipSprites(void)
 }
 
 
-ShanRec shipSpriteInfo;
 ShanRec **shipSpriteInfoHand;
 short firstShipGlowIndex;
 short firstShipLightIndex;

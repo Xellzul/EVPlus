@@ -104,8 +104,7 @@ void MissionInfoDialog::Run()
     if (screenFaded != 0)
         return;
     PlaySound(beepSnd[1], 1, gSoundVolume, gSoundVolume);
-    dialog.Open(kMissionInfoDlogID, MissionInfoDialogUpdate, Filter, &missionInfoDialog,
-                DialogClose::NoFlash);
+    dialog.Open(kMissionInfoDlogID, MissionInfoDialogUpdate, Filter, &missionInfoDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(missionInfoBackgroundPic);

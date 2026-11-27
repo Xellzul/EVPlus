@@ -165,12 +165,7 @@ Boolean DupKeyCheck(ScanCode value, short skip)
 
 #define kMessageStrings 1000    /* STR# holding the numbered player messages */
 
-Boolean speechMgrPresent;
 uint64_t randomSeed;
-
-/* screen fade state (names invented; the mac fades via CGDisplayFade instead) */
-int32_t screenGamma = 0x00010000;           /* 0x00575878 — 16.16, 1.0 = full brightness */
-
 
 /* Show numbered message `index`, letting a plug-in override the built-in text. */
 // FUNCTION: EVNOVA 0x00467cf0
@@ -184,14 +179,11 @@ void DisplayMessage(short index)
     DisplayComm((PStrChar *)text, 480);
 }
 
-/* The screen's brightness as `percent'. The original walked the display gamma there over 500 ms; the port has
-   no gamma ramp, so it is set at once and the fades take no time. */
+/* cancels the white-out at once */
 // FUNCTION: EVNOVA 0x00467d60
-void FadeGammaTo(uint32_t percent)
+void FadeGammaTo(void)
 {
-    /* 1.1.1 */
     Screen::FadeWhite(kWhiteNone, kWhiteNone, 0);
-    screenGamma = (percent << 16) / 100;
 }
 
 // FUNCTION: EVNOVA 0x00467de0
@@ -202,7 +194,7 @@ void FadeScreenOut(void)
         return;
     ScreenEndScene();
     if (settings.windowed == 0)
-        FadeGammaTo(0);
+        FadeGammaTo();
     screenFaded = 1;
 }
 
@@ -214,7 +206,7 @@ void FadeScreenIn(void)
         return;
     ScreenEndScene();
     if (settings.windowed == 0)
-        FadeGammaTo(100);
+        FadeGammaTo();
     screenFaded = 0;
 }
 
@@ -488,13 +480,6 @@ void BusyIdle(void)
 {
     ProcessSystemEvents();
     Screen::Idle();
-}
-
-// FUNCTION: EVNOVA 0x0046e8e0
-// MAC: _DisposeDialogNoFlash i386 0x00007f91 ppc 0x00009db4
-void DisposeDialogNoFlash(void *dlg)
-{
-    DisposeDialog((DialogRecord *)dlg);
 }
 
 #define kStarLayers kMaxStars

@@ -10,9 +10,7 @@
 #include "pixel.h"
 
 #define kAlpha1555          0x8000      /* bit 15 of a 1555 pixel */
-#define kAlpha1555High      0x80        /* the same bit, in the pixel's high byte */
 #define kOpaque             255
-#define kAlphaMask          1           /* a 16-bit source: bit 15 marks the opaque pixels, laid over the destination */
 #define kAlphaKept          2           /* 32-bit premultiplied ARGB in and out: the alpha goes with the colour */
 
 #define kWeightBits         14          /* a pixel's weights add up to 1 << kWeightBits */
@@ -413,20 +411,8 @@ static void Blit(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *
         CopyScaled(src, dst, srcRect, dstRect, alpha);
 }
 
-void BlitDirect16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-                  int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
-{
-    Blit(src, dst, srcRect, dstRect, 0);
-}
-
-void BlitDirect24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-                  int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
-{
-    Blit(src, dst, srcRect, dstRect, 0);
-}
-
-void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-                  int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
+void BlitDirect(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac)
 {
     Blit(src, dst, srcRect, dstRect, 0);
 }
@@ -436,6 +422,10 @@ void BlitScaleArgb(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect
 {
     CopyScaled(src, dst, srcRect, dstRect, kAlphaKept);
 }
+
+#if EVPLUS_TEST_PAGES
+#define kAlpha1555High      0x80        /* bit 15 of a 1555 pixel, in its high byte */
+#define kAlphaMask          1           /* a 16-bit source: bit 15 marks the opaque pixels, laid over the destination */
 
 /* A black mask pixel makes its source pixel opaque, marked in the source itself for the blit and cleared after
    it, so no other copy of the source carries the mark; maskRect is not read. */
@@ -466,3 +456,4 @@ void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRec
             pixels[y * src->rowBytes + x * 2 + 1] &= (unsigned char)~kAlpha1555High;
     }
 }
+#endif

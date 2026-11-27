@@ -36,7 +36,7 @@ void PlayerLandOnStellar(void)
     ship = shipData;
     playerIsLanded = 1;
     dontMovePlayerAfterLanding = 0;
-    PreloadPortDialog(&stellarData[ship->targetStellar], ship->targetStellar);
+    PreloadPortDialog(&stellarData[ship->targetStellar]);
     ShipStatsToSystemInfo();
     SWHideAllSprites(gSpriteWorld);
     ClearParticles(1);
@@ -1019,9 +1019,6 @@ void HandlePlayerBoardAttempt(void)
 {
 
     std::string msg;
-    float limit;
-    float dist;
-    float limit2;
     ShipObj *me;
     Boolean canBoard;
     Boolean skip;

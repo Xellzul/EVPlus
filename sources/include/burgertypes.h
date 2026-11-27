@@ -18,7 +18,6 @@ typedef unsigned short Word16;
 typedef unsigned int Word;
 typedef uint32_t Word32;
 typedef uint32_t ULong;
-typedef unsigned long long ULongLong;
 
 /* the decoded picture: BurgerLib's image record, and the Windows port's PicHandle */
 typedef struct Image_t {

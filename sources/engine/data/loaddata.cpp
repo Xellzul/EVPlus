@@ -768,7 +768,7 @@ static void LoadWeapons(unsigned char *name)
                 rgb.blue = (res.liColor & 0xff) * 256;
             }
             ClampRGB(rgb);
-            weaponStats[i].ionizeColor = Color2Index(&rgb);
+            weaponStats[i].ionizeColor = Pixel::FromColor(rgb);
             if (weaponStats[i].burstCount <= 0)
                 weaponStats[i].burstCount = -1;
             weaponStats[i].beamLength = res.beamLength;
@@ -822,7 +822,7 @@ static void LoadWeapons(unsigned char *name)
             rgb.green = ((res.hitPartColor >> 8) & 0xff) * 256;
             rgb.blue = (res.hitPartColor & 0xff) * 256;
             ClampRGB(rgb);
-            weaponStats[i].hitPartColor = Color2Index(&rgb);
+            weaponStats[i].hitPartColor = Pixel::FromColor(rgb);
             weaponStats[i].hitPartLife = res.hitPartLife;
             weaponStats[i].hitPartVel = res.hitPartVel * 0.01;
             GetResInfo(weaponFileHand, &resID, &resType, name);
@@ -844,7 +844,7 @@ static void LoadWeapons(unsigned char *name)
                 shade.blue = (int32_t)(rgb.blue * factor);
                 // BUG (all versions): factor reaches 1.40, so a component above ~0xb6ff wraps when stored in
                 // the unsigned short -- bright particle colours turn dark (mac 1.0.10 clamped the shade, too late)
-                weaponStats[i].partColor[j] = Color2Index(&shade);
+                weaponStats[i].partColor[j] = Pixel::FromColor(shade);
                 weaponStats[i].partVel[j] = base * factor;
             }
             if (weaponStats[i].smokeSet >= 8)
@@ -3175,7 +3175,6 @@ short LoadPilotData(const char *path)
     short err;
     uint32_t len;
     Boolean junk;
-    int32_t parID;
 
     playerFileHand = NULL;
     altPlayerFileHand = NULL;

@@ -1496,7 +1496,6 @@ void HandleNavTargetSprites(void)
 {
     short i;
     short frame;
-    short size;
     short half;
     Point pt;
 
@@ -2180,10 +2179,8 @@ void KillVoiceSound(void)
 /* start the music once, restarting it if it is still running */
 // FUNCTION: EVNOVA 0x00431420
 // MAC: _WarpUpCallback i386 0x00031ff3 ppc 0x000374c4
-void WarpUpCallback(int which, int a, int b)
+void WarpUpCallback(void)
 {
-    if (which != 1)
-        return;
     if (warpSoundDone == 0) {
         warpSoundDone = 1;
         if (ST_IsSoundPlaying(warpOutSnd) != 0)

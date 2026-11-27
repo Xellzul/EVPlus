@@ -36,11 +36,11 @@ short SWCreatePixelMaskFromGWorld(CGrafPtr pictureGWorld, CGrafPtr maskGWorld,
         return -1;
 
     if (rectP == NULL)
-        rectP = GetWindowPortRect(pictureGWorld);
+        rectP = GetCWindowPortRect(pictureGWorld);
     width = rectP->right - rectP->left;
     height = rectP->bottom - rectP->top;
 
-    transparent = Color2Index(&gSWTransparentColor) & kAlphaMask16;
+    transparent = Pixel::FromColor(gSWTransparentColor) & kAlphaMask16;
 
     baseAddr = GetPixBaseAddr(pictPix);
     maskAddr = GetPixBaseAddr(maskPix);

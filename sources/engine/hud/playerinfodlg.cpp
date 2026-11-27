@@ -165,7 +165,7 @@ void PlayerInfoDialog::Run()
         return;
     ShipStatsToSystemInfo();
     selPlayerInfoMode = 1;
-    dialog.Open(kPlayerInfoDlogID, PlayerInfoDialogUpdate, Filter, &infoDialog, DialogClose::NoFlash);
+    dialog.Open(kPlayerInfoDlogID, PlayerInfoDialogUpdate, Filter, &infoDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrops[3];
@@ -181,7 +181,6 @@ void PlayerInfoDialog::Run()
     measured = TENew(&box6, &box6);
     (*measured)->txFont = smallTextFont;
     (*measured)->txSize = smallTextSize;
-    TESetLineMetrics(measured);
     tallest = -1;
     {
         UI::Painter measure(UI::Surface::Dialog(infoDialog));
@@ -189,7 +188,7 @@ void PlayerInfoDialog::Run()
         for (i = 0; i < 3; i++) {
             measure.EditSetText(measured, playerInfoText[i].data(), playerInfoText[i].size(), UI::Style::Small);
             measure.EditMeasure(measured, UI::Style::Small);
-            height = TEWrappedHeight(measured);
+            height = TETextHeight(measured);
             if (height > tallest || tallest <= 0)
                 tallest = height;
         }

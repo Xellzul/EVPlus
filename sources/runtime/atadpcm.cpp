@@ -22,7 +22,6 @@ static int stepsizeTable[kMaxStepIndex + 1] = {  /* 0x00579528 */
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 };
 
-#define kImaPacketBytes     34                  /* a 2-byte header, then 32 bytes of nibbles */
 #define kImaPacketSamples   64
 #define kImaHeaderIndex     0x7f                /* the header's step index; the rest is the predictor */
 #define kImaResyncDiff      0x7f                /* how far the running predictor may be from the header's */

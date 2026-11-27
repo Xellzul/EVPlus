@@ -63,10 +63,12 @@ void DisplayCommStyled(PStrChar *msg, short count, const UI::TextSpec &spec)
     gCommDrawn = false;
 }
 
+#if EVPLUS_TEST_PAGES
 const UI::TextSpec &CommStyle(void)
 {
     return gCommSpec;
 }
+#endif
 
 void DisplayComm(const std::string &msg, short count)
 {

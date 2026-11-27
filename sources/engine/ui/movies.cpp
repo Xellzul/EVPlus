@@ -21,7 +21,7 @@ static bool DecodeInto(GWorldContainer &frame, Movie movie, CGrafPtr port, const
     Rect device = UI::Mapping(port->pix).DeviceRect(box);
 
     OffsetRect(&device, -device.left, -device.top);
-    CreateGWorldContainer(&frame, 0, kMovieDepth, &device);
+    CreateGWorldContainer(&frame, kMovieDepth, &device);
     if (frame.world == NULL)
         return false;
     frame.world->pix.bounds = frame.bounds = box;

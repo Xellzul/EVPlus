@@ -6,8 +6,7 @@
 
 #include "burger.h"
 
-/* same shape as endianswap.cpp's helper - `static __inline` is the only
-   spelling that inlines an asm block in C */
+/* endianswap.h's SwapEndianShort, unsigned */
 static __inline unsigned short SwapUShort(const unsigned short *p)
 {
     unsigned short t;

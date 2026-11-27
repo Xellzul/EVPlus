@@ -102,13 +102,9 @@ std::string OutfitName(int i);
 std::string ShipClassName(int i);
 std::string PersonName(int i);
 std::string RankName(int i);
-std::string RankConvName(int i);
-std::string RankShortName(int i);
 std::string JunkName(int i);
 std::string JunkLcName(int i);
-std::string DisasterName(int i);
 /* the active mission in slot `slot' */
-std::string MissionName(int slot);
 std::string MissionShipName(int slot);
 std::string MissionShipSubtitle(int slot);
 /* the callers' test for a mission ship name / subtitle: its length byte read as signed, above 0 */
@@ -119,8 +115,6 @@ bool MissionHasShipSubtitle(int slot);
 
 /* textShowString (ShowTextDialog's text) set to the text up to a NUL, cut to the buffer */
 void SetShowText(const std::string &text);
-/* up to the first NUL, as the control keeps a C string */
-void SetControlText(ControlPtr ctl, const std::string &text);
 /* cut to 255 bytes; a char buffer must be passed as std::string or cast to its Pascal type */
 void DisplayComm(const std::string &msg, short count);
 void DisplayCommStyled(const std::string &msg, short count, const UI::TextSpec &spec);

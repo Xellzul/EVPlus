@@ -27,29 +27,19 @@ PicHandle LoadPictResource(int picID)
 }
 
 // FUNCTION: EVNOVA 0x004b9050
+// FUNCTION: EVNOVA 0x004b9060
 PicHandle GetPicture(int picID)
 {
     return LoadPictResource(picID);
 }
 
-/* the same as GetPicture */
-// FUNCTION: EVNOVA 0x004b9060
-PicHandle GetPictureNoGamma(int picID)
-{
-    return LoadPictResource(picID);
-}
-
-/* A decoded picture as a CopyBits source. The exe passed a record of its own (bounds, then the bit depth
-   where a PixMap has pixelSize, then the Image_t) that only lined up with a PixMap's fields because every
-   pointer and integer there was 4 bytes; this fills a PixMap. (The exe's record also put AlphaPtr where
-   originV is; nothing reads originV.) */
+/* fills a PixMap from a decoded picture, as a CopyBits source */
 static void ImageAsPixMap(PixMap *pm, const Image_t *im)
 {
     SetRect(&pm->bounds, 0, 0, im->Width, im->Height);
     pm->pixelSize = (im->DataType + 7) & ~7;
     pm->baseAddr = im->ImagePtr;
     pm->ctab = im->PalettePtr;
-    pm->originV = 0;
     pm->width = im->Width;
     pm->height = im->Height;
     pm->rowBytes = im->RowBytes;

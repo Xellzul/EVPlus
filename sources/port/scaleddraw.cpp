@@ -146,6 +146,7 @@ void LineTo(short h, short v)
     }
 }
 
+#if EVPLUS_TEST_PAGES
 namespace {
 
 /* the original's circle: centred in the rect, its radius half the rect's height */
@@ -194,6 +195,7 @@ void PaintOval(const Rect &r)
 {
     DrawCircle(DeviceCircle(r), -1);
 }
+#endif
 
 namespace {
 
@@ -291,6 +293,7 @@ void CopyBits(const PixMap &src, const PixMap &dst, const Rect &srcRect, const R
     DisposeGWorld(scratch);
 }
 
+#if EVPLUS_TEST_PAGES
 void CopyMask(const PixMap &src, const PixMap &mask, const PixMap &dst, const Rect &srcRect, const Rect &maskRect,
               const Rect &dstRect)
 {
@@ -304,5 +307,6 @@ void CopyMask(const PixMap &src, const PixMap &mask, const PixMap &dst, const Re
     DeviceRects(src, dst, srcRect, dstRect, s, d);
     ::CopyMask((BitMapPtr)&from, (BitMapPtr)&through, (BitMapPtr)&to, &s, &m, &d);
 }
+#endif
 
 } // namespace Scaled

@@ -1,6 +1,5 @@
 /* dialog.cpp -- Dialog, Picture and LoadPageToDialog */
 #include "dialog.h"
-#include "dialogs.h"
 #include "painter.h"
 
 void Picture::Release()
@@ -23,36 +22,31 @@ void LoadPageToDialog(DialogPtr dlg, const Rect &box)
     p.Copy(UI::Surface::Load(), box, box);
 }
 
-DialogPtr Dialog::Opened(DialogPtr opened, DialogPtr *to, DialogClose closeHow)
+DialogPtr Dialog::Opened(DialogPtr opened, DialogPtr *to)
 {
     dlg = opened;
     global = to;
-    how = closeHow;
     if (global != nullptr)
         *global = dlg;
     return dlg;
 }
 
-DialogPtr Dialog::Open(short dlogID, DialogUpdateProc update, DialogEventProc filter, DialogPtr *to,
-                       DialogClose closeHow)
+DialogPtr Dialog::Open(short dlogID, DialogUpdateProc update, DialogEventProc filter, DialogPtr *to)
 {
-    return Opened(GetNewDialog(dlogID, update, filter), to, closeHow);
+    return Opened(GetNewDialog(dlogID, update, filter), to);
 }
 
 DialogPtr Dialog::Open(short width, short height, const DialogItemSpec *items, short count,
                        DialogUpdateProc update, DialogEventProc filter, DialogPtr *to)
 {
-    return Opened(NewDialogFromItems(width, height, items, count, update, filter), to, DialogClose::Plain);
+    return Opened(NewDialogFromItems(width, height, items, count, update, filter), to);
 }
 
 void Dialog::Close()
 {
     if (dlg == nullptr)
         return;
-    if (how == DialogClose::NoFlash)
-        DisposeDialogNoFlash(dlg);
-    else
-        DisposeDialog(dlg);
+    DisposeDialog(dlg);
     dlg = nullptr;
     if (global != nullptr)
         *global = NULL;

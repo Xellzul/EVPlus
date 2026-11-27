@@ -40,7 +40,7 @@ GWorldContainer planetPicContainer;
 
 // FUNCTION: EVNOVA 0x0048e970
 // MAC: _PreloadPortDialog i386 0x0004e5c7 ppc 0x000571c0
-void PreloadPortDialog(SpobRecord *spob, short stellar)
+void PreloadPortDialog(SpobRecord *spob)
 {
     Rect rect;
     PicHandle pic;
@@ -57,7 +57,7 @@ void PreloadPortDialog(SpobRecord *spob, short stellar)
     if (pic != NULL) {
         QDGetPictureBounds(pic, &rect);
         OffsetRect(&rect, -rect.left, -rect.top);
-        CreateGWorldContainer(&planetPicContainer, 0, gSpriteWorld->pixelDepth, &rect);
+        CreateGWorldContainer(&planetPicContainer, gSpriteWorld->pixelDepth, &rect);
         if (planetPicContainer.world != NULL) {
             UI::Painter p{UI::Surface(planetPicContainer)};
             p.Fill(planetPicContainer.bounds, UI::kBlack);
@@ -106,7 +106,7 @@ void PortDialog::Run(SpobRecord *spob, short stellar)
             }
         }
     }
-    dialog.Open(kPortDlogID, PortDialogUpdate, Filter, &portDialog, DialogClose::NoFlash);
+    dialog.Open(kPortDlogID, PortDialogUpdate, Filter, &portDialog);
     if (!dialog.IsOpen())
         return;
     if (spob->customSound >= kFirstResourceID && settings.ambientSounds != 0) {

@@ -205,7 +205,6 @@ void ScanPlayer(ShipObj *ship)
     short j;
     char c;
     std::string msg;
-    char *cmsg;
 
     if (ship->aiType != kAIWarship && ship->aiType != kAIInterceptor)
         return;
@@ -2382,7 +2381,7 @@ void LowLevelAIHandler(ShipObj *ship)
         if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x) < 165.0F ||
                 FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y) < 165.0F ||
                 ship->IsInertialess() == 0) {
-            if ((ship->targetShip != 0 && Rand(2) == 0) || AIPerformsComplexManeuvers(ship) != 0) {
+            if ((ship->targetShip != 0 && Rand(2) == 0) || AIPerformsComplexManeuvers() != 0) {
                 i = 123;
                 if (AIIsCombat(shipClass[ship->type].inherentAI) &&
                         shipClass[ship->type].mass < 200 &&
@@ -3001,7 +3000,6 @@ short SelectRandomStellarDest(ShipObj *ship, unsigned char allowSpecial, Boolean
     Boolean preferKindB;
     short spob;
     short g;
-    unsigned short f;
 
     countAny = 0;
     pick = -1;
@@ -3283,7 +3281,6 @@ void AIFireGun(ShipObj *ship, Boolean allowUnguided)
     short score;
     Boolean sawGuided;
     short pick;
-    int32_t dist;
 
     bestWeap[0] = bestWeap[1] = -1;
     best[0] = best[1] = 0;
@@ -3316,8 +3313,6 @@ void AIFireGun(ShipObj *ship, Boolean allowUnguided)
                         score = 1;
                     if (weaponStats[i].guidance == kGuidanceRocket
                             && weaponStats[i].proxRadius > 0) {
-                        dist = FloatAbs(XYFloatSquaredDist(&ship->pos,
-                                                           &shipData[ship->targetShip].pos));
                         if (FloatAbs(ship->pos.x - shipData[ship->targetShip].pos.x)
                                     >= weaponStats[i].proxRadius * aiTune.rangeScale
                                 && FloatAbs(ship->pos.y - shipData[ship->targetShip].pos.y)
@@ -4665,7 +4660,6 @@ Boolean AIEvalHopelessChase(ShipObj *ship)
     short a2;
     short i;
     short found;
-    float distSq;
     float absDistSq;
 
     if (ship->targetShip == -1)
@@ -5747,7 +5741,6 @@ Boolean AIShipIsScooping(ShipObj *ship)
     return 0;
 }
 
-#define kHalfTurnDeg       180
 #define kGunSoundFlags     4
 
 // FUNCTION: EVNOVA 0x00414550

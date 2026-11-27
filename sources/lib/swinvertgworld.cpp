@@ -5,7 +5,7 @@
 // MAC: _SWInvertGWorld i386 0x000a703a ppc 0x000b1c60
 void SWInvertGWorld(CGrafPtr gWorldP)
 {
-    SWInvertRect(gWorldP, GetWindowPortRect(gWorldP));
+    SWInvertRect(gWorldP, GetCWindowPortRect(gWorldP));
 }
 
 // FUNCTION: EVNOVA 0x004791d0

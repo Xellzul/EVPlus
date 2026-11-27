@@ -1,5 +1,4 @@
 /* buttons.cpp -- the custom picture buttons every EV Nova dialog draws over its Dialog Manager items (win TU region 0x0049eef0..0x004a3aa0). Notes: Research/notes/buttons.md */
-#include "scaleddraw.h"
 #include "uiscale.h"
 
 #include "ai.h"
@@ -14,9 +13,6 @@
 
 #define kButtonPictID         7500
 #define kButtonMaskPictID     7600
-
-/* the mac builds the offscreens on the main screen's device; the port's take none */
-#define kButtonDevice 0
 
 /* button slots */
 enum { kTradeDoneButton, kTradeBuyButton, kTradeSellButton };
@@ -266,8 +262,8 @@ void InitButtons(void)
                      buttonPieceRect[6].bottom : buttonPieceRect[7].bottom;
     bounds.bottom = (bounds.bottom > buttonPieceRect[8].bottom) ?
                      bounds.bottom : buttonPieceRect[8].bottom;
-    CreateGWorldContainer(&buttonImagePort, kButtonDevice, gSpriteWorld->pixelDepth, &bounds);
-    CreateGWorldContainer(&buttonMaskPort, kButtonDevice, 1, &bounds);
+    CreateGWorldContainer(&buttonImagePort, gSpriteWorld->pixelDepth, &bounds);
+    CreateGWorldContainer(&buttonMaskPort, 1, &bounds);
     mask = buttonPieceRect;
     {
         UI::Painter image{UI::Surface(buttonImagePort)};
@@ -309,7 +305,7 @@ void CreateButtonPort(void)
     SetRect(&bounds, 0, 0, 500, 75);
     if (UI::Enabled())
         SetRect(&bounds, 0, 0, UI::ScreenWidth(), UI::ScreenHeight());     /* buttons drawn where they lie */
-    CreateGWorldContainer(&buttonPort, kButtonDevice, gSpriteWorld->pixelDepth, &bounds);
+    CreateGWorldContainer(&buttonPort, gSpriteWorld->pixelDepth, &bounds);
     if (buttonPort.world != 0) {
         UI::ScaleUIPort(buttonPort.world);
         UI::Canvas::MakeNewTarget(buttonPort.world);

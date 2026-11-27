@@ -318,8 +318,8 @@ void DrawCopyModes(GWorldContainer *page)
     SetRect(&area, 0, 0, 120, 60);
     source.world = 0;
     mask.world = 0;
-    CreateGWorldContainer(&source, GetMainDevice(), 0, &area);
-    CreateGWorldContainer(&mask, GetMainDevice(), 0, &area);
+    CreateGWorldContainer(&source, 0, &area);
+    CreateGWorldContainer(&mask, 0, &area);
     if (source.world == 0 || mask.world == 0)
         return;
 
@@ -408,7 +408,7 @@ void DebugScaleTest(void)
     SetRect(&bounds, 0, 0, kPageWidth, kPageHeight);
     for (double scale : kTestScales) {
         page.world = 0;
-        CreateGWorldContainer(&page, GetMainDevice(), 0, &bounds);
+        CreateGWorldContainer(&page, 0, &bounds);
         if (page.world == 0)
             break;
         UI::ScalePortPixels(page.world, scale);

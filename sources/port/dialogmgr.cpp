@@ -11,7 +11,6 @@
 #include "platform.h"
 #include "endianswap.h"
 #include "screen.h"
-#include "text.h"
 #include "player.h"
 
 /* A control points back at the dialog that owns it so that changing a value
@@ -27,43 +26,6 @@ int32_t gBlinkTick;
 uint32_t gClickTime;
 void *gClickDialog;
 void *gClickItem;
-int32_t gRezOpenPending;
-
-/* the port has exactly one window, so there is nothing to search */
-
-/* the Toolbox GetMouse answers in port-local coordinates, so the port's
-   raw global reading has the current dialog's top left taken off it */
-
-/* a dialog record starts with the GWorldContainer it draws into */
-
-/* clamps into the control's own range, then marks its dialog for redraw */
-
-/* the GetWindowPortRect of the port's own dialog record */
-
-/* Three Toolbox entry points that collapsed to the same store: the item and
-   the rect saying WHAT to invalidate are discarded and the dialog is redrawn. */
-
-/* an item with no text of its own answers the empty string */
-
-/* only the three editable item kinds carry text */
-
-/*
- * Resize a dialog and the offscreen world behind it (win 0x004d18b0). The DIB
- * section is rebuilt at the new size, so the old bitmap is deleted first and
- * the port's baseAddr is re-pointed by CreateDIBSection.
- */
-
-/*
- * Replaces an item's text, reallocating to fit. An editable item also has its
- * selection reset to the whole string, which is what reuses minValue/maxValue.
- * The dialog is only marked dirty when text was actually installed.
- */
-
-/* the pascal-string entry point SetControlTitle dispatches to */
-
-/* and the pascal-string reader that mirrors it */
-
-/* set the text back without disturbing the caret or the selection */
 
 /*
  * A list item's data block: the MENU's title, then fixed-width C-string
@@ -83,44 +45,11 @@ typedef struct DlgListRec {
 } DlgListRec;
 
 /*
- * The scroll state behind a list; a separate record from the dialog, sharing
- * only the convention of being reached through a handle.
- */
-
-/* The two "no such item" stores load their zero byte from a pooled empty string, so
-   they are an inlined strcpy: this file takes <string.h> and intrinsics. */
-
-/* scroll by `delta`, then clamp to the last full page and to zero */
-
-/* The bevel the port draws round a control: an optional fill, then a highlight
-   down the top and left edges and a shadow up the bottom and right. Each edge is
-   drawn as its own move/line pair rather than a polyline, so the corner pixel is
-   painted twice and both diagonals start from the same inset corner. */
-
-/* The vertical run's `if (n == 9) n = 0;' can never fire and is in the original. The
-   corner goes through the botRight Point view of the Rect: spelled r->bottom/r->right
-   it value-numbers into the loop bounds. */
-
-/* scroll the selected row into view, doing nothing when the whole list already
-   fits or when the row is already on screen */
-
-/* the box a run of wrapped text will occupy, sat on its baseline */
-
-/*
  * The item list is a plain ControlRecord array (0x28 stride on 32-bit) hanging off the dialog, and
  * item numbers are 1-based as the Toolbox has them. Every Dialog Manager
  * entry point that takes an item number funnels through this.
  */
 #define kDialogItemSize sizeof(ControlRecord)
-
-/* An absent item answers zero in each out-parameter except the handle, which
-   gets the null record itself. */
-
-/*
- * The Toolbox signature carries the type and handle too, but the port stores
- * only the box — the other two are set when the item is built. Marking the
- * owning dialog for update is what makes a moved item repaint.
- */
 
 /* The three resource-backed item kinds load their resource here; the three longs ahead
    of the box are the control's value and its range. The length is unsigned and the
@@ -523,7 +452,7 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
     GetGlobalMouse(&pt);
     if (PtInRect(pt.h - dlg->bounds.left, pt.v - dlg->bounds.top, &box)) {
         portRect = GetCWindowPortRect(gWind);
-        CreateGWorldContainer(&gw, 0, 0, &box);
+        CreateGWorldContainer(&gw, 0, &box);
         SetGWorldContainer(&gw);
         for (i = 0; i < list->count; i++) {
             w = MeasureCString(list->item[i].text) + 3;
@@ -545,7 +474,7 @@ int32_t PopUpListSelect(DialogPtr dlg, ControlRecord *rec)
         } else if (box.top < portRect->top) {
             OffsetRect(&box, 0, portRect->top - box.top);
         }
-        CreateGWorldContainer(&gw, 0, 0, &box);
+        CreateGWorldContainer(&gw, 0, &box);
         UI::ScaleUIPort(gw.world);
         SetGWorldContainer(&gw);
         EraseRect(&box);
@@ -655,7 +584,7 @@ static DialogPtr NewDialogFromTemplate(const unsigned short *dlogTemplate, unsig
     dlg->portRect.bottom = dlg->bounds.bottom;
     dlg->portRect.right = dlg->bounds.right;
     OffsetRect(&dlg->portRect, -dlg->bounds.left, -dlg->bounds.top);
-    CreateGWorldContainer((GWorldContainer *)dlg, 0, 0, &dlg->portRect);
+    CreateGWorldContainer((GWorldContainer *)dlg, 0, &dlg->portRect);
     UI::ScaleUIPort(dlg->port);
     SetGWorldContainer((GWorldContainer *)dlg);
     EraseRect(&dlg->portRect);
@@ -755,6 +684,8 @@ DialogPtr NewDialogFromItems(short width, short height, const DialogItemSpec *it
 }
 
 // FUNCTION: EVNOVA 0x004cf890
+// FUNCTION: EVNOVA 0x0046e8e0
+// MAC: _DisposeDialogNoFlash i386 0x00007f91 ppc 0x00009db4
 void DisposeDialog(DialogPtr dlg)
 {
     ControlPtr item;
@@ -798,6 +729,7 @@ void DisposeDialog(DialogPtr dlg)
     ScreenEndScene();
 }
 
+/* an absent item: zeros and a NULL handle */
 // FUNCTION: EVNOVA 0x004cf960
 void GetDialogItem(DialogPtr dlg, int32_t item, short *type, Handle *handle,
                    Rect *box)
@@ -817,6 +749,7 @@ void GetDialogItem(DialogPtr dlg, int32_t item, short *type, Handle *handle,
     }
 }
 
+/* only the box is stored; type and handle are set when the item is built */
 // FUNCTION: EVNOVA 0x004cf9f0
 void SetDialogItem(DialogPtr dlg, int32_t item, short type, void *handle,
                    const Rect *box)
@@ -868,6 +801,7 @@ void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text)
     memcpy(text + 1, buf, text[0]);
 }
 
+/* an editable item's selection (minValue/maxValue) becomes the whole text */
 // FUNCTION: EVNOVA 0x004cfb10
 void SetControlText(ControlPtr ctl, const char *text)
 {
@@ -891,11 +825,6 @@ void SetControlText(ControlPtr ctl, const char *text)
     }
     if (changed)
         ctl->owner->needsUpdate = 1;
-}
-
-void SetControlText(ControlPtr ctl, const std::string &text)
-{
-    SetControlText(ctl, text.c_str());
 }
 
 // FUNCTION: EVNOVA 0x004cfb90
@@ -930,6 +859,7 @@ void GetDialogItemText(Handle item, unsigned char *text)
     memcpy(text + 1, buf, text[0]);
 }
 
+/* the item is not read: the whole dialog is redrawn */
 // FUNCTION: EVNOVA 0x004cfc60
 void InvalDialogItem(DialogPtr dlg, int32_t item)
 {
@@ -940,7 +870,7 @@ void InvalDialogItem(DialogPtr dlg, int32_t item)
 void SetControlTitle(ControlPtr ctl, const unsigned char *text)
 {
     switch (ctl->kind) {
-    case 4:
+    case 4:     /* button, check box, radio button: their title */
     case 5:
     case 6:
         SetDialogItemText((Handle)ctl, text);
@@ -981,6 +911,7 @@ Rect *GetDialogPortRect(DialogPtr dlg)
     return &dlg->portRect;
 }
 
+/* clamped to the control's range */
 // FUNCTION: EVNOVA 0x004cfd40
 void SetControlValue(ControlPtr ctl, int32_t value)
 {
@@ -1399,6 +1330,7 @@ void ModalDialog(void *filterProc, short *itemHitPtr)
     Screen::Idle();
 }
 
+/* caret and selection kept */
 // FUNCTION: EVNOVA 0x004d0610
 void SetControlTextKeepSelection(ControlPtr ctl, const char *text)
 {
@@ -1527,6 +1459,7 @@ void EditTextKey(ControlRecord *rec, int32_t key, int32_t mods)
     }
 }
 
+/* optional fill, light top and left edges, dark bottom and right */
 // FUNCTION: EVNOVA 0x004d0a50
 void DrawBevel(Rect *r, const RGBColor *fill, const RGBColor *light,
                   const RGBColor *dark)
@@ -1547,6 +1480,7 @@ void DrawBevel(Rect *r, const RGBColor *fill, const RGBColor *light,
     LineTo(r->right - 1, r->top + 1);
 }
 
+/* the box of the text on baseline `bottom' */
 // FUNCTION: EVNOVA 0x004d0b70
 void MeasureTextBox(const char *text, int left, int bottom, Rect *box)
 {
@@ -1586,7 +1520,7 @@ void DrawDottedFrame(Rect *r)
     if (at < r->bottom) {
         do {
             if ((n & 1) == 0) {
-                if (n == 9)
+                if (n == 9)     // BUG (all versions): never fires
                     n = 0;
             } else {
                 MoveTo(r->left, at);
@@ -1917,6 +1851,7 @@ CGrafPtr GetDialogPort(DialogPtr dlg)
     return port;
 }
 
+/* in the current dialog's coordinates */
 // FUNCTION: EVNOVA 0x004d17e0
 void GetMouse(Point *pt)
 {
@@ -1943,6 +1878,7 @@ void SetDialogVisible(DialogPtr dlg, unsigned char value)
     ScreenEndScene();
 }
 
+/* its pixels resized with it */
 // FUNCTION: EVNOVA 0x004d18b0
 void SizeDialogWindow(DialogPtr dlg, short width, short height, char update)
 {
@@ -2097,6 +2033,7 @@ char LGetSelect(int32_t unused, Point *pt, ScrollRec **list)
     return same;
 }
 
+/* scrolls the selected row into view */
 // FUNCTION: EVNOVA 0x004d1d40
 void LAutoScroll(ScrollRec **h)
 {
@@ -2165,6 +2102,7 @@ void GetListCellRect(Rect *box, Point cell, ScrollRec **h)
     OffsetRect(box, (*h)->rView.left, (*h)->rView.top);
 }
 
+/* clamped to the last full page */
 // FUNCTION: EVNOVA 0x004d1fb0
 void LScroll(int32_t unused, short delta, ScrollRec **h)
 {

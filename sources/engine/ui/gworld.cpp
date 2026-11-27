@@ -5,8 +5,7 @@
 
 // FUNCTION: EVNOVA 0x0046f740
 // MAC: _CreateGWorldContainer i386 0x000a4517 ppc 0x000b001c
-void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
-                           Rect *bounds)
+void CreateGWorldContainer(GWorldContainer *gwc, short depth, Rect *bounds)
 {
     if (gwc != 0) {
         short useDepth;
@@ -35,8 +34,7 @@ void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
 
 // FUNCTION: EVNOVA 0x0046f850
 // MAC: _CreateGWorldContainerFromPictResource i386 0x000a46b7 ppc 0x000b0208
-void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
-                                           short depth, short picID)
+void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, short depth, short picID)
 {
     PicHandle pic;
     Rect bounds;
@@ -45,7 +43,7 @@ void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
     if (pic != 0) {
         QDGetPictureBounds(pic, &bounds);
         OffsetRect(&bounds, -bounds.left, -bounds.top);
-        CreateGWorldContainer(gwc, flags, depth, &bounds);
+        CreateGWorldContainer(gwc, depth, &bounds);
         UI::Painter(UI::Surface(*gwc)).Picture(pic, gwc->bounds);
         QDReleaseResource(pic);
     } else {
@@ -63,6 +61,7 @@ void DisposeGWorldContainer(GWorldContainer *gwc)
     }
 }
 
+#if EVPLUS_TEST_PAGES
 // FUNCTION: EVNOVA 0x0046f940
 // MAC: _GetGWCPixMap i386 0x000a469e ppc 0x000b01f0
 PixMapPtr GetGWCPixMap(GWorldContainer *gwc)
@@ -71,3 +70,4 @@ PixMapPtr GetGWCPixMap(GWorldContainer *gwc)
         return GetCWindowPixMap(gwc->world);
     return 0;
 }
+#endif

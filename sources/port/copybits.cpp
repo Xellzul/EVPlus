@@ -325,17 +325,17 @@ typedef void (*BlitProc)(PixMapPtr srcBits, PixMapPtr dstBits,
 BlitProc copyBitsProcs[5][5] = {             /* 0x00575b28 same-size srcCopy */
     { NULL, NULL, NULL, NULL, NULL },
     { NULL, CopyBitsNone, CopyBitsCopy8, CopyBitsNone, CopyBitsNone },
-    { NULL, CopyBitsNone, CopyBitsCopy16, CopyBitsNone, BlitDirect16 },
-    { NULL, CopyBitsNone, BlitDirect24, CopyBitsNone, BlitDirect24 },
-    { NULL, CopyBitsNone, BlitDirect32, CopyBitsNone, BlitDirect32 }
+    { NULL, CopyBitsNone, CopyBitsCopy16, CopyBitsNone, BlitDirect },
+    { NULL, CopyBitsNone, BlitDirect, CopyBitsNone, BlitDirect },
+    { NULL, CopyBitsNone, BlitDirect, CopyBitsNone, BlitDirect }
 };
 
 BlitProc scaleBitsCopyProcs[5][5] = {        /* 0x00575b8c scaled srcCopy */
     { NULL, NULL, NULL, NULL, NULL },
     { NULL, CopyBitsNone, CopyBitsScale8, CopyBitsNone, CopyBitsNone },
-    { NULL, CopyBitsNone, BlitDirect16, CopyBitsNone, BlitDirect16 },
-    { NULL, CopyBitsNone, BlitDirect24, CopyBitsNone, BlitDirect24 },
-    { NULL, CopyBitsNone, BlitDirect32, CopyBitsNone, BlitDirect32 }
+    { NULL, CopyBitsNone, BlitDirect, CopyBitsNone, BlitDirect },
+    { NULL, CopyBitsNone, BlitDirect, CopyBitsNone, BlitDirect },
+    { NULL, CopyBitsNone, BlitDirect, CopyBitsNone, BlitDirect }
 };
 
 BlitProc copyBitsAddOverProcs[5][5] = {      /* 0x00575bf0 same-size addOver */
@@ -493,6 +493,7 @@ void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits, const Rect *srcRect,
     proc(srcPix, dstPix, &src, &dst, xStep, yStep, xFrac, yFrac);
 }
 
+#if EVPLUS_TEST_PAGES
 // FUNCTION: EVNOVA 0x004b92d0
 void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
                 Rect *srcRect, Rect *maskRect, Rect *dstRect,
@@ -671,3 +672,4 @@ void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
     proc((PixMapPtr)srcBits, (PixMapPtr)maskBits, (PixMapPtr)dstBits, &src, &mask, &dst,
          xStep, yStep, xFrac, yFrac);
 }
+#endif

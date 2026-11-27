@@ -1,7 +1,6 @@
 /* viewdraw.cpp -- the space view drawn by the GPU (viewdraw.h). */
 #include <stdlib.h>
 #include <vector>
-#include "burger.h"
 #include "game.h"
 #include "pixel.h"
 #include "player.h"
@@ -91,9 +90,7 @@ void Fill(const Rect &r, uint16_t color)
 /* the system's colour over the whole view, under everything */
 void Background(const Rect &view)
 {
-    RGBColor color = systemData[shipData[0].curSystem < 0 ? 0 : shipData[0].curSystem].rgb;
-
-    Fill(view, (uint16_t)Color2Index(&color));
+    Fill(view, Pixel::FromColor(systemData[shipData[0].curSystem < 0 ? 0 : shipData[0].curSystem].rgb));
 }
 
 /* the field of a pixel-pair channel value, 0..31 */
@@ -428,9 +425,7 @@ void Overlay(SWFrameRec *frame, const Rect &place, short level)
 
 void Flash(const RGBColor &color)
 {
-    RGBColor c = color;
-
-    flashColor = (uint16_t)Color2Index(&c);
+    flashColor = Pixel::FromColor(color);
     flashing = true;
     flashTaken = false;
 }

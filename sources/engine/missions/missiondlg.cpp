@@ -5,7 +5,6 @@
 #include "missions.h"
 #include "render.h"
 #include "ships.h"
-#include "prototypes.h"
 #include "gamedialog.h"
 #include "buttons.h"
 #include "missionlist.h"
@@ -86,7 +85,7 @@ void MissionDialog::Run()
         }
         return;
     }
-    dialog.Open(kMissionDlogID, MissionDialogUpdate, Filter, &missionDialog, DialogClose::NoFlash);
+    dialog.Open(kMissionDlogID, MissionDialogUpdate, Filter, &missionDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(missionBackgroundPic[0]);

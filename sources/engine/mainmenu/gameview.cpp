@@ -161,7 +161,6 @@ void InitMainScreen(void)
 
     didSpeak = 0;
     onPlanet = 0;
-    doMainScreenAnim = 1;
 
     standardPicRect.left = (GetCWindowPortRect((WindowRef)gWind)->left
                       + GetCWindowPortRect((WindowRef)gWind)->right) / 2 - kViewWidth / 2;

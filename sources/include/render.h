@@ -22,8 +22,7 @@ static __inline void CopyRect(Rect *d, const Rect *s)
 
 extern void DeltaIntroProgressBar(double amount);
 extern void CenterRect(Rect *r, Rect *bounds);
-extern void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, int32_t flags,
-                          short depth, short picID);
+extern void CreateGWorldContainerFromPictResource(GWorldContainer *gwc, short depth, short picID);
 extern SpriteRec *weapTargetSprite[4];
 extern SpriteRec *navTargetSprite[4];
 extern SpriteRec *masterExplodSprite[64];
@@ -33,11 +32,9 @@ extern Rect statusOffRect[8];
 extern unsigned char targKeyOnNow;
 extern ShipClassID lastTargetedShipClass;
 extern unsigned char lastDebugTargInfoState;
-extern Boolean gUpdateFlag;
 extern Boolean regNoticeShown;
 extern void DisposeMainScreenAnim(void);
-extern void CreateGWorldContainer(GWorldContainer *gwc, int32_t flags, short depth,
-                                  Rect *bounds);
+extern void CreateGWorldContainer(GWorldContainer *gwc, short depth, Rect *bounds);
 extern void DisposeGWorldContainer(GWorldContainer *gwc);
 extern void DoMainScreen(void);
 extern Boolean RetrieveMenuIcon(short picID, const UI::Surface &dest, Rect *destRect);
@@ -78,7 +75,7 @@ extern void LoopingMovieIdle(void);
 extern void MainScreenAnimDraw(void);
 extern void MainScreenChoice(short which);
 extern void MainScreenAppearStart(void);
-void MainScreenKey(char key, int32_t a, int32_t b);
+void MainScreenKey(char key);
 extern void MainScreenRolloverDraw(void);
 extern void MainScreenUpdate(short which);
 extern void ShowMainScreen(void);
@@ -178,6 +175,6 @@ extern void FloaterDrawCallback(SpriteWorldPtr world);
 extern void StartLoopingMovie(const std::string &name, DialogPtr dlg, const Rect &box);
 /* the looping movie's frame as last decoded, at its box */
 extern void DrawLoopingMovie(UI::Painter &p);
-extern void PreloadPortDialog(SpobRecord *spob, short stellar);
+extern void PreloadPortDialog(SpobRecord *spob);
 
 #endif

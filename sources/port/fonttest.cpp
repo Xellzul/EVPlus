@@ -161,7 +161,7 @@ void DebugFontScreen(void)
 
     screen = *GetCWindowPortRect((WindowRef)gWind);
     page.world = 0;
-    CreateGWorldContainer(&page, GetMainDevice(), 0, &screen);
+    CreateGWorldContainer(&page, 0, &screen);
     if (page.world == 0)
         return;
     count = FontFamilyCount();

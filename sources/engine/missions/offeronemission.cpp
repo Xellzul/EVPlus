@@ -126,7 +126,7 @@ short SingleMissionDialog::Run(short offered)
         strcat(briefingTextPtr, "\r");
 
     dialog.Open(descResourcePictId >= 128 ? kWideDlogID : kNarrowDlogID, SingleMissionDialogUpdate,
-                Filter, &missionDialog, DialogClose::NoFlash);
+                Filter, &missionDialog);
     if (!dialog.IsOpen())
         return 0;
 

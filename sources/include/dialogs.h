@@ -53,7 +53,7 @@ extern void DoPlunderDialog(void);
 extern void DoPortDialog(SpobRecord *spob, short stellar);
 extern void DoPrefsDialog(void);
 extern void DoRaceDialog(void);
-void DoShipyardDescription(short ship);
+void DoShipyardDescription(void);
 extern void DoShipyardDialog(void);
 extern void DoSystemSearch(void);
 extern void DoTradeDialog(void);
@@ -212,7 +212,6 @@ extern short raceCount;
 extern PicHandle raceBackgroundPic;
 extern short racePick;
 extern short raceWinner;
-extern RGBColor *redColor;
 extern RGBColor redRGB;
 extern const RGBColor betterRGB;    /* green: a better or raised value */
 extern const RGBColor worseRGB;     /* red: a worse or lowered value */
@@ -247,9 +246,6 @@ extern DialogPtr keyDialog;
 extern DialogPtr prefsDialog;
 extern DialogPtr textDialog;
 extern DialogPtr qtyDialog;
-extern DialogPtr depthDialog;
-extern DialogPtr loadingDialog;
-extern DialogPtr outfitDescDialog;
 
 extern void EVNoteAlert(const unsigned char *text);
 extern PicHandle raceButtonPic[4][4];

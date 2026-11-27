@@ -2,7 +2,6 @@
    frames. */
 #include <math.h>
 #include <initializer_list>
-#include "burger.h"
 #include "canvas.h"
 #include "player.h"
 #include "render.h"
@@ -19,7 +18,6 @@ short height;
 
 namespace {
 
-short gameHeight;
 int zoomLevel;                      /* Zoom() = 2^(zoomLevel / kZoomStepsPerDouble) */
 constexpr int kZoomStepsPerDouble = 3;
 constexpr int kMaxZoomLevel = 6;    /* 4 times */
@@ -57,7 +55,6 @@ double Scale()
 void SetSizes(short gameW, short gameH, short drawH, double ui)
 {
     gameWidth = gameW;
-    gameHeight = gameH;
     scale = gameH > 0 ? (double)drawH / gameH : 1.0;
     if (fabs(scale - 1.0) < 1e-9)
         scale = 1.0;

@@ -3,15 +3,11 @@
 #include "dialogs.h"
 #include "stellar.h"
 #include "render.h"
-#include "sound.h"
 #include "painter.h"
 
 #define kPictCacheSlots 128
 
 PictCacheSlot iconCache[kPictCacheSlots];
-DialogPtr depthDialog;
-DialogPtr loadingDialog;
-DialogPtr outfitDescDialog;
 Rect listPicOffRect[kPictCacheSlots];
 GWorldContainer iconsPort;
 short nagCount;
@@ -114,12 +110,9 @@ void SetupDialogs(void)
     short i;
 
     alertDialog = NULL;
-    depthDialog = NULL;
-    loadingDialog = NULL;
     tradeDialog = NULL;
     portDialog = NULL;
     outfitDialog = NULL;
-    outfitDescDialog = NULL;
     shipyardDialog = NULL;
     shipDescDialog = NULL;
     infoDialog = NULL;
@@ -138,7 +131,7 @@ void SetupDialogs(void)
     }
     nagCount = 0;
     SetRect(&r, 0, 0, kGridThumbSize * 128, kGridThumbSize);
-    CreateGWorldContainer(&iconsPort, 0, 0, &r);
+    CreateGWorldContainer(&iconsPort, 0, &r);
 }
 
 // FUNCTION: EVNOVA 0x0049eec0

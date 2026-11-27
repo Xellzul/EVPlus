@@ -6,7 +6,6 @@
 #include "space.h"
 #include "prototypes.h"
 #include "gameutil.h"
-#include "viewscale.h"
 #include "uiscale.h"
 #include "sound.h"
 
@@ -676,7 +675,7 @@ short ConvertSpriteToRLE(SpriteRec *set)
 
     first = set->frameArray[0];
     if (first->framePort != NULL) {
-        r = GetWindowPortRect(first->framePort);
+        r = GetCWindowPortRect(first->framePort);
         first = set->frameArray[0];
         if ((r->right - r->left) * (r->bottom - r->top) !=
             (first->frameRect.right - first->frameRect.left) * set->numFrames *
@@ -718,7 +717,6 @@ clearCaches:
    passes NULL for the rest. */
 
 /* GetSpriteInfo's globals */
-SpinRec spriteInfo;
 SpinHandle spriteInfoHand;
 
 // FUNCTION: EVNOVA 0x004b4e10

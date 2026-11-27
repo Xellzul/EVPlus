@@ -97,10 +97,10 @@ short SWCreateSpriteFromSinglePictXY(
     }
 
     if ((int)err == noErr) {
-        err = SWCreateGWorldFromPictResource(destSpriteWorldP, &tempPictGWorldP, pictResID, 0);
+        err = SWCreateGWorldFromPictResource(destSpriteWorldP, &tempPictGWorldP, pictResID);
 
         if ((int)err == noErr && maskType != kNoMask)
-            err = SWCreateGWorldFromPictResource(destSpriteWorldP, &tempMaskGWorldP, maskResID, 0);
+            err = SWCreateGWorldFromPictResource(destSpriteWorldP, &tempMaskGWorldP, maskResID);
 
         SWInvertGWorld(tempMaskGWorldP);
 
@@ -111,8 +111,8 @@ short SWCreateSpriteFromSinglePictXY(
         }
 
         if (maxFrames == 0) {
-            maxFrames = (GetWindowPortRect(tempPictGWorldP)->right / frameWidth) *
-                        (GetWindowPortRect(tempPictGWorldP)->bottom / frameHeight);
+            maxFrames = (GetCWindowPortRect(tempPictGWorldP)->right / frameWidth) *
+                        (GetCWindowPortRect(tempPictGWorldP)->bottom / frameHeight);
         }
 
         if ((int)err == noErr) {
@@ -139,14 +139,14 @@ short SWCreateSpriteFromSinglePictXY(
                         frameRect.left += frameWidth + borderWidth;
                         frameRect.right = frameRect.left + frameWidth;
                         if (frameRect.right >
-                                GetWindowPortRect(tempPictGWorldP)->right) {
+                                GetCWindowPortRect(tempPictGWorldP)->right) {
                             frameRect.top += frameHeight + borderHeight;
                             frameRect.left = 0;
                             frameRect.right = frameWidth;
                             frameRect.bottom = frameRect.top + frameHeight;
 
                             if (frameRect.bottom >
-                                    GetWindowPortRect(tempPictGWorldP)->bottom) {
+                                    GetCWindowPortRect(tempPictGWorldP)->bottom) {
                                 err = kOutOfRangeErr;
                             }
                         }

@@ -6,7 +6,6 @@
 #define MACPORT_H
 
 typedef unsigned char *StringPtr;
-typedef uint32_t OSType;
 
 /* QuickDraw basics (partial) */
 typedef struct Point {
@@ -39,7 +38,6 @@ typedef struct PixMap {
     int32_t pixelSize;
     void *baseAddr;
     unsigned char *ctab;
-    int32_t originV;
     int32_t width;
     int32_t height;
     int32_t rowBytes;
@@ -64,8 +62,6 @@ typedef struct CGrafPort {
     int32_t pnDeviceOffset;         /* text: the pen's device x minus pnLoc.h's; 0 after any pen move */
     struct PlatTarget *target;      /* the Painter's GPU canvas for this port, pix its size; NULL: its pixels */
 } CGrafPort, *CGrafPtr;
-/* one port record serves every port, so these are Carbon's: a GrafPtr is a CGrafPtr */
-typedef CGrafPtr GrafPtr;
 typedef CWindowPtr WindowRef;
 typedef struct BitMap *BitMapPtr;
 
@@ -91,6 +87,26 @@ extern void DebugGpuTest(void);                   /* port/gputest.cpp: runs when
 extern short FontFamilyCount(void);
 extern const char *FontFamilyName(short familyID);
 extern void FontRealName(short familyID, short size, short style, char *out, int outSize);
+/* QuickDraw calls only the test pages make */
+extern void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
+                     Rect *srcRect, Rect *maskRect, Rect *dstRect);
+extern void CopyMaskNone(PixMapPtr src, PixMapPtr mask, PixMapPtr dst,
+        Rect *srcRect, Rect *maskRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
+extern void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
+        Rect *srcRect, Rect *maskRect, Rect *dstRect,
+        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
+extern void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect, Rect *maskRect,
+                             Rect *dstRect,
+                             int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
+extern PixMapPtr GetGWCPixMap(struct GWorldContainer *gwc);
+/* a GWorldContainer's bits for CopyBits */
+#define GWorldContainerBits(gwc) ((BitMapPtr)GetGWCPixMap(gwc))
+extern void DrawText(const void *textBuf, int firstByte, int byteCount);
+extern short StringWidth(const unsigned char *str);
+extern void FrameOval(Rect *r);
+extern void PaintOval(Rect *r);
+extern void PenSize(short width, short height);
 #endif
 extern void DrawTextRun(const void *text, uint32_t byteCount, Rect *box,
                         Boolean clipped, int height);
@@ -106,17 +122,12 @@ extern void CopyBits(BitMapPtr srcBits, BitMapPtr dstBits,
                      const Rect *srcRect, const Rect *dstRect,
                      int32_t mode, void *maskRgn);
 extern BitMapPtr GetPortBitMapForCopyBits(CGrafPtr port);
-extern void CopyMask(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits,
-                     Rect *srcRect, Rect *maskRect, Rect *dstRect);
-/* a GWorldContainer's bits for CopyBits: the mac takes its GWorld's port, the win port the container */
-#define GWorldContainerBits(gwc) ((BitMapPtr)GetGWCPixMap(gwc))
 /* a Point in hand: the mac passes it whole, the win port's PtInRect takes h and v */
 #define PtInRectPoint(pt, r) PtInRect((pt).h, (pt).v, r)
 extern short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds,
                        void *theGDH);
 extern PixMapPtr GetGWorldPixMap(CGrafPtr world);
 extern void QDGetCIconBounds(Image_t *icon, Rect *r);
-extern PicHandle GetPictureNoGamma(int picID);
 extern void (*gArtGone)(const Image_t *art);     /* set: told of each picture, icon and pattern released */
 extern void (*gPortGone)(CGrafPtr port);         /* set: told of each port disposed (DisposeGWorld) */
 
@@ -140,30 +151,15 @@ extern void CopyBitsAdMax16(PixMapPtr src, PixMapPtr dst,
         int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 extern void CopyBitsScale8(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
         int32_t xStep, int32_t yStep, int32_t xStart, int32_t yStart);
-extern void CopyMaskNone(PixMapPtr src, PixMapPtr mask, PixMapPtr dst,
-        Rect *srcRect, Rect *maskRect, Rect *dstRect,
-        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
-/* blitdirect.cpp: CopyBits / CopyMask procs for direct-colour sources, at the same size or stretched */
-extern void BlitDirect16(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-                         int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
-extern void BlitDirect24(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-                         int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
-extern void BlitDirect32(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
-                         int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
-extern void BlitDirectMask16(PixMapPtr src, PixMapPtr mask, PixMapPtr dst, Rect *srcRect, Rect *maskRect,
-                             Rect *dstRect,
-                             int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
+/* blitdirect.cpp: CopyBits procs for direct-colour sources, at the same size or stretched */
+extern void BlitDirect(PixMapPtr src, PixMapPtr dst, Rect *srcRect, Rect *dstRect,
+                       int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 /* the bicubic stretch on 32-bit premultiplied ARGB pixel maps, the alpha stretched with the colour */
 extern void BlitScaleArgb(PixMapPtr src, PixMapPtr dst, const Rect *srcRect, const Rect *dstRect);
-extern void CopyMask16(PixMapPtr srcBits, PixMapPtr maskBits, PixMapPtr dstBits,
-        Rect *srcRect, Rect *maskRect, Rect *dstRect,
-        int32_t xStep, int32_t yStep, int32_t xFrac, int32_t yFrac);
 
 extern CGrafPtr GetCWindowGrafPort(CWindowPtr window);
-extern Rect *GetWindowPortRect(CWindowPtr window);
 extern Rect *GetCWindowPortRect(CWindowPtr window);
 extern PixMapPtr GetCWindowPixMap(CWindowPtr window);
-extern PixMapPtr GetGWCPixMap(GWorldContainer *gwc);
 
 typedef struct SWFrameRec {
     CGrafPtr framePort;
@@ -227,14 +223,12 @@ typedef struct RLEPixelData {
 #define noErr           0
 #define memFullErr      (-108)
 #define resNotFound     (-192)
-#define srcCopy         0
 
 #define SW_ROWBYTES(frame, rows) \
         ((frame)->scanLinePtrArray[(rows) - (frame)->frameRect.top])
 #define SW_PIXELBYTES(frame, pixels)    ((pixels) << (frame)->pixelShift)
 
 #define ABS(x) (((x)<0) ? (-(x)) : (x))
-#define SIGN(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
 
 #define SW_PIXELPTR(frame, x, y) \
     ((frame)->frameBaseAddr + SW_ROWBYTES(frame, y) + SW_PIXELBYTES(frame, x))
@@ -295,9 +289,7 @@ typedef struct TERec {
     int32_t                   height;
 } TERec, **TEHandle;
 
-#define TESetLineMetrics(te) ((void)0)
 #define TETextHeight(te) ((*(te))->height)
-#define TEWrappedHeight(te) ((*(te))->height)
 
 struct ScrollRec;
 typedef void (*ListDrawProcPtr)(short lMessage, Boolean lSelect, Rect *lRect,
@@ -351,7 +343,7 @@ typedef struct Particle {
 
 /* Toolbox GetTime shim — port implementation at 0x004bbb10 */
 extern void GetTime(DateTimeRec *dtr);
-extern void IncrementDate(DateTimeRec *date, int32_t daysToAdd);
+extern void IncrementDate(DateTimeRec *date);
 
 extern char *PtoCstr(unsigned char *str);
 extern unsigned char *CtoPstr(char *str);
@@ -393,7 +385,6 @@ extern void Delay(uint32_t numTicks, uint32_t *finalTicks);
 extern void DisposeCIcon(Image_t *icon);
 extern void DrawCString(const char *text);
 extern void DrawPicHandle(PicHandle pic, Rect *dstRect);
-extern void DrawText(const void *textBuf, int firstByte, int byteCount);
 extern void EraseRect(Rect *r);
 extern void ExitToShell(void);
 extern void DisposePixPat(Image_t *pat);
@@ -418,9 +409,7 @@ extern void FillRectWithColor(Rect *r, RGBColor *color);
 extern short FindFirstCoLocatedSystem(short sys);
 extern short FindPriorLoadedShipSprite(short value, short count, short field);
 extern void DisposeClonedSprite(SpritePtr *p);
-extern void DisposeDialogNoFlash(void *dlg);
 extern void FlushEvents(unsigned short whichMask, unsigned short stopMask);
-extern void FrameOval(Rect *r);
 extern CWindowPtr FrontWindow(void *window);
 extern Image_t *GetCIcon(short iconID);
 extern Rect *GetDialogPortRect(DialogPtr dlg);
@@ -476,7 +465,6 @@ extern int32_t GetKeyModifiers(void);
 extern void KeyboardScanCodeToString(char *buf, uint32_t size, ScanCode code);
 extern unsigned int KeyIsDown(ScanCode scanCode);
 extern bool KeyboardGet2(int *ch);
-extern void Line(short dh, short dv);
 extern void LineTo(short h, short v);
 extern short MeasureCString(const char *text);
 extern short CapsCenteredPenV(short top, short bottom);
@@ -484,8 +472,6 @@ extern void MoveTo(short h, short v);
 extern void OffsetRect(Rect *r, int dh, int dv);
 extern void OpenDataFiles(void);
 extern void PStr2CStr(char *dst, const unsigned char *src);
-extern void PaintOval(Rect *r);
-extern void PenSize(short width, short height);
 /* QuickDraw's PtInRect under a link name of its own: on 64-bit Windows names are not decorated, and
    user32's PtInRect (which SDL uses) would clash with it */
 #define PtInRect QD_PtInRect
@@ -499,7 +485,6 @@ extern void RedrawDialogs(int a);
 extern void ResetScreenRect(void);
 extern void ScreenEndScene(void);
 extern int SectRect(const Rect *a, const Rect *b, Rect *dst);
-extern uint32_t Color2Index(RGBColor *color);
 extern void SetDialogDefaultItem(DialogPtr dlg, int32_t value);
 extern short Random(void);
 extern void SetQDGlobalsRandomSeed(int32_t seed);
@@ -510,17 +495,13 @@ extern void SetPort(CGrafPtr port);
 extern void SetGWorldContainer(GWorldContainer *gwc);
 extern void UnsetGWorldContainer(GWorldContainer *gwc);
 extern void SetRect(Rect *r, int left, int top, int right, int bottom);
-extern void FatalStartupError(short index);
 extern Boolean StillDown(void);
-extern void StrcatOrdinalNumber(short n, char *dst, Boolean capitalize);
-extern short StringWidth(const unsigned char *str);
 extern void SysBeep(short duration);
 extern void TETextBox(const void *text, int32_t length, Rect *box, short just);
 extern int MeasureWrappedText(const char *text, int byteCount, int width);
 extern int TextLineHeight(void);
 extern void NumToString(int32_t value, unsigned char *str);
 extern void QDGetPictureBounds(PicHandle pic, Rect *r);
-extern void *GetGWorldDevice(CGrafPtr port);
 extern void DisposeGWorld(CGrafPtr port);
 extern void DebugStr(const char *message);
 extern void GetMenuItemText(ControlPtr ctl, int index, unsigned char *text);
@@ -533,7 +514,7 @@ extern char gParamText0[];
 extern char gParamText1[];
 extern char gParamText2[];
 extern char gParamText3[];
-extern void FadeGammaTo(uint32_t percent);
+extern void FadeGammaTo(void);
 extern bool SplitTwoLineString(const std::string &src, std::string &line1, std::string &line2);
 extern void TextFace(short face);
 extern void TextFont(short font);
@@ -551,7 +532,6 @@ extern int32_t gCaretPhase;
 extern int32_t gBlinkTick;
 extern SWFrameRec *floatingEscortMenuFrame;
 extern SWFrameRec *floatingMapFrame;
-extern short gChicagoFont;
 extern void *gClickDialog;
 extern void *gClickItem;
 extern uint32_t gClickTime;
@@ -567,13 +547,10 @@ extern SpriteRec *masterShipWeaponSprite[768];
 extern SpriteRec *masterShipAltSprite[768];
 extern CGrafPort gGamePort;
 extern RGBColor blackRGB;
-extern int32_t gRezOpenPending;
 extern void nv_BlitImageOr(Rect *dstRect, Image_t *icon);
 extern RGBColor *whiteColor;
-extern RGBColor bkgndGreen;
 extern RGBColor brightGreen;
 extern RGBColor dimGreen;
-extern RGBColor dimmerGreen;
 extern RGBColor rgbWhite;
 extern RGBColor playerPaint;
 extern RGBColor rgbLightGrey;
@@ -581,7 +558,6 @@ extern RGBColor rgbMedGrey;
 extern RGBColor rgbDarkGrey;
 extern RGBColor rgbLessDarkGrey;
 extern RGBColor rgbRealDarkGrey;
-extern RGBColor rgbRealDarkBlue;
 extern RGBColor rgbBlack;
 
 extern short GetSpriteXSize(SpriteRec *spr);
@@ -603,7 +579,6 @@ extern int32_t GetControlValue(ControlPtr ctl);
 extern void InvalDialogRect(DialogPtr dlg, Rect *box);
 extern void ModalDialog(void *filterProc, short *itemHitPtr);
 extern void DisposeDialog(DialogPtr dlg);
-/* the body is empty, but every caller passes an argument */
 extern void GetDialogItem(DialogPtr dlg, int32_t item, short *type, Handle *handle,
                           Rect *box);
 void GetControlText(ControlPtr ctl, char *text);

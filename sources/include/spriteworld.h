@@ -19,7 +19,9 @@ extern short SWCreateSpriteWorld(SpriteWorldRec **spriteWorldP, CGrafPtr windowP
                                  const Rect &viewRect);  /* 0x00477640 */
 extern void SWResizeSpriteWorld(SpriteWorldPtr spriteWorldP, const Rect &viewRect);
 extern void SWDisposeSpriteWorld(SpriteWorldPtr *spriteWorldP);
+#if EVPLUS_TEST_PAGES
 extern void SWSetPortToWindow(SpriteWorldPtr spriteWorld);  /* the game window's port */
+#endif
 extern void SWAnimateSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x00478480 */
 extern void SWProcessSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x004781f0 */
 extern void SWUpdateSpriteWorld(SpriteWorldRec *spriteWorldP);  /* 0x00477fa0 */
@@ -169,7 +171,6 @@ extern void BlitPixieAddOverCopy(unsigned char *dstPixels, unsigned char *srcPix
                                  int32_t byteWidth);        /* 0x00473b60 */
 extern void BlitPixieTranslucentCopy(unsigned char *dstPixels, unsigned char *srcPixels,
                                      int32_t byteWidth, const SpriteBlend &blend); /* 0x004736c0 */
-extern int32_t GetMainDevice(void);                         /* 0x004f2a50 */
 
 /* --- errors --- */
 /* an SW_ASSERT site: the fork file's name and line, which differ per build (the win port's
@@ -192,8 +193,7 @@ extern void AsteroidCollisionHandler(SpriteRec *roidSpr, SpriteRec *otherSpr,
                                      Rect *sectRect);    /* 0x00436f70 */
 
 extern short SWCreateGWorldFromPictResource(SpriteWorldPtr destSpriteWorld,
-                                    CGrafPtr *pictGWorldP, short pictResID,
-                                    Boolean useGetPicture); /* 0x00478f30 */
+                                    CGrafPtr *pictGWorldP, short pictResID); /* 0x00478f30 */
 extern short SWCreateGWorldFromPict(SpriteWorldPtr destSpriteWorld,
                                     CGrafPtr *pictGWorldP,
                                     void *pictH);        /* 0x00478fa0 */

@@ -25,7 +25,6 @@
 // MAC: _InitMissions i386 0x00097b97 ppc 0x000a37ac
 void InitMissions(void)
 {
-    MisnRes *rec;
     short i;
     short j;
     short resID;
@@ -33,7 +32,6 @@ void InitMissions(void)
     short numLoaded;
     short numMisns;
     unsigned char name[256];
-    int32_t k;
 
     lastMissionStellar = -1;
     offeringFromShip = 0;
@@ -77,7 +75,6 @@ void InitMissions(void)
         missionFileHand = GetResource(kMisnType, i + kFirstResourceID);
         if (missionFileHand != NULL) {
             numLoaded++;
-            rec = (MisnRes *)*missionFileHand;
             missionAvailData[i].availStel = ((MisnRes *)*missionFileHand)->availStel;
             missionAvailData[i].availLoc = MisnFileRec->availLoc;
             missionAvailData[i].availRecord = MisnFileRec->availRecord;

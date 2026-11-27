@@ -6,9 +6,6 @@
 #include "shipobj.h"
 
 extern void CenterPict(void *pict, Rect *bounds);
-extern void DateToLongString(DateTimeRec date, char *out);
-extern void DateToMedString(DateTimeRec date, char *out);
-extern void StrcatCommaNumber(int32_t value, char *dst);
 extern std::string shieldString[6];
 extern std::string armorString[3];
 extern std::string newbieString[10];

@@ -42,8 +42,6 @@ private:
     short count = 0;
 };
 
-enum class DialogClose : unsigned char { Plain, NoFlash };
-
 /* A dialog from its DLOG/DITL (or an item list). Open sets `global` if given; Close disposes the dialog once
    and clears it. Dialogs are a stack: close them in reverse order of opening. Any idle may run the update proc
    while the dialog is open, so what it draws from (pictures, edit records, lists) is freed after Close. */
@@ -55,7 +53,7 @@ public:
     Dialog &operator=(const Dialog &) = delete;
 
     DialogPtr Open(short dlogID, DialogUpdateProc update = nullptr, DialogEventProc filter = nullptr,
-                   DialogPtr *to = nullptr, DialogClose closeHow = DialogClose::Plain);
+                   DialogPtr *to = nullptr);
     DialogPtr Open(short width, short height, const DialogItemSpec *items, short count, DialogUpdateProc update,
                    DialogEventProc filter, DialogPtr *to = nullptr);
     void Close();
@@ -65,9 +63,8 @@ public:
     short Modal();                  /* the item hit */
 
 private:
-    DialogPtr Opened(DialogPtr opened, DialogPtr *to, DialogClose closeHow);
+    DialogPtr Opened(DialogPtr opened, DialogPtr *to);
 
     DialogPtr dlg = nullptr;
     DialogPtr *global = nullptr;
-    DialogClose how = DialogClose::Plain;
 };

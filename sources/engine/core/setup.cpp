@@ -118,10 +118,6 @@ void SetupSpriteWorld(void)
 
     BlackScreen();
 
-    spriteClipRect = floatingEscortMenuFrame->frameRect;
-    spriteClipRect.top -= 75;
-    spriteClipRect.left -= 75;
-
     for (i = 0; i < kMaxShipTypes; i++) {
         masterShipSprite[i] = 0;
         masterShipGlowSprite[i] = 0;
@@ -157,7 +153,6 @@ void SetupWind(void)
     short bottom;
     short right;
 
-    fullScreenRestore = 0;
     gWind = OpenGamePort(&mainWindRect, PascalLiteral("EV Nova").text);
     top = mainWindRect.top;
     left = mainWindRect.left;
@@ -243,7 +238,6 @@ void InitArrays(void)
 }
 
 Rect mainWindRect;
-int32_t fullScreenRestore;
 GWorldContainer menuArtPort;            /* MenuArt() */
 GWorldContainer menuShownPort;          /* the menu art last stretched into loadPort */
 
@@ -253,7 +247,7 @@ static void CreateStatusOffPort(Rect screen)
     unsigned char msg[256];
 
     screen.right = screen.left + kStatusBarWidth;
-    CreateGWorldContainer(&statusOffPort, GetMainDevice(), 0, &screen);
+    CreateGWorldContainer(&statusOffPort, 0, &screen);
     if (statusOffPort.world != NULL) {
         UI::ScaleUIPort(statusOffPort.world);
         UI::Canvas::MakeNewTarget(statusOffPort.world);
@@ -279,7 +273,7 @@ void InitOffscreen(void)
     bounds = GetCWindowPortRect((WindowRef)gWind);
     r = *bounds;
     OffsetRect(&r, -r.left, -r.top);
-    CreateGWorldContainer(&loadPort, GetMainDevice(), 0, &r);
+    CreateGWorldContainer(&loadPort, 0, &r);
     if (loadPort.world != NULL) {
         UI::ScaleUIPort(loadPort.world);
         UI::Canvas::MakeNewTarget(loadPort.world);
@@ -289,8 +283,8 @@ void InitOffscreen(void)
         if (UI::Enabled()) {
             Rect art = *GetCWindowPortRect((WindowRef)gWind);
             OffsetRect(&art, -art.left, -art.top);
-            CreateGWorldContainer(&menuArtPort, GetMainDevice(), 0, &art);
-            CreateGWorldContainer(&menuShownPort, GetMainDevice(), 0, &art);
+            CreateGWorldContainer(&menuArtPort, 0, &art);
+            CreateGWorldContainer(&menuShownPort, 0, &art);
         }
     }
     if (loadPort.world == NULL) {
@@ -617,12 +611,8 @@ void Bye(void)
 // MAC: _InitColors i386 0x0001be73 ppc 0x0001ff78
 void InitColors(void)
 {
-    bkgndGreen.red = bkgndGreen.blue = 0;
-    bkgndGreen.green = 0x2200;
     dimGreen.red = dimGreen.blue = 0;
     dimGreen.green = 0x9900;
-    dimmerGreen.red = dimmerGreen.blue = 0;
-    dimmerGreen.green = 0x6666;
     brightGreen.red = brightGreen.blue = 0;
     brightGreen.green = 0xffff;
     rgbWhite.red = rgbWhite.green = rgbWhite.blue = 0xffff;
@@ -631,8 +621,6 @@ void InitColors(void)
     rgbMedGrey.red = rgbMedGrey.green = rgbMedGrey.blue = 0x8000;
     rgbLessDarkGrey.red = rgbLessDarkGrey.green = rgbLessDarkGrey.blue = 0x4e20;
     rgbLightGrey.red = rgbLightGrey.green = rgbLightGrey.blue = 0xc000;
-    rgbRealDarkBlue.red = rgbRealDarkBlue.green = 0;
-    rgbRealDarkBlue.blue = 0x428f;
     rgbBlack.red = rgbBlack.green = rgbBlack.blue = 0;
 }
 
@@ -968,16 +956,4 @@ void ResetScreenRect(void)
     mainWindRect.left = 0;
     mainWindRect.bottom = UI::ScreenHeight();
     mainWindRect.right = UI::ScreenWidth();
-}
-
-// FUNCTION: EVNOVA 0x004b6760
-// MAC: _FatalStartupError i386 0x0001e62f ppc 0x00022f78
-void FatalStartupError(short index)
-{
-    unsigned char text[256];
-
-    GetIndString(text, kAlertStrList, index);
-    ParamText(text, NULL, NULL, NULL);
-    StopAlert(128, NULL);
-    ExitToShell();
 }

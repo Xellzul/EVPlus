@@ -111,7 +111,6 @@ short NewGWorld(CGrafPtr *out, int depth, const Rect *bounds, void *theGDH)
     gw->txSize = 9;
     gw->offscreen = 1;
     gw->pix.ctab = NULL;
-    gw->pix.originV = 0;
     gw->pix.width = bounds->right - bounds->left;
     gw->pix.height = bounds->bottom - bounds->top;
     gw->depth = bitCount;
@@ -175,27 +174,16 @@ PixMapPtr GetGWorldPixMap(CGrafPtr world)
 
 
 // FUNCTION: EVNOVA 0x004bba80
-Rect *GetWindowPortRect(CWindowPtr window)
-{
-    return &window->pix.bounds;
-}
-
 // FUNCTION: EVNOVA 0x004bba90
 Rect *GetCWindowPortRect(CWindowPtr window)
 {
-    return GetWindowPortRect(window);
+    return &window->pix.bounds;
 }
 
 // FUNCTION: EVNOVA 0x004bbaa0
 CGrafPtr GetCWindowGrafPort(CWindowPtr window)
 {
     return window;
-}
-
-// FUNCTION: EVNOVA 0x004bbad0
-void *GetGWorldDevice(CGrafPtr port)
-{
-    return NULL;
 }
 
 // FUNCTION: EVNOVA 0x004bbae0

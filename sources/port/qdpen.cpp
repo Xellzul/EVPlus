@@ -1,18 +1,8 @@
-/* qdpen.cpp -- the pen and the shapes drawn with it: MoveTo, Line, LineTo, PenSize, FrameOval, PaintOval. */
+/* qdpen.cpp -- the pen and the shapes drawn with it: MoveTo, LineTo, PenSize, FrameOval, PaintOval. */
 #include "scaleddraw.h"
 
 /* The pen position and size live in the current port, so these are field stores with
-   the Toolbox's null guard; the relative Line is spelled in terms of the absolute
-   LineTo exactly as the Toolbox defines it. */
-
-// FUNCTION: EVNOVA 0x004b9790
-void Line(short dh, short dv)
-{
-    if (CurrentGrafPort == NULL)
-        return;
-    LineTo((CurrentGrafPort->pnLoc.h + dh), (CurrentGrafPort->pnLoc.v + dv));
-}
-
+   the Toolbox's null guard. */
 
 // FUNCTION: EVNOVA 0x004b97e0
 void LineTo(short h, short v)
@@ -35,6 +25,7 @@ void MoveTo(short h, short v)
     CurrentGrafPort->pnDeviceOffset = 0;
 }
 
+#if EVPLUS_TEST_PAGES
 // FUNCTION: EVNOVA 0x004ba320
 void PenSize(short width, short height)
 {
@@ -57,3 +48,4 @@ void PaintOval(Rect *r)
     if (CurrentGrafPort != NULL && r != NULL && CurrentGrafPort->pix.pixelSize == 16)
         Scaled::PaintOval(*r);
 }
+#endif

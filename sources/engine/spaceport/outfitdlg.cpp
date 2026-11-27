@@ -3,7 +3,6 @@
 #include "game.h"
 #include "stellar.h"
 #include "crashlog.h"
-#include "prototypes.h"
 #include "gameutil.h"
 #include "missions.h"
 #include "player.h"
@@ -662,7 +661,7 @@ void OutfitDialog::Run()
     missionsOutside = kOutfitVenue;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(30) + 30;
-    dialog.Open(kOutfitDlogID, OutfitDialogUpdate, Filter, &outfitDialog, DialogClose::NoFlash);
+    dialog.Open(kOutfitDlogID, OutfitDialogUpdate, Filter, &outfitDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(outfitBackgroundPic);

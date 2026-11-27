@@ -1,31 +1,9 @@
 /* textutils.cpp -- number, date and name formatting, Pascal strings, status strings */
 
 #include "player.h"
-#include "render.h"
 #include "gameutil.h"
-#include "prototypes.h"
 #include "missions.h"
 #include "text.h"
-
-// FUNCTION: EVNOVA 0x00465c10
-// MAC: _StrcatCommaNumber i386 0x00008820 ppc 0x0000a8e0
-void StrcatCommaNumber(int32_t value, char *dst)
-{
-    strcat(dst, CommaNumber(value).c_str());
-}
-
-/* Append an ordinal to a C string: first through tenth out of STR# 137 (its entries 29..38), anything else in
-   digits. */
-// FUNCTION: EVNOVA 0x00465d90
-// MAC: _StrcatOrdinalNumber i386 0x00008ab4 ppc 0x0000ab98
-void StrcatOrdinalNumber(short n, char *dst, Boolean capitalize)
-{
-    strcat(dst, OrdinalText(n, capitalize != 0).c_str());
-}
-
-
-/* MSL <ctype.h> inlines tolower's table lookup; the exe calls the library
-   function (0x004d6230), so declare it without the header. */
 
 // FUNCTION: EVNOVA 0x004665f0
 // MAC: _CullNameString i386 0x0000dbe2 ppc 0x00011150
@@ -55,20 +33,6 @@ void CullNameString(unsigned char *name)
     culled[i] = 0;
     CtoPstr((char *)culled);
     pstrcpy(name, culled);
-}
-
-// FUNCTION: EVNOVA 0x00468450
-// MAC: _DateToMedString i386 0x00008cb6 ppc 0x0000adcc
-void DateToMedString(DateTimeRec date, char *out)
-{
-    strcpy(out, DateMedText(date).c_str());
-}
-
-// FUNCTION: EVNOVA 0x00468600
-// MAC: _DateToLongString i386 0x00008ef8 ppc 0x0000b014
-void DateToLongString(DateTimeRec date, char *out)
-{
-    strcpy(out, DateLongText(date).c_str());
 }
 
 // FUNCTION: EVNOVA 0x00468d90

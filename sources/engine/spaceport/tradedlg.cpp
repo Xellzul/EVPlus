@@ -111,7 +111,7 @@ void TradeDialog::Run()
     missionsOutside = kTradeVenue;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(0x1e) + 0x1e;
-    dialog.Open(kTradeDlogID, TradeDialogUpdate, Filter, &tradeDialog, DialogClose::NoFlash);
+    dialog.Open(kTradeDlogID, TradeDialogUpdate, Filter, &tradeDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(tradeBackgroundPic);

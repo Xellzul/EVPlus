@@ -4,7 +4,6 @@
 #include "sound.h"
 #include "game.h"
 #include "stellar.h"
-#include "prototypes.h"
 #include "gameutil.h"
 #include "missions.h"
 #include "render.h"
@@ -85,8 +84,7 @@ void BarDialog::Run()
     barPic = NULL;
     if (descResourcePictId >= kFirstResourceID)
         portrait.Load(descResourcePictId);
-    dialog.Open(barPic != NULL ? kBarDlogID : kPlainBarDlogID, BarDialogUpdate, Filter, &barDialog,
-                DialogClose::NoFlash);
+    dialog.Open(barPic != NULL ? kBarDlogID : kPlainBarDlogID, BarDialogUpdate, Filter, &barDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(barBackgroundPic);
@@ -272,7 +270,7 @@ void NewsDialog::Run()
     }
     if (backdrop.Load(pictID) == NULL && pictID != kDefaultBackdropPict)
         backdrop.Load(kDefaultBackdropPict);
-    dialog.Open(kDlg1014ID, NewsDialogUpdate, Filter, &newsDialog, DialogClose::NoFlash);
+    dialog.Open(kDlg1014ID, NewsDialogUpdate, Filter, &newsDialog);
     if (!dialog.IsOpen())
         return;
     FlushEvents(everyEvent - diskMask, 0);
@@ -472,7 +470,7 @@ void RaceDialog::Run()
     short j;
     Picture racers[kRacerCount][kLastRaceFrame + 1];
 
-    dialog.Open(kRaceDialogID, RaceDialogUpdate, Filter, &raceDialog, DialogClose::NoFlash);
+    dialog.Open(kRaceDialogID, RaceDialogUpdate, Filter, &raceDialog);
     if (!dialog.IsOpen())
         return;
     raceWinner = -1;

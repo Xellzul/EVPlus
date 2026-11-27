@@ -9,7 +9,6 @@ static RGBColor whiteRGB = { 0xffff, 0xffff, 0xffff };   /* 0x00575ad0 */
 RGBColor *whiteColor = &whiteRGB;                /* 0x00575ad8 */
 
 RGBColor redRGB = { 0xffff, 0x0000, 0x0000 };     /* 0x00575adc */
-RGBColor *redColor = &redRGB;                    /* 0x00575ae4 */
 
 static RGBColor cyanRGB = { 0x0000, 0xffff, 0xffff };    /* 0x00575ae8 */
 RGBColor *cyanColor = &cyanRGB;                  /* 0x00575af0 */

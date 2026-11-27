@@ -10,11 +10,9 @@
 /* the map object's globals */
 Image_t *redMapArrow;
 Image_t *greenMapArrow;
-void *mapCursorSwitchRgn;
 PicHandle nebulaPic[32][7];
 PicHandle mapBackgroundPic;
 Boolean partialMapDialogUpdate;
-Boolean didUpdateMap;
 Boolean canZoomIn;
 Boolean canZoomOut;
 Boolean showClearRouteButton;

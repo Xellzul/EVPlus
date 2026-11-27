@@ -1,7 +1,6 @@
 /* initevnova.cpp -- tu-map object O2: game start, PlayGame, ship spawning, damage, escorts and fleets, then the pirated-key check and the .CRT hook that ends the object. Notes: Research/notes/initevnova.md */
 
 #include "burgermath.h"
-#include "platform.h"
 #include "profiler.h"
 #include "sound.h"
 #include "ai.h"
@@ -27,9 +26,6 @@
 #define kEventLoopTicks     10
 
 short pluginCount;
-Rect backUpdateRect;
-uint32_t lastSmokeUpdateTime;
-uint32_t lastKeypressTime;
 uint32_t lastEventLoopTime;
 ShipObj *shipData;
 ShipRec *shipClass;
@@ -210,10 +206,8 @@ char commMsg[2048];
 char textShowString[kLongTextSize];
 char datePrefix[0x10];
 char dateSuffix[0x10];
-RGBColor bkgndGreen;
 RGBColor brightGreen;
 RGBColor dimGreen;
-RGBColor dimmerGreen;
 RGBColor rgbWhite;
 RGBColor playerPaint;
 RGBColor rgbLightGrey;
@@ -221,11 +215,9 @@ RGBColor rgbMedGrey;
 RGBColor rgbDarkGrey;
 RGBColor rgbLessDarkGrey;
 RGBColor rgbRealDarkGrey;
-RGBColor rgbRealDarkBlue;
 RGBColor rgbBlack;
 void *staticPat[10];
 Rect commRect;
-Rect spriteClipRect;
 Rect floatingMapRect;
 Rect escortMenuRect;
 short playerRecord[kMaxSystems];
@@ -311,11 +303,6 @@ Boolean playerHasPerishableJunk;
 // MAC: _InitEVNova i386 0x0004666c ppc 0x0004eb44
 void InitEVNova(void)
 {
-    unsigned char alertText[256];
-    long grow;
-    int err;
-    short i;
-
     gameLoaded = gameInProgress = 0;
     preventStatusCopy = 0;
     gWind = 0;
@@ -500,9 +487,7 @@ void PlayGame(void)
     Screen::ComposeView();
     RefreshSAT();
     FadeScreenIn();
-    lastSmokeUpdateTime = ReadTick();
     lastEventLoopTime = ReadTick();
-    lastKeypressTime = ReadTick();
     AdjustSoundVolume();
     gSpriteWorld->fastBlit = 1;
     inBackground = 0;
@@ -523,7 +508,6 @@ void PlayGame(void)
                 lastFramePlayerPos.y = shipData[0].pos.y;
                 if (frameCounter % 3 == 0) {
                     updateSmokeThisFrame = 1;
-                    lastSmokeUpdateTime = ReadTick();
                 } else {
                     updateSmokeThisFrame = 0;
                 }
@@ -621,8 +605,6 @@ void PlayGame(void)
                 }
                 if (cheatsActive == 0)
                     gameFrozen = 0;
-                if (keyPressedThisFrame != 0)
-                    lastKeypressTime = ReadTick();
                 if (shipData[0].jumpTimer <= 0.0f || shipData[0].active == 0) {
                     if (ReadTick() - lastEventLoopTime > 30) {
                         IterateInGameEventLoop(1);
@@ -872,7 +854,6 @@ void DamageShip(ShipObj *ship, FloatPoint *from, short impact, short armorDmg,
     int32_t aligned;
     short angle;
     float capacity;
-    short myGovt;
     short myTop;
     FloatPoint spob;
     short i;
@@ -1323,7 +1304,6 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
     short i;
     short j;
     short m;
-    short k;
     short slot;
     short sysOf;
     short count;
@@ -1376,7 +1356,6 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
         }
     }
 
-    k = 0;
     for (m = 0; m < kMaxActiveMissions; m++) {
         if (currentMissionObjectives[m].active != 0) {
             shipSyst = currentMissions[m].shipSyst;
@@ -1399,7 +1378,6 @@ void SetupShipsInSystem(short sys, unsigned char arriving)
                     for (i = 0; i < count; i++) {
                         slot = MissionDudeSpawn(currentMissions[m].shipDude, -1, sys, m);
                         if (slot != -1) {
-                            k++;
                             if (currentMissions[m].shipGoal == kMissionGoalEscort) {
                                 shipData[slot].pos.x = Rand(0x200) - 0x100;
                                 shipData[slot].pos.y = Rand(0x200) - 0x100;
@@ -3343,12 +3321,10 @@ void DoEscortPayment(short days)
 {
     short i;
     short day;
-    short checked;
     short numDismissed;
     int32_t cost;
     Boolean skip;
 
-    checked = 0;
     numDismissed = 0;
     for (day = 0; day < days; day++) {
         for (i = 1; i < kMaxShips; i++) {
@@ -3382,14 +3358,13 @@ void DoEscortPayment(short days)
                 shipData[i].aiType = kAIWimpyTrader;
             }
             }
-            checked++;
         }
     }
 
     if (numDismissed > 0) {
         if (hyperGamma >= 0.0) {
             hyperGamma = -1.0f;
-            FadeGammaTo(100);
+            FadeGammaTo();
         }
         SetShowText(IndString(kGameStrList, numDismissed == 1 ? 302 : 303));
         statusRedraw[kRedrawCargo] = 1;
@@ -3577,7 +3552,6 @@ void DoShipCapture(ShipObj *me, Boolean asEscort)
 {
     unsigned char buf[256];
     int32_t slotL;
-    int32_t capType;
     short m;
     short w;
     short i;

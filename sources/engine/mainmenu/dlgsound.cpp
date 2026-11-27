@@ -76,7 +76,7 @@ void LoadMainScreenAnim(void)
                        &xTiles, &logoFrameCount)) {
         if (xTiles != 1)
             crashlog("warning: logo animation image has wrong dimensions");
-        CreateGWorldContainerFromPictResource(&logoPort, GetMainDevice(), 0, spriteID);
+        CreateGWorldContainerFromPictResource(&logoPort, 0, spriteID);
     }
 
     for (i = 0; i < 3; i++) {
@@ -84,7 +84,7 @@ void LoadMainScreenAnim(void)
                            &xTiles, &slideFrameCount[i])) {
             if (xTiles != 1)
                 crashlog("warning: button slide animation image has wrong dimensions");
-            CreateGWorldContainerFromPictResource(&slidePort[i], GetMainDevice(), 0, spriteID);
+            CreateGWorldContainerFromPictResource(&slidePort[i], 0, spriteID);
         }
         if (inBackground) {
             slideIndex[i] = slideFrameCount[i];

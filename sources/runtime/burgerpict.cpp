@@ -379,7 +379,6 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
     Word32 MaskSize;
     Word Width;
     Word Height;
-    Word Kind;
     Rect DestRect;
     short Err;
     Word32 Size;
@@ -535,7 +534,6 @@ Word ImageParsePict(Image_t *ImagePtr, const Word8 *InputPtr)
                 }
                 return 0;
             case opLongComment:
-                Kind = BigShort(InputPtr);
                 Length = BigShort(InputPtr + 2);
                 InputPtr += 4;
                 InputPtr += Length;

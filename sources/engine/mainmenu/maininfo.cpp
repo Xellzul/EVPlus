@@ -8,7 +8,6 @@
 #include "sound.h"
 #include "stellar.h"
 #include "crashlog.h"
-#include "prototypes.h"
 #include "ships.h"
 #include "viewscale.h"
 #include "screen.h"
@@ -361,7 +360,6 @@ void DoNewPilot(void)
     char **h;
     unsigned char *shipNameP;
     short i;
-    short j;
     short sys;
     short k;
     Boolean ok;

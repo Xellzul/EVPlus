@@ -131,12 +131,6 @@ extern void Fatal(const char *fmt, ...);
 extern void NonFatal(const char *fmt, ...);
 
 
-/* the guarded copy the exe's file and sound tools inline */
-static inline void BlockMoveData(const void *src, void *dst, ULong size)
-{
-    if (size != 0)
-        memmove(dst, src, size);
-}
 extern short OpenEVPlugins(const char *path, const char *ext,
                            FILE *log);
 extern void ImageDestroy(struct Image_t *ImagePtr);

@@ -3,7 +3,6 @@
 #include "game.h"
 #include "stellar.h"
 #include "crashlog.h"
-#include "prototypes.h"
 #include "gameutil.h"
 #include "missions.h"
 #include "player.h"
@@ -91,7 +90,7 @@ void ShipyardDialog::Run()
     missionsOutside = 5;
     offeringFromShip = 0;
     missionOfferTime = ReadTick() + Rand(30) + 30;
-    dialog.Open(0x3ec, ShipyardDialogUpdate, Filter, &shipyardDialog, DialogClose::NoFlash);
+    dialog.Open(0x3ec, ShipyardDialogUpdate, Filter, &shipyardDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(shipyardBackgroundPic);
@@ -296,7 +295,7 @@ void ShipyardDialog::Hit(short item)
         MissionInfoFromDialog(shipyardDialog);
     if (item == 10 && selShipyardItem != -1) {
         ShipyardDialogUpdate();
-        DoShipyardDescription(selShipyardItem);
+        DoShipyardDescription();
         RedrawDialog(shipyardDialog);
     }
     if (item == 0xc && shipyardScroll >= kGridCols) {
@@ -493,7 +492,7 @@ Boolean ShipyardDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
                 if (selShipListItem == lastClickItem && selShipListItem != -1 &&
                     ev.when - lastClickTime <= 15) {
                     ShipyardDialogUpdate();
-                    DoShipyardDescription(selShipyardItem);
+                    DoShipyardDescription();
                     RedrawDialog(shipyardDialog);
                 }
                 lastClickItem = selShipListItem;
@@ -729,7 +728,7 @@ void ShipDescDialog::Run()
     if (descResourcePictId >= kFirstResourceID)
         bigShip.Load(descResourcePictId);
     dialog.Open(bigShipPic != NULL ? kDescDlogID : kPlainDescDlogID, ShipDescDialogUpdate, Filter,
-                &shipDescDialog, DialogClose::NoFlash);
+                &shipDescDialog);
     if (!dialog.IsOpen())
         return;
     Picture backdrop(shipDescBackgroundPic);
@@ -817,7 +816,7 @@ Boolean ShipDescDialog::Filter(DialogPtr unused, const DialogEvent &ev, short *i
 
 } // namespace
 
-void DoShipyardDescription(short ship)
+void DoShipyardDescription(void)
 {
     ShipDescDialog().Run();
 }

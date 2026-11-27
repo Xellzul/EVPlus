@@ -155,7 +155,7 @@ int32_t DoQuantityDialog(int32_t maxCount, short mode)
     int32_t result;
     Dialog dialog;
 
-    dialog.Open(kQtyDlogID, NULL, NULL, &qtyDialog, DialogClose::NoFlash);
+    dialog.Open(kQtyDlogID, NULL, NULL, &qtyDialog);
     if (!dialog.IsOpen())
         return 0;
 

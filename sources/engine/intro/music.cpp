@@ -21,7 +21,6 @@
 
 /* the load-bar and intro-music object's globals */
 Rect progressRect;
-unsigned char fireOffRect[144];
 Rect progressDefRect;
 double progressCount;
 double progressMax;

@@ -98,9 +98,9 @@ void ShowTextDialog(Boolean allowMap, Boolean showMovie)
         strcat(textShowString, "\r");
     Dialog dialog;
     if (descResourcePictId >= kFirstResourceID && showMovie) {
-        dialog.Open(kTextDialogPictID, TextDialogUpdate, TextDialogFilter, &textDialog, DialogClose::NoFlash);
+        dialog.Open(kTextDialogPictID, TextDialogUpdate, TextDialogFilter, &textDialog);
     } else {
-        dialog.Open(kTextDialogPlainID, TextDialogUpdate, TextDialogFilter, &textDialog, DialogClose::NoFlash);
+        dialog.Open(kTextDialogPlainID, TextDialogUpdate, TextDialogFilter, &textDialog);
         descResourcePictId = -1;
     }
     if (!dialog.IsOpen())

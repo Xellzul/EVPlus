@@ -212,7 +212,7 @@ void CommDialog::Run(short shipIndex)
             LoadResponse(2);
     }
     Picture backdrop(commBackgroundPic);
-    dialog.Open(kCommDlgID2, CommDialogUpdate, Filter, &commDialog, DialogClose::NoFlash);
+    dialog.Open(kCommDlgID2, CommDialogUpdate, Filter, &commDialog);
     if (!dialog.IsOpen())
         return;
     canAskEscort = 0;
@@ -634,7 +634,7 @@ void PlanetCommDialog::Run()
     PlaySound(beepSnd[4], 1, gSoundVolume, gSoundVolume);
     ShowTheCursor();
     Picture backdrop(commBackgroundPic);
-    dialog.Open(kCommDlogID, PlanetCommDialogUpdate, Filter, &commDialog, DialogClose::NoFlash);
+    dialog.Open(kCommDlogID, PlanetCommDialogUpdate, Filter, &commDialog);
     if (!dialog.IsOpen())
         return;
     if (stellarData[shipData->targetStellar].minStatus == 0x7fff)
@@ -1253,7 +1253,7 @@ short HaggleDialog::Run(Boolean raise, short chance)
         canHaggle = 0;
 
     Picture backdrop(haggleBackgroundPic);
-    dialog.Open(kHaggleDlogID, HaggleDialogUpdate, Filter, &haggleDialog, DialogClose::NoFlash);
+    dialog.Open(kHaggleDlogID, HaggleDialogUpdate, Filter, &haggleDialog);
     if (!dialog.IsOpen())
         return 0;
 
@@ -1505,7 +1505,7 @@ void PlunderDialog::Run()
 
     ShowTheCursor();
     Picture backdrop(plunderBackgroundPic);
-    dialog.Open(kPlunderDlogID, PlunderDialogUpdate, Filter, &plunderDialog, DialogClose::NoFlash);
+    dialog.Open(kPlunderDlogID, PlunderDialogUpdate, Filter, &plunderDialog);
     if (!dialog.IsOpen())
         return;
     backdrop.Load(kPlunderPictID);
@@ -2045,7 +2045,7 @@ void EscortDialog::Run(ShipObj *ship)
     ShowTheCursor();
 
     Picture backdrop(commBackgroundPic);
-    dialog.Open(kEscortDialogID, EscortDialogUpdate, Filter, &commDialog, DialogClose::NoFlash);
+    dialog.Open(kEscortDialogID, EscortDialogUpdate, Filter, &commDialog);
     if (!dialog.IsOpen())
         return;
 

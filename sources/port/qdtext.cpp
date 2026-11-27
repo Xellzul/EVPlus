@@ -7,7 +7,6 @@
 #include "fontraster.h"
 #include "pixel.h"
 #include "textlayout.h"
-#include "text.h"
 
 #define kFull           255
 #define kFallbackFont   0               /* the system font's number */
@@ -220,11 +219,13 @@ int MeasureTextSpans(const void *text, uint32_t byteCount, Rect *box)
     return DrawTextCore(text, byteCount, box, 1, 0, 0);
 }
 
+#if EVPLUS_TEST_PAGES
 // FUNCTION: EVNOVA 0x004bca70
 void DrawText(const void *textBuf, int firstByte, int byteCount)
 {
     DrawTextRun((char *)textBuf + firstByte, byteCount, NULL, 0, 0);
 }
+#endif
 
 // FUNCTION: EVNOVA 0x004bcab0
 void DrawCString(const char *text)
@@ -269,6 +270,7 @@ static short MeasureAnsi(const char *text, int byteCount)
     return TextLayout::ClampShort(map.LogicalLength(AnsiDeviceWidth(map, text, byteCount)));
 }
 
+#if EVPLUS_TEST_PAGES
 /* the same measurer over a Pascal string */
 // FUNCTION: EVNOVA 0x004bcad0
 short StringWidth(const unsigned char *str)
@@ -278,6 +280,7 @@ short StringWidth(const unsigned char *str)
     PStr2CStr(text, str);
     return MeasureCString(text);
 }
+#endif
 
 // FUNCTION: EVNOVA 0x004bcb00
 short MeasureCString(const char *text)

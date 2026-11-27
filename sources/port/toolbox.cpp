@@ -1,5 +1,5 @@
 /* toolbox.cpp -- small Mac Toolbox calls the game makes: the clocks, QuickDraw's Random, StringToNum and NumToString,
-   DebugStr, the main device, GetIndString, ParamText and Alert, Delay, ExitToShell */
+   DebugStr, GetIndString, ParamText and Alert, Delay, ExitToShell */
 
 #include <time.h>
 
@@ -7,11 +7,6 @@
 #include "endianswap.h"
 #include "platform.h"
 #include "player.h"
-#include "spriteworld.h"
-
-#define kDeviceToken      0x51544744                /* any non-NULL "GDHandle"; nothing reads it */
-
-int32_t GetMainDevice(void) { return kDeviceToken; }
 
 void Microseconds(UnsignedWide *now)
 {

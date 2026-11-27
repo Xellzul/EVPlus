@@ -27,7 +27,6 @@ typedef struct GameFont {
     RasterFont *font;
 } GameFont;
 
-short gChicagoFont;
 short gTimesFont;
 ListRec gFontFamilies;
 static GameFont *gGameFonts;
@@ -71,7 +70,7 @@ void InitFonts(void)
 
     PlatListFiles(PlatExeFolder(), kFontPattern, AddGameFont, NULL);
     LinkedListInit(&gFontFamilies);
-    GetFNum(PascalLiteral("Chicago").text, &gChicagoFont);
+    GetFNum(PascalLiteral("Chicago").text, &scratch);
     GetFNum(PascalLiteral("Times").text, &gTimesFont);
     GetFNum(PascalLiteral("Geneva").text, &scratch);
 }

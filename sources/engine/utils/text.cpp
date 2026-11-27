@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "text.h"
-#include "gameutil.h"
 #include "missions.h"
 #include "dialogs.h"
 #include "prototypes.h"
@@ -167,8 +166,6 @@ std::string NumText(int32_t value)
     return FromPascal(str);
 }
 
-// FUNCTION: EVNOVA 0x00465af0
-// MAC: _DrawCommaNumber i386 0x00004895 ppc 0x00005cb0
 std::string CommaNumber(int32_t value)
 {
     if (value < 1000)
@@ -271,20 +268,6 @@ std::string RankName(int i)
     return FromField(rankData[i].name, sizeof rankData[i].name);
 }
 
-std::string RankConvName(int i)
-{
-    if (rankData == NULL || i < 0 || i >= kMaxRanks)
-        return std::string();
-    return FromField(rankData[i].convName, sizeof rankData[i].convName);
-}
-
-std::string RankShortName(int i)
-{
-    if (rankData == NULL || i < 0 || i >= kMaxRanks)
-        return std::string();
-    return FromField(rankData[i].shortName, sizeof rankData[i].shortName);
-}
-
 std::string JunkName(int i)
 {
     if (junkData == NULL || i < 0 || i >= kMaxJunks)
@@ -299,25 +282,11 @@ std::string JunkLcName(int i)
     return FromField(junkData[i].lcName, sizeof junkData[i].lcName);
 }
 
-std::string DisasterName(int i)
-{
-    if (disasterData == NULL || i < 0 || i >= kMaxDisasters)
-        return std::string();
-    return FromNameField(disasterData[i].name);
-}
-
 static const MissionRecord *MissionSlot(int slot)
 {
     if (currentMissions == NULL || slot < 0 || slot >= kMaxActiveMissions)
         return NULL;
     return &currentMissions[slot];
-}
-
-std::string MissionName(int slot)
-{
-    const MissionRecord *m = MissionSlot(slot);
-
-    return m != NULL ? FromNameField(m->name) : std::string();
 }
 
 std::string MissionShipName(int slot)
